@@ -1,13 +1,10 @@
-/**
- * @author Josh Milthorpe
- */
-
 package x10x.polar;
 
 import x10x.vector.Point3d;
 
 /** 
  *  This class represents a point in 3D Polar coordinates.
+ * @author milthorpe
  */
 public value Polar3d {
     val r: double;

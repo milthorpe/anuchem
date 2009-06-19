@@ -1,11 +1,8 @@
-/**
- * @author Josh Milthorpe
- */
-
 package x10x.vector;
 
 /** 
- *  This class represents a point in 3D cartesian space.
+ * This class represents a point in 3D cartesian space.
+ * @author milthorpe
  */
 public value Point3d {
     public val x : double;

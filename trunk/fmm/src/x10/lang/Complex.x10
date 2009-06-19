@@ -1,4 +1,10 @@
-public class Complex {
+package x10.lang;
+
+/**
+ * This class represents a complex number (a + b*i).
+ * @author milthorpe
+ */
+public value Complex {
 	public val imaginary : double;
     public val real : double;
 	
