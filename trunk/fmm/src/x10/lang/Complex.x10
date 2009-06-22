@@ -13,15 +13,16 @@ public value Complex {
     public static val I : Complex = new Complex(0.0, 1.0);
     public static val NaN : Complex = new Complex(Double.NaN, Double.NaN);
 
-	public def this(imaginary : double, real : double) {
-		this.imaginary = imaginary; this.real = real;
+	public def this(real : double, imaginary : double) {
+		this.real = real;
+		this.imaginary = imaginary;
 	}
 	
     /**
      * @return the sum of this complex number and the given complex number
      */
 	public def add(a : Complex) : Complex {
-		return new Complex(imaginary + a.imaginary, real + a.real);
+		return new Complex(real + a.real, imaginary + a.imaginary);
 	}
 
     /**
@@ -66,6 +67,17 @@ public value Complex {
             return ZERO;
         }
 
+		if (d == 0.0) {
+			return new Complex(real/c, imaginary/c);
+		} else if (c == 0.0) {
+			return new Complex(imaginary/d, -real/c);
+		} else {
+			val denominator = c*c + d*d;
+			return new Complex((real*c + imaginary*d) / denominator, (imaginary*c - real*d) / denominator);
+		}
+
+		/*
+		Implementation from Commons math, presumably to avoid cancellation
         if (Math.abs(c) < Math.abs(d)) {
             if (d == 0.0) {
                 return new Complex(real/c, imaginary/c);
@@ -83,6 +95,7 @@ public value Complex {
             return new Complex((imaginary * q + real) / denominator,
                 (imaginary - real * q) / denominator);
         }
+		*/
     }
 	
 	public def equals(a : Complex) : boolean {
@@ -153,6 +166,10 @@ public value Complex {
      */
     public def isInfinite() : boolean {
         return !isNaN() && 
-        (real.isInfinite() || imaginary.isInfinite());        
+        (real.isInfinite() || imaginary.isInfinite());
     }
+
+	public def toString() : String {
+		return (real + " + " + imaginary + "i");
+	}
 }
