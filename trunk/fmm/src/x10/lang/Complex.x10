@@ -26,6 +26,13 @@ public value Complex {
 	}
 
     /**
+     * @return the sum of this complex number and the given double
+     */
+	public def add(a : double) : Complex {
+		return new Complex(real + a, imaginary);
+	}
+
+    /**
      * @return the difference between this complex number and the given complex number
      */
     public def subtract(a : Complex) : Complex {
@@ -35,6 +42,16 @@ public value Complex {
         
         return new Complex(real - a.real, imaginary - a.imaginary);
     }
+
+    /**
+     * @return the difference between this complex number and the given double
+     */
+	public def subtract(a : double) : Complex {
+        if (isNaN()) {
+            return NaN;
+        }
+		return new Complex(real - a, imaginary);
+	}
 	
     /**
      * @return the product of this complex number and the given complex number
@@ -42,6 +59,13 @@ public value Complex {
 	public def multiply(a : Complex) : Complex {
 		return new Complex(real * a.real - imaginary * a.imaginary, 
                              real * a.imaginary + imaginary * a.real);
+	}
+
+    /**
+     * @return the product of this complex number and the given double
+     */
+	public def multiply(a : double) : Complex {
+		return new Complex(real * a, imaginary * a);
 	}
 
     /**
@@ -96,6 +120,13 @@ public value Complex {
                 (imaginary - real * q) / denominator);
         }
 		*/
+    }
+
+    /**
+     * Gets the quotient of this complex number and the given double.
+     */
+    public def divide(a : double) : Complex {
+        return new Complex(real / a, imaginary / a);
     }
 	
 	public def equals(a : Complex) : boolean {

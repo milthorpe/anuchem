@@ -7,9 +7,9 @@ import x10x.vector.Point3d;
  * @author milthorpe
  */
 public value Polar3d {
-    val r: double;
-    val theta: double;
-    val phi: double;
+    public val r: double;
+    public val theta: double;
+    public val phi: double;
 
     public def this(r : double, theta : double, phi : double) {
         this.r = r;
