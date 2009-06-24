@@ -5,7 +5,7 @@ import x10x.vector.Point3d;
 import au.edu.anu.mm.MultipoleExpansion;
 
 /**
- * Test calculation of associated Legendre polynomials.
+ * Test multipole expansion including Taylor-like terms.
  * @author milthorpe
  */
 class TestMultipoleExpansion extends x10Test {
