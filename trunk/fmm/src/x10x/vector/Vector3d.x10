@@ -11,11 +11,11 @@ public value Vector3d {
     public val j : Double;
     public val k : Double;
 
-    public val NULL = new Vector3d(0, 0, 0);
+    public static val NULL = new Vector3d(0, 0, 0);
 
-    public val UX = new Vector3d(1.0, 0, 0);
-    public val UY = new Vector3d(0, 1.0, 0);
-    public val UZ = new Vector3d(0, 0, 1.0);
+    public static val UX = new Vector3d(1.0, 0, 0);
+    public static val UY = new Vector3d(0, 1.0, 0);
+    public static val UZ = new Vector3d(0, 0, 1.0);
     
     public def this(i : Double, j : Double, k : Double) {
         this.i = i;
