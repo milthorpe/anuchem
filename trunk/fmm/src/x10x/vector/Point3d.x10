@@ -4,19 +4,9 @@ package x10x.vector;
  * This class represents a point in 3D cartesian space.
  * @author milthorpe
  */
-public value Point3d {
-    public val x : double;
-    public val y : double;
-    public val z : double;
-
+public value Point3d extends Tuple3d {
     public def this(x : double, y : double, z : double) {
-        this.x = x;
-        this.y = y;
-        this.z = z;
-    }
-
-    public def toString() : String {
-        return ("(" + x + "," + y + "," + z + ")");
-    }
+        super(x, y, z);
+    }    
 }
 
