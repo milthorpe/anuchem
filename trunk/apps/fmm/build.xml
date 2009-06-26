@@ -78,7 +78,7 @@
 
     <target name="test" depends="check-test">
         <apply executable="x10" failonerror="true" dir="${target-test}" relative="true" addsourcefile="false">
-            <arg line="-t -v -mx 128M -classpath ${target-src}:${target-test}" />
+            <arg line="-t -v -mx 128M -classpath ${xre.lib}:${xla.lib}:${target-src}:${target-test}" />
             <targetfile/>
 
             <fileset dir="${target-test}" includes="**/Test*.java" />
