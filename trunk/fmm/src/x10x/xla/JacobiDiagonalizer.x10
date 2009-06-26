@@ -1,4 +1,4 @@
-package x10x.vector;
+package x10x.xla;
 
 import x10x.matrix.Matrix;
 import x10.io.Console;
