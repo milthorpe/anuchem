@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE project [<!ENTITY buildfile SYSTEM "file:./build-user.xml">]>
+<project name="X10 project" default="build" basedir=".">
+    <property name="x10.testlib" location="${user.home}/x10-17/x10.tests/examples/x10lib"/>
+    <property name="bash.exe" value="bash"/>    
+    <property name="optimize" value="false" />
+	<property name="target" location="${basedir}/target" />
+	<property name="target-src" location="${target}/classes" />
+	<property name="target-test" location="${target}/test-classes" />
+
+    <condition property="x10c.optimize" value="-O" else="">
+        <istrue value="${optimize}" />
+    </condition>
+
+	<target name="init">
+        <mkdir dir="${target}"/>
+	</target>
+
+    <target name="build" depends="build-src,build-test"/>
+
+    <target name="build-src" depends="check-src" unless="src.uptodate">
+        <echo message="Building source tree"/>
+
+        <fileset id="changed.src.files" dir="${basedir}/src" includes="**/*.x10">
+            <depend targetdir="${target}/classes">
+                <mapper type="glob" from="*.x10" to="*.java"/>
+            </depend>
+        </fileset>
+
+        <pathconvert property="src.list" refid="changed.src.files" dirsep="/" pathsep=" ">
+            <map from="${basedir}${file.separator}src${file.separator}" to=""/>
+        </pathconvert>
+        <echo message="x10c ${src.list}"/>
+
+        <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/src">
+            <arg value="-c"/>
+            <arg value="'x10c' ${x10c.optimize} -sourcepath . -commandlineonly -d ${target-src} ${src.list}"/>
+        </exec>
+    </target>
+
+	<target name="init-src" depends="init">
+        <mkdir dir="${target-src}"/>
+	</target>
+
+	<target name="check-src" depends="init-src">
+        <fileset id="src.files" dir="${basedir}/src" includes="**/*.x10"/>
+        <uptodate property="src.uptodate">
+            <srcfiles refid="src.files"/>
+            <globmapper from="*.x10" to="${target-src}/*.java" handledirsep="true"/>
+        </uptodate>
+    </target>
+    
+    <target name="build-test" depends="check-test,build-harness" unless="test.uptodate">
+        <echo message="Building tests"/>
+
+        <fileset id="changed.test.files" dir="${basedir}/test" includes="**/*.x10">
+            <depend targetdir="${target}/test-classes">
+                <mapper type="glob" from="*.x10" to="*.java"/>
+            </depend>
+        </fileset>
+
+        <pathconvert property="test.list" refid="changed.test.files" dirsep="/" pathsep=" ">
+            <map from="${basedir}${file.separator}test${file.separator}" to=""/>
+        </pathconvert>
+        <echo message="x10c ${test.list}"/>
+
+        <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/test">
+            <arg value="-c"/>
+            <arg value="'x10c' ${x10c.optimize} -sourcepath ${x10.testlib}:${basedir}/src:. -classpath ${target-src} -commandlineonly -d ${target-test} ${test.list}"/>
+        </exec>
+    </target>
+
+    <target name="test" depends="check-test">
+        <apply executable="x10" failonerror="true" dir="${target-test}" relative="true" addsourcefile="false">
+            <arg line="-t -v -mx 128M -classpath ${target-src}:${target-test}" />
+            <targetfile/>
+
+            <fileset dir="${target-test}" includes="**/Test*.java" />
+            <mapper type="glob" from="*.java" to="*"/>
+        </apply>
+    </target>
+
+	<target name="init-test" depends="init">
+        <mkdir dir="${target-test}"/>
+	</target>
+
+	<target name="check-test" depends="init-test">
+        <fileset id="test.files" dir="${basedir}/test" includes="**/*.x10"/>
+        <uptodate property="test.uptodate">
+            <srcfiles refid="test.files"/>
+            <globmapper from="*.x10" to="${target-test}/*.java" handledirsep="true"/>
+        </uptodate>
+    </target>
+
+	<target name="build-harness" depends="init-test,check-harness" unless="harness.uptodate">
+        <echo message="Building test harness"/>
+		<echo message="x10c ${test.list} ${x10.testlib}/harness/x10Test.x10"/>
+        <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/test">
+            <arg value="-c"/>
+            <arg value="'x10c' ${x10c.optimize} -sourcepath . -commandlineonly -d ${target-test} ${x10.testlib}/harness/x10Test.x10"/>
+        </exec>
+    </target>
+
+	<target name="check-harness" >
+		<uptodate property="harness.uptodate">
+			<srcfiles dir="${x10.testlib}" includes="harness/*.x10"/>
+	 		<globmapper from="*.x10" to="${target-test}/*.java" handledirsep="true"/>
+		</uptodate>
+    </target>
+
+	<target name="clean">
+		<delete dir="target" />
+	</target>
+
+</project>
