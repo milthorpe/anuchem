@@ -68,9 +68,9 @@ public class Vector {
     }
 
     /**
-     * add two vectors: this + X 
+     * add two vectors: this + b 
      */
-    public def add(x:Vector) : Vector {
+    public def add(b:Vector) : Vector {
         val N = getSize();
         val res = new Vector(N);
 
@@ -81,9 +81,9 @@ public class Vector {
     }
 
     /**
-     * subtract two vectors: this - X
+     * subtract two vectors: this - b
      */
-    public def sub(x:Vector) : Vector {
+    public def sub(b:Vector) : Vector {
         val N = getSize();
         val res = new Vector(N);
 
@@ -124,9 +124,9 @@ public class Vector {
     /**
      * return (-1) . V
      */
-    public def negate() : Vector {      
-        val n = new Vector(vector.length);
+    public def negate() : Vector {
         val N = getSize();
+		val n = new Vector(N);
         
         // TODO : x10 - parallel
         for(var i:Int=0; i<N; i++) n.vec(i) = -vec(i);
