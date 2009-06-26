@@ -1,6 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE project [<!ENTITY buildfile SYSTEM "file:./build-user.xml">]>
-<project name="X10 project" default="build" basedir=".">
+<project name="X10 application project" default="build" basedir=".">
+	<property name="x10x.lib" location="../../x10x.lib"/>
+	<property name="xla.src" location="${x10x.lib}/xla/src"/>
+	<property name="xla.lib" location="${x10x.lib}/xla/lib/xla.jar"/>
+	<property name="x10.runtime.extensions" location="../../x10.runtime"/>
+	<property name="xre.src" location="${x10.runtime.extensions}/src"/>
+	<property name="xre.lib" location="${x10.runtime.extensions}/lib/x10re.jar"/>
     <property name="x10.testlib" location="${user.home}/x10-17/x10.tests/examples/x10lib"/>
     <property name="bash.exe" value="bash"/>    
     <property name="optimize" value="false" />
@@ -34,7 +40,7 @@
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/src">
             <arg value="-c"/>
-            <arg value="'x10c' ${x10c.optimize} -sourcepath . -commandlineonly -d ${target-src} ${src.list}"/>
+            <arg value="'x10c' ${x10c.optimize} -sourcepath ${xre.src}:${xla.src}:. -commandlineonly -d ${target-src} ${src.list}"/>
         </exec>
     </target>
 
@@ -66,7 +72,7 @@
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/test">
             <arg value="-c"/>
-            <arg value="'x10c' ${x10c.optimize} -sourcepath ${x10.testlib}:${basedir}/src:. -classpath ${target-src} -commandlineonly -d ${target-test} ${test.list}"/>
+            <arg value="'x10c' ${x10c.optimize} -sourcepath ${xre.src}:${xla.src}:${x10.testlib}:${basedir}/src:. -classpath ${xre.lib}:${xla.lib}:${target-src} -commandlineonly -d ${target-test} ${test.list}"/>
         </exec>
     </target>
 
