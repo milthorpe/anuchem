@@ -32,8 +32,8 @@ public value MultipoleExpansion {
                 phifac = phifac.multiply(phifac0);
                 Olm(l,m) = phifac.divide(ilm).multiply(q * rfac * pplm(l,m));
             }
-            for (val (m): Point in [1..l]) {
-                Olm(l,m) = Olm(l,-m).conjugate().multiply((2*(-m+1%2)-1 as double));
+            for (val (m): Point in [-l..-1]) {
+                Olm(l,m) = Olm(l,-m).conjugate().multiply((2*((-m+1)%2)-1 as double));
             }
             rfac = rfac * v_pole.r;
         }
@@ -64,7 +64,7 @@ public value MultipoleExpansion {
               Mlm(l,m) = phifac.multiply(rfac * pplm(l,m) * ilm);
             }
             for (val (m): Point in [-l..-1]) {
-              Mlm(l,m) = Mlm(l,-m).conjugate().multiply((2*(-m+1%2)-1 as double));
+              Mlm(l,m) = Mlm(l,-m).conjugate().multiply((2*((-m+1)%2)-1 as double));
             }
             rfac = rfac * rfac0;
         }
