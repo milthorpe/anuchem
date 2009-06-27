@@ -40,7 +40,7 @@
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/src">
             <arg value="-c"/>
-            <arg value="'x10c' ${x10c.optimize} -sourcepath ${xre.src}:${xla.src}:. -commandlineonly -d ${target-src} ${src.list}"/>
+            <arg value="'x10c' ${x10c.optimize} -sourcepath ${xre.src}:${xla.src}:. -classpath ${xre.lib}:${xla.lib} -commandlineonly -d ${target-src} ${src.list}"/>
         </exec>
     </target>
 
@@ -76,7 +76,7 @@
         </exec>
     </target>
 
-    <target name="test" depends="check-test">
+    <target name="test" depends="build-test">
         <apply executable="x10" failonerror="true" dir="${target-test}" relative="true" addsourcefile="false">
             <arg line="-t -v -mx 128M -classpath ${xre.lib}:${xla.lib}:${target-src}:${target-test}" />
             <targetfile/>
