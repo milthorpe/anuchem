@@ -1,11 +1,16 @@
 package au.edu.anu.mm;
 
 import x10.lang.Complex;
+import x10x.vector.Tuple3d;
 import x10x.vector.Point3d;
+import x10x.vector.Vector3d;
 import x10x.polar.Polar3d;
 
 /**
- * This class calculates multipole expansions.
+ * This class calculates multipole expansions, using the algorithms given in
+ * <a href="info:doi/10.1063/1.468354">
+ *      Derivation and efficient implementation of the fast multipole method
+ * </a>, White and Head-Gordon, 1994.
  * @author milthorpe
  */
 public value MultipoleExpansion {
@@ -13,7 +18,7 @@ public value MultipoleExpansion {
     /**
      * Calculate the multipole-like term O_{lm} (with m >= 0) for a point v.
      */
-    public static def getOlm(q : double, v : Point3d, p : int) : Array[Complex]{rank==2} {
+    public static def getOlm(q : double, v : Tuple3d, p : int) : Array[Complex]{rank==2} {
         val Olm : Array[Complex]{rank==2} = Array.make[Complex]([0..p, -p..p]->here, (val (i,j): Point)=> Complex.ZERO);
         var v_pole : Polar3d = Polar3d.getPolar3d(v);
         val pplm : Array[double]{rank==2} = AssociatedLegendrePolynomial.getPlm(Math.cos(v_pole.theta), p); 
@@ -41,10 +46,10 @@ public value MultipoleExpansion {
         return Olm;
     }
 
-  /**
-   * Calculate the Taylor-like term M_{lm} (with m >= 0) for a single point v.
-   */
-    public static def getMlm(v : Point3d, p : int) : Array[Complex]{rank==2} {
+    /**
+     * Calculate the local Taylor-type expansion M_{lm} (with m >= 0) for a single point v.
+     */
+    public static def getMlm(v : Tuple3d, p : int) : Array[Complex]{rank==2} {
         val Mlm : Array[Complex]{rank==2} = Array.make[Complex]([0..p, -p..p]->here, (val (i,j): Point)=> Complex.ZERO);
         val v_pole : Polar3d = Polar3d.getPolar3d(v);
         val pplm : Array[double]{rank==2} = AssociatedLegendrePolynomial.getPlm(Math.cos(v_pole.theta), p); 
@@ -70,6 +75,34 @@ public value MultipoleExpansion {
         }
 
         return Mlm;
+    }
+
+    /**
+     * Perform local expansion translation along a vector V.
+     * This is used in FMM to translate from parent to child box.
+     * // TODO use correct array regions (not shoehorned into 1D array)
+     * @param v the vector from the centre of parent box to centre of child box
+     * @param parentExpansion the parent local expansion
+     * @param childExpansion the child local expansion to which the parent will be added
+     */
+    public static def translateExpansion(v : Tuple3d, 
+                            parentExpansion: Array[Complex]{rank==1},
+                            var childExpansion : Array[Complex]{rank==1}) {
+
+        val numTerms : int = parentExpansion.region.max(0);
+        val cylo : Array[Complex]{rank==2} = getOlm(1.0, v, numTerms);
+        var inm : int = 0;
+        for (val (jt): Point in [0..numTerms]) {
+            for (val (kt) : Point in [jt..jt]) {
+                inm++;
+                for (val(lt): Point in [jt..numTerms]) {
+                    for (val (mt): Point in [kt-(lt-jt)..kt+(lt-jt)]) {     
+                        val ido = (lt*lt)+lt+mt+1;
+                        childExpansion(inm) = childExpansion(inm).add(parentExpansion(ido).multiply(cylo(lt-jt,mt-kt)));
+                    }
+                }
+            }
+        }
     }
 }
 
