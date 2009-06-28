@@ -5,11 +5,11 @@ package x10x.vector;
  * @author milthorpe
  */
 public value Tuple3d {
-    public val x : double;
-    public val y : double;
-    public val z : double;
+    public val x : Double;
+    public val y : Double;
+    public val z : Double;
 
-    public def this(x : double, y : double, z : double) {
+    public def this(x : Double, y : Double, z : Double) {
         this.x = x;
         this.y = y;
         this.z = z;
