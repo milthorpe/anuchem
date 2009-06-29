@@ -29,13 +29,13 @@ public value Polar3d {
 
     /** Returns a polar representation of the given cartesian tuple. */
     public static def getPolar3d(point : Tuple3d) {
-        val rxy2 : Double = (point.x * point.x) + (point.y * point.y);
-        val r2 : Double = rxy2 + (point.z * point.z);
+        val rxy2 : Double = (point.i * point.i) + (point.j * point.j);
+        val r2 : Double = rxy2 + (point.k * point.k);
         val r : Double = Math.sqrt(r2);
         var phi : Double;
         var theta : Double;
         if (rxy2 == 0.0) {
-            if (point.z >= 0.0) {
+            if (point.k >= 0.0) {
                 theta = 0.0;
             } else {
                 theta = Math.PI;
@@ -43,7 +43,7 @@ public value Polar3d {
             phi = 0.0;
         } else {
             val rxy : Double = Math.sqrt(rxy2);
-            phi = Math.atan2(point.y, point.x);
+            phi = Math.atan2(point.j, point.i);
             theta = Math.asin(rxy / r);
         }
         return new Polar3d(r, theta, phi);

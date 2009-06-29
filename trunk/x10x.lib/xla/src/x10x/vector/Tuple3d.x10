@@ -5,18 +5,18 @@ package x10x.vector;
  * @author milthorpe
  */
 public value Tuple3d {
-    public val x : Double;
-    public val y : Double;
-    public val z : Double;
+    public val i : Double;
+    public val j : Double;
+    public val k : Double;
 
-    public def this(x : Double, y : Double, z : Double) {
-        this.x = x;
-        this.y = y;
-        this.z = z;
+    public def this(i : Double, j : Double, k : Double) {
+        this.i = i;
+        this.j = j;
+        this.k = k;
     }
 
     public def toString() : String {
-        return ("(" + x + "x + " + y + "y + " + z + "z)");
+        return ("(" + i + "i + " + j + "j + " + k + "k)");
     }
 }
 

@@ -5,8 +5,8 @@ package x10x.vector;
  * @author milthorpe
  */
 public value Point3d extends Tuple3d {
-    public def this(x : Double, y : Double, z : Double) {
-        super(x, y, z);
+    public def this(i : Double, j : Double, k : Double) {
+        super(i, j, k);
     }    
 }
 

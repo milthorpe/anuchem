@@ -11,22 +11,22 @@ public value Vector3d extends Tuple3d {
     public static val UY = new Vector3d(0, 1.0, 0);
     public static val UZ = new Vector3d(0, 0, 1.0);
     
-    public def this(x : Double, y : Double, z : Double) {
-        super(x, y, z);
+    public def this(i : Double, j : Double, k : Double) {
+        super(i, j, k);
     }
 
     public def dot(vec : Vector3d) : Double {
-        return this.x * vec.x + this.y * vec.y + this.z * vec.z;
+        return this.i * vec.i + this.j * vec.j + this.k * vec.k;
     }
 
     public def cross(vec : Vector3d) : Vector3d {
-        return new Vector3d(y * vec.z - z * vec.y,
-                            z * vec.x - x * vec.z,
-                            x * vec.y - y * vec.x);
+        return new Vector3d(j * vec.k - k * vec.j,
+                            k * vec.i - i * vec.k,
+                            i * vec.j - j * vec.i);
     }
 
-    public def mul(k : Double) : Vector3d {
-        return new Vector3d(this.x * k, this.y * k, this.z * k);
+    public def mul(c : Double) : Vector3d {
+        return new Vector3d(this.i * c, this.j * c, this.k * c);
     }
 
     public def mixedProduct(v2 : Vector3d, v3 : Vector3d) : Double {
@@ -34,16 +34,16 @@ public value Vector3d extends Tuple3d {
     }
 
     public def lengthSquared() : Double {
-        return x * x + y * y + z * z;
+        return i * i + j * j + k * k;
     }
 
     public def length() : Double {
-        return Math.sqrt(x * x + y * y + z * z);
+        return Math.sqrt(i * i + j * j + k * k);
     }
 
     /* Should which name to use - length or magnitude? */
     public def magnitude() : Double {
-        return Math.sqrt(x * x + y * y + z * z);
+        return Math.sqrt(i * i + j * j + k * k);
     }
 
     public def angleWith(vec : Vector3d) : Double {
@@ -56,11 +56,11 @@ public value Vector3d extends Tuple3d {
     public def normalize() : Vector3d {
         val norm = 1.0 / length();
 
-        return new Vector3d(x * norm, y * norm, z * norm);
+        return new Vector3d(i * norm, j * norm, k * norm);
     }
 
     public def negate() : Vector3d {
-        return new Vector3d(-x, -y, -z);
+        return new Vector3d(-i, -j, -k);
     }
 }
 
