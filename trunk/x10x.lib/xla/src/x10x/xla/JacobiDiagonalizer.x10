@@ -55,14 +55,14 @@ public class JacobiDiagonalizer implements Diagonalizer {
                 val g:Double = 100.0 * Math.abs(a(ip,iq));
 
                 if ((sweeps > 4) 
-                    && (((Math.abs(eigenValues(ip))+g) as Float) == ((Math.abs(eigenValues(ip))) as Float))
-                    && (((Math.abs(eigenValues(iq))+g) as Float) == ((Math.abs(eigenValues(iq))) as Float))) {
+                    && (((Math.abs(eigenValues(ip))+g) as Double) == ((Math.abs(eigenValues(ip))) as Double))
+                    && (((Math.abs(eigenValues(iq))+g) as Double) == ((Math.abs(eigenValues(iq))) as Double))) {
                    a(ip,iq) = 0.0;
                 } else if (Math.abs(a(ip,iq)) > zeroTolerance) {
                    var h:Double = eigenValues(iq) - eigenValues(ip);
                    var t:Double, theta:Double;
 
-                   if ((((Math.abs(h)+g)) as Float) == (Math.abs(h) as Float)) {
+                   if ((((Math.abs(h)+g)) as Double) == (Math.abs(h) as Double)) {
                      t = a(ip,iq) / h;
                    } else {
                      theta = 0.5 * h / a(ip,iq);
