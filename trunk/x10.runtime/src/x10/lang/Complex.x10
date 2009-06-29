@@ -5,15 +5,16 @@ package x10.lang;
  * @author milthorpe
  */
 public value Complex {
-	public val imaginary : double;
-    public val real : double;
+	public val real : Double;
+	public val imaginary : Double;
 	
 	public static val ZERO : Complex = new Complex(0.0, 0.0);
     public static val ONE : Complex = new Complex(1.0, 0.0);
     public static val I : Complex = new Complex(0.0, 1.0);
+	public static val INF : Complex = new Complex(Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY);
     public static val NaN : Complex = new Complex(Double.NaN, Double.NaN);
 
-	public def this(real : double, imaginary : double) {
+	public def this(real : Double, imaginary : Double) {
 		this.real = real;
 		this.imaginary = imaginary;
 	}
@@ -26,9 +27,9 @@ public value Complex {
 	}
 
     /**
-     * @return the sum of this complex number and the given double
+     * @return the sum of this complex number and the given Double
      */
-	public def add(a : double) : Complex {
+	public def add(a : Double) : Complex {
 		return new Complex(real + a, imaginary);
 	}
 
@@ -44,9 +45,9 @@ public value Complex {
     }
 
     /**
-     * @return the difference between this complex number and the given double
+     * @return the difference between this complex number and the given Double
      */
-	public def subtract(a : double) : Complex {
+	public def subtract(a : Double) : Complex {
         if (isNaN()) {
             return NaN;
         }
@@ -62,70 +63,56 @@ public value Complex {
 	}
 
     /**
-     * @return the product of this complex number and the given double
+     * @return the product of this complex number and the given Double
      */
-	public def multiply(a : double) : Complex {
+	public def multiply(a : Double) : Complex {
 		return new Complex(real * a, imaginary * a);
 	}
 
     /**
      * Gets the quotient of this complex number and the given complex number.
-     * <p>
-     * Uses 
-     * <a href="http://doi.acm.org/10.1145/1039813.1039814">
-     * </p>
+	 * Uses Smith's algorithm <a href="http://doi.acm.org/10.1145/368637.368661"/>
+	 * TODO: consider using Priest's algorithm <a href="http://doi.acm.org/10.1145/1039813.1039814"/>
      * @return the quotient of this complex number and the given complex number
      */
-    public def divide(a : Complex) : Complex {
-        if (isNaN() || a.isNaN()) {
+    public def divide(w : Complex) : Complex {
+        if (isNaN() || w.isNaN()) {
             return NaN;
         }
 
-        val c : double = a.real;
-        val d : double = a.imaginary;
+        val c : Double = w.real;
+        val d : Double = w.imaginary;
         if (c == 0.0 && d == 0.0) {
             return NaN;
         }
         
-        if (a.isInfinite() && !isInfinite()) {
+        if (w.isInfinite() && !isInfinite()) {
             return ZERO;
         }
-
-		if (d == 0.0) {
-			return new Complex(real/c, imaginary/c);
-		} else if (c == 0.0) {
-			return new Complex(imaginary/d, -real/c);
-		} else {
-			val denominator = c*c + d*d;
-			return new Complex((real*c + imaginary*d) / denominator, (imaginary*c - real*d) / denominator);
-		}
-
-		/*
-		Implementation from Commons math, presumably to avoid cancellation
-        if (Math.abs(c) < Math.abs(d)) {
-            if (d == 0.0) {
-                return new Complex(real/c, imaginary/c);
-            }
-            val q : double = c / d;
-            val denominator : double = c * q + d;
-            return new Complex((real * q + imaginary) / denominator,
-                (imaginary * q - real) / denominator);
-        } else {
-            if (c == 0.0) {
+		 	 
+        if (Math.abs(d) <= Math.abs(c)) {
+			if (c == 0.0) {
                 return new Complex(imaginary/d, -real/c);
             }
-            val q : double =  d / c;
-            val denominator : double = d * q + c;
-            return new Complex((imaginary * q + real) / denominator,
-                (imaginary - real * q) / denominator);
+            val r : Double =  d / c;
+            val denominator : Double = c + d * r;
+            return new Complex((real + imaginary * r) / denominator,
+                (imaginary - real * r) / denominator);
+        } else {
+			if (d == 0.0) {
+                return new Complex(real/c, imaginary/c);
+            }
+            val r : Double = c / d;
+            val denominator : Double = c * r + d;
+            return new Complex((real * r + imaginary) / denominator,
+                (imaginary * r - real) / denominator);
         }
-		*/
     }
 
     /**
-     * Gets the quotient of this complex number and the given double.
+     * Gets the quotient of this complex number and the given Double.
      */
-    public def divide(a : double) : Complex {
+    public def divide(a : Double) : Complex {
         return new Complex(real / a, imaginary / a);
     }
 	
@@ -165,7 +152,7 @@ public value Complex {
      *
      * @return the absolute value
      */
-    public def abs() : double {
+    public def abs() : Double {
         if (isNaN()) {
             return Double.NaN;
         }

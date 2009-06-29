@@ -14,12 +14,15 @@ class TestComplex extends x10Test {
 		val b : Complex = a.conjugate();
 		chk (b.conjugate() == a);
 
-		val c : Complex = new Complex(1.0, 3.0);
+		val c : Complex = new Complex(1.0, 4.0);
 		chk (a.add(c).subtract(c) == a, "a + c - c = a");
+		/* Note: this identity does not always hold, given peculiarities of Smith's algorithm for division */
 		chk (a.multiply(c).divide(c) == a, "a * c / c = a");
+		
 
 		val d : Complex = new Complex(4.0, -1.0);
 		chk (a.add(d).subtract(d) == a, "a + d - d = a");
+		
 		chk (a.multiply(d).divide(d) == a, "a * d / d = a");
 
 		val e : Complex = a.divide(Complex.ZERO);

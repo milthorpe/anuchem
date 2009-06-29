@@ -67,6 +67,7 @@
     
     <target name="build-test" depends="check-test,build-harness" unless="test.uptodate">
         <echo message="Building tests"/>
+
         <fileset id="changed.test.files" dir="${basedir}/test" includes="**/*.x10">
             <depend targetdir="${target}/test-classes">
                 <mapper type="glob" from="*.x10" to="*.java"/>
@@ -84,7 +85,7 @@
         </exec>
     </target>
 
-    <target name="test" depends="check-test">
+    <target name="test" depends="build-test">
         <apply executable="x10" failonerror="true" dir="${target-test}" relative="true" addsourcefile="false">
             <arg line="-t -v -mx 128M -classpath ${target-src}:${target-test}" />
             <targetfile/>
