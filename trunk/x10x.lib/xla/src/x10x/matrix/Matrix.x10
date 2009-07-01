@@ -5,7 +5,7 @@ import x10x.vector.Vector;
 
 /**
  * This class represents an (NxM)  Matrix.
- * (Initial DRAFT) 
+ * (Initial DRAFT)
  *
  * @author V.Ganesh
  */
@@ -31,15 +31,9 @@ public class Matrix {
         mat = Array.make[Double]([0..row, 0..col]);
     }
 
-    /**
-     * Return the reference the actual storage 
-     */
     public def getMatrix() : Array[Double]{rank==2} = mat;
-
-    /**
-     * Return the row count of this matrix
-     */
     public def getRowCount() : Int = mat.region.max(0);
+    public def getColCount() : Int = mat.region.max(1);
 
     /**
      * Perform symmetric orthogonalization of this matrix
@@ -62,7 +56,7 @@ public class Matrix {
         
         return (sHalf.similarityTransformT(eigenVectors)); 
     }
-
+  
     /**
      * Make the current Matrix as Identity
      */
@@ -94,18 +88,20 @@ public class Matrix {
      * Multiply two matrices: this . X
      */
     public def mul(x:Matrix) : Matrix {
-         val N = getRowCount();
-         val res = new Matrix(x.getRowCount());
+         val N  = getRowCount();
+         val N1 = x.getRowCount();
+         val M  = x.getColCount();
+         val res = new Matrix(N, M);
+         var cij:Double;
 
          // TODO : x10 parallel
-         for(var i:Int=0; i<N; i++) {
-            for(var j:Int=0; j<N; j++) {
-               res.mat(i, j) = 0.0;
-               for(var k:Int=0; k<N; k++) {
-                  res.mat(i, j) += mat(i, k) * x.mat(k, j);
-               } // end for k
-            } // end for j 
-         } // end for i 
+         for(var i:Int=0; i<N; i++) 
+            for(var j:Int=0; j<M; j++) {
+               cij = 0.0;
+               for(var k:Int=0; k<N1; k++) 
+                  cij += mat(i, k) * x.mat(k, j);
+               res.mat(i, j) = cij;
+            } // end for  
 
          return res;
     }
@@ -115,26 +111,28 @@ public class Matrix {
      */
     public def add(x:Matrix) : Matrix {
          val N = getRowCount();
-         val res = new Matrix(x.getRowCount());
+         val M = getColCount();
+         val res = new Matrix(N, M);
 
          // TODO : x10 parallel
          for(var i:Int=0; i<N; i++) 
-            for(var j:Int=0; j<N; j++) 
+            for(var j:Int=0; j<M; j++) 
                res.mat(i, j) = mat(i, j) + x.mat(i, j);
 
          return res;
     }
- 
+
     /**
      * Subtract two matrices: this - X
      */
     public def sub(x:Matrix) : Matrix {
          val N = getRowCount();
-         val res = new Matrix(x.getRowCount());
+         val M = getColCount();
+         val res = new Matrix(N, M);
 
          // TODO : x10 parallel
-         for(var i:Int=0; i<N; i++) 
-            for(var j:Int=0; j<N; j++) 
+         for(var i:Int=0; i<N; i++)
+            for(var j:Int=0; j<M; j++)
                res.mat(i, j) = mat(i, j) - x.mat(i, j);
 
          return res;
@@ -145,12 +143,15 @@ public class Matrix {
      */
     public def transpose() : Matrix {
          val N = getRowCount();
-         val res = new Matrix(N);
+         val M = getColCount();
+         val res = new Matrix(M,N);
 
          // TODO : x10 parallel
-         for(var i:Int=0; i<N; i++) 
-            for(var j:Int=0; j<N; j++) 
-               res.mat(i, j) = mat(j, i);
+         for(var i:Int=0; i<N; i++) {
+            for(var j:Int=0; j<M; j++) {
+               res.mat(j, i) = mat(i, j);
+            } // end for
+         } // end for i 
  
          return res;
     }
@@ -167,6 +168,19 @@ public class Matrix {
             tr += mat(i, i);
         
          return tr;
+    }
+
+    public def toString() : String { 
+         var str : String = "";
+         val N = getRowCount();
+         
+         for(var i:Int=0; i<N; i++) {
+            for(var j:Int=0; j<N; j++)  
+               str += mat(i, j) + " ";
+            str += "\n";
+         } // end for
+
+         return str;
     }
 
    /**

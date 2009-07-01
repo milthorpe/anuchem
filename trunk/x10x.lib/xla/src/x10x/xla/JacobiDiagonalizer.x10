@@ -23,7 +23,11 @@ public class JacobiDiagonalizer implements Diagonalizer {
        eigenVectors = Array.make[Double]([0..n, 0..n]);
        for(var i:Int = 0; i<n; i++) eigenVectors(i,i) = 1.0; 
 
-       var a : Array[Double]{rank==2} = matrix;
+       // clone the matrix, do not tamper the actual matrix
+       var a : Array[Double]{rank==2} = Array.make[Double]([0..n, 0..n]);
+       for(var i:Int=0; i<n; i++)
+          for(var j:Int=0; j<n; j++)
+             a(i,j) = matrix(i, j);
 
        eigenValues = Array.make[Double]([0..n]);
 
@@ -55,14 +59,14 @@ public class JacobiDiagonalizer implements Diagonalizer {
                 val g:Double = 100.0 * Math.abs(a(ip,iq));
 
                 if ((sweeps > 4) 
-                    && (((Math.abs(eigenValues(ip))+g) as Double) == ((Math.abs(eigenValues(ip))) as Double))
-                    && (((Math.abs(eigenValues(iq))+g) as Double) == ((Math.abs(eigenValues(iq))) as Double))) {
+                    && (((Math.abs(eigenValues(ip))+g) as Float) == ((Math.abs(eigenValues(ip))) as Float))
+                    && (((Math.abs(eigenValues(iq))+g) as Float) == ((Math.abs(eigenValues(iq))) as Float))) {
                    a(ip,iq) = 0.0;
                 } else if (Math.abs(a(ip,iq)) > zeroTolerance) {
                    var h:Double = eigenValues(iq) - eigenValues(ip);
                    var t:Double, theta:Double;
 
-                   if ((((Math.abs(h)+g)) as Double) == (Math.abs(h) as Double)) {
+                   if ((((Math.abs(h)+g)) as Float) == (Math.abs(h) as Float)) {
                      t = a(ip,iq) / h;
                    } else {
                      theta = 0.5 * h / a(ip,iq);
@@ -96,6 +100,8 @@ public class JacobiDiagonalizer implements Diagonalizer {
           } // end for
        } // end for
 
+       sortEigenValues(); 
+
        var temp:Double;
        for(var i:Int = 0; i<n; i++) 
           for(var j:Int = i+1; j<n; j++) {
@@ -103,6 +109,30 @@ public class JacobiDiagonalizer implements Diagonalizer {
              eigenVectors(i, j) = eigenVectors(j, i);
              eigenVectors(j, i) = temp;
           }      
+    }
+
+    private def sortEigenValues() {
+        var i:Int, j:Int, k:Int;
+        var p:Double;
+        val n = eigenValues.region.max(0);
+        
+        for(i=0; i<n; i++) {
+            p = eigenValues(k=i);
+            
+            for(j=i+1; j<n; j++) 
+                if (eigenValues(j) <= p) p = eigenValues(k=j);
+            
+            if (k!=i) { // swap
+                eigenValues(k) = eigenValues(i);
+                eigenValues(i) = p;
+                
+                for(j=0; j<n; j++) { // swap eigenVectors
+                    p = eigenVectors(j,i);
+                    eigenVectors(j,i) = eigenVectors(j,k);
+                    eigenVectors(j,k) = p;
+                } // end for
+            } // end if
+        } // end for
     }
 
     private def doRotate(a:Array[Double]{rank==2}, i:Int, j:Int, k:Int, l:Int) : void {
