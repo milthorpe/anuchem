@@ -2,10 +2,9 @@ package au.edu.anu.mm;
 
 import harness.x10Test;
 import x10x.vector.Point3d;
-import au.edu.anu.mm.MultipoleExpansion;
 
 /**
- * Test multipole expansion including Taylor-like terms.
+ * Test multipole expansions
  * @author milthorpe
  */
 class TestMultipoleExpansion extends x10Test {
@@ -13,22 +12,30 @@ class TestMultipoleExpansion extends x10Test {
         val p : int = 2; // multipole level
 
         val x : Point3d = new Point3d(1.0, 2.0, -1.0);
-        val Olm : Array[Complex]{rank==2} = MultipoleExpansion.getOlm(1.5, x, p);
+        val Olm : MultipoleExpansion = MultipoleExpansion.getOlm(1.5, x, p);
         Console.OUT.println("multipole expansion");
 		for (val(i) : Point in [0..p]) {
             for (val(j) : Point in [-p..p]) {
-			    Console.OUT.print(Olm(i,j) + " ");
+			    Console.OUT.print(Olm.terms(i,j) + " ");
             }
             Console.OUT.println();
 		}
 
-        val Mlm : Array[Complex]{rank==2} = MultipoleExpansion.getMlm(x, p);
-        Console.OUT.println("local expansion");
-		for (val(i) : Point in [0..p]) {
-            for (val(j) : Point in [-p..p]) {
-			    Console.OUT.print(Mlm(i,j) + " ");
+        
+        val parent : Array[Complex]{rank==1} = Array.make[Complex]([0..(p+1)*(p+1)]->here, (val (i): Point)=> Complex.ZERO);
+        var inm : Int = 0;
+        for (val(n) : Point in [0..p]) {
+            for (val(m) : Point in [-n..n]) {
+                inm=inm+1;
+                parent(inm) = Olm.terms(n,m);
             }
-            Console.OUT.println();
+        }
+        val child : Array[Complex]{rank==1} = Array.make[Complex]([0..(p+1)*(p+1)]->here, (val (i): Point)=> Complex.ZERO);
+
+        MultipoleExpansion.translateExpansion(new Point3d(2.0, -3.0, 1.0), parent, child);
+        Console.OUT.println("translated expansion");
+		for (val(i) : Point in [0..(p+1)*(p+1)]) {
+		    Console.OUT.print(child(i) + " ");
 		}
 
         return true;

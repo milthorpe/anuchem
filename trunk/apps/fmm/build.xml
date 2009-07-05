@@ -22,7 +22,7 @@
         <mkdir dir="${target}"/>
 	</target>
 
-    <target name="build" depends="build-src,build-test"/>
+    <target name="build" depends="build-src,test"/>
 
     <target name="build-src" depends="check-src" unless="src.uptodate">
         <echo message="Building source tree"/>
