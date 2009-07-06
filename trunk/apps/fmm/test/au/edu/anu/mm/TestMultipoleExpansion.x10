@@ -37,6 +37,7 @@ class TestMultipoleExpansion extends x10Test {
 		for (val(i) : Point in [0..(p+1)*(p+1)]) {
 		    Console.OUT.print(child(i) + " ");
 		}
+        Console.OUT.println();
 
         val target : MultipoleExpansion = new MultipoleExpansion(p);
         MultipoleExpansion.translateAndAddMultipole(new Point3d(2.0, -3.0, 1.0), Olm, target);
