@@ -37,12 +37,12 @@ public value LocalExpansion extends Expansion {
             var phifac : Complex = Complex.ONE;
             exp.terms(l,0) = phifac.multiply(rfac * pplm(l,0) * ilm);
             for (val (m): Point in [1..l]) {
-              ilm = ilm / (l+1-m);
-              phifac = phifac.multiply(phifac0);
-              exp.terms(l,m) = phifac.multiply(rfac * pplm(l,m) * ilm);
+                ilm = ilm / (l+1-m);
+                phifac = phifac.multiply(phifac0);
+                exp.terms(l,m) = phifac.multiply(rfac * pplm(l,m) * ilm);
             }
             for (val (m): Point in [-l..-1]) {
-              exp.terms(l,m) = exp.terms(l,-m).conjugate().multiply((2*((-m+1)%2)-1 as Double));
+                exp.terms(l,m) = exp.terms(l,-m).conjugate().multiply((2*((-m+1)%2)-1 as Double));
             }
             rfac = rfac * rfac0;
         }

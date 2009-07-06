@@ -9,7 +9,7 @@ import x10x.vector.Point3d;
  */
 class TestMultipoleExpansion extends x10Test {
     public def run(): boolean {
-        val p : int = 2; // multipole level
+        val p : Int = 3; // multipole level
 
         val x : Point3d = new Point3d(1.0, 2.0, -1.0);
         val Olm : MultipoleExpansion = MultipoleExpansion.getOlm(1.5, x, p);
@@ -36,6 +36,16 @@ class TestMultipoleExpansion extends x10Test {
         Console.OUT.println("translated expansion");
 		for (val(i) : Point in [0..(p+1)*(p+1)]) {
 		    Console.OUT.print(child(i) + " ");
+		}
+
+        val target : MultipoleExpansion = new MultipoleExpansion(p);
+        MultipoleExpansion.translateAndAddMultipole(new Point3d(2.0, -3.0, 1.0), Olm, target);
+        Console.OUT.println("translated multipole");
+		for (val(i) : Point in [0..p]) {
+            for (val(j) : Point in [-p..p]) {
+			    Console.OUT.print(target.terms(i,j) + " ");
+            }
+            Console.OUT.println();
 		}
 
         return true;
