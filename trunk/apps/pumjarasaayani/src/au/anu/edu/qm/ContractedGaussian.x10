@@ -32,6 +32,10 @@ public class ContractedGaussian {
     public def getExponents() : ArrayList[Double] = exponents;
     public def getCoefficients() : ArrayList[Double] = coefficients;
     public def getPrimNorms() : ArrayList[Double] = primNorms;
+    public def getTotalAngularMomentum() = power.getTotalAngularMomentum();
+    public def getMaximumAngularMomentum() = power.getMaximumAngularMomentum();
+    public def getMinimumAngularMomentum() = power.getMinimumAngularMomentum();
+
 
     public def addPrimitive(exp:Double, coeff:Double) {
         primitives.add(new PrimitiveGaussian(centeredAtom, power, exp, coeff));

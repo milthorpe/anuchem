@@ -21,6 +21,10 @@ public class PrimitiveGaussian {
     public def getExponent() : Double = exponent;
     public def getCoefficient() : Double = coefficient;
     public def getNormalization() : Double = normalization;
+    public def getTotalAngularMomentum() = power.getTotalAngularMomentum();
+    public def getMaximumAngularMomentum() = power.getMaximumAngularMomentum();
+    public def getMinimumAngularMomentum() = power.getMinimumAngularMomentum();
+
 
     public def overlap(pg:PrimitiveGaussian) : Double {
         return normalization * pg.normalization * ovrlp(pg);
