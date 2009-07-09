@@ -6,6 +6,7 @@ public class BasisFunctions {
     var molecule:Molecule;
     var basisName:String;
     var basisFunctions:ArrayList[ContractedGaussian];
+    var shellList:ShellList;
 
     public def this(mol:Molecule, basNam:String) { 
         this.molecule  = mol;
@@ -13,6 +14,9 @@ public class BasisFunctions {
 
         basisFunctions = new ArrayList[ContractedGaussian](); 
         initBasisFunctions();
+
+        shellList = new ShellList();
+        initShellList();
     } 
 
     private def initBasisFunctions() : void {
@@ -40,10 +44,12 @@ public class BasisFunctions {
         } // end for
     }
 
-    public def getBasisName() : String = this.basisName;
-
-    public def getBasisFunctions() : ArrayList[ContractedGaussian] {    
-        return basisFunctions;
+    private def initShellList() : void {
+        for(cg in basisFunctions) shellList.addShellPrimitive(cg);
     }
+
+    public def getBasisName() : String = this.basisName;
+    public def getBasisFunctions() : ArrayList[ContractedGaussian] = basisFunctions;
+    public def getShellList() : ShellList = shellList;
 }
 

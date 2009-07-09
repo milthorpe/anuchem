@@ -1,5 +1,7 @@
 package au.anu.edu.qm;
 
+import x10.util.*;
+
 public class Shell { 
     var angularMomentum:Int;
     var shellPrimitives:ArrayList[ContractedGaussian];
