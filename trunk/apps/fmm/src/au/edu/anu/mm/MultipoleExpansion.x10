@@ -97,11 +97,15 @@ public value MultipoleExpansion extends Expansion {
         val p : Int = source.terms.region.max(0);
         val shift : MultipoleExpansion = MultipoleExpansion.getOlm(b, p);
         for (val (j): Point in [0..p]) {
-            for (val (l): Point in [j..p]) {
+            for (val (l): Point in [0..p]) {
                 for (val (k): Point in [-j..j]) {
-                    for (val (m): Point in [j-l+k..-j+l+k]) {
+                    //for (val (m): Point in [j-l+k..-j+l+k]) {   
+                    for (val (m): Point in [-l..l]) {   
+                        if ((l-j) >= 0 && Math.abs(m-k) <= (l-j)) {
                         val A_lmjk : Complex = shift.terms(l-j, m-k);
+                        Console.OUT.println("A_lmjk = " + A_lmjk + " source(" + j + "," + k + ") = " + source.terms(j,k) + " target(" + l + "," + m + ") = " + target.terms(l,m));
                         target.terms(l,m) = target.terms(l,m).add(A_lmjk.multiply(source.terms(j,k)));
+                        }
                     }
                 }
             }
