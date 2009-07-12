@@ -108,30 +108,29 @@ public value MultipoleExpansion extends Expansion {
         }
     }
 
-    /**
-     * Perform local expansion translation along a vector V.
-     * This is used in FMM to translate from parent to child box.
-     * // TODO use correct array regions (not shoehorned into 1D array)
-     * @param v the vector from the centre of parent box to centre of child box
-     * @param parentExpansion the parent local expansion
-     * @param childExpansion the child local expansion to which the parent will be added
+    /** 
+     * Transform a multipole expansion centred around the origin into a
+     * Taylor expansion centred about b.
+     * This corresponds to "Operator B", Equations 13-15 in White & Head-Gordon.
+     * This operator is inexact due to truncation of the series at <em>p</em> poles.
+     * Note: this defines B^lm_jk(b) = M_j+l,k+m(b), therefore restrict l to [0..p-j]
+     * @param b the vector along which to translate the multipole
+     * @param source the source multipole expansion, centred at the origin
+     * @param target the target multipole expansion, centred at -b
      */
-    public static def translateExpansion(v : Tuple3d, 
-                            parentExpansion: Array[Complex]{rank==1},
-                            var childExpansion : Array[Complex]{rank==1}) {
-
-        val numTerms : Int = (Math.sqrt(parentExpansion.region.max(0)) as Int) - 1;
-        val cylo : Array[Complex]{rank==2} = MultipoleExpansion.getOlm(1.0, v, numTerms).terms;
-        var inm : Int = 0;
-        for (val (jt): Point in [0..numTerms]) {
-            for (val (kt) : Point in [-jt..jt]) {
-                inm++;
-                for (val(lt): Point in [jt..numTerms]) {
-                    for (val (mt): Point in [kt-(lt-jt)..kt+(lt-jt)]) {
-                        //Console.OUT.println("jt = " + jt + " kt = " + kt + " lt = " + lt + " mt = " + mt);  
-                        val ido = (lt*lt)+lt+mt+1;
-                       // Console.OUT.println("inm = " + inm + " ido = " + ido);
-                        childExpansion(inm) = childExpansion(inm).add(parentExpansion(ido).multiply(cylo(lt-jt,mt-kt)));
+    public static def transformAndAddToLocal(b : Tuple3d,
+                                         source : MultipoleExpansion,
+                                         target : LocalExpansion) {
+        val p : Int = source.terms.region.max(0);
+        val transform : LocalExpansion = LocalExpansion.getMlm(b, p);
+        for (val (j): Point in [0..p]) {
+            for (val (l): Point in [0..p-j]) {
+                for (val (k): Point in [-j..j]) {
+                    for (val (m): Point in [-l..l]) {
+                        if ((j+l) <= p && Math.abs(k+m) <= (j+l)) {
+                            val B_lmjk : Complex = transform.terms(j+l, k+m);
+                            target.terms(l,m) = target.terms(l,m).add(B_lmjk.multiply(source.terms(j,k)));
+                        }
                     }
                 }
             }

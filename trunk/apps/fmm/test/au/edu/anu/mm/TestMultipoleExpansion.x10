@@ -21,23 +21,15 @@ class TestMultipoleExpansion extends x10Test {
             Console.OUT.println();
 		}
 
-        
-        val parent : Array[Complex]{rank==1} = Array.make[Complex]([0..(p+1)*(p+1)]->here, (val (i): Point)=> Complex.ZERO);
-        var inm : Int = 0;
-        for (val(n) : Point in [0..p]) {
-            for (val(m) : Point in [-n..n]) {
-                inm=inm+1;
-                parent(inm) = Olm.terms(n,m);
+        val localExp : LocalExpansion = new LocalExpansion(p);
+        MultipoleExpansion.transformAndAddToLocal(new Point3d(2.0, -3.0, 1.0), Olm, localExp);
+        Console.OUT.println("transformed multipole");
+		for (val(i) : Point in [0..p]) {
+            for (val(j) : Point in [-p..p]) {
+			    Console.OUT.print(localExp.terms(i,j) + " ");
             }
-        }
-        val child : Array[Complex]{rank==1} = Array.make[Complex]([0..(p+1)*(p+1)]->here, (val (i): Point)=> Complex.ZERO);
-
-        MultipoleExpansion.translateExpansion(new Point3d(2.0, -3.0, 1.0), parent, child);
-        Console.OUT.println("translated expansion");
-		for (val(i) : Point in [0..(p+1)*(p+1)]) {
-		    Console.OUT.print(child(i) + " ");
+            Console.OUT.println();
 		}
-        Console.OUT.println();
 
         val target : MultipoleExpansion = new MultipoleExpansion(p);
         MultipoleExpansion.translateAndAddMultipole(new Point3d(2.0, -3.0, 1.0), Olm, target);
