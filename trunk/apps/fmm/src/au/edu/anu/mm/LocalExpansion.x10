@@ -53,7 +53,7 @@ public value LocalExpansion extends Expansion {
     /** 
      * Translate a local expansion centred around the origin along a vector b,
      * and adds to a target expansion centred at b.
-     * This corresponds to "Operator A", Equations 10-11 in White & Head-Gordon.
+     * This corresponds to "Operator C", Equations 18-21 in White & Head-Gordon.
      * Note: this defines C^lm_jk(b) = O_j-l,k-m(b); however this is only defined
      * where abs(k-m) <= j-l, therefore we restrict k to [l-j+m..-l+j+m]
      * @param b the vector along which to translate the multipole

@@ -1,10 +1,6 @@
 package au.edu.anu.mm;
 
 import x10.lang.Complex;
-import x10x.vector.Tuple3d;
-import x10x.vector.Point3d;
-import x10x.vector.Vector3d;
-import x10x.polar.Polar3d;
 
 /**
  * This is the superclass for multipole and local expansions, as used in
