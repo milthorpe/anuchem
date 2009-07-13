@@ -7,9 +7,9 @@ import x10x.vector.Point3d;
  * Test multipole expansions
  * @author milthorpe
  */
-class TestMultipoleExpansion extends x10Test {
+class TestMultipoleExpansion extends MathTest {
     public def run(): boolean {
-        val p : Int = 1; // multipole level
+        val p : Int = 3; // multipole level
 
         val x : Point3d = new Point3d(1.0, 2.0, -1.0);
         val Olm : MultipoleExpansion = MultipoleExpansion.getOlm(1.5, x, p);
@@ -33,11 +33,11 @@ class TestMultipoleExpansion extends x10Test {
 
         val roundtrip : MultipoleExpansion = new MultipoleExpansion(p);
         MultipoleExpansion.translateAndAddMultipole(new Point3d(-2.0, 3.0, -1.0), target, roundtrip);
-        Console.OUT.println("translated - roundtrip");
+        Console.OUT.println("translated multipole - roundtrip");
 		for (val(i) : Point in [0..p]) {
             for (val(j) : Point in [-p..p]) {
 			    Console.OUT.print(roundtrip.terms(i,j) + " ");
-                //chk(nearlyEqual(roundtrip.terms(i,j), Olm.terms(i,j), 1.0e-6));
+                chk(nearlyEqual(roundtrip.terms(i,j), Olm.terms(i,j), 1.0e-6, 1.0e-12));
             }
             Console.OUT.println();
 		}
@@ -53,31 +53,6 @@ class TestMultipoleExpansion extends x10Test {
 		}
 */
         return true;
-    }
-
-
-    public def nearlyEqual(a : Complex, b : Complex, maxRelativeError : Double) : Boolean {
-        if (a.equals(b))
-            return true;
-
-        return nearlyEqual(a.real, b.real, maxRelativeError) && nearlyEqual(a.imaginary, b.imaginary, maxRelativeError);
-    }
-
-    public def  nearlyEqual(a: Double, b: Double, maxRelativeError : Double) : Boolean {
-        if (a == b)
-            return true;
-
-        var relativeError : Double;
-
-        if (Math.abs(b) > Math.abs(a))
-            relativeError = Math.abs((a - b) / b);
-        else
-            relativeError = Math.abs((a - b) / a);
-
-        if (relativeError <= maxRelativeError)
-            return true;
-        else
-            return false;
     }
 
     public static def main(Rail[String]) {

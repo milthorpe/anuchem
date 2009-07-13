@@ -103,7 +103,7 @@ public value MultipoleExpansion extends Expansion {
                     for (val (m): Point in [-l..l]) {   
                         if ((l-j) >= 0 && Math.abs(m-k) <= (l-j)) {
                         val A_lmjk : Complex = shift.terms(l-j, m-k);
-                        Console.OUT.println("A_lmjk = " + A_lmjk + " source(" + j + "," + k + ") = " + source.terms(j,k) + " target(" + l + "," + m + ") = " + target.terms(l,m));
+                        //Console.OUT.println("A_lmjk = " + A_lmjk + " source(" + j + "," + k + ") = " + source.terms(j,k) + " target(" + l + "," + m + ") = " + target.terms(l,m));
                         target.terms(l,m) = target.terms(l,m).add(A_lmjk.multiply(source.terms(j,k)));
                         }
                     }

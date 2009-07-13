@@ -43,8 +43,13 @@ public value Polar3d {
             phi = 0.0;
         } else {
             val rxy : Double = Math.sqrt(rxy2);
-            phi = Math.atan2(point.j, point.i);
-            theta = Math.asin(rxy / r);
+            //phi = Math.atan2(point.j, point.i);
+            //theta = Math.asin(rxy / r);
+            theta = Math.acos(point.k / r);
+            phi = Math.acos(point.i / rxy);
+            if (point.j < 0.0) {
+                phi = Math.PI * 2.0 - phi;
+            }
         }
         return new Polar3d(r, theta, phi);
     }
