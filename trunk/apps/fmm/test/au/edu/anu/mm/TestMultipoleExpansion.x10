@@ -13,45 +13,23 @@ class TestMultipoleExpansion extends MathTest {
 
         val x : Point3d = new Point3d(1.0, 2.0, -1.0);
         val Olm : MultipoleExpansion = MultipoleExpansion.getOlm(1.5, x, p);
-        Console.OUT.println("multipole expansion");
-		for (val(i) : Point in [0..p]) {
-            for (val(j) : Point in [-p..p]) {
-			    Console.OUT.print(Olm.terms(i,j) + " ");
-            }
-            Console.OUT.println();
-		}
+        Console.OUT.println("multipole expansion:\n" + Olm.toString());
 
         val target : MultipoleExpansion = new MultipoleExpansion(p);
         MultipoleExpansion.translateAndAddMultipole(new Point3d(2.0, -3.0, 1.0), Olm, target);
-        Console.OUT.println("translated multipole");
-		for (val(i) : Point in [0..p]) {
-            for (val(j) : Point in [-p..p]) {
-			    Console.OUT.print(target.terms(i,j) + " ");
-            }
-            Console.OUT.println();
-		}
+        Console.OUT.println("translated multipole:\n" + target.toString());
 
         val roundtrip : MultipoleExpansion = new MultipoleExpansion(p);
         MultipoleExpansion.translateAndAddMultipole(new Point3d(-2.0, 3.0, -1.0), target, roundtrip);
-        Console.OUT.println("translated multipole - roundtrip");
-		for (val(i) : Point in [0..p]) {
-            for (val(j) : Point in [-p..p]) {
-			    Console.OUT.print(roundtrip.terms(i,j) + " ");
-                chk(nearlyEqual(roundtrip.terms(i,j), Olm.terms(i,j), 1.0e-6, 1.0e-12));
-            }
-            Console.OUT.println();
+        Console.OUT.println("translated multipole - roundtrip:\n" + roundtrip.toString());
+		for (val(i,j) : Point in [0..p,-p..p]) {
+            chk(nearlyEqual(roundtrip.terms(i,j), Olm.terms(i,j), 1.0e-6, 1.0e-12)); 
 		}
-/*
+
         val localExp : LocalExpansion = new LocalExpansion(p);
         MultipoleExpansion.transformAndAddToLocal(new Point3d(2.0, -3.0, 1.0), Olm, localExp);
-        Console.OUT.println("transformed multipole");
-		for (val(i) : Point in [0..p]) {
-            for (val(j) : Point in [-p..p]) {
-			    Console.OUT.print(localExp.terms(i,j) + " ");
-            }
-            Console.OUT.println();
-		}
-*/
+        Console.OUT.println("transformed multipole:\n" + localExp.toString());
+
         return true;
     }
 
