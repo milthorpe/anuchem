@@ -33,7 +33,7 @@ public class PumjaRasaayani {
         Console.OUT.println("Overlap");
         Console.OUT.println(oneE.getOverlap());   
 
-        val twoE = new TwoElectronIntegrals(bsf);
+        val twoE = new TwoElectronIntegrals(bsf, true);
 
         val hfscf = new HartreeFockSCFMethod(mol, oneE, twoE);
         hfscf.scf();

@@ -8,6 +8,7 @@ public class Shell {
 
     public def this(am:Int) { 
        angularMomentum = am;
+       shellPrimitives = new ArrayList[ContractedGaussian]();
     } 
 
     public def getAngularMomentum() = angularMomentum;

@@ -3,10 +3,27 @@ package au.anu.edu.qm;
 public class TwoElectronIntegrals { 
     var basisFunctions:BasisFunctions;
     var twoEInts:Array[Double]{rank==1};
+    var direct:Boolean;
 
     public def this(bfs:BasisFunctions) { 
         basisFunctions = bfs;
+        direct = false;
         compute2E();
+    }
+
+    public def this(bfs:BasisFunctions, isDirect:Boolean) {
+        basisFunctions = bfs;
+        direct = isDirect;
+
+        if (!direct) compute2E();
+    }
+
+    public def isDirect() : Boolean = direct;
+
+    public def compute2E(i:Int, j:Int, k:Int, l:Int) : Double {
+        val bfs = basisFunctions.getBasisFunctions();
+
+        return coulomb(bfs.get(i), bfs.get(j), bfs.get(k), bfs.get(l));
     }
 
     protected def compute2E() : void {

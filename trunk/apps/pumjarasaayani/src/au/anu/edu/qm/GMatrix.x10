@@ -9,6 +9,8 @@ public class GMatrix extends Matrix {
     }
   
     public def compute(twoE:TwoElectronIntegrals, density:Density) : void {
+        if (twoE.isDirect()) { computeDirect(twoE, density); return; }
+
         val noOfBasisFunctions = density.getRowCount();
         val densityOneD = new Vector(density); // form 1D vector of density
         val tempVector  = new Vector(noOfBasisFunctions*noOfBasisFunctions);
@@ -20,6 +22,7 @@ public class GMatrix extends Matrix {
         var i:Int, j:Int, k:Int, l:Int, kl:Int, 
             indexJ:Int, indexK1:Int, indexK2:Int;
 
+        // TODO: x10 - parallel
         for(i=0; i<noOfBasisFunctions; i++) {
             for(j=0; j<i+1; j++) {
 
@@ -40,6 +43,39 @@ public class GMatrix extends Matrix {
                 gMatrix(i, j) = gMatrix(j, i) = tempVector.dot(densityOneD);
             } // end j loop
         } // end i loop  
+    }
+
+    private def computeDirect(twoE:TwoElectronIntegrals, density:Density) : void {
+        val noOfBasisFunctions = density.getRowCount();
+        val densityOneD = new Vector(density); // form 1D vector of density
+        val tempVector  = new Vector(noOfBasisFunctions*noOfBasisFunctions);
+
+        val gMatrix = mat;
+        val ints = twoE.getTwoElectronIntegrals();
+        val temp = tempVector.getVector();
+
+        var i:Int, j:Int, k:Int, l:Int, kl:Int,
+            indexJ:Int, indexK1:Int, indexK2:Int;
+
+        // TODO: x10 - parallel
+        for(i=0; i<noOfBasisFunctions; i++) {
+            for(j=0; j<i+1; j++) {
+
+                tempVector.makeZero();
+                kl = 0;
+
+                for(k=0; k<noOfBasisFunctions; k++) {
+                    for(l=0; l<noOfBasisFunctions; l++) {
+                        temp(kl) = 2.0*twoE.compute2E(i,j,k,l) 
+                                   - 0.5*twoE.compute2E(i,k,j,l)
+                                   - 0.5*twoE.compute2E(i,l,k,j);
+                        kl++;
+                    } // end l loop
+                } // end k loop
+
+                gMatrix(i, j) = gMatrix(j, i) = tempVector.dot(densityOneD);
+            } // end j loop
+        } // end i loop
     }
 }
 
