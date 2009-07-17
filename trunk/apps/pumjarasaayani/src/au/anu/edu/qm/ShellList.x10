@@ -10,14 +10,14 @@ public class ShellList {
     } 
 
     public def addShellPrimitive(cg:ContractedGaussian) : void {
-        var shell:Shell = null;
-
+        var shell:Shell = null; 
+        
         try {
            shell = shellList.get(cg.getTotalAngularMomentum()) as Shell;
         } catch (e:NullPointerException) {
            shell = new Shell(cg.getTotalAngularMomentum());
            shellList.put(cg.getTotalAngularMomentum(), shell);
-        } // end if
+        } // end try .. catch 
 
         shell.addShellPrimitive(cg);
     }
