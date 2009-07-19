@@ -28,6 +28,9 @@ public class Fmm3d {
     /** The number of terms to use in the multipole and local expansions. */
     public val numTerms : Int;
 
+    /** The well-separatedness parameter ws. */
+    public val ws : Int;
+
     /** The maximum number of boxes in the tree, if there are no empty boxes at the lowest level. */
     val maxBoxes : Int;
 
@@ -40,18 +43,39 @@ public class Fmm3d {
     val atoms : Rail[Atom];
     val atomBoxIndices : Rail[Int];
 
-    public def this(numLevels : Int, numTerms : Int, topLeftFront : Point3d, size : Double, atoms : Rail[Atom]) {
-        this.numLevels = numLevels;
+    /**
+     * Initialises a fast multipole method electrostatics calculation
+     * for the given system of atoms.
+     * @param density mean number of particles per lowest level box
+     * @param numTerms number of terms in multipole and local expansions
+     * @param ws well-separated parameter
+     * @param topLeftFront cartesian location of the top-left-front corner of the simulation cube
+     * @param size length of a side of the simulation cube
+     * @param atoms the atoms for which to calculate electrostatics
+     */
+    public def this(density : Double, 
+                    numTerms : Int,
+                    ws : Int,
+                    topLeftFront : Point3d,
+                    size : Double,
+                    atoms : Rail[Atom]) {
+        this.numLevels = Math.max(2, (Math.log(atoms.length / density) / Math.log(8.0) + 1.0 as Int));
         var nBox : Int = 1;
         for ((i) in 1..numLevels) {
             nBox += Math.pow(8,i) as Int;
         }
-        this.numTerms = numTerms;
-        this.maxBoxes = nBox;   
+        this.maxBoxes = nBox;
         this.dimLowestLevelBoxes = Math.pow2(numLevels);
+        Console.OUT.println("numLevels = " + numLevels + " maxBoxes = " + maxBoxes);
+
+        this.numTerms = numTerms;
+        this.ws = ws;
+
         this.topLeftFront = topLeftFront;
         this.size = size;
+
         this.atoms = atoms;
+
         this.atomBoxIndices = ValRail.make[Int](atoms.length, (i : Int) => getLowestLevelBoxIndex(atoms(i)));
         var boxRegion : Region{rank==2} = [0..8, 1..1];
         for ((i) in 2..numLevels) {
@@ -61,24 +85,21 @@ public class Fmm3d {
         
         // all boxes are null to start.  they will be initialised as needed.
         this.boxes = Array.make[FmmBox](boxRegion);
-    }
-    
-    public def calculateEnergy() : Double {
-        var energy : Double = 0.0;
-
-        Console.OUT.println("numLevels = " + numLevels + " maxBoxes = " + maxBoxes);
-        Console.OUT.println("boxes: " + boxes.region);
 
         /*
+        Console.OUT.println("boxes: " + boxes.region);
         for ((i) in 0..atoms.length()-1) {
             Console.OUT.println("atom(" + i + ") index = " + atomBoxIndices(i));
         }
         */
-
+    }
+    
+    public def calculateEnergy() : Double {
         multipoleLowestLevel();
 
         combineMultipoles();
 
+        /*
         var nonEmpty : Int = 0;
         for (val (i,j) in boxes.region) {
             if (boxes(i,j) != null) {
@@ -87,16 +108,11 @@ public class Fmm3d {
             }
         }
         Console.OUT.println("nonEmpty = " + nonEmpty);
-        
-        /*
-            TODO
-            
-            local expansion for each level.
-
-            return far field potential energy & error check.
         */
 
-        return energy;
+        transformToLocal();
+        
+        return getEnergy();
     }
 
     /** 
@@ -145,6 +161,79 @@ public class Fmm3d {
         }
     }
 
+    /**
+     * Starting at the top level, for each box, transform multipole
+     * expansions for all well-separated boxes (for which the parent
+     * box is not also well-separated) to local expansions for this 
+     * box.  Translate the local expansion for each parent down to all
+     * non-empty child boxes.
+     */
+    def transformToLocal() {
+        var wellSep : Int = 0;
+        var nearField : Int = 0;
+        for ((level) in 2..numLevels) {
+            for ((boxIndex1) in 1..(Math.pow(8,level) as Int)) {
+                for ((boxIndex2) in 0..boxIndex1-1) {
+                    box1 : FmmBox = boxes(boxIndex1, level);
+                    box2 : FmmBox = boxes(boxIndex2, level);
+                    if (box1 != null && box2 != null) {
+                        parentIndex1 : Int = getParentIndex(boxIndex1, level);
+                        parentIndex2 : Int = getParentIndex(boxIndex2, level);
+                        if (!wellSeparated(ws, parentIndex1, parentIndex2, level-1)) {
+                            if (wellSeparated(ws, boxIndex1, boxIndex2, level)) {
+                                //Console.OUT.println("boxes " + boxIndex1 + " and " + boxIndex2);
+                                wellSep++;
+                                boxCentre1 : Point3d = getBoxCentre(boxIndex1, level);
+                                boxCentre2 : Point3d = getBoxCentre(boxIndex2, level);
+                                v : Tuple3d = boxCentre1.sub(boxCentre2);
+                                MultipoleExpansion.transformAndAddToLocal(v, box1.multipoleExp, box2.localExp);
+                                MultipoleExpansion.transformAndAddToLocal(v.negate(), box2.multipoleExp, box1.localExp);
+                            } else if (level==numLevels) {
+                                nearField++;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        Console.OUT.println("wellSep = " + wellSep + " nearField = " + nearField);
+    }
+
+    def getEnergy() : Double {
+        var fmmEnergy : Double = 0.0;
+        var directEnergy : Double = 0.0;
+
+        // TODO n^2 calculation - to check - remove this
+        for ((i) in 0..(atoms.length - 1)) {
+            for ((j) in 0..(atoms.length - 1)) {
+                if (i != j) {
+                    val pairEnergy : Double = pairEnergy(atoms(i), atoms(j));
+                    directEnergy += pairEnergy;
+                    if (!wellSeparated(ws, atomBoxIndices(i), atomBoxIndices(j), numLevels)) {
+                        // only add direct pair energy for particles in non-well-separated boxes
+                        fmmEnergy += pairEnergy;
+                    }
+                }
+            }
+        }
+
+        Console.OUT.println(directEnergy);
+
+        for ((i) in 0..(atoms.length - 1)) {
+            atom : Atom = atoms(i);
+            box : FmmBox = boxes(atomBoxIndices(i), numLevels);
+            v : Tuple3d = getBoxCentre(atomBoxIndices(i), numLevels).sub(atom.centre);
+            farFieldEnergy : Double = LocalExpansion.getPotential(atom.charge, v, box.localExp);
+            fmmEnergy += farFieldEnergy;
+        }
+
+        return fmmEnergy;
+    }
+
+    def pairEnergy(atom1 : Atom, atom2 : Atom) : Double {
+        return atom1.charge * atom2.charge / (atom1.centre.distance(atom2.centre));
+    }
+
     def getLowestLevelBoxLocation(atom : Atom) : Rail[Int] {
         //Console.OUT.println(atom.centre);
         index : ValRail[Int] = [ atom.centre.i / size * dimLowestLevelBoxes + dimLowestLevelBoxes / 2 as Int, atom.centre.j / size * dimLowestLevelBoxes + dimLowestLevelBoxes / 2 as Int, atom.centre.k / size * dimLowestLevelBoxes + dimLowestLevelBoxes / 2 as Int ];
@@ -161,6 +250,22 @@ public class Fmm3d {
         dim : Int = Math.pow2(level) as Int;
         location : ValRail[Int] = [ index / (dim * dim), (index / dim) % dim, index % dim ];
         return location;
+    }
+
+    /**
+     * Returns true if <code>boxes(boxIndex1)</code> and 
+     * <code>boxes(boxIndex2)</code> are well separated i.e. whether
+     * there are at least <code>ws</code> boxes separating them.
+     */
+    def wellSeparated(ws : Int, boxIndex1 : Int, boxIndex2 : Int, level : Int) : Boolean {
+        if (boxIndex1 == boxIndex2)
+            return false;
+        loc1 : ValRail[Int] = getBoxLocation(boxIndex1, level);
+        loc2 : ValRail[Int] = getBoxLocation(boxIndex2, level);
+        // TODO can do reduction on a Rail?
+        return Math.abs(loc1(0) - loc2(0)) > ws 
+            || Math.abs(loc1(1) - loc2(1)) > ws 
+            || Math.abs(loc1(2) - loc2(2)) > ws;
     }
 
     def getParentIndex(childIndex : Int, childLevel : Int) : Int {

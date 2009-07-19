@@ -12,25 +12,32 @@ public class TestFmm3d {
     private static val R = new Random(RANDOM_SEED);
 
     public static def main(args: Rail[String]) {
-        var numLevels : Int;
         var numParticles : Int;
-        var numTerms : Int;
-        if (args.length >= 1) {
+        var density : Double = 3.0;
+        var numTerms : Int = 5;
+        var wellSpaced : Int = 2;
+        if (args.length > 0) {
             numParticles = Int.parseInt(args(0));
-            numTerms = Int.parseInt(args(1));
-            numLevels = Int.parseInt(args(2));
+            if (args.length > 1) {
+                density = Double.parseDouble(args(1));
+                if (args.length > 2) {
+                    numTerms = Int.parseInt(args(2));
+                    if (args.length > 3) {
+                        wellSpaced = Int.parseInt(args(3));
+                    }
+                }
+            }
         } else {
-            numParticles = 1000;
-            numTerms = 5;
-            numLevels = 2;
-            //Console.ERR.println("usage: TestFmm3d <numParticles> <numTerms> <numLevels>");
+            Console.ERR.println("usage: TestFmm3d numParticles [density] [numTerms] [numLevels]");
+            return;
         }
 
         
         /* Assign particles to random locations within a -1..1 3D box, with unit charge (1/3 are negative). */
         val atoms : Rail[Atom] = ValRail.make[Atom](numParticles, (i : Int) => new Atom("H", new Point3d(randomUnit(), randomUnit(), randomUnit()), i%3==0?1:-1));
         val topLeftFront = new Point3d(-1.0, -1.0, -1.0);
-        val energy : Double = new Fmm3d(numLevels, numTerms, topLeftFront, 2.0, atoms).calculateEnergy();
+        val energy : Double = new Fmm3d(density, numTerms, wellSpaced, topLeftFront, 2.0, atoms).calculateEnergy();
+        Console.OUT.println("energy = " + energy);
     }
 
     static def randomUnit() : Double {
