@@ -8,18 +8,20 @@ import x10x.vector.Point3d;
  * for the fast multipole method.
  * @author milthorpe
  */
-public abstract class FmmBox { 
+public class FmmBox {    
     /** The multipole expansion of the charges within this box. */
-    public var multipoleExp : MultipoleExpansion;
+    public val multipoleExp : MultipoleExpansion;
 
     /** The Taylor expansion of the potential within this box due to particles in well separated boxes. */
-    public var localExp : LocalExpansion;
+    public val localExp : LocalExpansion;
 
-    /** The parent box containing this box. */
-    public val parent : FmmBox;
-
-    public def this(parent : FmmBox) { 
-        this.parent = parent;
+    /**
+     * Creates a new FmmBox with multipole and local expansions
+     * of the given number of terms.
+     */
+    public def this(numTerms : Int) { 
+        this.multipoleExp = new MultipoleExpansion(numTerms);
+        this.localExp = new LocalExpansion(numTerms);
     }
 }
 

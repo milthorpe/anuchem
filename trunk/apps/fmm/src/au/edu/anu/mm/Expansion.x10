@@ -18,6 +18,15 @@ public value Expansion {
         this.terms = Array.make[Complex]([0..p, -p..p]->here, (val (i,j): Point)=> Complex.ZERO);
     }
 
+    public def add(e : Expansion) {
+        val p : Int = terms.region.max(0);
+        for (val(i) : Point in [0..p]) {
+            for (val(j) : Point in [-i..i]) {
+                this.terms(i,j) = this.terms(i,j).add(e.terms(i,j));
+            }
+        }
+    }
+
     public def toString() : String {
         val p : Int = terms.region.max(0);
         s : StringBuilder = new StringBuilder();
