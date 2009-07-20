@@ -19,6 +19,7 @@ public value MultipoleExpansion extends Expansion {
 
     /**
      * Calculate the multipole-like term O_{lm} (with m >= 0) for a point v.
+     * TODO x10doc
      */
     public static def getOlm(q : Double, v : Tuple3d, p : int) : MultipoleExpansion {
         val exp : MultipoleExpansion = new MultipoleExpansion(p);

@@ -41,7 +41,6 @@ public class Fmm3d {
     val boxes : Array[FmmBox]{rank==2};
 
     val atoms : Rail[Atom];
-    val atomBoxIndices : Rail[Int];
 
     /**
      * Initialises a fast multipole method electrostatics calculation
@@ -76,7 +75,6 @@ public class Fmm3d {
 
         this.atoms = atoms;
 
-        this.atomBoxIndices = ValRail.make[Int](atoms.length, (i : Int) => getLowestLevelBoxIndex(atoms(i)));
         var boxRegion : Region{rank==2} = [0..8, 1..1];
         for ((i) in 2..numLevels) {
             rNextLevel : Region{rank==2} = [0..(Math.pow(8,i) as Int), i..i];
@@ -86,12 +84,9 @@ public class Fmm3d {
         // all boxes are null to start.  they will be initialised as needed.
         this.boxes = Array.make[FmmBox](boxRegion);
 
-        /*
+        
         Console.OUT.println("boxes: " + boxes.region);
-        for ((i) in 0..atoms.length()-1) {
-            Console.OUT.println("atom(" + i + ") index = " + atomBoxIndices(i));
-        }
-        */
+        
     }
     
     public def calculateEnergy() : Double {
@@ -122,14 +117,20 @@ public class Fmm3d {
     def multipoleLowestLevel() {
         for ((i) in 0..atoms.length-1) {
             atom : Atom = atoms(i);
-            boxIndex : Int = atomBoxIndices(i);
-            v : Tuple3d = getBoxCentre(boxIndex, numLevels).sub(atom.centre);
-            olm : MultipoleExpansion = MultipoleExpansion.getOlm(atom.charge, v, numTerms);
-            var box : FmmBox = boxes(boxIndex, numLevels);
+            boxLocation : ValRail[Int]{length==3} = getLowestLevelBoxLocation(atom);
+            boxIndex : Int = FmmBox.getBoxIndex(boxLocation, numLevels);
+            parentBox : FmmParentBox = getParentBox(boxIndex, numLevels);
+            var box : FmmLeafBox = boxes(boxIndex, numLevels) as FmmLeafBox;
             if (box == null) {
-                box = new FmmBox(numTerms);
+                box = new FmmLeafBox(numLevels, boxLocation, numTerms, parentBox);
+                parentBox.children.add(box);
                 boxes(boxIndex, numLevels) = box;
             }
+            v : Tuple3d = parentBox.getCentre(size).sub(atom.centre);
+            olm : MultipoleExpansion = MultipoleExpansion.getOlm(atom.charge, v, numTerms);
+            
+            box.atoms.add(atom);
+            //Console.OUT.println("atoms(" + i + ") => box(" + boxIndex + ")");
             box.multipoleExp.add(olm);
         }
     }
@@ -139,23 +140,16 @@ public class Fmm3d {
      * lowest level box that contains the atom.
      */
     def combineMultipoles() {
-        for (var level: Int = numLevels; level >= 2; level--) {
+        for (var level: Int = numLevels; level > 1; level--) {
             for ((childIndex) in 0..(Math.pow(8,level) as Int)) {
                 child : FmmBox = boxes(childIndex,level);
                 if (child != null) {
-                    childCentre : Point3d = getBoxCentre(childIndex, level);
-                    parentIndex : Int = getParentIndex(childIndex, level);
-                    //Console.OUT.println("childIndex = " + childIndex + " parentIndex = " + parentIndex);
-                    var parent : FmmBox = boxes(parentIndex, level-1);
-                    if (parent == null) {
-                        //Console.OUT.println("assigning (" + parentIndex + "," + (level-1) + ")");
-                        parent = new FmmBox(numTerms);
-                        boxes(parentIndex, level-1) = parent;
-                    }
-                    parentCentre : Point3d = getBoxCentre(parentIndex, level-1);
-                    //Console.OUT.println(parentCentre);
-                    v : Tuple3d = parentCentre.sub(childCentre);
+                    childCentre : Point3d = child.getCentre(size);
+                    var parent : FmmBox = child.parent;
+                    //Console.OUT.println("childIndex = " + childIndex + " parentIndex = " + parent.index());
+                    v : Tuple3d = parent.getCentre(size).sub(childCentre);
                     MultipoleExpansion.translateAndAddMultipole(v, child.multipoleExp, parent.multipoleExp);
+                    //Console.OUT.println(parent.multipoleExp);
                 }
             }
         }
@@ -173,25 +167,33 @@ public class Fmm3d {
         var nearField : Int = 0;
         for ((level) in 2..numLevels) {
             for ((boxIndex1) in 1..(Math.pow(8,level) as Int)) {
-                for ((boxIndex2) in 0..boxIndex1-1) {
-                    box1 : FmmBox = boxes(boxIndex1, level);
-                    box2 : FmmBox = boxes(boxIndex2, level);
-                    if (box1 != null && box2 != null) {
-                        parentIndex1 : Int = getParentIndex(boxIndex1, level);
-                        parentIndex2 : Int = getParentIndex(boxIndex2, level);
-                        if (!wellSeparated(ws, parentIndex1, parentIndex2, level-1)) {
-                            if (wellSeparated(ws, boxIndex1, boxIndex2, level)) {
-                                //Console.OUT.println("boxes " + boxIndex1 + " and " + boxIndex2);
-                                wellSep++;
-                                boxCentre1 : Point3d = getBoxCentre(boxIndex1, level);
-                                boxCentre2 : Point3d = getBoxCentre(boxIndex2, level);
-                                v : Tuple3d = boxCentre1.sub(boxCentre2);
-                                MultipoleExpansion.transformAndAddToLocal(v, box1.multipoleExp, box2.localExp);
-                                MultipoleExpansion.transformAndAddToLocal(v.negate(), box2.multipoleExp, box1.localExp);
-                            } else if (level==numLevels) {
-                                nearField++;
+                box1 : FmmBox = boxes(boxIndex1, level);
+                if (box1 != null) {
+                    //Console.OUT.println("transformToLocal: box(" + boxIndex1 + ")");
+                    for ((boxIndex2) in 0..boxIndex1-1) { 
+                        box2 : FmmBox = boxes(boxIndex2, level);
+                        if (box2 != null) {
+                            //Console.OUT.println("transformToLocal: box(" + boxIndex1 + "," + level + ") and box(" + level + "," + boxIndex2 + ")");
+                            if (!box1.parent.wellSeparated(ws, box2.parent)) {
+                                //Console.OUT.println("parents not well sep");
+                                if (box1.wellSeparated(ws, box2)) {
+                                    //Console.OUT.println("boxes well sep");
+                                    wellSep++;
+                                    boxCentre1 : Point3d = box1.getCentre(size);
+                                    boxCentre2 : Point3d = box2.getCentre(size);
+                                    v : Tuple3d = boxCentre2.sub(boxCentre1);
+                                    MultipoleExpansion.transformAndAddToLocal(v, box1.multipoleExp, box2.localExp);
+                                    MultipoleExpansion.transformAndAddToLocal(v.negate(), box2.multipoleExp, box1.localExp);
+                                } else if (level==numLevels) {
+                                    nearField++;
+                                }
                             }
                         }
+                    }
+                    if (level > 2) {
+                        v : Tuple3d = box1.getCentre(size).sub(box1.parent.getCentre(size));
+                        LocalExpansion.translateAndAddLocal(v, box1.parent.localExp, box1.localExp);
+                        //Console.OUT.println("after add parent: " + box1.localExp);
                     }
                 }
             }
@@ -209,22 +211,42 @@ public class Fmm3d {
                 if (i != j) {
                     val pairEnergy : Double = pairEnergy(atoms(i), atoms(j));
                     directEnergy += pairEnergy;
-                    if (!wellSeparated(ws, atomBoxIndices(i), atomBoxIndices(j), numLevels)) {
-                        // only add direct pair energy for particles in non-well-separated boxes
-                        fmmEnergy += pairEnergy;
-                    }
                 }
             }
         }
 
-        Console.OUT.println(directEnergy);
+        Console.OUT.println("directEnergy = " + directEnergy);
 
-        for ((i) in 0..(atoms.length - 1)) {
-            atom : Atom = atoms(i);
-            box : FmmBox = boxes(atomBoxIndices(i), numLevels);
-            v : Tuple3d = getBoxCentre(atomBoxIndices(i), numLevels).sub(atom.centre);
-            farFieldEnergy : Double = LocalExpansion.getPotential(atom.charge, v, box.localExp);
-            fmmEnergy += farFieldEnergy;
+        for ((boxIndex1) in 0..(Math.pow(8,numLevels) as Int)) { 
+            box : FmmLeafBox = boxes(boxIndex1, numLevels) as FmmLeafBox;
+            if (box != null) {
+                for ((atomIndex1) in 0..box.atoms.length()-1) {
+                    atom1 : Atom = box.atoms(atomIndex1);
+                    v : Tuple3d = atom1.centre.sub(box.getCentre(size));
+                    //Console.OUT.println("atom(" + atomIndex1 + ") box(" + box.index() + ") v = " + v);
+                    //Console.OUT.println("atom centre" + atom1.centre + " box centre " + box.getCentre(size));
+                    //Console.OUT.println("localExp = " + box.localExp);
+                    farFieldEnergy : Double = LocalExpansion.getPotential(atom1.charge, v, box.localExp);
+                    //Console.OUT.println("farFieldEnergy = " + farFieldEnergy);
+                    fmmEnergy += farFieldEnergy;
+
+                    for ((boxIndex2) in 0..boxIndex1-1) {
+                        box2 : FmmLeafBox = boxes(boxIndex2, numLevels) as FmmLeafBox;
+                        if (box2 != null) {
+                            if (!box.wellSeparated(ws, box2)) {
+                                //Console.OUT.println("box(" + boxIndex1 + ") and box(" + boxIndex2 + ") not well sep");
+                                for ((atomIndex2) in 0..box2.atoms.length()-1) {
+                                    atom2 : Atom = atoms(atomIndex2);
+                                    val pairEnergy : Double = pairEnergy(atom1, atom2);
+                                    fmmEnergy += 2 * pairEnergy;
+                                }
+                            } else {
+                                //Console.OUT.println("box(" + boxIndex1 + ") and box(" + boxIndex2 + ") well sep");
+                            }
+                        }
+                    } 
+                }
+            }
         }
 
         return fmmEnergy;
@@ -234,21 +256,34 @@ public class Fmm3d {
         return atom1.charge * atom2.charge / (atom1.centre.distance(atom2.centre));
     }
 
-    def getLowestLevelBoxLocation(atom : Atom) : Rail[Int] {
+    def getLowestLevelBoxLocation(atom : Atom) : ValRail[Int]{length==3} {
         //Console.OUT.println(atom.centre);
-        index : ValRail[Int] = [ atom.centre.i / size * dimLowestLevelBoxes + dimLowestLevelBoxes / 2 as Int, atom.centre.j / size * dimLowestLevelBoxes + dimLowestLevelBoxes / 2 as Int, atom.centre.k / size * dimLowestLevelBoxes + dimLowestLevelBoxes / 2 as Int ];
+        index : ValRail[Int]{length==3} = [ atom.centre.i / size * dimLowestLevelBoxes + dimLowestLevelBoxes / 2 as Int, atom.centre.j / size * dimLowestLevelBoxes + dimLowestLevelBoxes / 2 as Int, atom.centre.k / size * dimLowestLevelBoxes + dimLowestLevelBoxes / 2 as Int ];
         //Console.OUT.println(index(0) + " " + index(1) + " " + index(2));
         return index;
     }
 
-    def getLowestLevelBoxIndex(atom : Atom) {
-        index : ValRail[Int] = getLowestLevelBoxLocation(atom);
-        return index(0) * dimLowestLevelBoxes * dimLowestLevelBoxes + index(1) * dimLowestLevelBoxes + index(2);
+    def getParentBox(childIndex : Int, childLevel : Int) : FmmParentBox {
+        //Console.OUT.println("getParentBox(" + childIndex + ", " + childLevel);
+        if (childLevel == 1)
+            return null;
+        parentIndex : Int = getParentIndex(childIndex, childLevel);
+        parentLevel : Int = childLevel - 1;
+        parentLocation : ValRail[Int]{length==3} = getBoxLocation(parentIndex, parentLevel);
+        var parent : FmmParentBox = boxes(parentIndex, parentLevel) as FmmParentBox;
+        if (parent == null) {
+            grandparent : FmmParentBox = getParentBox(parentIndex, parentLevel);
+            parent = new FmmParentBox(parentLevel, parentLocation, numTerms, grandparent);
+            if (grandparent != null)
+                grandparent.children.add(parent);
+            boxes(parentIndex, parentLevel) = parent;
+        }
+        return parent;
     }
 
-    def getBoxLocation(index : Int, level : Int) : ValRail[int] {
+    def getBoxLocation(index : Int, level : Int) : ValRail[Int]{length==3} {
         dim : Int = Math.pow2(level) as Int;
-        location : ValRail[Int] = [ index / (dim * dim), (index / dim) % dim, index % dim ];
+        location : ValRail[Int]{length==3} = [ index / (dim * dim), (index / dim) % dim, index % dim ];
         return location;
     }
 
@@ -258,6 +293,8 @@ public class Fmm3d {
      * there are at least <code>ws</code> boxes separating them.
      */
     def wellSeparated(ws : Int, boxIndex1 : Int, boxIndex2 : Int, level : Int) : Boolean {
+        if (level < 2)
+            return false;
         if (boxIndex1 == boxIndex2)
             return false;
         loc1 : ValRail[Int] = getBoxLocation(boxIndex1, level);
@@ -271,15 +308,8 @@ public class Fmm3d {
     def getParentIndex(childIndex : Int, childLevel : Int) : Int {
         parentDim : Int = Math.pow2(childLevel-1) as Int;
         location : ValRail[Int] = getBoxLocation(childIndex, childLevel);
+        //Console.OUT.println("childLoc = " + location(0) + " " + location(1) + " " + location(2));
         return location(0) / 2 * parentDim * parentDim + location(1) / 2 * parentDim + location(2) / 2;
-    }
-    
-    def getBoxCentre(boxIndex : Int, level : Int) {
-        dim : Int = Math.pow2(level);
-        sideLength : Double = size / dim;
-        return new Point3d( (boxIndex / (dim * dim) + 0.5) * sideLength - (0.5 * size),
-                                (boxIndex % (dim * dim ) / (dim) + 0.5) * sideLength - (0.5 * size),
-                                (boxIndex % dim + 0.5) * sideLength - (0.5 * size));
     }
 }
 

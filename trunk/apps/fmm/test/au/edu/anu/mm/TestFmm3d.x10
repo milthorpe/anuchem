@@ -28,7 +28,7 @@ public class TestFmm3d {
                 }
             }
         } else {
-            Console.ERR.println("usage: TestFmm3d numParticles [density] [numTerms] [numLevels]");
+            Console.ERR.println("usage: TestFmm3d numParticles [density] [numTerms] [wellSpaced]");
             return;
         }
 
