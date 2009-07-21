@@ -41,7 +41,7 @@ public class PumjaRasaayani {
         Console.OUT.println("Overlap");
         Console.OUT.println(oneE.getOverlap());   
 
-        val twoE = new TwoElectronIntegrals(bsf);
+        val twoE = new TwoElectronIntegrals(bsf, true);
         Console.OUT.println("\nNumber of 2E integrals: " + twoE.getNumberOfIntegrals());
         Console.OUT.println("\nComputed two-electron integrals. If direct, this is skipped for now.");
 
