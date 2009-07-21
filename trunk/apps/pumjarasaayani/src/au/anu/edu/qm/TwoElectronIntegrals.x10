@@ -4,10 +4,13 @@ public class TwoElectronIntegrals {
     var basisFunctions:BasisFunctions;
     var twoEInts:Array[Double]{rank==1};
     var direct:Boolean;
+    var noOfIntegrals:Int;
 
     public def this(bfs:BasisFunctions) { 
         basisFunctions = bfs;
         direct = false;
+
+        init();
         compute2E();
     }
 
@@ -15,10 +18,19 @@ public class TwoElectronIntegrals {
         basisFunctions = bfs;
         direct = isDirect;
 
+        init();
         if (!direct) compute2E();
     }
 
+    private def init() : void {
+        val noOfBasisFunctions = basisFunctions.getBasisFunctions().size();
+        noOfIntegrals = noOfBasisFunctions * (noOfBasisFunctions + 1)
+                          * (noOfBasisFunctions * noOfBasisFunctions
+                             + noOfBasisFunctions + 2) / 8;
+    }
+
     public def isDirect() : Boolean = direct;
+    public def getNumberOfIntegrals() : Int = noOfIntegrals;
 
     public def compute2E(i:Int, j:Int, k:Int, l:Int) : Double {
         val bfs = basisFunctions.getBasisFunctions();
@@ -28,13 +40,9 @@ public class TwoElectronIntegrals {
 
     protected def compute2E() : void {
         val bfs = basisFunctions.getBasisFunctions();
+        val noOfBasisFunctions = bfs.size();
         
         // allocate required memory
-        val noOfBasisFunctions = bfs.size();
-        val noOfIntegrals = noOfBasisFunctions * (noOfBasisFunctions + 1)
-                           * (noOfBasisFunctions * noOfBasisFunctions
-                              + noOfBasisFunctions + 2) / 8;
-
         twoEInts = Array.make[Double]([0..noOfIntegrals]);
 
         var i:Int, j:Int, k:Int, l:Int, ij:Int, kl:Int, ijkl:Int;        

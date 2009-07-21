@@ -57,6 +57,8 @@ public class GMatrix extends Matrix {
         var i:Int, j:Int, k:Int, l:Int, kl:Int,
             indexJ:Int, indexK1:Int, indexK2:Int;
 
+        var twoEIntVal1:Double, twoEIntVal2:Double, twoEIntVal3:Double;
+
         // TODO: x10 - parallel
         for(i=0; i<noOfBasisFunctions; i++) {
             for(j=0; j<i+1; j++) {
@@ -66,9 +68,27 @@ public class GMatrix extends Matrix {
 
                 for(k=0; k<noOfBasisFunctions; k++) {
                     for(l=0; l<noOfBasisFunctions; l++) {
-                        temp(kl) = 2.0*twoE.compute2E(i,j,k,l) 
-                                   - 0.5*twoE.compute2E(i,k,j,l)
-                                   - 0.5*twoE.compute2E(i,l,k,j);
+                        indexJ   = IntegralsUtils.ijkl2intindex(i, j, k, l);
+                        indexK1  = IntegralsUtils.ijkl2intindex(i, k, j, l);
+                        indexK2  = IntegralsUtils.ijkl2intindex(i, l, k, j);
+
+                        twoEIntVal1 = twoE.compute2E(i,j,k,l);
+                        if (indexJ == indexK1) twoEIntVal2 = twoEIntVal1;
+                        else                   twoEIntVal2 = twoE.compute2E(i,k,j,l);
+
+                        if (indexJ == indexK2)       twoEIntVal3 = twoEIntVal1;
+                        else if (indexK1 == indexK2) twoEIntVal3 = twoEIntVal2;
+                        else                         twoEIntVal3 = twoE.compute2E(i,l,k,j);
+
+                        temp(kl) = 2.0*twoEIntVal1 - 0.5*twoEIntVal2 - 0.5*twoEIntVal3;
+
+                        /** 
+                         x10.io.Console.OUT.println("\t" + kl);
+                         x10.io.Console.OUT.println("\t\t <" + i + " " + j + " | " + k + " " + l + ">"); 
+                         x10.io.Console.OUT.println("\t\t <" + i + " " + k + " | " + j + " " + l + ">"); 
+                         x10.io.Console.OUT.println("\t\t <" + i + " " + l + " | " + k + " " + j + ">"); 
+                        **/
+
                         kl++;
                     } // end l loop
                 } // end k loop
