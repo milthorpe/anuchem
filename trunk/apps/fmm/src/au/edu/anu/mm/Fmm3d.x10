@@ -220,12 +220,15 @@ public class Fmm3d {
 
         // TODO n^2 calculation - to check - remove this
         for ((i) in 0..(atoms.length - 1)) {
+            var atomEnergy : Double = 0.0;
             for ((j) in 0..(atoms.length - 1)) {
                 if (i != j) {
                     val pairEnergy : Double = pairEnergy(atoms(i), atoms(j));
+                    atomEnergy += pairEnergy;
                     directEnergy += pairEnergy;
                 }
             }
+            Console.OUT.println("atomEnergy = " + atomEnergy);
         }
 
         Console.OUT.println("directEnergy = " + directEnergy);
@@ -234,6 +237,7 @@ public class Fmm3d {
             box : FmmLeafBox = boxes(boxIndex1, numLevels) as FmmLeafBox;
             if (box != null) {
                 for ((atomIndex1) in 0..box.atoms.length()-1) {
+                    var atomEnergy : Double = 0.0;
                     atom1 : Atom = box.atoms(atomIndex1);
                     v : Tuple3d = atom1.centre.sub(box.getCentre(size));
                     //Console.OUT.println("atom(" + atomIndex1 + ") box(" + box.index() + ") v = " + v);
@@ -242,6 +246,7 @@ public class Fmm3d {
                     farFieldEnergy : Double = LocalExpansion.getPotential(atom1.charge, v, box.localExp);
                     //Console.OUT.println("farFieldEnergy = " + farFieldEnergy);
                     fmmEnergy += farFieldEnergy;
+                    atomEnergy += farFieldEnergy;
 
                     for ((boxIndex2) in 0..boxIndex1-1) {
                         box2 : FmmLeafBox = boxes(boxIndex2, numLevels) as FmmLeafBox;
@@ -251,6 +256,7 @@ public class Fmm3d {
                                 for ((atomIndex2) in 0..box2.atoms.length()-1) {
                                     atom2 : Atom = box2.atoms(atomIndex2);
                                     val pairEnergy : Double = pairEnergy(atom1, atom2);
+                                    atomEnergy += pairEnergy;
                                     //Console.OUT.println("pairEnergy = " + pairEnergy);
                                     fmmEnergy += 2 * pairEnergy;
                                 }
@@ -258,7 +264,8 @@ public class Fmm3d {
                                 //Console.OUT.println("box(" + boxIndex1 + ") and box(" + boxIndex2 + ") well sep");
                             }
                         }
-                    } 
+                    }
+                    Console.OUT.println("atomEnergy = " + atomEnergy);
                 }
             }
         }
