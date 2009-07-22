@@ -34,9 +34,6 @@ public class Fmm3d {
     /** The maximum number of boxes in the tree, if there are no empty boxes at the lowest level. */
     val maxBoxes : Int;
 
-    /** The total number of non-empty boxes at the lowest level. */
-    var numLeafBoxes : Int;
-
     /** All boxes in the octree division of space. */
     val boxes : Array[FmmBox]{rank==2};
 
@@ -80,18 +77,14 @@ public class Fmm3d {
             rNextLevel : Region{rank==2} = [0..(Math.pow(8,i) as Int), i..i];
             boxRegion = boxRegion || rNextLevel;
         }
-        
         // all boxes are null to start.  they will be initialised as needed.
         this.boxes = Array.make[FmmBox](boxRegion);
-
         
         Console.OUT.println("boxes: " + boxes.region);
-        
     }
     
     public def calculateEnergy() : Double {
         multipoleLowestLevel();
-
         /*
         var nonEmpty : Int = 0;
         for (val (i,j) in boxes.region) {
@@ -103,13 +96,6 @@ public class Fmm3d {
         Console.OUT.println("nonEmpty = " + nonEmpty);
         */
         combineMultipoles();
-        /*
-        for (val (i,j) in boxes.region) {
-            if (boxes(i,j) != null) {
-                Console.OUT.println("boxes(" + i + "," + j + ") multipole = " + boxes(i,j).multipoleExp);
-            }
-        }
-        */
 
         transformToLocal();
         /*
@@ -119,7 +105,6 @@ public class Fmm3d {
             }
         }
         */
-
         return getEnergy();
     }
 
@@ -158,10 +143,8 @@ public class Fmm3d {
                 if (child != null) {
                     childCentre : Point3d = child.getCentre(size);
                     var parent : FmmBox = child.parent;
-                    //Console.OUT.println("childIndex = " + childIndex + " parentIndex = " + parent.index());
                     v : Tuple3d = parent.getCentre(size).sub(childCentre);
                     MultipoleExpansion.translateAndAddMultipole(v, child.multipoleExp, parent.multipoleExp);
-                    //Console.OUT.println(parent.multipoleExp);
                 }
             }
         }
@@ -187,9 +170,7 @@ public class Fmm3d {
                         if (box2 != null) {
                             //Console.OUT.println("... and box(" + level + "," + boxIndex2 + ")");
                             if (!box1.parent.wellSeparated(ws, box2.parent)) {
-                                //Console.OUT.println("parents not well sep");
                                 if (box1.wellSeparated(ws, box2)) {
-                                    //Console.OUT.println("boxes well sep");
                                     wellSep++;
                                     boxCentre1 : Point3d = box1.getCentre(size);
                                     boxCentre2 : Point3d = box2.getCentre(size);
@@ -205,7 +186,6 @@ public class Fmm3d {
                     if (level > 2) {
                         v : Tuple3d = box1.getCentre(size).sub(box1.parent.getCentre(size));
                         LocalExpansion.translateAndAddLocal(v, box1.parent.localExp, box1.localExp);
-                        //Console.OUT.println("after add parent: " + box1.localExp);
                     }
                 }
             }
@@ -214,56 +194,48 @@ public class Fmm3d {
     }
 
     def getEnergy() : Double {
-        var fmmEnergy : Double = 0.0;
-        var directEnergy : Double = 0.0;
-
         // TODO n^2 calculation - to check - remove this
+        /*
+        var directEnergy : Double = 0.0;
         for ((i) in 0..(atoms.length - 1)) {
-            var atomEnergy : Double = 0.0;
             for ((j) in 0..(i - 1)) {
                 val pairEnergy : Double = pairEnergy(atoms(i), atoms(j));
-                atomEnergy += pairEnergy;
                 directEnergy += 2 * pairEnergy;
-                //Console.OUT.println("pairEnergy = " + pairEnergy);
             }
-            //Console.OUT.println("atomEnergy = " + atomEnergy);
         }
-
         Console.OUT.println("directEnergy = " + directEnergy);
+        */
 
+        var fmmEnergy : Double = 0.0;
         for ((boxIndex1) in 0..(Math.pow(8,numLevels) as Int)) { 
             box : FmmLeafBox = boxes(boxIndex1, numLevels) as FmmLeafBox;
             if (box != null) {
                 for ((atomIndex1) in 0..box.atoms.length()-1) {
-                    var atomEnergy : Double = 0.0;
                     atom1 : Atom = box.atoms(atomIndex1);
                     v : Tuple3d = atom1.centre.sub(box.getCentre(size));
-                    //Console.OUT.println("atom(" + atomIndex1 + ") box(" + box.index() + ") v = " + v);
-                    //Console.OUT.println("atom1 centre = " + atom1.centre + " box centre = " + box.getCentre(size));
-                    //Console.OUT.println("localExp = " + box.localExp);
                     farFieldEnergy : Double = LocalExpansion.getPotential(atom1.charge, v, box.localExp);
-                    //Console.OUT.println("farFieldEnergy = " + farFieldEnergy);
                     fmmEnergy += farFieldEnergy;
-                    atomEnergy += farFieldEnergy;
 
+                    // direct calculation with all atoms in same box
+                    for ((sameBoxAtomIndex) in 0..atomIndex1-1) {
+                        sameBoxAtom : Atom = box.atoms(sameBoxAtomIndex);
+                        val pairEnergy : Double = pairEnergy(atom1, sameBoxAtom);
+                        fmmEnergy += 2 * pairEnergy;
+                    }
+
+                    // direct calculation with all atoms in non-well-separated boxes
                     for ((boxIndex2) in 0..boxIndex1-1) {
                         box2 : FmmLeafBox = boxes(boxIndex2, numLevels) as FmmLeafBox;
                         if (box2 != null) {
                             if (!box.wellSeparated(ws, box2)) {
-                                //Console.OUT.println("box(" + boxIndex1 + ") and box(" + boxIndex2 + ") not well sep");
                                 for ((atomIndex2) in 0..box2.atoms.length()-1) {
                                     atom2 : Atom = box2.atoms(atomIndex2);
                                     val pairEnergy : Double = pairEnergy(atom1, atom2);
-                                    atomEnergy += pairEnergy;
-                                    //Console.OUT.println("pairEnergy = " + pairEnergy);
                                     fmmEnergy += 2 * pairEnergy;
                                 }
-                            } else {
-                                //Console.OUT.println("box(" + boxIndex1 + ") and box(" + boxIndex2 + ") well sep");
                             }
                         }
                     }
-                    //Console.OUT.println("atomEnergy = " + atomEnergy);
                 }
             }
         }
@@ -276,14 +248,11 @@ public class Fmm3d {
     }
 
     def getLowestLevelBoxLocation(atom : Atom) : ValRail[Int]{length==3} {
-        //Console.OUT.println(atom.centre);
         index : ValRail[Int]{length==3} = [ atom.centre.i / size * dimLowestLevelBoxes + dimLowestLevelBoxes / 2 as Int, atom.centre.j / size * dimLowestLevelBoxes + dimLowestLevelBoxes / 2 as Int, atom.centre.k / size * dimLowestLevelBoxes + dimLowestLevelBoxes / 2 as Int ];
-        //Console.OUT.println(index(0) + " " + index(1) + " " + index(2));
         return index;
     }
 
     def getParentBox(childIndex : Int, childLevel : Int) : FmmParentBox {
-        //Console.OUT.println("getParentBox(" + childIndex + ", " + childLevel);
         if (childLevel == 1)
             return null;
         parentIndex : Int = getParentIndex(childIndex, childLevel);
@@ -327,7 +296,6 @@ public class Fmm3d {
     def getParentIndex(childIndex : Int, childLevel : Int) : Int {
         parentDim : Int = Math.pow2(childLevel-1) as Int;
         location : ValRail[Int] = getBoxLocation(childIndex, childLevel);
-        //Console.OUT.println("childLoc = " + location(0) + " " + location(1) + " " + location(2));
         return location(0) / 2 * parentDim * parentDim + location(1) / 2 * parentDim + location(2) / 2;
     }
 }
