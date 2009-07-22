@@ -139,11 +139,10 @@ public class Fmm3d {
                 parentBox.children.add(box);
                 boxes(boxIndex, numLevels) = box;
             }
-            v : Tuple3d = parentBox.getCentre(size).sub(atom.centre);
-            olm : MultipoleExpansion = MultipoleExpansion.getOlm(atom.charge, v, numTerms);
-            
             box.atoms.add(atom);
             //Console.OUT.println("atoms(" + i + ") => box(" + boxIndex + ")");
+            v : Tuple3d = box.getCentre(size).sub(atom.centre);
+            olm : MultipoleExpansion = MultipoleExpansion.getOlm(atom.charge, v, numTerms);
             box.multipoleExp.add(olm);
         }
     }
@@ -186,7 +185,7 @@ public class Fmm3d {
                     for ((boxIndex2) in 0..boxIndex1-1) { 
                         box2 : FmmBox = boxes(boxIndex2, level);
                         if (box2 != null) {
-                            //Console.OUT.println("transformToLocal: box(" + boxIndex1 + "," + level + ") and box(" + level + "," + boxIndex2 + ")");
+                            //Console.OUT.println("... and box(" + level + "," + boxIndex2 + ")");
                             if (!box1.parent.wellSeparated(ws, box2.parent)) {
                                 //Console.OUT.println("parents not well sep");
                                 if (box1.wellSeparated(ws, box2)) {
@@ -221,14 +220,13 @@ public class Fmm3d {
         // TODO n^2 calculation - to check - remove this
         for ((i) in 0..(atoms.length - 1)) {
             var atomEnergy : Double = 0.0;
-            for ((j) in 0..(atoms.length - 1)) {
-                if (i != j) {
-                    val pairEnergy : Double = pairEnergy(atoms(i), atoms(j));
-                    atomEnergy += pairEnergy;
-                    directEnergy += pairEnergy;
-                }
+            for ((j) in 0..(i - 1)) {
+                val pairEnergy : Double = pairEnergy(atoms(i), atoms(j));
+                atomEnergy += pairEnergy;
+                directEnergy += 2 * pairEnergy;
+                //Console.OUT.println("pairEnergy = " + pairEnergy);
             }
-            Console.OUT.println("atomEnergy = " + atomEnergy);
+            //Console.OUT.println("atomEnergy = " + atomEnergy);
         }
 
         Console.OUT.println("directEnergy = " + directEnergy);
@@ -265,7 +263,7 @@ public class Fmm3d {
                             }
                         }
                     }
-                    Console.OUT.println("atomEnergy = " + atomEnergy);
+                    //Console.OUT.println("atomEnergy = " + atomEnergy);
                 }
             }
         }
