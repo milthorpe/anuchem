@@ -193,7 +193,7 @@ public class Fmm3d {
                                     wellSep++;
                                     boxCentre1 : Point3d = box1.getCentre(size);
                                     boxCentre2 : Point3d = box2.getCentre(size);
-                                    v : Tuple3d = boxCentre2.sub(boxCentre1);
+                                    v : Tuple3d = boxCentre1.sub(boxCentre2);
                                     MultipoleExpansion.transformAndAddToLocal(v, box1.multipoleExp, box2.localExp);
                                     MultipoleExpansion.transformAndAddToLocal(v.negate(), box2.multipoleExp, box1.localExp);
                                 } else if (level==numLevels) {
