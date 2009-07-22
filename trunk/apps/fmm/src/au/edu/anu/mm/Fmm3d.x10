@@ -92,8 +92,6 @@ public class Fmm3d {
     public def calculateEnergy() : Double {
         multipoleLowestLevel();
 
-        combineMultipoles();
-
         /*
         var nonEmpty : Int = 0;
         for (val (i,j) in boxes.region) {
@@ -104,9 +102,24 @@ public class Fmm3d {
         }
         Console.OUT.println("nonEmpty = " + nonEmpty);
         */
+        combineMultipoles();
+        /*
+        for (val (i,j) in boxes.region) {
+            if (boxes(i,j) != null) {
+                Console.OUT.println("boxes(" + i + "," + j + ") multipole = " + boxes(i,j).multipoleExp);
+            }
+        }
+        */
 
         transformToLocal();
-        
+        /*
+        for (val (i,j) in boxes.region) {
+            if (boxes(i,j) != null) {
+                Console.OUT.println("boxes(" + i + "," + j + ") local = " + boxes(i,j).localExp);
+            }
+        }
+        */
+
         return getEnergy();
     }
 
@@ -224,7 +237,7 @@ public class Fmm3d {
                     atom1 : Atom = box.atoms(atomIndex1);
                     v : Tuple3d = atom1.centre.sub(box.getCentre(size));
                     //Console.OUT.println("atom(" + atomIndex1 + ") box(" + box.index() + ") v = " + v);
-                    //Console.OUT.println("atom centre" + atom1.centre + " box centre " + box.getCentre(size));
+                    //Console.OUT.println("atom1 centre = " + atom1.centre + " box centre = " + box.getCentre(size));
                     //Console.OUT.println("localExp = " + box.localExp);
                     farFieldEnergy : Double = LocalExpansion.getPotential(atom1.charge, v, box.localExp);
                     //Console.OUT.println("farFieldEnergy = " + farFieldEnergy);
@@ -236,8 +249,9 @@ public class Fmm3d {
                             if (!box.wellSeparated(ws, box2)) {
                                 //Console.OUT.println("box(" + boxIndex1 + ") and box(" + boxIndex2 + ") not well sep");
                                 for ((atomIndex2) in 0..box2.atoms.length()-1) {
-                                    atom2 : Atom = atoms(atomIndex2);
+                                    atom2 : Atom = box2.atoms(atomIndex2);
                                     val pairEnergy : Double = pairEnergy(atom1, atom2);
+                                    //Console.OUT.println("pairEnergy = " + pairEnergy);
                                     fmmEnergy += 2 * pairEnergy;
                                 }
                             } else {

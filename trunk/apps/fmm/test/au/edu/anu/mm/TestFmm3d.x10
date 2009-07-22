@@ -14,7 +14,7 @@ public class TestFmm3d {
     public static def main(args: Rail[String]) {
         var numParticles : Int;
         var density : Double = 3.0;
-        var numTerms : Int = 5;
+        var numTerms : Int = 10;
         var wellSpaced : Int = 2;
         if (args.length > 0) {
             numParticles = Int.parseInt(args(0));
