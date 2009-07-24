@@ -82,12 +82,10 @@ public class GMatrix extends Matrix {
 
                         temp(kl) = 2.0*twoEIntVal1 - 0.5*twoEIntVal2 - 0.5*twoEIntVal3;
 
-                        /** 
                          x10.io.Console.OUT.println("\t" + kl);
                          x10.io.Console.OUT.println("\t\t <" + i + " " + j + " | " + k + " " + l + ">"); 
                          x10.io.Console.OUT.println("\t\t <" + i + " " + k + " | " + j + " " + l + ">"); 
                          x10.io.Console.OUT.println("\t\t <" + i + " " + l + " | " + k + " " + j + ">"); 
-                        **/
 
                         kl++;
                     } // end l loop

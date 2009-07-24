@@ -22,6 +22,8 @@ public class Molecule {
     public def getAtom(index:Int) : Atom = atomList.get(index);
     public def getAtoms() : ArrayList[Atom] = atomList;
     public def getNumberOfAtoms() : Int = atomList.size();
+
+    public def setName(nam:String) : void { this.name = nam; }
     
     public def getNumberOfElectrons() : int {
        val ai = AtomInfo.getInstance();
