@@ -275,24 +275,6 @@ public class Fmm3d {
         return location;
     }
 
-    /**
-     * Returns true if <code>boxes(boxIndex1)</code> and 
-     * <code>boxes(boxIndex2)</code> are well separated i.e. whether
-     * there are at least <code>ws</code> boxes separating them.
-     */
-    def wellSeparated(ws : Int, boxIndex1 : Int, boxIndex2 : Int, level : Int) : Boolean {
-        if (level < 2)
-            return false;
-        if (boxIndex1 == boxIndex2)
-            return false;
-        loc1 : ValRail[Int] = getBoxLocation(boxIndex1, level);
-        loc2 : ValRail[Int] = getBoxLocation(boxIndex2, level);
-        // TODO can do reduction on a Rail?
-        return Math.abs(loc1(0) - loc2(0)) > ws 
-            || Math.abs(loc1(1) - loc2(1)) > ws 
-            || Math.abs(loc1(2) - loc2(2)) > ws;
-    }
-
     def getParentIndex(childIndex : Int, childLevel : Int) : Int {
         parentDim : Int = Math.pow2(childLevel-1) as Int;
         location : ValRail[Int] = getBoxLocation(childIndex, childLevel);
