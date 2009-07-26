@@ -72,9 +72,9 @@ public class Fmm3d {
 
         this.atoms = atoms;
 
-        var boxRegion : Region{rank==2} = [0..8, 1..1];
+        var boxRegion : Region{rank==2} = [0..7, 1..1];
         for ((i) in 2..numLevels) {
-            rNextLevel : Region{rank==2} = [0..(Math.pow(8,i) as Int), i..i];
+            rNextLevel : Region{rank==2} = [0..(Math.pow(8,i) as Int)-1, i..i];
             boxRegion = boxRegion || rNextLevel;
         }
         // all boxes are null to start.  they will be initialised as needed.
@@ -138,7 +138,7 @@ public class Fmm3d {
      */
     def combineMultipoles() {
         for (var level: Int = numLevels; level > 1; level--) {
-            for ((childIndex) in 0..(Math.pow(8,level) as Int)) {
+            for ((childIndex) in 0..(Math.pow(8,level) as Int)-1) {
                 child : FmmBox = boxes(childIndex,level);
                 if (child != null) {
                     childCentre : Point3d = child.getCentre(size);
@@ -161,7 +161,7 @@ public class Fmm3d {
         var wellSep : Int = 0;
         var nearField : Int = 0;
         for ((level) in 2..numLevels) {
-            for ((boxIndex1) in 1..(Math.pow(8,level) as Int)) {
+            for ((boxIndex1) in 1..(Math.pow(8,level) as Int)-1) {
                 box1 : FmmBox = boxes(boxIndex1, level);
                 if (box1 != null) {
                     //Console.OUT.println("transformToLocal: box(" + boxIndex1 + ")");
@@ -207,7 +207,7 @@ public class Fmm3d {
         */
 
         var fmmEnergy : Double = 0.0;
-        for ((boxIndex1) in 0..(Math.pow(8,numLevels) as Int)) { 
+        for ((boxIndex1) in 0..(Math.pow(8,numLevels) as Int)-1) { 
             box : FmmLeafBox = boxes(boxIndex1, numLevels) as FmmLeafBox;
             if (box != null) {
                 for ((atomIndex1) in 0..box.atoms.length()-1) {
