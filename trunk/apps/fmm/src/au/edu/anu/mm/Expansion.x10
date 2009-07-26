@@ -25,11 +25,8 @@ public value Expansion {
     }
 
     public def add(e : Expansion) {
-        val p : Int = terms.region.max(0);
-        for (val(i) : Point in [0..p]) {
-            for (val(j) : Point in [-i..i]) {
-                this.terms(i,j) = this.terms(i,j).add(e.terms(i,j));
-            }
+        for (val p : Point{rank==2} in terms.region) {
+            this.terms(p) = this.terms(p).add(e.terms(p));
         }
     }
 

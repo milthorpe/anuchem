@@ -161,10 +161,10 @@ public class Fmm3d {
         var wellSep : Int = 0;
         var nearField : Int = 0;
         for ((level) in 2..numLevels) {
-            for ((boxIndex1) in 1..(Math.pow(8,level) as Int)-1) {
+            for ((boxIndex1) in 0..(Math.pow(8,level) as Int)-1) {
                 box1 : FmmBox = boxes(boxIndex1, level);
                 if (box1 != null) {
-                    //Console.OUT.println("transformToLocal: box(" + boxIndex1 + ")");
+                    //Console.OUT.println("transformToLocal: box(" + boxIndex1 + "," + level + ")");
                     for ((boxIndex2) in 0..boxIndex1-1) { 
                         box2 : FmmBox = boxes(boxIndex2, level);
                         if (box2 != null) {
