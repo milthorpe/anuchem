@@ -100,7 +100,7 @@
 
 	<target name="build-harness" depends="init-test,check-harness" unless="harness.uptodate">
         <echo message="Building test harness"/>
-		<echo message="x10c ${test.list} ${x10.testlib}/harness/x10Test.x10"/>
+		<echo message="x10c ${x10.testlib}/harness/x10Test.x10"/>
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/test">
             <arg value="-c"/>
             <arg value="'x10c' ${x10c.optimize} -sourcepath . -commandlineonly -d ${target-test} ${x10.testlib}/harness/x10Test.x10"/>

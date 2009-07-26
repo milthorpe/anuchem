@@ -85,14 +85,12 @@ public value LocalExpansion extends Expansion {
     public static def getPotential(q : Double,
                                 v : Tuple3d,
                                 source : LocalExpansion) : Double {
-        val p : Int = source.terms.region.max(0);
-        val transform : MultipoleExpansion = MultipoleExpansion.getOlm(q, v, p);
+        val numTerms : Int = source.terms.region.max(0);
+        val transform : MultipoleExpansion = MultipoleExpansion.getOlm(q, v, numTerms);
         var potential : Double = 0.0;
-        // TODO use reduction
-        for (val (j): Point in [0..p]) {
-            for (val (k): Point in [-j..j]) {
-                potential += source.terms(j,k).multiply(transform.terms(j,k)).real;
-            }
+        // TODO use lift/reduction?
+        for (val p : Point{rank==2} in source.terms.region) {
+            potential += source.terms(p).multiply(transform.terms(p)).real;
         }
         return potential;
     }

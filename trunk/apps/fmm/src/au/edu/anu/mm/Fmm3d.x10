@@ -165,6 +165,7 @@ public class Fmm3d {
                 box1 : FmmBox = boxes(boxIndex1, level);
                 if (box1 != null) {
                     //Console.OUT.println("transformToLocal: box(" + boxIndex1 + "," + level + ")");
+                    boxCentre1 : Point3d = box1.getCentre(size);
                     for ((boxIndex2) in 0..boxIndex1-1) { 
                         box2 : FmmBox = boxes(boxIndex2, level);
                         if (box2 != null) {
@@ -172,7 +173,6 @@ public class Fmm3d {
                             if (!box1.parent.wellSeparated(ws, box2.parent)) {
                                 if (box1.wellSeparated(ws, box2)) {
                                     wellSep++;
-                                    boxCentre1 : Point3d = box1.getCentre(size);
                                     boxCentre2 : Point3d = box2.getCentre(size);
                                     v : Tuple3d = boxCentre1.sub(boxCentre2);
                                     MultipoleExpansion.transformAndAddToLocal(v, box1.multipoleExp, box2.localExp);
@@ -184,7 +184,7 @@ public class Fmm3d {
                         }
                     }
                     if (level > 2) {
-                        v : Tuple3d = box1.getCentre(size).sub(box1.parent.getCentre(size));
+                        v : Tuple3d = boxCentre1.sub(box1.parent.getCentre(size));
                         LocalExpansion.translateAndAddLocal(v, box1.parent.localExp, box1.localExp);
                     }
                 }
