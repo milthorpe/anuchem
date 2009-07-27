@@ -21,7 +21,7 @@ public value MultipoleExpansion extends Expansion {
      * Calculate the multipole-like term O_{lm} (with m >= 0) for a point v.
      * TODO x10doc
      */
-    public static def getOlm(q : Double, v : Tuple3d, p : int) : MultipoleExpansion {
+    public static def getOlm(q : Double, v : Tuple3d, p : Int) : MultipoleExpansion {
         val exp : MultipoleExpansion = new MultipoleExpansion(p);
         var v_pole : Polar3d = Polar3d.getPolar3d(v);
         val pplm : Array[Double]{rank==2} = AssociatedLegendrePolynomial.getPlm(Math.cos(v_pole.theta), p); 
@@ -29,10 +29,10 @@ public value MultipoleExpansion extends Expansion {
         val phifac0 : Complex = new Complex(Math.cos(-v_pole.phi), Math.sin(-v_pole.phi));
 
         var rfac : Double = 1.0;
-        var il : Int = 1;
+        var il : Double = 1.0;
         for (val (l): Point in [0..p]) {
             il = il * Math.max(l,1);
-            var ilm : Int = il;
+            var ilm : Double = il;
             var phifac : Complex = Complex.ONE;
             exp.terms(l,0) = phifac.divide(ilm).multiply(q * rfac * pplm(l,0)); 
             for (val (m): Point in [1..l]) {
@@ -41,7 +41,7 @@ public value MultipoleExpansion extends Expansion {
                 exp.terms(l,m) = phifac.divide(ilm).multiply(q * rfac * pplm(l,m));
             }
             for (val (m): Point in [-l..-1]) {
-                exp.terms(l,m) = exp.terms(l,-m).conjugate().multiply((2*((-m+1)%2)-1 as Double));
+                exp.terms(l,m) = exp.terms(l,-m).conjugate().multiply(2*((-m+1)%2)-1);
             }
             rfac = rfac * v_pole.r;
         }
@@ -52,7 +52,7 @@ public value MultipoleExpansion extends Expansion {
     /**
      * Calculate the chargeless multipole-like term O_{lm} (with m >= 0) for a point v.
      */
-    public static def getOlm(v : Tuple3d, p : int) : MultipoleExpansion {
+    public static def getOlm(v : Tuple3d, p : Int) : MultipoleExpansion {
         val exp : MultipoleExpansion = new MultipoleExpansion(p);
         var v_pole : Polar3d = Polar3d.getPolar3d(v);
         val pplm : Array[Double]{rank==2} = AssociatedLegendrePolynomial.getPlm(Math.cos(v_pole.theta), p); 
@@ -60,10 +60,10 @@ public value MultipoleExpansion extends Expansion {
         val phifac0 : Complex = new Complex(Math.cos(-v_pole.phi), Math.sin(-v_pole.phi));
 
         var rfac : Double = 1.0;
-        var il : Int = 1;
+        var il : Double = 1.0;
         for (val (l): Point in [0..p]) {
             il = il * Math.max(l,1);
-            var ilm : Int = il;
+            var ilm : Double = il;
             var phifac : Complex = Complex.ONE;
             exp.terms(l,0) = phifac.divide(ilm).multiply(rfac * pplm(l,0)); 
             for (val (m): Point in [1..l]) {
@@ -72,7 +72,7 @@ public value MultipoleExpansion extends Expansion {
                 exp.terms(l,m) = phifac.divide(ilm).multiply(rfac * pplm(l,m));
             }
             for (val (m): Point in [-l..-1]) {
-                exp.terms(l,m) = exp.terms(l,-m).conjugate().multiply((2*((-m+1)%2)-1 as Double));
+                exp.terms(l,m) = exp.terms(l,-m).conjugate().multiply(2*((-m+1)%2)-1);
             }
             rfac = rfac * v_pole.r;
         }

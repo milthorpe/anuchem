@@ -28,7 +28,7 @@ public value LocalExpansion extends Expansion {
         val rfac0 : Double = 1.0 / v_pole.r;
         val phifac0 : Complex = new Complex(Math.cos(v_pole.phi), Math.sin(v_pole.phi));
         var rfac : Double = rfac0;
-        var il : int = 1;
+        var il : Double = 1.0;
         for (val (l): Point in [0..p]) {
             il = il * Math.max(l,1);
             var ilm : Double = il;
