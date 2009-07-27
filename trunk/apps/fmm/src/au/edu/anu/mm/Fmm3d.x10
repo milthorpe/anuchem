@@ -195,7 +195,7 @@ public class Fmm3d {
 
     def getEnergy() : Double {
         // TODO n^2 calculation - to check - remove this
-        /*
+        
         var directEnergy : Double = 0.0;
         for ((i) in 0..(atoms.length - 1)) {
             for ((j) in 0..(i - 1)) {
@@ -204,7 +204,7 @@ public class Fmm3d {
             }
         }
         Console.OUT.println("directEnergy = " + directEnergy);
-        */
+        
 
         var fmmEnergy : Double = 0.0;
         for ((boxIndex1) in 0..(Math.pow(8,numLevels) as Int)-1) { 
