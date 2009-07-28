@@ -1,3 +1,11 @@
+/**
+ * AtomicBasis.x10
+ *
+ * Represents an atomic basis as a collection of Orbital objects
+ *
+ * @author: V.Ganesh
+ */
+
 package au.anu.edu.qm;
 
 import x10.util.*;

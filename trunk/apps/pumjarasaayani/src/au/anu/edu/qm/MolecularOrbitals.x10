@@ -1,3 +1,11 @@
+/**
+ * MolecularOrbitals.x10
+ *
+ * Represents MOs in a HF-SCF
+ *
+ * @author: V.Ganesh
+ */
+
 package au.anu.edu.qm;
 
 import x10x.matrix.Matrix;

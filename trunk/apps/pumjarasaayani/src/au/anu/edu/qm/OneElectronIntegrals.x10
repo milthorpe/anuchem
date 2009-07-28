@@ -1,3 +1,11 @@
+/**
+ * OneElectronIntegrals.x10
+ *
+ * Evaluate 1E integrals
+ *
+ * @author: V.Ganesh
+ */
+
 package au.anu.edu.qm;
 
 public class OneElectronIntegrals { 

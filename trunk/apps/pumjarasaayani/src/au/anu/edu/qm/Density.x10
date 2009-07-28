@@ -1,3 +1,11 @@
+/**
+ * Density.x10
+ *
+ * The density matrix in the HF calculation
+ *
+ * @author: V.Ganesh
+ */
+
 package au.anu.edu.qm;
 
 import x10x.matrix.Matrix;

@@ -1,3 +1,11 @@
+/**
+ * Atom.x10
+ *
+ * Represent an Atom class
+ *
+ * @author: V.Ganesh
+ */
+
 package au.anu.edu.qm;
 
 public class Atom { 

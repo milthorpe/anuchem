@@ -1,3 +1,11 @@
+/**
+ * BasisFunctions.x10
+ *
+ * Generates basis functions for a given Molecule object 
+ *
+ * @author: V.Ganesh
+ */
+
 package au.anu.edu.qm;
 
 import x10.util.*;

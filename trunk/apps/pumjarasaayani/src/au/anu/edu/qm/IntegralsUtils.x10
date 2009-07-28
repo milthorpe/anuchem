@@ -1,3 +1,11 @@
+/**
+ * IntegralsUtils.x10
+ *
+ * Some utilities for integral evaluation
+ *
+ * @author: V.Ganesh
+ */
+
 package au.anu.edu.qm;
 
 public class IntegralsUtils { 

@@ -1,3 +1,11 @@
+/**
+ * TwoElectronIntegrals.x10 
+ * 
+ * Evaluate 2E integrals 
+ *
+ * @author: V.Ganesh
+ */
+
 package au.anu.edu.qm;
 
 public class TwoElectronIntegrals { 

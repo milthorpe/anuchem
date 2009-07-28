@@ -1,3 +1,11 @@
+/**
+ * Shell.x10
+ *
+ * Class representing a gaussian shell 
+ *
+ * @author: V.Ganesh
+ */
+
 package au.anu.edu.qm;
 
 import x10.util.*;

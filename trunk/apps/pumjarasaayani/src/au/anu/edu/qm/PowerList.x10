@@ -1,3 +1,11 @@
+/**
+ * PowerList.x10
+ *
+ * Represents gaussian powers terms for various orbital types
+ *
+ * @author: V.Ganesh
+ */
+
 package au.anu.edu.qm;
 
 import x10.util.*;

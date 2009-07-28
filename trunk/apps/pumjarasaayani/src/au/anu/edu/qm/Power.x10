@@ -1,3 +1,11 @@
+/**
+ * Power.x10
+ *
+ * Represents a gaussian power
+ *
+ * @author: V.Ganesh
+ */
+
 package au.anu.edu.qm;
 
 public class Power { 

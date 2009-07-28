@@ -1,3 +1,11 @@
+/**
+ * GMatrix.x10
+ *
+ * GMatrix in HF calculation
+ *
+ * @author: V.Ganesh
+ */
+
 package au.anu.edu.qm;
 
 import x10x.matrix.Matrix;

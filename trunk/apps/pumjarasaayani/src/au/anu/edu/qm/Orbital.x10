@@ -1,3 +1,11 @@
+/**
+ * Orbitals.x10
+ *
+ * Represents an Orbital (used for basis function formation)
+ *
+ * @author: V.Ganesh
+ */
+
 package au.anu.edu.qm;
 
 import x10.util.*;

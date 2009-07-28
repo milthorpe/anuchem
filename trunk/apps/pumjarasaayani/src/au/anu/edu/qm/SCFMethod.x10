@@ -1,3 +1,11 @@
+/**
+ * SCFMethod.x10
+ *
+ * Stub for SCF method
+ *
+ * @author: V.Ganesh
+ */
+
 package au.anu.edu.qm;
 
 public abstract class SCFMethod { 

@@ -1,3 +1,11 @@
+/**
+ * ShellList.x10
+ *
+ * Structure storing Shell list
+ *
+ * @author: V.Ganesh
+ */
+
 package au.anu.edu.qm;
 
 import x10.util.*;

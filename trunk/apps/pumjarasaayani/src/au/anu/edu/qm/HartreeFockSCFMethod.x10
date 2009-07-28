@@ -1,3 +1,11 @@
+/**
+ * HartreeFockSCFMethod.x10
+ *
+ * Implementation of Hartree-Fock SCF method 
+ *
+ * @author: V.Ganesh
+ */
+
 package au.anu.edu.qm;
 
 public class HartreeFockSCFMethod extends SCFMethod { 

@@ -1,3 +1,11 @@
+/**
+ * AtomInfo.x10
+ *
+ * Basic information on Atom types.
+ *
+ * @author: V.Ganesh
+ */
+
 package au.anu.edu.qm;
 
 import x10.io.*;

@@ -1,3 +1,11 @@
+/**
+ * BasisSet.x10
+ *
+ * Represents a basis set, used for setting up basis functions (by BasisFunctions)
+ *
+ * @author: V.Ganesh
+ */
+
 package au.anu.edu.qm;
 
 import x10.util.*;

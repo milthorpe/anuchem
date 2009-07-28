@@ -1,3 +1,11 @@
+/**
+ * MathUtil.x10
+ *
+ * Some math functions that are not provided by the x10 library
+ *
+ * @author: V.Ganesh
+ */
+
 package au.anu.edu.qm;
 
 public final class MathUtil { 

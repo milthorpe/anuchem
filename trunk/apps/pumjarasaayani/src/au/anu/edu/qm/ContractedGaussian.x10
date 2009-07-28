@@ -1,3 +1,11 @@
+/**
+ * ContractedGaussian.x10
+ *
+ * Represents a contracted gaussian function (made up of PrimitiveGaussian)
+ *
+ * @author: V.Ganesh
+ */
+
 package au.anu.edu.qm;
 
 import x10.util.*;
