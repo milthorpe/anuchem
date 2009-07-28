@@ -57,7 +57,7 @@ public class Fmm3d {
                     atoms : Rail[Atom]) {
         this.numLevels = Math.max(2, (Math.log(atoms.length / density) / Math.log(8.0) + 1.0 as Int));
         var nBox : Int = 1;
-        for ((i) in 1..numLevels) {
+        for ((i) in 2..numLevels) {
             nBox += Math.pow(8,i) as Int;
         }
         this.maxBoxes = nBox;
@@ -72,8 +72,8 @@ public class Fmm3d {
 
         this.atoms = atoms;
 
-        var boxRegion : Region{rank==2} = [0..7, 1..1];
-        for ((i) in 2..numLevels) {
+        var boxRegion : Region{rank==2} = [0..63, 2..2];
+        for ((i) in 3..numLevels) {
             rNextLevel : Region{rank==2} = [0..(Math.pow(8,i) as Int)-1, i..i];
             boxRegion = boxRegion || rNextLevel;
         }
@@ -121,7 +121,9 @@ public class Fmm3d {
             var box : FmmLeafBox = boxes(boxIndex, numLevels) as FmmLeafBox;
             if (box == null) {
                 box = new FmmLeafBox(numLevels, boxLocation, numTerms, parentBox);
-                parentBox.children.add(box);
+                if (parentBox != null) {
+                    parentBox.children.add(box);
+                }
                 boxes(boxIndex, numLevels) = box;
             }
             box.atoms.add(atom);
@@ -137,7 +139,7 @@ public class Fmm3d {
      * lowest level box that contains the atom.
      */
     def combineMultipoles() {
-        for (var level: Int = numLevels; level > 1; level--) {
+        for (var level: Int = numLevels; level > 2; level--) {
             for ((childIndex) in 0..(Math.pow(8,level) as Int)-1) {
                 child : FmmBox = boxes(childIndex,level);
                 if (child != null) {
@@ -160,7 +162,29 @@ public class Fmm3d {
     def transformToLocal() {
         var wellSep : Int = 0;
         var nearField : Int = 0;
-        for ((level) in 2..numLevels) {
+        // top level (==2)
+        for ((boxIndex1) in 0..63) {
+            box1 : FmmBox = boxes(boxIndex1, 2);
+            if (box1 != null) {
+                //Console.OUT.println("transformToLocal: box(" + boxIndex1 + "," + 2 + ")");
+                boxCentre1 : Point3d = box1.getCentre(size);
+                for ((boxIndex2) in 0..boxIndex1-1) { 
+                    box2 : FmmBox = boxes(boxIndex2, 2);
+                    if (box2 != null) {
+                        //Console.OUT.println("... and box(" + 2 + "," + boxIndex2 + ")");
+                        if (box1.wellSeparated(ws, box2)) {
+                            wellSep++;
+                            boxCentre2 : Point3d = box2.getCentre(size);
+                            v : Tuple3d = boxCentre1.sub(boxCentre2);
+                            MultipoleExpansion.transformAndAddToLocal(v, box1.multipoleExp, box2.localExp);
+                            MultipoleExpansion.transformAndAddToLocal(v.negate(), box2.multipoleExp, box1.localExp);
+                        }
+                    }
+                }
+            }
+        }
+
+        for ((level) in 3..numLevels) {
             for ((boxIndex1) in 0..(Math.pow(8,level) as Int)-1) {
                 box1 : FmmBox = boxes(boxIndex1, level);
                 if (box1 != null) {
@@ -183,10 +207,8 @@ public class Fmm3d {
                             }
                         }
                     }
-                    if (level > 2) {
-                        v : Tuple3d = boxCentre1.sub(box1.parent.getCentre(size));
-                        LocalExpansion.translateAndAddLocal(v, box1.parent.localExp, box1.localExp);
-                    }
+                    v : Tuple3d = boxCentre1.sub(box1.parent.getCentre(size));
+                    LocalExpansion.translateAndAddLocal(v, box1.parent.localExp, box1.localExp);
                 }
             }
         }
@@ -195,7 +217,7 @@ public class Fmm3d {
 
     def getEnergy() : Double {
         // TODO n^2 calculation - to check - remove this
-        
+        /*
         var directEnergy : Double = 0.0;
         for ((i) in 0..(atoms.length - 1)) {
             for ((j) in 0..(i - 1)) {
@@ -204,7 +226,7 @@ public class Fmm3d {
             }
         }
         Console.OUT.println("directEnergy = " + directEnergy);
-        
+        */
 
         var fmmEnergy : Double = 0.0;
         for ((boxIndex1) in 0..(Math.pow(8,numLevels) as Int)-1) { 
@@ -253,7 +275,7 @@ public class Fmm3d {
     }
 
     def getParentBox(childIndex : Int, childLevel : Int) : FmmParentBox {
-        if (childLevel == 1)
+        if (childLevel == 2)
             return null;
         parentIndex : Int = getParentIndex(childIndex, childLevel);
         parentLevel : Int = childLevel - 1;
