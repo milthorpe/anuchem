@@ -75,6 +75,33 @@ public value LocalExpansion extends Expansion {
         }
     }
 
+    /** 
+     * Translate a local expansion centred around the origin along a vector b,
+     * and adds to a target expansion centred at b, where shift is the expansion
+     * of the vector b.
+     * This corresponds to "Operator C", Equations 18-21 in White & Head-Gordon.
+     * Note: this defines C^lm_jk(b) = O_j-l,k-m(b); however this is only defined
+     * where abs(k-m) <= j-l, therefore we restrict k to [l-j+m..-l+j+m]
+     * @param shift the multipole expansion of the translation
+     * @param source the source local expansion, centred at the origin
+     * @param target the target local expansion, centred at b
+     */
+    public static def translateAndAddLocal(shift : MultipoleExpansion,
+                                         source : LocalExpansion,
+                                         target : LocalExpansion) {
+        val p : Int = source.terms.region.max(0);
+        for (val (l): Point in [0..p]) {
+            for (val (j): Point in [l..p]) {
+                for (val (m): Point in [-l..l]) {
+                    for (val (k): Point in [l-j+m..-l+j+m]) {
+                        val C_lmjk : Complex = shift.terms(j-l, k-m);
+                        target.terms(l,m) = target.terms(l,m).add(C_lmjk.multiply(source.terms(j,k)));
+                    }
+                }
+            }
+        }
+    }
+
     /**
      * Transforms a local expansion about the origin to the potential
      * acting on <code>q</code> at point <code>v</code>.

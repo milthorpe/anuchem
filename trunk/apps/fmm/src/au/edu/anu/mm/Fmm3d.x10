@@ -39,6 +39,12 @@ public class Fmm3d {
 
     val atoms : Rail[Atom];
 
+    /** A cache of transformations from multipole to local at the same level. */
+    val multipoleTransforms : Array[LocalExpansion]{rank==4};
+
+    /** A cache of multipole translations between parent box centres and child box centres. */
+    val multipoleTranslations : Array[MultipoleExpansion]{rank==4};
+
     /**
      * Initialises a fast multipole method electrostatics calculation
      * for the given system of atoms.
@@ -81,9 +87,24 @@ public class Fmm3d {
         this.boxes = Array.make[FmmBox](boxRegion);
         
         Console.OUT.println("boxes: " + boxes.region);
+    
+        var wellSpacedLimit : Region(4) = [2..numLevels,-(ws+3)..ws+3,-(ws+3)..ws+3,-(ws+3)..ws+3];
+        val multipoleTransformRegion : Region(4) = wellSpacedLimit - ([2..numLevels,-ws..ws,-ws..ws,-ws..ws] as Region);
+        this.multipoleTransforms = Array.make[LocalExpansion](multipoleTransformRegion);
+        this.multipoleTranslations = Array.make[MultipoleExpansion]([2..numLevels, 0..1, 0..1, 0..1]);
     }
     
     public def calculateEnergy() : Double {
+        // precompute multipole translations
+        for (val(level,i,j,k) in multipoleTranslations.region) {
+            dim : Int = Math.pow2(level);
+            sideLength : Double = size / dim;
+            translationVector : Vector3d = new Vector3d((i*2-1) * 0.5 * sideLength,
+                                                             (j*2-1) * 0.5 * sideLength,
+                                                             (k*2-1) * 0.5 * sideLength);
+            multipoleTranslations(level, i, j, k) = MultipoleExpansion.getOlm(translationVector, numTerms);
+        }
+
         multipoleLowestLevel();
         /*
         var nonEmpty : Int = 0;
@@ -143,10 +164,9 @@ public class Fmm3d {
             for ((childIndex) in 0..(Math.pow(8,level) as Int)-1) {
                 child : FmmBox = boxes(childIndex,level);
                 if (child != null) {
-                    childCentre : Point3d = child.getCentre(size);
-                    var parent : FmmBox = child.parent;
-                    v : Tuple3d = parent.getCentre(size).sub(childCentre);
-                    MultipoleExpansion.translateAndAddMultipole(v, child.multipoleExp, parent.multipoleExp);
+                    val parent : FmmBox = child.parent;
+                    val shift : MultipoleExpansion = multipoleTranslations(level, (child.location(0)+1)%2, (child.location(1)+1)%2, (child.location(2)+1)%2);
+                    MultipoleExpansion.translateAndAddMultipole(shift, child.multipoleExp, parent.multipoleExp);
                 }
             }
         }
@@ -160,6 +180,16 @@ public class Fmm3d {
      * non-empty child boxes.
      */
     def transformToLocal() {
+        // precompute child translations
+        for (val(level,i,j,k) in multipoleTransforms.region) {
+            dim : Int = Math.pow2(level);
+            sideLength : Double = size / dim;
+            translationVector : Vector3d = new Vector3d(i * sideLength,
+                                                        j * sideLength,
+                                                        k * sideLength);
+            multipoleTransforms(level, i, j, k) = LocalExpansion.getMlm(translationVector, numTerms);
+        } 
+
         var wellSep : Int = 0;
         var nearField : Int = 0;
         // top level (==2)
@@ -167,17 +197,19 @@ public class Fmm3d {
             box1 : FmmBox = boxes(boxIndex1, 2);
             if (box1 != null) {
                 //Console.OUT.println("transformToLocal: box(" + boxIndex1 + "," + 2 + ")");
-                boxCentre1 : Point3d = box1.getCentre(size);
                 for ((boxIndex2) in 0..boxIndex1-1) { 
                     box2 : FmmBox = boxes(boxIndex2, 2);
                     if (box2 != null) {
                         //Console.OUT.println("... and box(" + 2 + "," + boxIndex2 + ")");
                         if (box1.wellSeparated(ws, box2)) {
+                            translation : ValRail[Int]{length==3} = getTranslationIndex(box1, box2);
+                                    transform12 : LocalExpansion = multipoleTransforms(2, translation(0), translation(1), translation(2));
+                                    MultipoleExpansion.transformAndAddToLocal(transform12, box1.multipoleExp, box2.localExp);
+                                    transform21 : LocalExpansion = multipoleTransforms(2, -translation(0), -translation(1), -translation(2));
+                                    MultipoleExpansion.transformAndAddToLocal(transform21, box2.multipoleExp, box1.localExp);
                             wellSep++;
-                            boxCentre2 : Point3d = box2.getCentre(size);
-                            v : Tuple3d = boxCentre1.sub(boxCentre2);
-                            MultipoleExpansion.transformAndAddToLocal(v, box1.multipoleExp, box2.localExp);
-                            MultipoleExpansion.transformAndAddToLocal(v.negate(), box2.multipoleExp, box1.localExp);
+                        } else if (numLevels==2) {
+                            nearField++;
                         }
                     }
                 }
@@ -189,26 +221,28 @@ public class Fmm3d {
                 box1 : FmmBox = boxes(boxIndex1, level);
                 if (box1 != null) {
                     //Console.OUT.println("transformToLocal: box(" + boxIndex1 + "," + level + ")");
-                    boxCentre1 : Point3d = box1.getCentre(size);
                     for ((boxIndex2) in 0..boxIndex1-1) { 
                         box2 : FmmBox = boxes(boxIndex2, level);
                         if (box2 != null) {
                             //Console.OUT.println("... and box(" + level + "," + boxIndex2 + ")");
                             if (!box1.parent.wellSeparated(ws, box2.parent)) {
                                 if (box1.wellSeparated(ws, box2)) {
+                                    translation : ValRail[Int]{length==3} = getTranslationIndex(box1, box2);
+                                    transform12 : LocalExpansion = multipoleTransforms(level, translation(0), translation(1), translation(2));
+                                    MultipoleExpansion.transformAndAddToLocal(transform12, box1.multipoleExp, box2.localExp);
+                                    transform21 : LocalExpansion = multipoleTransforms(level, -translation(0), -translation(1), -translation(2));
+                                    MultipoleExpansion.transformAndAddToLocal(transform21, box2.multipoleExp, box1.localExp);
                                     wellSep++;
-                                    boxCentre2 : Point3d = box2.getCentre(size);
-                                    v : Tuple3d = boxCentre1.sub(boxCentre2);
-                                    MultipoleExpansion.transformAndAddToLocal(v, box1.multipoleExp, box2.localExp);
-                                    MultipoleExpansion.transformAndAddToLocal(v.negate(), box2.multipoleExp, box1.localExp);
+                                    
                                 } else if (level==numLevels) {
                                     nearField++;
                                 }
                             }
                         }
                     }
-                    v : Tuple3d = boxCentre1.sub(box1.parent.getCentre(size));
-                    LocalExpansion.translateAndAddLocal(v, box1.parent.localExp, box1.localExp);
+                    
+                    shift : MultipoleExpansion = multipoleTranslations(level, box1.location(0)%2, box1.location(1)%2, box1.location(2)%2);
+                    LocalExpansion.translateAndAddLocal(shift, box1.parent.localExp, box1.localExp);
                 }
             }
         }
@@ -301,6 +335,10 @@ public class Fmm3d {
         parentDim : Int = Math.pow2(childLevel-1) as Int;
         location : ValRail[Int] = getBoxLocation(childIndex, childLevel);
         return location(0) / 2 * parentDim * parentDim + location(1) / 2 * parentDim + location(2) / 2;
+    }
+
+    def getTranslationIndex(box1 : FmmBox, box2 : FmmBox) : ValRail[Int]{length==3} {
+        return [box1.location(0) - box2.location(0), box1.location(1) - box2.location(1), box1.location(2) - box2.location(2)];
     }
 }
 

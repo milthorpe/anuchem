@@ -110,6 +110,34 @@ public value MultipoleExpansion extends Expansion {
     }
 
     /** 
+     * Translate a multipole expansion centred around the origin along a vector -b,
+     * and adds to a target expansion centred at -b.
+     * This corresponds to "Operator A", Equations 10-11 in White & Head-Gordon.
+     * Note: this defines A^lm_jk(b) = O_l-j,m-k(b); however this is only defined
+     * where abs(m-k) <= l-j, therefore we restrict m to [j-l+k..-j+l+k]
+     * @param b the vector along which to translate the multipole
+     * @param source the source multipole expansion, centred at the origin
+     * @param target the target multipole expansion, centred at -b
+     */
+    public static def translateAndAddMultipole(shift : MultipoleExpansion,
+                                         source : MultipoleExpansion,
+                                         target : MultipoleExpansion) {
+        val p : Int = source.terms.region.max(0);
+        for (val (j): Point in [0..p]) {
+            for (val (l): Point in [j..p]) {
+                for (val (k): Point in [-j..j]) {
+                    for (val (m): Point in [-l..l]) {   
+                        if (Math.abs(m-k) <= (l-j)) {
+                        val A_lmjk : Complex = shift.terms(l-j, m-k);
+                        target.terms(l,m) = target.terms(l,m).add(A_lmjk.multiply(source.terms(j,k)));
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /** 
      * Transform a multipole expansion centred around the origin into a
      * Taylor expansion centred about b.
      * This corresponds to "Operator B", Equations 13-15 in White & Head-Gordon.
@@ -124,6 +152,34 @@ public value MultipoleExpansion extends Expansion {
                                          target : LocalExpansion) {
         val p : Int = source.terms.region.max(0);
         val transform : LocalExpansion = LocalExpansion.getMlm(b, p);
+        for (val (j): Point in [0..p]) {
+            for (val (l): Point in [0..p-j]) {
+                for (val (k): Point in [-j..j]) {
+                    for (val (m): Point in [-l..l]) {
+                        if (Math.abs(k+m) <= (j+l)) {
+                            val B_lmjk : Complex = transform.terms(j+l, k+m);
+                            target.terms(l,m) = target.terms(l,m).add(B_lmjk.multiply(source.terms(j,k)));
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /** 
+     * Transform a multipole expansion centred around the origin into a
+     * Taylor expansion centred about b.
+     * This corresponds to "Operator B", Equations 13-15 in White & Head-Gordon.
+     * This operator is inexact due to truncation of the series at <em>p</em> poles.
+     * Note: this defines B^lm_jk(b) = M_j+l,k+m(b), therefore restrict l to [0..p-j]
+     * @param b the vector along which to translate the multipole
+     * @param source the source multipole expansion, centred at the origin
+     * @param target the target multipole expansion, centred at -b
+     */
+    public static def transformAndAddToLocal(transform : LocalExpansion,
+                                         source : MultipoleExpansion,
+                                         target : LocalExpansion) {
+        val p : Int = source.terms.region.max(0);
         for (val (j): Point in [0..p]) {
             for (val (l): Point in [0..p-j]) {
                 for (val (k): Point in [-j..j]) {
