@@ -30,17 +30,17 @@ public value MultipoleExpansion extends Expansion {
 
         var rfac : Double = 1.0;
         var il : Double = 1.0;
-        for (val (l): Point in [0..p]) {
+        for (var l : Int = 0; l<=p; l++) {
             il = il * Math.max(l,1);
             var ilm : Double = il;
             var phifac : Complex = Complex.ONE;
             exp.terms(l,0) = phifac.divide(ilm).multiply(q * rfac * pplm(l,0)); 
-            for (val (m): Point in [1..l]) {
+            for (var m : Int = 1; m<=l; m++) {
                 ilm = ilm*(l+m);
                 phifac = phifac.multiply(phifac0);
                 exp.terms(l,m) = phifac.divide(ilm).multiply(q * rfac * pplm(l,m));
             }
-            for (val (m): Point in [-l..-1]) {
+            for (var m : Int = -l; m<=-1; m++) {
                 exp.terms(l,m) = exp.terms(l,-m).conjugate().multiply(2*((-m+1)%2)-1);
             }
             rfac = rfac * v_pole.r;
@@ -61,17 +61,17 @@ public value MultipoleExpansion extends Expansion {
 
         var rfac : Double = 1.0;
         var il : Double = 1.0;
-        for (val (l): Point in [0..p]) {
+        for (var l : Int = 0; l<=p; l++) {
             il = il * Math.max(l,1);
             var ilm : Double = il;
             var phifac : Complex = Complex.ONE;
             exp.terms(l,0) = phifac.divide(ilm).multiply(rfac * pplm(l,0)); 
-            for (val (m): Point in [1..l]) {
+            for (var m : Int = 1; m<=l; m++) {
                 ilm = ilm*(l+m);
                 phifac = phifac.multiply(phifac0);
                 exp.terms(l,m) = phifac.divide(ilm).multiply(rfac * pplm(l,m));
             }
-            for (val (m): Point in [-l..-1]) {
+            for (var m : Int = -l; m<=-1; m++) {
                 exp.terms(l,m) = exp.terms(l,-m).conjugate().multiply(2*((-m+1)%2)-1);
             }
             rfac = rfac * v_pole.r;
@@ -95,14 +95,12 @@ public value MultipoleExpansion extends Expansion {
                                          target : MultipoleExpansion) {
         val p : Int = source.terms.region.max(0);
         val shift : MultipoleExpansion = MultipoleExpansion.getOlm(b, p);
-        for (val (j): Point in [0..p]) {
-            for (val (l): Point in [j..p]) {
-                for (val (k): Point in [-j..j]) {
-                    for (val (m): Point in [-l..l]) {   
-                        if (Math.abs(m-k) <= (l-j)) {
+        for (val (j,k): Point in source.terms) {
+            for (var l : Int = j; l<=p; l++) {
+                for (var m : Int = -l; m<=l; m++) {   
+                    if (Math.abs(m-k) <= (l-j)) {
                         val A_lmjk : Complex = shift.terms(l-j, m-k);
                         target.terms(l,m) = target.terms(l,m).add(A_lmjk.multiply(source.terms(j,k)));
-                        }
                     }
                 }
             }
@@ -123,14 +121,12 @@ public value MultipoleExpansion extends Expansion {
                                          source : MultipoleExpansion,
                                          target : MultipoleExpansion) {
         val p : Int = source.terms.region.max(0);
-        for (val (j): Point in [0..p]) {
-            for (val (l): Point in [j..p]) {
-                for (val (k): Point in [-j..j]) {
-                    for (val (m): Point in [-l..l]) {   
-                        if (Math.abs(m-k) <= (l-j)) {
+        for (val (j,k): Point in source.terms) {
+            for (var l : Int = j; l<=p; l++) {
+                for (var m : Int = -l; m<=l; m++) {
+                    if (Math.abs(m-k) <= (l-j)) {
                         val A_lmjk : Complex = shift.terms(l-j, m-k);
                         target.terms(l,m) = target.terms(l,m).add(A_lmjk.multiply(source.terms(j,k)));
-                        }
                     }
                 }
             }
@@ -152,14 +148,12 @@ public value MultipoleExpansion extends Expansion {
                                          target : LocalExpansion) {
         val p : Int = source.terms.region.max(0);
         val transform : LocalExpansion = LocalExpansion.getMlm(b, p);
-        for (val (j): Point in [0..p]) {
-            for (val (l): Point in [0..p-j]) {
-                for (val (k): Point in [-j..j]) {
-                    for (val (m): Point in [-l..l]) {
-                        if (Math.abs(k+m) <= (j+l)) {
-                            val B_lmjk : Complex = transform.terms(j+l, k+m);
-                            target.terms(l,m) = target.terms(l,m).add(B_lmjk.multiply(source.terms(j,k)));
-                        }
+        for (val (j,k): Point in source.terms) {
+            for (var l : Int = 0; l<=p-j; l++) {
+                for (var m : Int = -l; m<=l; m++) {
+                    if (Math.abs(k+m) <= (j+l)) {
+                        val B_lmjk : Complex = transform.terms(j+l, k+m);
+                        target.terms(l,m) = target.terms(l,m).add(B_lmjk.multiply(source.terms(j,k)));
                     }
                 }
             }
@@ -180,14 +174,12 @@ public value MultipoleExpansion extends Expansion {
                                          source : MultipoleExpansion,
                                          target : LocalExpansion) {
         val p : Int = source.terms.region.max(0);
-        for (val (j): Point in [0..p]) {
-            for (val (l): Point in [0..p-j]) {
-                for (val (k): Point in [-j..j]) {
-                    for (val (m): Point in [-l..l]) {
-                        if (Math.abs(k+m) <= (j+l)) {
-                            val B_lmjk : Complex = transform.terms(j+l, k+m);
-                            target.terms(l,m) = target.terms(l,m).add(B_lmjk.multiply(source.terms(j,k)));
-                        }
+        for (val (j,k): Point in source.terms) {
+            for (var l : Int = 0; l<=p-j; l++) {
+                for (var m : Int = -l; m<=l; m++) {
+                    if (Math.abs(k+m) <= (j+l)) {
+                        val B_lmjk : Complex = transform.terms(j+l, k+m);
+                        target.terms(l,m) = target.terms(l,m).add(B_lmjk.multiply(source.terms(j,k)));
                     }
                 }
             }

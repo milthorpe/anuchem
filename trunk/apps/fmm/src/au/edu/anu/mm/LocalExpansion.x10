@@ -29,17 +29,17 @@ public value LocalExpansion extends Expansion {
         val phifac0 : Complex = new Complex(Math.cos(v_pole.phi), Math.sin(v_pole.phi));
         var rfac : Double = rfac0;
         var il : Double = 1.0;
-        for (val (l): Point in [0..p]) {
+        for (var l : Int = 0; l<=p; l++) {
             il = il * Math.max(l,1);
             var ilm : Double = il;
             var phifac : Complex = Complex.ONE;
             exp.terms(l,0) = phifac.multiply(rfac * pplm(l,0) * ilm);
-            for (val (m): Point in [1..l]) {
+            for (var m : Int = 1; m<=l; m++) {
                 ilm = ilm / (l+1-m);
                 phifac = phifac.multiply(phifac0);
                 exp.terms(l,m) = phifac.multiply(rfac * pplm(l,m) * ilm);
             }
-            for (val (m): Point in [-l..-1]) {
+            for (var m : Int = -l; m<=-1; m++) {
                 exp.terms(l,m) = exp.terms(l,-m).conjugate().multiply((2*((-m+1)%2)-1 as Double));
             }
             rfac = rfac * rfac0;
@@ -63,13 +63,11 @@ public value LocalExpansion extends Expansion {
                                          target : LocalExpansion) {
         val p : Int = source.terms.region.max(0);
         val shift : MultipoleExpansion = MultipoleExpansion.getOlm(b, p);
-        for (val (l): Point in [0..p]) {
-            for (val (j): Point in [l..p]) {
-                for (val (m): Point in [-l..l]) {
-                    for (val (k): Point in [l-j+m..-l+j+m]) {
-                        val C_lmjk : Complex = shift.terms(j-l, k-m);
-                        target.terms(l,m) = target.terms(l,m).add(C_lmjk.multiply(source.terms(j,k)));
-                    }
+        for (val (l,m): Point in target.terms) {
+            for (var j : Int = l; j<=p; j++) {
+                for (var k : Int = l-j+m; k<=-l+j+m; k++) {
+                    val C_lmjk : Complex = shift.terms(j-l, k-m);
+                    target.terms(l,m) = target.terms(l,m).add(C_lmjk.multiply(source.terms(j,k)));
                 }
             }
         }
@@ -90,13 +88,11 @@ public value LocalExpansion extends Expansion {
                                          source : LocalExpansion,
                                          target : LocalExpansion) {
         val p : Int = source.terms.region.max(0);
-        for (val (l): Point in [0..p]) {
-            for (val (j): Point in [l..p]) {
-                for (val (m): Point in [-l..l]) {
-                    for (val (k): Point in [l-j+m..-l+j+m]) {
-                        val C_lmjk : Complex = shift.terms(j-l, k-m);
-                        target.terms(l,m) = target.terms(l,m).add(C_lmjk.multiply(source.terms(j,k)));
-                    }
+        for (val (l,m): Point in target.terms) {
+            for (var j : Int = l; j<=p; j++) {
+                for (var k : Int = l-j+m; k<=-l+j+m; k++) {
+                    val C_lmjk : Complex = shift.terms(j-l, k-m);
+                    target.terms(l,m) = target.terms(l,m).add(C_lmjk.multiply(source.terms(j,k)));
                 }
             }
         }
@@ -116,7 +112,7 @@ public value LocalExpansion extends Expansion {
         val transform : MultipoleExpansion = MultipoleExpansion.getOlm(q, v, numTerms);
         var potential : Double = 0.0;
         // TODO use lift/reduction?
-        for (val p : Point{rank==2} in source.terms.region) {
+        for (p in source.terms.region) {
             potential += source.terms(p).multiply(transform.terms(p)).real;
         }
         return potential;
