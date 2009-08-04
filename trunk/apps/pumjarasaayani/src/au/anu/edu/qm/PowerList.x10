@@ -22,40 +22,38 @@ public class PowerList {
     private def init() : void {
        powerList = new HashMap[String,Array[Power]{rank==1}](); 
 
-       val sList:Array[Power]{rank==1} = sList = Array.make[Power]([0..1]);
-       sList(0) = new Power(0,0,0);
-       powerList.put("S", sList);
-
-       val pList:Array[Power]{rank==1} = Array.make[Power]([0..3]);
-       pList(0) = new Power(1,0,0);
-       pList(1) = new Power(0,1,0);
-       pList(2) = new Power(0,0,1);
-       powerList.put("P", pList);
-
-       val dList:Array[Power]{rank==1} = Array.make[Power]([0..6]);
-       dList(0) = new Power(2,0,0);
-       dList(1) = new Power(0,2,0);
-       dList(2) = new Power(0,0,2);
-       dList(3) = new Power(1,1,0);
-       dList(4) = new Power(0,1,1);
-       dList(5) = new Power(1,0,1);
-       powerList.put("D", dList);
-
-       val fList:Array[Power]{rank==1} = Array.make[Power]([0..10]);
-       fList(0) = new Power(3,0,0);
-       fList(1) = new Power(2,1,0);
-       fList(2) = new Power(2,0,1);
-       fList(3) = new Power(1,2,0);
-       fList(4) = new Power(1,1,1);
-       fList(5) = new Power(1,0,2);
-       fList(6) = new Power(0,3,0);
-       fList(7) = new Power(0,2,1);
-       fList(8) = new Power(0,1,2);
-       fList(9) = new Power(0,0,3);
-       powerList.put("F", fList); 
+       powerList.put("S", generatePowerList(0));
+       powerList.put("P", generatePowerList(1));
+       powerList.put("D", generatePowerList(2));
+       powerList.put("F", generatePowerList(3)); 
 
        initCalled = true;
     }
+
+    public def generatePowerList(maxAngularMomentum:Int) : Array[Power]{rank==1} {
+        var n:Int = 0;
+        switch(maxAngularMomentum) {
+          case 0:
+               n = 1; break;
+          case 1:
+               n = 3; break;
+          case 2:
+               n = 6; break;
+          case 3:
+               n = 10; break;
+        } // end switch .. case
+
+        var pList:Array[Power]{rank==1};
+        pList = Array.make[Power]([0..n]);
+     
+        var idx:Int = 0;
+        for(var i:Int=maxAngularMomentum; i>=0; i--)
+            for(var j:Int=maxAngularMomentum-i; j>=0; j--)
+                pList(idx++) = new Power(i, j, maxAngularMomentum-i-j);
+
+        return pList;
+    }
+
 
     static val _theInstance:PowerList = new PowerList();
 
