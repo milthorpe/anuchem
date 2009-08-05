@@ -34,6 +34,26 @@
         </exec>
     </target>
 
+    <target name="build-src-java" depends="check-src" unless="src.uptodate">
+        <echo message="Building source tree"/>
+
+        <fileset id="changed.src.files" dir="${basedir}/src" includes="**/*.x10">
+            <depend targetdir="${target}/classes">
+                <mapper type="glob" from="*.x10" to="*.java"/>
+            </depend>
+        </fileset>
+
+        <pathconvert property="src.list" refid="changed.src.files" dirsep="/" pathsep=" ">
+            <map from="${basedir}${file.separator}src${file.separator}" to=""/>
+        </pathconvert>
+        <echo message="x10c ${src.list}"/>
+
+        <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/src">
+            <arg value="-c"/>
+            <arg value="'x10c' ${x10c.optimize} -sourcepath .:${x10x.xlalib} -d ${target-src} ${src.list}"/>
+        </exec>
+    </target>
+
     <target name="build-src" depends="check-src" unless="src.uptodate">
         <echo message="Building source tree"/>
 
