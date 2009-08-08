@@ -17,10 +17,11 @@ public value Expansion {
     /** The terms X_{lm} (with m >= 0) in this expansion */
     public val terms : Array[Complex]{rank==2};
 
-    public def this(p : Int) {
-        var expRegion : Region{rank==2} = [0..p,-p..p];
-        expRegion = expRegion - Region.makeHalfspace([1,1],1);
-        expRegion = expRegion - Region.makeHalfspace([1,-1],1);
+    public def this(p : Int){p>0} {
+        //var expRegion : Region{rank==2} = [0..p,-p..p];
+        //expRegion = expRegion - Region.makeHalfspace([1,1],1);
+        //expRegion = expRegion - Region.makeHalfspace([1,-1],1);
+        val expRegion : Region{rank==2} = new ExpansionRegion(p);
         this.terms = Array.make[Complex](expRegion->here, (Point)=> Complex.ZERO);
     }
 

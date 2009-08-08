@@ -1,5 +1,7 @@
 package au.edu.anu.mm;
 
+import x10.array.TriangularRegion;
+
 /**
  * This class calculates associated Legendre polynomials.
  * @author milthorpe
@@ -14,7 +16,9 @@ public value AssociatedLegendrePolynomial {
             throw new IllegalArgumentException("abs(x) > 1: Associated Legendre functions are only defined on [-1, 1].");
         }
 
-		val Plm : Array[double]{rank==2} = Array.make[double](Region.makeLowerTriangular(p+1)->here);
+        triRegion : TriangularRegion = new TriangularRegion(0,0,p+1,true);
+        Plm : Array[double]{rank==2} = Array.make[double](triRegion->here);
+		//val Plm : Array[double]{rank==2} = Array.make[double](Region.makeLowerTriangular(p+1)->here);
 		Plm(0,0) = 1.0;
 		val somx2 : double = Math.sqrt((1.0 - x) * (1.0 + x));
 		var fact : double = 1.0;
