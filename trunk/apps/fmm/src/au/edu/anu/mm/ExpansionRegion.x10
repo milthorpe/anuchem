@@ -42,6 +42,13 @@ public value class ExpansionRegion extends BaseRegion{rank==2} {
         return p * p + 2 * (p + 1);
     }
 
+    public def contains(p: Point): boolean {
+        if (p.rank == 2) {
+            return (p(0) >= 0 && p(0) <= this.p && Math.abs(p(1)) <= p(0));
+        }
+        throw U.unsupported(this, "contains(" + p + ")");
+    }
+
     public def complement(): Region(rank) {
         // TODO
         throw U.unsupported(this, "complement()");

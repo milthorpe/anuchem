@@ -38,6 +38,25 @@ public value class TriangularRegion extends BaseRegion{rank==2} {
         return dim * (dim + 1) / 2;
     }
 
+    public def contains(p: Point): boolean {
+        if (p.rank == 2) {
+            if (p(0) >= rowMin && p(0) <= (rowMin + dim)) {
+                if (lower) {
+                    if (p(1) >= colMin && p(1) <= p(0)) {
+                        return true;
+                    }
+                    
+                } else {
+                    if (p(1) <= (colMin + dim) && p(1) >= p(0)) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+        throw U.unsupported(this, "contains(" + p + ")");
+    }
+
     public def complement(): Region(rank) {
         // TODO
         throw U.unsupported(this, "complement()");
@@ -108,16 +127,16 @@ public value class TriangularRegion extends BaseRegion{rank==2} {
         final public def next(): Point(2) {
             nextPoint : Point(2) = [i,j];
             if (lower) {
-                if (j < (colMin + dim - i)) j++;
-                else {
-                    i++;
-                    j = colMin;
-                }
-            } else {
                 if (j < (colMin + dim)) j++;
                 else {
                     i++;
-                    j = colMin + dim - i;
+                    j = colMin + i;
+                }
+            } else {
+                if (j < i) j++;
+                else {
+                    i++;
+                    j = colMin;
                 }
             }
             return nextPoint;
