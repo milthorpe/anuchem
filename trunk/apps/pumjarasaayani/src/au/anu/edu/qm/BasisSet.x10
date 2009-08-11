@@ -8,6 +8,7 @@
 
 package au.anu.edu.qm;
 
+import x10.io.*;
 import x10.util.*;
 
 public class BasisSet { 
@@ -23,14 +24,51 @@ public class BasisSet {
     public def this(name:String, basisDir:String) {
        this.name = name;
 
-       init(name, basisDir);
+       try {
+         init(name, basisDir);
+       } catch(e:Exception) {
+         x10.io.Console.OUT.println("Unable to read basis from : " + basisDir + ".");
+         x10.io.Console.OUT.println("Will use sto3g basis.");
+
+         this.name = "sto3g";
+         init(this.name);
+       } // end of try .. catch block
     }
 
-    private def init(name:String, basisDir:String) {
+    private def init(name:String, basisDir:String) throws IOException {
        basisInfo = new HashMap[String, AtomicBasis]();
 
-       // TODO: use file separator!
+       // TODO: use file separator in the following line!
        val fil = new FileReader(new File(basisDir + "/" + name));       
+       val noOfAtoms = Int.parseInt(fil.readLine());
+
+       for(var i:Int=0; i<noOfAtoms; i++) {
+          var words:ArrayList[String] = Utility.split(fil.readLine(), ' ');
+          var symbol:String = words(0);
+          var noOfContractions:Int = Int.parseInt(words(1));
+
+          var atomBasis:AtomicBasis = new AtomicBasis();
+
+          for(var j:Int=0; j<noOfContractions; j++) {
+             words = Utility.split(fil.readLine(), ' ');
+             var orbitalType:String = words(0);
+             var noOfPrimitives:Int = Int.parseInt(words(1));
+
+             var orbital:Orbital = new Orbital(orbitalType);
+
+             for(var k:Int=0; k<noOfPrimitives; k++) { 
+                words = Utility.split(fil.readLine(), ' ');
+                
+                orbital.add(Double.parseDouble(words(0)),
+                            Double.parseDouble(words(1)));
+             } // end for
+
+             atomBasis.addOrbital(orbital); 
+          } // end for
+
+          basisInfo.put(symbol, atomBasis);
+       } // end for
+
        fil.close();
     }
  

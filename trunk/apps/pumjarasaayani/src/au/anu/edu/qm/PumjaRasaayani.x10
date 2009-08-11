@@ -56,7 +56,7 @@ public class PumjaRasaayani {
 
         Console.OUT.println("\nSetting up basis set: " + basisName);
 
-        val bsf  = new BasisFunctions(mol, basisName);
+        val bsf  = new BasisFunctions(mol, basisName, "basis");
         Console.OUT.println("\nSetting up basis functions over.");
         
         val oneE = new OneElectronIntegrals(bsf, mol);

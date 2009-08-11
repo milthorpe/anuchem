@@ -23,7 +23,7 @@ public class JobInput {
        val fil = new FileReader(new File(inpFile));
 
        val noOfAtoms = Int.parseInt(fil.readLine());
-       var words:ArrayList[String] = split(fil.readLine(), ' ');
+       var words:ArrayList[String] = Utility.split(fil.readLine(), ' ');
        var line:String;
  
        molecule = new Molecule(words(0));
@@ -31,8 +31,10 @@ public class JobInput {
 
        for(var i:Int=0; i<noOfAtoms; i++) { 
          line = fil.readLine();         
-         words = split(line, ' ');      
-         for(var j:Int=0; j<words.size(); j++) x10.io.Console.OUT.println(words.get(j));
+         words = Utility.split(line, ' ');      
+
+         // for(var j:Int=0; j<words.size(); j++) x10.io.Console.OUT.println(words.get(j));
+
          molecule.addAtom(new Atom(words.get(0), 
                                    Double.parseDouble(words.get(1)),
                                    Double.parseDouble(words.get(2)),
@@ -40,26 +42,6 @@ public class JobInput {
        } // end while              
 
        fil.close();
-    }
-
-    public def split(str:String, splitChar:Char) : ArrayList[String] {
-        val strs = new ArrayList[String]();
-
-        var ns:String = str;
-        while(true) {
-           val i = ns.indexOf(splitChar);
-           if (i < 0) {
-             if(ns.length() != 0) strs.add(ns);
-             break;
-           } else if (i == 0) {
-             ns = ns.substring(i+1, ns.length());
-           } else {
-             strs.add(ns.substring(0, i));
-             ns = ns.substring(i+1, ns.length());
-           } // end if
-        }
-
-        return strs;
     }
 
     public def getMolecule()  : Molecule = molecule;

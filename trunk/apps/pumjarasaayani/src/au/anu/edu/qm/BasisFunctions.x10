@@ -16,19 +16,19 @@ public class BasisFunctions {
     var basisFunctions:ArrayList[ContractedGaussian];
     var shellList:ShellList;
 
-    public def this(mol:Molecule, basNam:String) { 
+    public def this(mol:Molecule, basNam:String, basisDir:String) { 
         this.molecule  = mol;
         this.basisName = basNam;
 
         basisFunctions = new ArrayList[ContractedGaussian](); 
-        initBasisFunctions();
+        initBasisFunctions(basisDir);
 
         shellList = new ShellList();
         initShellList();
     } 
 
-    private def initBasisFunctions() : void {
-        val basisSet:BasisSet = new BasisSet(basisName);
+    private def initBasisFunctions(basisDir:String) : void {
+        val basisSet:BasisSet = new BasisSet(basisName, basisDir);
 
         for(atom in molecule.getAtoms()) {
             val orbitals = basisSet.getBasis(atom).getOrbitals();
