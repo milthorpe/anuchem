@@ -19,6 +19,20 @@ public class BasisSet {
 
        init(name);
     } 
+
+    public def this(name:String, basisDir:String) {
+       this.name = name;
+
+       init(name, basisDir);
+    }
+
+    private def init(name:String, basisDir:String) {
+       basisInfo = new HashMap[String, AtomicBasis]();
+
+       // TODO: use file separator!
+       val fil = new FileReader(new File(basisDir + "/" + name));       
+       fil.close();
+    }
  
     private def init(name:String) : void {
        basisInfo = new HashMap[String, AtomicBasis]();

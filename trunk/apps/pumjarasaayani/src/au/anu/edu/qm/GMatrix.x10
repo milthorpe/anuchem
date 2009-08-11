@@ -92,9 +92,9 @@ public class GMatrix extends Matrix {
 
                         /**
                          x10.io.Console.OUT.println("\t" + kl);
-                         x10.io.Console.OUT.println("\t\t <" + i + " " + j + " | " + k + " " + l + ">"); 
-                         x10.io.Console.OUT.println("\t\t <" + i + " " + k + " | " + j + " " + l + ">"); 
-                         x10.io.Console.OUT.println("\t\t <" + i + " " + l + " | " + k + " " + j + ">"); 
+                         x10.io.Console.OUT.println("\t\t <" + i + " " + j + " | " + k + " " + l + "> : " + twoEIntVal1); 
+                         x10.io.Console.OUT.println("\t\t <" + i + " " + k + " | " + j + " " + l + "> : " + twoEIntVal2); 
+                         x10.io.Console.OUT.println("\t\t <" + i + " " + l + " | " + k + " " + j + "> : " + twoEIntVal3); 
                         **/
 
                         kl++;

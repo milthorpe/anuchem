@@ -50,7 +50,9 @@ public class OneElectronIntegrals {
              
              ovr(i,j) = bfi.overlap(bfj); 
              h(i,j)   = bfi.kinetic(bfj);
- 
+
+             // x10.io.Console.OUT.println("K = " + i + ", " + j + " = " + h(i, j));
+
              for(var k:Int=0; k<nat; k++)
                 h(i,j) += atno(k) * bfi.nuclear(bfj, atms.get(k));
           } // end for

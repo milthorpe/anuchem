@@ -1,5 +1,6 @@
 /**
- * PumjaRasaayani .. first x10 Quantum Chemistry code (??!!) ;-)
+ * PumjaRasaayani .. first, fully working, x10 Quantum Chemistry code (??!!) ;-)
+ * 
  * Pumja : Sanskrit for Quantum
  * Rasaayn : Chemical (Rasayan Shastra : Chemistry / Chemical Science)
  *
