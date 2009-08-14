@@ -11,7 +11,7 @@ public value class ExpansionRegion extends BaseRegion{rank==2} {
      * or local expansion of the given dimension.
      * @param p the dimension of the expansion
      */
-    public def this(p : Int){p>0} {
+    public def this(p : Int) {
         super(p, false, true);
         this.p = p;
     }
