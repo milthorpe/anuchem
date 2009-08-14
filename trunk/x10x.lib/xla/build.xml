@@ -3,7 +3,7 @@
 <project name="X10 Linear Algebra project" default="build" basedir=".">
     <property name="x10.testlib" location="${user.home}/x10-17/x10.tests/examples/x10lib"/>
     <property name="bash.exe" value="bash"/>    
-    <property name="optimize" value="false" />
+    <property name="optimize" value="true" />
 	<property name="target" location="${basedir}/target" />
 	<property name="target-src" location="${target}/classes" />
 	<property name="target-test" location="${target}/test-classes" />
