@@ -11,14 +11,14 @@ package au.anu.edu.qm;
 import x10.util.*;
 
 public class ContractedGaussian { 
-    var centeredAtom:Atom;
-    var power:Power;
-    var primitives:ArrayList[PrimitiveGaussian];
+    val centeredAtom:Atom;
+    val power:Power;
+    val primitives:ArrayList[PrimitiveGaussian];
     var normalization:Double;
  
-    var exponents:ArrayList[Double];
-    var coefficients:ArrayList[Double];
-    var primNorms:ArrayList[Double];
+    val exponents:ArrayList[Double];
+    val coefficients:ArrayList[Double];
+    val primNorms:ArrayList[Double];
 
     public def this(atm:Atom, pwr:Power) { 
         this.centeredAtom = atm;

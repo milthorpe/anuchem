@@ -11,7 +11,7 @@ package au.anu.edu.qm;
 import x10.util.*;
 
 public class AtomicBasis { 
-    var orbitals:ArrayList[Orbital];
+    val orbitals:ArrayList[Orbital];
 
     public def this() { 
        orbitals = new ArrayList[Orbital]();

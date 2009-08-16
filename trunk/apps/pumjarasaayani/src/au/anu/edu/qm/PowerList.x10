@@ -12,16 +12,15 @@ import x10.util.*;
 
 public class PowerList { 
 
-    var powerList:HashMap[String,Array[Power]{rank==1}];
+    val powerList:HashMap[String,Array[Power]{rank==1}];
     var initCalled:Boolean;
 
     private def this() { 
        initCalled = false;
+       powerList = new HashMap[String,Array[Power]{rank==1}](); 
     }
 
     private def init() : void {
-       powerList = new HashMap[String,Array[Power]{rank==1}](); 
-
        powerList.put("S", generatePowerList(0));
        powerList.put("P", generatePowerList(1));
        powerList.put("D", generatePowerList(2));

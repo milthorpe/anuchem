@@ -12,7 +12,7 @@ import x10.io.*;
 import x10.util.*;
 
 public class AtomInfo { 
-    var atomicNumbers:HashMap[String, Int];
+    val atomicNumbers:HashMap[String, Int];
     val atomInfoFile = "AtomInfo.conf";
 
     private def this() { 

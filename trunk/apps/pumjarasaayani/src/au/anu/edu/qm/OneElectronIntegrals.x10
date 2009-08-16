@@ -9,14 +9,18 @@
 package au.anu.edu.qm;
 
 public class OneElectronIntegrals { 
-    var basisFunctions:BasisFunctions;
-    var molecule:Molecule;
-    var hCore:HCore;
-    var overlap:Overlap;
+    val basisFunctions:BasisFunctions;
+    val molecule:Molecule;
+    val hCore:HCore;
+    val overlap:Overlap;
 
     public def this(bfs:BasisFunctions, mol:Molecule) { 
        this.basisFunctions = bfs;
        this.molecule = mol;
+
+       val nbf  = basisFunctions.getBasisFunctions().size();
+       hCore    = new HCore(nbf);
+       overlap  = new Overlap(nbf);
  
        compute1E();
     } 
@@ -29,8 +33,6 @@ public class OneElectronIntegrals {
     protected def compute1E() : void {
        val bfs  = basisFunctions.getBasisFunctions();
        val nbf  = bfs.size();
-       hCore    = new HCore(nbf);
-       overlap  = new Overlap(nbf);
        val nat  = molecule.getNumberOfAtoms();
        val atno = Array.make[Double]([0..nat]);
        val ai   = AtomInfo.getInstance();

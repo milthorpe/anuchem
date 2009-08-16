@@ -9,9 +9,9 @@
 package au.anu.edu.qm;
 
 public abstract class SCFMethod { 
-    protected var molecule:Molecule;
-    protected var oneE:OneElectronIntegrals;
-    protected var twoE:TwoElectronIntegrals;
+    protected val molecule:Molecule;
+    protected val oneE:OneElectronIntegrals;
+    protected val twoE:TwoElectronIntegrals;
 
     protected var maxIteration:Int;
     protected var energyTolerance:Double;

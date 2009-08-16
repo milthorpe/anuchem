@@ -11,10 +11,10 @@ package au.anu.edu.qm;
 import x10.util.*;
 
 public class BasisFunctions { 
-    var molecule:Molecule;
-    var basisName:String;
-    var basisFunctions:ArrayList[ContractedGaussian];
-    var shellList:ShellList;
+    val molecule:Molecule;
+    val basisName:String;
+    val basisFunctions:ArrayList[ContractedGaussian];
+    val shellList:ShellList;
 
     public def this(mol:Molecule, basNam:String, basisDir:String) { 
         this.molecule  = mol;

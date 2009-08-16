@@ -9,7 +9,7 @@
 package au.anu.edu.qm;
 
 public class Power { 
-    var l:Int, m:Int, n:Int;
+    val l:Int, m:Int, n:Int;
 
     public def this() { l = m = n = 0; }
 

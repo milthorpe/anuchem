@@ -9,8 +9,8 @@
 package au.anu.edu.qm;
 
 public class Atom { 
-    var x:Double, y:Double, z:Double;
-    var symbol:String;
+    val x:Double, y:Double, z:Double;
+    val symbol:String;
 
     public def this(symbol:String, x:Double, y:Double, z:Double) { 
         this.symbol = symbol;

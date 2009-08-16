@@ -26,7 +26,10 @@ public class Density extends Matrix {
             for(j=0; j<N; j++)
                 dVector.mat(i, j) = mos.mat(i, j);
 
-        mat = dVector.transpose().mul(dVector).getMatrix();
+        val res = dVector.transpose().mul(dVector).getMatrix();
+        for(i=0; i<N; i++)
+           for(j=0; j<N; j++)
+              mat(i, j) = res(i, j);
     }
 }
 

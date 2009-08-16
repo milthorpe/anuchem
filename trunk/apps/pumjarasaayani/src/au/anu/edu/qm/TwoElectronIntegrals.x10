@@ -8,17 +8,37 @@
 
 package au.anu.edu.qm;
 
+import x10.util.*;
+
 public class TwoElectronIntegrals { 
-    var basisFunctions:BasisFunctions;
-    var twoEInts:Array[Double]{rank==1};
-    var direct:Boolean;
-    var noOfIntegrals:Int;
+    val basisFunctions:BasisFunctions;
+    val twoEInts:Array[Double]{rank==1};
+    val direct:Boolean;
+    val noOfIntegrals:Int;
+    val contractedList:ArrayList[ContractedGaussian];
+
+    public def this() {
+        // Dummy constructor
+        twoEInts = Array.make[Double]([0..1]);
+        contractedList = new ArrayList[ContractedGaussian]();
+        basisFunctions = null;
+        direct = false;
+        noOfIntegrals = 0;
+    }
 
     public def this(bfs:BasisFunctions) { 
         basisFunctions = bfs;
         direct = false;
 
-        init();
+        val noOfBasisFunctions = basisFunctions.getBasisFunctions().size();
+        noOfIntegrals = noOfBasisFunctions * (noOfBasisFunctions + 1)
+                          * (noOfBasisFunctions * noOfBasisFunctions
+                             + noOfBasisFunctions + 2) / 8;
+
+        this.contractedList = null;
+
+        // allocate required memory
+        twoEInts = Array.make[Double]([0..noOfIntegrals]);
         compute2E();
     }
 
@@ -26,32 +46,34 @@ public class TwoElectronIntegrals {
         basisFunctions = bfs;
         direct = isDirect;
 
-        init();
-        if (!direct) compute2E();
-    }
-
-    private def init() : void {
         val noOfBasisFunctions = basisFunctions.getBasisFunctions().size();
         noOfIntegrals = noOfBasisFunctions * (noOfBasisFunctions + 1)
                           * (noOfBasisFunctions * noOfBasisFunctions
                              + noOfBasisFunctions + 2) / 8;
+
+        if (!direct) { 
+           // allocate required memory
+           twoEInts = Array.make[Double]([0..noOfIntegrals]);
+           this.contractedList = null;
+           compute2E();
+        } else { 
+           this.contractedList = basisFunctions.getBasisFunctions();
+           twoEInts = Array.make[Double]([0..1]);
+        } // end if
     }
 
     public def isDirect() : Boolean = direct;
     public def getNumberOfIntegrals() : Int = noOfIntegrals;
 
     public def compute2E(i:Int, j:Int, k:Int, l:Int) : Double {
-        val bfs = basisFunctions.getBasisFunctions();
-
-        return coulomb(bfs.get(i), bfs.get(j), bfs.get(k), bfs.get(l));
+        return coulomb(contractedList.get(i), contractedList.get(j), 
+                       contractedList.get(k), contractedList.get(l));
     }
 
     protected def compute2E() : void {
         val bfs = basisFunctions.getBasisFunctions();
         val noOfBasisFunctions = bfs.size();
         
-        // allocate required memory
-        twoEInts = Array.make[Double]([0..noOfIntegrals]);
 
         var i:Int, j:Int, k:Int, l:Int, ij:Int, kl:Int, ijkl:Int;        
         
@@ -123,22 +145,27 @@ public class TwoElectronIntegrals {
              kcExp:Double, kcCoef:Double, kcNorm:Double;
          var repulsionTerm:Double;
 
-         for(i=0; i<aExps.size(); i++) {
+         val na = aExps.size();
+         val nb = bExps.size();
+         val nc = cExps.size();
+         val nd = dExps.size();
+
+         for(i=0; i<na; i++) {
              iaCoef = aCoefs.get(i);
              iaExp  = aExps.get(i);
              iaNorm = aNorms.get(i);
 
-             for(j=0; j<bExps.size(); j++) {
+             for(j=0; j<nb; j++) {
                 jbCoef = bCoefs.get(j);
                 jbExp  = bExps.get(j);
                 jbNorm = bNorms.get(j);
 
-                for(k=0; k<cExps.size(); k++) {
+                for(k=0; k<nc; k++) {
                     kcCoef = cCoefs.get(k);
                     kcExp  = cExps.get(k);
                     kcNorm = cNorms.get(k);
 
-                    for(l=0; l<dExps.size(); l++) {
+                    for(l=0; l<nd; l++) {
                         repulsionTerm = coulombRepulsion(
                                          aOrigin, iaNorm, aPower, iaExp,
                                          bOrigin, jbNorm, bPower, jbExp,

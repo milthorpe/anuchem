@@ -16,7 +16,13 @@ public class Fock extends Matrix {
     }
 
     public def compute(hCore:HCore, gMatrix:GMatrix) : void {
-        mat = hCore.add(gMatrix).getMatrix();
+        val res = hCore.add(gMatrix).getMatrix();
+        val N   = getRowCount();
+        
+        var i:Int, j:Int;
+        for(i=0; i<N; i++)
+           for(j=0; j<N; j++)
+              mat(i, j) = res(i, j);
     }
 }
 

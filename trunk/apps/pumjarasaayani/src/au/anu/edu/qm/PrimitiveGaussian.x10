@@ -9,10 +9,10 @@
 package au.anu.edu.qm;
 
 public class PrimitiveGaussian { 
-    var origin:Atom;
-    var power:Power;
-    var exponent:Double;
-    var coefficient:Double;
+    val origin:Atom;
+    val power:Power;
+    val exponent:Double;
+    val coefficient:Double;
     var normalization:Double;
 
     public def this(atm:Atom, pwr:Power, exp:Double, coeff:Double) { 

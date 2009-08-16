@@ -124,23 +124,25 @@ public class IntegralsUtils {
      * Numerical recipes, section 6.1
      */
     public static def gammln(x:Double) : Double {
-        // TODO: this needs to be changed
-        val cof = Array.make[Double]([
-                    76.18009172947146,     -86.50532032941677,
-                    24.01409824083091,     -1.231739572450155,
-                    0.1208650973866179e-2, -0.5395239384953e-5
-                  ]);
-
         var y:Double = x;
         var tmp:Double = x + 5.5;
 
         tmp -= (x + 0.5) * Math.log(tmp);
 
         var ser:Double = 1.000000000190015;
-        for(var j:Int=0; j<6; j++) {
+
             y++;
-            ser += cof(j) / y;
-        } // end for
+            ser += 76.18009172947146 / y;
+            y++;
+            ser += -86.50532032941677 / y;
+            y++;
+            ser += 24.01409824083091 / y;
+            y++;
+            ser += -1.231739572450155 / y;
+            y++;
+            ser += 0.1208650973866179e-2 / y;
+            y++;
+            ser += -0.5395239384953e-5 / y;
 
         return (-tmp + Math.log((2.5066282746310005 * ser) / x));
     }
@@ -151,13 +153,5 @@ public class IntegralsUtils {
     private static FPMIN:Double = 1.0e-30;
 
     private static MAX_ITERATION:Int = 100;
-
-    /** 
-    private static cof:Array[Double] = Array.make[Double]([
-        76.18009172947146,     -86.50532032941677,
-        24.01409824083091,     -1.231739572450155,
-        0.1208650973866179e-2, -0.5395239384953e-5
-    ]);
-    **/
 }
 
