@@ -9,7 +9,7 @@ import x10x.matrix.Matrix;
  * @author V.Ganesh
  */
 public class Vector { 
-    var vec:Array[Double]{rank==1}; 
+    val vec:Array[Double]{rank==1}; 
 
     /**
      * Construct a Vector of dimention N

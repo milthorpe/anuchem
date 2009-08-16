@@ -10,7 +10,7 @@ import x10x.vector.Vector;
  * @author V.Ganesh
  */
 public class Matrix { 
-    protected var mat : Array[Double]{rank==2};
+    protected val mat : Array[Double]{rank==2};
 
     /**
      * Construct an NxN matrix
