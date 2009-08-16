@@ -175,8 +175,8 @@ public value MultipoleExpansion extends Expansion {
                                          target : LocalExpansion) {
         val p : Int = source.terms.region.max(0);
         for (val (j,k): Point in source.terms) {
-            for (var l : Int = 0; l<=p-j; l++) {
-                for (var m : Int = -l; m<=l; m++) {
+            for ((l) in 0..p-j) {
+                for ((m) in -l..l) {
                     if (Math.abs(k+m) <= (j+l)) {
                         val B_lmjk : Complex = transform.terms(j+l, k+m);
                         target.terms(l,m) = target.terms(l,m).add(B_lmjk.multiply(source.terms(j,k)));

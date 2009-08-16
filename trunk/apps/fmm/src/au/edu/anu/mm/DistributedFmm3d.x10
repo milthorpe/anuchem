@@ -198,26 +198,32 @@ public class DistributedFmm3d {
             multipoleTransforms(level, i, j, k) = LocalExpansion.getMlm(translationVector, numTerms);
         } 
 
-        var wellSep : Int = 0;
-        var nearField : Int = 0;
+        //var wellSep : Int = 0;
+        //var nearField : Int = 0;
         // top level (==2)
         for ((boxIndex1) in 0..63) {
-            box1 : FmmBox = boxes(boxIndex1, 2);
-            if (box1 != null) {
-                //Console.OUT.println("transformToLocal: box(" + boxIndex1 + "," + 2 + ")");
-                for ((boxIndex2) in 0..boxIndex1-1) { 
-                    box2 : FmmBox = boxes(boxIndex2, 2);
-                    if (box2 != null) {
-                        //Console.OUT.println("... and box(" + 2 + "," + boxIndex2 + ")");
-                        if (box1.wellSeparated(ws, box2)) {
-                            translation : ValRail[Int]{length==3} = getTranslationIndex(box1, box2);
-                                    transform12 : LocalExpansion = multipoleTransforms(2, translation(0), translation(1), translation(2));
-                                    MultipoleExpansion.transformAndAddToLocal(transform12, box1.multipoleExp, box2.localExp);
-                                    transform21 : LocalExpansion = multipoleTransforms(2, -translation(0), -translation(1), -translation(2));
-                                    MultipoleExpansion.transformAndAddToLocal(transform21, box2.multipoleExp, box1.localExp);
-                            wellSep++;
-                        } else if (numLevels==2) {
-                            nearField++;
+            at (boxes.dist(boxIndex1,2)) {
+                box1 : FmmBox = boxes(boxIndex1, 2);
+                if (box1 != null) {
+                    //Console.OUT.println("transformToLocal: box(" + boxIndex1 + "," + 2 + ")");
+                    for ((boxIndex2) in 0..boxIndex1-1) { 
+                        at (boxes.dist(boxIndex2,2)) {
+                            box2 : FmmBox = boxes(boxIndex2, 2);
+                            if (box2 != null) {
+                                //Console.OUT.println("... and box(" + 2 + "," + boxIndex2 + ")");
+                                if (box1.wellSeparated(ws, box2)) {
+                                    translation : ValRail[Int]{length==3} = getTranslationIndex(box1, box2);
+                                            transform12 : LocalExpansion = at (Place.FIRST_PLACE) {multipoleTransforms(2, translation(0), translation(1), translation(2))};
+                                            box2.localExp.transformAndAddToLocal(transform12, at (boxes.dist(boxIndex1,2)) {box1.multipoleExp});
+                                            at (boxes.dist(boxIndex1,2)) {
+                                                transform21 : LocalExpansion = at (Place.FIRST_PLACE) {multipoleTransforms(2, -translation(0), -translation(1), -translation(2))};
+                                                box1.localExp.transformAndAddToLocal(transform21, at (boxes.dist(boxIndex2,2)) {box2.multipoleExp});
+                                            }
+                                    //wellSep++;
+                                } else if (numLevels==2) {
+                                    //nearField++;
+                                }
+                            }
                         }
                     }
                 }
@@ -226,24 +232,30 @@ public class DistributedFmm3d {
 
         for ((level) in 3..numLevels) {
             for ((boxIndex1) in 0..(Math.pow(8,level) as Int)-1) {
+                at (boxes.dist(boxIndex1,level)) {
                 box1 : FmmBox = boxes(boxIndex1, level);
-                if (box1 != null) {
-                    //Console.OUT.println("transformToLocal: box(" + boxIndex1 + "," + level + ")");
-                    for ((boxIndex2) in 0..boxIndex1-1) { 
-                        box2 : FmmBox = boxes(boxIndex2, level);
-                        if (box2 != null) {
-                            //Console.OUT.println("... and box(" + level + "," + boxIndex2 + ")");
-                            if (!box1.parent.wellSeparated(ws, box2.parent)) {
-                                if (box1.wellSeparated(ws, box2)) {
-                                    translation : ValRail[Int]{length==3} = getTranslationIndex(box1, box2);
-                                    transform12 : LocalExpansion = multipoleTransforms(level, translation(0), translation(1), translation(2));
-                                    MultipoleExpansion.transformAndAddToLocal(transform12, box1.multipoleExp, box2.localExp);
-                                    transform21 : LocalExpansion = multipoleTransforms(level, -translation(0), -translation(1), -translation(2));
-                                    MultipoleExpansion.transformAndAddToLocal(transform21, box2.multipoleExp, box1.localExp);
-                                    wellSep++;
-                                    
-                                } else if (level==numLevels) {
-                                    nearField++;
+                    if (box1 != null) {
+                        //Console.OUT.println("transformToLocal: box(" + boxIndex1 + "," + level + ")");
+                        for ((boxIndex2) in 0..boxIndex1-1) {
+                            at (boxes.dist(boxIndex2,level)) {
+                                box2 : FmmBox = boxes(boxIndex2, level);
+                                if (box2 != null) {
+                                    //Console.OUT.println("... and box(" + level + "," + boxIndex2 + ")");
+                                    if (!box1.parent.wellSeparated(ws, box2.parent)) {
+                                        if (box1.wellSeparated(ws, box2)) {
+                                            translation : ValRail[Int]{length==3} = getTranslationIndex(box1, box2);
+                                            transform12 : LocalExpansion = at (Place.FIRST_PLACE){multipoleTransforms(level, translation(0), translation(1), translation(2))};
+                                            box2.localExp.transformAndAddToLocal(transform12, at (boxes.dist(boxIndex1,level)) {box1.multipoleExp});
+                                            at (boxes.dist(boxIndex1,2)) {
+                                                transform21 : LocalExpansion = at (Place.FIRST_PLACE){multipoleTransforms(level, -translation(0), -translation(1), -translation(2))};
+                                                box1.localExp.transformAndAddToLocal(transform21, at (boxes.dist(boxIndex2,level)) {box2.multipoleExp});
+                                            }
+                                            //wellSep++;
+                                            
+                                        } else if (level==numLevels) {
+                                            //nearField++;
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -254,7 +266,7 @@ public class DistributedFmm3d {
                 }
             }
         }
-        Console.OUT.println("wellSep = " + wellSep + " nearField = " + nearField);
+        //Console.OUT.println("wellSep = " + wellSep + " nearField = " + nearField);
     }
 
     def getEnergy() : Double {
@@ -272,30 +284,34 @@ public class DistributedFmm3d {
 
         var fmmEnergy : Double = 0.0;
         for ((boxIndex1) in 0..(Math.pow(8,numLevels) as Int)-1) { 
-            box : FmmLeafBox = boxes(boxIndex1, numLevels) as FmmLeafBox;
-            if (box != null) {
-                for ((atomIndex1) in 0..box.atoms.length()-1) {
-                    atom1 : Atom = box.atoms(atomIndex1);
-                    v : Tuple3d = atom1.centre.sub(box.getCentre(size));
-                    farFieldEnergy : Double = LocalExpansion.getPotential(atom1.charge, v, box.localExp);
-                    fmmEnergy += farFieldEnergy;
+            at (boxes.dist(boxIndex1,numLevels)) {
+                box : FmmLeafBox = boxes(boxIndex1, numLevels) as FmmLeafBox;
+                if (box != null) {
+                    for ((atomIndex1) in 0..box.atoms.length()-1) {
+                        atom1 : Atom = box.atoms(atomIndex1);
+                        v : Tuple3d = atom1.centre.sub(box.getCentre(size));
+                        farFieldEnergy : Double = LocalExpansion.getPotential(atom1.charge, v, box.localExp);
+                        fmmEnergy += farFieldEnergy;
 
-                    // direct calculation with all atoms in same box
-                    for ((sameBoxAtomIndex) in 0..atomIndex1-1) {
-                        sameBoxAtom : Atom = box.atoms(sameBoxAtomIndex);
-                        val pairEnergy : Double = pairEnergy(atom1, sameBoxAtom);
-                        fmmEnergy += 2 * pairEnergy;
-                    }
+                        // direct calculation with all atoms in same box
+                        for ((sameBoxAtomIndex) in 0..atomIndex1-1) {
+                            sameBoxAtom : Atom = box.atoms(sameBoxAtomIndex);
+                            val pairEnergy : Double = pairEnergy(atom1, sameBoxAtom);
+                            fmmEnergy += 2 * pairEnergy;
+                        }
 
-                    // direct calculation with all atoms in non-well-separated boxes
-                    for ((boxIndex2) in 0..boxIndex1-1) {
-                        box2 : FmmLeafBox = boxes(boxIndex2, numLevels) as FmmLeafBox;
-                        if (box2 != null) {
-                            if (!box.wellSeparated(ws, box2)) {
-                                for ((atomIndex2) in 0..box2.atoms.length()-1) {
-                                    atom2 : Atom = box2.atoms(atomIndex2);
-                                    val pairEnergy : Double = pairEnergy(atom1, atom2);
-                                    fmmEnergy += 2 * pairEnergy;
+                        // direct calculation with all atoms in non-well-separated boxes
+                        for ((boxIndex2) in 0..boxIndex1-1) {
+                            at (boxes.dist(boxIndex2,numLevels)) {
+                                box2 : FmmLeafBox = boxes(boxIndex2, numLevels) as FmmLeafBox;
+                                if (box2 != null) {
+                                    if (!box.wellSeparated(ws, box2)) {
+                                        for ((atomIndex2) in 0..box2.atoms.length()-1) {
+                                            atom2 : Atom = box2.atoms(atomIndex2);
+                                            val pairEnergy : Double = pairEnergy(atom1, atom2);
+                                            fmmEnergy += 2 * pairEnergy;
+                                        }
+                                    }
                                 }
                             }
                         }

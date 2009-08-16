@@ -98,6 +98,31 @@ public value LocalExpansion extends Expansion {
         }
     }
 
+   /** 
+     * Transform a multipole expansion centred around the origin into a
+     * Taylor expansion centred about b, and adds to this expansion.
+     * This corresponds to "Operator B", Equations 13-15 in White & Head-Gordon.
+     * This operator is inexact due to truncation of the series at <em>p</em> poles.
+     * Note: this defines B^lm_jk(b) = M_j+l,k+m(b), therefore restrict l to [0..p-j]
+     * @param b the vector along which to translate the multipole
+     * @param source the source multipole expansion, centred at the origin
+     */
+    public def transformAndAddToLocal(transform : LocalExpansion,
+                                         source : MultipoleExpansion) {
+        val p : Int = source.terms.region.max(0);
+        for (val (j,k): Point in source.terms) {
+            for ((l) in 0..p-j) {
+                for ((m) in -l..l) {
+                    if (Math.abs(k+m) <= (j+l)) {
+                        val B_lmjk : Complex = at (transform.terms.dist(j+l, k+m)) {transform.terms(j+l, k+m)};
+                        val O_jk : Complex = at (source.terms.dist(j,k)) {source.terms(j,k)};
+                        this.terms(l,m) = this.terms(l,m).add(B_lmjk.multiply(O_jk));
+                    }
+                }
+            }
+        }
+    }
+
     /**
      * Transforms a local expansion about the origin to the potential
      * acting on <code>q</code> at point <code>v</code>.
