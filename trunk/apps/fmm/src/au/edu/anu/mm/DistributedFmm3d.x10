@@ -45,6 +45,10 @@ public class DistributedFmm3d {
     /** A cache of multipole translations between parent box centres and child box centres. */
     val multipoleTranslations : Array[MultipoleExpansion]{rank==4};
 
+    // TODO use shared local variable within getEnergy() - 
+    // not currently possible due to <a href="http://jira.codehaus.org/browse/XTENLANG-505"/>
+    var fmmEnergy : Double = 0.0;
+
     /**
      * Initialises a fast multipole method electrostatics calculation
      * for the given system of atoms.
@@ -109,7 +113,7 @@ public class DistributedFmm3d {
         }
 
         multipoleLowestLevel();
-        /*
+        
         var nonEmpty : Int = 0;
         for (val (i,j) in boxes.region) {
             if (boxes(i,j) != null) {
@@ -118,7 +122,7 @@ public class DistributedFmm3d {
             }
         }
         Console.OUT.println("nonEmpty = " + nonEmpty);
-        */
+        
         combineMultipoles();
 
         transformToLocal();
@@ -137,13 +141,19 @@ public class DistributedFmm3d {
      * lowest level box that contains the atom.
      */
     def multipoleLowestLevel() {
+        
         for ((i) in 0..atoms.length-1) {
             atom : Atom = atoms(i);
             boxLocation : ValRail[Int]{length==3} = getLowestLevelBoxLocation(atom);
             boxIndex : Int = FmmBox.getBoxIndex(boxLocation, numLevels);
+            Console.OUT.println("atoms(" + i + ") => box(" + boxIndex + ")");
             parentBox : FmmParentBox = getParentBox(boxIndex, numLevels);
+            Console.OUT.println(boxes.dist(boxIndex, numLevels));
+            Console.OUT.println("boxIndex = " + boxIndex + " numLevels = " + numLevels);
             at (boxes.dist(boxIndex, numLevels)) {
+                Console.OUT.println("boxIndex = " + boxIndex + " numLevels = " + numLevels);
                 var box : FmmLeafBox = boxes(boxIndex, numLevels) as FmmLeafBox;
+                //Console.OUT.println("about to access parent");
                 if (box == null) {
                     box = new FmmLeafBox(numLevels, boxLocation, numTerms, parentBox);
                     if (parentBox != null) {
@@ -151,8 +161,8 @@ public class DistributedFmm3d {
                     }
                     boxes(boxIndex, numLevels) = box;
                 }
+                //Console.OUT.println("about to access atom");
                 box.atoms.add(atom);
-                //Console.OUT.println("atoms(" + i + ") => box(" + boxIndex + ")");
                 v : Tuple3d = box.getCentre(size).sub(atom.centre);
                 olm : MultipoleExpansion = MultipoleExpansion.getOlm(atom.charge, v, numTerms);
                 box.multipoleExp.add(olm);
@@ -282,7 +292,6 @@ public class DistributedFmm3d {
         Console.OUT.println("directEnergy = " + directEnergy);
         */
 
-        var fmmEnergy : Double = 0.0;
         for ((boxIndex1) in 0..(Math.pow(8,numLevels) as Int)-1) { 
             at (boxes.dist(boxIndex1,numLevels)) {
                 box : FmmLeafBox = boxes(boxIndex1, numLevels) as FmmLeafBox;
@@ -291,13 +300,13 @@ public class DistributedFmm3d {
                         atom1 : Atom = box.atoms(atomIndex1);
                         v : Tuple3d = atom1.centre.sub(box.getCentre(size));
                         farFieldEnergy : Double = LocalExpansion.getPotential(atom1.charge, v, box.localExp);
-                        fmmEnergy += farFieldEnergy;
+                        atomic {fmmEnergy += farFieldEnergy;}
 
                         // direct calculation with all atoms in same box
                         for ((sameBoxAtomIndex) in 0..atomIndex1-1) {
                             sameBoxAtom : Atom = box.atoms(sameBoxAtomIndex);
                             val pairEnergy : Double = pairEnergy(atom1, sameBoxAtom);
-                            fmmEnergy += 2 * pairEnergy;
+                            atomic {fmmEnergy += 2 * pairEnergy;}
                         }
 
                         // direct calculation with all atoms in non-well-separated boxes
@@ -309,7 +318,7 @@ public class DistributedFmm3d {
                                         for ((atomIndex2) in 0..box2.atoms.length()-1) {
                                             atom2 : Atom = box2.atoms(atomIndex2);
                                             val pairEnergy : Double = pairEnergy(atom1, atom2);
-                                            fmmEnergy += 2 * pairEnergy;
+                                            atomic {fmmEnergy += 2 * pairEnergy;}
                                         }
                                     }
                                 }
@@ -333,20 +342,29 @@ public class DistributedFmm3d {
     }
 
     def getParentBox(childIndex : Int, childLevel : Int) : FmmParentBox {
+        Console.OUT.println("getParentBox(" + childIndex + ", " + childLevel + ")");
         if (childLevel == 2)
             return null;
         parentIndex : Int = getParentIndex(childIndex, childLevel);
         parentLevel : Int = childLevel - 1;
-        parentLocation : ValRail[Int]{length==3} = getBoxLocation(parentIndex, parentLevel);
-        var parent : FmmParentBox = boxes(parentIndex, parentLevel) as FmmParentBox;
+        var parent : FmmParentBox = at (boxes.dist(parentIndex, parentLevel)) {
+            boxes(parentIndex, parentLevel) as FmmParentBox
+        };
+        
         if (parent == null) {
-            grandparent : FmmParentBox = getParentBox(parentIndex, parentLevel);
-            parent = new FmmParentBox(parentLevel, parentLocation, numTerms, grandparent);
-            if (grandparent != null)
-                grandparent.children.add(parent);
-            boxes(parentIndex, parentLevel) = parent;
+            parent = at (boxes.dist(parentIndex, parentLevel)) {getNewParent(parentIndex, parentLevel)};
         }
         return parent;
+    }
+
+    def getNewParent(parentIndex : int, parentLevel : Int) : FmmParentBox {
+        grandparent : FmmParentBox = getParentBox(parentIndex, parentLevel);
+        parentLocation : ValRail[Int]{length==3} = getBoxLocation(parentIndex, parentLevel);
+        newParent : FmmParentBox = new FmmParentBox(parentLevel, parentLocation, numTerms, grandparent);
+        if (grandparent != null)
+            grandparent.children.add(newParent);
+        boxes(parentIndex, parentLevel) = newParent;
+        return newParent;
     }
 
     def getBoxLocation(index : Int, level : Int) : ValRail[Int]{length==3} {
