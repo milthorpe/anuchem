@@ -8,7 +8,7 @@
 
 package au.anu.edu.qm;
 
-public class Atom { 
+public value Atom { 
     val x:Double, y:Double, z:Double;
     val symbol:String;
 

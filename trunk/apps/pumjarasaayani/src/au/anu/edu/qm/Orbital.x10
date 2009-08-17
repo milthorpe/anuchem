@@ -11,9 +11,9 @@ package au.anu.edu.qm;
 import x10.util.*;
 
 public class Orbital { 
-    var exps:ArrayList[Double];
-    var coeff:ArrayList[Double];
-    var type:String;
+    val exps:ArrayList[Double];
+    val coeff:ArrayList[Double];
+    val type:String;
 
     public def this(type:String) { 
        exps      = new ArrayList[Double]();

@@ -12,8 +12,8 @@ import x10.util.*;
 
 public class Molecule { 
    
-    var atomList:ArrayList[Atom];
-    var name:String;
+    val atomList:ArrayList[Atom];
+    val name:String;
 
     public def this() { 
         atomList = new ArrayList[Atom]();
@@ -31,8 +31,6 @@ public class Molecule {
     public def getAtoms() : ArrayList[Atom] = atomList;
     public def getNumberOfAtoms() : Int = atomList.size();
 
-    public def setName(nam:String) : void { this.name = nam; }
-    
     public def getNumberOfElectrons() : int {
        val ai = AtomInfo.getInstance();
        var ne:Int = 0;

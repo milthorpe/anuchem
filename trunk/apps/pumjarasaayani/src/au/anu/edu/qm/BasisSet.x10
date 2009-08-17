@@ -12,16 +12,18 @@ import x10.io.*;
 import x10.util.*;
 
 public class BasisSet { 
-    var name:String;
-    var basisInfo:HashMap[String, AtomicBasis];
+    val name:String;
+    val basisInfo:HashMap[String, AtomicBasis];
 
     public def this(name:String) { 
        this.name = name;
 
+       basisInfo = new HashMap[String, AtomicBasis]();
        init(name);
     } 
 
     public def this(name:String, basisDir:String) {
+       basisInfo = new HashMap[String, AtomicBasis]();
        this.name = name;
 
        try {
@@ -30,14 +32,11 @@ public class BasisSet {
          x10.io.Console.OUT.println("Unable to read basis from : " + basisDir + ".");
          x10.io.Console.OUT.println("Will use sto3g basis.");
 
-         this.name = "sto3g";
-         init(this.name);
+         init("sto3g");
        } // end of try .. catch block
     }
 
     private def init(name:String, basisDir:String) throws IOException {
-       basisInfo = new HashMap[String, AtomicBasis]();
-
        // TODO: use file separator in the following line!
        val fil = new FileReader(new File(basisDir + "/" + name));       
        val noOfAtoms = Int.parseInt(fil.readLine());
@@ -73,8 +72,6 @@ public class BasisSet {
     }
  
     private def init(name:String) : void {
-       basisInfo = new HashMap[String, AtomicBasis]();
-
        if (name.equals("sto3g")) {
           val hBasis = new AtomicBasis();
           val hOrb   = new Orbital("S");

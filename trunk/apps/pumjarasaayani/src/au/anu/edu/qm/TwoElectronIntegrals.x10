@@ -143,13 +143,13 @@ public class TwoElectronIntegrals {
          var iaExp:Double, iaCoef:Double, iaNorm:Double,
              jbExp:Double, jbCoef:Double, jbNorm:Double,
              kcExp:Double, kcCoef:Double, kcNorm:Double;
-         var repulsionTerm:Double;
 
          val na = aExps.size();
          val nb = bExps.size();
          val nc = cExps.size();
          val nd = dExps.size();
 
+         // TODO: x10 parallel
          for(i=0; i<na; i++) {
              iaCoef = aCoefs.get(i);
              iaExp  = aExps.get(i);
@@ -166,7 +166,9 @@ public class TwoElectronIntegrals {
                     kcNorm = cNorms.get(k);
 
                     for(l=0; l<nd; l++) {
-                        repulsionTerm = coulombRepulsion(
+                        jij += iaCoef * jbCoef * kcCoef
+                               * dCoefs.get(l)
+                               * coulombRepulsion(
                                          aOrigin, iaNorm, aPower, iaExp,
                                          bOrigin, jbNorm, bPower, jbExp,
                                          cOrigin, kcNorm, cPower, kcExp,
@@ -174,11 +176,7 @@ public class TwoElectronIntegrals {
                                          dNorms.get(l),
                                          dPower,
                                          dExps.get(l)
-                                        );
-
-                        jij += iaCoef * jbCoef * kcCoef
-                               * dCoefs.get(l)
-                               * repulsionTerm;
+                                        ); 
                     } // end l loop
                 } // end k loop
              } // end j loop
@@ -226,6 +224,7 @@ public class TwoElectronIntegrals {
         val nbx = bx.region.max(0);
         val nby = by.region.max(0);
         val nbz = bz.region.max(0);
+        // TODO: x10 parallel
         for(i=0; i<nbx; i++) {
             for(j=0; j<nby; j++) {
                 for(k=0; k<nbz; k++) {
@@ -252,10 +251,11 @@ public class TwoElectronIntegrals {
                   p:Double, a:Double, b:Double, q:Double, c:Double, d:Double,
                   g1:Double, g2:Double, delta:Double) : Array[Double]{rank==1} {
         val iMax = l1+l2+l3+l4+1;
-        var bArr:Array[Double]{rank==1} = Array.make[Double]([0..iMax]);
+        val bArr:Array[Double]{rank==1} = Array.make[Double]([0..iMax]);
 
         var i1:Int, i2:Int, r1:Int, r2:Int, u:Int, index:Int;
 
+        // TODO: x10 parallel
         for(i1=0; i1<(l1+l2+1); i1++) {
             for(i2=0; i2<(l3+l4+1); i2++) {
                 for(r1=0; r1<(i1/2+1); r1++) {

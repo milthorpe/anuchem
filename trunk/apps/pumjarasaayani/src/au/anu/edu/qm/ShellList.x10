@@ -11,7 +11,7 @@ package au.anu.edu.qm;
 import x10.util.*;
 
 public class ShellList { 
-    var shellList:HashMap[Int, Shell];
+    val shellList:HashMap[Int, Shell];
 
     public def this() { 
         shellList = new HashMap[Int, Shell]();

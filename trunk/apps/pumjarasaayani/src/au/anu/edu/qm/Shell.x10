@@ -11,8 +11,8 @@ package au.anu.edu.qm;
 import x10.util.*;
 
 public class Shell { 
-    var angularMomentum:Int;
-    var shellPrimitives:ArrayList[ContractedGaussian];
+    val angularMomentum:Int;
+    val shellPrimitives:ArrayList[ContractedGaussian];
 
     public def this(am:Int) { 
        angularMomentum = am;
