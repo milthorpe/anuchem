@@ -10,6 +10,7 @@
 	<property name="target-test" location="${target}/test-classes" />
 	<property name="bin" location="${basedir}/bin" />
 	<property name="exe" value="pumjarasaayani.exe"/>
+	<property name="jar" value="pumjarasaayani.jar"/>
 
     <condition property="x10c.optimize" value="-O" else="">
         <istrue value="${optimize}" />
@@ -22,6 +23,19 @@
     <target name="build" depends="dist"/>
 
     <target name="dist" depends="exe">
+    </target>
+
+    <target name="dist-java" depends="jar">
+    </target>
+
+    <target name="jar" depends="build-src-java">
+        <mkdir dir="${bin}"/>
+        <jar jarfile="${bin}/${jar}">
+            <manifest>
+                <attribute name="Main-Class" value="au.anu.edu.qm.PumjaRasaayani"/>
+            </manifest>
+            <fileset dir="${target-src}" includes="**/*.class" excludes="${jar}"/>          
+        </jar>
     </target>
 
     <target name="exe" depends="build-src">

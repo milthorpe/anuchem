@@ -19,17 +19,18 @@ public class Density extends Matrix {
         // construct it from the MOs .. C*C'
         val N = mos.getRowCount();
         val dVector = new Matrix(noOfOccupancies, N);
-        var i:Int, j:Int;
 
-        // TODO : x10 - parallel
-        for(i=0; i<noOfOccupancies; i++)
-            for(j=0; j<N; j++)
-                dVector.mat(i, j) = mos.mat(i, j);
+        val dMat = dVector.getMatrix();
+        val mosMat = mos.getMatrix();
+        for(var i:Int=0; i<noOfOccupancies; i++)
+            for(var j:Int=0; j<N; j++) 
+              dMat(i, j) = mosMat(i, j);
 
         val res = dVector.transpose().mul(dVector).getMatrix();
-        for(i=0; i<N; i++)
-           for(j=0; j<N; j++)
-              mat(i, j) = res(i, j);
+
+        val thisMat = getMatrix();
+        for(val(i, j) in thisMat.region)
+           thisMat(i, j) = res(i, j);
     }
 }
 

@@ -26,15 +26,12 @@ public class MolecularOrbitals extends Matrix {
         val diag = new JacobiDiagonalizer();
 
         diag.diagonalize(a);
-        orbitalEnergies = diag.getEigenValues();
+        orbitalEnergies = diag.getEigenValues().getVector();
         val res = diag.getEigenVectors().mul(x).getMatrix(); 
+        val thisMat = getMatrix();
 
-        val N   = getRowCount();
-
-        var i:Int, j:Int;
-        for(i=0; i<N; i++)
-           for(j=0; j<N; j++)
-              mat(i, j) = res(i, j);
+        for(val(i, j) in res.region)
+           thisMat(i, j) = res(i, j);
     }
 }
 
