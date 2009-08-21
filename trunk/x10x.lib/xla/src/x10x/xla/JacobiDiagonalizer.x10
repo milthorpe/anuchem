@@ -1,7 +1,7 @@
 package x10x.xla;
 
+import x10x.vector.Vector;
 import x10x.matrix.Matrix;
-import x10.io.Console;
 
 /**
  * Based on JacobiDiagonalizer.java (org.meta.math.la.JacobiDiagonalizer)
@@ -10,7 +10,9 @@ import x10.io.Console;
  * @author V.Ganesh
  */
 public class JacobiDiagonalizer implements Diagonalizer {
-    var eigenValues : Array[Double]{rank==1};
+    var eigenValuesVec : Vector; 
+    var eigenVectorsMat : Matrix;
+    var eigenValues  : Array[Double]{rank==1};
     var eigenVectors : Array[Double]{rank==2};
     var cos:Double, sin:Double, tau:Double;
 
@@ -18,21 +20,25 @@ public class JacobiDiagonalizer implements Diagonalizer {
 
     public def diagonalize(mat:Matrix) : void {
        val matrix = mat.getMatrix();
-       val n:Int = matrix.region.max(0);
-       
-       eigenVectors = Array.make[Double]([0..n, 0..n]);
-       for(var i:Int = 0; i<n; i++) eigenVectors(i,i) = 1.0; 
+       val n:Int = mat.getRowCount();
+
+       eigenVectorsMat = new Matrix(mat.dist());
+       eigenVectorsMat.makeIdentity();
+
+       eigenVectors = eigenVectorsMat.getMatrix();
 
        // clone the matrix, do not tamper the actual matrix
-       var a : Array[Double]{rank==2} = Array.make[Double]([0..n, 0..n]);
-       for(var i:Int=0; i<n; i++)
-          for(var j:Int=0; j<n; j++)
-             a(i,j) = matrix(i, j);
+       val aMat = new Matrix(mat.dist());
+       val a = aMat.getMatrix();;
+       for(var(i,j) in a.region) a(i, j) = matrix(i, j);
 
-       eigenValues = Array.make[Double]([0..n]);
-
-       var b:Array[Double]{rank==1} = Array.make[Double]([0..n]);
-       var z:Array[Double]{rank==1} = Array.make[Double]([0..n]);
+       eigenValuesVec = new Vector(n); 
+       eigenValues = eigenValuesVec.getVector();
+      
+       val bVec = new Vector(n);
+       val zVec = new Vector(n);
+       val b = bVec.getVector();
+       val z = zVec.getVector();
 
        for(var i:Int = 0; i<n; i++) { 
           eigenValues(i) = b(i) = a(i,i);
@@ -43,12 +49,8 @@ public class JacobiDiagonalizer implements Diagonalizer {
 
        for(var sweeps:Int = 0; sweeps<maxIterations; sweeps++) {
           // sum off diagonal elements of A
-          var sum:Double = 0.0;
+          val sum = aMat.sumOffDiagonal();
           
-          for(var i:Int = 0; i<n-1; i++) 
-             for(var j:Int = i+1; j<n; j++)
-                sum += Math.abs(a(i,j));
-
           if (sum == 0.0) break;  // if off diagonal elements are zero, we stop
 
           if (sweeps < 3) zeroTolerance = 0.2 * sum / (n*n);
@@ -114,7 +116,7 @@ public class JacobiDiagonalizer implements Diagonalizer {
     private def sortEigenValues() {
         var i:Int, j:Int, k:Int;
         var p:Double;
-        val n = eigenValues.region.max(0);
+        val n = eigenValuesVec.getSize();
         
         for(i=0; i<n; i++) {
             p = eigenValues(k=i);
@@ -143,20 +145,12 @@ public class JacobiDiagonalizer implements Diagonalizer {
        a(k,l) = h + sin * (g - h*tau);
     }
 
-    public def getEigenValues() : Array[Double]{rank==1} {
-       return eigenValues;
+    public def getEigenValues() : Vector {
+       return eigenValuesVec;
     }
 
     public def getEigenVectors() : Matrix {
-       val N   = eigenVectors.region.max(0);
-       val res = new Matrix(N);
-       val mat = res.getMatrix();
-
-       for(var i:Int=0; i<N; i++)
-          for(var j:Int=0; j<N; j++)
-             mat(i, j) = eigenVectors(i, j);
-       
-       return res; 
+       return eigenVectorsMat; 
     }
 }
 

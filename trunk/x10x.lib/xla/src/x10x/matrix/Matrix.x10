@@ -10,7 +10,9 @@ import x10x.vector.Vector;
  * @author V.Ganesh
  */
 public class Matrix { 
-    protected val mat : Array[Double]{rank==2};
+    val mat:Array[Double]{rank==2};
+    val region:Region{rank==2};
+    val distribution:Dist{rank==2};
 
     /**
      * Construct an NxN matrix
@@ -18,7 +20,9 @@ public class Matrix {
      * @param siz the size of this matrix
      */
     public def this(siz:Int) {
-        mat = Array.make[Double]([0..siz, 0..siz]);
+        region = [0..siz, 0..siz];
+        distribution = Dist.makeBlock(region, 1); 
+        mat = Array.make[Double](region);
     }
 
     /**
@@ -28,8 +32,29 @@ public class Matrix {
      * @param col number of rows in this matrix
      */
     public def this(row:Int, col:Int) {
-        mat = Array.make[Double]([0..row, 0..col]);
+        region = [0..row, 0..col];
+        distribution = Dist.makeBlock(region, 1);
+        mat = Array.make[Double](region);
     }
+
+    /**
+     * Construct a Matrix with a custom distribution
+     */
+    public def this(dist:Dist{rank==2}) {
+        region = dist.region;
+        distribution = dist;
+        mat = Array.make[Double](distribution);
+    }
+
+    /**
+     * Get associated region
+     */
+    public def region() : Region{rank==2} = region;
+
+    /**
+     * Get associated distribution
+     */
+    public def dist() : Dist{rank==2} = distribution;
 
     public def getMatrix() : Array[Double]{rank==2} = mat;
     public def getRowCount() : Int = mat.region.max(0);
@@ -44,30 +69,27 @@ public class Matrix {
         diag.diagonalize(this);
         
         val rowCount     = getRowCount(); 
-        val eigenValues  = diag.getEigenValues();
+        val eigenValues  = diag.getEigenValues().getVector();
         val eigenVectors = diag.getEigenVectors();
         val sHalf        = new Matrix(rowCount);
         
         sHalf.makeIdentity();
 
-        // TODO : x10 parallel
         for(var i:Int=0; i<rowCount; i++) 
             sHalf.mat(i, i) /= Math.sqrt(eigenValues(i));
         
         return (sHalf.similarityTransformT(eigenVectors)); 
     }
-  
+
     /**
      * Make the current Matrix as Identity
      */
     public def makeIdentity() : void {
         val N = getRowCount();
 
-        // TODO : x10 parallel
-        for(var i:Int=0; i<N; i++) 
-           for(var j:Int=0; j<N; j++)
-              if (i == j) mat(i, j) = 1.0;
-              else        mat(i, j) = 0.0;
+        for(val(i,j) in mat.region)
+           if (i == j) mat(i, j) = 1.0;
+           else        mat(i, j) = 0.0;
     }
 
     /**
@@ -94,14 +116,12 @@ public class Matrix {
          val res = new Matrix(N, M);
          var cij:Double;
 
-         // TODO : x10 parallel
-         for(var i:Int=0; i<N; i++) 
-            for(var j:Int=0; j<M; j++) {
-               cij = 0.0;
-               for(var k:Int=0; k<N1; k++) 
-                  cij += mat(i, k) * x.mat(k, j);
-               res.mat(i, j) = cij;
-            } // end for  
+         for(val(i, j) in res.mat.region) {
+            cij = 0.0;
+            for(var k:Int=0; k<N1; k++) 
+               cij += mat(i, k) * x.mat(k, j);
+            res.mat(i, j) = cij;
+         } // end for  
 
          return res;
     }
@@ -114,10 +134,8 @@ public class Matrix {
          val M = getColCount();
          val res = new Matrix(N, M);
 
-         // TODO : x10 parallel
-         for(var i:Int=0; i<N; i++) 
-            for(var j:Int=0; j<M; j++) 
-               res.mat(i, j) = mat(i, j) + x.mat(i, j);
+         for(val(i, j) in res.mat.region)
+            res.mat(i, j) = mat(i, j) + x.mat(i, j);
 
          return res;
     }
@@ -130,10 +148,8 @@ public class Matrix {
          val M = getColCount();
          val res = new Matrix(N, M);
 
-         // TODO : x10 parallel
-         for(var i:Int=0; i<N; i++)
-            for(var j:Int=0; j<M; j++)
-               res.mat(i, j) = mat(i, j) - x.mat(i, j);
+         for(val(i, j) in res.mat.region)
+            res.mat(i, j) = mat(i, j) - x.mat(i, j);
 
          return res;
     }
@@ -145,13 +161,11 @@ public class Matrix {
          val N = getRowCount();
          val M = getColCount();
          val res = new Matrix(M,N);
+         var i:Int, j:Int;
 
-         // TODO : x10 parallel
-         for(var i:Int=0; i<N; i++) {
-            for(var j:Int=0; j<M; j++) {
-               res.mat(j, i) = mat(i, j);
-            } // end for
-         } // end for i 
+         for(i=0; i<N; i++)
+           for(j=0; j<M; j++)
+             res.mat(j, i) = mat(i, j);
  
          return res;
     }
@@ -163,19 +177,35 @@ public class Matrix {
          val N = getRowCount();
          var tr:Double = 0.0;
         
-         // TODO : x10 parallel
-         for(var i:Int=0; i<N; i++) 
+         for(var i:Int=0; i<N; i++)
             tr += mat(i, i);
         
          return tr;
     }
 
+    /**
+     * absolute sum of off-diagonal elements
+     */
+    public def sumOffDiagonal() : Double {
+       // sum off diagonal elements of A
+       var sum:Double = 0.0;
+       val N = getRowCount();
+
+       // TODO: change this 
+       for(var i:Int = 0; i<N-1; i++)
+         for(var j:Int = i+1; j<N; j++)
+            sum += Math.abs(mat(i,j));
+
+       return sum; 
+    }
+
     public def toString() : String { 
          var str : String = "";
          val N = getRowCount();
+         val M = getColCount();
          
          for(var i:Int=0; i<N; i++) {
-            for(var j:Int=0; j<N; j++)  
+            for(var j:Int=0; j<M; j++)  
                str += mat(i, j) + " ";
             str += "\n";
          } // end for

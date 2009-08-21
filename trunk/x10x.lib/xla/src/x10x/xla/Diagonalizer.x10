@@ -1,5 +1,6 @@
 package x10x.xla;
 
+import x10x.vector.Vector;
 import x10x.matrix.Matrix;
 
 /**
@@ -10,7 +11,7 @@ import x10x.matrix.Matrix;
  */
 public interface Diagonalizer {
     public def diagonalize(matrix:Matrix) : void;
-    public def getEigenValues()  : Array[Double]{rank==1};
+    public def getEigenValues()  : Vector;
     public def getEigenVectors() : Matrix;
 }
 
