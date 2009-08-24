@@ -146,14 +146,18 @@ public class DistributedFmm3d {
             atom : Atom = atoms(i);
             boxLocation : ValRail[Int]{length==3} = getLowestLevelBoxLocation(atom);
             boxIndex : Int = FmmBox.getBoxIndex(boxLocation, numLevels);
-            Console.OUT.println("atoms(" + i + ") => box(" + boxIndex + ")");
+            //Console.OUT.println("atoms(" + i + ") => box(" + boxIndex + ")");
             parentBox : FmmParentBox = getParentBox(boxIndex, numLevels);
-            Console.OUT.println(boxes.dist(boxIndex, numLevels));
-            Console.OUT.println("boxIndex = " + boxIndex + " numLevels = " + numLevels);
+            //Console.OUT.println("boxIndex = " + boxIndex + " numLevels = " + numLevels);
+
+            // TODO XTENLANG-513
+            val numLevels : Int = this.numLevels;
+            val numTerms : Int = this.numTerms;
+            val boxes : Array[FmmBox]{rank==2} = this.boxes;
+            val size : Double = this.size;
+
             at (boxes.dist(boxIndex, numLevels)) {
-                Console.OUT.println("boxIndex = " + boxIndex + " numLevels = " + numLevels);
                 var box : FmmLeafBox = boxes(boxIndex, numLevels) as FmmLeafBox;
-                //Console.OUT.println("about to access parent");
                 if (box == null) {
                     box = new FmmLeafBox(numLevels, boxLocation, numTerms, parentBox);
                     if (parentBox != null) {
@@ -161,10 +165,11 @@ public class DistributedFmm3d {
                     }
                     boxes(boxIndex, numLevels) = box;
                 }
-                //Console.OUT.println("about to access atom");
                 box.atoms.add(atom);
-                v : Tuple3d = box.getCentre(size).sub(atom.centre);
-                olm : MultipoleExpansion = MultipoleExpansion.getOlm(atom.charge, v, numTerms);
+                centre : Point3d = at (Place.FIRST_PLACE) {atom.centre};
+                v : Tuple3d = box.getCentre(size).sub(centre);
+                charge : Double = at (Place.FIRST_PLACE) {atom.charge};
+                olm : MultipoleExpansion = MultipoleExpansion.getOlm(charge, v, numTerms);
                 box.multipoleExp.add(olm);
             }
         }
