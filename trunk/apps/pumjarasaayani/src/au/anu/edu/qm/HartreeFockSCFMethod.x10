@@ -25,7 +25,7 @@ public class HartreeFockSCFMethod extends SCFMethod {
            return;
         } // end if
 
-        val hCore = oneE.getHCore();
+        val hCore   = oneE.getHCore();
         val overlap = oneE.getOverlap();
         
         var converged:Boolean = false;
@@ -38,10 +38,11 @@ public class HartreeFockSCFMethod extends SCFMethod {
         var eOne:Double, eTwo:Double;
 
         // init memory for the matrices
-        val gMatrix = new GMatrix(hCore.getRowCount());
-        val mos = new MolecularOrbitals(hCore.getRowCount());
-        val density = new Density(hCore.getRowCount());
-        val fock = new Fock(hCore.getRowCount());
+        val N = hCore.getRowCount();
+        val gMatrix = GMatrix.make(new GMatrix(), N) as GMatrix;
+        val mos     = MolecularOrbitals.make(new MolecularOrbitals(), N) as MolecularOrbitals;
+        val density = Density.make(new Density(), N) as Density;
+        val fock    = Fock.make(new Fock(), N) as Fock;
 
         // compute initial MOs
         mos.compute(hCore, overlap);

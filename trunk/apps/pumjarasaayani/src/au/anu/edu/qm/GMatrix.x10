@@ -12,16 +12,12 @@ import x10x.matrix.Matrix;
 import x10x.vector.Vector;
 
 public class GMatrix extends Matrix {
-    public def this(siz:Int) {
-        super(siz);
-    }
-  
     public def compute(twoE:TwoElectronIntegrals, density:Density) : void {
         if (twoE.isDirect()) { computeDirect(twoE, density); return; }
 
         val noOfBasisFunctions = density.getRowCount();
-        val densityOneD = new Vector(density); // form 1D vector of density
-        val tempVector  = new Vector(noOfBasisFunctions*noOfBasisFunctions);
+        val densityOneD = Vector.make(density); // form 1D vector of density
+        val tempVector  = Vector.make(noOfBasisFunctions*noOfBasisFunctions);
 
         val gMatrix = getMatrix();
         val ints = twoE.getTwoElectronIntegrals();
@@ -53,8 +49,8 @@ public class GMatrix extends Matrix {
 
     private def computeDirect(twoE:TwoElectronIntegrals, density:Density) : void {
         val noOfBasisFunctions = density.getRowCount();
-        val densityOneD = new Vector(density); // form 1D vector of density
-        val tempVector  = new Vector(noOfBasisFunctions*noOfBasisFunctions);
+        val densityOneD = Vector.make(density); // form 1D vector of density
+        val tempVector  = Vector.make(noOfBasisFunctions*noOfBasisFunctions);
 
         val gMatrix = getMatrix();
         val ints = twoE.getTwoElectronIntegrals();

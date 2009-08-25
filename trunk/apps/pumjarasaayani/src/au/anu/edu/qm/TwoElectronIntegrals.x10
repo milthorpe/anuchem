@@ -11,11 +11,11 @@ package au.anu.edu.qm;
 import x10.util.*;
 
 public class TwoElectronIntegrals { 
-    val basisFunctions:BasisFunctions;
-    val twoEInts:Array[Double]{rank==1};
-    val direct:Boolean;
-    val noOfIntegrals:Int;
-    val contractedList:ArrayList[ContractedGaussian];
+    var basisFunctions:BasisFunctions;
+    var twoEInts:Array[Double]{rank==1};
+    var direct:Boolean;
+    var noOfIntegrals:Int;
+    var contractedList:ArrayList[ContractedGaussian];
 
     public def this() {
         // Dummy constructor
@@ -26,7 +26,7 @@ public class TwoElectronIntegrals {
         noOfIntegrals = 0;
     }
 
-    public def this(bfs:BasisFunctions) { 
+    public def make(bfs:BasisFunctions) { 
         basisFunctions = bfs;
         direct = false;
 
@@ -42,7 +42,7 @@ public class TwoElectronIntegrals {
         compute2E();
     }
 
-    public def this(bfs:BasisFunctions, isDirect:Boolean) {
+    public def make(bfs:BasisFunctions, isDirect:Boolean) {
         basisFunctions = bfs;
         direct = isDirect;
 

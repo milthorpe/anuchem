@@ -15,8 +15,15 @@ public class AtomInfo {
     val atomicNumbers:HashMap[String, Int];
     val atomInfoFile = "AtomInfo.conf";
 
+    var madeIt:Boolean;
+
     private def this() { 
         atomicNumbers = new HashMap[String, Int]();
+        madeIt = false;
+    }
+ 
+    private def make() {
+        if (madeIt) return;
 
         /** 
         try {
@@ -48,11 +55,15 @@ public class AtomInfo {
         atomicNumbers.put("O", 8);
         atomicNumbers.put("F", 9);
         atomicNumbers.put("Ne", 10);
+
+        madeIt = true;
     } 
 
     private static _theInstance:AtomInfo = new AtomInfo();
 
     public static def getInstance() : AtomInfo {
+        _theInstance.make();
+
         return _theInstance;
     }    
 

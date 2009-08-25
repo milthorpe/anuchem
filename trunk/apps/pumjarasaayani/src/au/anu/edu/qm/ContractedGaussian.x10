@@ -108,11 +108,12 @@ public class ContractedGaussian {
     }
 
     public def normalize() : void {        
-        normalization = 1.0 / Math.sqrt(this.overlap(this));
-
         for(var i:Int=0; i<primitives.size(); i++) {
-            primNorms.add(primitives.get(i).getNormalization());
-        } // end for
+           primitives.get(i).normalize();
+           primNorms.add(primitives.get(i).getNormalization());
+        }
+
+        normalization = 1.0 / Math.sqrt(this.overlap(this));
     }
 }
 

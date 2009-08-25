@@ -11,12 +11,14 @@ package au.anu.edu.qm;
 import x10.util.*;
 
 public class BasisFunctions { 
-    val molecule:Molecule;
-    val basisName:String;
-    val basisFunctions:ArrayList[ContractedGaussian];
-    val shellList:ShellList;
+    var molecule:Molecule;
+    var basisName:String;
+    var basisFunctions:ArrayList[ContractedGaussian];
+    var shellList:ShellList;
 
-    public def this(mol:Molecule, basNam:String, basisDir:String) { 
+    public def this() { }
+
+    public def make(mol:Molecule, basNam:String, basisDir:String) { 
         this.molecule  = mol;
         this.basisName = basNam;
 
@@ -28,7 +30,8 @@ public class BasisFunctions {
     } 
 
     private def initBasisFunctions(basisDir:String) : void {
-        val basisSet:BasisSet = new BasisSet(basisName, basisDir);
+        val basisSet:BasisSet = new BasisSet(); 
+        basisSet.make(basisName, basisDir);
 
         for(atom in molecule.getAtoms()) {
             val orbitals = basisSet.getBasis(atom).getOrbitals();

@@ -12,17 +12,19 @@ import x10.io.*;
 import x10.util.*;
 
 public class BasisSet { 
-    val name:String;
-    val basisInfo:HashMap[String, AtomicBasis];
+    var name:String;
+    var basisInfo:HashMap[String, AtomicBasis];
 
-    public def this(name:String) { 
+    public def this() { }
+
+    public def make(name:String) { 
        this.name = name;
 
        basisInfo = new HashMap[String, AtomicBasis]();
        init(name);
     } 
 
-    public def this(name:String, basisDir:String) {
+    public def make(name:String, basisDir:String) {
        basisInfo = new HashMap[String, AtomicBasis]();
        this.name = name;
 

@@ -15,13 +15,16 @@ public class PumjaRasaayani {
     var mol:Molecule;
     var basisName:String;
 
-    public def this() {     
+    public def this() { }
+
+    public def make() {
         initDefault();
     } 
 
-    public def this(inpFile:String) {     
+    public def make(inpFile:String) {     
         try {
-          val inp = new JobInput(inpFile);
+          val inp = new JobInput();
+          inp.make(inpFile);
         
           mol = inp.getMolecule();
           basisName = inp.getBasisName();
@@ -56,17 +59,20 @@ public class PumjaRasaayani {
 
         Console.OUT.println("\nSetting up basis set: " + basisName);
 
-        val bsf  = new BasisFunctions(mol, basisName, "basis");
+        val bsf  = new BasisFunctions();
+        bsf.make(mol, basisName, "basis");
         Console.OUT.println("\nSetting up basis functions over.");
         
         val oneE = new OneElectronIntegrals(bsf, mol);
+        oneE.make();
         Console.OUT.println("\nComputed one-electron integrals.");
         Console.OUT.println("HCore");
         Console.OUT.println(oneE.getHCore());   
         Console.OUT.println("Overlap");
         Console.OUT.println(oneE.getOverlap());   
 
-        val twoE = new TwoElectronIntegrals(bsf, true);
+        val twoE = new TwoElectronIntegrals(); 
+        twoE.make(bsf, true);
         Console.OUT.println("\nNumber of 2E integrals: " + twoE.getNumberOfIntegrals());
         Console.OUT.println("\nComputed two-electron integrals. If direct, this is skipped for now.");
 
@@ -75,8 +81,12 @@ public class PumjaRasaayani {
     }
 
     public static def main(args:Rail[String]) : void {
-        if (args.length == 0) (new PumjaRasaayani()).runIt();
-        else                  { (new PumjaRasaayani(args(0))).runIt(); }
+        val qmApp = new PumjaRasaayani();
+
+        if (args.length == 0) qmApp.make();
+        else                  qmApp.make(args(0));
+ 
+        qmApp.runIt();
     }
 }
 

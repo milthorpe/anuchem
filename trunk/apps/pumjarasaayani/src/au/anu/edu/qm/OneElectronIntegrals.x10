@@ -11,19 +11,21 @@ package au.anu.edu.qm;
 public class OneElectronIntegrals { 
     val basisFunctions:BasisFunctions;
     val molecule:Molecule;
-    val hCore:HCore;
-    val overlap:Overlap;
+    var hCore:HCore;
+    var overlap:Overlap;
 
     public def this(bfs:BasisFunctions, mol:Molecule) { 
        this.basisFunctions = bfs;
        this.molecule = mol;
-
-       val nbf  = basisFunctions.getBasisFunctions().size();
-       hCore    = new HCore(nbf);
-       overlap  = new Overlap(nbf);
- 
-       compute1E();
     } 
+
+    public def make() {
+       val nbf  = basisFunctions.getBasisFunctions().size();
+       hCore    = HCore.make(new HCore(), nbf) as HCore;
+       overlap  = Overlap.make(new Overlap(), nbf) as Overlap;
+
+       compute1E();
+    }
 
     public def getHCore() : HCore = hCore;
     public def getOverlap() : Overlap = overlap;

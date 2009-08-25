@@ -14,10 +14,6 @@ import x10x.xla.JacobiDiagonalizer;
 public class MolecularOrbitals extends Matrix {
     var orbitalEnergies:Array[Double]{rank==1};
 
-    public def this(siz:Int) {
-       super(siz);
-    }
-
     public def getOrbitalEnergies() : Array[Double]{rank==1} = orbitalEnergies;
  
     public def compute(theMat:Matrix, overlap:Overlap) : void {

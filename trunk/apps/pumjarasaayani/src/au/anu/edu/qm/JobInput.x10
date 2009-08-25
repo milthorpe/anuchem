@@ -15,7 +15,9 @@ public class JobInput {
     var molecule:Molecule;
     var basisName:String;
 
-    public def this(inpFile:String) throws IOException { 
+    public def this() { } 
+
+    public def make(inpFile:String) throws IOException { 
        readInp(inpFile);
     } 
 

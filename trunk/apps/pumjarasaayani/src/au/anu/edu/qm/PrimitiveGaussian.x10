@@ -20,8 +20,6 @@ public class PrimitiveGaussian {
         power  = pwr;
         exponent    = exp;
         coefficient = coeff;
-
-        normalize();
     } 
 
     public def getOrigin() : Atom = origin;
