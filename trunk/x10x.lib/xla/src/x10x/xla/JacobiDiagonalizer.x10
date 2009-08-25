@@ -22,21 +22,21 @@ public class JacobiDiagonalizer implements Diagonalizer {
        val matrix = mat.getMatrix();
        val n:Int = mat.getRowCount();
 
-       eigenVectorsMat = new Matrix(mat.dist());
+       eigenVectorsMat = Matrix.make(mat.dist());
        eigenVectorsMat.makeIdentity();
 
        eigenVectors = eigenVectorsMat.getMatrix();
 
        // clone the matrix, do not tamper the actual matrix
-       val aMat = new Matrix(mat.dist());
+       val aMat = Matrix.make(mat.dist());
        val a = aMat.getMatrix();;
-       for(var(i,j) in a.region) a(i, j) = matrix(i, j);
+       ateach(var(i,j) in a.dist) a(i, j) = matrix(i, j);
 
-       eigenValuesVec = new Vector(n); 
+       eigenValuesVec = Vector.make(n); 
        eigenValues = eigenValuesVec.getVector();
       
-       val bVec = new Vector(n);
-       val zVec = new Vector(n);
+       val bVec = Vector.make(n);
+       val zVec = Vector.make(n);
        val b = bVec.getVector();
        val z = zVec.getVector();
 
@@ -145,12 +145,8 @@ public class JacobiDiagonalizer implements Diagonalizer {
        a(k,l) = h + sin * (g - h*tau);
     }
 
-    public def getEigenValues() : Vector {
-       return eigenValuesVec;
-    }
+    public def getEigenValues() : Vector = eigenValuesVec;
 
-    public def getEigenVectors() : Matrix {
-       return eigenVectorsMat; 
-    }
+    public def getEigenVectors() : Matrix = eigenVectorsMat; 
 }
 

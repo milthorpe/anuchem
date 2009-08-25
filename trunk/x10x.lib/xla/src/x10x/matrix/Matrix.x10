@@ -10,40 +10,94 @@ import x10x.vector.Vector;
  * @author V.Ganesh
  */
 public class Matrix { 
-    val mat:Array[Double]{rank==2};
-    val region:Region{rank==2};
-    val distribution:Dist{rank==2};
+    var mat:Array[Double]{rank==2};
+    var region:Region{rank==2};
+    var distribution:Dist{rank==2};
 
     /**
-     * Construct an NxN matrix
-     *
+     * Empty constructor 
+     */
+    public def this() { }
+
+    /**
+     * Make instance of Matrix class 
+     * 
      * @param siz the size of this matrix
      */
-    public def this(siz:Int) {
-        region = [0..siz, 0..siz];
-        distribution = Dist.makeBlock(region, 1); 
-        mat = Array.make[Double](region);
+    public static def make(siz:Int) : Matrix {
+        val newMatrix = new Matrix();
+
+        newMatrix.region       = [0..siz, 0..siz];
+        newMatrix.distribution = Dist.makeBlock(newMatrix.region, 1);
+        newMatrix.mat          = Array.make[Double](newMatrix.distribution);
+
+        return newMatrix;
     }
 
     /**
-     * Construct an NxM matrix
+     * Make instance of Matrix class
      *
-     * @param row number of rows in this matrix
-     * @param col number of rows in this matrix
+     * @param siz the size of this matrix
      */
-    public def this(row:Int, col:Int) {
-        region = [0..row, 0..col];
-        distribution = Dist.makeBlock(region, 1);
-        mat = Array.make[Double](region);
+    public static def make(newMatrix:Matrix, siz:Int) : Matrix {
+        newMatrix.region       = [0..siz, 0..siz];
+        newMatrix.distribution = Dist.makeBlock(newMatrix.region, 1);
+        newMatrix.mat          = Array.make[Double](newMatrix.distribution);
+
+        return newMatrix;
+    }
+
+    /**
+     * Make instance of Matrix class
+     *
+     * @param siz the size of this matrix
+     */
+    public static def make(row:Int, col:Int) : Matrix {
+        val newMatrix = new Matrix();
+
+        newMatrix.region       = [0..row, 0..col];
+        newMatrix.distribution = Dist.makeBlock(newMatrix.region, 1);
+        newMatrix.mat          = Array.make[Double](newMatrix.distribution);
+
+        return newMatrix;
+    }
+
+    /**
+     * Make instance of Matrix class
+     *
+     * @param siz the size of this matrix
+     */
+    public static def make(newMatrix:Matrix, row:Int, col:Int) : Matrix {
+        newMatrix.region       = [0..row, 0..col];
+        newMatrix.distribution = Dist.makeBlock(newMatrix.region, 1);
+        newMatrix.mat          = Array.make[Double](newMatrix.distribution);
+
+        return newMatrix;
+    }
+
+
+    /**
+     * Construct a Matrix with a custom distribution
+     */
+    public static def make(dist:Dist{rank==2}) : Matrix {
+        val newMatrix = new Matrix();
+
+        newMatrix.region       = dist.region;
+        newMatrix.distribution = dist;
+        newMatrix.mat          = Array.make[Double](newMatrix.distribution);
+
+        return newMatrix;
     }
 
     /**
      * Construct a Matrix with a custom distribution
      */
-    public def this(dist:Dist{rank==2}) {
-        region = dist.region;
-        distribution = dist;
-        mat = Array.make[Double](distribution);
+    public static def make(newMatrix:Matrix, dist:Dist{rank==2}) : Matrix {
+        newMatrix.region       = dist.region;
+        newMatrix.distribution = dist;
+        newMatrix.mat          = Array.make[Double](newMatrix.distribution);
+
+        return newMatrix;
     }
 
     /**
@@ -71,7 +125,7 @@ public class Matrix {
         val rowCount     = getRowCount(); 
         val eigenValues  = diag.getEigenValues().getVector();
         val eigenVectors = diag.getEigenVectors();
-        val sHalf        = new Matrix(rowCount);
+        val sHalf        = Matrix.make(rowCount);
         
         sHalf.makeIdentity();
 
@@ -87,7 +141,7 @@ public class Matrix {
     public def makeIdentity() : void {
         val N = getRowCount();
 
-        for(val(i,j) in mat.region)
+        finish foreach(val(i,j) in mat.region)
            if (i == j) mat(i, j) = 1.0;
            else        mat(i, j) = 0.0;
     }
@@ -110,10 +164,10 @@ public class Matrix {
      * Multiply two matrices: this . X
      */
     public def mul(x:Matrix) : Matrix {
-         val N  = getRowCount();
-         val N1 = x.getRowCount();
-         val M  = x.getColCount();
-         val res = new Matrix(N, M);
+         val N   = getRowCount();
+         val N1  = x.getRowCount();
+         val M   = x.getColCount();
+         val res = Matrix.make(N, M);
          var cij:Double;
 
          for(val(i, j) in res.mat.region) {
@@ -130,11 +184,11 @@ public class Matrix {
      * Add two matrices: this + X
      */
     public def add(x:Matrix) : Matrix {
-         val N = getRowCount();
-         val M = getColCount();
-         val res = new Matrix(N, M);
+         val N   = getRowCount();
+         val M   = getColCount();
+         val res = Matrix.make(N, M);
 
-         for(val(i, j) in res.mat.region)
+         finish foreach(val(i, j) in res.mat.region)
             res.mat(i, j) = mat(i, j) + x.mat(i, j);
 
          return res;
@@ -144,11 +198,11 @@ public class Matrix {
      * Subtract two matrices: this - X
      */
     public def sub(x:Matrix) : Matrix {
-         val N = getRowCount();
-         val M = getColCount();
-         val res = new Matrix(N, M);
+         val N   = getRowCount();
+         val M   = getColCount();
+         val res = Matrix.make(N, M);
 
-         for(val(i, j) in res.mat.region)
+         finish foreach(val(i, j) in res.mat.region)
             res.mat(i, j) = mat(i, j) - x.mat(i, j);
 
          return res;
@@ -158,9 +212,10 @@ public class Matrix {
      * Find transpose of this matrix
      */
     public def transpose() : Matrix {
-         val N = getRowCount();
-         val M = getColCount();
-         val res = new Matrix(M,N);
+         val N   = getRowCount();
+         val M   = getColCount();
+         val res = Matrix.make(M,N);
+
          var i:Int, j:Int;
 
          for(i=0; i<N; i++)
