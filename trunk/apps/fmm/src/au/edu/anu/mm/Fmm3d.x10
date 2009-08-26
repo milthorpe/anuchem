@@ -142,9 +142,6 @@ public class Fmm3d {
             var box : FmmLeafBox = boxes(boxIndex, numLevels) as FmmLeafBox;
             if (box == null) {
                 box = new FmmLeafBox(numLevels, boxLocation, numTerms, parentBox);
-                if (parentBox != null) {
-                    parentBox.children.add(box);
-                }
                 boxes(boxIndex, numLevels) = box;
             }
             box.atoms.add(atom);
@@ -165,7 +162,7 @@ public class Fmm3d {
                 child : FmmBox = boxes(childIndex,level);
                 if (child != null) {
                     val parent : FmmBox = child.parent;
-                    val shift : MultipoleExpansion = multipoleTranslations(level, (child.location(0)+1)%2, (child.location(1)+1)%2, (child.location(2)+1)%2);
+                    val shift : MultipoleExpansion = multipoleTranslations(level, (child.gridLoc(0)+1)%2, (child.gridLoc(1)+1)%2, (child.gridLoc(2)+1)%2);
                     MultipoleExpansion.translateAndAddMultipole(shift, child.multipoleExp, parent.multipoleExp);
                 }
             }
@@ -241,7 +238,7 @@ public class Fmm3d {
                         }
                     }
                     
-                    shift : MultipoleExpansion = multipoleTranslations(level, box1.location(0)%2, box1.location(1)%2, box1.location(2)%2);
+                    shift : MultipoleExpansion = multipoleTranslations(level, box1.gridLoc(0)%2, box1.gridLoc(1)%2, box1.gridLoc(2)%2);
                     LocalExpansion.translateAndAddLocal(shift, box1.parent.localExp, box1.localExp);
                 }
             }
@@ -318,8 +315,6 @@ public class Fmm3d {
         if (parent == null) {
             grandparent : FmmParentBox = getParentBox(parentIndex, parentLevel);
             parent = new FmmParentBox(parentLevel, parentLocation, numTerms, grandparent);
-            if (grandparent != null)
-                grandparent.children.add(parent);
             boxes(parentIndex, parentLevel) = parent;
         }
         return parent;
@@ -327,18 +322,18 @@ public class Fmm3d {
 
     def getBoxLocation(index : Int, level : Int) : ValRail[Int]{length==3} {
         dim : Int = Math.pow2(level) as Int;
-        location : ValRail[Int]{length==3} = [ index / (dim * dim), (index / dim) % dim, index % dim ];
-        return location;
+        gridLoc : ValRail[Int]{length==3} = [ index / (dim * dim), (index / dim) % dim, index % dim ];
+        return gridLoc;
     }
 
     def getParentIndex(childIndex : Int, childLevel : Int) : Int {
         parentDim : Int = Math.pow2(childLevel-1) as Int;
-        location : ValRail[Int] = getBoxLocation(childIndex, childLevel);
-        return location(0) / 2 * parentDim * parentDim + location(1) / 2 * parentDim + location(2) / 2;
+        gridLoc : ValRail[Int] = getBoxLocation(childIndex, childLevel);
+        return gridLoc(0) / 2 * parentDim * parentDim + gridLoc(1) / 2 * parentDim + gridLoc(2) / 2;
     }
 
     def getTranslationIndex(box1 : FmmBox, box2 : FmmBox) : ValRail[Int]{length==3} {
-        return [box1.location(0) - box2.location(0), box1.location(1) - box2.location(1), box1.location(2) - box2.location(2)];
+        return [box1.gridLoc(0) - box2.gridLoc(0), box1.gridLoc(1) - box2.gridLoc(1), box1.gridLoc(2) - box2.gridLoc(2)];
     }
 }
 

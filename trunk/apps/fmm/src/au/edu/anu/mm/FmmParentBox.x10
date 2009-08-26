@@ -9,11 +9,9 @@ import x10x.vector.Point3d;
  * @author milthorpe
  */
 public class FmmParentBox extends FmmBox {    
-    public val children : GrowableRail[FmmBox];
 
     public def this(level : Int, location : ValRail[Int]{length==3},numTerms : Int, parent : FmmBox) { 
         super(level, location, numTerms, parent);
-        children = new GrowableRail[FmmBox](0);
     }
 }
 

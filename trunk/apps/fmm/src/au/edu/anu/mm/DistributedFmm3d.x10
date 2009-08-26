@@ -113,7 +113,7 @@ public class DistributedFmm3d {
         }
 
         multipoleLowestLevel();
-        
+        /*
         var nonEmpty : Int = 0;
         for (val (i,j) in boxes.region) {
             if (boxes(i,j) != null) {
@@ -122,9 +122,11 @@ public class DistributedFmm3d {
             }
         }
         Console.OUT.println("nonEmpty = " + nonEmpty);
-        
-        combineMultipoles();
+        */
 
+        Console.OUT.println("combine");
+        combineMultipoles();
+        Console.OUT.println("transform");
         transformToLocal();
         /*
         for (val (i,j) in boxes.region) {
@@ -133,6 +135,7 @@ public class DistributedFmm3d {
             }
         }
         */
+        Console.OUT.println("getEnergy");
         return getEnergy();
     }
 
@@ -155,15 +158,12 @@ public class DistributedFmm3d {
             val numTerms : Int = this.numTerms;
             val boxes : Array[FmmBox]{rank==2} = this.boxes;
             val size : Double = this.size;
-
             at (boxes.dist(boxIndex, numLevels)) {
                 var box : FmmLeafBox = boxes(boxIndex, numLevels) as FmmLeafBox;
                 if (box == null) {
-                    box = new FmmLeafBox(numLevels, boxLocation, numTerms, parentBox);
-                    if (parentBox != null) {
-                        parentBox.children.add(box);
-                    }
-                    boxes(boxIndex, numLevels) = box;
+                    newBox : FmmLeafBox = new FmmLeafBox(numLevels, boxLocation, numTerms, parentBox);
+                    boxes(boxIndex, numLevels) = newBox;
+                    box = newBox;
                 }
                 box.atoms.add(atom);
                 centre : Point3d = at (Place.FIRST_PLACE) {atom.centre};
@@ -183,11 +183,12 @@ public class DistributedFmm3d {
         for (var level: Int = numLevels; level > 2; level--) {
             for ((childIndex) in 0..(Math.pow(8,level) as Int)-1) {
                 childLevel : Int = level;
+                Console.OUT.println("childIndex = " + childIndex + " childLevel = " + childLevel + " dist " + boxes.dist(childIndex,childLevel));
                 at (boxes.dist(childIndex,childLevel)) {
                     child : FmmBox = boxes(childIndex,childLevel);
                     if (child != null) {
                         val parent : FmmBox = child.parent;
-                        val shift : MultipoleExpansion = at (Place.FIRST_PLACE) {multipoleTranslations(childLevel, (child.location(0)+1)%2, (child.location(1)+1)%2, (child.location(2)+1)%2)};
+                        val shift : MultipoleExpansion = at (Place.FIRST_PLACE) {multipoleTranslations(childLevel, (child.gridLoc(0)+1)%2, (child.gridLoc(1)+1)%2, (child.gridLoc(2)+1)%2)};
                         MultipoleExpansion.translateAndAddMultipole(shift, child.multipoleExp, parent.multipoleExp);
                     }
                 }
@@ -216,24 +217,43 @@ public class DistributedFmm3d {
         //var wellSep : Int = 0;
         //var nearField : Int = 0;
         // top level (==2)
+
+        Console.OUT.println("level 2");
+
+        // TODO XTENLANG-513
+        val ws : Int = this.ws;
+        val numLevels : Int = this.numLevels;
+
         for ((boxIndex1) in 0..63) {
+            Console.OUT.println(boxIndex1 + " dist " + boxes.dist(boxIndex1,2));
             at (boxes.dist(boxIndex1,2)) {
+                Console.OUT.println("at " + boxIndex1);
+                // TODO BPE happens after this point !
                 box1 : FmmBox = boxes(boxIndex1, 2);
                 if (box1 != null) {
-                    //Console.OUT.println("transformToLocal: box(" + boxIndex1 + "," + 2 + ")");
+                    Console.OUT.println("transformToLocal: box(" + boxIndex1 + "," + 2 + ")");
+                    box1Location : ValRail[Int]{length==3} = box1.gridLoc;
                     for ((boxIndex2) in 0..boxIndex1-1) { 
+                        Console.OUT.println("boxIndex2 = " + boxIndex2 + " dist " + boxes.dist(boxIndex2,2));
                         at (boxes.dist(boxIndex2,2)) {
                             box2 : FmmBox = boxes(boxIndex2, 2);
                             if (box2 != null) {
-                                //Console.OUT.println("... and box(" + 2 + "," + boxIndex2 + ")");
-                                if (box1.wellSeparated(ws, box2)) {
+                                Console.OUT.println("... and box(" + 2 + "," + boxIndex2 + ")");
+                                Console.OUT.println(here);
+                                if (wellSeparated(ws, box1Location, box2.gridLoc)) {
+                                    Console.OUT.println("wellsep");
                                     translation : ValRail[Int]{length==3} = getTranslationIndex(box1, box2);
-                                            transform12 : LocalExpansion = at (Place.FIRST_PLACE) {multipoleTransforms(2, translation(0), translation(1), translation(2))};
-                                            box2.localExp.transformAndAddToLocal(transform12, at (boxes.dist(boxIndex1,2)) {box1.multipoleExp});
-                                            at (boxes.dist(boxIndex1,2)) {
-                                                transform21 : LocalExpansion = at (Place.FIRST_PLACE) {multipoleTransforms(2, -translation(0), -translation(1), -translation(2))};
-                                                box1.localExp.transformAndAddToLocal(transform21, at (boxes.dist(boxIndex2,2)) {box2.multipoleExp});
-                                            }
+                                    Console.OUT.println("translation");
+                                    transform12 : LocalExpansion = at (Place.FIRST_PLACE) {multipoleTransforms(2, translation(0), translation(1), translation(2))};
+                                    Console.OUT.println("transform12");
+                                    box2.localExp.transformAndAddToLocal(transform12, at (boxes.dist(boxIndex1,2)) {box1.multipoleExp});
+                                    Console.OUT.println("1 -> 2");
+                                    at (boxes.dist(boxIndex1,2)) {
+                                        transform21 : LocalExpansion = at (Place.FIRST_PLACE) {multipoleTransforms(2, -translation(0), -translation(1), -translation(2))};
+                                        Console.OUT.println("transform12");
+                                        box1.localExp.transformAndAddToLocal(transform21, at (boxes.dist(boxIndex2,2)) {box2.multipoleExp});
+                                        Console.OUT.println("2 -> 1");
+                                    }
                                     //wellSep++;
                                 } else if (numLevels==2) {
                                     //nearField++;
@@ -241,21 +261,26 @@ public class DistributedFmm3d {
                             }
                         }
                     }
+                    Console.OUT.println("done if not null: "+ boxIndex1);
                 }
+                Console.OUT.println("done at " + boxIndex1);
             }
+            Console.OUT.println("done outer"); 
         }
+
+        Console.OUT.println("remaining levels");
 
         for ((level) in 3..numLevels) {
             for ((boxIndex1) in 0..(Math.pow(8,level) as Int)-1) {
                 at (boxes.dist(boxIndex1,level)) {
                 box1 : FmmBox = boxes(boxIndex1, level);
                     if (box1 != null) {
-                        //Console.OUT.println("transformToLocal: box(" + boxIndex1 + "," + level + ")");
+                        Console.OUT.println("transformToLocal: box(" + boxIndex1 + "," + level + ")");
                         for ((boxIndex2) in 0..boxIndex1-1) {
                             at (boxes.dist(boxIndex2,level)) {
                                 box2 : FmmBox = boxes(boxIndex2, level);
                                 if (box2 != null) {
-                                    //Console.OUT.println("... and box(" + level + "," + boxIndex2 + ")");
+                                    Console.OUT.println("... and box(" + level + "," + boxIndex2 + ")");
                                     if (!box1.parent.wellSeparated(ws, box2.parent)) {
                                         if (box1.wellSeparated(ws, box2)) {
                                             translation : ValRail[Int]{length==3} = getTranslationIndex(box1, box2);
@@ -276,7 +301,7 @@ public class DistributedFmm3d {
                         }
                     }
                     
-                    shift : MultipoleExpansion = multipoleTranslations(level, box1.location(0)%2, box1.location(1)%2, box1.location(2)%2);
+                    shift : MultipoleExpansion = multipoleTranslations(level, box1.gridLoc(0)%2, box1.gridLoc(1)%2, box1.gridLoc(2)%2);
                     LocalExpansion.translateAndAddLocal(shift, box1.parent.localExp, box1.localExp);
                 }
             }
@@ -367,25 +392,39 @@ public class DistributedFmm3d {
         parentLocation : ValRail[Int]{length==3} = getBoxLocation(parentIndex, parentLevel);
         newParent : FmmParentBox = new FmmParentBox(parentLevel, parentLocation, numTerms, grandparent);
         if (grandparent != null)
-            grandparent.children.add(newParent);
         boxes(parentIndex, parentLevel) = newParent;
         return newParent;
     }
 
     def getBoxLocation(index : Int, level : Int) : ValRail[Int]{length==3} {
         dim : Int = Math.pow2(level) as Int;
-        location : ValRail[Int]{length==3} = [ index / (dim * dim), (index / dim) % dim, index % dim ];
-        return location;
+        gridLoc : ValRail[Int]{length==3} = [ index / (dim * dim), (index / dim) % dim, index % dim ];
+        return gridLoc;
     }
 
     def getParentIndex(childIndex : Int, childLevel : Int) : Int {
         parentDim : Int = Math.pow2(childLevel-1) as Int;
-        location : ValRail[Int] = getBoxLocation(childIndex, childLevel);
-        return location(0) / 2 * parentDim * parentDim + location(1) / 2 * parentDim + location(2) / 2;
+        gridLoc : ValRail[Int] = getBoxLocation(childIndex, childLevel);
+        return gridLoc(0) / 2 * parentDim * parentDim + gridLoc(1) / 2 * parentDim + gridLoc(2) / 2;
     }
 
     def getTranslationIndex(box1 : FmmBox, box2 : FmmBox) : ValRail[Int]{length==3} {
-        return [box1.location(0) - box2.location(0), box1.location(1) - box2.location(1), box1.location(2) - box2.location(2)];
+        return [box1.gridLoc(0) - box2.gridLoc(0), box1.gridLoc(1) - box2.gridLoc(1), box1.gridLoc(2) - box2.gridLoc(2)];
+    }
+
+    /**
+     * Returns true if this boxes with centres <code>gridLoc1</code>
+     * and <code>gridLoc2</code> are well-separated from each other
+     * on the same level, i.e. if there are at least <code>ws</code>
+     * boxes separating them.
+     */
+    def wellSeparated(ws : Int, 
+                      gridLoc1 : ValRail[Int]{length==3}, 
+                      gridLoc2 : ValRail[Int]{length==3}) : Boolean {
+        Console.OUT.println("in wellSeparated");
+        return Math.abs(gridLoc1(0) - gridLoc2(0)) > ws 
+            || Math.abs(gridLoc1(1) - gridLoc2(1)) > ws 
+            || Math.abs(gridLoc1(2) - gridLoc2(2)) > ws;
     }
 }
 
