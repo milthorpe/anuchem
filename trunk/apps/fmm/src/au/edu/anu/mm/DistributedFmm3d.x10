@@ -221,26 +221,24 @@ public class DistributedFmm3d {
         Console.OUT.println("level 2");
 
         // TODO XTENLANG-513
-        val ws : Int = this.ws;
-        val numLevels : Int = this.numLevels;
+        val ws = this.ws;
+        val numLevels = this.numLevels;
+        val boxes = this.boxes;
 
         for ((boxIndex1) in 0..63) {
             Console.OUT.println(boxIndex1 + " dist " + boxes.dist(boxIndex1,2));
             at (boxes.dist(boxIndex1,2)) {
                 Console.OUT.println("at " + boxIndex1);
-                // TODO BPE happens after this point !
-                box1 : FmmBox = boxes(boxIndex1, 2);
+                val box1 = boxes(boxIndex1, 2);
                 if (box1 != null) {
                     Console.OUT.println("transformToLocal: box(" + boxIndex1 + "," + 2 + ")");
-                    box1Location : ValRail[Int]{length==3} = box1.gridLoc;
                     for ((boxIndex2) in 0..boxIndex1-1) { 
-                        Console.OUT.println("boxIndex2 = " + boxIndex2 + " dist " + boxes.dist(boxIndex2,2));
                         at (boxes.dist(boxIndex2,2)) {
-                            box2 : FmmBox = boxes(boxIndex2, 2);
+                            val box2 = boxes(boxIndex2, 2);
                             if (box2 != null) {
                                 Console.OUT.println("... and box(" + 2 + "," + boxIndex2 + ")");
                                 Console.OUT.println(here);
-                                if (wellSeparated(ws, box1Location, box2.gridLoc)) {
+                                if (box2.wellSeparated(ws, box1)) {
                                     Console.OUT.println("wellsep");
                                     translation : ValRail[Int]{length==3} = getTranslationIndex(box1, box2);
                                     Console.OUT.println("translation");
@@ -254,9 +252,6 @@ public class DistributedFmm3d {
                                         box1.localExp.transformAndAddToLocal(transform21, at (boxes.dist(boxIndex2,2)) {box2.multipoleExp});
                                         Console.OUT.println("2 -> 1");
                                     }
-                                    //wellSep++;
-                                } else if (numLevels==2) {
-                                    //nearField++;
                                 }
                             }
                         }
@@ -273,7 +268,7 @@ public class DistributedFmm3d {
         for ((level) in 3..numLevels) {
             for ((boxIndex1) in 0..(Math.pow(8,level) as Int)-1) {
                 at (boxes.dist(boxIndex1,level)) {
-                box1 : FmmBox = boxes(boxIndex1, level);
+                val box1 = boxes(boxIndex1, level);
                     if (box1 != null) {
                         Console.OUT.println("transformToLocal: box(" + boxIndex1 + "," + level + ")");
                         for ((boxIndex2) in 0..boxIndex1-1) {
@@ -282,7 +277,7 @@ public class DistributedFmm3d {
                                 if (box2 != null) {
                                     Console.OUT.println("... and box(" + level + "," + boxIndex2 + ")");
                                     if (!box1.parent.wellSeparated(ws, box2.parent)) {
-                                        if (box1.wellSeparated(ws, box2)) {
+                                        if (box2.wellSeparated(ws, box1)) {
                                             translation : ValRail[Int]{length==3} = getTranslationIndex(box1, box2);
                                             transform12 : LocalExpansion = at (Place.FIRST_PLACE){multipoleTransforms(level, translation(0), translation(1), translation(2))};
                                             box2.localExp.transformAndAddToLocal(transform12, at (boxes.dist(boxIndex1,level)) {box1.multipoleExp});
@@ -410,21 +405,6 @@ public class DistributedFmm3d {
 
     def getTranslationIndex(box1 : FmmBox, box2 : FmmBox) : ValRail[Int]{length==3} {
         return [box1.gridLoc(0) - box2.gridLoc(0), box1.gridLoc(1) - box2.gridLoc(1), box1.gridLoc(2) - box2.gridLoc(2)];
-    }
-
-    /**
-     * Returns true if this boxes with centres <code>gridLoc1</code>
-     * and <code>gridLoc2</code> are well-separated from each other
-     * on the same level, i.e. if there are at least <code>ws</code>
-     * boxes separating them.
-     */
-    def wellSeparated(ws : Int, 
-                      gridLoc1 : ValRail[Int]{length==3}, 
-                      gridLoc2 : ValRail[Int]{length==3}) : Boolean {
-        Console.OUT.println("in wellSeparated");
-        return Math.abs(gridLoc1(0) - gridLoc2(0)) > ws 
-            || Math.abs(gridLoc1(1) - gridLoc2(1)) > ws 
-            || Math.abs(gridLoc1(2) - gridLoc2(2)) > ws;
     }
 }
 
