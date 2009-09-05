@@ -114,7 +114,12 @@ public value LocalExpansion extends Expansion {
             for ((l) in 0..p-j) {
                 for ((m) in -l..l) {
                     if (Math.abs(k+m) <= (j+l)) {
-                        val B_lmjk : Complex = at (transform.terms.dist(j+l, k+m)) {transform.terms(j+l, k+m)};
+                        // TODO calculating the indices "on the fly" in the body 
+                        // of the at statement results in a Seg Fault... why?
+                        val jPlusL : Int = (j+l);
+                        val kPlusM : Int = (k+m);
+                        val B_lmjk : Complex = at (Place.FIRST_PLACE) {transform.terms(jPlusL, kPlusM)};
+                        //Console.OUT.println("source.terms.dist(" + j + "," + k + ") = " + source.terms.dist(j,k));
                         val O_jk : Complex = at (source.terms.dist(j,k)) {source.terms(j,k)};
                         this.terms(l,m) = this.terms(l,m).add(B_lmjk.multiply(O_jk));
                     }

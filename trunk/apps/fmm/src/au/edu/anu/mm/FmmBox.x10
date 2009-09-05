@@ -58,18 +58,21 @@ public class FmmBox {
      * boxes separating them.
      */
     def wellSeparated(ws : Int, box2 : FmmBox) : Boolean {
-        Console.OUT.println("in wellSeparated: " + ws);
         if (level < 2)
             return false;
-        if (this == box2)
-            return false;
+        //if (this == box2)
+        //    return false;
+        //Console.OUT.println("not equal");
         // TODO can do reduction on a Rail?
-        Console.OUT.println("box2.location = " + box2.location);
         val box2GridLoc = at (box2.location) {box2.gridLoc};
-        Console.OUT.println("box2.gridLoc = " + box2GridLoc);
         return Math.abs(gridLoc(0) - box2GridLoc(0)) > ws 
             || Math.abs(gridLoc(1) - box2GridLoc(1)) > ws 
             || Math.abs(gridLoc(2) - box2GridLoc(2)) > ws;
+    }
+
+    def getTranslationIndex(box2 : FmmBox) : ValRail[Int]{length==3} {
+        val box2GridLoc = at (box2.location) {box2.gridLoc};
+        return [gridLoc(0) - box2GridLoc(0), gridLoc(1) - box2GridLoc(1), gridLoc(2) - box2GridLoc(2)];
     }
 }
 

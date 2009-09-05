@@ -148,7 +148,7 @@ public value MultipoleExpansion extends Expansion {
                                          target : LocalExpansion) {
         val p : Int = source.terms.region.max(0);
         val transform : LocalExpansion = LocalExpansion.getMlm(b, p);
-        for (val (j,k) in source.terms) {
+        for (val (j,k) : Point in source.terms) {
             for (var l : Int = 0; l<=p-j; l++) {
                 for (var m : Int = -l; m<=l; m++) {
                     if (Math.abs(k+m) <= (j+l)) {
@@ -174,7 +174,7 @@ public value MultipoleExpansion extends Expansion {
                                          source : MultipoleExpansion,
                                          target : LocalExpansion) {
         val p : Int = source.terms.region.max(0);
-        for (val (j,k) in source.terms) {
+        for (val (j,k) : Point in source.terms) {
             for ((l) in 0..p-j) {
                 for ((m) in -l..l) {
                     if (Math.abs(k+m) <= (j+l)) {

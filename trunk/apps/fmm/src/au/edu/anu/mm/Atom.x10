@@ -32,5 +32,9 @@ public class Atom {
     public def this(symbol:String, centre : Point3d) { 
         this(symbol, centre, 0.0);
     } 
+
+    public def pairEnergy(atom2 : Atom) : Double {
+        return charge * (at(atom2.location){atom2.charge}) / centre.distance(at(atom2.location){atom2.centre});
+    }
 }
 
