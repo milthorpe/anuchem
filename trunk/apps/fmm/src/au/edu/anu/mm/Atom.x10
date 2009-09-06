@@ -16,21 +16,27 @@ public class Atom {
     /** The current force acting upon this atom. */
     public var force : Vector3d;
 
-    /** The atomic symbol e.g. "Li" */
-    public val symbol : String;
-
     /** The effective charge in atomic units. */
     public val charge : Double;
 
-    public def this(symbol : String, centre : Point3d, charge : Double) { 
-        this.symbol = symbol;
+    public def this(centre : Point3d, charge : Double) {
         this.centre = centre;
         this.charge = charge;
         this.force = Vector3d.NULL;
     } 
+    
+    /**
+     * Create a new atom with all the same values as <code>atom</code>,
+     * but transferring all fields to the current place.
+     */
+    public def this(atom : Atom) {
+        this.centre = at (atom.location) {atom.centre};
+        this.charge = at (atom.location) {atom.charge};
+        this.force = at (atom.location) {atom.force};
+    }
 
-    public def this(symbol:String, centre : Point3d) { 
-        this(symbol, centre, 0.0);
+    public def this(centre : Point3d) { 
+        this(centre, 0.0);
     } 
 
     public def pairEnergy(atom2 : Atom) : Double {

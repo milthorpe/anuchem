@@ -58,11 +58,12 @@ public class FmmBox {
      * boxes separating them.
      */
     def wellSeparated(ws : Int, box2 : FmmBox) : Boolean {
+        Console.OUT.println("in wellsep");
         if (level < 2)
             return false;
         //if (this == box2)
         //    return false;
-        //Console.OUT.println("not equal");
+        Console.OUT.println("not equal");
         // TODO can do reduction on a Rail?
         val box2GridLoc = at (box2.location) {box2.gridLoc};
         return Math.abs(gridLoc(0) - box2GridLoc(0)) > ws 

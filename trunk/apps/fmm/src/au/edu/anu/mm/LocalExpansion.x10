@@ -147,6 +147,24 @@ public value LocalExpansion extends Expansion {
         }
         return potential;
     }
+
+    /**
+     * Transforms this local expansion about the origin to the potential
+     * acting on <code>q</code> at point <code>v</code>.
+     * @param q the charge at point v
+     * @param v the location of charge q
+     */
+    public def getPotential(q : Double,
+                                v : Tuple3d) : Double {
+        val numTerms : Int = terms.region.max(0);
+        val transform : MultipoleExpansion = MultipoleExpansion.getOlm(q, v, numTerms);
+        var potential : Double = 0.0;
+        // TODO use lift/reduction?
+        for (p in terms.region) {
+            potential += terms(p).multiply(transform.terms(p)).real;
+        }
+        return potential;
+    }
 }
 
 

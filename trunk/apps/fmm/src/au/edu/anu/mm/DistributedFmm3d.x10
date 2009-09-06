@@ -146,10 +146,10 @@ public class DistributedFmm3d {
     def multipoleLowestLevel() {
         
         for ((i) in 0..atoms.length-1) {
-            atom : Atom = atoms(i);
+            val atom = atoms(i);
             boxLocation : ValRail[Int]{length==3} = getLowestLevelBoxLocation(atom);
             boxIndex : Int = FmmBox.getBoxIndex(boxLocation, numLevels);
-            //Console.OUT.println("atoms(" + i + ") => box(" + boxIndex + ")");
+            Console.OUT.println("atoms(" + i + ") => box(" + boxIndex + ")");
             parentBox : FmmParentBox = getParentBox(boxIndex, numLevels);
             //Console.OUT.println("boxIndex = " + boxIndex + " numLevels = " + numLevels);
 
@@ -165,11 +165,10 @@ public class DistributedFmm3d {
                     boxes(boxIndex, numLevels) = newBox;
                     box = newBox;
                 }
-                box.atoms.add(atom);
-                centre : Point3d = at (Place.FIRST_PLACE) {atom.centre};
-                v : Tuple3d = box.getCentre(size).sub(centre);
-                charge : Double = at (Place.FIRST_PLACE) {atom.charge};
-                olm : MultipoleExpansion = MultipoleExpansion.getOlm(charge, v, numTerms);
+                val remoteAtom = new Atom(atom);
+                box.atoms.add(remoteAtom);
+                v : Tuple3d = box.getCentre(size).sub(remoteAtom.centre);
+                olm : MultipoleExpansion = MultipoleExpansion.getOlm(remoteAtom.charge, v, numTerms);
                 box.multipoleExp.add(olm);
             }
         }
@@ -307,23 +306,32 @@ public class DistributedFmm3d {
         Console.OUT.println("directEnergy = " + directEnergy);
         */
 
+        // TODO XTENLANG-513
+        val ws = this.ws;
         val numLevels = this.numLevels;
+        val size = this.size;
+        val boxes = this.boxes;
 
         for ((boxIndex1) in 0..(Math.pow(8,numLevels) as Int)-1) { 
+            Console.OUT.println("boxIndex1 = " + boxIndex1);
             at (boxes.dist(boxIndex1,numLevels)) {
-                box : FmmLeafBox = boxes(boxIndex1, numLevels) as FmmLeafBox;
-                if (box != null) {
-                    for ((atomIndex1) in 0..box.atoms.length()-1) {
-                        Console.OUT.println("boxIndex1 = " + boxIndex1);
-                        atom1 : Atom = box.atoms(atomIndex1);
-                        v : Tuple3d = atom1.centre.sub(box.getCentre(size));
-                        farFieldEnergy : Double = LocalExpansion.getPotential(atom1.charge, v, box.localExp);
+                box1 : FmmLeafBox = boxes(boxIndex1, numLevels) as FmmLeafBox;
+                if (box1 != null) {
+                    Console.OUT.println("getEnergy: box(" + boxIndex1 + "," + numLevels + ")");
+                    for ((atomIndex1) in 0..box1.atoms.length()-1) {
+                        Console.OUT.println("atomIndex1: " + atomIndex1);
+                        atom1 : Atom = box1.atoms(atomIndex1);
+                        Console.OUT.println("atom1");
+                        v : Tuple3d = atom1.centre.sub(box1.getCentre(size));
+                        Console.OUT.println("v");
+                        farFieldEnergy : Double = box1.localExp.getPotential(atom1.charge, v);
+                        Console.OUT.println("farFieldEnergy " + farFieldEnergy + " at " + this.location);
                         at (this.location){atomic {fmmEnergy += farFieldEnergy;}}
 
                         Console.OUT.println("direct - same box");
                         // direct calculation with all atoms in same box
                         for ((sameBoxAtomIndex) in 0..atomIndex1-1) {
-                            sameBoxAtom : Atom = box.atoms(sameBoxAtomIndex);
+                            sameBoxAtom : Atom = box1.atoms(sameBoxAtomIndex);
                             val pairEnergy : Double = atom1.pairEnergy(sameBoxAtom);
                             at (this.location){atomic {fmmEnergy += 2 * pairEnergy;}}
                         }
@@ -335,7 +343,7 @@ public class DistributedFmm3d {
                                 box2 : FmmLeafBox = boxes(boxIndex2, numLevels) as FmmLeafBox;
                                 if (box2 != null) {
                                     Console.OUT.println(boxIndex1 + " vs. " + boxIndex2);
-                                    if (!box2.wellSeparated(ws, box)) {
+                                    if (!(box2.wellSeparated(ws, box1))) {
                                         Console.OUT.println("wellsep");
                                         for ((atomIndex2) in 0..box2.atoms.length()-1) {
                                             Console.OUT.println("pair energy: " + boxIndex1 + "-" + atomIndex1 + " " + boxIndex2 + "-" + atomIndex2);
