@@ -149,7 +149,7 @@ public class DistributedFmm3d {
             val atom = atoms(i);
             boxLocation : ValRail[Int]{length==3} = getLowestLevelBoxLocation(atom);
             boxIndex : Int = FmmBox.getBoxIndex(boxLocation, numLevels);
-            Console.OUT.println("atoms(" + i + ") => box(" + boxIndex + ")");
+            //Console.OUT.println("atoms(" + i + ") => box(" + boxIndex + ")");
             parentBox : FmmParentBox = getParentBox(boxIndex, numLevels);
             //Console.OUT.println("boxIndex = " + boxIndex + " numLevels = " + numLevels);
 
@@ -182,7 +182,7 @@ public class DistributedFmm3d {
         for (var level: Int = numLevels; level > 2; level--) {
             for ((childIndex) in 0..(Math.pow(8,level) as Int)-1) {
                 childLevel : Int = level;
-                Console.OUT.println("childIndex = " + childIndex + " childLevel = " + childLevel + " dist " + boxes.dist(childIndex,childLevel));
+                //Console.OUT.println("childIndex = " + childIndex + " childLevel = " + childLevel + " dist " + boxes.dist(childIndex,childLevel));
                 at (boxes.dist(childIndex,childLevel)) {
                     child : FmmBox = boxes(childIndex,childLevel);
                     if (child != null) {
@@ -256,14 +256,14 @@ public class DistributedFmm3d {
         for ((level) in 3..numLevels) {
             for ((boxIndex1) in 0..(Math.pow(8,level) as Int)-1) {
                 at (boxes.dist(boxIndex1,level)) {
-                val box1 = boxes(boxIndex1, level);
+                    val box1 = boxes(boxIndex1, level);
                     if (box1 != null) {
-                        Console.OUT.println("transformToLocal: box(" + boxIndex1 + "," + level + ")");
+                        //Console.OUT.println("transformToLocal: box(" + boxIndex1 + "," + level + ")");
                         for ((boxIndex2) in 0..boxIndex1-1) {
                             at (boxes.dist(boxIndex2,level)) {
                                 box2 : FmmBox = boxes(boxIndex2, level);
                                 if (box2 != null) {
-                                    Console.OUT.println("... and box(" + level + "," + boxIndex2 + ")");
+                                    //Console.OUT.println("... and box(" + level + "," + boxIndex2 + ")");
                                     if (!(at (box2.parent.location) {box2.parent.wellSeparated(ws, box1.parent)})) {
                                         if (box2.wellSeparated(ws, box1)) {
                                             val translation = box2.getTranslationIndex(box1);
@@ -313,22 +313,19 @@ public class DistributedFmm3d {
         val boxes = this.boxes;
 
         for ((boxIndex1) in 0..(Math.pow(8,numLevels) as Int)-1) { 
-            Console.OUT.println("boxIndex1 = " + boxIndex1);
+            //Console.OUT.println("boxIndex1 = " + boxIndex1);
             at (boxes.dist(boxIndex1,numLevels)) {
-                box1 : FmmLeafBox = boxes(boxIndex1, numLevels) as FmmLeafBox;
+                val box1 = boxes(boxIndex1, numLevels) as FmmLeafBox;
                 if (box1 != null) {
-                    Console.OUT.println("getEnergy: box(" + boxIndex1 + "," + numLevels + ")");
+                    //Console.OUT.println("getEnergy: box(" + boxIndex1 + "," + numLevels + ")");
                     for ((atomIndex1) in 0..box1.atoms.length()-1) {
-                        Console.OUT.println("atomIndex1: " + atomIndex1);
                         atom1 : Atom = box1.atoms(atomIndex1);
-                        Console.OUT.println("atom1");
                         v : Tuple3d = atom1.centre.sub(box1.getCentre(size));
-                        Console.OUT.println("v");
                         farFieldEnergy : Double = box1.localExp.getPotential(atom1.charge, v);
-                        Console.OUT.println("farFieldEnergy " + farFieldEnergy + " at " + this.location);
+                        //Console.OUT.println("farFieldEnergy " + farFieldEnergy + " at " + this.location);
                         at (this.location){atomic {fmmEnergy += farFieldEnergy;}}
 
-                        Console.OUT.println("direct - same box");
+                        //Console.OUT.println("direct - same box");
                         // direct calculation with all atoms in same box
                         for ((sameBoxAtomIndex) in 0..atomIndex1-1) {
                             sameBoxAtom : Atom = box1.atoms(sameBoxAtomIndex);
@@ -336,20 +333,20 @@ public class DistributedFmm3d {
                             at (this.location){atomic {fmmEnergy += 2 * pairEnergy;}}
                         }
 
-                        Console.OUT.println("direct - non-well-sep");
+                        //Console.OUT.println("direct - non-well-sep");
                         // direct calculation with all atoms in non-well-separated boxes
                         for ((boxIndex2) in 0..boxIndex1-1) {
                             at (boxes.dist(boxIndex2,numLevels)) {
                                 box2 : FmmLeafBox = boxes(boxIndex2, numLevels) as FmmLeafBox;
                                 if (box2 != null) {
-                                    Console.OUT.println(boxIndex1 + " vs. " + boxIndex2);
+                                    //Console.OUT.println(boxIndex1 + " vs. " + boxIndex2 + " ws = " + ws);
+                                    val box1 = at (boxes.dist(boxIndex1,numLevels)) {boxes(boxIndex1, numLevels)};
                                     if (!(box2.wellSeparated(ws, box1))) {
-                                        Console.OUT.println("wellsep");
                                         for ((atomIndex2) in 0..box2.atoms.length()-1) {
-                                            Console.OUT.println("pair energy: " + boxIndex1 + "-" + atomIndex1 + " " + boxIndex2 + "-" + atomIndex2);
+                                            //Console.OUT.println("pair energy: " + boxIndex1 + "-" + atomIndex1 + " " + boxIndex2 + "-" + atomIndex2);
                                             atom2 : Atom = box2.atoms(atomIndex2);
                                             val pairEnergy : Double = atom2.pairEnergy(atom1);
-                                            Console.OUT.println("pairEnergy " + here);
+                                            //Console.OUT.println("pairEnergy " + here);
                                             at (this.location) {atomic {fmmEnergy += 2 * pairEnergy;}}
                                         }
                                     }
