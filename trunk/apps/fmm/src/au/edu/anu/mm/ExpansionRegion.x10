@@ -12,7 +12,7 @@ public value class ExpansionRegion extends BaseRegion{rank==2} {
      * @param p the dimension of the expansion
      */
     public def this(p : Int) {
-        super(p, false, true);
+        super(2, false, true);
         this.p = p;
     }
 
