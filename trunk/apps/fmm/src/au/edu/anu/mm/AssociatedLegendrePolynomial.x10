@@ -17,8 +17,8 @@ public value AssociatedLegendrePolynomial {
         }
 
         triRegion : TriangularRegion = new TriangularRegion(0,0,p+1,true);
-        Plm : Array[double]{rank==2} = Array.make[double](triRegion->here);
-		//val Plm : Array[double]{rank==2} = Array.make[double](Region.makeLowerTriangular(p+1)->here);
+        val Plm = Array.make[double](triRegion);
+		//val Plm = Array.make[double](Region.makeLowerTriangular(p+1));
 		Plm(0,0) = 1.0;
 		val somx2 : double = Math.sqrt((1.0 - x) * (1.0 + x));
 		var fact : double = 1.0;
