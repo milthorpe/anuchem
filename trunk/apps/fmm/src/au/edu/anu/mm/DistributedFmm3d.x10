@@ -204,7 +204,7 @@ public class DistributedFmm3d {
      */
     def transformToLocal() {
         // precompute child translations
-        for (val(level,i,j,k) in multipoleTransforms.region) {
+        finish foreach (val(level,i,j,k) in multipoleTransforms.region) {
             dim : Int = Math.pow2(level);
             sideLength : Double = size / dim;
             translationVector : Vector3d = new Vector3d(i * sideLength,
@@ -224,23 +224,25 @@ public class DistributedFmm3d {
         val numLevels = this.numLevels;
         val boxes = this.boxes;
 
-        for ((boxIndex1) in 0..63) {
-            at (boxes.dist(boxIndex1,2)) {
-                val box1 = boxes(boxIndex1, 2);
+        val level2Dist = boxes.dist | [0..63,2..2];
+        finish ateach ((boxIndex1,level) in level2Dist) {
+        //for ((boxIndex1) in 0..63) {
+        //    at (boxes.dist(boxIndex1,2)) {
+                val box1 = boxes(boxIndex1, level);
                 if (box1 != null) {
                     //Console.OUT.println("transformToLocal: box(" + boxIndex1 + "," + 2 + ")");
                     for ((boxIndex2) in 0..boxIndex1-1) { 
-                        at (boxes.dist(boxIndex2,2)) {
-                            val box2 = boxes(boxIndex2, 2);
+                        async (boxes.dist(boxIndex2,level)) {
+                            val box2 = boxes(boxIndex2, level);
                             if (box2 != null) {
                                 //Console.OUT.println("... and box(" + 2 + "," + boxIndex2 + ")");
                                 if (box2.wellSeparated(ws, box1)) {
                                     val translation = box2.getTranslationIndex(box1);
-                                    val transform12 = at (Place.FIRST_PLACE) {multipoleTransforms(2, -translation(0), -translation(1), -translation(2))};
+                                    val transform12 = at (Place.FIRST_PLACE) {multipoleTransforms(level, -translation(0), -translation(1), -translation(2))};
                                     box2.localExp.transformAndAddToLocal(transform12, at (boxes.dist(boxIndex1,2)) {box1.multipoleExp});
                                     val box2MultipoleExp = at (boxes.dist(boxIndex2,2)) {box2.multipoleExp};
-                                    at (boxes.dist(boxIndex1,2)) {
-                                        val transform21 = at (Place.FIRST_PLACE) {multipoleTransforms(2, translation(0), translation(1), translation(2))};
+                                    at (boxes.dist(boxIndex1,level)) {
+                                        val transform21 = at (Place.FIRST_PLACE) {multipoleTransforms(level, translation(0), translation(1), translation(2))};
                                         box1.localExp.transformAndAddToLocal(transform21, box2MultipoleExp);
                                     }
                                 }
@@ -249,18 +251,21 @@ public class DistributedFmm3d {
                     }
                 }
             }
-        }
+        //}
 
         Console.OUT.println("remaining levels");
 
+        
         for ((level) in 3..numLevels) {
-            for ((boxIndex1) in 0..(Math.pow(8,level) as Int)-1) {
-                at (boxes.dist(boxIndex1,level)) {
+            val thisLevelDist = boxes.dist | [0..63,level..level];
+            finish ateach ((boxIndex1,level) in thisLevelDist) {
+        //    for ((boxIndex1) in 0..(Math.pow(8,level) as Int)-1) {
+        //        at (boxes.dist(boxIndex1,level)) {
                     val box1 = boxes(boxIndex1, level);
                     if (box1 != null) {
                         //Console.OUT.println("transformToLocal: box(" + boxIndex1 + "," + level + ")");
                         for ((boxIndex2) in 0..boxIndex1-1) {
-                            at (boxes.dist(boxIndex2,level)) {
+                            async (boxes.dist(boxIndex2,level)) {
                                 box2 : FmmBox = boxes(boxIndex2, level);
                                 if (box2 != null) {
                                     //Console.OUT.println("... and box(" + level + "," + boxIndex2 + ")");
@@ -288,7 +293,7 @@ public class DistributedFmm3d {
                     shift : MultipoleExpansion = multipoleTranslations(level, box1.gridLoc(0)%2, box1.gridLoc(1)%2, box1.gridLoc(2)%2);
                     LocalExpansion.translateAndAddLocal(shift, box1.parent.localExp, box1.localExp);
                 }
-            }
+            //}
         }
         //Console.OUT.println("wellSep = " + wellSep + " nearField = " + nearField);
     }
@@ -312,9 +317,11 @@ public class DistributedFmm3d {
         val size = this.size;
         val boxes = this.boxes;
 
-        for ((boxIndex1) in 0..(Math.pow(8,numLevels) as Int)-1) { 
+        val lowestLevelDist = boxes.dist | [0..(Math.pow(8,numLevels) as Int)-1,numLevels..numLevels];
+        finish ateach ((boxIndex1,level) in lowestLevelDist) {
+        //for ((boxIndex1) in 0..(Math.pow(8,numLevels) as Int)-1) { 
             //Console.OUT.println("boxIndex1 = " + boxIndex1);
-            at (boxes.dist(boxIndex1,numLevels)) {
+        //    at (boxes.dist(boxIndex1,numLevels)) {
                 val box1 = boxes(boxIndex1, numLevels) as FmmLeafBox;
                 if (box1 != null) {
                     //Console.OUT.println("getEnergy: box(" + boxIndex1 + "," + numLevels + ")");
@@ -335,7 +342,7 @@ public class DistributedFmm3d {
 
                         //Console.OUT.println("direct - non-well-sep");
                         // direct calculation with all atoms in non-well-separated boxes
-                        for ((boxIndex2) in 0..boxIndex1-1) {
+                        finish foreach ((boxIndex2) in 0..boxIndex1-1) {
                             at (boxes.dist(boxIndex2,numLevels)) {
                                 box2 : FmmLeafBox = boxes(boxIndex2, numLevels) as FmmLeafBox;
                                 if (box2 != null) {
@@ -355,7 +362,7 @@ public class DistributedFmm3d {
                         }
                     }
                 }
-            }
+            //}
         }
 
         return fmmEnergy;
