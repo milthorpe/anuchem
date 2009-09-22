@@ -116,7 +116,7 @@ public value class TriangularRegion extends BaseRegion{rank==2} {
             this.dim = r.dim;
             this.lower = r.lower;
             this.i = r.rowMin;
-            this.j = lower? r.colMin : r.colMin + dim;
+            this.j = r.lower? r.colMin : r.colMin + r.dim;
         }
 
         final public def hasNext(): Boolean {

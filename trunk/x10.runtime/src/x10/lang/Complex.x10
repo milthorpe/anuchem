@@ -92,7 +92,7 @@ public value Complex {
 		 	 
         if (Math.abs(d) <= Math.abs(c)) {
 			if (c == 0.0) {
-                return new Complex(imaginary/d, -real/c);
+                return new Complex(imaginary/d, real/d);
             }
             val r : Double =  d / c;
             val denominator : Double = c + d * r;

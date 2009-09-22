@@ -2,7 +2,8 @@
 <!DOCTYPE project [<!ENTITY buildfile SYSTEM "file:./build-user.xml">]>
 <project name="X10 runtime extensions" default="build" basedir=".">
     <property name="x10.testlib" location="${user.home}/x10-17/x10.tests/examples/x10lib"/>
-    <property name="bash.exe" value="bash"/>    
+    <property name="bash.exe" value="bash"/>   
+    <property name="cpp.compiler.exe" value="g++" /> 
     <property name="optimize" value="true" />
 	<property name="target" location="${basedir}/target" />
 	<property name="target-src" location="${target}/classes" />
@@ -49,7 +50,7 @@
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/src">
             <arg value="-c"/>
-            <arg value="'x10c' ${x10c.optimize} -sourcepath . -commandlineonly -d ${target-src} ${src.list}"/>
+            <arg value="'x10c' -sourcepath . -commandlineonly -d ${target-src} ${src.list}"/>
         </exec>
     </target>
 
@@ -69,7 +70,7 @@
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/src">
             <arg value="-c"/>
-            <arg value="'x10c++' ${x10c.optimize} -c -sourcepath . -commandlineonly -d ${target-src} ${src.list}"/>
+            <arg value="'x10c++' ${x10c.optimize} -sourcepath . -commandlineonly -d ${target-src} ${src.list}"/>
         </exec>
     </target>
 
