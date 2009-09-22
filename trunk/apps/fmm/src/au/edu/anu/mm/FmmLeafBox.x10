@@ -9,11 +9,14 @@ import x10x.vector.Point3d;
  * @author milthorpe
  */
 public class FmmLeafBox extends FmmBox {
-    public val atoms : GrowableRail[Atom];
+    public val atoms = new GrowableRail[Atom]();
 
     public def this(level : Int, location : ValRail[Int]{length==3},numTerms : Int, parent : FmmBox) { 
         super(level, location, numTerms, parent);
-        atoms = new GrowableRail[Atom]();
+    }
+
+    public def addAtom(atom : Atom) {
+        atoms.add(atom);
     }
 }
 

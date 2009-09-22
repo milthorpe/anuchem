@@ -33,7 +33,7 @@ public value Expansion {
 
     public def toString() : String {
         val p : Int = terms.region.max(0);
-        s : StringBuilder = new StringBuilder();
+        val s = new StringBuilder();
         for (val(i) : Point in [0..p]) {
             for (val(j) : Point in [-i..i]) {
 			    s.add(terms(i,j) + " ");

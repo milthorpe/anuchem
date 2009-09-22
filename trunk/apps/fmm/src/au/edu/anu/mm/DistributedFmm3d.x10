@@ -37,7 +37,7 @@ public class DistributedFmm3d {
     /** All boxes in the octree division of space. */
     val boxes : Array[FmmBox]{rank==2};
 
-    val atoms : Rail[Atom];
+    val atoms : ValRail[Atom]!;
 
     /** A cache of transformations from multipole to local at the same level. */
     val multipoleTransforms : Array[LocalExpansion]{rank==4};
@@ -64,15 +64,17 @@ public class DistributedFmm3d {
                     ws : Int,
                     topLeftFront : Point3d,
                     size : Double,
-                    atoms : Rail[Atom]) {
-        this.numLevels = Math.max(2, (Math.log(atoms.length / density) / Math.log(8.0) + 1.0 as Int));
+                    atoms : ValRail[Atom]!) {
+        val numLevels = Math.max(2, (Math.log(atoms.length / density) / Math.log(8.0) + 1.0 as Int));
+        this.numLevels = numLevels;
+
         var nBox : Int = 1;
         for ((i) in 2..numLevels) {
             nBox += Math.pow(8,i) as Int;
         }
         this.maxBoxes = nBox;
         this.dimLowestLevelBoxes = Math.pow2(numLevels);
-        Console.OUT.println("numLevels = " + numLevels + " maxBoxes = " + maxBoxes);
+        Console.OUT.println("numLevels = " + numLevels + " maxBoxes = " + nBox);
 
         this.numTerms = numTerms;
         this.ws = ws;
@@ -147,26 +149,26 @@ public class DistributedFmm3d {
         
         for ((i) in 0..atoms.length-1) {
             val atom = atoms(i);
-            boxLocation : ValRail[Int]{length==3} = getLowestLevelBoxLocation(atom);
-            boxIndex : Int = FmmBox.getBoxIndex(boxLocation, numLevels);
+            val boxLocation = getLowestLevelBoxLocation(atom);
+            val boxIndex = FmmBox.getBoxIndex(boxLocation, numLevels);
             //Console.OUT.println("atoms(" + i + ") => box(" + boxIndex + ")");
-            parentBox : FmmParentBox = getParentBox(boxIndex, numLevels);
+            val parentBox = getParentBox(boxIndex, numLevels);
             //Console.OUT.println("boxIndex = " + boxIndex + " numLevels = " + numLevels);
 
             // TODO XTENLANG-513
-            val numLevels : Int = this.numLevels;
-            val numTerms : Int = this.numTerms;
-            val boxes : Array[FmmBox]{rank==2} = this.boxes;
-            val size : Double = this.size;
+            val numLevels = this.numLevels;
+            val numTerms = this.numTerms;
+            val boxes = this.boxes;
+            val size = this.size;
             at (boxes.dist(boxIndex, numLevels)) {
-                var box : FmmLeafBox = boxes(boxIndex, numLevels) as FmmLeafBox;
+                var box : FmmLeafBox! = boxes(boxIndex, numLevels) as FmmLeafBox!;
                 if (box == null) {
                     newBox : FmmLeafBox = new FmmLeafBox(numLevels, boxLocation, numTerms, parentBox);
                     boxes(boxIndex, numLevels) = newBox;
                     box = newBox;
                 }
                 val remoteAtom = new Atom(atom);
-                box.atoms.add(remoteAtom);
+                box.addAtom(remoteAtom);
                 v : Tuple3d = box.getCentre(size).sub(remoteAtom.centre);
                 olm : MultipoleExpansion = MultipoleExpansion.getOlm(remoteAtom.charge, v, numTerms);
                 box.multipoleExp.add(olm);

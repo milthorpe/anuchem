@@ -37,7 +37,7 @@ public class Fmm3d {
     /** All boxes in the octree division of space. */
     val boxes : Array[FmmBox]{rank==2};
 
-    val atoms : Rail[Atom];
+    val atoms : ValRail[Atom]!;
 
     /** A cache of transformations from multipole to local at the same level. */
     val multipoleTransforms : Array[LocalExpansion]{rank==4};
@@ -60,15 +60,16 @@ public class Fmm3d {
                     ws : Int,
                     topLeftFront : Point3d,
                     size : Double,
-                    atoms : Rail[Atom]) {
-        this.numLevels = Math.max(2, (Math.log(atoms.length / density) / Math.log(8.0) + 1.0 as Int));
+                    atoms : ValRail[Atom]!) {
+        val numLevels = Math.max(2, (Math.log(atoms.length / density) / Math.log(8.0) + 1.0 as Int));
+        this.numLevels = numLevels;
         var nBox : Int = 1;
         for ((i) in 2..numLevels) {
             nBox += Math.pow(8,i) as Int;
         }
         this.maxBoxes = nBox;
         this.dimLowestLevelBoxes = Math.pow2(numLevels);
-        Console.OUT.println("numLevels = " + numLevels + " maxBoxes = " + maxBoxes);
+        Console.OUT.println("numLevels = " + numLevels + " maxBoxes = " + nBox);
 
         this.numTerms = numTerms;
         this.ws = ws;
@@ -83,10 +84,10 @@ public class Fmm3d {
             rNextLevel : Region{rank==2} = [0..(Math.pow(8,i) as Int)-1, i..i];
             boxRegion = boxRegion || rNextLevel;
         }
+        Console.OUT.println("boxes: " + boxRegion);
+
         // all boxes are null to start.  they will be initialised as needed.
         this.boxes = Array.make[FmmBox](boxRegion);
-        
-        Console.OUT.println("boxes: " + boxes.region);
     
         var wellSpacedLimit : Region(4) = [2..numLevels,-(ws+3)..ws+3,-(ws+3)..ws+3,-(ws+3)..ws+3];
         val multipoleTransformRegion : Region(4) = wellSpacedLimit - ([2..numLevels,-ws..ws,-ws..ws,-ws..ws] as Region);
@@ -95,6 +96,7 @@ public class Fmm3d {
     }
     
     public def calculateEnergy() : Double {
+
         // precompute multipole translations
         for (val(level,i,j,k) in multipoleTranslations.region) {
             dim : Int = Math.pow2(level);
@@ -135,11 +137,11 @@ public class Fmm3d {
      */
     def multipoleLowestLevel() {
         for ((i) in 0..atoms.length-1) {
-            atom : Atom = atoms(i);
-            boxLocation : ValRail[Int]{length==3} = getLowestLevelBoxLocation(atom);
-            boxIndex : Int = FmmBox.getBoxIndex(boxLocation, numLevels);
-            parentBox : FmmParentBox = getParentBox(boxIndex, numLevels);
-            var box : FmmLeafBox = boxes(boxIndex, numLevels) as FmmLeafBox;
+            val atom = atoms(i);
+            val boxLocation = getLowestLevelBoxLocation(atom);
+            val boxIndex = FmmBox.getBoxIndex(boxLocation, numLevels);
+            val parentBox = getParentBox(boxIndex, numLevels);
+            var box : FmmLeafBox! = boxes(boxIndex, numLevels) as FmmLeafBox!;
             if (box == null) {
                 box = new FmmLeafBox(numLevels, boxLocation, numTerms, parentBox);
                 boxes(boxIndex, numLevels) = box;
@@ -191,11 +193,11 @@ public class Fmm3d {
         var nearField : Int = 0;
         // top level (==2)
         for ((boxIndex1) in 0..63) {
-            box1 : FmmBox = boxes(boxIndex1, 2);
+            val box1 = boxes(boxIndex1, 2);
             if (box1 != null) {
                 //Console.OUT.println("transformToLocal: box(" + boxIndex1 + "," + 2 + ")");
                 for ((boxIndex2) in 0..boxIndex1-1) { 
-                    box2 : FmmBox = boxes(boxIndex2, 2);
+                    val box2 = boxes(boxIndex2, 2);
                     if (box2 != null) {
                         //Console.OUT.println("... and box(" + 2 + "," + boxIndex2 + ")");
                         if (box1.wellSeparated(ws, box2)) {
