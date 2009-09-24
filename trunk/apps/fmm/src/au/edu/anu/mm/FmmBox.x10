@@ -9,11 +9,11 @@ import x10x.vector.Point3d;
  * @author milthorpe
  */
 public class FmmBox {
-    public val parent : FmmBox{self.at(this)};
+    public global val parent : FmmBox;
 
     public val level : Int;
 
-    public val gridLoc : ValRail[Int]{length==3,self.at(this)};
+    public val gridLoc : ValRail[Int]{length==3};
 
     /** The multipole expansion of the charges within this box. */
     public val multipoleExp : MultipoleExpansion{self.at(this)};

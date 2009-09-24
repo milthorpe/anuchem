@@ -17,7 +17,7 @@ public class Atom {
     public var force : Vector3d;
 
     /** The effective charge in atomic units. */
-    public val charge : Double{self.at(this)};
+    public global val charge : Double;
 
     public def this(centre : Point3d, charge : Double) {
         this.centre = centre;
