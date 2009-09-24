@@ -9,17 +9,17 @@ import x10x.vector.Point3d;
  * @author milthorpe
  */
 public class FmmBox {
-    public val parent : FmmBox;
+    public val parent : FmmBox{self.at(this)};
 
     public val level : Int;
 
-    public val gridLoc : ValRail[Int]{length==3};
+    public val gridLoc : ValRail[Int]{length==3,self.at(this)};
 
     /** The multipole expansion of the charges within this box. */
-    public val multipoleExp : MultipoleExpansion;
+    public val multipoleExp : MultipoleExpansion{self.at(this)};
 
     /** The Taylor expansion of the potential within this box due to particles in well separated boxes. */
-    public val localExp : LocalExpansion;
+    public val localExp : LocalExpansion{self.at(this)};
 
     /**
      * Creates a new FmmBox with multipole and local expansions

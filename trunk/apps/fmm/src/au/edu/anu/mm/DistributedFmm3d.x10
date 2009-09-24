@@ -84,6 +84,7 @@ public class DistributedFmm3d {
 
         this.atoms = atoms;
 
+
         var boxRegion : Region{rank==2} = [0..63, 2..2];
         for ((i) in 3..numLevels) {
             rNextLevel : Region{rank==2} = [0..(Math.pow(8,i) as Int)-1, i..i];
@@ -96,6 +97,7 @@ public class DistributedFmm3d {
         
         // all boxes are null to start.  they will be initialised as needed.
         this.boxes = Array.make[FmmBox](boxDistribution);
+
     
         var wellSpacedLimit : Region(4) = [2..numLevels,-(ws+3)..ws+3,-(ws+3)..ws+3,-(ws+3)..ws+3];
         val multipoleTransformRegion : Region(4) = wellSpacedLimit - ([2..numLevels,-ws..ws,-ws..ws,-ws..ws] as Region);
@@ -163,7 +165,7 @@ public class DistributedFmm3d {
             at (boxes.dist(boxIndex, numLevels)) {
                 var box : FmmLeafBox! = boxes(boxIndex, numLevels) as FmmLeafBox!;
                 if (box == null) {
-                    newBox : FmmLeafBox = new FmmLeafBox(numLevels, boxLocation, numTerms, parentBox);
+                    val newBox = new FmmLeafBox(numLevels, boxLocation, numTerms, parentBox);
                     boxes(boxIndex, numLevels) = newBox;
                     box = newBox;
                 }
@@ -182,18 +184,20 @@ public class DistributedFmm3d {
      */
     def combineMultipoles() {
         for (var level: Int = numLevels; level > 2; level--) {
-            for ((childIndex) in 0..(Math.pow(8,level) as Int)-1) {
-                childLevel : Int = level;
+            val thisLevelDist = boxes.dist | [0..((Math.pow(8,level) as Int)-1),level..level];
+            finish ateach ((childIndex,childLevel) in thisLevelDist) {
+            //for ((childIndex) in 0..(Math.pow(8,level) as Int)-1) {
+            //    childLevel : Int = level;
                 //Console.OUT.println("childIndex = " + childIndex + " childLevel = " + childLevel + " dist " + boxes.dist(childIndex,childLevel));
-                at (boxes.dist(childIndex,childLevel)) {
-                    child : FmmBox = boxes(childIndex,childLevel);
+            //    at (boxes.dist(childIndex,childLevel)) {
+                    val child = boxes(childIndex,childLevel);
                     if (child != null) {
-                        val parent : FmmBox = child.parent;
-                        val shift : MultipoleExpansion = at (Place.FIRST_PLACE) {multipoleTranslations(childLevel, (child.gridLoc(0)+1)%2, (child.gridLoc(1)+1)%2, (child.gridLoc(2)+1)%2)};
+                        val parent = child.parent;
+                        val shift = at (Place.FIRST_PLACE) {multipoleTranslations(childLevel, (child.gridLoc(0)+1)%2, (child.gridLoc(1)+1)%2, (child.gridLoc(2)+1)%2)};
                         MultipoleExpansion.translateAndAddMultipole(shift, child.multipoleExp, parent.multipoleExp);
                     }
                 }
-            }
+            //}
         }
     }
 
@@ -259,7 +263,7 @@ public class DistributedFmm3d {
 
         
         for ((level) in 3..numLevels) {
-            val thisLevelDist = boxes.dist | [0..63,level..level];
+            val thisLevelDist = boxes.dist | [0..(Math.pow(8,level) as Int)-1,level..level];
             finish ateach ((boxIndex1,level) in thisLevelDist) {
         //    for ((boxIndex1) in 0..(Math.pow(8,level) as Int)-1) {
         //        at (boxes.dist(boxIndex1,level)) {

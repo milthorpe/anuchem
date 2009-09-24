@@ -11,13 +11,13 @@ import x10x.vector.Vector3d;
  */
 public class Atom { 
     /** The location of the atomic nucleus. */
-    public var centre : Point3d;
+    public var centre : Point3d{self.at(this)};
 
     /** The current force acting upon this atom. */
     public var force : Vector3d;
 
     /** The effective charge in atomic units. */
-    public val charge : Double;
+    public val charge : Double{self.at(this)};
 
     public def this(centre : Point3d, charge : Double) {
         this.centre = centre;
