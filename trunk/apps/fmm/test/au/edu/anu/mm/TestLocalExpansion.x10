@@ -21,8 +21,8 @@ class TestLocalExpansion extends MathTest {
         val roundtrip : LocalExpansion = new LocalExpansion(p);
         LocalExpansion.translateAndAddLocal(new Point3d(-2.0, 3.0, -1.0), target, roundtrip);
         Console.OUT.println("translated local - roundtrip:\n" + roundtrip.toString());
-		for (val (i): Point in [0..p]) {
-            for (val (j): Point in [-i..i]) {
+		for ((i): Point in [0..p]) {
+            for ((j): Point in [-i..i]) {
                 chk(nearlyEqual(roundtrip.terms(i,j), Mlm.terms(i,j), 1.0e-6, 1.0e-12));
 		    }
         }

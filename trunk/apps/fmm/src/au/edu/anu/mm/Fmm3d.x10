@@ -37,7 +37,7 @@ public class Fmm3d {
     /** All boxes in the octree division of space. */
     val boxes : Array[FmmBox]{rank==2};
 
-    val atoms : ValRail[Atom]!;
+    val atoms : ValRail[Atom];
 
     /** A cache of transformations from multipole to local at the same level. */
     val multipoleTransforms : Array[LocalExpansion]{rank==4};
@@ -60,7 +60,7 @@ public class Fmm3d {
                     ws : Int,
                     topLeftFront : Point3d,
                     size : Double,
-                    atoms : ValRail[Atom]!) {
+                    atoms : ValRail[Atom]) {
         val numLevels = Math.max(2, (Math.log(atoms.length / density) / Math.log(8.0) + 1.0 as Int));
         this.numLevels = numLevels;
         var nBox : Int = 1;
@@ -141,7 +141,7 @@ public class Fmm3d {
             val boxLocation = getLowestLevelBoxLocation(atom);
             val boxIndex = FmmBox.getBoxIndex(boxLocation, numLevels);
             val parentBox = getParentBox(boxIndex, numLevels);
-            var box : FmmLeafBox! = boxes(boxIndex, numLevels) as FmmLeafBox!;
+            var box : FmmLeafBox = boxes(boxIndex, numLevels) as FmmLeafBox;
             if (box == null) {
                 box = new FmmLeafBox(numLevels, boxLocation, numTerms, parentBox);
                 boxes(boxIndex, numLevels) = box;

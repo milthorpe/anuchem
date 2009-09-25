@@ -10,8 +10,8 @@ import au.edu.anu.mm.AssociatedLegendrePolynomial;
 class TestAssociatedLegendrePolynomial extends x10Test {
     public def run(): boolean {
         val Plm : Array[double]{rank==2} = AssociatedLegendrePolynomial.getPlm(0.5, 3);
-		for (val(i) : Point in [0..3]) {
-            for (val(j) : Point in [0..i]) {
+		for ((i) : Point in [0..3]) {
+            for ((j) : Point in [0..i]) {
 			    Console.OUT.print(Plm(i,j) + " ");
             }
             Console.OUT.println();

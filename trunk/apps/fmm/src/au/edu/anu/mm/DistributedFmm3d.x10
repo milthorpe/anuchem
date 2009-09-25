@@ -37,7 +37,7 @@ public class DistributedFmm3d {
     /** All boxes in the octree division of space. */
     val boxes : Array[FmmBox]{rank==2};
 
-    val atoms : ValRail[Atom]!;
+    val atoms : ValRail[Atom];
 
     /** A cache of transformations from multipole to local at the same level. */
     val multipoleTransforms : Array[LocalExpansion]{rank==4};
@@ -64,7 +64,7 @@ public class DistributedFmm3d {
                     ws : Int,
                     topLeftFront : Point3d,
                     size : Double,
-                    atoms : ValRail[Atom]!) {
+                    atoms : ValRail[Atom]) {
         val numLevels = Math.max(2, (Math.log(atoms.length / density) / Math.log(8.0) + 1.0 as Int));
         this.numLevels = numLevels;
 
@@ -163,7 +163,7 @@ public class DistributedFmm3d {
             val boxes = this.boxes;
             val size = this.size;
             at (boxes.dist(boxIndex, numLevels)) {
-                var box : FmmLeafBox! = boxes(boxIndex, numLevels) as FmmLeafBox!;
+                var box : FmmLeafBox = boxes(boxIndex, numLevels) as FmmLeafBox;
                 if (box == null) {
                     val newBox = new FmmLeafBox(numLevels, boxLocation, numTerms, parentBox);
                     boxes(boxIndex, numLevels) = newBox;
@@ -219,10 +219,6 @@ public class DistributedFmm3d {
             multipoleTransforms(level, i, j, k) = LocalExpansion.getMlm(translationVector, numTerms);
         } 
 
-        //var wellSep : Int = 0;
-        //var nearField : Int = 0;
-        // top level (==2)
-
         Console.OUT.println("level 2");
 
         // TODO XTENLANG-513
@@ -232,41 +228,36 @@ public class DistributedFmm3d {
 
         val level2Dist = boxes.dist | [0..63,2..2];
         finish ateach ((boxIndex1,level) in level2Dist) {
-        //for ((boxIndex1) in 0..63) {
-        //    at (boxes.dist(boxIndex1,2)) {
-                val box1 = boxes(boxIndex1, level);
-                if (box1 != null) {
-                    //Console.OUT.println("transformToLocal: box(" + boxIndex1 + "," + 2 + ")");
-                    for ((boxIndex2) in 0..boxIndex1-1) { 
-                        async (boxes.dist(boxIndex2,level)) {
-                            val box2 = boxes(boxIndex2, level);
-                            if (box2 != null) {
-                                //Console.OUT.println("... and box(" + 2 + "," + boxIndex2 + ")");
-                                if (box2.wellSeparated(ws, box1)) {
-                                    val translation = box2.getTranslationIndex(box1);
-                                    val transform12 = at (Place.FIRST_PLACE) {multipoleTransforms(level, -translation(0), -translation(1), -translation(2))};
-                                    box2.localExp.transformAndAddToLocal(transform12, at (boxes.dist(boxIndex1,2)) {box1.multipoleExp});
-                                    val box2MultipoleExp = at (boxes.dist(boxIndex2,2)) {box2.multipoleExp};
-                                    at (boxes.dist(boxIndex1,level)) {
-                                        val transform21 = at (Place.FIRST_PLACE) {multipoleTransforms(level, translation(0), translation(1), translation(2))};
-                                        box1.localExp.transformAndAddToLocal(transform21, box2MultipoleExp);
-                                    }
+            val box1 = boxes(boxIndex1, level);
+            if (box1 != null) {
+                //Console.OUT.println("transformToLocal: box(" + boxIndex1 + "," + 2 + ")");
+                for ((boxIndex2) in 0..boxIndex1-1) { 
+                    async (boxes.dist(boxIndex2,level)) {
+                        val box2 = boxes(boxIndex2, level);
+                        if (box2 != null) {
+                            //Console.OUT.println("... and box(" + 2 + "," + boxIndex2 + ")");
+                            if (box2.wellSeparated(ws, box1)) {
+                                val translation = box2.getTranslationIndex(box1);
+                                val transform12 = at (Place.FIRST_PLACE) {multipoleTransforms(level, -translation(0), -translation(1), -translation(2))};
+                                box2.localExp.transformAndAddToLocal(transform12, at (boxes.dist(boxIndex1,2)) {box1.multipoleExp});
+                                val box2MultipoleExp = at (boxes.dist(boxIndex2,2)) {box2.multipoleExp};
+                                at (boxes.dist(boxIndex1,level)) {
+                                    val transform21 = at (Place.FIRST_PLACE) {multipoleTransforms(level, translation(0), translation(1), translation(2))};
+                                    box1.localExp.transformAndAddToLocal(transform21, box2MultipoleExp);
                                 }
                             }
                         }
                     }
                 }
             }
-        //}
+        }
 
         Console.OUT.println("remaining levels");
 
         
-        for ((level) in 3..numLevels) {
-            val thisLevelDist = boxes.dist | [0..(Math.pow(8,level) as Int)-1,level..level];
+        for ((thisLevel) in 3..numLevels) {
+            val thisLevelDist = boxes.dist | [0..(Math.pow(8,thisLevel) as Int)-1,thisLevel..thisLevel];
             finish ateach ((boxIndex1,level) in thisLevelDist) {
-        //    for ((boxIndex1) in 0..(Math.pow(8,level) as Int)-1) {
-        //        at (boxes.dist(boxIndex1,level)) {
                     val box1 = boxes(boxIndex1, level);
                     if (box1 != null) {
                         //Console.OUT.println("transformToLocal: box(" + boxIndex1 + "," + level + ")");
@@ -284,11 +275,7 @@ public class DistributedFmm3d {
                                             at (boxes.dist(boxIndex1,2)) {
                                                 transform21 : LocalExpansion = at (Place.FIRST_PLACE){multipoleTransforms(level, translation(0), translation(1), translation(2))};
                                                 box1.localExp.transformAndAddToLocal(transform21, box2MultipoleExp);
-                                            }
-                                            //wellSep++;
-                                            
-                                        } else if (level==numLevels) {
-                                            //nearField++;
+                                            }   
                                         }
                                     }
                                 }
