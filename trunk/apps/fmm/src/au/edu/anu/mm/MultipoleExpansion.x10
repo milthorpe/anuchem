@@ -96,8 +96,8 @@ public value MultipoleExpansion extends Expansion {
         val p : Int = source.terms.region.max(0);
         val shift : MultipoleExpansion = MultipoleExpansion.getOlm(b, p);
         for (val (j,k): Point in source.terms) {
-            for (var l : Int = j; l<=p; l++) {
-                for (var m : Int = -l; m<=l; m++) {   
+            for (var l : Int = j; l<=p; l++) { // TODO XTENLANG-504
+                for (var m : Int = -l; m<=l; m++) { // TODO XTENLANG-504
                     if (Math.abs(m-k) <= (l-j)) {
                         val A_lmjk : Complex = shift.terms(l-j, m-k);
                         target.terms(l,m) = target.terms(l,m).add(A_lmjk.multiply(source.terms(j,k)));
@@ -122,8 +122,8 @@ public value MultipoleExpansion extends Expansion {
                                          target : MultipoleExpansion) {
         val p : Int = source.terms.region.max(0);
         for (val (j,k): Point in source.terms) {
-            for (var l : Int = j; l<=p; l++) {
-                for (var m : Int = -l; m<=l; m++) {
+            for (var l : Int = j; l<=p; l++) { // TODO XTENLANG-504
+                for (var m : Int = -l; m<=l; m++) { // TODO XTENLANG-504
                     if (Math.abs(m-k) <= (l-j)) {
                         val A_lmjk : Complex = shift.terms(l-j, m-k);
                         target.terms(l,m) = target.terms(l,m).add(A_lmjk.multiply(source.terms(j,k)));
@@ -149,8 +149,8 @@ public value MultipoleExpansion extends Expansion {
         val p : Int = source.terms.region.max(0);
         val transform : LocalExpansion = LocalExpansion.getMlm(b, p);
         for (val (j,k) : Point in source.terms) {
-            for (var l : Int = 0; l<=p-j; l++) {
-                for (var m : Int = -l; m<=l; m++) {
+            for (var l : Int = 0; l<=p-j; l++) { // TODO XTENLANG-504
+                for (var m : Int = -l; m<=l; m++) { // TODO XTENLANG-504
                     if (Math.abs(k+m) <= (j+l)) {
                         val B_lmjk : Complex = transform.terms(j+l, k+m);
                         target.terms(l,m) = target.terms(l,m).add(B_lmjk.multiply(source.terms(j,k)));
@@ -175,8 +175,8 @@ public value MultipoleExpansion extends Expansion {
                                          target : LocalExpansion) {
         val p : Int = source.terms.region.max(0);
         for (val (j,k) : Point in source.terms) {
-            for ((l) in 0..p-j) {
-                for ((m) in -l..l) {
+            for (var l : Int = 0; l<=p-j; l++) { // TODO XTENLANG-504
+                for (var m : Int = -l; m<=l; m++) { // TODO XTENLANG-504
                     if (Math.abs(k+m) <= (j+l)) {
                         val B_lmjk : Complex = transform.terms(j+l, k+m);
                         target.terms(l,m) = target.terms(l,m).add(B_lmjk.multiply(source.terms(j,k)));

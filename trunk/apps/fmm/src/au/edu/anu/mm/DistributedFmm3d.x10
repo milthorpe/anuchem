@@ -236,14 +236,14 @@ public class DistributedFmm3d {
                         val box2 = boxes(boxIndex2, level);
                         if (box2 != null) {
                             //Console.OUT.println("... and box(" + 2 + "," + boxIndex2 + ")");
-                            if (box2.wellSeparated(ws, box1)) {
-                                val translation = box2.getTranslationIndex(box1);
+                            if (box2.wellSeparatedDist(ws, box1)) {
+                                val translation = box2.getTranslationIndexDist(box1);
                                 val transform12 = at (Place.FIRST_PLACE) {multipoleTransforms(level, -translation(0), -translation(1), -translation(2))};
-                                box2.localExp.transformAndAddToLocal(transform12, at (boxes.dist(boxIndex1,2)) {box1.multipoleExp});
+                                box2.localExp.transformAndAddToLocalDist(transform12, at (boxes.dist(boxIndex1,2)) {box1.multipoleExp});
                                 val box2MultipoleExp = at (boxes.dist(boxIndex2,2)) {box2.multipoleExp};
                                 at (boxes.dist(boxIndex1,level)) {
                                     val transform21 = at (Place.FIRST_PLACE) {multipoleTransforms(level, translation(0), translation(1), translation(2))};
-                                    box1.localExp.transformAndAddToLocal(transform21, box2MultipoleExp);
+                                    box1.localExp.transformAndAddToLocalDist(transform21, box2MultipoleExp);
                                 }
                             }
                         }
@@ -266,15 +266,15 @@ public class DistributedFmm3d {
                                 box2 : FmmBox = boxes(boxIndex2, level);
                                 if (box2 != null) {
                                     //Console.OUT.println("... and box(" + level + "," + boxIndex2 + ")");
-                                    if (!(at (box2.parent.location) {box2.parent.wellSeparated(ws, box1.parent)})) {
-                                        if (box2.wellSeparated(ws, box1)) {
-                                            val translation = box2.getTranslationIndex(box1);
+                                    if (!(at (box2.parent.location) {box2.parent.wellSeparatedDist(ws, box1.parent)})) {
+                                        if (box2.wellSeparatedDist(ws, box1)) {
+                                            val translation = box2.getTranslationIndexDist(box1);
                                             transform12 : LocalExpansion = at (Place.FIRST_PLACE){multipoleTransforms(level, -translation(0), -translation(1), -translation(2))};
-                                            box2.localExp.transformAndAddToLocal(transform12, at (boxes.dist(boxIndex1,level)) {box1.multipoleExp});
+                                            box2.localExp.transformAndAddToLocalDist(transform12, at (boxes.dist(boxIndex1,level)) {box1.multipoleExp});
                                             val box2MultipoleExp = at (boxes.dist(boxIndex2,2)) {box2.multipoleExp};
                                             at (boxes.dist(boxIndex1,2)) {
                                                 transform21 : LocalExpansion = at (Place.FIRST_PLACE){multipoleTransforms(level, translation(0), translation(1), translation(2))};
-                                                box1.localExp.transformAndAddToLocal(transform21, box2MultipoleExp);
+                                                box1.localExp.transformAndAddToLocalDist(transform21, box2MultipoleExp);
                                             }   
                                         }
                                     }
@@ -329,7 +329,7 @@ public class DistributedFmm3d {
                         // direct calculation with all atoms in same box
                         for ((sameBoxAtomIndex) in 0..atomIndex1-1) {
                             sameBoxAtom : Atom = box1.atoms(sameBoxAtomIndex);
-                            val pairEnergy : Double = atom1.pairEnergy(sameBoxAtom);
+                            val pairEnergy : Double = atom1.pairEnergyDist(sameBoxAtom);
                             at (this.location){atomic {fmmEnergy += 2 * pairEnergy;}}
                         }
 
@@ -341,11 +341,11 @@ public class DistributedFmm3d {
                                 if (box2 != null) {
                                     //Console.OUT.println(boxIndex1 + " vs. " + boxIndex2 + " ws = " + ws);
                                     val box1 = at (boxes.dist(boxIndex1,numLevels)) {boxes(boxIndex1, numLevels)};
-                                    if (!(box2.wellSeparated(ws, box1))) {
+                                    if (!(box2.wellSeparatedDist(ws, box1))) {
                                         for ((atomIndex2) in 0..box2.atoms.length()-1) {
                                             //Console.OUT.println("pair energy: " + boxIndex1 + "-" + atomIndex1 + " " + boxIndex2 + "-" + atomIndex2);
                                             atom2 : Atom = box2.atoms(atomIndex2);
-                                            val pairEnergy : Double = atom2.pairEnergy(atom1);
+                                            val pairEnergy : Double = atom2.pairEnergyDist(atom1);
                                             //Console.OUT.println("pairEnergy " + here);
                                             at (this.location) {atomic {fmmEnergy += 2 * pairEnergy;}}
                                         }
