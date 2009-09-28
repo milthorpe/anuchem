@@ -8,8 +8,8 @@ import x10x.vector.Point3d;
  * for the fast multipole method.
  * @author milthorpe
  */
-public class FmmBox {
-    public val parent : FmmBox;
+public value FmmBox {
+    public val parent : Box[FmmBox];
 
     public val level : Int;
 
@@ -25,7 +25,7 @@ public class FmmBox {
      * Creates a new FmmBox with multipole and local expansions
      * of the given number of terms.
      */
-    public def this(level : Int, gridLoc : ValRail[Int]{length==3}, numTerms : Int, parent : FmmBox) {
+    public def this(level : Int, gridLoc : ValRail[Int]{length==3}, numTerms : Int, parent : Box[FmmBox]) {
         this.level = level;
         this.gridLoc = gridLoc;
         this.parent = parent;
@@ -69,30 +69,8 @@ public class FmmBox {
             || Math.abs(gridLoc(2) - box2GridLoc(2)) > ws;
     }
 
-    /**
-     * Returns true if this box is well-separated from <code>box2</code>
-     * on the same level, i.e. if there are at least <code>ws</code>
-     * boxes separating them.
-     */
-    def wellSeparatedDist(ws : Int, box2 : FmmBox) : Boolean {
-        if (level < 2)
-            return false;
-        //if (this == box2)
-        //    return false;
-        // TODO can do reduction on a Rail?
-        val box2GridLoc = at (box2.location) {box2.gridLoc};
-        return Math.abs(gridLoc(0) - box2GridLoc(0)) > ws 
-            || Math.abs(gridLoc(1) - box2GridLoc(1)) > ws 
-            || Math.abs(gridLoc(2) - box2GridLoc(2)) > ws;
-    }
-
     def getTranslationIndex(box2 : FmmBox) : ValRail[Int]{length==3} {
         val box2GridLoc = box2.gridLoc;
-        return [gridLoc(0) - box2GridLoc(0), gridLoc(1) - box2GridLoc(1), gridLoc(2) - box2GridLoc(2)];
-    }
-
-    def getTranslationIndexDist(box2 : FmmBox) : ValRail[Int]{length==3} {
-        val box2GridLoc = at (box2.location) {box2.gridLoc};
         return [gridLoc(0) - box2GridLoc(0), gridLoc(1) - box2GridLoc(1), gridLoc(2) - box2GridLoc(2)];
     }
 }
