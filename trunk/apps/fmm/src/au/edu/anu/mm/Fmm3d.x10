@@ -307,16 +307,16 @@ public class Fmm3d {
         return index;
     }
 
-    def getParentBox(childIndex : Int, childLevel : Int) : FmmParentBox {
+    def getParentBox(childIndex : Int, childLevel : Int) : FmmBox {
         if (childLevel == 2)
             return null;
         parentIndex : Int = getParentIndex(childIndex, childLevel);
         parentLevel : Int = childLevel - 1;
         parentLocation : ValRail[Int]{length==3} = getBoxLocation(parentIndex, parentLevel);
-        var parent : FmmParentBox = boxes(parentIndex, parentLevel) as FmmParentBox;
+        var parent : FmmBox = boxes(parentIndex, parentLevel);
         if (parent == null) {
-            grandparent : FmmParentBox = getParentBox(parentIndex, parentLevel);
-            parent = new FmmParentBox(parentLevel, parentLocation, numTerms, grandparent);
+            val grandparent = getParentBox(parentIndex, parentLevel);
+            parent = new FmmBox(parentLevel, parentLocation, numTerms, grandparent);
             boxes(parentIndex, parentLevel) = parent;
         }
         return parent;

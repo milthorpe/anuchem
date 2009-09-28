@@ -186,18 +186,14 @@ public class DistributedFmm3d {
         for (var level: Int = numLevels; level > 2; level--) {
             val thisLevelDist = boxes.dist | [0..((Math.pow(8,level) as Int)-1),level..level];
             finish ateach ((childIndex,childLevel) in thisLevelDist) {
-            //for ((childIndex) in 0..(Math.pow(8,level) as Int)-1) {
-            //    childLevel : Int = level;
                 //Console.OUT.println("childIndex = " + childIndex + " childLevel = " + childLevel + " dist " + boxes.dist(childIndex,childLevel));
-            //    at (boxes.dist(childIndex,childLevel)) {
-                    val child = boxes(childIndex,childLevel);
-                    if (child != null) {
-                        val parent = child.parent;
-                        val shift = at (Place.FIRST_PLACE) {multipoleTranslations(childLevel, (child.gridLoc(0)+1)%2, (child.gridLoc(1)+1)%2, (child.gridLoc(2)+1)%2)};
-                        MultipoleExpansion.translateAndAddMultipole(shift, child.multipoleExp, parent.multipoleExp);
-                    }
+                val child = boxes(childIndex,childLevel);
+                if (child != null) {
+                    val parent = child.parent;
+                    val shift = at (Place.FIRST_PLACE) {multipoleTranslations(childLevel, (child.gridLoc(0)+1)%2, (child.gridLoc(1)+1)%2, (child.gridLoc(2)+1)%2)};
+                    MultipoleExpansion.translateAndAddMultipole(shift, child.multipoleExp, parent.multipoleExp);
                 }
-            //}
+            }
         }
     }
 
@@ -258,35 +254,34 @@ public class DistributedFmm3d {
         for ((thisLevel) in 3..numLevels) {
             val thisLevelDist = boxes.dist | [0..(Math.pow(8,thisLevel) as Int)-1,thisLevel..thisLevel];
             finish ateach ((boxIndex1,level) in thisLevelDist) {
-                    val box1 = boxes(boxIndex1, level);
-                    if (box1 != null) {
-                        //Console.OUT.println("transformToLocal: box(" + boxIndex1 + "," + level + ")");
-                        for ((boxIndex2) in 0..boxIndex1-1) {
-                            async (boxes.dist(boxIndex2,level)) {
-                                box2 : FmmBox = boxes(boxIndex2, level);
-                                if (box2 != null) {
-                                    //Console.OUT.println("... and box(" + level + "," + boxIndex2 + ")");
-                                    if (!(at (box2.parent.location) {box2.parent.wellSeparatedDist(ws, box1.parent)})) {
-                                        if (box2.wellSeparatedDist(ws, box1)) {
-                                            val translation = box2.getTranslationIndexDist(box1);
-                                            transform12 : LocalExpansion = at (Place.FIRST_PLACE){multipoleTransforms(level, -translation(0), -translation(1), -translation(2))};
-                                            box2.localExp.transformAndAddToLocalDist(transform12, at (boxes.dist(boxIndex1,level)) {box1.multipoleExp});
-                                            val box2MultipoleExp = at (boxes.dist(boxIndex2,2)) {box2.multipoleExp};
-                                            at (boxes.dist(boxIndex1,2)) {
-                                                transform21 : LocalExpansion = at (Place.FIRST_PLACE){multipoleTransforms(level, translation(0), translation(1), translation(2))};
-                                                box1.localExp.transformAndAddToLocalDist(transform21, box2MultipoleExp);
-                                            }   
-                                        }
+                val box1 = boxes(boxIndex1, level);
+                if (box1 != null) {
+                    //Console.OUT.println("transformToLocal: box(" + boxIndex1 + "," + level + ")");
+                    for ((boxIndex2) in 0..boxIndex1-1) {
+                        async (boxes.dist(boxIndex2,level)) {
+                            box2 : FmmBox = boxes(boxIndex2, level);
+                            if (box2 != null) {
+                                //Console.OUT.println("... and box(" + level + "," + boxIndex2 + ")");
+                                if (!(at (box2.parent.location) {box2.parent.wellSeparatedDist(ws, box1.parent)})) {
+                                    if (box2.wellSeparatedDist(ws, box1)) {
+                                        val translation = box2.getTranslationIndexDist(box1);
+                                        transform12 : LocalExpansion = at (Place.FIRST_PLACE){multipoleTransforms(level, -translation(0), -translation(1), -translation(2))};
+                                        box2.localExp.transformAndAddToLocalDist(transform12, at (boxes.dist(boxIndex1,level)) {box1.multipoleExp});
+                                        val box2MultipoleExp = at (boxes.dist(boxIndex2,2)) {box2.multipoleExp};
+                                        at (boxes.dist(boxIndex1,2)) {
+                                            transform21 : LocalExpansion = at (Place.FIRST_PLACE){multipoleTransforms(level, translation(0), translation(1), translation(2))};
+                                            box1.localExp.transformAndAddToLocalDist(transform21, box2MultipoleExp);
+                                        }   
                                     }
                                 }
                             }
                         }
                     }
-                    
-                    shift : MultipoleExpansion = multipoleTranslations(level, box1.gridLoc(0)%2, box1.gridLoc(1)%2, box1.gridLoc(2)%2);
-                    LocalExpansion.translateAndAddLocal(shift, box1.parent.localExp, box1.localExp);
                 }
-            //}
+                
+                shift : MultipoleExpansion = multipoleTranslations(level, box1.gridLoc(0)%2, box1.gridLoc(1)%2, box1.gridLoc(2)%2);
+                LocalExpansion.translateAndAddLocal(shift, box1.parent.localExp, box1.localExp);
+            }
         }
         //Console.OUT.println("wellSep = " + wellSep + " nearField = " + nearField);
     }
@@ -312,50 +307,47 @@ public class DistributedFmm3d {
 
         val lowestLevelDist = boxes.dist | [0..(Math.pow(8,numLevels) as Int)-1,numLevels..numLevels];
         finish ateach ((boxIndex1,level) in lowestLevelDist) {
-        //for ((boxIndex1) in 0..(Math.pow(8,numLevels) as Int)-1) { 
             //Console.OUT.println("boxIndex1 = " + boxIndex1);
-        //    at (boxes.dist(boxIndex1,numLevels)) {
-                val box1 = boxes(boxIndex1, numLevels) as FmmLeafBox;
-                if (box1 != null) {
-                    //Console.OUT.println("getEnergy: box(" + boxIndex1 + "," + numLevels + ")");
-                    for ((atomIndex1) in 0..box1.atoms.length()-1) {
-                        atom1 : Atom = box1.atoms(atomIndex1);
-                        v : Tuple3d = atom1.centre.sub(box1.getCentre(size));
-                        farFieldEnergy : Double = box1.localExp.getPotential(atom1.charge, v);
-                        //Console.OUT.println("farFieldEnergy " + farFieldEnergy + " at " + this.location);
-                        at (this.location){atomic {fmmEnergy += farFieldEnergy;}}
+            val box1 = boxes(boxIndex1, numLevels) as FmmLeafBox;
+            if (box1 != null) {
+                //Console.OUT.println("getEnergy: box(" + boxIndex1 + "," + numLevels + ")");
+                for ((atomIndex1) in 0..box1.atoms.length()-1) {
+                    atom1 : Atom = box1.atoms(atomIndex1);
+                    v : Tuple3d = atom1.centre.sub(box1.getCentre(size));
+                    farFieldEnergy : Double = box1.localExp.getPotential(atom1.charge, v);
+                    //Console.OUT.println("farFieldEnergy " + farFieldEnergy + " at " + this.location);
+                    at (this.location){atomic {fmmEnergy += farFieldEnergy;}}
 
-                        //Console.OUT.println("direct - same box");
-                        // direct calculation with all atoms in same box
-                        for ((sameBoxAtomIndex) in 0..atomIndex1-1) {
-                            sameBoxAtom : Atom = box1.atoms(sameBoxAtomIndex);
-                            val pairEnergy : Double = atom1.pairEnergyDist(sameBoxAtom);
-                            at (this.location){atomic {fmmEnergy += 2 * pairEnergy;}}
-                        }
+                    //Console.OUT.println("direct - same box");
+                    // direct calculation with all atoms in same box
+                    for ((sameBoxAtomIndex) in 0..atomIndex1-1) {
+                        sameBoxAtom : Atom = box1.atoms(sameBoxAtomIndex);
+                        val pairEnergy : Double = atom1.pairEnergyDist(sameBoxAtom);
+                        at (this.location){atomic {fmmEnergy += 2 * pairEnergy;}}
+                    }
 
-                        //Console.OUT.println("direct - non-well-sep");
-                        // direct calculation with all atoms in non-well-separated boxes
-                        finish foreach ((boxIndex2) in 0..boxIndex1-1) {
-                            at (boxes.dist(boxIndex2,numLevels)) {
-                                box2 : FmmLeafBox = boxes(boxIndex2, numLevels) as FmmLeafBox;
-                                if (box2 != null) {
-                                    //Console.OUT.println(boxIndex1 + " vs. " + boxIndex2 + " ws = " + ws);
-                                    val box1 = at (boxes.dist(boxIndex1,numLevels)) {boxes(boxIndex1, numLevels)};
-                                    if (!(box2.wellSeparatedDist(ws, box1))) {
-                                        for ((atomIndex2) in 0..box2.atoms.length()-1) {
-                                            //Console.OUT.println("pair energy: " + boxIndex1 + "-" + atomIndex1 + " " + boxIndex2 + "-" + atomIndex2);
-                                            atom2 : Atom = box2.atoms(atomIndex2);
-                                            val pairEnergy : Double = atom2.pairEnergyDist(atom1);
-                                            //Console.OUT.println("pairEnergy " + here);
-                                            at (this.location) {atomic {fmmEnergy += 2 * pairEnergy;}}
-                                        }
+                    //Console.OUT.println("direct - non-well-sep");
+                    // direct calculation with all atoms in non-well-separated boxes
+                    finish foreach ((boxIndex2) in 0..boxIndex1-1) {
+                        at (boxes.dist(boxIndex2,numLevels)) {
+                            box2 : FmmLeafBox = boxes(boxIndex2, numLevels) as FmmLeafBox;
+                            if (box2 != null) {
+                                //Console.OUT.println(boxIndex1 + " vs. " + boxIndex2 + " ws = " + ws);
+                                val box1 = at (boxes.dist(boxIndex1,numLevels)) {boxes(boxIndex1, numLevels)};
+                                if (!(box2.wellSeparatedDist(ws, box1))) {
+                                    for ((atomIndex2) in 0..box2.atoms.length()-1) {
+                                        //Console.OUT.println("pair energy: " + boxIndex1 + "-" + atomIndex1 + " " + boxIndex2 + "-" + atomIndex2);
+                                        atom2 : Atom = box2.atoms(atomIndex2);
+                                        val pairEnergy : Double = atom2.pairEnergyDist(atom1);
+                                        //Console.OUT.println("pairEnergy " + here);
+                                        at (this.location) {atomic {fmmEnergy += 2 * pairEnergy;}}
                                     }
                                 }
                             }
                         }
                     }
                 }
-            //}
+            }
         }
 
         return fmmEnergy;
@@ -366,28 +358,25 @@ public class DistributedFmm3d {
         return index;
     }
 
-    def getParentBox(childIndex : Int, childLevel : Int) : FmmParentBox {
+    def getParentBox(childIndex : Int, childLevel : Int) : FmmBox {
         //Console.OUT.println("getParentBox(" + childIndex + ", " + childLevel + ")");
         if (childLevel == 2)
             return null;
         parentIndex : Int = getParentIndex(childIndex, childLevel);
         parentLevel : Int = childLevel - 1;
-        var parent : FmmParentBox = at (boxes.dist(parentIndex, parentLevel)) {
-            boxes(parentIndex, parentLevel) as FmmParentBox
-        };
-        
+        var parent : FmmBox = at (boxes.dist(parentIndex, parentLevel)) {boxes(parentIndex, parentLevel)};
         if (parent == null) {
             parent = at (boxes.dist(parentIndex, parentLevel)) {getNewParent(parentIndex, parentLevel)};
         }
         return parent;
     }
 
-    def getNewParent(parentIndex : int, parentLevel : Int) : FmmParentBox {
-        grandparent : FmmParentBox = getParentBox(parentIndex, parentLevel);
-        parentLocation : ValRail[Int]{length==3} = getBoxLocation(parentIndex, parentLevel);
-        newParent : FmmParentBox = new FmmParentBox(parentLevel, parentLocation, numTerms, grandparent);
+    def getNewParent(parentIndex : int, parentLevel : Int) : FmmBox {
+        val grandparent = getParentBox(parentIndex, parentLevel);
+        val parentLocation = getBoxLocation(parentIndex, parentLevel);
+        val newParent = new FmmBox(parentLevel, parentLocation, numTerms, grandparent);
         if (grandparent != null)
-        boxes(parentIndex, parentLevel) = newParent;
+            boxes(parentIndex, parentLevel) = newParent;
         return newParent;
     }
 
