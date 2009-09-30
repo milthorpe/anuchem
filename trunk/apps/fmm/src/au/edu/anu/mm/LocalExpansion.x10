@@ -148,7 +148,7 @@ public value LocalExpansion extends Expansion {
                         // of the at statement results in a Seg Fault... why?
                         val jPlusL : Int = (j+l);
                         val kPlusM : Int = (k+m);
-                        val B_lmjk : Complex = at (Place.FIRST_PLACE) {transform.terms(jPlusL, kPlusM)};
+                        val B_lmjk : Complex = transform.terms(jPlusL, kPlusM);
                         //Console.OUT.println("source.terms.dist(" + j + "," + k + ") = " + source.terms.dist(j,k));
                         val O_jk : Complex = at (source.terms.dist(j,k)) {source.terms(j,k)};
                         this.terms(l,m) = this.terms(l,m).add(B_lmjk.multiply(O_jk));

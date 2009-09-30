@@ -40,10 +40,10 @@ public class DistributedFmm3d {
     val atoms : ValRail[Atom];
 
     /** A cache of transformations from multipole to local at the same level. */
-    val multipoleTransforms : Array[LocalExpansion]{rank==4};
+    val multipoleTransforms : Array[LocalExpansion]{rank==5};
 
     /** A cache of multipole translations between parent box centres and child box centres. */
-    val multipoleTranslations : Array[MultipoleExpansion]{rank==4};
+    val multipoleTranslations : Array[MultipoleExpansion]{rank==5};
 
     // TODO use shared local variable within getEnergy() - 
     // not currently possible due to <a href="http://jira.codehaus.org/browse/XTENLANG-505"/>
@@ -98,23 +98,34 @@ public class DistributedFmm3d {
         // all boxes are null to start.  they will be initialised as needed.
         this.boxes = Array.make[Box[FmmBox]](boxDistribution);
 
-    
-        var wellSpacedLimit : Region(4) = [2..numLevels,-(ws+3)..ws+3,-(ws+3)..ws+3,-(ws+3)..ws+3];
-        val multipoleTransformRegion : Region(4) = wellSpacedLimit - ([2..numLevels,-ws..ws,-ws..ws,-ws..ws] as Region);
-        this.multipoleTransforms = Array.make[LocalExpansion](multipoleTransformRegion);
-        this.multipoleTranslations = Array.make[MultipoleExpansion]([2..numLevels, 0..1, 0..1, 0..1]);
+        // two special arrays distributed to all places (this is done by replicating the first index in a cyclic dist across Place.PLACES)
+        var wellSpacedLimit : Region(5) = [0..Place.MAX_PLACES-1,2..numLevels,-(ws+3)..ws+3,-(ws+3)..ws+3,-(ws+3)..ws+3];
+        val multipoleTransformRegion : Region(5) = wellSpacedLimit - ([0..Place.MAX_PLACES-1,2..numLevels,-ws..ws,-ws..ws,-ws..ws] as Region);
+        this.multipoleTransforms = Array.make[LocalExpansion](Dist.makeCyclic(multipoleTransformRegion,0));
+        this.multipoleTranslations = Array.make[MultipoleExpansion](Dist.makeCyclic([0..Place.MAX_PLACES-1,2..numLevels, 0..1, 0..1, 0..1],0));
     }
     
     public def calculateEnergy() : Double {
+        // TODO XTENLANG-513
+        val numTerms = this.numTerms;
+        val size = this.size;
+        val multipoleTranslations = this.multipoleTranslations;
+
         // precompute multipole translations
-        for (val(level,i,j,k) in multipoleTranslations.region) {
-            dim : Int = Math.pow2(level);
-            sideLength : Double = size / dim;
-            translationVector : Vector3d = new Vector3d((i*2-1) * 0.5 * sideLength,
-                                                             (j*2-1) * 0.5 * sideLength,
-                                                             (k*2-1) * 0.5 * sideLength);
-            multipoleTranslations(level, i, j, k) = MultipoleExpansion.getOlm(translationVector, numTerms);
+        val d: Dist = Dist.makeUnique(Place.places);
+        finish ateach ((p) : Point in d) {
+            val myPortion = multipoleTranslations.dist | here;
+            foreach (val(placeId,level,i,j,k) in multipoleTranslations.dist | here) {
+                dim : Int = Math.pow2(level);
+                sideLength : Double = size / dim;
+                translationVector : Vector3d = new Vector3d((i*2-1) * 0.5 * sideLength,
+                                                                 (j*2-1) * 0.5 * sideLength,
+                                                                 (k*2-1) * 0.5 * sideLength);
+                multipoleTranslations(Point.make([placeId, level, i, j, k])) = MultipoleExpansion.getOlm(translationVector, numTerms);
+            } 
         }
+
+        Console.OUT.println("multipoleLowestLevel");
 
         multipoleLowestLevel();
         /*
@@ -122,7 +133,7 @@ public class DistributedFmm3d {
         for (val (i,j) in boxes.region) {
             if (boxes(i,j) != null) {
                 nonEmpty++;
-                Console.OUT.println("boxes(" + i + "," + j + ") multipole = " + boxes(i,j).multipoleExp);
+                Console.OUT.println("boxes(" + i + "," + j + ") multipole = " + boxes(i,j).value.multipoleExp);
             }
         }
         Console.OUT.println("nonEmpty = " + nonEmpty);
@@ -190,7 +201,7 @@ public class DistributedFmm3d {
                 if (bChild != null) {
                     val child = bChild.value;
                     val parent = child.parent;
-                    val shift = at (Place.FIRST_PLACE) {multipoleTranslations(childLevel, (child.gridLoc(0)+1)%2, (child.gridLoc(1)+1)%2, (child.gridLoc(2)+1)%2)};
+                    val shift = multipoleTranslations(Point.make([here.id, childLevel, (child.gridLoc(0)+1)%2, (child.gridLoc(1)+1)%2, (child.gridLoc(2)+1)%2]));
                     MultipoleExpansion.translateAndAddMultipole(shift, child.multipoleExp, parent.value.multipoleExp);
                 }
             }
@@ -205,22 +216,29 @@ public class DistributedFmm3d {
      * non-empty child boxes.
      */
     def transformToLocal() {
-        // precompute child translations
-        finish foreach (val(level,i,j,k) in multipoleTransforms.region) {
-            dim : Int = Math.pow2(level);
-            sideLength : Double = size / dim;
-            translationVector : Vector3d = new Vector3d(i * sideLength,
-                                                        j * sideLength,
-                                                        k * sideLength);
-            multipoleTransforms(level, i, j, k) = LocalExpansion.getMlm(translationVector, numTerms);
-        } 
-
-        Console.OUT.println("level 2");
-
         // TODO XTENLANG-513
         val ws = this.ws;
         val numLevels = this.numLevels;
         val boxes = this.boxes;
+        val numTerms = this.numTerms;
+        val size = this.size;
+        val multipoleTransforms = this.multipoleTransforms;
+        val multipoleTranslations = this.multipoleTranslations;
+
+        // precompute child translations
+        val d: Dist = Dist.makeUnique(Place.places);
+        finish ateach ((p) : Point in d) {
+            foreach (val(placeId, level,i,j,k) in multipoleTransforms.dist | here) {
+                dim : Int = Math.pow2(level);
+                sideLength : Double = size / dim;
+                translationVector : Vector3d = new Vector3d(i * sideLength,
+                                                            j * sideLength,
+                                                            k * sideLength);
+                multipoleTransforms(Point.make([placeId, level, i, j, k])) = LocalExpansion.getMlm(translationVector, numTerms);
+            }
+        } 
+
+        Console.OUT.println("level 2");
 
         val level2Dist = boxes.dist | [0..63,2..2];
         finish ateach ((boxIndex1,level) in level2Dist) {
@@ -236,11 +254,11 @@ public class DistributedFmm3d {
                             //Console.OUT.println("... and box(" + 2 + "," + boxIndex2 + ")");
                             if (box2.wellSeparated(ws, box1)) {
                                 val translation = box2.getTranslationIndex(box1);
-                                val transform12 = at (Place.FIRST_PLACE) {multipoleTransforms(level, -translation(0), -translation(1), -translation(2))};
+                                val transform12 = multipoleTransforms(Point.make([here.id, level, -translation(0), -translation(1), -translation(2)]));
                                 box2.localExp.transformAndAddToLocalDist(transform12, at (boxes.dist(boxIndex1,level)) {box1.multipoleExp});
                                 val box2MultipoleExp = box2.multipoleExp;
                                 at (bBox1.location) {
-                                    val transform21 = at (Place.FIRST_PLACE) {multipoleTransforms(level, translation(0), translation(1), translation(2))};
+                                    val transform21 = multipoleTransforms(Point.make([here.id, level, translation(0), translation(1), translation(2)]));
                                     box1.localExp.transformAndAddToLocalDist(transform21, box2MultipoleExp);
                                 }
                             }
@@ -269,11 +287,11 @@ public class DistributedFmm3d {
                                 if (!(at (box2.parent.location) {box2.parent.value.wellSeparated(ws, box1.parent.value)})) {
                                     if (box2.wellSeparated(ws, box1)) {
                                         val translation = box2.getTranslationIndex(box1);
-                                        val transform12 = at (Place.FIRST_PLACE) {multipoleTransforms(level, -translation(0), -translation(1), -translation(2))};
+                                        val transform12 = multipoleTransforms(Point.make([here.id, level, -translation(0), -translation(1), -translation(2)]));
                                         box2.localExp.transformAndAddToLocalDist(transform12, at (boxes.dist(boxIndex1,level)) {box1.multipoleExp});
                                         val box2MultipoleExp = box2.multipoleExp;
                                         at (bBox1.location) {
-                                            val transform21 = at (Place.FIRST_PLACE) {multipoleTransforms(level, translation(0), translation(1), translation(2))};
+                                            val transform21 = multipoleTransforms(Point.make([here.id, level, translation(0), translation(1), translation(2)]));
                                             box1.localExp.transformAndAddToLocalDist(transform21, box2MultipoleExp);
                                         }   
                                     }
@@ -281,7 +299,7 @@ public class DistributedFmm3d {
                             }
                         }
                     }
-                    val shift = at (Place.FIRST_PLACE) {multipoleTranslations(level, box1.gridLoc(0)%2, box1.gridLoc(1)%2, box1.gridLoc(2)%2)};
+                    val shift = multipoleTranslations(Point.make([here.id, level, box1.gridLoc(0)%2, box1.gridLoc(1)%2, box1.gridLoc(2)%2]));
                     LocalExpansion.translateAndAddLocal(shift, box1.parent.value.localExp, box1.localExp);
                 }
             }
