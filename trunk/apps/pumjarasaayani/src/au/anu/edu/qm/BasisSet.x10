@@ -44,24 +44,25 @@ public class BasisSet {
        val noOfAtoms = Int.parseInt(fil.readLine());
 
        for(var i:Int=0; i<noOfAtoms; i++) {
-          var words:ArrayList[String] = Utility.split(fil.readLine(), ' ');
+          // var words:ArrayList[String] = Utility.split(fil.readLine(), ' ');
+          val words = fil.readLine().split(" ");
           var symbol:String = words(0);
           var noOfContractions:Int = Int.parseInt(words(1));
 
           var atomBasis:AtomicBasis = new AtomicBasis();
 
           for(var j:Int=0; j<noOfContractions; j++) {
-             words = Utility.split(fil.readLine(), ' ');
-             var orbitalType:String = words(0);
-             var noOfPrimitives:Int = Int.parseInt(words(1));
+             val words1 = fil.readLine().split(" ");
+             var orbitalType:String = words1(0);
+             var noOfPrimitives:Int = Int.parseInt(words1(1));
 
              var orbital:Orbital = new Orbital(orbitalType);
 
              for(var k:Int=0; k<noOfPrimitives; k++) { 
-                words = Utility.split(fil.readLine(), ' ');
+                val words2 = fil.readLine().split(" ");
                 
-                orbital.add(Double.parseDouble(words(0)),
-                            Double.parseDouble(words(1)));
+                orbital.add(Double.parseDouble(words2(0)),
+                            Double.parseDouble(words2(1)));
              } // end for
 
              atomBasis.addOrbital(orbital); 
@@ -73,7 +74,7 @@ public class BasisSet {
        fil.close();
     }
  
-    private def init(name:String) : void {
+    private def init(name:String) {
        if (name.equals("sto3g")) {
           val hBasis = new AtomicBasis();
           val hOrb   = new Orbital("S");
@@ -139,7 +140,7 @@ public class BasisSet {
        } // end if
     }
 
-    public def getName():String = this.name;
+    public def getName() = this.name;
 
     public def getBasis(atom:Atom) : AtomicBasis {
         return (basisInfo.get(atom.getSymbol()) as AtomicBasis);

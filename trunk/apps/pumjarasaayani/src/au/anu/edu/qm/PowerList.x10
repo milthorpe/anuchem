@@ -29,7 +29,7 @@ public class PowerList {
        initCalled = true;
     }
 
-    public def generatePowerList(maxAngularMomentum:Int) : Array[Power]{rank==1} {
+    public def generatePowerList(maxAngularMomentum:Int) {
         var n:Int = 0;
         switch(maxAngularMomentum) {
           case 0:
@@ -54,9 +54,9 @@ public class PowerList {
     }
 
 
-    static val _theInstance:PowerList = new PowerList();
+    private static val _theInstance = new PowerList();
 
-    public static def getInstance() : PowerList { 
+    public static def getInstance() { 
        if (!_theInstance.initCalled) _theInstance.init();
 
        return _theInstance;

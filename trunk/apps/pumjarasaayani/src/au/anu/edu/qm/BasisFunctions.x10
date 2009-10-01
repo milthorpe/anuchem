@@ -29,38 +29,49 @@ public class BasisFunctions {
         initShellList();
     } 
 
-    private def initBasisFunctions(basisDir:String) : void {
-        val basisSet:BasisSet = new BasisSet(); 
+    private def initBasisFunctions(basisDir:String) {
+        var basisSet:BasisSet = new BasisSet(); 
         basisSet.make(basisName, basisDir);
+        var indx:Int = 0;
 
-        for(atom in molecule.getAtoms()) {
-            val orbitals = basisSet.getBasis(atom).getOrbitals();
+        for(var atmno:Int=0; atmno<molecule.getNumberOfAtoms(); atmno++) {
+            val atom      = molecule.getAtom(atmno);
+            val atomBasis = basisSet.getBasis(atom);
+            val orbitals  = atomBasis.getOrbitals();
+            val atombfs   = new ArrayList[ContractedGaussian]();
 
-            for(orb in orbitals) { 
+            for(var orbno:Int=0; orbno<orbitals.size(); orbno++) { 
+               val orb = orbitals.get(orbno);
                val pList = PowerList.getInstance().getPowers(orb.getType());
-              
-               for(var l:Int=0; l<pList.region.max(0); l++) {
+               val pListSiz = pList.region.max(0); 
+
+               for(var l:Int=0; l<pListSiz; l++) {
                   var cg:ContractedGaussian = new ContractedGaussian(atom, pList(l));   
-                  val coeff = orb.getCoefficients();
-                  val exps  = orb.getExponents();
+                  cg.setIndex(indx++);
+              
+                  val coeff:ArrayList[Double] = orb.getCoefficients();
+                  val exps:ArrayList[Double]  = orb.getExponents();
 
                   for(var i:Int=0; i<coeff.size(); i++) {
                      cg.addPrimitive(exps.get(i), coeff.get(i));
                   } // end for
 
                   cg.normalize();
+                  atombfs.add(cg);
                   basisFunctions.add(cg);
                } // end for
-            } // end for            
+            } // end for          
+
+            atom.setBasisFunctions(atombfs);  
         } // end for
     }
 
-    private def initShellList() : void {
+    private def initShellList() {
         for(cg in basisFunctions) shellList.addShellPrimitive(cg);
     }
 
-    public def getBasisName() : String = this.basisName;
-    public def getBasisFunctions() : ArrayList[ContractedGaussian] = basisFunctions;
-    public def getShellList() : ShellList = shellList;
+    public def getBasisName() = this.basisName;
+    public def getBasisFunctions() = basisFunctions;
+    public def getShellList() = shellList;
 }
 

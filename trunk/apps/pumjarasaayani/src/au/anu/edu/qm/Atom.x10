@@ -8,7 +8,9 @@
 
 package au.anu.edu.qm;
 
-public value Atom { 
+import x10.util.*;
+
+public class Atom { 
     val x:Double, y:Double, z:Double;
     val symbol:String;
 
@@ -22,17 +24,26 @@ public value Atom {
         this.x = x; this.y = y; this.z = z;
     } 
 
-    public def getX() : Double = this.x; 
-    public def getY() : Double = this.y; 
-    public def getZ() : Double = this.z; 
+    public def getX() = this.x; 
+    public def getY() = this.y; 
+    public def getZ() = this.z; 
 
-    public def getSymbol() : String = this.symbol; 
+    public def getSymbol() = this.symbol; 
 
-    public def distanceFrom(atm:Atom) : Double {
+    
+    var basisFunctions:ArrayList[ContractedGaussian];
+    
+    public def setBasisFunctions(bfs:ArrayList[ContractedGaussian]) {
+        basisFunctions = bfs;
+    }
+
+    public def getBasisFunctions() = basisFunctions;    
+
+    public def distanceFrom(atm:Atom) {
         return Math.sqrt(distanceSquaredFrom(atm));
     }
 
-    public def distanceSquaredFrom(atm:Atom) : Double {
+    public def distanceSquaredFrom(atm:Atom) {
         val x = this.x - atm.x;
         val y = this.y - atm.y;
         val z = this.z - atm.z;

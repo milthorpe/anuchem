@@ -13,8 +13,8 @@ import x10.util.*;
 public class ContractedGaussian { 
     val centeredAtom:Atom;
     val power:Power;
-    val primitives:ArrayList[PrimitiveGaussian];
     var normalization:Double;
+    val primitives:ArrayList[PrimitiveGaussian];
  
     val exponents:ArrayList[Double];
     val coefficients:ArrayList[Double];
@@ -32,18 +32,24 @@ public class ContractedGaussian {
         primNorms = new ArrayList[Double]();
     } 
 
-    public def getOrigin() : Atom = centeredAtom;
-    public def getCenteredAtom() : Atom = centeredAtom;
-    public def getPower() : Power = power;
-    public def getNormalization() : Double = normalization;
-    public def getPrimitives() : ArrayList[PrimitiveGaussian] = primitives;
-    public def getExponents() : ArrayList[Double] = exponents;
-    public def getCoefficients() : ArrayList[Double] = coefficients;
-    public def getPrimNorms() : ArrayList[Double] = primNorms;
+    public def getOrigin() = centeredAtom;
+    public def getCenteredAtom() = centeredAtom;
+    public def getPower() = power;
+    public def getNormalization() = normalization;
+    public def getPrimitives() = primitives;
+    public def getExponents() = exponents;
+    public def getCoefficients() = coefficients;
+    public def getPrimNorms() = primNorms;
     public def getTotalAngularMomentum() = power.getTotalAngularMomentum();
     public def getMaximumAngularMomentum() = power.getMaximumAngularMomentum();
     public def getMinimumAngularMomentum() = power.getMinimumAngularMomentum();
 
+    var index:Int;
+    public def getIndex() = index;
+    
+    public def setIndex(idx:Int) {
+       index = idx;
+    }
 
     public def addPrimitive(exp:Double, coeff:Double) {
         primitives.add(new PrimitiveGaussian(centeredAtom, power, exp, coeff));
@@ -52,7 +58,7 @@ public class ContractedGaussian {
         coefficients.add(coeff);
     }
 
-    public def overlap(cg:ContractedGaussian) : Double {
+    public def overlap(cg:ContractedGaussian) {
         val cgPrimitives = cg.getPrimitives();
         var i:Int, j:Int;
         var sij:Double = 0.0;
@@ -70,7 +76,7 @@ public class ContractedGaussian {
         return normalization * cg.normalization * sij;
     }
 
-    public def kinetic(cg:ContractedGaussian) : Double {
+    public def kinetic(cg:ContractedGaussian) {
         var tij:Double = 0.0;
         var i:Int, j:Int;
         val cgPrimitives = cg.getPrimitives();
@@ -88,7 +94,7 @@ public class ContractedGaussian {
         return normalization * cg.normalization * tij;
     }
 
-    public def nuclear(cg:ContractedGaussian, center:Atom) : Double {
+    public def nuclear(cg:ContractedGaussian, center:Atom) {
         var vij:Double = 0.0;
         var i:Int, j:Int;
         val cgPrimitives = cg.getPrimitives();
@@ -107,7 +113,7 @@ public class ContractedGaussian {
         return normalization * cg.normalization * vij;
     }
 
-    public def normalize() : void {        
+    public def normalize() {        
         for(var i:Int=0; i<primitives.size(); i++) {
            primitives.get(i).normalize();
            primNorms.add(primitives.get(i).getNormalization());

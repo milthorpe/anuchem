@@ -12,6 +12,7 @@ import x10.util.*;
 
 public class TwoElectronIntegrals { 
     var basisFunctions:BasisFunctions;
+    var molecule:Molecule;
     var twoEInts:Array[Double]{rank==1};
     var direct:Boolean;
     var noOfIntegrals:Int;
@@ -62,12 +63,38 @@ public class TwoElectronIntegrals {
         } // end if
     }
 
+    public def make(bfs:BasisFunctions, mol:Molecule, isDirect:Boolean) {
+        basisFunctions = bfs;
+        molecule       = mol;
+        direct         = isDirect;        
+
+        val noOfBasisFunctions = basisFunctions.getBasisFunctions().size();
+        noOfIntegrals = noOfBasisFunctions * (noOfBasisFunctions + 1)
+                          * (noOfBasisFunctions * noOfBasisFunctions
+                             + noOfBasisFunctions + 2) / 8;
+
+        if (!direct) {
+           // allocate required memory
+           twoEInts = Array.make[Double]([0..noOfIntegrals]);
+           this.contractedList = null;
+           compute2EShellPair();
+        } else {
+           this.contractedList = basisFunctions.getBasisFunctions();
+           twoEInts = Array.make[Double]([0..1]);
+        } // end if
+    }
+
     public def isDirect() : Boolean = direct;
     public def getNumberOfIntegrals() : Int = noOfIntegrals;
 
     public def compute2E(i:Int, j:Int, k:Int, l:Int) : Double {
         return coulomb(contractedList.get(i), contractedList.get(j), 
                        contractedList.get(k), contractedList.get(l));
+    }
+
+    public def compute2E(ia:ContractedGaussian, ja:ContractedGaussian, 
+                         ka:ContractedGaussian, la:ContractedGaussian) : Double {
+        return coulomb(ia, ja, ka, la);
     }
 
     protected def compute2E() : void {
@@ -106,6 +133,68 @@ public class TwoElectronIntegrals {
                 } // end k loop
             } // end of j loop
         } // end of i loop       
+    }
+
+    protected def compute2EShellPair() : void {
+        val bfs = basisFunctions.getBasisFunctions();
+        val noOfBasisFunctions = bfs.size();
+
+        val noOfAtoms = molecule.getNumberOfAtoms();
+        var a:Int, b:Int, c:Int, d:Int;
+        var i:Int, j:Int, k:Int, l:Int;
+        var naFunc:Int, nbFunc:Int, ncFunc:Int, ndFunc:Int, twoEIndx:Int;
+        var aFunc:ArrayList[ContractedGaussian], bFunc:ArrayList[ContractedGaussian], 
+            cFunc:ArrayList[ContractedGaussian], dFunc:ArrayList[ContractedGaussian];
+        var iaFunc:ContractedGaussian, jbFunc:ContractedGaussian, 
+            kcFunc:ContractedGaussian, ldFunc:ContractedGaussian;
+
+        // center a
+        for(a=0; a<noOfAtoms; a++) {
+            aFunc = molecule.getAtom(a).getBasisFunctions();
+            naFunc = aFunc.size();
+            // basis functions on a
+            for(i=0; i<naFunc; i++) {
+                iaFunc = aFunc.get(i);
+
+                // center b
+                for(b=0; b<=a; b++) {
+                    bFunc = molecule.getAtom(b).getBasisFunctions();
+                    nbFunc = (b<a) ? bFunc.size() : i+1;
+                    // basis functions on b
+                    for(j=0; j<nbFunc; j++) {
+                        jbFunc = bFunc.get(j);
+
+                        // center c
+                        for(c=0; c<noOfAtoms; c++) {
+                            cFunc = molecule.getAtom(c).getBasisFunctions();
+                            ncFunc = cFunc.size();
+                            // basis functions on c
+                            for(k=0; k<ncFunc; k++) {
+                                kcFunc = cFunc.get(k);
+
+                                // center d
+                                for(d=0; d<=c; d++) {
+                                    dFunc = molecule.getAtom(d).getBasisFunctions();
+                                    ndFunc = (d<c) ? dFunc.size() : k+1;
+                                    // basis functions on d
+                                    for(l=0; l<ndFunc; l++) {
+                                        ldFunc = dFunc.get(l);
+                                        twoEIndx = IntegralsUtils.ijkl2intindex(
+                                                           iaFunc.getIndex(),
+                                                           jbFunc.getIndex(),
+                                                           kcFunc.getIndex(),
+                                                           ldFunc.getIndex());
+
+                                        twoEInts(twoEIndx) = compute2E(iaFunc, jbFunc,
+                                                                       kcFunc, ldFunc);
+                                    } // end for (l)
+                                } // end for (d)
+                            } // end for (k)
+                        } // end for (c)
+                    }  // end for (j)
+                } // end for (b)
+            } // end for (i)
+        } // end for (a)
     }
 
     public def getTwoElectronIntegrals() : Array[Double]{rank==1} = twoEInts;

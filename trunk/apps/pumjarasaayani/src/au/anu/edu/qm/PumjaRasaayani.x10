@@ -35,7 +35,7 @@ public class PumjaRasaayani {
         } // end of try .. catch block
     } 
 
-    private def initDefault() : void { 
+    private def initDefault() { 
         mol = new Molecule("h2");
 
         // H2, 1 a.u. apart
@@ -51,7 +51,7 @@ public class PumjaRasaayani {
         basisName = "sto3g";
     }
 
-    public def runIt() : void {
+    public def runIt() {
         Console.OUT.println("PumjaRasaayani shunya.eak, Quantum Chemisty program in x10, v0.1");
 
         Console.OUT.println("\nInput deck:");
@@ -80,7 +80,7 @@ public class PumjaRasaayani {
         hfscf.scf();
     }
 
-    public static def main(args:Rail[String]) : void {
+    public static def main(args:Rail[String]) {
         val qmApp = new PumjaRasaayani();
 
         if (args.length == 0) qmApp.make();

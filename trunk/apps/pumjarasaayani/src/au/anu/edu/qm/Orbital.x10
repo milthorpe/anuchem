@@ -21,21 +21,21 @@ public class Orbital {
        this.type = type;
     } 
 
-    public def addExponent(ex:Double) : void {
+    public def addExponent(ex:Double) {
        exps.add(ex);
     }
 
-    public def addCoefficient(co:Double) : void {
+    public def addCoefficient(co:Double) {
        coeff.add(co);
     }
 
-    public def add(ex:Double, co:Double) : void {
+    public def add(ex:Double, co:Double) {
        exps.add(ex);
        coeff.add(co);
     }
 
-    public def getType() : String = this.type;
-    public def getExponents() : ArrayList[Double] = this.exps;
-    public def getCoefficients() : ArrayList[Double] = this.coeff;
+    public def getType() = this.type;
+    public def getExponents() = this.exps;
+    public def getCoefficients() = this.coeff;
 }
 

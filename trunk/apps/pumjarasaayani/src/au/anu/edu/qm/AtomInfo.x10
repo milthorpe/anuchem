@@ -12,7 +12,7 @@ import x10.io.*;
 import x10.util.*;
 
 public class AtomInfo { 
-    val atomicNumbers:HashMap[String, Int];
+    var atomicNumbers:HashMap[String, Int];
     val atomInfoFile = "AtomInfo.conf";
 
     var madeIt:Boolean;
@@ -59,14 +59,14 @@ public class AtomInfo {
         madeIt = true;
     } 
 
-    private static _theInstance:AtomInfo = new AtomInfo();
+    private static _theInstance = new AtomInfo();
 
-    public static def getInstance() : AtomInfo {
+    public static def getInstance() {
         _theInstance.make();
 
         return _theInstance;
     }    
 
-    public def getAtomicNumber(atm:Atom) : Int = (atomicNumbers.get(atm.getSymbol()) as Int);
+    public def getAtomicNumber(atm:Atom) = (atomicNumbers.get(atm.getSymbol()) as Int);
 }
 

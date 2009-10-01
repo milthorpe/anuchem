@@ -17,10 +17,10 @@ public class AtomicBasis {
        orbitals = new ArrayList[Orbital]();
     } 
 
-    public def addOrbital(orb:Orbital) : void {
+    public def addOrbital(orb:Orbital) {
        orbitals.add(orb);
     }
 
-    public def getOrbitals() : ArrayList[Orbital] = this.orbitals;
+    public def getOrbitals() = this.orbitals;
 }
 
