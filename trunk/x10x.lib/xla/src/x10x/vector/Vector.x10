@@ -153,25 +153,11 @@ public class Vector {
      * magnitude of this vector
      */
     public def magnitude() : Double {
-        // scatter
-        val ps = distribution.places();
-        val results = Rail.makeVar[Double](ps.length);
-        finish foreach (val (p) in 0..(ps.length-1)) {
-        	results(p) = at (ps(p)) {
-        	    var result: Double = 0.0;
-                val a = (vec | here);
-                for (p(i):Point in a) {
-                    result += vec(i) * vec(i);
-                }
-                return result;
-            };
-        }
-
-        // gather
         var magSquared: Double = 0.0;
-        for (var i:int = 0; i < results.length; i++) {
-            magSquared += results(i);
-        }
+        val N = getSize();
+
+        for (var i:Int=0; i<N; i++) 
+            magSquared += vec(i)*vec(i);
        
         return Math.sqrt(magSquared);
     }
