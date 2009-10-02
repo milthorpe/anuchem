@@ -39,8 +39,36 @@ public class Matrix {
      *
      * @param siz the size of this matrix
      */
+    public static def makeLowerTriangular(siz:Int) : Matrix {
+        val newMatrix = new Matrix();
+
+        newMatrix.region       = Region.makeLowerTriangular(siz);
+        newMatrix.distribution = Dist.makeBlock(newMatrix.region, 1);
+        newMatrix.mat          = Array.make[Double](newMatrix.distribution);
+
+        return newMatrix;
+    }
+
+    /**
+     * Make instance of Matrix class
+     *
+     * @param siz the size of this matrix
+     */
     public static def make(newMatrix:Matrix, siz:Int) : Matrix {
         newMatrix.region       = [0..siz, 0..siz];
+        newMatrix.distribution = Dist.makeBlock(newMatrix.region, 1);
+        newMatrix.mat          = Array.make[Double](newMatrix.distribution);
+
+        return newMatrix;
+    }
+
+    /**
+     * Make instance of Matrix class
+     *
+     * @param siz the size of this matrix
+     */
+    public static def makeLowerTriangular(newMatrix:Matrix, siz:Int) : Matrix {
+        newMatrix.region       = Region.makeLowerTriangular(siz);
         newMatrix.distribution = Dist.makeBlock(newMatrix.region, 1);
         newMatrix.mat          = Array.make[Double](newMatrix.distribution);
 
