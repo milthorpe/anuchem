@@ -26,7 +26,7 @@ public value MultipoleExpansion extends Expansion {
         var v_pole : Polar3d = Polar3d.getPolar3d(v);
         val pplm : Array[Double]{rank==2} = AssociatedLegendrePolynomial.getPlm(Math.cos(v_pole.theta), p); 
         
-        val phifac0 : Complex = new Complex(Math.cos(-v_pole.phi), Math.sin(-v_pole.phi));
+        val phifac0 = Complex(Math.cos(-v_pole.phi), Math.sin(-v_pole.phi));
 
         var rfac : Double = 1.0;
         var il : Double = 1.0;
@@ -34,14 +34,14 @@ public value MultipoleExpansion extends Expansion {
             il = il * Math.max(l,1);
             var ilm : Double = il;
             var phifac : Complex = Complex.ONE;
-            exp.terms(l,0) = phifac.divide(ilm).multiply(q * rfac * pplm(l,0)); 
+            exp.terms(l,0) = phifac / ilm * (q * rfac * pplm(l,0)); 
             for (var m : Int = 1; m<=l; m++) {
                 ilm = ilm*(l+m);
-                phifac = phifac.multiply(phifac0);
-                exp.terms(l,m) = phifac.divide(ilm).multiply(q * rfac * pplm(l,m));
+                phifac = phifac * phifac0;
+                exp.terms(l,m) = phifac / ilm * (q * rfac * pplm(l,m));
             }
             for (var m : Int = -l; m<=-1; m++) {
-                exp.terms(l,m) = exp.terms(l,-m).conjugate().multiply(2*((-m+1)%2)-1);
+                exp.terms(l,m) = exp.terms(l,-m).conjugate() * (2*((-m+1)%2)-1);
             }
             rfac = rfac * v_pole.r;
         }
@@ -65,14 +65,14 @@ public value MultipoleExpansion extends Expansion {
             il = il * Math.max(l,1);
             var ilm : Double = il;
             var phifac : Complex = Complex.ONE;
-            exp.terms(l,0) = phifac.divide(ilm).multiply(rfac * pplm(l,0)); 
+            exp.terms(l,0) = phifac / ilm * (rfac * pplm(l,0)); 
             for (var m : Int = 1; m<=l; m++) {
                 ilm = ilm*(l+m);
                 phifac = phifac.multiply(phifac0);
-                exp.terms(l,m) = phifac.divide(ilm).multiply(rfac * pplm(l,m));
+                exp.terms(l,m) = phifac / ilm * (rfac * pplm(l,m));
             }
             for (var m : Int = -l; m<=-1; m++) {
-                exp.terms(l,m) = exp.terms(l,-m).conjugate().multiply(2*((-m+1)%2)-1);
+                exp.terms(l,m) = exp.terms(l,-m).conjugate() * (2*((-m+1)%2)-1);
             }
             rfac = rfac * v_pole.r;
         }
@@ -100,7 +100,7 @@ public value MultipoleExpansion extends Expansion {
                 for (var m : Int = -l; m<=l; m++) { // TODO XTENLANG-504
                     if (Math.abs(m-k) <= (l-j)) {
                         val A_lmjk : Complex = shift.terms(l-j, m-k);
-                        target.terms(l,m) = target.terms(l,m).add(A_lmjk.multiply(source.terms(j,k)));
+                        target.terms(l,m) = target.terms(l,m) + A_lmjk * source.terms(j,k);
                     }
                 }
             }
@@ -125,8 +125,8 @@ public value MultipoleExpansion extends Expansion {
             for (var l : Int = j; l<=p; l++) { // TODO XTENLANG-504
                 for (var m : Int = -l; m<=l; m++) { // TODO XTENLANG-504
                     if (Math.abs(m-k) <= (l-j)) {
-                        val A_lmjk : Complex = shift.terms(l-j, m-k);
-                        target.terms(l,m) = target.terms(l,m).add(A_lmjk.multiply(source.terms(j,k)));
+                        val A_lmjk = shift.terms(l-j, m-k);
+                        target.terms(l,m) = target.terms(l,m) + A_lmjk * source.terms(j,k);
                     }
                 }
             }
@@ -152,8 +152,8 @@ public value MultipoleExpansion extends Expansion {
             for (var l : Int = 0; l<=p-j; l++) { // TODO XTENLANG-504
                 for (var m : Int = -l; m<=l; m++) { // TODO XTENLANG-504
                     if (Math.abs(k+m) <= (j+l)) {
-                        val B_lmjk : Complex = transform.terms(j+l, k+m);
-                        target.terms(l,m) = target.terms(l,m).add(B_lmjk.multiply(source.terms(j,k)));
+                        val B_lmjk = transform.terms(j+l, k+m);
+                        target.terms(l,m) = target.terms(l,m) + B_lmjk * source.terms(j,k);
                     }
                 }
             }
@@ -178,8 +178,8 @@ public value MultipoleExpansion extends Expansion {
             for (var l : Int = 0; l<=p-j; l++) { // TODO XTENLANG-504
                 for (var m : Int = -l; m<=l; m++) { // TODO XTENLANG-504
                     if (Math.abs(k+m) <= (j+l)) {
-                        val B_lmjk : Complex = transform.terms(j+l, k+m);
-                        target.terms(l,m) = target.terms(l,m).add(B_lmjk.multiply(source.terms(j,k)));
+                        val B_lmjk = transform.terms(j+l, k+m);
+                        target.terms(l,m) = target.terms(l,m) + B_lmjk * source.terms(j,k);
                     }
                 }
             }

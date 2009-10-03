@@ -26,21 +26,21 @@ public value LocalExpansion extends Expansion {
         val pplm : Array[Double]{rank==2} = AssociatedLegendrePolynomial.getPlm(Math.cos(v_pole.theta), p); 
 
         val rfac0 : Double = 1.0 / v_pole.r;
-        val phifac0 : Complex = new Complex(Math.cos(v_pole.phi), Math.sin(v_pole.phi));
+        val phifac0 = Complex(Math.cos(v_pole.phi), Math.sin(v_pole.phi));
         var rfac : Double = rfac0;
         var il : Double = 1.0;
         for (var l : Int = 0; l<=p; l++) {
             il = il * Math.max(l,1);
             var ilm : Double = il;
             var phifac : Complex = Complex.ONE;
-            exp.terms(l,0) = phifac.multiply(rfac * pplm(l,0) * ilm);
+            exp.terms(l,0) = phifac * (rfac * pplm(l,0) * ilm);
             for (var m : Int = 1; m<=l; m++) {
                 ilm = ilm / (l+1-m);
-                phifac = phifac.multiply(phifac0);
-                exp.terms(l,m) = phifac.multiply(rfac * pplm(l,m) * ilm);
+                phifac = phifac * phifac0;
+                exp.terms(l,m) = phifac * (rfac * pplm(l,m) * ilm);
             }
             for (var m : Int = -l; m<=-1; m++) {
-                exp.terms(l,m) = exp.terms(l,-m).conjugate().multiply((2*((-m+1)%2)-1 as Double));
+                exp.terms(l,m) = exp.terms(l,-m).conjugate() * ((2*((-m+1)%2)-1 as Double));
             }
             rfac = rfac * rfac0;
         }
@@ -66,8 +66,8 @@ public value LocalExpansion extends Expansion {
         for (val (l,m): Point in target.terms) {
             for (var j : Int = l; j<=p; j++) { // TODO XTENLANG-504
                 for (var k : Int = l-j+m; k<=-l+j+m; k++) { // TODO XTENLANG-504
-                    val C_lmjk : Complex = shift.terms(j-l, k-m);
-                    target.terms(l,m) = target.terms(l,m).add(C_lmjk.multiply(source.terms(j,k)));
+                    val C_lmjk = shift.terms(j-l, k-m);
+                    target.terms(l,m) = target.terms(l,m) + C_lmjk * source.terms(j,k);
                 }
             }
         }
@@ -91,8 +91,8 @@ public value LocalExpansion extends Expansion {
         for (val (l,m): Point in target.terms) {
             for (var j : Int = l; j<=p; j++) { // TODO XTENLANG-504
                 for (var k : Int = l-j+m; k<=-l+j+m; k++) { // TODO XTENLANG-504
-                    val C_lmjk : Complex = shift.terms(j-l, k-m);
-                    target.terms(l,m) = target.terms(l,m).add(C_lmjk.multiply(source.terms(j,k)));
+                    val C_lmjk = shift.terms(j-l, k-m);
+                    target.terms(l,m) = target.terms(l,m) + C_lmjk * source.terms(j,k);
                 }
             }
         }
@@ -118,10 +118,10 @@ public value LocalExpansion extends Expansion {
                         // of the at statement results in a Seg Fault... why?
                         val jPlusL : Int = (j+l);
                         val kPlusM : Int = (k+m);
-                        val B_lmjk : Complex = transform.terms(jPlusL, kPlusM);
+                        val B_lmjk = transform.terms(jPlusL, kPlusM);
                         //Console.OUT.println("source.terms.dist(" + j + "," + k + ") = " + source.terms.dist(j,k));
                         val O_jk : Complex = source.terms(j,k);
-                        this.terms(l,m) = this.terms(l,m).add(B_lmjk.multiply(O_jk));
+                        this.terms(l,m) = this.terms(l,m) + B_lmjk * O_jk;
                     }
                 }
             }
@@ -148,10 +148,10 @@ public value LocalExpansion extends Expansion {
                         // of the at statement results in a Seg Fault... why?
                         val jPlusL : Int = (j+l);
                         val kPlusM : Int = (k+m);
-                        val B_lmjk : Complex = transform.terms(jPlusL, kPlusM);
+                        val B_lmjk = transform.terms(jPlusL, kPlusM);
                         //Console.OUT.println("source.terms.dist(" + j + "," + k + ") = " + source.terms.dist(j,k));
                         val O_jk : Complex = at (source.terms.dist(j,k)) {source.terms(j,k)};
-                        this.terms(l,m) = this.terms(l,m).add(B_lmjk.multiply(O_jk));
+                        this.terms(l,m) = this.terms(l,m) + B_lmjk * O_jk;
                     }
                 }
             }
@@ -168,12 +168,12 @@ public value LocalExpansion extends Expansion {
     public static def getPotential(q : Double,
                                 v : Tuple3d,
                                 source : LocalExpansion) : Double {
-        val numTerms : Int = source.terms.region.max(0);
-        val transform : MultipoleExpansion = MultipoleExpansion.getOlm(q, v, numTerms);
+        val numTerms = source.terms.region.max(0);
+        val transform = MultipoleExpansion.getOlm(q, v, numTerms);
         var potential : Double = 0.0;
         // TODO use lift/reduction?
         for (p in source.terms.region) {
-            potential += source.terms(p).multiply(transform.terms(p)).real;
+            potential += (source.terms(p) * transform.terms(p)).real;
         }
         return potential;
     }
@@ -186,12 +186,12 @@ public value LocalExpansion extends Expansion {
      */
     public def getPotential(q : Double,
                                 v : Tuple3d) : Double {
-        val numTerms : Int = terms.region.max(0);
-        val transform : MultipoleExpansion = MultipoleExpansion.getOlm(q, v, numTerms);
+        val numTerms = terms.region.max(0);
+        val transform = MultipoleExpansion.getOlm(q, v, numTerms);
         var potential : Double = 0.0;
         // TODO use lift/reduction?
         for (p in terms.region) {
-            potential += terms(p).multiply(transform.terms(p)).real;
+            potential += (terms(p) * transform.terms(p)).real;
         }
         return potential;
     }
