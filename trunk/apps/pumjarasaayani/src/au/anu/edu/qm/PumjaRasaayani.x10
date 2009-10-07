@@ -75,7 +75,7 @@ public class PumjaRasaayani {
         twoE.make(bsf, true);
         Console.OUT.println("\nNumber of 2E integrals: " + twoE.getNumberOfIntegrals());
         Console.OUT.println("\nComputed two-electron integrals. If direct, this is skipped for now.");
-        Console.OUT.println("\nIs Direct: " + twoE.isDirect());
+        Console.OUT.println("Is Direct: " + twoE.isDirect());
 
         val hfscf = new HartreeFockSCFMethod(mol, oneE, twoE);
         hfscf.scf();
