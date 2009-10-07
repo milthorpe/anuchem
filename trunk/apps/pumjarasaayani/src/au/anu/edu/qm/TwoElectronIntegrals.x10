@@ -56,7 +56,7 @@ public class TwoElectronIntegrals {
            // allocate required memory
            twoEInts = Array.make[Double]([0..noOfIntegrals]);
            this.contractedList = null;
-           compute2E();
+           compute2EShellPair();
         } else { 
            this.contractedList = basisFunctions.getBasisFunctions();
            twoEInts = Array.make[Double]([0..1]);
