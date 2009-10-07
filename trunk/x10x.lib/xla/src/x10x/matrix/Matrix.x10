@@ -175,6 +175,16 @@ public class Matrix {
     }
 
     /**
+     * Fill the current Matrix with zero
+     */
+    public def makeZero() : void {
+        val N = getRowCount();
+
+        finish foreach(val(i,j) in mat.region)
+           mat(i, j) = 0.0;
+    }
+
+    /**
      * Perform a similarity transform: X' . this . X
      */
     public def similarityTransformT(x:Matrix) : Matrix {
