@@ -255,6 +255,7 @@ public class TwoElectronIntegrals {
                     kcNorm = cNorms.get(k);
 
                     for(l=0; l<nd; l++) {
+
                         jij += iaCoef * jbCoef * kcCoef
                                * dCoefs.get(l)
                                * coulombRepulsion(
@@ -324,14 +325,33 @@ public class TwoElectronIntegrals {
             } // end for
         } // end for
 
-        return (2 * Math.pow(Math.PI, 2.5)
+        return (2.0 * Math.pow(Math.PI, 2.5)
                   / (gamma1 * gamma2 * Math.sqrt(gamma1+gamma2))
                   * Math.exp(-aAlpha*bAlpha*radiusABSquared/gamma1)
                   * Math.exp(-cAlpha*dAlpha*radiusCDSquared/gamma2)
                   * sum * aNorm * bNorm * cNorm * dNorm);
     }
 
-    /**
+    /** recursively form the columb repulsion term using HGP, stage one: form HRR */ 
+    private def contrHrr(
+                    a:Atom, aNorm:Double, aPower:Power, aAlpha:Double,
+                    b:Atom, bNorm:Double, bPower:Power, bAlpha:Double,
+                    c:Atom, cNorm:Double, cPower:Power, cAlpha:Double,
+                    d:Atom, dNorm:Double, dPower:Power, dAlpha:Double) : Double {
+       var hrrTerm:Double = 0.0;
+
+       // TODO :
+
+       return hrrTerm;
+    }
+
+    /** for VRR */
+    private def contrVrr() : Double {
+       // TODO:
+       return 0.0;
+    }
+
+   /**
      * Construct B array.
      *
      * <i> THO eq. 2.22 </i>
@@ -339,7 +359,7 @@ public class TwoElectronIntegrals {
     private def constructBArray(l1:Int, l2:Int, l3:Int, l4:Int,
                   p:Double, a:Double, b:Double, q:Double, c:Double, d:Double,
                   g1:Double, g2:Double, delta:Double) : Array[Double]{rank==1} {
-        val iMax = l1+l2+l3+l4+1;
+        val iMax = l1+l2+l3+l4+1;  // hold all the values (max angular momentum)
         val bArr:Array[Double]{rank==1} = Array.make[Double]([0..iMax]);
 
         var i1:Int, i2:Int, r1:Int, r2:Int, u:Int, index:Int;
