@@ -16,11 +16,13 @@ class TestMultipoleExpansion extends MathTest {
         Console.OUT.println("multipole expansion:\n" + Olm.toString());
 
         val target : MultipoleExpansion = new MultipoleExpansion(p);
-        MultipoleExpansion.translateAndAddMultipole(new Point3d(2.0, -3.0, 1.0), Olm, target);
+        val translation = MultipoleExpansion.getOlm(new Point3d(2.0, -3.0, 1.0), p);
+        target.translateAndAddMultipole(translation, Olm);
         Console.OUT.println("translated multipole:\n" + target.toString());
 
         val roundtrip : MultipoleExpansion = new MultipoleExpansion(p);
-        MultipoleExpansion.translateAndAddMultipole(new Point3d(-2.0, 3.0, -1.0), target, roundtrip);
+        val reverseTranslation = MultipoleExpansion.getOlm(new Point3d(-2.0, 3.0, -1.0), p);
+        roundtrip.translateAndAddMultipole(reverseTranslation, target);
         Console.OUT.println("translated multipole - roundtrip:\n" + roundtrip.toString());
 		for ((i): Point in [0..p]) {
             for ((j): Point in [-i..i]) {
@@ -29,7 +31,8 @@ class TestMultipoleExpansion extends MathTest {
         }
 
         val localExp : LocalExpansion = new LocalExpansion(p);
-        MultipoleExpansion.transformAndAddToLocal(new Point3d(2.0, -3.0, 1.0), Olm, localExp);
+        val transformation = LocalExpansion.getMlm(new Point3d(2.0, -3.0, 1.0), p);
+        localExp.transformAndAddToLocal(transformation, Olm);
         Console.OUT.println("transformed multipole:\n" + localExp.toString());
 
         return true;

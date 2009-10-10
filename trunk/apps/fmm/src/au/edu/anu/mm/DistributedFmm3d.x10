@@ -278,14 +278,13 @@ public class DistributedFmm3d {
                 if (bBox1 != null) {
                     val box1 = bBox1.value as FmmBox!;
                     val box1MultipoleExp = box1.multipoleExp;
-                    val box1Parent = at(box1.parent.location) {box1.parent.value};
+                    val box1Parent = at(box1.parent.location) {box1.parent.value} as FmmBox!;
                     //Console.OUT.println("transformToLocal: box(" + boxIndex1 + "," + level + ")");
                     for ((boxIndex2) in 0..boxIndex1-1) {
                         async (boxes.dist(boxIndex2,level)) {
                             val bBox2 = boxes(boxIndex2, level);
                             if (bBox2 != null) {
                                 val box2 = bBox2.value as FmmBox!;
-                                val box2Parent = at(box2.parent.location) {box2.parent.value};
                                 //Console.OUT.println("... and box(" + level + "," + boxIndex2 + ")");
                                 if (!(at (box2.parent.location) {box2.parent.value.wellSeparated(ws, box1Parent)})) {
                                     if (box2.wellSeparated(ws, box1)) {
@@ -329,7 +328,8 @@ public class DistributedFmm3d {
         val size = this.size;
         val boxes = this.boxes;
 
-        val lowestLevelDist = boxes.dist | [0..(Math.pow(8,numLevels) as Int)-1,numLevels..numLevels];
+        val lowestLevelRegion : Region{rank==2} = [0..(Math.pow(8,numLevels) as Int)-1,numLevels..numLevels];
+        val lowestLevelDist = boxes.dist | lowestLevelRegion;
         finish ateach ((boxIndex1,level) in lowestLevelDist) {
             //Console.OUT.println("boxIndex1 = " + boxIndex1);
             val bBox1 = boxes(boxIndex1, numLevels);
@@ -338,7 +338,7 @@ public class DistributedFmm3d {
                 //Console.OUT.println("getEnergy: box(" + boxIndex1 + "," + numLevels + ")");
                 for ((atomIndex1) in 0..box1.atoms.length()-1) {
                     // TODO should be able to use a shared var for atom energy
-                    val atom1 = box1.atoms(atomIndex1);
+                    val atom1 = box1.atoms(atomIndex1) as Atom!;
                     val box1Centre = atom1.centre.sub(box1.getCentre(size));
                     val farFieldEnergy = box1.localExp.getPotential(atom1.charge, box1Centre);
                     //Console.OUT.println("farFieldEnergy " + farFieldEnergy + " at " + this.location);
@@ -354,16 +354,17 @@ public class DistributedFmm3d {
 
                     //Console.OUT.println("direct - non-well-sep");
                     // direct calculation with all atoms in non-well-separated boxes
-                    val otherBoxDist = boxes.dist | [0..boxIndex1-1,numLevels..numLevels];
+                    val otherBoxRegion : Region{rank==2} = [0..boxIndex1-1,numLevels..numLevels];
+                    val otherBoxDist = boxes.dist | otherBoxRegion;
                     finish ateach ((boxIndex2,level) in otherBoxDist) {
                         val bBox2 = boxes(boxIndex2, level);
                         if (bBox2 != null) {
-                            val box2 = bBox2.value as FmmLeafBox;
+                            val box2 = bBox2.value as FmmLeafBox!;
                             //Console.OUT.println(boxIndex1 + " vs. " + boxIndex2 + " ws = " + ws);
                             if (!box2.wellSeparated(ws, box1)) {
                                 for ((atomIndex2) in 0..box2.atoms.length()-1) {
                                     //Console.OUT.println("pair energy: " + boxIndex1 + "-" + atomIndex1 + " " + boxIndex2 + "-" + atomIndex2);
-                                    val atom2 = box2.atoms(atomIndex2);
+                                    val atom2 = box2.atoms(atomIndex2) as Atom!;
                                     val pairEnergy : Double = atom2.pairEnergy(atom1);
                                     //Console.OUT.println("pairEnergy " + here);
                                     at (this.location){atomic {fmmEnergy += 2 * pairEnergy;}}
@@ -378,25 +379,25 @@ public class DistributedFmm3d {
         return fmmEnergy;
     }
 
-    def getLowestLevelBoxLocation(atom : Atom) : ValRail[Int]{length==3} {
+    private def getLowestLevelBoxLocation(atom : Atom) : ValRail[Int]{length==3} {
         index : ValRail[Int]{length==3} = [ atom.centre.i / size * dimLowestLevelBoxes + dimLowestLevelBoxes / 2 as Int, atom.centre.j / size * dimLowestLevelBoxes + dimLowestLevelBoxes / 2 as Int, atom.centre.k / size * dimLowestLevelBoxes + dimLowestLevelBoxes / 2 as Int ];
         return index;
     }
 
-    def getParentBox(childIndex : Int, childLevel : Int) : Box[FmmBox] {
+    private def getParentBox(childIndex : Int, childLevel : Int) : Box[FmmBox] {
         //Console.OUT.println("getParentBox(" + childIndex + ", " + childLevel + ")");
         if (childLevel == 2)
             return null;
-        parentIndex : Int = getParentIndex(childIndex, childLevel);
-        parentLevel : Int = childLevel - 1;
-        var parent : Box[FmmBox] = at (boxes.dist(parentIndex, parentLevel)) {boxes(parentIndex, parentLevel)};
+        val parentIndex = getParentIndex(childIndex, childLevel);
+        val parentLevel = childLevel - 1;
+        var parent : Box[FmmBox] = boxes(parentIndex, parentLevel);
         if (parent == null) {
             parent = at (boxes.dist(parentIndex, parentLevel)) {getNewParent(parentIndex, parentLevel)};
         }
         return parent;
     }
 
-    def getNewParent(parentIndex : int, parentLevel : Int) : FmmBox {
+    private def getNewParent(parentIndex : int, parentLevel : Int) : FmmBox {
         val grandparent = getParentBox(parentIndex, parentLevel);
         val parentLocation = getBoxLocation(parentIndex, parentLevel);
         val newParent = new FmmBox(parentLevel, parentLocation, numTerms, grandparent);
@@ -405,13 +406,13 @@ public class DistributedFmm3d {
         return newParent;
     }
 
-    def getBoxLocation(index : Int, level : Int) : ValRail[Int]{length==3} {
+    private def getBoxLocation(index : Int, level : Int) : ValRail[Int]{length==3} {
         dim : Int = Math.pow2(level) as Int;
         gridLoc : ValRail[Int]{length==3} = [ index / (dim * dim), (index / dim) % dim, index % dim ];
         return gridLoc;
     }
 
-    def getParentIndex(childIndex : Int, childLevel : Int) : Int {
+    private def getParentIndex(childIndex : Int, childLevel : Int) : Int {
         parentDim : Int = Math.pow2(childLevel-1) as Int;
         gridLoc : ValRail[Int] = getBoxLocation(childIndex, childLevel);
         return gridLoc(0) / 2 * parentDim * parentDim + gridLoc(1) / 2 * parentDim + gridLoc(2) / 2;

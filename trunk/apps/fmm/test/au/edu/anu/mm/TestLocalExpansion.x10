@@ -15,11 +15,13 @@ class TestLocalExpansion extends MathTest {
         Console.OUT.println("local expansion:\n" + Mlm.toString());
 
         val target : LocalExpansion = new LocalExpansion(p);
-        LocalExpansion.translateAndAddLocal(new Point3d(2.0, -3.0, 1.0), Mlm, target);
+        val translation = MultipoleExpansion.getOlm(new Point3d(2.0, -3.0, 1.0), p);
+        target.translateAndAddLocal(translation, Mlm);
         Console.OUT.println("translated local:\n" + target.toString());
 
         val roundtrip : LocalExpansion = new LocalExpansion(p);
-        LocalExpansion.translateAndAddLocal(new Point3d(-2.0, 3.0, -1.0), target, roundtrip);
+        val reverseTranslation = MultipoleExpansion.getOlm(new Point3d(-2.0, 3.0, -1.0), p);
+        roundtrip.translateAndAddLocal(reverseTranslation, target);
         Console.OUT.println("translated local - roundtrip:\n" + roundtrip.toString());
 		for ((i): Point in [0..p]) {
             for ((j): Point in [-i..i]) {

@@ -25,7 +25,7 @@ public value LocalExpansion extends Expansion {
         val pplm : Array[Double]{rank==2} = AssociatedLegendrePolynomial.getPlm(Math.cos(v_pole.theta), p); 
 
         val rfac0 : Double = 1.0 / v_pole.r;
-        val phifac0 : Complex = Complex(Math.cos(v_pole.phi), Math.sin(v_pole.phi));
+        val phifac0 = new Complex(Math.cos(v_pole.phi), Math.sin(v_pole.phi));
         var rfac : Double = rfac0;
         var il : Double = 1.0;
         for (var l : Int = 0; l<=p; l++) {
@@ -59,13 +59,12 @@ public value LocalExpansion extends Expansion {
      */
     public def translateAndAddLocal(shift : MultipoleExpansion,
                                          source : LocalExpansion) {
-        val sourceTerms = at (source) {source.terms};
-        val p : Int = sourceTerms.region.max(0);
-        for (val (l,m): Point in target.terms) {
+        val p : Int = source.terms.region.max(0);
+        for (val (l,m): Point in this.terms) {
             for (var j : Int = l; j<=p; j++) { // TODO XTENLANG-504
                 for (var k : Int = l-j+m; k<=-l+j+m; k++) { // TODO XTENLANG-504
                     val C_lmjk = shift.terms(j-l, k-m);
-                    this.terms(l,m) = this.terms(l,m) + C_lmjk * sourceTerms(j,k);
+                    this.terms(l,m) = this.terms(l,m) + C_lmjk * source.terms(j,k);
                 }
             }
         }
@@ -146,7 +145,7 @@ public value LocalExpansion extends Expansion {
         var potential : Double = 0.0;
         // TODO use lift/reduction?
         for (p in source.terms.region) {
-            potential += (source.terms(p) * transform.terms(p)).real;
+            potential += (source.terms(p) * transform.terms(p)).re;
         }
         return potential;
     }
@@ -164,7 +163,7 @@ public value LocalExpansion extends Expansion {
         var potential : Double = 0.0;
         // TODO use lift/reduction?
         for (p in terms.region) {
-            potential += (terms(p) * transform.terms(p)).real;
+            potential += (terms(p) * transform.terms(p)).re;
         }
         return potential;
     }

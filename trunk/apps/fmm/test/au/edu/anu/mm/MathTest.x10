@@ -9,11 +9,11 @@ import harness.x10Test;
 abstract class MathTest extends x10Test {
 
     public def nearlyEqual(a : Complex, b : Complex, maxRelativeError : Double, maxAbsoluteError : Double) : Boolean {
-        if (a.equals(b))
+        if (a == b)
             return true;
 
-        return nearlyEqual(a.real, b.real, maxRelativeError, maxAbsoluteError) 
-            && nearlyEqual(a.imaginary, b.imaginary, maxRelativeError, maxAbsoluteError);
+        return nearlyEqual(a.re, b.re, maxRelativeError, maxAbsoluteError) 
+            && nearlyEqual(a.im, b.im, maxRelativeError, maxAbsoluteError);
     }
 
     public def nearlyEqual(a: Double, b: Double, maxRelativeError : Double, maxAbsoluteError : Double) : Boolean {

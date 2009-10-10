@@ -7,7 +7,7 @@
 	<property name="x10.runtime.extensions" location="../../x10.runtime"/>
 	<property name="xre.src" location="${x10.runtime.extensions}/src"/>
 	<property name="xre.lib" location="${x10.runtime.extensions}/lib/x10re.jar"/>
-    <property name="x10.testlib" location="${user.home}/x10-17/x10.tests/examples/x10lib"/>
+    <property name="x10.testlib" location="${user.home}/x10-trunk/x10.tests/examples/x10lib"/>
     <property name="bash.exe" value="bash"/>    
     <property name="optimize" value="true" />
 	<property name="target" location="${basedir}/target" />

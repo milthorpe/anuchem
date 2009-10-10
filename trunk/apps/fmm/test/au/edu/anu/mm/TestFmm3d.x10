@@ -11,7 +11,7 @@ public class TestFmm3d {
     private const RANDOM_SEED = 10101110L;
     private static val R = new Random(RANDOM_SEED);
 
-    public static def main(args: Rail[String]) {
+    public static def main(args: Rail[String]!) {
         var numParticles : Int;
         var density : Double = 3.0;
         var numTerms : Int = 10;
