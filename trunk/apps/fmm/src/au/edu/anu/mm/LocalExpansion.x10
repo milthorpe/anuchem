@@ -1,6 +1,5 @@
 package au.edu.anu.mm;
 
-import x10.lang.Complex;
 import x10x.vector.Tuple3d;
 import x10x.polar.Polar3d;
 
@@ -21,18 +20,18 @@ public value LocalExpansion extends Expansion {
      * Calculate the local Taylor-type expansion M_{lm} (with m >= 0) for a single point v.
      */
     public static def getMlm(v : Tuple3d, p : int) : LocalExpansion {
-        val exp : LocalExpansion = new LocalExpansion(p);
+        val exp = new LocalExpansion(p);
         val v_pole : Polar3d = Polar3d.getPolar3d(v);
         val pplm : Array[Double]{rank==2} = AssociatedLegendrePolynomial.getPlm(Math.cos(v_pole.theta), p); 
 
         val rfac0 : Double = 1.0 / v_pole.r;
-        val phifac0 = Complex(Math.cos(v_pole.phi), Math.sin(v_pole.phi));
+        val phifac0 : struct Complex = Complex(Math.cos(v_pole.phi), Math.sin(v_pole.phi));
         var rfac : Double = rfac0;
         var il : Double = 1.0;
         for (var l : Int = 0; l<=p; l++) {
             il = il * Math.max(l,1);
             var ilm : Double = il;
-            var phifac : Complex = Complex.ONE;
+            var phifac : struct Complex = Complex.ONE;
             exp.terms(l,0) = phifac * (rfac * pplm(l,0) * ilm);
             for (var m : Int = 1; m<=l; m++) {
                 ilm = ilm / (l+1-m);
@@ -50,49 +49,23 @@ public value LocalExpansion extends Expansion {
 
     /** 
      * Translate a local expansion centred around the origin along a vector b,
-     * and adds to a target expansion centred at b.
-     * This corresponds to "Operator C", Equations 18-21 in White & Head-Gordon.
-     * Note: this defines C^lm_jk(b) = O_j-l,k-m(b); however this is only defined
-     * where abs(k-m) <= j-l, therefore we restrict k to [l-j+m..-l+j+m]
-     * @param b the vector along which to translate the multipole
-     * @param source the source local expansion, centred at the origin
-     * @param target the target local expansion, centred at b
-     */
-    public static def translateAndAddLocal(b : Tuple3d,
-                                         source : LocalExpansion,
-                                         target : LocalExpansion) {
-        val p : Int = source.terms.region.max(0);
-        val shift : MultipoleExpansion = MultipoleExpansion.getOlm(b, p);
-        for (val (l,m): Point in target.terms) {
-            for (var j : Int = l; j<=p; j++) { // TODO XTENLANG-504
-                for (var k : Int = l-j+m; k<=-l+j+m; k++) { // TODO XTENLANG-504
-                    val C_lmjk = shift.terms(j-l, k-m);
-                    target.terms(l,m) = target.terms(l,m) + C_lmjk * source.terms(j,k);
-                }
-            }
-        }
-    }
-
-    /** 
-     * Translate a local expansion centred around the origin along a vector b,
-     * and adds to a target expansion centred at b, where shift is the expansion
+     * and adds to this expansion centred at b, where shift is the expansion
      * of the vector b.
      * This corresponds to "Operator C", Equations 18-21 in White & Head-Gordon.
      * Note: this defines C^lm_jk(b) = O_j-l,k-m(b); however this is only defined
      * where abs(k-m) <= j-l, therefore we restrict k to [l-j+m..-l+j+m]
      * @param shift the multipole expansion of the translation
      * @param source the source local expansion, centred at the origin
-     * @param target the target local expansion, centred at b
      */
-    public static def translateAndAddLocal(shift : MultipoleExpansion,
-                                         source : LocalExpansion,
-                                         target : LocalExpansion) {
-        val p : Int = source.terms.region.max(0);
+    public def translateAndAddLocal(shift : MultipoleExpansion,
+                                         source : LocalExpansion) {
+        val sourceTerms = at (source) {source.terms};
+        val p : Int = sourceTerms.region.max(0);
         for (val (l,m): Point in target.terms) {
             for (var j : Int = l; j<=p; j++) { // TODO XTENLANG-504
                 for (var k : Int = l-j+m; k<=-l+j+m; k++) { // TODO XTENLANG-504
                     val C_lmjk = shift.terms(j-l, k-m);
-                    target.terms(l,m) = target.terms(l,m) + C_lmjk * source.terms(j,k);
+                    this.terms(l,m) = this.terms(l,m) + C_lmjk * sourceTerms(j,k);
                 }
             }
         }
@@ -150,7 +123,7 @@ public value LocalExpansion extends Expansion {
                         val kPlusM : Int = (k+m);
                         val B_lmjk = transform.terms(jPlusL, kPlusM);
                         //Console.OUT.println("source.terms.dist(" + j + "," + k + ") = " + source.terms.dist(j,k));
-                        val O_jk : Complex = at (source.terms.dist(j,k)) {source.terms(j,k)};
+                        val O_jk = at (source.terms.dist(j,k)) {source.terms(j,k)};
                         this.terms(l,m) = this.terms(l,m) + B_lmjk * O_jk;
                     }
                 }

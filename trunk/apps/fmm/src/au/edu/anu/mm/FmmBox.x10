@@ -8,12 +8,12 @@ import x10x.vector.Point3d;
  * for the fast multipole method.
  * @author milthorpe
  */
-public value FmmBox {
-    public val parent : Box[FmmBox];
+public class FmmBox {
+    public global val parent : Box[FmmBox];
 
-    public val level : Int;
+    public global val level : Int;
 
-    public val gridLoc : ValRail[Int]{length==3};
+    public global val gridLoc : ValRail[Int]{length==3};
 
     /** The multipole expansion of the charges within this box. */
     public val multipoleExp : MultipoleExpansion;
@@ -33,7 +33,7 @@ public value FmmBox {
         this.localExp = new LocalExpansion(numTerms);
     }
 
-    public def index() : Int {
+    public global def index() : Int {
         dim : Int = Math.pow2(level) as Int;
         return gridLoc(0) * dim * dim + gridLoc(1) * dim + gridLoc(2);
     }
@@ -43,7 +43,7 @@ public value FmmBox {
         return gridLoc(0) * dim * dim + gridLoc(1) * dim + gridLoc(2);
     }
 
-    public def getCentre(size : Double) : Point3d {
+    public global def getCentre(size : Double) : Point3d {
         dim : Int = Math.pow2(level);
         sideLength : Double = size / dim;
         offset : Double = 0.5 * size;
@@ -57,7 +57,7 @@ public value FmmBox {
      * on the same level, i.e. if there are at least <code>ws</code>
      * boxes separating them.
      */
-    def wellSeparated(ws : Int, box2 : FmmBox) : Boolean {
+    public global def wellSeparated(ws : Int, box2 : FmmBox) : Boolean {
         if (level < 2)
             return false;
         //if (this == box2)
@@ -69,7 +69,7 @@ public value FmmBox {
             || Math.abs(gridLoc(2) - box2GridLoc(2)) > ws;
     }
 
-    def getTranslationIndex(box2 : FmmBox) : ValRail[Int]{length==3} {
+    public global def getTranslationIndex(box2 : FmmBox) : ValRail[Int]{length==3} {
         val box2GridLoc = box2.gridLoc;
         return [gridLoc(0) - box2GridLoc(0), gridLoc(1) - box2GridLoc(1), gridLoc(2) - box2GridLoc(2)];
     }

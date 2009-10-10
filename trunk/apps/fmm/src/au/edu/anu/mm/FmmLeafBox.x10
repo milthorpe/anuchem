@@ -8,11 +8,11 @@ import x10x.vector.Point3d;
  * in the 3D division of space for the fast multipole method.
  * @author milthorpe
  */
-public value FmmLeafBox extends FmmBox {
-    public val atoms = new GrowableRail[Atom]();
+public class FmmLeafBox extends FmmBox {
+    public val atoms : GrowableRail[Atom]{self.location==this.location} = new GrowableRail[Atom]();
 
-    public def this(level : Int, location : ValRail[Int]{length==3},numTerms : Int, parent : Box[FmmBox]) { 
-        super(level, location, numTerms, parent);
+    public def this(level : Int, gridLoc : ValRail[Int]{length==3}, numTerms : Int, parent : Box[FmmBox]) { 
+        super(level, gridLoc, numTerms, parent);
     }
 
     public def addAtom(atom : Atom) {

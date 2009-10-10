@@ -31,11 +31,8 @@ public class Fmm3d {
     /** The well-separatedness parameter ws. */
     public val ws : Int;
 
-    /** The maximum number of boxes in the tree, if there are no empty boxes at the lowest level. */
-    val maxBoxes : Int;
-
     /** All boxes in the octree division of space. */
-    val boxes : Array[Box[FmmBox]]{rank==2};
+    val boxes : Array[Box[FmmBox!]]{rank==2};
 
     val atoms : ValRail[Atom];
 
@@ -63,11 +60,10 @@ public class Fmm3d {
                     atoms : ValRail[Atom]) {
         val numLevels = Math.max(2, (Math.log(atoms.length / density) / Math.log(8.0) + 1.0 as Int));
         this.numLevels = numLevels;
-        var nBox : Int = 1;
+        var nBox : Int = 0;
         for ((i) in 2..numLevels) {
             nBox += Math.pow(8,i) as Int;
         }
-        this.maxBoxes = nBox;
         this.dimLowestLevelBoxes = Math.pow2(numLevels);
         Console.OUT.println("numLevels = " + numLevels + " maxBoxes = " + nBox);
 
@@ -87,7 +83,7 @@ public class Fmm3d {
         Console.OUT.println("boxes: " + boxRegion);
 
         // all boxes are null to start.  they will be initialised as needed.
-        this.boxes = Array.make[Box[FmmBox]](boxRegion);
+        this.boxes = Array.make[Box[FmmBox!]](boxRegion);
     
         var wellSpacedLimit : Region(4) = [2..numLevels,-(ws+3)..ws+3,-(ws+3)..ws+3,-(ws+3)..ws+3];
         val multipoleTransformRegion : Region(4) = wellSpacedLimit - ([2..numLevels,-ws..ws,-ws..ws,-ws..ws] as Region);
@@ -141,12 +137,12 @@ public class Fmm3d {
             val boxLocation = getLowestLevelBoxLocation(atom);
             val boxIndex = FmmBox.getBoxIndex(boxLocation, numLevels);
             val parentBox = getParentBox(boxIndex, numLevels);
-            var box : Box[FmmBox] = boxes(boxIndex, numLevels);
+            var box : Box[FmmBox!] = boxes(boxIndex, numLevels);
             if (box == null) {
-                box = new Box[FmmBox](new FmmLeafBox(numLevels, boxLocation, numTerms, parentBox));
+                box = new Box[FmmBox!](new FmmLeafBox(numLevels, boxLocation, numTerms, parentBox));
                 boxes(boxIndex, numLevels) = box;
             }
-            val leafBox = box.value as FmmLeafBox;
+            val leafBox = box.value as FmmLeafBox!;
             leafBox.atoms.add(atom);
             //Console.OUT.println("atoms(" + i + ") => box(" + boxIndex + ")");
             val boxCentre = leafBox.getCentre(size).sub(atom.centre);
@@ -245,7 +241,7 @@ public class Fmm3d {
                         }
                     }
                     val shift = multipoleTranslations(level, box1.gridLoc(0)%2, box1.gridLoc(1)%2, box1.gridLoc(2)%2);
-                    LocalExpansion.translateAndAddLocal(shift, box1.parent.value.localExp, box1.localExp);
+                    box1.localExp.translateAndAddLocal(shift, box1.parent.value.localExp);
                 }
             }
         }

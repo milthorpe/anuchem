@@ -42,9 +42,5 @@ public class Atom {
     public def pairEnergy(atom2 : Atom) : Double {
         return charge * (atom2.charge) / centre.distance(atom2.centre);
     }
-
-    public def pairEnergyDist(atom2 : Atom) : Double {
-        return charge * (at(atom2.location){atom2.charge}) / centre.distance(at(atom2.location){atom2.centre});
-    }
 }
 
