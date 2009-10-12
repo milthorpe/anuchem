@@ -9,9 +9,9 @@ import x10x.matrix.Matrix;
  * @author V.Ganesh
  */
 public class Vector { 
-    var vec:Array[Double]{rank==1}; 
-    var region:Region{rank==1};
-    var distribution:Dist{rank==1};
+    global var vec:Array[Double]{rank==1}; 
+    global var region:Region{rank==1};
+    global var distribution:Dist{rank==1};
 
     /**
      * Empty constructor
@@ -45,7 +45,7 @@ public class Vector {
     /**
      * Construct a Vector from a Matrix
      */
-    public static def make(mat:Matrix) : Vector {
+    public def make(mat:Matrix{self.at(this)}) : Vector {
         val N = mat.getRowCount();
         val newVector = Vector.make(N*N);
          
