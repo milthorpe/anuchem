@@ -88,7 +88,7 @@ public class Fmm3d {
         var wellSpacedLimit : Region(4) = [2..numLevels,-(ws+3)..ws+3,-(ws+3)..ws+3,-(ws+3)..ws+3];
         val multipoleTransformRegion : Region(4) = wellSpacedLimit - ([2..numLevels,-ws..ws,-ws..ws,-ws..ws] as Region);
         this.multipoleTransforms = Array.make[LocalExpansion](multipoleTransformRegion);
-        this.multipoleTranslations = Array.make[MultipoleExpansion]([2..numLevels, 0..1, 0..1, 0..1]);
+        this.multipoleTranslations = Array.make[MultipoleExpansion]([3..numLevels, 0..1, 0..1, 0..1]);
     }
     
     public def calculateEnergy() : Double {
@@ -160,8 +160,8 @@ public class Fmm3d {
                 val bChild = boxes(childIndex,level);
                 if (bChild != null) {
                     val child = bChild.value;
-                    val bParent = child.parent;
-                    val parentExp = at(bParent.value) {bParent.value.multipoleExp};
+                    val parent = child.parent.value as FmmBox!;
+                    val parentExp = parent.multipoleExp;
                     val shift = multipoleTranslations(level, (child.gridLoc(0)+1)%2, (child.gridLoc(1)+1)%2, (child.gridLoc(2)+1)%2);
                     parentExp.translateAndAddMultipole(shift, child.multipoleExp);
                 }
@@ -177,7 +177,7 @@ public class Fmm3d {
      * non-empty child boxes.
      */
     def transformToLocal() {
-        // precompute child translations
+        // precompute multipole-to-local transformations
         for (val(level,i,j,k) in multipoleTransforms.region) {
             dim : Int = Math.pow2(level);
             sideLength : Double = size / dim;
@@ -220,7 +220,7 @@ public class Fmm3d {
                 val bBox1 = boxes(boxIndex1, level);
                 if (bBox1 != null) {
                     val box1 = bBox1.value;
-                    val box1Parent = at(box1.parent.location) {box1.parent.value} as FmmBox!;
+                    val box1Parent = box1.parent.value as FmmBox!;
                     //Console.OUT.println("transformToLocal: box(" + boxIndex1 + "," + level + ")");
                     for ((boxIndex2) in 0..boxIndex1-1) { 
                         val bBox2 = boxes(boxIndex2, level);
@@ -234,8 +234,7 @@ public class Fmm3d {
                                     box2.localExp.transformAndAddToLocal(transform12, box1.multipoleExp);
                                     val transform21 = multipoleTransforms(level, -translation(0), -translation(1), -translation(2));
                                     box1.localExp.transformAndAddToLocal(transform21, box2.multipoleExp);
-                                    wellSep++;
-                                    
+                                    wellSep++;                             
                                 } else if (level==numLevels) {
                                     nearField++;
                                 }
@@ -286,7 +285,7 @@ public class Fmm3d {
                         val bBox2 = boxes(boxIndex2, numLevels);
                         if (bBox2 != null) {
                             val box2 = bBox2.value as FmmLeafBox!;
-                            if (!box1.wellSeparated(ws, box2)) {
+                            if (!box2.wellSeparated(ws, box1)) {
                                 for ((atomIndex2) in 0..box2.atoms.length()-1) {
                                     val atom2 = box2.atoms(atomIndex2) as Atom!;
                                     val pairEnergy : Double = atom2.pairEnergy(atom1);
