@@ -10,9 +10,9 @@ import x10x.vector.Vector;
  * @author V.Ganesh
  */
 public class Matrix { 
-    var mat:Array[Double]{rank==2};
-    var region:Region{rank==2};
-    var distribution:Dist{rank==2};
+    global var mat:Array[Double]{rank==2};
+    global var region:Region{rank==2};
+    global var distribution:Dist{rank==2};
 
     /**
      * Empty constructor 
@@ -145,7 +145,7 @@ public class Matrix {
     /**
      * Perform symmetric orthogonalization of this matrix
      */
-    public def symmetricOrthogonalization() : Matrix { 
+    public def symmetricOrthogonalization() : Matrix{self.at(this)} { 
         val diag = new JacobiDiagonalizer();
         
         diag.diagonalize(this);
@@ -153,14 +153,15 @@ public class Matrix {
         val rowCount     = getRowCount(); 
         val eigenValues  = diag.getEigenValues().getVector();
         val eigenVectors = diag.getEigenVectors();
-        val sHalf        = Matrix.make(rowCount);
+        val sHalf:Matrix{self.at(this)}
+                         = Matrix.make(rowCount) as Matrix{self.at(this)};
         
         sHalf.makeIdentity();
 
         for(var i:Int=0; i<rowCount; i++) 
             sHalf.mat(i, i) /= Math.sqrt(eigenValues(i));
         
-        return (sHalf.similarityTransformT(eigenVectors)); 
+        return (sHalf.similarityTransformT(eigenVectors) as Matrix{self.at(this)}); 
     }
 
     /**
@@ -187,25 +188,25 @@ public class Matrix {
     /**
      * Perform a similarity transform: X' . this . X
      */
-    public def similarityTransformT(x:Matrix) : Matrix {
-        return x.transpose().mul(this).mul(x);
+    public def similarityTransformT(x:Matrix{self.at(this)}) : Matrix{self.at(this)} {
+        return x.transpose().mul(this).mul(x) as Matrix{self.at(this)};
     }
 
     /**
      * Perform a similarity transform: X . this . X'
      */
-    public def similarityTransform(x:Matrix) : Matrix {
-        return x.mul(this).mul(x.transpose());
+    public def similarityTransform(x:Matrix{self.at(this)}) : Matrix{self.at(this)} {
+        return x.mul(this as Matrix{self.at(this)}).mul(x.transpose());
     }
 
     /**
      * Multiply two matrices: this . X
      */
-    public def mul(x:Matrix) : Matrix {
+    public def mul(x:Matrix{self.at(this)}) : Matrix{self.at(this)} {
          val N   = getRowCount();
          val N1  = x.getRowCount();
          val M   = x.getColCount();
-         val res = Matrix.make(N, M);
+         val res:Matrix{self.at(this)} = Matrix.make(N, M) as Matrix{self.at(this)};
          var cij:Double;
 
          for(val(i, j) in res.mat.region) {
@@ -221,10 +222,10 @@ public class Matrix {
     /**
      * Add two matrices: this + X
      */
-    public def add(x:Matrix) : Matrix {
+    public def add(x:Matrix{self.at(this)}) : Matrix{self.at(this)} {
          val N   = getRowCount();
          val M   = getColCount();
-         val res = Matrix.make(N, M);
+         val res:Matrix{self.at(this)} = Matrix.make(N, M) as Matrix{self.at(this)};
 
          finish foreach(val(i, j) in res.mat.region)
             res.mat(i, j) = mat(i, j) + x.mat(i, j);
@@ -235,10 +236,10 @@ public class Matrix {
     /**
      * Subtract two matrices: this - X
      */
-    public def sub(x:Matrix) : Matrix {
+    public def sub(x:Matrix{self.at(this)}) : Matrix{self.at(this)} {
          val N   = getRowCount();
          val M   = getColCount();
-         val res = Matrix.make(N, M);
+         val res:Matrix{self.at(this)} = Matrix.make(N, M) as Matrix{self.at(this)};
 
          finish foreach(val(i, j) in res.mat.region)
             res.mat(i, j) = mat(i, j) - x.mat(i, j);
@@ -249,10 +250,10 @@ public class Matrix {
     /**
      * Find transpose of this matrix
      */
-    public def transpose() : Matrix {
+    public def transpose() : Matrix{self.at(this)} {
          val N   = getRowCount();
          val M   = getColCount();
-         val res = Matrix.make(M,N);
+         val res:Matrix{self.at(this)} = Matrix.make(M, N) as Matrix{self.at(this)};
 
          var i:Int, j:Int;
 
