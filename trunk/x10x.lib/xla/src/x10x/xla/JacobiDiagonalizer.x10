@@ -9,34 +9,36 @@ import x10x.matrix.Matrix;
  *
  * @author V.Ganesh
  */
-public class JacobiDiagonalizer implements Diagonalizer {
-    var eigenValuesVec : Vector; 
-    var eigenVectorsMat : Matrix;
-    var eigenValues  : Array[Double]{rank==1};
-    var eigenVectors : Array[Double]{rank==2};
+public class JacobiDiagonalizer {
+    var eigenValuesVec:Vector{self.at(this)}; 
+    var eigenVectorsMat:Matrix{self.at(this)};
+    var eigenValues:Array[Double]{rank==1};
+    var eigenVectors:Array[Double]{rank==2};
     var cos:Double, sin:Double, tau:Double;
 
     val maxIterations : Int = 100;
 
-    public def diagonalize(mat:Matrix) : void {
+    public def this() { }
+
+    public def diagonalize(mat:Matrix{self.at(this)}) : void {
        val matrix = mat.getMatrix();
        val n:Int = mat.getRowCount();
 
-       eigenVectorsMat = Matrix.make(mat.dist());
+       eigenVectorsMat = Matrix.make(mat.dist()) as Matrix{self.at(this)};
        eigenVectorsMat.makeIdentity();
 
        eigenVectors = eigenVectorsMat.getMatrix();
 
        // clone the matrix, do not tamper the actual matrix
-       val aMat = Matrix.make(mat.dist());
+       val aMat:Matrix{self.at(this)} = Matrix.make(mat.dist()) as Matrix{self.at(this)};
        val a = aMat.getMatrix();;
        ateach(var(i,j) in a.dist) a(i, j) = matrix(i, j);
 
-       eigenValuesVec = Vector.make(n); 
+       eigenValuesVec = Vector.make(n) as Vector{self.at(this)}; 
        eigenValues = eigenValuesVec.getVector();
       
-       val bVec = Vector.make(n);
-       val zVec = Vector.make(n);
+       val bVec:Vector{self.at(this)} = Vector.make(n) as Vector{self.at(this)};
+       val zVec:Vector{self.at(this)} = Vector.make(n) as Vector{self.at(this)};
        val b = bVec.getVector();
        val z = zVec.getVector();
 
@@ -145,8 +147,8 @@ public class JacobiDiagonalizer implements Diagonalizer {
        a(k,l) = h + sin * (g - h*tau);
     }
 
-    public def getEigenValues() : Vector = eigenValuesVec;
+    public def getEigenValues() : Vector{self.at(this)} = eigenValuesVec;
 
-    public def getEigenVectors() : Matrix = eigenVectorsMat; 
+    public def getEigenVectors() : Matrix{self.at(this)} = eigenVectorsMat; 
 }
 
