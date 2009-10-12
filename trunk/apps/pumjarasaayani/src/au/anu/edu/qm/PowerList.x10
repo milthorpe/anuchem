@@ -12,8 +12,8 @@ import x10.util.*;
 
 public class PowerList { 
 
-    val powerList:HashMap[String,Array[Power]{rank==1}];
-    var initCalled:Boolean;
+    global val powerList:HashMap[String,Array[Power]{self.at(this),rank==1}]{self.at(this)};
+    global var initCalled:Boolean;
 
     private def this() { 
        initCalled = false;
@@ -42,27 +42,29 @@ public class PowerList {
                n = 10; break;
         } // end switch .. case
 
-        var pList:Array[Power]{rank==1};
-        pList = Array.make[Power]([0..n]);
+        val pList:Array[Power]{self.at(this),rank==1} = Array.make[Power]([0..n]);
      
         var idx:Int = 0;
-        for(var i:Int=maxAngularMomentum; i>=0; i--)
-            for(var j:Int=maxAngularMomentum-i; j>=0; j--)
-                pList(idx++) = new Power(i, j, maxAngularMomentum-i-j);
+        for(var i:Int=maxAngularMomentum; i>=0; i--) {
+            for(var j:Int=maxAngularMomentum-i; j>=0; j--) {
+                var pwr:Power{self.at(this)} = new Power(i, j, maxAngularMomentum-i-j);
+                pList(idx++) = pwr;
+            }
+        }
 
         return pList;
     }
 
 
-    private static val _theInstance = new PowerList();
+    private global static val _theInstance = new PowerList();
 
-    public static def getInstance() { 
+    public static def getInstance() : PowerList { 
        if (!_theInstance.initCalled) _theInstance.init();
 
        return _theInstance;
     }
 
-    public def getPowers(orbitalType:String) : Array[Power]{rank==1} {
+    public def getPowers(orbitalType:String) : Array[Power]{self.at(this),rank==1} {
        return (powerList.get(orbitalType) as Array[Power]{rank==1});
     }
 }

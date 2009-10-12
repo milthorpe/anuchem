@@ -11,23 +11,23 @@ package au.anu.edu.qm;
 import x10.util.*;
 
 public class TwoElectronIntegrals { 
-    var basisFunctions:BasisFunctions;
-    var molecule:Molecule;
-    var twoEInts:Array[Double]{rank==1};
+    global var basisFunctions:BasisFunctions{self.at(this)};
+    global var molecule:Molecule{self.at(this)};
+    global var twoEInts:Array[Double]{self.at(this), rank==1};
+    global var contractedList:ArrayList[ContractedGaussian{self.at(this)}]{self.at(this)};
     var direct:Boolean;
     var noOfIntegrals:Int;
-    var contractedList:ArrayList[ContractedGaussian];
 
     public def this() {
         // Dummy constructor
         twoEInts = Array.make[Double]([0..1]);
-        contractedList = new ArrayList[ContractedGaussian]();
+        contractedList = new ArrayList[ContractedGaussian{self.at(this)}]();
         basisFunctions = null;
         direct = false;
         noOfIntegrals = 0;
     }
 
-    public def make(bfs:BasisFunctions) { 
+    public def make(bfs:BasisFunctions{self.at(this)}) { 
         basisFunctions = bfs;
         direct = false;
 
@@ -43,7 +43,7 @@ public class TwoElectronIntegrals {
         compute2E();
     }
 
-    public def make(bfs:BasisFunctions, isDirect:Boolean) {
+    public def make(bfs:BasisFunctions{self.at(this)}, isDirect:Boolean) {
         basisFunctions = bfs;
         direct = isDirect;
 
@@ -63,7 +63,7 @@ public class TwoElectronIntegrals {
         } // end if
     }
 
-    public def make(bfs:BasisFunctions, mol:Molecule, isDirect:Boolean) {
+    public def make(bfs:BasisFunctions{self.at(this)}, mol:Molecule{self.at(this)}, isDirect:Boolean) {
         basisFunctions = bfs;
         molecule       = mol;
         direct         = isDirect;        
@@ -92,8 +92,8 @@ public class TwoElectronIntegrals {
                        contractedList.get(k), contractedList.get(l));
     }
 
-    public def compute2E(ia:ContractedGaussian, ja:ContractedGaussian, 
-                         ka:ContractedGaussian, la:ContractedGaussian) : Double {
+    public def compute2E(ia:ContractedGaussian{self.at(this)}, ja:ContractedGaussian{self.at(this)}, 
+                         ka:ContractedGaussian{self.at(this)}, la:ContractedGaussian{self.at(this)}) : Double {
         return coulomb(ia, ja, ka, la);
     }
 
@@ -104,8 +104,8 @@ public class TwoElectronIntegrals {
 
         var i:Int, j:Int, k:Int, l:Int, ij:Int, kl:Int, ijkl:Int;        
         
-        var bfi:ContractedGaussian, bfj:ContractedGaussian, 
-            bfk:ContractedGaussian, bfl:ContractedGaussian;
+        var bfi:ContractedGaussian{self.at(this)}, bfj:ContractedGaussian{self.at(this)}, 
+            bfk:ContractedGaussian{self.at(this)}, bfl:ContractedGaussian{self.at(this)};
         
         // TODO: x10 - parallel
         // we only need i <= j, k <= l, and ij >= kl
@@ -143,10 +143,12 @@ public class TwoElectronIntegrals {
         var a:Int, b:Int, c:Int, d:Int;
         var i:Int, j:Int, k:Int, l:Int;
         var naFunc:Int, nbFunc:Int, ncFunc:Int, ndFunc:Int, twoEIndx:Int;
-        var aFunc:ArrayList[ContractedGaussian], bFunc:ArrayList[ContractedGaussian], 
-            cFunc:ArrayList[ContractedGaussian], dFunc:ArrayList[ContractedGaussian];
-        var iaFunc:ContractedGaussian, jbFunc:ContractedGaussian, 
-            kcFunc:ContractedGaussian, ldFunc:ContractedGaussian;
+        var aFunc:ArrayList[ContractedGaussian{self.at(this)}]{self.at(this)}, 
+            bFunc:ArrayList[ContractedGaussian{self.at(this)}]{self.at(this)}, 
+            cFunc:ArrayList[ContractedGaussian{self.at(this)}]{self.at(this)}, 
+            dFunc:ArrayList[ContractedGaussian{self.at(this)}]{self.at(this)};
+        var iaFunc:ContractedGaussian{self.at(this)}, jbFunc:ContractedGaussian{self.at(this)}, 
+            kcFunc:ContractedGaussian{self.at(this)}, ldFunc:ContractedGaussian{self.at(this)};
 
         // center a
         for(a=0; a<noOfAtoms; a++) {
@@ -200,8 +202,8 @@ public class TwoElectronIntegrals {
     public def getTwoElectronIntegrals() : Array[Double]{rank==1} = twoEInts;
 
 
-    private def coulomb(a:ContractedGaussian, b:ContractedGaussian,
-                        c:ContractedGaussian, d:ContractedGaussian) : Double {
+    private def coulomb(a:ContractedGaussian{self.at(this)}, b:ContractedGaussian{self.at(this)},
+                        c:ContractedGaussian{self.at(this)}, d:ContractedGaussian{self.at(this)}) : Double {
          var jij:Double = 0.0;
 
          val aExps   = a.getExponents();
@@ -277,16 +279,16 @@ public class TwoElectronIntegrals {
     }
 
     private def coulombRepulsion(
-                    a:Atom, aNorm:Double, aPower:Power, aAlpha:Double,
-                    b:Atom, bNorm:Double, bPower:Power, bAlpha:Double,
-                    c:Atom, cNorm:Double, cPower:Power, cAlpha:Double,
-                    d:Atom, dNorm:Double, dPower:Power, dAlpha:Double) : Double {
+                    a:Atom{self.at(this)}, aNorm:Double, aPower:Power, aAlpha:Double,
+                    b:Atom{self.at(this)}, bNorm:Double, bPower:Power, bAlpha:Double,
+                    c:Atom{self.at(this)}, cNorm:Double, cPower:Power, cAlpha:Double,
+                    d:Atom{self.at(this)}, dNorm:Double, dPower:Power, dAlpha:Double) : Double {
 
         val radiusABSquared = a.distanceSquaredFrom(b);
         val radiusCDSquared = c.distanceSquaredFrom(d);
 
-        val p = IntegralsUtils.gaussianProductCenter(aAlpha, a, bAlpha, b);
-        val q = IntegralsUtils.gaussianProductCenter(cAlpha, c, dAlpha, d);
+        val p:Atom{self.at(this)} = gaussianProductCenter(aAlpha, a, bAlpha, b);
+        val q:Atom{self.at(this)} = gaussianProductCenter(cAlpha, c, dAlpha, d);
 
         val radiusPQSquared = p.distanceSquaredFrom(q);
 
@@ -418,6 +420,19 @@ public class TwoElectronIntegrals {
     private def functionB0(i:Int, r:Int, g:Double) : Double {
         return (MathUtil.factorialRatioSquared(i, r)
                 * Math.pow(4*g, r-i));
+    }
+
+    /** Product of two gaussians */
+    public def gaussianProductCenter(alpha1:Double, a:Atom{self.at(this)},  
+                                    alpha2:Double, b:Atom{self.at(this)}) : Atom{self.at(this)} {
+        val gamma:Double = alpha1 + alpha2;
+        val atm:Atom{self.at(this)} =  new Atom(
+                         (alpha1 * a.getX() + alpha2 * b.getX()) / gamma,
+                         (alpha1 * a.getY() + alpha2 * b.getY()) / gamma,
+                         (alpha1 * a.getZ() + alpha2 * b.getZ()) / gamma
+                       );
+
+        return atm;
     }
 }
 

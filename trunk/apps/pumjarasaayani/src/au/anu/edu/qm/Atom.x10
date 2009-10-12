@@ -11,8 +11,8 @@ package au.anu.edu.qm;
 import x10.util.*;
 
 public class Atom { 
-    val x:Double, y:Double, z:Double;
-    val symbol:String;
+    global val x:Double, y:Double, z:Double;
+    global val symbol:String;
 
     public def this(symbol:String, x:Double, y:Double, z:Double) { 
         this.symbol = symbol;
@@ -31,19 +31,19 @@ public class Atom {
     public def getSymbol() = this.symbol; 
 
     
-    var basisFunctions:ArrayList[ContractedGaussian];
+    global var basisFunctions:ArrayList[ContractedGaussian{self.at(this)}]{self.at(this)};
     
-    public def setBasisFunctions(bfs:ArrayList[ContractedGaussian]) {
+    public def setBasisFunctions(bfs:ArrayList[ContractedGaussian{self.at(this)}]{self.at(this)}) {
         basisFunctions = bfs;
     }
 
-    public def getBasisFunctions() = basisFunctions;    
+    public def getBasisFunctions() : ArrayList[ContractedGaussian{self.at(this)}]{self.at(this)} = basisFunctions;    
 
-    public def distanceFrom(atm:Atom) {
+    public def distanceFrom(atm:Atom) : Double {
         return Math.sqrt(distanceSquaredFrom(atm));
     }
 
-    public def distanceSquaredFrom(atm:Atom) {
+    public def distanceSquaredFrom(atm:Atom) : Double {
         val x = this.x - atm.x;
         val y = this.y - atm.y;
         val z = this.z - atm.z;

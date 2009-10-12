@@ -11,9 +11,9 @@ package au.anu.edu.qm;
 import x10.util.*;
 
 public class Orbital { 
-    val exps:ArrayList[Double];
-    val coeff:ArrayList[Double];
-    val type:String;
+    global val exps:ArrayList[Double]{self.at(this)};
+    global val coeff:ArrayList[Double]{self.at(this)};
+    global val type:String{self.at(this)};
 
     public def this(type:String) { 
        exps      = new ArrayList[Double]();
@@ -34,8 +34,8 @@ public class Orbital {
        coeff.add(co);
     }
 
-    public def getType() = this.type;
-    public def getExponents() = this.exps;
-    public def getCoefficients() = this.coeff;
+    public def getType() : String{self.at(this)} = this.type;
+    public def getExponents() : ArrayList[Double]{self.at(this)} = this.exps;
+    public def getCoefficients() : ArrayList[Double]{self.at(this)} = this.coeff;
 }
 

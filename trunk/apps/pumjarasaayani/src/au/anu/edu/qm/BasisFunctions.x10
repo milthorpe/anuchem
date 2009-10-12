@@ -11,26 +11,27 @@ package au.anu.edu.qm;
 import x10.util.*;
 
 public class BasisFunctions { 
-    var molecule:Molecule;
-    var basisName:String;
-    var basisFunctions:ArrayList[ContractedGaussian];
-    var shellList:ShellList;
+    global var molecule:Molecule{self.at(this)};
+    global var basisName:String;
+    global var basisFunctions:ArrayList[ContractedGaussian{self.at(this)}]{self.at(this)};
+    global var shellList:ShellList{self.at(this)};
 
     public def this() { }
 
-    public def make(mol:Molecule, basNam:String, basisDir:String) { 
+    public def make(mol:Molecule{self.at(this)}, basNam:String, basisDir:String) { 
         this.molecule  = mol;
         this.basisName = basNam;
 
-        basisFunctions = new ArrayList[ContractedGaussian](); 
+        basisFunctions = new ArrayList[ContractedGaussian{self.at(this)}](); 
         initBasisFunctions(basisDir);
 
         shellList = new ShellList();
+        shellList.make();
         initShellList();
     } 
 
     private def initBasisFunctions(basisDir:String) {
-        var basisSet:BasisSet = new BasisSet(); 
+        var basisSet:BasisSet{self.at(this)} = new BasisSet(); 
         basisSet.make(basisName, basisDir);
         var indx:Int = 0;
 
@@ -38,19 +39,22 @@ public class BasisFunctions {
             val atom      = molecule.getAtom(atmno);
             val atomBasis = basisSet.getBasis(atom);
             val orbitals  = atomBasis.getOrbitals();
-            val atombfs   = new ArrayList[ContractedGaussian]();
+            val atombfs:ArrayList[ContractedGaussian{self.at(this)}]{self.at(this)} 
+                          = new ArrayList[ContractedGaussian{self.at(this)}]();
 
             for(var orbno:Int=0; orbno<orbitals.size(); orbno++) { 
                val orb = orbitals.get(orbno);
-               val pList = PowerList.getInstance().getPowers(orb.getType());
+               val typ = orb.getType();
+               val pList = PowerList.getInstance().getPowers(typ);
                val pListSiz = pList.region.max(0); 
 
                for(var l:Int=0; l<pListSiz; l++) {
-                  var cg:ContractedGaussian = new ContractedGaussian(atom, pList(l));   
+                  var cg:ContractedGaussian{self.at(this)} = new ContractedGaussian();
+                  cg.make(atom, pList(l));   
                   cg.setIndex(indx++);
               
-                  val coeff:ArrayList[Double] = orb.getCoefficients();
-                  val exps:ArrayList[Double]  = orb.getExponents();
+                  val coeff:ArrayList[Double]{self.at(this)} = orb.getCoefficients();
+                  val exps:ArrayList[Double]{self.at(this)}  = orb.getExponents();
 
                   for(var i:Int=0; i<coeff.size(); i++) {
                      cg.addPrimitive(exps.get(i), coeff.get(i));
@@ -71,7 +75,7 @@ public class BasisFunctions {
     }
 
     public def getBasisName() = this.basisName;
-    public def getBasisFunctions() = basisFunctions;
-    public def getShellList() = shellList;
+    public def getBasisFunctions() : ArrayList[ContractedGaussian{self.at(this)}]{self.at(this)} = basisFunctions;
+    public def getShellList() : ShellList{self.at(this)} = shellList;
 }
 

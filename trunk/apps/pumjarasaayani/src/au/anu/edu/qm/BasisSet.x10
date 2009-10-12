@@ -12,20 +12,20 @@ import x10.io.*;
 import x10.util.*;
 
 public class BasisSet { 
-    var name:String;
-    var basisInfo:HashMap[String, AtomicBasis];
+    global var name:String;
+    global var basisInfo:HashMap[String, AtomicBasis{self.at(this)}];
 
     public def this() { }
 
     public def make(name:String) { 
        this.name = name;
 
-       basisInfo = new HashMap[String, AtomicBasis]();
+       basisInfo = new HashMap[String, AtomicBasis{self.at(this)}]();
        init(name);
     } 
 
     public def make(name:String, basisDir:String) {
-       basisInfo = new HashMap[String, AtomicBasis]();
+       basisInfo = new HashMap[String, AtomicBasis{self.at(this)}]();
        this.name = name;
 
        try {
@@ -49,14 +49,15 @@ public class BasisSet {
           var symbol:String = words(0);
           var noOfContractions:Int = Int.parseInt(words(1));
 
-          var atomBasis:AtomicBasis = new AtomicBasis();
+          var atomBasis:AtomicBasis{self.at(this)} = new AtomicBasis();
+          atomBasis.make();
 
           for(var j:Int=0; j<noOfContractions; j++) {
              val words1 = fil.readLine().split(" ");
              var orbitalType:String = words1(0);
              var noOfPrimitives:Int = Int.parseInt(words1(1));
 
-             var orbital:Orbital = new Orbital(orbitalType);
+             val orbital:Orbital{self.at(this)} = new Orbital(orbitalType);
 
              for(var k:Int=0; k<noOfPrimitives; k++) { 
                 val words2 = fil.readLine().split(" ");
@@ -142,8 +143,8 @@ public class BasisSet {
 
     public def getName() = this.name;
 
-    public def getBasis(atom:Atom) : AtomicBasis {
-        return (basisInfo.get(atom.getSymbol()) as AtomicBasis);
+    public def getBasis(atom:Atom{self.at(this)}) : AtomicBasis{self.at(this)} {
+        return (basisInfo.get(atom.getSymbol()) as AtomicBasis{self.at(this)});
     }
 }
 

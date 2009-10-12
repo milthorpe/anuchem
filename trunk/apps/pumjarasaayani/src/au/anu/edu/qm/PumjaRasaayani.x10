@@ -12,7 +12,7 @@ package au.anu.edu.qm;
 import x10.io.Console;
 
 public class PumjaRasaayani { 
-    var mol:Molecule;
+    global var mol:Molecule{self.at(this)};
     var basisName:String;
 
     public def this() { }
@@ -36,7 +36,8 @@ public class PumjaRasaayani {
     } 
 
     private def initDefault() { 
-        mol = new Molecule("h2");
+        mol = new Molecule();
+        mol.make("h2");
 
         // H2, 1 a.u. apart
         mol.addAtom(new Atom("H", 0.0, 0.0, 0.0));
@@ -59,34 +60,40 @@ public class PumjaRasaayani {
 
         Console.OUT.println("\nSetting up basis set: " + basisName);
 
-        val bsf  = new BasisFunctions();
+        val bsf:BasisFunctions{self.at(this)}  = new BasisFunctions();
         bsf.make(mol, basisName, "basis");
         Console.OUT.println("\nSetting up basis functions over.");
         
-        val oneE = new OneElectronIntegrals(bsf, mol);
-        oneE.make();
+        val oneE:OneElectronIntegrals{self.at(this)} = new OneElectronIntegrals();
+        oneE.make(bsf, mol);
         Console.OUT.println("\nComputed one-electron integrals.");
         Console.OUT.println("HCore");
         Console.OUT.println(oneE.getHCore());   
         Console.OUT.println("Overlap");
         Console.OUT.println(oneE.getOverlap());   
 
-        val twoE = new TwoElectronIntegrals(); 
+        val twoE:TwoElectronIntegrals{self.at(this)} = new TwoElectronIntegrals(); 
         twoE.make(bsf, true);
         Console.OUT.println("\nNumber of 2E integrals: " + twoE.getNumberOfIntegrals());
         Console.OUT.println("\nComputed two-electron integrals. If direct, this is skipped for now.");
         Console.OUT.println("Is Direct: " + twoE.isDirect());
 
-        val hfscf = new HartreeFockSCFMethod(mol, oneE, twoE);
+        val hfscf:HartreeFockSCFMethod{self.at(this)} = new HartreeFockSCFMethod();
+        hfscf.make(mol, oneE, twoE);
         hfscf.scf();
     }
 
-    public static def main(args:Rail[String]) {
-        val qmApp = new PumjaRasaayani();
+    public def make(ag:Rail[String]) {
+        val args:Rail[String]{self.at(this)} = ag as Rail[String]{self.at(this)}; 
 
-        if (args.length == 0) qmApp.make();
-        else                  qmApp.make(args(0));
- 
+        if (args.length == 0) make();
+        else                  make(args(0));
+    }
+
+    public static def main(args:Rail[String]) {
+        val qmApp   = new PumjaRasaayani();
+
+        qmApp.make(args);
         qmApp.runIt();
     }
 }

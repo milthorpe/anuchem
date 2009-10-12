@@ -9,14 +9,18 @@
 package au.anu.edu.qm;
 
 public abstract class SCFMethod { 
-    protected val molecule:Molecule;
-    protected val oneE:OneElectronIntegrals;
-    protected val twoE:TwoElectronIntegrals;
+    protected global var molecule:Molecule{self.at(this)};
+    protected global var oneE:OneElectronIntegrals{self.at(this)};
+    protected global var twoE:TwoElectronIntegrals{self.at(this)};
 
     protected var maxIteration:Int;
     protected var energyTolerance:Double;
 
-    public def this(mol:Molecule, oneE:OneElectronIntegrals, twoE:TwoElectronIntegrals) { 
+    public def this() { }
+
+    public def make(mol:Molecule{self.at(this)},  
+                    oneE:OneElectronIntegrals{self.at(this)}, 
+                    twoE:TwoElectronIntegrals{self.at(this)}) { 
         this.molecule = mol;
         this.oneE     = oneE;
         this.twoE     = twoE;
@@ -42,7 +46,7 @@ public abstract class SCFMethod {
         var i:Int, j:Int;
         val noOfAtoms = molecule.getNumberOfAtoms();
         
-        var atomI:Atom, atomJ:Atom;
+        var atomI:Atom{self.at(this)}, atomJ:Atom{self.at(this)};
         
         // read in the atomic numbers
         atomicNumbers:Array[Int]{rank==1} = Array.make[Int]([0..noOfAtoms]);

@@ -12,15 +12,6 @@ public class IntegralsUtils {
     public def this() { 
     } 
 
-    public static def gaussianProductCenter(alpha1:Double, a:Atom, alpha2:Double, b:Atom) : Atom {
-        val gamma:Double = alpha1 + alpha2;
-        return new Atom(
-                         (alpha1 * a.getX() + alpha2 * b.getX()) / gamma,
-                         (alpha1 * a.getY() + alpha2 * b.getY()) / gamma,
-                         (alpha1 * a.getZ() + alpha2 * b.getZ()) / gamma
-                       );
-    }
-
     /**
      * Indexing (i,j,k,l) into long array.
      */

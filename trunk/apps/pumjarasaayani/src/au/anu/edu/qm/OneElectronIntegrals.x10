@@ -9,28 +9,29 @@
 package au.anu.edu.qm;
 
 public class OneElectronIntegrals { 
-    val basisFunctions:BasisFunctions;
-    val molecule:Molecule;
-    var hCore:HCore;
-    var overlap:Overlap;
+    global var basisFunctions:BasisFunctions{self.at(this)};
+    global var molecule:Molecule{self.at(this)};
+    global var hCore:HCore{self.at(this)};
+    global var overlap:Overlap{self.at(this)};
 
-    public def this(bfs:BasisFunctions, mol:Molecule) { 
-       this.basisFunctions = bfs;
-       this.molecule = mol;
-    } 
-
-    public def make() {
-       val nbf  = basisFunctions.getBasisFunctions().size();
-       hCore    = HCore.make(new HCore(), nbf) as HCore;
-       overlap  = Overlap.make(new Overlap(), nbf) as Overlap;
-
-       compute1E();
+    public def this() {
     }
 
-    public def getHCore() : HCore = hCore;
-    public def getOverlap() : Overlap = overlap;
-    public def getBasisFunctions() : BasisFunctions = basisFunctions;
-    public def getMolecule() : Molecule = molecule;
+    public def make(bfs:BasisFunctions{self.at(this)}, mol:Molecule{self.at(this)}) { 
+       this.basisFunctions = bfs;
+       this.molecule = mol;
+
+       val nbf  = basisFunctions.getBasisFunctions().size();
+       hCore    = HCore.make(new HCore(), nbf) as HCore{self.at(this)};
+       overlap  = Overlap.make(new Overlap(), nbf) as Overlap{self.at(this)};
+
+       compute1E();
+    } 
+
+    public def getHCore() : HCore{self.at(this)} = hCore;
+    public def getOverlap() : Overlap{self.at(this)} = overlap;
+    public def getBasisFunctions() : BasisFunctions{self.at(this)} = basisFunctions;
+    public def getMolecule() : Molecule{self.at(this)} = molecule;
 
     protected def compute1E() : void {
        val bfs  = basisFunctions.getBasisFunctions();
@@ -47,10 +48,10 @@ public class OneElectronIntegrals {
 
        // TODO : x10 - parallel
        for(var i:Int=0; i<nbf; i++) {
-          var bfi:ContractedGaussian = bfs.get(i);
+          var bfi:ContractedGaussian{self.at(this)} = bfs.get(i);
 
           for(var j:Int=0; j<nbf; j++) {
-             var bfj:ContractedGaussian = bfs.get(j);
+             var bfj:ContractedGaussian{self.at(this)} = bfs.get(j);
              
              ovr(i,j) = bfi.overlap(bfj); 
              h(i,j)   = bfi.kinetic(bfj);

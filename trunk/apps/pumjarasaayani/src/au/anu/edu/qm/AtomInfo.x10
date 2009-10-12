@@ -12,18 +12,19 @@ import x10.io.*;
 import x10.util.*;
 
 public class AtomInfo { 
-    var atomicNumbers:HashMap[String, Int];
+    global var atomicNumbers:HashMap[String, Int]{self.at(this)};
     val atomInfoFile = "AtomInfo.conf";
 
     var madeIt:Boolean;
 
     private def this() { 
-        atomicNumbers = new HashMap[String, Int]();
         madeIt = false;
     }
  
     private def make() {
         if (madeIt) return;
+
+        atomicNumbers = new HashMap[String, Int]();
 
         /** 
         try {
@@ -67,6 +68,9 @@ public class AtomInfo {
         return _theInstance;
     }    
 
-    public def getAtomicNumber(atm:Atom) = (atomicNumbers.get(atm.getSymbol()) as Int);
+    public def getAtomicNumber(atm:Atom{self.at(this)}) : Int {
+        val sym = atm.getSymbol();
+        return (atomicNumbers.get(sym) as Int);
+    }
 }
 

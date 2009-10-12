@@ -12,7 +12,7 @@ import x10.util.*;
 
 public class Shell { 
     val angularMomentum:Int;
-    val shellPrimitives:ArrayList[ContractedGaussian];
+    global val shellPrimitives:ArrayList[ContractedGaussian]{self.at(this)};
 
     public def this(am:Int) { 
        angularMomentum = am;

@@ -9,9 +9,7 @@
 package au.anu.edu.qm;
 
 public class HartreeFockSCFMethod extends SCFMethod { 
-    public def this(mol:Molecule, oneE:OneElectronIntegrals, twoE:TwoElectronIntegrals) { 
-        super(mol, oneE, twoE);
-    } 
+    public def this() { }
 
     public def scf() : void {
         x10.io.Console.OUT.println("Starting RHF-SCF ... ");        
@@ -39,10 +37,10 @@ public class HartreeFockSCFMethod extends SCFMethod {
 
         // init memory for the matrices
         val N = hCore.getRowCount();
-        val gMatrix = GMatrix.make(new GMatrix(), N) as GMatrix;
-        val mos     = MolecularOrbitals.make(new MolecularOrbitals(), N) as MolecularOrbitals;
-        val density = Density.make(new Density(), N) as Density;
-        val fock    = Fock.make(new Fock(), N) as Fock;
+        val gMatrix:GMatrix{self.at(this)}       = GMatrix.make(new GMatrix(), N) as GMatrix{self.at(this)};
+        val mos:MolecularOrbitals{self.at(this)} = MolecularOrbitals.make(new MolecularOrbitals(), N) as MolecularOrbitals{self.at(this)};
+        val density:Density{self.at(this)}       = Density.make(new Density(), N) as Density{self.at(this)};
+        val fock:Fock{self.at(this)}             = Fock.make(new Fock(), N) as Fock{self.at(this)};
 
         // compute initial MOs
         mos.compute(hCore, overlap);

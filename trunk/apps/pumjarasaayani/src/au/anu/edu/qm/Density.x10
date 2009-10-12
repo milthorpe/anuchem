@@ -11,10 +11,10 @@ package au.anu.edu.qm;
 import x10x.matrix.Matrix;
 
 public class Density extends Matrix {
-    public def compute(noOfOccupancies:Int, mos:MolecularOrbitals) : void {
+    public def compute(noOfOccupancies:Int, mos:MolecularOrbitals{self.at(this)}) : void {
         // construct it from the MOs .. C*C'
         val N = mos.getRowCount();
-        val dVector = Matrix.make(noOfOccupancies, N);
+        val dVector:Matrix{self.at(this)} = Matrix.make(noOfOccupancies, N) as Matrix{self.at(this)};
 
         val dMat = dVector.getMatrix();
         val mosMat = mos.getMatrix();

@@ -12,12 +12,13 @@ import x10x.matrix.Matrix;
 import x10x.vector.Vector;
 
 public class GMatrix extends Matrix {
-    public def compute(twoE:TwoElectronIntegrals, density:Density) : void {
+    public def compute(twoE:TwoElectronIntegrals{self.at(this)}, density:Density{self.at(this)}) : void {
         if (twoE.isDirect()) { computeDirect2(twoE, density); return; }
 
         val noOfBasisFunctions = density.getRowCount();
-        val densityOneD = Vector.make(density); // form 1D vector of density
-        val tempVector  = Vector.make(noOfBasisFunctions*noOfBasisFunctions);
+        val densityOneD = new Vector();
+        densityOneD.make(density); // form 1D vector of density
+        val tempVector:Vector{self.at(this)}  = Vector.make(noOfBasisFunctions*noOfBasisFunctions) as Vector{self.at(this)};
 
         val gMatrix = getMatrix();
         val ints = twoE.getTwoElectronIntegrals();
@@ -47,10 +48,11 @@ public class GMatrix extends Matrix {
         } // end i loop  
     }
 
-    private def computeDirect(twoE:TwoElectronIntegrals, density:Density) : void {
+    private def computeDirect(twoE:TwoElectronIntegrals{self.at(this)}, density:Density{self.at(this)}) : void {
         val noOfBasisFunctions = density.getRowCount();
-        val densityOneD = Vector.make(density); // form 1D vector of density
-        val tempVector  = Vector.make(noOfBasisFunctions*noOfBasisFunctions);
+        val densityOneD = new Vector();
+        densityOneD.make(density); // form 1D vector of density
+        val tempVector:Vector{self.at(this)}  = Vector.make(noOfBasisFunctions*noOfBasisFunctions) as Vector{self.at(this)};
 
         val gMatrix = getMatrix();
         val temp = tempVector.getVector();
@@ -112,7 +114,7 @@ public class GMatrix extends Matrix {
         } // end i loop
     }
 
-    private def computeDirect2(twoE:TwoElectronIntegrals, density:Density) : void {
+    private def computeDirect2(twoE:TwoElectronIntegrals{self.at(this)}, density:Density{self.at(this)}) : void {
         val N = density.getRowCount();
 
         makeZero();
