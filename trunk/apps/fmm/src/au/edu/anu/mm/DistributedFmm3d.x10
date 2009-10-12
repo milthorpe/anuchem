@@ -311,16 +311,16 @@ public class DistributedFmm3d {
 
     def getEnergy() : Double {
         // TODO n^2 calculation - to check - remove this
-        /*
+        
         var directEnergy : Double = 0.0;
         for ((i) in 0..(atoms.length - 1)) {
             for ((j) in 0..(i - 1)) {
-                val pairEnergy : Double = pairEnergy(atoms(i), atoms(j));
+                val pairEnergy : Double = atoms(j).pairEnergy(atoms(i));
                 directEnergy += 2 * pairEnergy;
             }
         }
         Console.OUT.println("directEnergy = " + directEnergy);
-        */
+        
 
         // TODO XTENLANG-513
         val ws = this.ws;
@@ -392,17 +392,16 @@ public class DistributedFmm3d {
         val parentLevel = childLevel - 1;
         var parent : Box[FmmBox] = boxes(parentIndex, parentLevel);
         if (parent == null) {
-            parent = at (boxes.dist(parentIndex, parentLevel)) {getNewParent(parentIndex, parentLevel)};
+            parent = at (boxes.dist(parentIndex, parentLevel)) {createNewParent(parentIndex, parentLevel)};
         }
         return parent;
     }
 
-    private def getNewParent(parentIndex : int, parentLevel : Int) : FmmBox {
+    private def createNewParent(parentIndex : int, parentLevel : Int) : FmmBox {
         val grandparent = getParentBox(parentIndex, parentLevel);
         val parentLocation = getBoxLocation(parentIndex, parentLevel);
         val newParent = new FmmBox(parentLevel, parentLocation, numTerms, grandparent);
-        if (grandparent != null)
-            boxes(parentIndex, parentLevel) = newParent;
+        boxes(parentIndex, parentLevel) = newParent;
         return newParent;
     }
 

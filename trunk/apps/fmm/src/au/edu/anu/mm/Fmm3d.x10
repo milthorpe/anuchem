@@ -199,13 +199,13 @@ public class Fmm3d {
                     val bBox2 = boxes(boxIndex2, 2);
                     if (bBox2 != null) {
                         val box2 = bBox2.value;
-                        //Console.OUT.println("... and box(" + 2 + "," + boxIndex2 + ")");
-                        if (box1.wellSeparated(ws, box2)) {
-                            translation : ValRail[Int]{length==3} = getTranslationIndex(box1, box2);
-                                    val transform12 = multipoleTransforms(2, translation(0), translation(1), translation(2));
-                                    box2.localExp.transformAndAddToLocal(transform12, box1.multipoleExp);
-                                    val transform21 = multipoleTransforms(2, -translation(0), -translation(1), -translation(2));
-                                    box1.localExp.transformAndAddToLocal(transform21, box2.multipoleExp);
+                        //Console.OUT.println("... and box(" + boxIndex2 + "," + 2 + ")");
+                        if (box2.wellSeparated(ws, box1)) {
+                            val translation = getTranslationIndex(box1, box2);
+                            val transform12 = multipoleTransforms(2, translation(0), translation(1), translation(2));
+                            box2.localExp.transformAndAddToLocal(transform12, box1.multipoleExp);
+                            val transform21 = multipoleTransforms(2, -translation(0), -translation(1), -translation(2));
+                            box1.localExp.transformAndAddToLocal(transform21, box2.multipoleExp);
                             wellSep++;
                         } else if (numLevels==2) {
                             nearField++;
@@ -226,9 +226,9 @@ public class Fmm3d {
                         val bBox2 = boxes(boxIndex2, level);
                         if (bBox2 != null) {
                             val box2 = bBox2.value;
-                            //Console.OUT.println("... and box(" + level + "," + boxIndex2 + ")");
-                            if (!box1.parent.value.wellSeparated(ws, box2.parent.value)) {
-                                if (box1.wellSeparated(ws, box2)) {
+                            //Console.OUT.println("... and box(" + boxIndex2 + "," + level + ")");
+                            if (!box2.parent.value.wellSeparated(ws, box1.parent.value)) {
+                                if (box2.wellSeparated(ws, box1)) {
                                     val translation = getTranslationIndex(box1, box2);
                                     val transform12 = multipoleTransforms(level, translation(0), translation(1), translation(2));
                                     box2.localExp.transformAndAddToLocal(transform12, box1.multipoleExp);
@@ -256,7 +256,7 @@ public class Fmm3d {
         var directEnergy : Double = 0.0;
         for ((i) in 0..(atoms.length - 1)) {
             for ((j) in 0..(i - 1)) {
-                val pairEnergy : Double = pairEnergy(atoms(i), atoms(j));
+                val pairEnergy : Double = atoms(j).pairEnergy(atoms(i));
                 directEnergy += 2 * pairEnergy;
             }
         }
@@ -308,24 +308,23 @@ public class Fmm3d {
     }
 
     private def getParentBox(childIndex : Int, childLevel : Int) : Box[FmmBox] {
+        //Console.OUT.println("getParentBox(" + childIndex + ", " + childLevel + ")");
         if (childLevel == 2)
             return null;
-        parentIndex : Int = getParentIndex(childIndex, childLevel);
-        parentLevel : Int = childLevel - 1;
-        parentLocation : ValRail[Int]{length==3} = getBoxLocation(parentIndex, parentLevel);
+        val parentIndex = getParentIndex(childIndex, childLevel);
+        val parentLevel = childLevel - 1;
         var parent : Box[FmmBox] = boxes(parentIndex, parentLevel);
         if (parent == null) {
-            parent = getNewParent(parentIndex, parentLevel);
+            parent = createNewParent(parentIndex, parentLevel);
         }
         return parent;
     }
 
-    private def getNewParent(parentIndex : int, parentLevel : Int) : FmmBox {
+    private def createNewParent(parentIndex : int, parentLevel : Int) : FmmBox {
         val grandparent = getParentBox(parentIndex, parentLevel);
         val parentLocation = getBoxLocation(parentIndex, parentLevel);
         val newParent = new FmmBox(parentLevel, parentLocation, numTerms, grandparent);
-        if (grandparent != null)
-            boxes(parentIndex, parentLevel) = newParent;
+        boxes(parentIndex, parentLevel) = newParent;
         return newParent;
     }
 
