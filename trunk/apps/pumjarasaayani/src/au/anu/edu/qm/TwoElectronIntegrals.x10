@@ -86,6 +86,8 @@ public class TwoElectronIntegrals {
 
     public def isDirect() : Boolean = direct;
     public def getNumberOfIntegrals() : Int = noOfIntegrals;
+    public def getMolecule() : Molecule{self.at(this)} = molecule;
+    public def getBasisFunctions() : BasisFunctions{self.at(this)} = basisFunctions;
 
     public def compute2E(i:Int, j:Int, k:Int, l:Int) : Double {
         return coulomb(contractedList.get(i), contractedList.get(j), 
