@@ -80,15 +80,13 @@ public class DistributedFmm3d {
 
         this.atoms = atoms;
 
-
         var boxRegion : Region{rank==2} = [0..63, 2..2];
+        var boxDistribution : Dist{rank==2} = Dist.makeBlock(boxRegion, 0);
         for ((i) in 3..numLevels) {
-            rNextLevel : Region{rank==2} = [0..(Math.pow(8,i) as Int)-1, i..i];
-            boxRegion = boxRegion || rNextLevel;
+            val nextLevelRegion : Region{rank==2} = [0..(Math.pow(8,i) as Int)-1, i..i];
+            val nextLevelDist = Dist.makeBlock(nextLevelRegion, 0);
+            boxDistribution = boxDistribution.overlay(nextLevelDist);
         }
-        Console.OUT.println("boxes: " + boxRegion);
-
-        val boxDistribution : Dist{rank==2} = Dist.makeBlock(boxRegion, 0);
         Console.OUT.println("dist: " + boxDistribution);
         
         // all boxes are null to start.  they will be initialised as needed.
