@@ -64,6 +64,11 @@ public value class ExpansionRegion extends BaseRegion{rank==2} {
         throw U.unsupported(this, "product()");
     }
 
+    public def translate(v: Point(rank)): Region(rank) {
+        // TODO
+        throw U.unsupported(this, "translate()");
+    }
+
     public def projection(axis: int): Region(1) {
         switch (axis) {
             case 0:

@@ -72,6 +72,10 @@ public value class TriangularRegion extends BaseRegion{rank==2} {
         throw U.unsupported(this, "product()");
     }
 
+    public def translate(v: Point(rank)): Region(rank) {
+        return new TriangularRegion(rowMin + v(0), colMin + v(1), dim, lower) as Region(rank);
+    }
+
     public def projection(axis: Int): Region(1) {
         switch (axis) {
             case 0:
