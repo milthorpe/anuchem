@@ -25,7 +25,7 @@ public value LocalExpansion extends Expansion {
         val pplm : Array[Double]{rank==2} = AssociatedLegendrePolynomial.getPlm(Math.cos(v_pole.theta), p); 
 
         val rfac0 : Double = 1.0 / v_pole.r;
-        val phifac0 = new Complex(Math.cos(v_pole.phi), Math.sin(v_pole.phi));
+        val phifac0 = Complex(Math.cos(v_pole.phi), Math.sin(v_pole.phi));
         var rfac : Double = rfac0;
         var il : Double = 1.0;
         for (var l : Int = 0; l<=p; l++) {

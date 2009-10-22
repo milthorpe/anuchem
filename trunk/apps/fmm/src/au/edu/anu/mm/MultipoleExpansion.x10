@@ -25,7 +25,7 @@ public value MultipoleExpansion extends Expansion {
         var v_pole : Polar3d = Polar3d.getPolar3d(v);
         val pplm : Array[Double]{rank==2} = AssociatedLegendrePolynomial.getPlm(Math.cos(v_pole.theta), p); 
         
-        val phifac0 = new Complex(Math.cos(-v_pole.phi), Math.sin(-v_pole.phi));
+        val phifac0 = Complex(Math.cos(-v_pole.phi), Math.sin(-v_pole.phi));
 
         var rfac : Double = 1.0;
         var il : Double = 1.0;
@@ -56,7 +56,7 @@ public value MultipoleExpansion extends Expansion {
         var v_pole : Polar3d = Polar3d.getPolar3d(v);
         val pplm : Array[Double]{rank==2} = AssociatedLegendrePolynomial.getPlm(Math.cos(v_pole.theta), p); 
         
-        val phifac0 = new Complex(Math.cos(-v_pole.phi), Math.sin(-v_pole.phi));
+        val phifac0 = Complex(Math.cos(-v_pole.phi), Math.sin(-v_pole.phi));
 
         var rfac : Double = 1.0;
         var il : Double = 1.0;
