@@ -96,22 +96,28 @@ public class DistributedFmm3d {
         var wellSpacedLimit : Region(5) = [0..Place.MAX_PLACES-1,2..numLevels,-(ws+3)..ws+3,-(ws+3)..ws+3,-(ws+3)..ws+3];
         val multipoleTransformRegion : Region(5) = wellSpacedLimit - ([0..Place.MAX_PLACES-1,2..numLevels,-ws..ws,-ws..ws,-ws..ws] as Region);
         this.multipoleTransforms = Array.make[LocalExpansion](Dist.makeCyclic(multipoleTransformRegion,0));
-        this.multipoleTranslations = Array.make[MultipoleExpansion](Dist.makeCyclic([0..Place.MAX_PLACES-1,3..numLevels, 0..1, 0..1, 0..1],0));
+        if (numLevels >= 3) {
+            this.multipoleTranslations = Array.make[MultipoleExpansion](Dist.makeCyclic([0..Place.MAX_PLACES-1,3..numLevels, 0..1, 0..1, 0..1],0));
+        } else {
+            this.multipoleTranslations = null;
+        }
     }
     
     public def calculateEnergy() : Double {
-        // precompute multipole translations
-        val d: Dist = Dist.makeUnique(Place.places);
-        finish ateach ((p) : Point in d) {
-            val myPortion = multipoleTranslations.dist.restriction(here);
-            foreach (val(placeId,level,i,j,k) in multipoleTranslations.dist.restriction(here)) {
-                dim : Int = Math.pow2(level);
-                sideLength : Double = size / dim;
-                translationVector : Vector3d = new Vector3d((i*2-1) * 0.5 * sideLength,
-                                                                 (j*2-1) * 0.5 * sideLength,
-                                                                 (k*2-1) * 0.5 * sideLength);
-                multipoleTranslations(Point.make([placeId, level, i, j, k])) = MultipoleExpansion.getOlm(translationVector, numTerms);
-            } 
+        if (numLevels >= 3) {
+            // precompute multipole translations
+            val d: Dist = Dist.makeUnique(Place.places);
+            finish ateach ((p) : Point in d) {
+                val myPortion = multipoleTranslations.dist.restriction(here);
+                foreach (val(placeId,level,i,j,k) in multipoleTranslations.dist.restriction(here)) {
+                    dim : Int = Math.pow2(level);
+                    sideLength : Double = size / dim;
+                    translationVector : Vector3d = new Vector3d((i*2-1) * 0.5 * sideLength,
+                                                                     (j*2-1) * 0.5 * sideLength,
+                                                                     (k*2-1) * 0.5 * sideLength);
+                    multipoleTranslations(Point.make([placeId, level, i, j, k])) = MultipoleExpansion.getOlm(translationVector, numTerms);
+                } 
+            }
         }
 
         Console.OUT.println("multipoleLowestLevel");

@@ -21,7 +21,7 @@ public class Expansion {
         //expRegion = expRegion - Region.makeHalfspace([1,1],1);
         //expRegion = expRegion - Region.makeHalfspace([1,-1],1);
         val expRegion = new ExpansionRegion(p);
-        this.terms = Array.make[Complex](expRegion, (Box[Point]) => Complex.ZERO);
+        this.terms = Array.make[Complex](expRegion, (val p:Point) => Complex.ZERO);
     }
 
     public def add(e : Expansion!) {

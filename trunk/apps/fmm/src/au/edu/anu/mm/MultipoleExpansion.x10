@@ -52,7 +52,7 @@ public class MultipoleExpansion extends Expansion {
      * Calculate the chargeless multipole-like term O_{lm} (with m >= 0) for a point v.
      */
     public static def getOlm(v : Tuple3d, p : Int) : MultipoleExpansion! {
-        val exp : MultipoleExpansion = new MultipoleExpansion(p);
+        val exp = new MultipoleExpansion(p);
         var v_pole : Polar3d = Polar3d.getPolar3d(v);
         val pplm : Array[Double]{rank==2} = AssociatedLegendrePolynomial.getPlm(Math.cos(v_pole.theta), p); 
         

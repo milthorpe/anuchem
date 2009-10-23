@@ -88,19 +88,24 @@ public class Fmm3d {
         var wellSpacedLimit : Region(4) = [2..numLevels,-(ws+3)..ws+3,-(ws+3)..ws+3,-(ws+3)..ws+3];
         val multipoleTransformRegion : Region(4) = wellSpacedLimit - ([2..numLevels,-ws..ws,-ws..ws,-ws..ws] as Region);
         this.multipoleTransforms = Array.make[LocalExpansion!](multipoleTransformRegion);
-        this.multipoleTranslations = Array.make[MultipoleExpansion!]([3..numLevels, 0..1, 0..1, 0..1]);
+        if (numLevels >= 3) {
+            this.multipoleTranslations = Array.make[MultipoleExpansion!]([3..numLevels, 0..1, 0..1, 0..1]);
+        } else {
+            this.multipoleTranslations = null;
+        }
     }
     
     public def calculateEnergy() : Double {
-
-        // precompute multipole translations
-        for (val(level,i,j,k) in multipoleTranslations.region) {
-            dim : Int = Math.pow2(level);
-            sideLength : Double = size / dim;
-            translationVector : Vector3d = new Vector3d((i*2-1) * 0.5 * sideLength,
-                                                             (j*2-1) * 0.5 * sideLength,
-                                                             (k*2-1) * 0.5 * sideLength);
-            multipoleTranslations(level, i, j, k) = MultipoleExpansion.getOlm(translationVector, numTerms);
+        if (numLevels >= 3) {
+            // precompute multipole translations
+            for (val(level,i,j,k) in multipoleTranslations.region) {
+                dim : Int = Math.pow2(level);
+                sideLength : Double = size / dim;
+                translationVector : Vector3d = new Vector3d((i*2-1) * 0.5 * sideLength,
+                                                                 (j*2-1) * 0.5 * sideLength,
+                                                                 (k*2-1) * 0.5 * sideLength);
+                multipoleTranslations(level, i, j, k) = MultipoleExpansion.getOlm(translationVector, numTerms);
+            }
         }
 
         multipoleLowestLevel();
