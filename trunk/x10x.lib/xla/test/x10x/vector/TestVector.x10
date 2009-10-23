@@ -8,7 +8,7 @@ import harness.x10Test;
  */
 public class TestVector extends x10Test {
     public def run(): boolean {
-        val vector = Vector.make(3);
+        val vector = Vector.make(3) as Vector!;
         ateach(p(i) : Point in vector.vec) {
             vector.vec(i) = i as Double;
         }
@@ -18,7 +18,7 @@ public class TestVector extends x10Test {
         return true;
     }
 
-    public static def main(Rail[String]) {
+    public static def main(Rail[String]!) {
         new TestVector().execute();
     }
 }
