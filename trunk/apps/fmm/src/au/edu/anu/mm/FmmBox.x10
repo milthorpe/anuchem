@@ -16,10 +16,10 @@ public class FmmBox {
     public global val gridLoc : ValRail[Int]{length==3};
 
     /** The multipole expansion of the charges within this box. */
-    public val multipoleExp : MultipoleExpansion;
+    public val multipoleExp : MultipoleExpansion{self.at(this)};
 
     /** The Taylor expansion of the potential within this box due to particles in well separated boxes. */
-    public val localExp : LocalExpansion;
+    public val localExp : LocalExpansion{self.at(this)};
 
     /**
      * Creates a new FmmBox with multipole and local expansions

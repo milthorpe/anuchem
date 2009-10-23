@@ -10,7 +10,7 @@ import x10x.polar.Polar3d;
  * </a>, White and Head-Gordon, 1994.
  * @author milthorpe
  */
-public value LocalExpansion extends Expansion {
+public class LocalExpansion extends Expansion {
 
     public def this(p : Int) {
         super(p);
@@ -19,7 +19,7 @@ public value LocalExpansion extends Expansion {
     /**
      * Calculate the local Taylor-type expansion M_{lm} (with m >= 0) for a single point v.
      */
-    public static def getMlm(v : Tuple3d, p : int) : LocalExpansion {
+    public static def getMlm(v : Tuple3d, p : int) : LocalExpansion! {
         val exp = new LocalExpansion(p);
         val v_pole : Polar3d = Polar3d.getPolar3d(v);
         val pplm : Array[Double]{rank==2} = AssociatedLegendrePolynomial.getPlm(Math.cos(v_pole.theta), p); 
@@ -57,8 +57,8 @@ public value LocalExpansion extends Expansion {
      * @param shift the multipole expansion of the translation
      * @param source the source local expansion, centred at the origin
      */
-    public def translateAndAddLocal(shift : MultipoleExpansion,
-                                         source : LocalExpansion) {
+    public def translateAndAddLocal(shift : MultipoleExpansion!,
+                                         source : LocalExpansion!) {
         val p : Int = source.terms.region.max(0);
         for (val (l,m): Point in this.terms) {
             for (var j : Int = l; j<=p; j++) { // TODO XTENLANG-504
@@ -79,8 +79,8 @@ public value LocalExpansion extends Expansion {
      * @param b the vector along which to translate the multipole
      * @param source the source multipole expansion, centred at the origin
      */
-    public def transformAndAddToLocal(transform : LocalExpansion,
-                                         source : MultipoleExpansion) {
+    public def transformAndAddToLocal(transform : LocalExpansion!,
+                                         source : MultipoleExpansion!) {
         val p : Int = source.terms.region.max(0);
         for (val (j,k): Point in source.terms) {
             for (var l : Int = 0; l <= p-j; l++) { // TODO XTENLANG-504
@@ -111,8 +111,8 @@ public value LocalExpansion extends Expansion {
      */
     public def transformAndAddToLocalDist(transform : LocalExpansion,
                                          source : MultipoleExpansion) {
-        val p : Int = source.terms.region.max(0);
-        for (val (j,k): Point in source.terms) {
+        val p : Int = this.terms.region.max(0);
+        for (val (j,k): Point in this.terms) {
             for (var l : Int = 0; l <= p-j; l++) { // TODO XTENLANG-504
                 for (var m : Int = -l; m<=l; m++) { // TODO XTENLANG-504
                     if (Math.abs(k+m) <= (j+l)) {
@@ -120,7 +120,7 @@ public value LocalExpansion extends Expansion {
                         // of the at statement results in a Seg Fault... why?
                         val jPlusL : Int = (j+l);
                         val kPlusM : Int = (k+m);
-                        val B_lmjk = transform.terms(jPlusL, kPlusM);
+                        val B_lmjk = transform.terms(Point.make([jPlusL, kPlusM]));
                         //Console.OUT.println("source.terms.dist(" + j + "," + k + ") = " + source.terms.dist(j,k));
                         val O_jk = at (source.terms.dist(j,k)) {source.terms(j,k)};
                         this.terms(l,m) = this.terms(l,m) + B_lmjk * O_jk;

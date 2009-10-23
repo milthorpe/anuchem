@@ -37,10 +37,10 @@ public class Fmm3d {
     val atoms : ValRail[Atom];
 
     /** A cache of transformations from multipole to local at the same level. */
-    val multipoleTransforms : Array[LocalExpansion]{rank==4};
+    val multipoleTransforms : Array[LocalExpansion!]{rank==4};
 
     /** A cache of multipole translations between parent box centres and child box centres. */
-    val multipoleTranslations : Array[MultipoleExpansion]{rank==4};
+    val multipoleTranslations : Array[MultipoleExpansion!]{rank==4};
 
     /**
      * Initialises a fast multipole method electrostatics calculation
@@ -87,8 +87,8 @@ public class Fmm3d {
     
         var wellSpacedLimit : Region(4) = [2..numLevels,-(ws+3)..ws+3,-(ws+3)..ws+3,-(ws+3)..ws+3];
         val multipoleTransformRegion : Region(4) = wellSpacedLimit - ([2..numLevels,-ws..ws,-ws..ws,-ws..ws] as Region);
-        this.multipoleTransforms = Array.make[LocalExpansion](multipoleTransformRegion);
-        this.multipoleTranslations = Array.make[MultipoleExpansion]([3..numLevels, 0..1, 0..1, 0..1]);
+        this.multipoleTransforms = Array.make[LocalExpansion!](multipoleTransformRegion);
+        this.multipoleTranslations = Array.make[MultipoleExpansion!]([3..numLevels, 0..1, 0..1, 0..1]);
     }
     
     public def calculateEnergy() : Double {
@@ -159,7 +159,7 @@ public class Fmm3d {
             for ((childIndex) in 0..(Math.pow(8,level) as Int)-1) {
                 val bChild = boxes(childIndex,level);
                 if (bChild != null) {
-                    val child = bChild.value;
+                    val child = bChild.value as FmmBox!;
                     val parent = child.parent.value as FmmBox!;
                     val parentExp = parent.multipoleExp;
                     val shift = multipoleTranslations(level, (child.gridLoc(0)+1)%2, (child.gridLoc(1)+1)%2, (child.gridLoc(2)+1)%2);

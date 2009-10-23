@@ -12,20 +12,20 @@ import x10.util.StringBuilder;
  * here by subtracting two halfspaces from a rectangular region. 
  * @author milthorpe
  */
-public value Expansion {
+public class Expansion {
     /** The terms X_{lm} (with m >= 0) in this expansion */
-    public val terms : Array[Complex]{rank==2};
+    public global val terms : Array[Complex](2){self.at(this)};
 
     public def this(p : Int) {
         //var expRegion : Region{rank==2} = [0..p,-p..p];
         //expRegion = expRegion - Region.makeHalfspace([1,1],1);
         //expRegion = expRegion - Region.makeHalfspace([1,-1],1);
-        val expRegion : Region{rank==2} = new ExpansionRegion(p);
-        this.terms = Array.make[Complex](expRegion, (Point)=> Complex.ZERO);
+        val expRegion = new ExpansionRegion(p);
+        this.terms = Array.make[Complex](expRegion, (Box[Point]) => Complex.ZERO);
     }
 
-    public def add(e : Expansion) {
-        for (val p : Point{rank==2} in terms.region) {
+    public def add(e : Expansion!) {
+        for (val p : Point(2) in terms.region) {
             this.terms(p) = this.terms(p) + e.terms(p);
         }
     }

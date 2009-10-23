@@ -10,7 +10,7 @@ import x10x.polar.Polar3d;
  * </a>, White and Head-Gordon, 1994.
  * @author milthorpe
  */
-public value MultipoleExpansion extends Expansion {
+public class MultipoleExpansion extends Expansion {
 
     public def this(p : Int) {
         super(p);
@@ -20,7 +20,7 @@ public value MultipoleExpansion extends Expansion {
      * Calculate the multipole-like term O_{lm} (with m >= 0) for a point v.
      * TODO x10doc
      */
-    public static def getOlm(q : Double, v : Tuple3d, p : Int) : MultipoleExpansion {
+    public static def getOlm(q : Double, v : Tuple3d, p : Int) : MultipoleExpansion! {
         val exp = new MultipoleExpansion(p);
         var v_pole : Polar3d = Polar3d.getPolar3d(v);
         val pplm : Array[Double]{rank==2} = AssociatedLegendrePolynomial.getPlm(Math.cos(v_pole.theta), p); 
@@ -51,7 +51,7 @@ public value MultipoleExpansion extends Expansion {
     /**
      * Calculate the chargeless multipole-like term O_{lm} (with m >= 0) for a point v.
      */
-    public static def getOlm(v : Tuple3d, p : Int) : MultipoleExpansion {
+    public static def getOlm(v : Tuple3d, p : Int) : MultipoleExpansion! {
         val exp : MultipoleExpansion = new MultipoleExpansion(p);
         var v_pole : Polar3d = Polar3d.getPolar3d(v);
         val pplm : Array[Double]{rank==2} = AssociatedLegendrePolynomial.getPlm(Math.cos(v_pole.theta), p); 
@@ -88,8 +88,8 @@ public value MultipoleExpansion extends Expansion {
      * @param b the vector along which to translate the multipole
      * @param source the source multipole expansion, centred at the origin
      */
-    public def translateAndAddMultipole(shift : MultipoleExpansion,
-                                         source : MultipoleExpansion) {
+    public def translateAndAddMultipole(shift : MultipoleExpansion!,
+                                         source : MultipoleExpansion!) {
         val p : Int = source.terms.region.max(0);
         for (val (j,k): Point in source.terms) {
             for (var l : Int = j; l<=p; l++) { // TODO XTENLANG-504
@@ -97,6 +97,31 @@ public value MultipoleExpansion extends Expansion {
                     if (Math.abs(m-k) <= (l-j)) {
                         val A_lmjk = shift.terms(l-j, m-k);
                         this.terms(l,m) = this.terms(l,m) + A_lmjk * source.terms(j,k);
+                    }
+                }
+            }
+        }
+    }
+
+    /** 
+     * Translate a multipole expansion centred around the origin along a vector -b,
+     * and adds to this expansion centred at -b.
+     * This corresponds to "Operator A", Equations 10-11 in White & Head-Gordon.
+     * Note: this defines A^lm_jk(b) = O_l-j,m-k(b); however this is only defined
+     * where abs(m-k) <= l-j, therefore we restrict m to [j-l+k..-j+l+k]
+     * @param b the vector along which to translate the multipole
+     * @param source the source multipole expansion, centred at the origin
+     */
+    public def translateAndAddMultipoleDist(shift : MultipoleExpansion!,
+                                         source : MultipoleExpansion) {
+        val p : Int = this.terms.region.max(0);
+        for (val (j,k): Point in this.terms) {
+            for (var l : Int = j; l<=p; l++) { // TODO XTENLANG-504
+                for (var m : Int = -l; m<=l; m++) { // TODO XTENLANG-504
+                    if (Math.abs(m-k) <= (l-j)) {
+                        val A_lmjk = shift.terms(l-j, m-k);
+                        val O_jk = at (source.terms.dist(j,k)) {source.terms(j,k)};
+                        this.terms(l,m) = this.terms(l,m) + A_lmjk * O_jk;
                     }
                 }
             }
