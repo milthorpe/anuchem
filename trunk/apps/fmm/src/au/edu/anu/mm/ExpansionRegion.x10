@@ -130,4 +130,7 @@ public class ExpansionRegion extends BaseRegion{rank==2} {
         } 
     }
 
+    public global def toString(): String {
+        return "ExpansionRegion (p = " + p + ")";
+    }
 }
