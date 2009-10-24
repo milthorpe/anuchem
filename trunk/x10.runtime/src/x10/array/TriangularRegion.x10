@@ -147,4 +147,12 @@ public class TriangularRegion extends BaseRegion{rank==2} {
         } 
     }
 
+    public global def toString(): String {
+        val triangleString = "triangular region " + colMin + ".." + (colMin + dim) + "," + rowMin + ".." + (rowMin + dim);
+        if (lower) {
+            return "lower " + triangleString;
+        } else {
+            return "upper " + triangleString;
+        }
+    }
 }
