@@ -24,7 +24,7 @@ public class Expansion {
         this.terms = Array.make[Complex](expRegion, (val p:Point) => Complex.ZERO);
     }
 
-    public def add(e : Expansion!) {
+    public def add(e : Expansion) {
         for (val p : Point(2) in terms.region) {
             this.terms(p) = this.terms(p) + e.terms(p);
         }
