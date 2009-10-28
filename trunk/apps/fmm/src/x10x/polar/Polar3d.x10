@@ -7,7 +7,7 @@ import x10x.vector.Tuple3d;
  *  This class represents a point in 3D Polar coordinates.
  * @author milthorpe
  */
-public value Polar3d {
+public struct Polar3d {
     public val r: Double;
     public val theta: Double;
     public val phi: Double;
@@ -49,11 +49,13 @@ public value Polar3d {
                 phi = Math.PI * 2.0 - phi;
             }
         }
-        return new Polar3d(r, theta, phi);
+        return Polar3d(r, theta, phi);
     }
 
     public def toString() : String {
         return ("(r:" + r + ",theta:" + theta + ",phi:" + phi + ")");
     }
+
+    public def typeName() = "x10x.polar.Polar";
 }
 
