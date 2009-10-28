@@ -319,7 +319,7 @@ public class Fmm3d {
         val parentLevel = childLevel - 1;
         var parent : Box[FmmBox] = boxes(parentIndex, parentLevel);
         if (parent == null) {
-            parent = createNewParent(parentIndex, parentLevel);
+            parent = new Box[FmmBox](createNewParent(parentIndex, parentLevel));
         }
         return parent;
     }
@@ -328,7 +328,7 @@ public class Fmm3d {
         val grandparent = getParentBox(parentIndex, parentLevel);
         val parentLocation = getBoxLocation(parentIndex, parentLevel);
         val newParent = new FmmBox(parentLevel, parentLocation, numTerms, grandparent);
-        boxes(parentIndex, parentLevel) = newParent;
+        boxes(parentIndex, parentLevel) = new Box[FmmBox!](newParent);
         return newParent;
     }
 
