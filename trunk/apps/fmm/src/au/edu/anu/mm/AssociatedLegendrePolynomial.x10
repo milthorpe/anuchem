@@ -6,7 +6,7 @@ import x10.array.TriangularRegion;
  * This class calculates associated Legendre polynomials.
  * @author milthorpe
  */
-public value AssociatedLegendrePolynomial {
+public class AssociatedLegendrePolynomial {
 
 	/**
 	 * Calculate associated Legendre polynomials P_{lm}(x) up to l=p (m.ge.0)
