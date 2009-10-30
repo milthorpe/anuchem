@@ -115,12 +115,13 @@ public class MultipoleExpansion extends Expansion {
     public def translateAndAddMultipoleDist(shift : MultipoleExpansion!,
                                          source : MultipoleExpansion) {
         val p : Int = this.terms.region.max(0);
+        val sourceTerms = at (source) {source.terms};
         for (val (j,k): Point in this.terms) {
             for (var l : Int = j; l<=p; l++) { // TODO XTENLANG-504
                 for (var m : Int = -l; m<=l; m++) { // TODO XTENLANG-504
                     if (Math.abs(m-k) <= (l-j)) {
                         val A_lmjk = shift.terms(l-j, m-k);
-                        val O_jk = at (source.terms.dist(j,k)) {source.terms(j,k)};
+                        val O_jk = sourceTerms(j,k);
                         this.terms(l,m) = this.terms(l,m) + A_lmjk * O_jk;
                     }
                 }

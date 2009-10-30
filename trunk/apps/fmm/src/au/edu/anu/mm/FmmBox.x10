@@ -13,7 +13,7 @@ public class FmmBox {
 
     public global val level : Int;
 
-    public global val gridLoc : ValRail[Int]{length==3};
+    public global val gridLoc : ValRail[Int](3);
 
     /** The multipole expansion of the charges within this box. */
     public val multipoleExp : MultipoleExpansion{self.at(this)};
@@ -25,7 +25,7 @@ public class FmmBox {
      * Creates a new FmmBox with multipole and local expansions
      * of the given number of terms.
      */
-    public def this(level : Int, gridLoc : ValRail[Int]{length==3}, numTerms : Int, parent : Box[FmmBox]) {
+    public def this(level : Int, gridLoc : ValRail[Int](3), numTerms : Int, parent : Box[FmmBox]) {
         this.level = level;
         this.gridLoc = gridLoc;
         this.parent = parent;
@@ -38,7 +38,7 @@ public class FmmBox {
         return gridLoc(0) * dim * dim + gridLoc(1) * dim + gridLoc(2);
     }
 
-    public static def getBoxIndex(gridLoc : ValRail[Int]{length==3}, level : Int) : Int {
+    public static def getBoxIndex(gridLoc : ValRail[Int](3), level : Int) : Int {
         dim : Int = Math.pow2(level);
         return gridLoc(0) * dim * dim + gridLoc(1) * dim + gridLoc(2);
     }
@@ -69,9 +69,8 @@ public class FmmBox {
             || Math.abs(gridLoc(2) - box2GridLoc(2)) > ws;
     }
 
-    public global def getTranslationIndex(box2 : FmmBox) : ValRail[Int]{length==3} {
-        val box2GridLoc = box2.gridLoc;
-        return [gridLoc(0) - box2GridLoc(0), gridLoc(1) - box2GridLoc(1), gridLoc(2) - box2GridLoc(2)];
+    public global def getTranslationIndex(box2 : FmmBox) : ValRail[Int](3) {
+        return [gridLoc(0) - box2.gridLoc(0), gridLoc(1) - box2.gridLoc(1), gridLoc(2) - box2.gridLoc(2)];
     }
 }
 

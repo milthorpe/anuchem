@@ -109,9 +109,10 @@ public class LocalExpansion extends Expansion {
      * @param b the vector along which to translate the multipole
      * @param source the source multipole expansion, centred at the origin
      */
-    public def transformAndAddToLocalDist(transform : LocalExpansion,
+    public def transformAndAddToLocalDist(transform : LocalExpansion!,
                                          source : MultipoleExpansion) {
         val p : Int = this.terms.region.max(0);
+        val sourceTerms = at (source) {source.terms};
         for (val (j,k): Point in this.terms) {
             for (var l : Int = 0; l <= p-j; l++) { // TODO XTENLANG-504
                 for (var m : Int = -l; m<=l; m++) { // TODO XTENLANG-504
@@ -122,7 +123,7 @@ public class LocalExpansion extends Expansion {
                         val kPlusM : Int = (k+m);
                         val B_lmjk = transform.terms(Point.make([jPlusL, kPlusM]));
                         //Console.OUT.println("source.terms.dist(" + j + "," + k + ") = " + source.terms.dist(j,k));
-                        val O_jk = at (source.terms.dist(j,k)) {source.terms(j,k)};
+                        val O_jk = sourceTerms(j,k);
                         this.terms(l,m) = this.terms(l,m) + B_lmjk * O_jk;
                     }
                 }
@@ -139,7 +140,7 @@ public class LocalExpansion extends Expansion {
      */
     public static def getPotential(q : Double,
                                 v : Tuple3d,
-                                source : LocalExpansion) : Double {
+                                source : LocalExpansion!) : Double {
         val numTerms = source.terms.region.max(0);
         val transform = MultipoleExpansion.getOlm(q, v, numTerms);
         var potential : Double = 0.0;
