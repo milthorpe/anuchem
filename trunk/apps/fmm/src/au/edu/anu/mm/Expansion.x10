@@ -14,7 +14,7 @@ import x10.util.StringBuilder;
  */
 public class Expansion {
     /** The terms X_{lm} (with m >= 0) in this expansion */
-    public global val terms : Array[Complex](2){self.at(this)};
+    public val terms : Array[Complex](2){self.at(this)};
 
     public def this(p : Int) {
         //var expRegion : Region{rank==2} = [0..p,-p..p];
