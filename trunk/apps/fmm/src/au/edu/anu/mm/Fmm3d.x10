@@ -32,15 +32,15 @@ public class Fmm3d {
     public val ws : Int;
 
     /** All boxes in the octree division of space. */
-    val boxes : Array[Box[FmmBox!]]{rank==2};
+    val boxes : Array[FmmBox!](2);
 
     val atoms : ValRail[Atom];
 
     /** A cache of transformations from multipole to local at the same level. */
-    val multipoleTransforms : Array[LocalExpansion!]{rank==4};
+    val multipoleTransforms : Array[LocalExpansion!](4);
 
     /** A cache of multipole translations between parent box centres and child box centres. */
-    val multipoleTranslations : Array[MultipoleExpansion!]{rank==4};
+    val multipoleTranslations : Array[MultipoleExpansion!](4);
 
     /**
      * Initialises a fast multipole method electrostatics calculation
@@ -83,7 +83,7 @@ public class Fmm3d {
         Console.OUT.println("boxes: " + boxRegion);
 
         // all boxes are null to start.  they will be initialised as needed.
-        this.boxes = Array.make[Box[FmmBox!]](boxRegion);
+        this.boxes = Array.make[FmmBox!](boxRegion);
     
         var wellSpacedLimit : Region(4) = [2..numLevels,-(ws+3)..ws+3,-(ws+3)..ws+3,-(ws+3)..ws+3];
         val multipoleTransformRegion : Region(4) = wellSpacedLimit - ([2..numLevels,-ws..ws,-ws..ws,-ws..ws] as Region);
@@ -142,12 +142,12 @@ public class Fmm3d {
             val boxLocation = getLowestLevelBoxLocation(atom);
             val boxIndex = FmmBox.getBoxIndex(boxLocation, numLevels);
             val parentBox = getParentBox(boxIndex, numLevels);
-            var box : Box[FmmBox!] = boxes(boxIndex, numLevels);
+            var box : FmmBox! = boxes(boxIndex, numLevels);
             if (box == null) {
-                box = new Box[FmmBox!](new FmmLeafBox(numLevels, boxLocation, numTerms, parentBox));
+                box = new FmmLeafBox(numLevels, boxLocation, numTerms, parentBox);
                 boxes(boxIndex, numLevels) = box;
             }
-            val leafBox = box.value as FmmLeafBox!;
+            val leafBox = box as FmmLeafBox!;
             leafBox.atoms.add(atom);
             //Console.OUT.println("atoms(" + i + ") => box(" + boxIndex + ")");
             val boxCentre = leafBox.getCentre(size).sub(atom.centre);
@@ -162,10 +162,9 @@ public class Fmm3d {
     def combineMultipoles() {
         for (var level: Int = numLevels; level > 2; level--) {
             for ((childIndex) in 0..(Math.pow(8,level) as Int)-1) {
-                val bChild = boxes(childIndex,level);
-                if (bChild != null) {
-                    val child = bChild.value as FmmBox!;
-                    val parent = child.parent.value as FmmBox!;
+                val child = boxes(childIndex,level);
+                if (child != null) {
+                    val parent = child.parent as FmmBox!;
                     val parentExp = parent.multipoleExp;
                     val shift = multipoleTranslations(level, (child.gridLoc(0)+1)%2, (child.gridLoc(1)+1)%2, (child.gridLoc(2)+1)%2);
                     parentExp.translateAndAddMultipole(shift, child.multipoleExp);
@@ -196,14 +195,12 @@ public class Fmm3d {
         var nearField : Int = 0;
         // top level (==2)
         for ((boxIndex1) in 0..63) {
-            val bBox1 = boxes(boxIndex1, 2);
-            if (bBox1 != null) {
-                val box1 = bBox1.value;
+            val box1 = boxes(boxIndex1, 2);
+            if (box1 != null) {
                 //Console.OUT.println("transformToLocal: box(" + boxIndex1 + "," + 2 + ")");
                 for ((boxIndex2) in 0..boxIndex1-1) { 
-                    val bBox2 = boxes(boxIndex2, 2);
-                    if (bBox2 != null) {
-                        val box2 = bBox2.value;
+                    val box2 = boxes(boxIndex2, 2);
+                    if (box2 != null) {
                         //Console.OUT.println("... and box(" + boxIndex2 + "," + 2 + ")");
                         if (box2.wellSeparated(ws, box1)) {
                             val translation = getTranslationIndex(box1, box2);
@@ -222,17 +219,15 @@ public class Fmm3d {
 
         for ((level) in 3..numLevels) {
             for ((boxIndex1) in 0..(Math.pow(8,level) as Int)-1) {
-                val bBox1 = boxes(boxIndex1, level);
-                if (bBox1 != null) {
-                    val box1 = bBox1.value;
-                    val box1Parent = box1.parent.value as FmmBox!;
+                val box1 = boxes(boxIndex1, level);
+                if (box1 != null) {
+                    val box1Parent = box1.parent as FmmBox!;
                     //Console.OUT.println("transformToLocal: box(" + boxIndex1 + "," + level + ")");
                     for ((boxIndex2) in 0..boxIndex1-1) { 
-                        val bBox2 = boxes(boxIndex2, level);
-                        if (bBox2 != null) {
-                            val box2 = bBox2.value;
+                        val box2 = boxes(boxIndex2, level);
+                        if (box2 != null) {
                             //Console.OUT.println("... and box(" + boxIndex2 + "," + level + ")");
-                            if (!box2.parent.value.wellSeparated(ws, box1.parent.value)) {
+                            if (!box2.parent.wellSeparated(ws, box1.parent)) {
                                 if (box2.wellSeparated(ws, box1)) {
                                     val translation = getTranslationIndex(box1, box2);
                                     val transform12 = multipoleTransforms(level, translation(0), translation(1), translation(2));
@@ -269,9 +264,8 @@ public class Fmm3d {
 
         var fmmEnergy : Double = 0.0;
         for ((boxIndex1) in 0..(Math.pow(8,numLevels) as Int)-1) { 
-            val bBox1 = boxes(boxIndex1, numLevels);
-            if (bBox1 != null) {
-                val box1 = bBox1.value as FmmLeafBox!;
+            val box1 = boxes(boxIndex1, numLevels) as FmmLeafBox!;
+            if (box1 != null) {
                 for ((atomIndex1) in 0..box1.atoms.length()-1) {
                     val atom1 = box1.atoms(atomIndex1);
                     val box1Centre = atom1.centre.sub(box1.getCentre(size));
@@ -287,9 +281,8 @@ public class Fmm3d {
 
                     // direct calculation with all atoms in non-well-separated boxes
                     for ((boxIndex2) in 0..boxIndex1-1) {
-                        val bBox2 = boxes(boxIndex2, numLevels);
-                        if (bBox2 != null) {
-                            val box2 = bBox2.value as FmmLeafBox!;
+                        val box2 = boxes(boxIndex2, numLevels) as FmmLeafBox!;
+                        if (box2 != null) {
                             if (!box2.wellSeparated(ws, box1)) {
                                 for ((atomIndex2) in 0..box2.atoms.length()-1) {
                                     val atom2 = box2.atoms(atomIndex2) as Atom!;
@@ -306,20 +299,20 @@ public class Fmm3d {
         return fmmEnergy;
     }
 
-    private def getLowestLevelBoxLocation(atom : Atom) : ValRail[Int]{length==3} {
-        index : ValRail[Int]{length==3} = [ atom.centre.i / size * dimLowestLevelBoxes + dimLowestLevelBoxes / 2 as Int, atom.centre.j / size * dimLowestLevelBoxes + dimLowestLevelBoxes / 2 as Int, atom.centre.k / size * dimLowestLevelBoxes + dimLowestLevelBoxes / 2 as Int ];
+    private def getLowestLevelBoxLocation(atom : Atom) : ValRail[Int](3) {
+        index : ValRail[Int](3) = [ atom.centre.i / size * dimLowestLevelBoxes + dimLowestLevelBoxes / 2 as Int, atom.centre.j / size * dimLowestLevelBoxes + dimLowestLevelBoxes / 2 as Int, atom.centre.k / size * dimLowestLevelBoxes + dimLowestLevelBoxes / 2 as Int ];
         return index;
     }
 
-    private def getParentBox(childIndex : Int, childLevel : Int) : Box[FmmBox] {
+    private def getParentBox(childIndex : Int, childLevel : Int) : FmmBox {
         //Console.OUT.println("getParentBox(" + childIndex + ", " + childLevel + ")");
         if (childLevel == 2)
             return null;
         val parentIndex = getParentIndex(childIndex, childLevel);
         val parentLevel = childLevel - 1;
-        var parent : Box[FmmBox] = boxes(parentIndex, parentLevel);
+        var parent : FmmBox = boxes(parentIndex, parentLevel);
         if (parent == null) {
-            parent = new Box[FmmBox](createNewParent(parentIndex, parentLevel));
+            parent = createNewParent(parentIndex, parentLevel);
         }
         return parent;
     }
@@ -328,13 +321,13 @@ public class Fmm3d {
         val grandparent = getParentBox(parentIndex, parentLevel);
         val parentLocation = getBoxLocation(parentIndex, parentLevel);
         val newParent = new FmmBox(parentLevel, parentLocation, numTerms, grandparent);
-        boxes(parentIndex, parentLevel) = new Box[FmmBox!](newParent);
+        boxes(parentIndex, parentLevel) = newParent;
         return newParent;
     }
 
-    private def getBoxLocation(index : Int, level : Int) : ValRail[Int]{length==3} {
+    private def getBoxLocation(index : Int, level : Int) : ValRail[Int](3) {
         dim : Int = Math.pow2(level) as Int;
-        gridLoc : ValRail[Int]{length==3} = [ index / (dim * dim), (index / dim) % dim, index % dim ];
+        gridLoc : ValRail[Int](3) = [ index / (dim * dim), (index / dim) % dim, index % dim ];
         return gridLoc;
     }
 

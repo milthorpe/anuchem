@@ -9,7 +9,7 @@ import x10x.vector.Point3d;
  * @author milthorpe
  */
 public class FmmBox {
-    public global val parent : Box[FmmBox];
+    public global val parent : FmmBox;
 
     public global val level : Int;
 
@@ -25,7 +25,7 @@ public class FmmBox {
      * Creates a new FmmBox with multipole and local expansions
      * of the given number of terms.
      */
-    public def this(level : Int, gridLoc : ValRail[Int](3), numTerms : Int, parent : Box[FmmBox]) {
+    public def this(level : Int, gridLoc : ValRail[Int](3), numTerms : Int, parent : FmmBox) {
         this.level = level;
         this.gridLoc = gridLoc;
         this.parent = parent;
