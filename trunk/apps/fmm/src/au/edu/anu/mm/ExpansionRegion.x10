@@ -3,7 +3,7 @@ package au.edu.anu.mm;
 import x10.array.BaseRegion;
 import x10.array.U;
 
-public class ExpansionRegion extends BaseRegion(2) {
+public class ExpansionRegion extends BaseRegion{self.rank==2}  {
     global val p : Int;
 
     /**

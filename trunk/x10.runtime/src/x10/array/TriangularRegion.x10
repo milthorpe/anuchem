@@ -1,6 +1,6 @@
 package x10.array;
 
-public class TriangularRegion extends BaseRegion(2) {
+public class TriangularRegion extends BaseRegion{rank==2} {
     global val dim : Int;
     global val rowMin : Int;
     global val colMin : Int;
