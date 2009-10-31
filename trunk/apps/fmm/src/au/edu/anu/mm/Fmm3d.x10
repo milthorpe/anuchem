@@ -205,9 +205,9 @@ public class Fmm3d {
                         //Console.OUT.println("... and box(" + boxIndex2 + "," + 2 + ")");
                         if (box2.wellSeparated(ws, box1)) {
                             val translation = box2.getTranslationIndex(box1);
-                            val transform12 = multipoleTransforms(2, translation.x, translation.y, translation.z);
+                            val transform12 = multipoleTransforms(2, -translation.x, -translation.y, -translation.z);
                             box2.localExp.transformAndAddToLocal(transform12, box1.multipoleExp);
-                            val transform21 = multipoleTransforms(2, -translation.x, -translation.y, -translation.z);
+                            val transform21 = multipoleTransforms(2, translation.x, translation.y, translation.z);
                             box1.localExp.transformAndAddToLocal(transform21, box2.multipoleExp);
                             wellSep++;
                         } else if (numLevels==2) {
@@ -231,9 +231,9 @@ public class Fmm3d {
                             if (!box2.parent.wellSeparated(ws, box1.parent)) {
                                 if (box2.wellSeparated(ws, box1)) {
                                     val translation = box2.getTranslationIndex(box1);
-                                    val transform12 = multipoleTransforms(level, translation.x, translation.y, translation.z);
+                                    val transform12 = multipoleTransforms(level, -translation.x, -translation.y, -translation.z);
                                     box2.localExp.transformAndAddToLocal(transform12, box1.multipoleExp);
-                                    val transform21 = multipoleTransforms(level, -translation.x, -translation.y, -translation.z);
+                                    val transform21 = multipoleTransforms(level, translation.x, translation.y, translation.z);
                                     box1.localExp.transformAndAddToLocal(transform21, box2.multipoleExp);
                                     wellSep++;                             
                                 } else if (level==numLevels) {
