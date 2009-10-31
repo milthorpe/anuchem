@@ -23,7 +23,7 @@ public class MultipoleExpansion extends Expansion {
     public static def getOlm(q : Double, v : Tuple3d, p : Int) : MultipoleExpansion! {
         val exp = new MultipoleExpansion(p);
         var v_pole : Polar3d = Polar3d.getPolar3d(v);
-        val pplm : Array[Double]{rank==2} = AssociatedLegendrePolynomial.getPlm(Math.cos(v_pole.theta), p); 
+        val pplm : Array[Double](2) = AssociatedLegendrePolynomial.getPlm(Math.cos(v_pole.theta), p); 
         
         val phifac0 = Complex(Math.cos(-v_pole.phi), Math.sin(-v_pole.phi));
 
@@ -54,7 +54,7 @@ public class MultipoleExpansion extends Expansion {
     public static def getOlm(v : Tuple3d, p : Int) : MultipoleExpansion! {
         val exp = new MultipoleExpansion(p);
         var v_pole : Polar3d = Polar3d.getPolar3d(v);
-        val pplm : Array[Double]{rank==2} = AssociatedLegendrePolynomial.getPlm(Math.cos(v_pole.theta), p); 
+        val pplm : Array[Double](2) = AssociatedLegendrePolynomial.getPlm(Math.cos(v_pole.theta), p); 
         
         val phifac0 = Complex(Math.cos(-v_pole.phi), Math.sin(-v_pole.phi));
 

@@ -17,11 +17,11 @@ public class Expansion {
     public val terms : Array[Complex](2){self.at(this)};
 
     public def this(p : Int) {
-        //var expRegion : Region{rank==2} = [0..p,-p..p];
+        //var expRegion : Region(2) = [0..p,-p..p];
         //expRegion = expRegion - Region.makeHalfspace([1,1],1);
         //expRegion = expRegion - Region.makeHalfspace([1,-1],1);
         val expRegion = new ExpansionRegion(p);
-        this.terms = Array.make[Complex](expRegion, (val p:Point) => Complex.ZERO);
+        this.terms = Array.make[Complex](expRegion->here, (val p:Point) => Complex.ZERO);
     }
 
     public def add(e : Expansion!) {

@@ -75,9 +75,9 @@ public class Fmm3d {
 
         this.atoms = atoms;
 
-        var boxRegion : Region{rank==2} = [0..63, 2..2];
+        var boxRegion : Region(2) = [0..63, 2..2];
         for ((i) in 3..numLevels) {
-            rNextLevel : Region{rank==2} = [0..(Math.pow(8,i) as Int)-1, i..i];
+            rNextLevel : Region(2) = [0..(Math.pow(8,i) as Int)-1, i..i];
             boxRegion = boxRegion || rNextLevel;
         }
         Console.OUT.println("boxes: " + boxRegion);

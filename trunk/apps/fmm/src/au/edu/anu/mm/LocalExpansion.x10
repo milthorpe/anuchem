@@ -22,7 +22,7 @@ public class LocalExpansion extends Expansion {
     public static def getMlm(v : Tuple3d, p : int) : LocalExpansion! {
         val exp = new LocalExpansion(p);
         val v_pole : Polar3d = Polar3d.getPolar3d(v);
-        val pplm : Array[Double]{rank==2} = AssociatedLegendrePolynomial.getPlm(Math.cos(v_pole.theta), p); 
+        val pplm : Array[Double](2) = AssociatedLegendrePolynomial.getPlm(Math.cos(v_pole.theta), p); 
 
         val rfac0 : Double = 1.0 / v_pole.r;
         val phifac0 = Complex(Math.cos(v_pole.phi), Math.sin(v_pole.phi));
