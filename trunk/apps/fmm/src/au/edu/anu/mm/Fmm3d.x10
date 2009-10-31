@@ -166,7 +166,8 @@ public class Fmm3d {
                 if (child != null) {
                     val parent = child.parent as FmmBox!;
                     val parentExp = parent.multipoleExp;
-                    val shift = multipoleTranslations(level, (child.gridLoc(0)+1)%2, (child.gridLoc(1)+1)%2, (child.gridLoc(2)+1)%2);
+                    val shift = multipoleTranslations(level, (child.gridLoc.x+1)%2, (child.gridLoc.y+1)%2, (child.gridLoc.z+1)%2);
+                    //val shift = multipoleTranslations(level, (child.gridLoc(0)+1)%2, (child.gridLoc(1)+1)%2, (child.gridLoc(2)+1)%2);
                     parentExp.translateAndAddMultipole(shift, child.multipoleExp);
                 }
             }
@@ -203,10 +204,10 @@ public class Fmm3d {
                     if (box2 != null) {
                         //Console.OUT.println("... and box(" + boxIndex2 + "," + 2 + ")");
                         if (box2.wellSeparated(ws, box1)) {
-                            val translation = getTranslationIndex(box1, box2);
-                            val transform12 = multipoleTransforms(2, translation(0), translation(1), translation(2));
+                            val translation = box2.getTranslationIndex(box1);
+                            val transform12 = multipoleTransforms(2, translation.x, translation.y, translation.z);
                             box2.localExp.transformAndAddToLocal(transform12, box1.multipoleExp);
-                            val transform21 = multipoleTransforms(2, -translation(0), -translation(1), -translation(2));
+                            val transform21 = multipoleTransforms(2, -translation.x, -translation.y, -translation.z);
                             box1.localExp.transformAndAddToLocal(transform21, box2.multipoleExp);
                             wellSep++;
                         } else if (numLevels==2) {
@@ -229,10 +230,10 @@ public class Fmm3d {
                             //Console.OUT.println("... and box(" + boxIndex2 + "," + level + ")");
                             if (!box2.parent.wellSeparated(ws, box1.parent)) {
                                 if (box2.wellSeparated(ws, box1)) {
-                                    val translation = getTranslationIndex(box1, box2);
-                                    val transform12 = multipoleTransforms(level, translation(0), translation(1), translation(2));
+                                    val translation = box2.getTranslationIndex(box1);
+                                    val transform12 = multipoleTransforms(level, translation.x, translation.y, translation.z);
                                     box2.localExp.transformAndAddToLocal(transform12, box1.multipoleExp);
-                                    val transform21 = multipoleTransforms(level, -translation(0), -translation(1), -translation(2));
+                                    val transform21 = multipoleTransforms(level, -translation.x, -translation.y, -translation.z);
                                     box1.localExp.transformAndAddToLocal(transform21, box2.multipoleExp);
                                     wellSep++;                             
                                 } else if (level==numLevels) {
@@ -241,7 +242,8 @@ public class Fmm3d {
                             }
                         }
                     }
-                    val shift = multipoleTranslations(level, box1.gridLoc(0)%2, box1.gridLoc(1)%2, box1.gridLoc(2)%2);
+                    val shift = multipoleTranslations(level, box1.gridLoc.x%2, box1.gridLoc.y%2, box1.gridLoc.z%2);
+                    //val shift = multipoleTranslations(level, box1.gridLoc(0)%2, box1.gridLoc(1)%2, box1.gridLoc(2)%2);
                     box1.localExp.translateAndAddLocal(shift, box1Parent.localExp);
                 }
             }
@@ -299,9 +301,12 @@ public class Fmm3d {
         return fmmEnergy;
     }
 
-    private def getLowestLevelBoxLocation(atom : Atom) : ValRail[Int](3) {
+    private def getLowestLevelBoxLocation(atom : Atom) : GridLocation {
+        return GridLocation(atom.centre.i / size * dimLowestLevelBoxes + dimLowestLevelBoxes / 2 as Int, atom.centre.j / size * dimLowestLevelBoxes + dimLowestLevelBoxes / 2 as Int, atom.centre.k / size * dimLowestLevelBoxes + dimLowestLevelBoxes / 2 as Int);
+        /*
         index : ValRail[Int](3) = [ atom.centre.i / size * dimLowestLevelBoxes + dimLowestLevelBoxes / 2 as Int, atom.centre.j / size * dimLowestLevelBoxes + dimLowestLevelBoxes / 2 as Int, atom.centre.k / size * dimLowestLevelBoxes + dimLowestLevelBoxes / 2 as Int ];
         return index;
+        */
     }
 
     private def getParentBox(childIndex : Int, childLevel : Int) : FmmBox {
@@ -325,20 +330,19 @@ public class Fmm3d {
         return newParent;
     }
 
-    private def getBoxLocation(index : Int, level : Int) : ValRail[Int](3) {
+    private def getBoxLocation(index : Int, level : Int) : GridLocation {
         dim : Int = Math.pow2(level) as Int;
-        gridLoc : ValRail[Int](3) = [ index / (dim * dim), (index / dim) % dim, index % dim ];
+        val gridLoc = GridLocation(index / (dim * dim), (index / dim) % dim, index % dim);
+        //gridLoc : ValRail[Int](3) = [ index / (dim * dim), (index / dim) % dim, index % dim ];
         return gridLoc;
     }
 
     private def getParentIndex(childIndex : Int, childLevel : Int) : Int {
         parentDim : Int = Math.pow2(childLevel-1) as Int;
-        gridLoc : ValRail[Int] = getBoxLocation(childIndex, childLevel);
-        return gridLoc(0) / 2 * parentDim * parentDim + gridLoc(1) / 2 * parentDim + gridLoc(2) / 2;
-    }
-
-    private def getTranslationIndex(box1 : FmmBox, box2 : FmmBox) : ValRail[Int]{length==3} {
-        return [box1.gridLoc(0) - box2.gridLoc(0), box1.gridLoc(1) - box2.gridLoc(1), box1.gridLoc(2) - box2.gridLoc(2)];
+        val gridLoc = getBoxLocation(childIndex, childLevel);
+        return gridLoc.x / 2 * parentDim * parentDim + gridLoc.y / 2 * parentDim + gridLoc.z / 2;
+        //gridLoc : ValRail[Int] = getBoxLocation(childIndex, childLevel);
+        //return gridLoc(0) / 2 * parentDim * parentDim + gridLoc(1) / 2 * parentDim + gridLoc(2) / 2;
     }
 }
 

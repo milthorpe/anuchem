@@ -190,7 +190,7 @@ public class DistributedFmm3d {
                 val child = boxes(p) as FmmBox!;
                 if (child != null) {
                     val parent = child.parent as FmmBox!;
-                    val shift = multipoleTranslations(Point.make([here.id, child.level, (child.gridLoc(0)+1)%2, (child.gridLoc(1)+1)%2, (child.gridLoc(2)+1)%2])) as MultipoleExpansion!;
+                    val shift = multipoleTranslations(Point.make([here.id, child.level, (child.gridLoc.x+1)%2, (child.gridLoc.y+1)%2, (child.gridLoc.z+1)%2])) as MultipoleExpansion!;
                     parent.multipoleExp.translateAndAddMultipoleDist(shift, child.multipoleExp);
                 }
             }
@@ -234,11 +234,11 @@ public class DistributedFmm3d {
                             //Console.OUT.println("... and box(" + 2 + "," + boxIndex2 + ")");
                             if (box2.wellSeparated(ws, box1)) {
                                 val translation = box2.getTranslationIndex(box1);
-                                val transform12 = multipoleTransforms(Point.make([here.id, level, -translation(0), -translation(1), -translation(2)])) as LocalExpansion!;
+                                val transform12 = multipoleTransforms(Point.make([here.id, level, -translation.x, -translation.y, -translation.z])) as LocalExpansion!;
                                 box2.localExp.transformAndAddToLocalDist(transform12, box1MultipoleExp);
                                 val box2MultipoleExp = box2.multipoleExp;
                                 at (box1.location) {
-                                    val transform21 = multipoleTransforms(Point.make([here.id, level, translation(0), translation(1), translation(2)])) as LocalExpansion!;
+                                    val transform21 = multipoleTransforms(Point.make([here.id, level, translation.x, translation.y, translation.z])) as LocalExpansion!;
                                     box1.localExp.transformAndAddToLocalDist(transform21, box2MultipoleExp);
                                 }
                             }
@@ -268,11 +268,11 @@ public class DistributedFmm3d {
                                 if (!box2Parent.wellSeparated(ws, box1Parent)) {
                                     if (box2.wellSeparated(ws, box1)) {
                                         val translation = box2.getTranslationIndex(box1);
-                                        val transform12 = multipoleTransforms(Point.make([here.id, level, -translation(0), -translation(1), -translation(2)])) as LocalExpansion!;
+                                        val transform12 = multipoleTransforms(Point.make([here.id, level, -translation.x, -translation.y, -translation.z])) as LocalExpansion!;
                                         box2.localExp.transformAndAddToLocalDist(transform12, box1MultipoleExp);
                                         val box2MultipoleExp = box2.multipoleExp;
                                         at (box1.location) {
-                                            val transform21 = multipoleTransforms(Point.make([here.id, level, translation(0), translation(1), translation(2)])) as LocalExpansion!;
+                                            val transform21 = multipoleTransforms(Point.make([here.id, level, translation.x, translation.y, translation.z])) as LocalExpansion!;
                                             box1.localExp.transformAndAddToLocalDist(transform21, box2MultipoleExp);
                                         }   
                                     }
@@ -280,7 +280,7 @@ public class DistributedFmm3d {
                             }
                         }
                     }
-                    val shift = multipoleTranslations(Point.make([here.id, level, box1.gridLoc(0)%2, box1.gridLoc(1)%2, box1.gridLoc(2)%2])) as MultipoleExpansion!;
+                    val shift = multipoleTranslations(Point.make([here.id, level, box1.gridLoc.x%2, box1.gridLoc.y%2, box1.gridLoc.z%2])) as MultipoleExpansion!;
                     box1.localExp.translateAndAddLocal(shift, box1Parent.localExp);
                 }
             }
@@ -290,7 +290,7 @@ public class DistributedFmm3d {
 
     def getEnergy() : Double {
         // TODO n^2 calculation - to check - remove this
-        
+        /*
         var directEnergy : Double = 0.0;
         for ((i) in 0..(atoms.length - 1)) {
             for ((j) in 0..(i - 1)) {
@@ -299,7 +299,7 @@ public class DistributedFmm3d {
             }
         }
         Console.OUT.println("directEnergy = " + directEnergy);
-
+        */
         val lowestLevelRegion : Region(2) = [0..(Math.pow(8,numLevels) as Int)-1,numLevels..numLevels];
         val lowestLevelDist = boxes.dist.restriction(lowestLevelRegion);
         finish ateach ((boxIndex1,level) in lowestLevelDist) {
@@ -351,9 +351,10 @@ public class DistributedFmm3d {
         return fmmEnergy;
     }
 
-    private global def getLowestLevelBoxLocation(atom : Atom) : ValRail[Int]{length==3} {
-        index : ValRail[Int]{length==3} = [ atom.centre.i / size * dimLowestLevelBoxes + dimLowestLevelBoxes / 2 as Int, atom.centre.j / size * dimLowestLevelBoxes + dimLowestLevelBoxes / 2 as Int, atom.centre.k / size * dimLowestLevelBoxes + dimLowestLevelBoxes / 2 as Int ];
-        return index;
+    private global def getLowestLevelBoxLocation(atom : Atom) : GridLocation {
+        return  GridLocation(atom.centre.i / size * dimLowestLevelBoxes + dimLowestLevelBoxes / 2 as Int, atom.centre.j / size * dimLowestLevelBoxes + dimLowestLevelBoxes / 2 as Int, atom.centre.k / size * dimLowestLevelBoxes + dimLowestLevelBoxes / 2 as Int);
+        /*index : ValRail[Int]{length==3} = [ atom.centre.i / size * dimLowestLevelBoxes + dimLowestLevelBoxes / 2 as Int, atom.centre.j / size * dimLowestLevelBoxes + dimLowestLevelBoxes / 2 as Int, atom.centre.k / size * dimLowestLevelBoxes + dimLowestLevelBoxes / 2 as Int ];
+        return index;*/
     }
 
     private global def getParentBox(childIndex : Int, childLevel : Int) : FmmBox {
@@ -377,16 +378,17 @@ public class DistributedFmm3d {
         return newParent;
     }
 
-    private global def getBoxLocation(index : Int, level : Int) : ValRail[Int]{length==3} {
+    private global def getBoxLocation(index : Int, level : Int) : GridLocation {
         dim : Int = Math.pow2(level) as Int;
-        gridLoc : ValRail[Int]{length==3} = [ index / (dim * dim), (index / dim) % dim, index % dim ];
+        val gridLoc = GridLocation(index / (dim * dim), (index / dim) % dim, index % dim);
+        //gridLoc : ValRail[Int]{length==3} = [ index / (dim * dim), (index / dim) % dim, index % dim ];
         return gridLoc;
     }
 
     private global def getParentIndex(childIndex : Int, childLevel : Int) : Int {
         parentDim : Int = Math.pow2(childLevel-1) as Int;
-        gridLoc : ValRail[Int] = getBoxLocation(childIndex, childLevel);
-        return gridLoc(0) / 2 * parentDim * parentDim + gridLoc(1) / 2 * parentDim + gridLoc(2) / 2;
+        val gridLoc = getBoxLocation(childIndex, childLevel);
+        return gridLoc.x / 2 * parentDim * parentDim + gridLoc.y / 2 * parentDim + gridLoc.z / 2;
     }
 }
 
