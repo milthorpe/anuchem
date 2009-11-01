@@ -83,6 +83,7 @@ public class LocalExpansion extends Expansion {
                                          source : MultipoleExpansion!) {
         val p : Int = source.terms.region.max(0);
         for (val (j,k): Point in source.terms) {
+            val O_jk : Complex = source.terms(j,k);
             for (var l : Int = 0; l <= p-j; l++) { // TODO XTENLANG-504
                 for (var m : Int = -l; m<=l; m++) { // TODO XTENLANG-504
                     if (Math.abs(k+m) <= (j+l)) {
@@ -92,7 +93,6 @@ public class LocalExpansion extends Expansion {
                         val kPlusM : Int = (k+m);
                         val B_lmjk = transform.terms(jPlusL, kPlusM);
                         //Console.OUT.println("source.terms.dist(" + j + "," + k + ") = " + source.terms.dist(j,k));
-                        val O_jk : Complex = source.terms(j,k);
                         this.terms(l,m) = this.terms(l,m) + B_lmjk * O_jk;
                     }
                 }
@@ -113,6 +113,7 @@ public class LocalExpansion extends Expansion {
                                          source : MultipoleExpansion) {
         val p : Int = this.terms.region.max(0);
         for (val (j,k): Point in this.terms) {
+            val O_jk = at (source) {source.terms(j,k)};
             for (var l : Int = 0; l <= p-j; l++) { // TODO XTENLANG-504
                 for (var m : Int = -l; m<=l; m++) { // TODO XTENLANG-504
                     if (Math.abs(k+m) <= (j+l)) {
@@ -122,7 +123,6 @@ public class LocalExpansion extends Expansion {
                         val kPlusM : Int = (k+m);
                         val B_lmjk = transform.terms(Point.make([jPlusL, kPlusM]));
                         //Console.OUT.println("source.terms.dist(" + j + "," + k + ") = " + source.terms.dist(j,k));
-                        val O_jk = at (source) {source.terms(j,k)};
                         this.terms(l,m) = this.terms(l,m) + B_lmjk * O_jk;
                     }
                 }

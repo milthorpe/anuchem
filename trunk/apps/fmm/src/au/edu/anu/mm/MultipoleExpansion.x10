@@ -92,11 +92,12 @@ public class MultipoleExpansion extends Expansion {
                                          source : MultipoleExpansion!) {
         val p : Int = source.terms.region.max(0);
         for (val (j,k): Point in source.terms) {
+            val O_jk = source.terms(j,k);
             for (var l : Int = j; l<=p; l++) { // TODO XTENLANG-504
                 for (var m : Int = -l; m<=l; m++) { // TODO XTENLANG-504
                     if (Math.abs(m-k) <= (l-j)) {
                         val A_lmjk = shift.terms(l-j, m-k);
-                        this.terms(l,m) = this.terms(l,m) + A_lmjk * source.terms(j,k);
+                        this.terms(l,m) = this.terms(l,m) + A_lmjk * O_jk;
                     }
                 }
             }
@@ -116,11 +117,11 @@ public class MultipoleExpansion extends Expansion {
                                          source : MultipoleExpansion) {
         val p : Int = this.terms.region.max(0);
         for (val (j,k): Point in this.terms) {
+            val O_jk = at (source) {source.terms(j,k)};
             for (var l : Int = j; l<=p; l++) { // TODO XTENLANG-504
                 for (var m : Int = -l; m<=l; m++) { // TODO XTENLANG-504
                     if (Math.abs(m-k) <= (l-j)) {
                         val A_lmjk = shift.terms(l-j, m-k);
-                        val O_jk = at (source) {source.terms(j,k)};
                         this.terms(l,m) = this.terms(l,m) + A_lmjk * O_jk;
                     }
                 }
