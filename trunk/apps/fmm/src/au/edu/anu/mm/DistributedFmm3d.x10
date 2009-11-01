@@ -108,7 +108,7 @@ public class DistributedFmm3d {
             // precompute multipole translations
             val d: Dist = Dist.makeUnique(Place.places);
             finish ateach ((p) : Point in d) {
-                foreach (val(placeId,level,i,j,k) in multipoleTranslations.dist.restriction(here)) {
+                foreach (val(placeId,level,i,j,k) in multipoleTranslations.dist | here) {
                     dim : Int = Math.pow2(level);
                     sideLength : Double = size / dim;
                     translationVector : Vector3d = new Vector3d((i*2-1) * 0.5 * sideLength,
@@ -184,7 +184,7 @@ public class DistributedFmm3d {
     def combineMultipoles() {
         for (var level: Int = numLevels; level > 2; level--) {
             val thisLevelRegion : Region(2) = [0..((Math.pow(8,level) as Int)-1),level..level];
-            val thisLevelDist = boxes.dist.restriction(thisLevelRegion);
+            val thisLevelDist = boxes.dist | thisLevelRegion;
             finish ateach (p in thisLevelDist) {
                 //Console.OUT.println("childIndex = " + childIndex + " childLevel = " + childLevel + " dist " + boxes.dist(childIndex,childLevel));
                 val child = boxes(p) as FmmBox!;
@@ -208,7 +208,7 @@ public class DistributedFmm3d {
         // precompute child translations
         val d: Dist = Dist.makeUnique(Place.places);
         finish ateach ((p) : Point in d) {
-            foreach (val(placeId, level,i,j,k) in multipoleTransforms.dist.restriction(here)) {
+            foreach (val(placeId, level,i,j,k) in multipoleTransforms.dist | here) {
                 dim : Int = Math.pow2(level);
                 sideLength : Double = size / dim;
                 translationVector : Vector3d = new Vector3d(i * sideLength,
@@ -221,7 +221,7 @@ public class DistributedFmm3d {
         Console.OUT.println("level 2");
 
         val level2Region : Region(2) = [0..63,2..2];
-        val level2Dist = boxes.dist.restriction(level2Region);
+        val level2Dist = boxes.dist | level2Region;
         finish ateach (p1(boxIndex1,level) in level2Dist) {
             val box1 = boxes(p1) as FmmBox!;
             if (box1 != null) {
@@ -252,7 +252,7 @@ public class DistributedFmm3d {
         
         for ((thisLevel) in 3..numLevels) {
             val thisLevelRegion : Region(2) = [0..(Math.pow(8,thisLevel) as Int)-1,thisLevel..thisLevel];
-            val thisLevelDist = boxes.dist.restriction(thisLevelRegion);
+            val thisLevelDist = boxes.dist | thisLevelRegion;
             finish ateach (p1(boxIndex1,level) in thisLevelDist) {
                 val box1 = boxes(p1) as FmmBox!;
                 if (box1 != null) {
@@ -301,7 +301,7 @@ public class DistributedFmm3d {
         Console.OUT.println("directEnergy = " + directEnergy);
         */
         val lowestLevelRegion : Region(2) = [0..(Math.pow(8,numLevels) as Int)-1,numLevels..numLevels];
-        val lowestLevelDist = boxes.dist.restriction(lowestLevelRegion);
+        val lowestLevelDist = boxes.dist | lowestLevelRegion;
         finish ateach ((boxIndex1,level) in lowestLevelDist) {
             //Console.OUT.println("boxIndex1 = " + boxIndex1);
             val box1 = boxes(boxIndex1, numLevels) as FmmLeafBox!;
@@ -327,7 +327,7 @@ public class DistributedFmm3d {
                         //Console.OUT.println("direct - non-well-sep");
                         // direct calculation with all atoms in non-well-separated boxes
                         val otherBoxRegion : Region(2) = [0..boxIndex1-1,numLevels..numLevels];
-                        val otherBoxDist = boxes.dist.restriction(otherBoxRegion);
+                        val otherBoxDist = boxes.dist | otherBoxRegion;
                         finish ateach ((boxIndex2,level) in otherBoxDist) {
                             val box2 = boxes(boxIndex2, level) as FmmLeafBox!;
                             if (box2 != null) {
