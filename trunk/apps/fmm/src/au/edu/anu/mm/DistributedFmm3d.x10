@@ -191,7 +191,7 @@ public class DistributedFmm3d {
                 if (child != null) {
                     val parent = child.parent as FmmBox!;
                     val shift = multipoleTranslations(Point.make([here.id, child.level, (child.gridLoc.x+1)%2, (child.gridLoc.y+1)%2, (child.gridLoc.z+1)%2])) as MultipoleExpansion!;
-                    parent.multipoleExp.translateAndAddMultipoleDist(shift, child.multipoleExp);
+                    parent.multipoleExp.translateAndAddMultipole(shift, child.multipoleExp);
                 }
             }
         }
@@ -235,11 +235,11 @@ public class DistributedFmm3d {
                             if (box2.wellSeparated(ws, box1)) {
                                 val translation = box2.getTranslationIndex(box1);
                                 val transform12 = multipoleTransforms(Point.make([here.id, level, -translation.x, -translation.y, -translation.z])) as LocalExpansion!;
-                                box2.localExp.transformAndAddToLocalDist(transform12, box1MultipoleExp);
+                                box2.localExp.transformAndAddToLocal(transform12, box1MultipoleExp);
                                 val box2MultipoleExp = box2.multipoleExp;
-                                at (box1.location) {
+                                async (box1.location) {
                                     val transform21 = multipoleTransforms(Point.make([here.id, level, translation.x, translation.y, translation.z])) as LocalExpansion!;
-                                    box1.localExp.transformAndAddToLocalDist(transform21, box2MultipoleExp);
+                                    box1.localExp.transformAndAddToLocal(transform21, box2MultipoleExp);
                                 }
                             }
                         }
@@ -269,11 +269,11 @@ public class DistributedFmm3d {
                                     if (box2.wellSeparated(ws, box1)) {
                                         val translation = box2.getTranslationIndex(box1);
                                         val transform12 = multipoleTransforms(Point.make([here.id, level, -translation.x, -translation.y, -translation.z])) as LocalExpansion!;
-                                        box2.localExp.transformAndAddToLocalDist(transform12, box1MultipoleExp);
+                                        box2.localExp.transformAndAddToLocal(transform12, box1MultipoleExp);
                                         val box2MultipoleExp = box2.multipoleExp;
-                                        at (box1.location) {
+                                        async (box1.location) {
                                             val transform21 = multipoleTransforms(Point.make([here.id, level, translation.x, translation.y, translation.z])) as LocalExpansion!;
-                                            box1.localExp.transformAndAddToLocalDist(transform21, box2MultipoleExp);
+                                            box1.localExp.transformAndAddToLocal(transform21, box2MultipoleExp);
                                         }   
                                     }
                                 }

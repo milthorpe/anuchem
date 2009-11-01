@@ -88,36 +88,11 @@ public class MultipoleExpansion extends Expansion {
      * @param b the vector along which to translate the multipole
      * @param source the source multipole expansion, centred at the origin
      */
-    public def translateAndAddMultipole(shift : MultipoleExpansion!,
-                                         source : MultipoleExpansion!) {
+    public def translateAndAddMultipole(shift : MultipoleExpansion,
+                                         source : MultipoleExpansion) {
         val p : Int = source.terms.region.max(0);
         for (val (j,k): Point in source.terms) {
             val O_jk = source.terms(j,k);
-            for (var l : Int = j; l<=p; l++) { // TODO XTENLANG-504
-                for (var m : Int = -l; m<=l; m++) { // TODO XTENLANG-504
-                    if (Math.abs(m-k) <= (l-j)) {
-                        val A_lmjk = shift.terms(l-j, m-k);
-                        this.terms(l,m) = this.terms(l,m) + A_lmjk * O_jk;
-                    }
-                }
-            }
-        }
-    }
-
-    /** 
-     * Translate a multipole expansion centred around the origin along a vector -b,
-     * and adds to this expansion centred at -b.
-     * This corresponds to "Operator A", Equations 10-11 in White & Head-Gordon.
-     * Note: this defines A^lm_jk(b) = O_l-j,m-k(b); however this is only defined
-     * where abs(m-k) <= l-j, therefore we restrict m to [j-l+k..-j+l+k]
-     * @param b the vector along which to translate the multipole
-     * @param source the source multipole expansion, centred at the origin
-     */
-    public def translateAndAddMultipoleDist(shift : MultipoleExpansion!,
-                                         source : MultipoleExpansion) {
-        val p : Int = this.terms.region.max(0);
-        for (val (j,k): Point in this.terms) {
-            val O_jk = at (source) {source.terms(j,k)};
             for (var l : Int = j; l<=p; l++) { // TODO XTENLANG-504
                 for (var m : Int = -l; m<=l; m++) { // TODO XTENLANG-504
                     if (Math.abs(m-k) <= (l-j)) {

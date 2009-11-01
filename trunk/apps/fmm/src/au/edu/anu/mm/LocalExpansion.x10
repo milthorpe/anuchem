@@ -57,8 +57,8 @@ public class LocalExpansion extends Expansion {
      * @param shift the multipole expansion of the translation
      * @param source the source local expansion, centred at the origin
      */
-    public def translateAndAddLocal(shift : MultipoleExpansion!,
-                                         source : LocalExpansion!) {
+    public def translateAndAddLocal(shift : MultipoleExpansion,
+                                         source : LocalExpansion) {
         val p : Int = source.terms.region.max(0);
         for (val (l,m): Point in this.terms) {
             for (var j : Int = l; j<=p; j++) { // TODO XTENLANG-504
@@ -79,8 +79,8 @@ public class LocalExpansion extends Expansion {
      * @param b the vector along which to translate the multipole
      * @param source the source multipole expansion, centred at the origin
      */
-    public def transformAndAddToLocal(transform : LocalExpansion!,
-                                         source : MultipoleExpansion!) {
+    public def transformAndAddToLocal(transform : LocalExpansion,
+                                         source : MultipoleExpansion) {
         val p : Int = source.terms.region.max(0);
         for (val (j,k): Point in source.terms) {
             val O_jk : Complex = source.terms(j,k);
@@ -98,56 +98,6 @@ public class LocalExpansion extends Expansion {
                 }
             }
         }
-    }
-
-    /** 
-     * Transform a multipole expansion centred around the origin into a
-     * Taylor expansion centred about b, and adds to this expansion.
-     * This corresponds to "Operator B", Equations 13-15 in White & Head-Gordon.
-     * This operator is inexact due to truncation of the series at <em>p</em> poles.
-     * Note: this defines B^lm_jk(b) = M_j+l,k+m(b), therefore restrict l to [0..p-j]
-     * @param b the vector along which to translate the multipole
-     * @param source the source multipole expansion, centred at the origin
-     */
-    public def transformAndAddToLocalDist(transform : LocalExpansion!,
-                                         source : MultipoleExpansion) {
-        val p : Int = this.terms.region.max(0);
-        for (val (j,k): Point in this.terms) {
-            val O_jk = at (source) {source.terms(j,k)};
-            for (var l : Int = 0; l <= p-j; l++) { // TODO XTENLANG-504
-                for (var m : Int = -l; m<=l; m++) { // TODO XTENLANG-504
-                    if (Math.abs(k+m) <= (j+l)) {
-                        // TODO calculating the indices "on the fly" in the body 
-                        // of the at statement results in a Seg Fault... why?
-                        val jPlusL : Int = (j+l);
-                        val kPlusM : Int = (k+m);
-                        val B_lmjk = transform.terms(Point.make([jPlusL, kPlusM]));
-                        //Console.OUT.println("source.terms.dist(" + j + "," + k + ") = " + source.terms.dist(j,k));
-                        this.terms(l,m) = this.terms(l,m) + B_lmjk * O_jk;
-                    }
-                }
-            }
-        }
-    }
-
-    /**
-     * Transforms a local expansion about the origin to the potential
-     * acting on <code>q</code> at point <code>v</code>.
-     * @param q the charge at point v
-     * @param v the location of charge q
-     * @param source a local expansion about the origin
-     */
-    public static def getPotential(q : Double,
-                                v : Tuple3d,
-                                source : LocalExpansion!) : Double {
-        val numTerms = source.terms.region.max(0);
-        val transform = MultipoleExpansion.getOlm(q, v, numTerms);
-        var potential : Double = 0.0;
-        // TODO use lift/reduction?
-        for (p in source.terms.region) {
-            potential += (source.terms(p) * transform.terms(p)).re;
-        }
-        return potential;
     }
 
     /**
