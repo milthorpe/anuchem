@@ -16,7 +16,7 @@ public class AssociatedLegendrePolynomial {
             throw new IllegalArgumentException("abs(x) > 1: Associated Legendre functions are only defined on [-1, 1].");
         }
 
-        triRegion : TriangularRegion = new TriangularRegion(0,0,p+1,true);
+        val triRegion = new TriangularRegion(0,0,p+1,true);
         val Plm = Array.make[double](triRegion->here);
 		//val Plm = Array.make[double](Region.makeLowerTriangular(p+1));
 		Plm(0,0) = 1.0;
