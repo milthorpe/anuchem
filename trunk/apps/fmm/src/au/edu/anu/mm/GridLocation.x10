@@ -10,7 +10,5 @@ public struct GridLocation {
         this.y = y;
         this.z = z;
     }
-
-    public def typeName() = "au.edu.anu.mm.FmmBox$GridLocation";
 }
 

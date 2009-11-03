@@ -55,7 +55,5 @@ public struct Polar3d {
     public def toString() : String {
         return ("(r:" + r + ",theta:" + theta + ",phi:" + phi + ")");
     }
-
-    public def typeName() = "x10x.polar.Polar";
 }
 
