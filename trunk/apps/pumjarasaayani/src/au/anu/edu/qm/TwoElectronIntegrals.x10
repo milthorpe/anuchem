@@ -281,10 +281,10 @@ public class TwoElectronIntegrals {
     }
 
     private def coulombRepulsion(
-                    a:Atom{self.at(this)}, aNorm:Double, aPower:Power, aAlpha:Double,
-                    b:Atom{self.at(this)}, bNorm:Double, bPower:Power, bAlpha:Double,
-                    c:Atom{self.at(this)}, cNorm:Double, cPower:Power, cAlpha:Double,
-                    d:Atom{self.at(this)}, dNorm:Double, dPower:Power, dAlpha:Double) : Double {
+                    a:Atom{self.at(this)}, aNorm:Double, aPower:Power{self.at(this)}, aAlpha:Double,
+                    b:Atom{self.at(this)}, bNorm:Double, bPower:Power{self.at(this)}, bAlpha:Double,
+                    c:Atom{self.at(this)}, cNorm:Double, cPower:Power{self.at(this)}, cAlpha:Double,
+                    d:Atom{self.at(this)}, dNorm:Double, dPower:Power{self.at(this)}, dAlpha:Double) : Double {
 
         val radiusABSquared = a.distanceSquaredFrom(b);
         val radiusCDSquared = c.distanceSquaredFrom(d);

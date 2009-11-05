@@ -8,7 +8,7 @@
 
 package au.anu.edu.qm;
 
-public value Power { 
+public class Power { 
     val l:Int, m:Int, n:Int;
 
     public def this() { l = m = n = 0; }

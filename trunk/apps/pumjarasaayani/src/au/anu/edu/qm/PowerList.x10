@@ -12,15 +12,15 @@ import x10.util.*;
 
 public class PowerList { 
 
-    global val powerList:HashMap[String,Array[Power]{self.at(this),rank==1}]{self.at(this)};
+    global var powerList:HashMap[String,Array[Power]{self.at(this),rank==1}]{self.at(this)};
     global var initCalled:Boolean;
 
-    private def this() { 
+    private def this() {
        initCalled = false;
-       powerList = new HashMap[String,Array[Power]{rank==1}](); 
     }
 
     private def init() : void {
+       powerList = new HashMap[String,Array[Power]{self.at(this),rank==1}](); 
        powerList.put("S", generatePowerList(0));
        powerList.put("P", generatePowerList(1));
        powerList.put("D", generatePowerList(2));
@@ -65,7 +65,7 @@ public class PowerList {
     }
 
     public def getPowers(orbitalType:String) : Array[Power]{self.at(this),rank==1} {
-       return (powerList.get(orbitalType) as Array[Power]{rank==1});
+       return (powerList.get(orbitalType) as Array[Power]{self.at(this),rank==1});
     }
 }
 
