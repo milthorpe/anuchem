@@ -10,13 +10,13 @@ import x10x.matrix.Matrix;
  * @author V.Ganesh
  */
 public class JacobiDiagonalizer {
-    var eigenValuesVec:Vector{self.at(this)}; 
-    var eigenVectorsMat:Matrix{self.at(this)};
-    var eigenValues:Array[Double]{rank==1};
-    var eigenVectors:Array[Double]{rank==2};
-    var cos:Double, sin:Double, tau:Double;
+    global var eigenValuesVec:Vector{self.at(this)}; 
+    global var eigenVectorsMat:Matrix{self.at(this)};
+    global var eigenValues:Array[Double]{rank==1};
+    global var eigenVectors:Array[Double]{rank==2};
+    global var cos:Double, sin:Double, tau:Double;
 
-    val maxIterations : Int = 100;
+    global val maxIterations : Int = 100;
 
     public def this() { }
 
@@ -32,7 +32,7 @@ public class JacobiDiagonalizer {
        // clone the matrix, do not tamper the actual matrix
        val aMat:Matrix{self.at(this)} = Matrix.make(mat.dist()) as Matrix{self.at(this)};
        val a = aMat.getMatrix();;
-       ateach(var(i,j) in a.dist) a(i, j) = matrix(i, j);
+       finish ateach(var(i,j) in a.dist) a(i, j) = matrix(i, j);
 
        eigenValuesVec = Vector.make(n) as Vector{self.at(this)}; 
        eigenValues = eigenValuesVec.getVector();
@@ -42,31 +42,46 @@ public class JacobiDiagonalizer {
        val b = bVec.getVector();
        val z = zVec.getVector();
 
-       for(var i:Int = 0; i<n; i++) { 
-          eigenValues(i) = b(i) = a(i,i);
-          z(i) = 0.0;
-       } // end for
+       finish ateach(var(i,j) in a.dist) {
+           if (i == j) { 
+               eigenValues(i) = b(i) = a(i,i);
+               z(i) = 0.0;
+           } // end if
+       } // end ateach
 
        var zeroTolerance:Double = 0.0;
 
-       for(var sweeps:Int = 0; sweeps<maxIterations; sweeps++) {
+       for(var sweepsIdx:Int = 0; sweepsIdx<maxIterations; sweepsIdx++) {
           // sum off diagonal elements of A
           val sum = aMat.sumOffDiagonal();
           
           if (sum == 0.0) break;  // if off diagonal elements are zero, we stop
 
-          if (sweeps < 3) zeroTolerance = 0.2 * sum / (n*n);
-          else            zeroTolerance = 0.0;
+          if (sweepsIdx < 3) zeroTolerance = 0.2 * sum / (n*n);
+          else               zeroTolerance = 0.0;
 
-          for(var ip:Int = 0; ip<n-1; ip++) {
-             for(var iq:Int =ip+1; iq<n; iq++) {
+          val sweeps = sweepsIdx;
+          val zeroTol = zeroTolerance;
+
+          //for(var ip:Int = 0; ip<n-1; ip++) { for(var iq:Int = ip+1; iq<n; iq++) {
+
+
+          //finish ateach(var(ip, iq) in a.dist) {
+          for(plc in a.dist.places()) {
+             for(var(ip, iq) in a.dist.get(plc)) {
+             finish async at(plc) {
+             // x10.io.Console.OUT.println(ip + " , " + iq);
+             // x10.io.Console.OUT.println(a.dist.contains(Point.make(ip, iq)));
+
+             if ((iq >= ip+1) && (ip < n-1)) { 
+
                 val g:Double = 100.0 * Math.abs(a(ip,iq));
 
                 if ((sweeps > 4) 
                     && (((Math.abs(eigenValues(ip))+g) as Double as Float) == ((Math.abs(eigenValues(ip))) as Double as Float))
                     && (((Math.abs(eigenValues(iq))+g) as Double as Float) == ((Math.abs(eigenValues(iq))) as Double as Float))) {
                    a(ip,iq) = 0.0;
-                } else if (Math.abs(a(ip,iq)) > zeroTolerance) {
+                } else if (Math.abs(a(ip,iq)) > zeroTol) {
                    var h:Double = eigenValues(iq) - eigenValues(ip);
                    var t:Double, theta:Double;
 
@@ -88,31 +103,49 @@ public class JacobiDiagonalizer {
 
                      a(ip,iq) = 0.0;
 
+                     for(var(i,j) in a.dist) if (i==j && j<ip)             
+                         doRotate(a, j, ip, j, iq, sin, tau);
+
+                     for(var(i,j) in a.dist) if (i==j && j>=ip+1 && j<iq)  
+                         doRotate(a, ip, j, j, iq, sin, tau);
+                     for(var(i,j) in a.dist) if (i==j && j>=iq+1 && j<n)   
+                         doRotate(a, ip, j, iq, j, sin, tau);
+                     for(var(i,j) in eigenVectors.dist) if (i==j)          
+                         doRotate(eigenVectors, j, ip, j, iq, sin, tau);
+
+                     /**
                      for(var j:Int = 0; j<ip; j++)    doRotate(a, j, ip, j, iq);
                      for(var j:Int = ip+1; j<iq; j++) doRotate(a, ip, j, j, iq);
                      for(var j:Int = iq+1; j<n; j++)  doRotate(a, ip, j, iq, j);
                      for(var j:Int = 0; j<n; j++)     doRotate(eigenVectors, j, ip, j, iq);
+                     **/
                    } // end if
                 } // end if
-             } // end for
-          } // end for          
+             } // end if
+           }}}
+          // }}
+          //} // end ateach
 
-          for(var ip:Int = 0; ip<n; ip++) {
+          finish ateach(var(ip) in b.dist) {
              b(ip) += z(ip);
              eigenValues(ip) = b(ip);
              z(ip) = 0.0;
-          } // end for
+          } // end ateach
        } // end for
 
+       // TODO: uncomment
        sortEigenValues(); 
+       eigenVectorsMat = eigenVectorsMat.transpose();
+     // x10.io.Console.OUT.println("P5");
+    }
 
-       var temp:Double;
-       for(var i:Int = 0; i<n; i++) 
-          for(var j:Int = i+1; j<n; j++) {
-             temp = eigenVectors(i, j);
-             eigenVectors(i, j) = eigenVectors(j, i);
-             eigenVectors(j, i) = temp;
-          }      
+    private static def doRotate(a:Array[Double]{rank==2}, i:Int, j:Int, k:Int, l:Int,
+                                sin:Double, tau:Double) : void {
+       var g:Double = a(i,j);
+       var h:Double = a(k,l);
+
+       a(i,j) = g - sin * (h + g*tau);
+       a(k,l) = h + sin * (g - h*tau);
     }
 
     private def sortEigenValues() {
@@ -137,14 +170,6 @@ public class JacobiDiagonalizer {
                 } // end for
             } // end if
         } // end for
-    }
-
-    private def doRotate(a:Array[Double]{rank==2}, i:Int, j:Int, k:Int, l:Int) : void {
-       var g:Double = a(i,j);
-       var h:Double = a(k,l);
- 
-       a(i,j) = g - sin * (h + g*tau);
-       a(k,l) = h + sin * (g - h*tau);
     }
 
     public def getEigenValues() : Vector{self.at(this)} = eigenValuesVec;

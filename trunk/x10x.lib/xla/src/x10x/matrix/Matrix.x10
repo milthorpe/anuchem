@@ -170,7 +170,7 @@ public class Matrix {
     public def makeIdentity() : void {
         val N = getRowCount();
 
-        finish foreach(val(i,j) in mat.region)
+        finish ateach(val(i,j) in mat.dist)
            if (i == j) mat(i, j) = 1.0;
            else        mat(i, j) = 0.0;
     }
@@ -181,7 +181,7 @@ public class Matrix {
     public def makeZero() : void {
         val N = getRowCount();
 
-        finish foreach(val(i,j) in mat.region)
+        finish ateach(val(i,j) in mat.dist)
            mat(i, j) = 0.0;
     }
 
@@ -209,7 +209,7 @@ public class Matrix {
          val res:Matrix{self.at(this)} = Matrix.make(N, M) as Matrix{self.at(this)};
          var cij:Double;
 
-         for(val(i, j) in res.mat.region) {
+         finish ateach(val(i, j) in res.mat.dist) {
             cij = 0.0;
             for(var k:Int=0; k<N1; k++) 
                cij += mat(i, k) * x.mat(k, j);
