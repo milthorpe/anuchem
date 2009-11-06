@@ -88,7 +88,7 @@ public class MultipoleExpansion extends Expansion {
      * @param b the vector along which to translate the multipole
      * @param source the source multipole expansion, centred at the origin
      */
-    public def translateAndAddMultipole(shift : MultipoleExpansion,
+    public global def translateAndAddMultipole(shift : MultipoleExpansion,
                                          source : MultipoleExpansion) {
         val p : Int = source.terms.region.max(0);
         for (val (j,k): Point in source.terms) {

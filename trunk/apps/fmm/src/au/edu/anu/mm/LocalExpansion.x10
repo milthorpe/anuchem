@@ -57,7 +57,7 @@ public class LocalExpansion extends Expansion {
      * @param shift the multipole expansion of the translation
      * @param source the source local expansion, centred at the origin
      */
-    public def translateAndAddLocal(shift : MultipoleExpansion,
+    public global def translateAndAddLocal(shift : MultipoleExpansion,
                                          source : LocalExpansion) {
         val p : Int = source.terms.region.max(0);
         for (val (l,m): Point in this.terms) {
@@ -79,7 +79,7 @@ public class LocalExpansion extends Expansion {
      * @param b the vector along which to translate the multipole
      * @param source the source multipole expansion, centred at the origin
      */
-    public def transformAndAddToLocal(transform : LocalExpansion,
+    public global def transformAndAddToLocal(transform : LocalExpansion,
                                          source : MultipoleExpansion) {
         val p : Int = source.terms.region.max(0);
         for (val (j,k): Point in source.terms) {
@@ -106,7 +106,7 @@ public class LocalExpansion extends Expansion {
      * @param q the charge at point v
      * @param v the location of charge q
      */
-    public def getPotential(q : Double,
+    public global def getPotential(q : Double,
                                 v : Tuple3d) : Double {
         val numTerms = terms.region.max(0);
         val transform = MultipoleExpansion.getOlm(q, v, numTerms);
