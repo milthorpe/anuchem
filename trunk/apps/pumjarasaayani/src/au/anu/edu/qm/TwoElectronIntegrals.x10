@@ -206,6 +206,17 @@ public class TwoElectronIntegrals {
 
     private def coulomb(a:ContractedGaussian{self.at(this)}, b:ContractedGaussian{self.at(this)},
                         c:ContractedGaussian{self.at(this)}, d:ContractedGaussian{self.at(this)}) : Double {
+        val la = a.getTotalAngularMomentum(), 
+            lb = b.getTotalAngularMomentum(),
+            lc = c.getTotalAngularMomentum(),
+            ld = d.getTotalAngularMomentum();
+
+        if (la+lb+lc+ld > 0) { return coulombOrg(a,b,c,d); }
+        else                 { return coulombHGP(a,b,c,d); }
+    }
+
+    private def coulombOrg(a:ContractedGaussian{self.at(this)}, b:ContractedGaussian{self.at(this)},
+                           c:ContractedGaussian{self.at(this)}, d:ContractedGaussian{self.at(this)}) : Double {
          var jij:Double = 0.0;
 
          val aExps   = a.getExponents();
@@ -280,6 +291,23 @@ public class TwoElectronIntegrals {
                  * c.getNormalization() * d.getNormalization() * jij);
     }
 
+    private def coulombHGP(a:ContractedGaussian{self.at(this)}, b:ContractedGaussian{self.at(this)},
+                           c:ContractedGaussian{self.at(this)}, d:ContractedGaussian{self.at(this)}) : Double {
+
+          val jij = contrHrr(a.getOrigin() as Atom{self.at(this)}, a.getPower() as Power{self.at(this)},
+                             a.getCoefficients(), a.getExponents(), a.getPrimNorms(),
+                             b.getOrigin() as Atom{self.at(this)}, b.getPower() as Power{self.at(this)},
+                             b.getCoefficients(), b.getExponents(), b.getPrimNorms(),
+                             c.getOrigin() as Atom{self.at(this)}, b.getPower() as Power{self.at(this)},
+                             c.getCoefficients(), c.getExponents(), c.getPrimNorms(),
+                             d.getOrigin() as Atom{self.at(this)}, d.getPower() as Power{self.at(this)},
+                             d.getCoefficients(), d.getExponents(), d.getPrimNorms()
+                            );
+
+         return (a.getNormalization() * b.getNormalization()
+                 * c.getNormalization() * d.getNormalization() * jij);
+    }
+
     private def coulombRepulsion(
                     a:Atom{self.at(this)}, aNorm:Double, aPower:Power{self.at(this)}, aAlpha:Double,
                     b:Atom{self.at(this)}, bNorm:Double, bPower:Power{self.at(this)}, bAlpha:Double,
@@ -336,23 +364,368 @@ public class TwoElectronIntegrals {
                   * sum * aNorm * bNorm * cNorm * dNorm);
     }
 
-    /** recursively form the columb repulsion term using HGP, stage one: form HRR */ 
-    private def contrHrr(
-                    a:Atom, aNorm:Double, aPower:Power, aAlpha:Double,
-                    b:Atom, bNorm:Double, bPower:Power, bAlpha:Double,
-                    c:Atom, cNorm:Double, cPower:Power, cAlpha:Double,
-                    d:Atom, dNorm:Double, dPower:Power, dAlpha:Double) : Double {
-       var hrrTerm:Double = 0.0;
+    /**
+     * recursively form the columb repulsion term using HGP, stage one: form HRR 
+     * HRR (Horizontal Recurrance Relation)
+     */
+    protected def contrHrr(a:Atom{self.at(this)}, aPower:Power{self.at(this)}, aCoeff:ArrayList[Double]{self.at(this)},
+                           aExps:ArrayList[Double]{self.at(this)}, aNorms:ArrayList[Double]{self.at(this)},
+                           b:Atom{self.at(this)}, bPower:Power{self.at(this)}, bCoeff:ArrayList[Double]{self.at(this)},
+                           bExps:ArrayList[Double]{self.at(this)}, bNorms:ArrayList[Double]{self.at(this)},
+                           c:Atom{self.at(this)}, cPower:Power{self.at(this)}, cCoeff:ArrayList[Double]{self.at(this)},
+                           cExps:ArrayList[Double]{self.at(this)}, cNorms:ArrayList[Double]{self.at(this)},
+                           d:Atom{self.at(this)}, dPower:Power{self.at(this)}, dCoeff:ArrayList[Double]{self.at(this)},
+                           dExps:ArrayList[Double]{self.at(this)}, dNorms:ArrayList[Double]{self.at(this)}) : Double {
+        val la = aPower.getL(), ma = aPower.getM(), na = aPower.getN();
+        val lb = bPower.getL(), mb = bPower.getM(), nb = bPower.getN();
+        val lc = cPower.getL(), mc = cPower.getM(), nc = cPower.getN();
+        val ld = dPower.getL(), md = dPower.getM(), nd = dPower.getN();
 
-       // TODO :
-
-       return hrrTerm;
+        if (lb > 0) {
+            val newBPower = new Power(lb-1,mb,nb);
+            return (contrHrr(a, new Power(la+1,ma,na), aCoeff, aExps, aNorms, 
+                             b, newBPower, bCoeff, bExps, bNorms,
+                             c, cPower, cCoeff, cExps, cNorms,
+                             d, dPower, dCoeff, dExps, dNorms)
+                   + (a.getX()-b.getX())
+                     * contrHrr(a, aPower, aCoeff, aExps, aNorms,
+                                b, newBPower, bCoeff, bExps, bNorms,
+                                c, cPower, cCoeff, cExps, cNorms,
+                                d, dPower, dCoeff, dExps, dNorms));
+        } else if (mb > 0) {
+            val newBPower = new Power(lb,mb-1,nb);
+            return (contrHrr(a, new Power(la,ma+1,na), aCoeff, aExps, aNorms,
+                             b, newBPower, bCoeff, bExps, bNorms,
+                             c, cPower, cCoeff, cExps, cNorms,
+                             d, dPower, dCoeff, dExps, dNorms)
+                   + (a.getY()-b.getY())
+                     * contrHrr(a, aPower, aCoeff, aExps, aNorms,
+                                b, newBPower, bCoeff, bExps, bNorms,
+                                c, cPower, cCoeff, cExps, cNorms,
+                                d, dPower, dCoeff, dExps, dNorms));
+        } else if (nb > 0) {
+            val newBPower = new Power(lb,mb,nb-1);
+            return (contrHrr(a, new Power(la,ma,na+1), aCoeff, aExps, aNorms,
+                             b, newBPower, bCoeff, bExps, bNorms,
+                             c, cPower, cCoeff, cExps, cNorms,
+                             d, dPower, dCoeff, dExps, dNorms)
+                   + (a.getZ()-b.getZ())
+                     * contrHrr(a, aPower, aCoeff, aExps, aNorms,
+                                b, newBPower, bCoeff, bExps, bNorms,
+                                c, cPower, cCoeff, cExps, cNorms,
+                                d, dPower, dCoeff, dExps, dNorms));
+        } else if (ld > 0) {
+            val newDPower = new Power(ld-1,md,nd);
+            return (contrHrr(a, aPower, aCoeff, aExps, aNorms, 
+                             b, bPower, bCoeff, bExps, bNorms,
+                             c, new Power(lc+1,mc,nc), cCoeff, cExps, cNorms,
+                             d, newDPower, dCoeff, dExps, dNorms)
+                   + (c.getX()-d.getX())
+                     * contrHrr(a, aPower, aCoeff, aExps, aNorms, 
+                                b, bPower, bCoeff, bExps, bNorms,
+                                c, cPower, cCoeff, cExps, cNorms,
+                                d, newDPower, dCoeff, dExps, dNorms));
+        } else if (md > 0) {
+            val newDPower = new Power(ld,md-1,nd);
+            return (contrHrr(a, aPower, aCoeff, aExps, aNorms,
+                             b, bPower, bCoeff, bExps, bNorms,
+                             c, new Power(lc,mc+1,nc), cCoeff, cExps, cNorms,
+                             d, newDPower, dCoeff, dExps, dNorms)
+                   + (c.getY()-d.getY())
+                     * contrHrr(a, aPower, aCoeff, aExps, aNorms,
+                                b, bPower, bCoeff, bExps, bNorms,
+                                c, cPower, cCoeff, cExps, cNorms,
+                                d, newDPower, dCoeff, dExps, dNorms));
+        } else if (nd > 0) {
+            val newDPower = new Power(ld,md,nd-1);
+            return (contrHrr(a, aPower, aCoeff, aExps, aNorms,
+                             b, bPower, bCoeff, bExps, bNorms,
+                             c, new Power(lc,mc,nc+1), cCoeff, cExps, cNorms,
+                             d, newDPower, dCoeff, dExps, dNorms)
+                + (c.getZ()-d.getZ())
+                    * contrHrr(a, aPower, aCoeff, aExps, aNorms,
+                               b, bPower, bCoeff, bExps, bNorms,
+                               c, cPower, cCoeff, cExps, cNorms,
+                               d, newDPower, dCoeff, dExps, dNorms));
+        } // end if
+        
+        return contrVrr(a, aPower, aCoeff, aExps, aNorms,
+                        b, bCoeff, bExps, bNorms,
+                        c, cPower, cCoeff, cExps, cNorms,
+                        d, dCoeff, dExps, dNorms);
     }
 
-    /** for VRR */
-    private def contrVrr() : Double {
-       // TODO:
-       return 0.0;
+    /**
+     * VRR (Vertical Recurrance Relation) contribution
+     */
+    protected def contrVrr(a:Atom{self.at(this)}, aPower:Power{self.at(this)}, aCoeff:ArrayList[Double]{self.at(this)},
+                           aExps:ArrayList[Double]{self.at(this)}, aNorms:ArrayList[Double]{self.at(this)},
+                           b:Atom{self.at(this)}, bCoeff:ArrayList[Double]{self.at(this)},
+                           bExps:ArrayList[Double]{self.at(this)}, bNorms:ArrayList[Double]{self.at(this)},
+                           c:Atom{self.at(this)}, cPower:Power{self.at(this)}, cCoeff:ArrayList[Double]{self.at(this)},
+                           cExps:ArrayList[Double]{self.at(this)}, cNorms:ArrayList[Double]{self.at(this)},
+                           d:Atom{self.at(this)}, dCoeff:ArrayList[Double]{self.at(this)},
+                           dExps:ArrayList[Double]{self.at(this)}, dNorms:ArrayList[Double]{self.at(this)}) : Double {
+        var res:Double = 0.0;
+
+        var i:Int, j:Int, k:Int, l:Int;
+        var iaExp:Double, iaCoef:Double, iaNorm:Double,
+            jbExp:Double, jbCoef:Double, jbNorm:Double,
+            kcExp:Double, kcCoef:Double, kcNorm:Double;
+        
+        for (i = 0; i < aExps.size(); i++) {
+            iaCoef = aCoeff.get(i);
+            iaExp = aExps.get(i);
+            iaNorm = aNorms.get(i);
+
+            for (j = 0; j < bExps.size(); j++) {
+                jbCoef = bCoeff.get(j);
+                jbExp = bExps.get(j);
+                jbNorm = bNorms.get(j);
+
+                for (k = 0; k < cExps.size(); k++) {
+                    kcCoef = cCoeff.get(k);
+                    kcExp = cExps.get(k);
+                    kcNorm = cNorms.get(k);
+
+                    for(l=0; l < dExps.size(); l++) {
+                        res += iaCoef * jbCoef * kcCoef * dCoeff.get(l)
+                                 * vrrWrapper(a, iaNorm, aPower, iaExp,
+                                       b, jbNorm, jbExp,
+                                       c, kcNorm, cPower, kcExp,
+                                       d, dNorms.get(l), dExps.get(l), 0);
+                    } // end for
+                } // end for
+            } // end for
+        } // end for
+        
+        return res;
+    }
+
+    private val sqrt2PI:Double = Math.sqrt(2.0) * Math.pow(Math.PI, 1.25);
+
+    /**
+     * VRR (Vertical Recurrance Relation)
+     */
+    protected def vrrWrapper(
+                         a:Atom{self.at(this)}, aNorm:Double, aPower:Power{self.at(this)}, aAlpha:Double,
+                         b:Atom{self.at(this)}, bNorm:Double, bAlpha:Double,
+                         c:Atom{self.at(this)}, cNorm:Double, cPower:Power{self.at(this)}, cAlpha:Double,
+                         d:Atom{self.at(this)}, dNorm:Double, dAlpha:Double, m:Int) : Double {
+        return vrr(a, aNorm, aPower, aAlpha, b, bNorm, bAlpha,
+                   c, cNorm, cPower, cAlpha, d, dNorm, dAlpha, m);
+    }
+
+    /**
+     * VRR (Vertical Recurrance Relation)
+     */
+    protected def vrr(a:Atom{self.at(this)}, aNorm:Double, aPower:Power{self.at(this)}, aAlpha:Double,
+                      b:Atom{self.at(this)}, bNorm:Double, bAlpha:Double,
+                      c:Atom{self.at(this)}, cNorm:Double, cPower:Power{self.at(this)}, cAlpha:Double,
+                      d:Atom{self.at(this)}, dNorm:Double, dAlpha:Double, m:Int) : Double {
+        var res:Double = 0.0;
+
+        val p = gaussianProductCenter(aAlpha, a, bAlpha, b);
+        val q = gaussianProductCenter(cAlpha, c, dAlpha, d);
+        val zeta = aAlpha + bAlpha;
+        val eta  = cAlpha + dAlpha;
+        val zetaPlusEta = zeta + eta;
+        val zetaByZetaPlusEta = zeta / zetaPlusEta;
+        val etaByZetaPlusEta  = eta / zetaPlusEta;
+        val w = gaussianProductCenter(zeta, p, eta, q);
+        
+        val la = aPower.getL();
+        val ma = aPower.getM();
+        val na = aPower.getN();
+        val lc = cPower.getL();
+        val mc = cPower.getM();
+        val nc = cPower.getN();
+        
+        if (nc > 0) {
+           val newCPower = new Power(lc, mc, nc-1);
+           res = (q.getZ()-c.getZ())*vrr(a, aNorm, aPower, aAlpha,
+                                         b, bNorm, bAlpha,
+                                         c, cNorm, newCPower, cAlpha,
+                                         d, dNorm, dAlpha, m)
+               + (w.getZ()-q.getZ())*vrr(a, aNorm, aPower, aAlpha,
+                                         b, bNorm, bAlpha,
+                                         c, cNorm, newCPower, cAlpha,
+                                         d, dNorm, dAlpha, m+1);
+
+           if (nc > 1) {
+              val newCPower1 = new Power(lc, mc, nc-2);
+              res += 0.5*(nc-1) / eta*(vrr(a, aNorm, aPower, aAlpha,
+                                           b, bNorm, bAlpha,
+                                           c, cNorm, newCPower1, cAlpha,
+                                           d, dNorm, dAlpha, m)
+                    -zetaByZetaPlusEta*vrr(a, aNorm, aPower, aAlpha,
+                                           b, bNorm, bAlpha,
+                                           c, cNorm, newCPower1, cAlpha,
+                                           d, dNorm, dAlpha, m+1));
+           } // end if
+
+           if (na > 0) {
+              res += 0.5*na/zetaPlusEta*vrr(a, aNorm, new Power(la, ma, na-1),
+                                            aAlpha,
+                                            b, bNorm, bAlpha,
+                                            c, cNorm, newCPower,
+                                            cAlpha,
+                                            d, dNorm, dAlpha, m+1);
+           } // end if
+
+           return res;
+        } else if (mc > 0) {
+            val newCPower = new Power(lc, mc-1, nc);
+            res = (q.getY()-c.getY())*vrr(a, aNorm, aPower, aAlpha,
+                                          b, bNorm, bAlpha,
+                                          c, cNorm, newCPower, cAlpha,
+                                          d, dNorm, dAlpha, m)
+                + (w.getY()-q.getY())*vrr(a, aNorm, aPower, aAlpha,
+                                          b, bNorm, bAlpha,
+                                          c, cNorm, newCPower, cAlpha,
+                                          d, dNorm, dAlpha, m+1);
+
+            if (mc > 1) {
+               val newCPower1 = new Power(lc, mc-2, nc);
+               res += 0.5*(mc-1)/eta*(vrr(a, aNorm, aPower, aAlpha,
+                                          b, bNorm, bAlpha,
+                                          c, cNorm, newCPower1, cAlpha,
+                                          d, dNorm, dAlpha, m)
+                   -zetaByZetaPlusEta*vrr(a, aNorm, aPower, aAlpha,
+                                          b, bNorm, bAlpha,
+                                          c, cNorm, newCPower1, cAlpha,
+                                          d, dNorm, dAlpha, m+1));
+            } // end if
+
+            if (ma > 0) {
+                res += 0.5*ma/zetaPlusEta*vrr(a, aNorm, new Power(la, ma-1, na),
+                                              aAlpha,
+                                              b, bNorm, bAlpha,
+                                              c, cNorm, newCPower,
+                                              cAlpha,
+                                              d, dNorm, dAlpha, m+1);
+            } // end if
+            
+            return res;
+        } else if (lc > 0) {
+            val newCPower = new Power(lc-1, mc, nc);
+            res = (q.getX()-c.getX())*vrr(a, aNorm, aPower, aAlpha,
+                                          b, bNorm, bAlpha,
+                                          c, cNorm, newCPower, cAlpha,
+                                          d, dNorm, dAlpha, m)
+                + (w.getX()-q.getX())*vrr(a, aNorm, aPower, aAlpha,
+                                          b, bNorm, bAlpha,
+                                          c, cNorm, newCPower, cAlpha,
+                                          d, dNorm, dAlpha, m+1);
+
+            if (lc > 1) {
+               val newCPower1 = new Power(lc-2, mc, nc);
+               res += 0.5*(lc-1)/eta*(vrr(a, aNorm, aPower, aAlpha,
+                                          b, bNorm, bAlpha,
+                                          c, cNorm, newCPower1, cAlpha,
+                                          d, dNorm, dAlpha, m)
+                   -zetaByZetaPlusEta*vrr(a, aNorm, aPower, aAlpha,
+                                          b, bNorm, bAlpha,
+                                          c, cNorm, newCPower1, cAlpha,
+                                          d, dNorm, dAlpha, m+1));
+            } // end if
+
+            if (la > 0) {
+                res += 0.5*la/zetaPlusEta*vrr(a, aNorm, new Power(la-1, ma, na),
+                                              aAlpha,
+                                              b, bNorm, bAlpha,
+                                              c, cNorm, newCPower,
+                                              cAlpha,
+                                              d, dNorm, dAlpha, m+1);
+            } // end if
+
+            return res;
+        } else if (na > 0) {
+            val newAPower = new Power(la, ma, na-1);
+            res = (p.getZ()-a.getZ())*vrr(a, aNorm, newAPower, aAlpha,
+                                          b, bNorm, bAlpha,
+                                          c, cNorm, cPower, cAlpha,
+                                          d, dNorm, dAlpha, m) 
+                + (w.getZ()-p.getZ())*vrr(a, aNorm, newAPower, aAlpha,
+                                          b, bNorm, bAlpha,
+                                          c, cNorm, cPower, cAlpha,
+                                          d, dNorm, dAlpha, m+1);
+
+            if (na > 1) {
+               val newAPower1 = new Power(la, ma, na-2);
+               res += 0.5*(na-1)/zeta*(vrr(a, aNorm, newAPower1, aAlpha,
+                                           b, bNorm, bAlpha,
+                                           c, cNorm, cPower, cAlpha,
+                                           d, dNorm, dAlpha, m)
+                     -etaByZetaPlusEta*vrr(a, aNorm, newAPower1, aAlpha,
+                                           b, bNorm, bAlpha,
+                                           c, cNorm, cPower, cAlpha,
+                                           d, dNorm, dAlpha, m+1));
+            } // end if
+
+            return res;
+        } else if (ma > 0) {
+            val newAPower = new Power(la, ma-1, na);
+            res = (p.getY()-a.getY())*vrr(a, aNorm, newAPower, aAlpha,
+                                          b, aNorm, aAlpha,
+                                          c, aNorm, cPower, cAlpha,
+                                          d, aNorm, dAlpha, m)
+                + (w.getY()-p.getY())*vrr(a, aNorm, newAPower, aAlpha,
+                                          b, aNorm, aAlpha,
+                                          c, aNorm, cPower, cAlpha,
+                                          d, aNorm, dAlpha, m+1);
+
+            if (ma > 1) {
+               val newAPower1 = new Power(la, ma-2, na);
+               res += 0.5*(ma-1)/zeta*(vrr(a, aNorm, newAPower1,
+                                           aAlpha,
+                                           b, aNorm, aAlpha,
+                                           c, aNorm, cPower, cAlpha,
+                                           d, aNorm, dAlpha, m)
+                     -etaByZetaPlusEta*vrr(a, aNorm, newAPower1,
+                                           aAlpha,
+                                           b, aNorm, aAlpha,
+                                           c, aNorm, cPower, cAlpha,
+                                           d, aNorm, dAlpha, m+1));
+            } // end if
+            
+            return res;
+        } else if (la > 0) {
+            val newAPower = new Power(la-1, ma, na);
+            res = (p.getX()-a.getX())*vrr(a, aNorm, newAPower, aAlpha,
+                                          b, aNorm, aAlpha,
+                                          c, aNorm, cPower, cAlpha,
+                                          d, aNorm, dAlpha, m)
+                + (w.getX()-p.getX())*vrr(a, aNorm, newAPower, aAlpha,
+                                          b, aNorm, aAlpha,
+                                          c, aNorm, cPower, cAlpha,
+                                          d, aNorm, dAlpha, m+1);
+
+            if (la > 1) {
+                val newAPower1 = new Power(la-2, ma, na);
+                res += 0.5*(la-1)/zeta*(vrr(a, aNorm, newAPower1, aAlpha,
+                                            b, aNorm, aAlpha,
+                                            c, aNorm, cPower, cAlpha,
+                                            d, aNorm, dAlpha, m)
+                      -etaByZetaPlusEta*vrr(a, aNorm, newAPower1, aAlpha,
+                                            b, aNorm, aAlpha,
+                                            c, aNorm, cPower, cAlpha,
+                                            d, aNorm, dAlpha, m+1));
+            } // end if
+            
+            return res;
+        } // end if
+
+        val rab2 = a.distanceSquaredFrom(b);
+        val Kab  = sqrt2PI / zeta * Math.exp(-aAlpha*bAlpha / zeta*rab2);
+        val rcd2 = c.distanceSquaredFrom(d);
+        val Kcd  = sqrt2PI / eta * Math.exp(-cAlpha*dAlpha / eta*rcd2);
+        val rpq2 = p.distanceSquaredFrom(q);
+        val T    = zeta*eta / zetaPlusEta*rpq2;
+
+        res = aNorm*bNorm*cNorm*dNorm*Kab*Kcd/Math.sqrt(zetaPlusEta)
+              * IntegralsUtils.computeFGamma(m, T);
+        return res;
     }
 
    /**

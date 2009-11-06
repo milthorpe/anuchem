@@ -15,7 +15,7 @@ import x10x.vector.Vector;
 
 public class GMatrix extends Matrix {
     public def compute(twoE:TwoElectronIntegrals{self.at(this)}, density:Density{self.at(this)}) : void {
-        if (twoE.isDirect()) { computeDirect2(twoE, density); return; }
+        if (twoE.isDirect()) { computeDirect3(twoE, density); return; }
 
         val noOfBasisFunctions = density.getRowCount();
         val densityOneD = new Vector();
@@ -187,9 +187,8 @@ public class GMatrix extends Matrix {
         } // end i loop
 
         // half the elements
-        for(i=0; i<N; i++) 
-           for(j=0; j<N; j++) 
-              gMatrix(i,j) *= 0.5;
+        finish ateach(var(a,b) in gMatrix.dist)
+                  gMatrix(a,b) *= 0.5;
     }
 
     private def computeDirect3(twoE:TwoElectronIntegrals{self.at(this)}, density:Density{self.at(this)}) : void {
@@ -200,7 +199,6 @@ public class GMatrix extends Matrix {
         val gMatrix = getMatrix();
         val dMatrix = density.getMatrix();
 
-        // TODO: x10 - parallel
         var i:Int, j:Int, k:Int, l:Int, m:Int, ij:Int, kl:Int;
         var idx_i:Int, jdx_i:Int, kdx_i:Int, ldx_i:Int;
         var twoEIntVal:Double, twoEIntVal2:Double, twoEIntValHalf:Double;
@@ -227,6 +225,7 @@ public class GMatrix extends Matrix {
         var iaFunc:ContractedGaussian{self.at(this)}, jbFunc:ContractedGaussian{self.at(this)},
             kcFunc:ContractedGaussian{self.at(this)}, ldFunc:ContractedGaussian{self.at(this)};
 
+        // TODO: x10 - parallel
         // center a
         for(a=0; a<noOfAtoms; a++) {
             aFunc = molecule.getAtom(a).getBasisFunctions();
@@ -269,7 +268,7 @@ public class GMatrix extends Matrix {
                                         ldFunc = dFunc.get(l);
                                         ldx_i = ldFunc.getIndex();
 
-                                        twoEIntVal     = twoE.compute2E(idx_i,jdx_i,kdx_i,ldx_i);
+                                        twoEIntVal     = twoE.compute2E(iaFunc, jbFunc, kcFunc, ldFunc);
                                         twoEIntVal2    = twoEIntVal + twoEIntVal;
                                         twoEIntValHalf = 0.5 * twoEIntVal;
 
@@ -310,10 +309,8 @@ public class GMatrix extends Matrix {
         } // end a
 
         // half the elements
-        for(i=0; i<N; i++) 
-           for(j=0; j<N; j++) 
-              gMatrix(i,j) *= 0.5;
-           
+        finish ateach(var(x,y) in gMatrix.dist)
+                  gMatrix(x,y) *= 0.5;
     }  
 
     /** find unique elements and mark the onces that are not */
