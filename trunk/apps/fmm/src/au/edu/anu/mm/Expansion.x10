@@ -25,8 +25,10 @@ public class Expansion {
     }
 
     public global def add(e : Expansion!) {
-        for (val p in terms.region) {
-            this.terms(p) = this.terms(p) + e.terms(p);
+        atomic {
+            for (val p in terms.region) {
+                this.terms(p) = this.terms(p) + e.terms(p);
+            }
         }
     }
 
