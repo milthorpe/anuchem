@@ -186,15 +186,13 @@ public class DistributedFmm3d {
         for (var level: Int = numLevels; level > 2; level--) {
             val thisLevelRegion : Region(2) = [0..((Math.pow(8,level) as Int)-1),level..level];
             val thisLevelDist = boxes.dist | thisLevelRegion;
-            for (p in thisLevelDist) {
-                at (boxes.dist(p)) {
+            ateach (p in thisLevelDist) {
                 //Console.OUT.println("childIndex = " + childIndex + " childLevel = " + childLevel + " dist " + boxes.dist(childIndex,childLevel));
                 val child = boxes(p) as FmmBox!;
                 if (child != null) {
                     val parent = child.parent as FmmBox!;
                     val shift = multipoleTranslations(Point.make([here.id, child.level, (child.gridLoc.x+1)%2, (child.gridLoc.y+1)%2, (child.gridLoc.z+1)%2])) as MultipoleExpansion!;
                     parent.multipoleExp.translateAndAddMultipole(shift, child.multipoleExp);
-                }
                 }
             }
         }
@@ -324,7 +322,7 @@ public class DistributedFmm3d {
                         // direct calculation with all atoms in non-well-separated boxes
                         val otherBoxRegion : Region(2) = [0..boxIndex1-1,numLevels..numLevels];
                         val otherBoxDist = boxes.dist | otherBoxRegion;
-                        foreach ((boxIndex2,level) in otherBoxDist) {
+                        for ((boxIndex2,level) in otherBoxDist) {
                             val box2 = boxes(boxIndex2, level) as FmmLeafBox!;
                             if (box2 != null) {
                                 //Console.OUT.println(boxIndex1 + " vs. " + boxIndex2 + " ws = " + ws);
