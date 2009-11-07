@@ -161,7 +161,7 @@ public class DistributedFmm3d {
             val parentBox = getParentBox(boxIndex, numLevels);
             //Console.OUT.println("boxIndex = " + boxIndex + " numLevels = " + numLevels);
 
-            async (boxes.dist(boxIndex, numLevels)) {
+            at (boxes.dist(boxIndex, numLevels)) {
                 atomic {
                     var box : FmmBox = boxes(boxIndex, numLevels);
                     if (box == null) {
@@ -231,7 +231,7 @@ public class DistributedFmm3d {
                 val box1MultipoleExp = box1.multipoleExp;
                 //Console.OUT.println("transformToLocal: box(" + boxIndex1 + "," + 2 + ")");
                 for ((boxIndex2) in 0..boxIndex1-1) { 
-                    async (boxes.dist(boxIndex2,level)) {
+                    at (boxes.dist(boxIndex2,level)) {
                         val box2 = boxes(boxIndex2, level) as FmmBox!;
                         if (box2 != null) {
                             //Console.OUT.println("... and box(" + 2 + "," + boxIndex2 + ")");
@@ -240,7 +240,7 @@ public class DistributedFmm3d {
                                 val transform12 = multipoleTransforms(Point.make([here.id, level, -translation.x, -translation.y, -translation.z])) as LocalExpansion!;
                                 box2.localExp.transformAndAddToLocal(transform12, box1MultipoleExp);
                                 val box2MultipoleExp = box2.multipoleExp;
-                                async (box1.location) {
+                                at (box1.location) {
                                     val transform21 = multipoleTransforms(Point.make([here.id, level, translation.x, translation.y, translation.z])) as LocalExpansion!;
                                     box1.localExp.transformAndAddToLocal(transform21, box2MultipoleExp);
                                 }
@@ -263,7 +263,7 @@ public class DistributedFmm3d {
                     val box1Parent = box1.parent as FmmBox!;
                     //Console.OUT.println("transformToLocal: box(" + boxIndex1 + "," + level + ")");
                     for ((boxIndex2) in 0..boxIndex1-1) {
-                        async (boxes.dist(boxIndex2,level)) {
+                        at (boxes.dist(boxIndex2,level)) {
                             val box2 = boxes(boxIndex2, level) as FmmBox!;
                             if (box2 != null) {
                                 //Console.OUT.println("... and box(" + level + "," + boxIndex2 + ")");
@@ -275,7 +275,7 @@ public class DistributedFmm3d {
                                         box2.localExp.transformAndAddToLocal(transform12, box1MultipoleExp);
                                         //Console.OUT.println("added box(" + boxIndex1 + "," + level + ") to box(" + boxIndex2 + "," + level + ")");
                                         val box2MultipoleExp = box2.multipoleExp;
-                                        async (box1.location) {
+                                        at (box1.location) {
                                             val transform21 = multipoleTransforms(Point.make([here.id, level, translation.x, translation.y, translation.z])) as LocalExpansion!;
                                             box1.localExp.transformAndAddToLocal(transform21, box2MultipoleExp);
                                             //Console.OUT.println("added box(" + boxIndex2 + "," + level + ") to box(" + boxIndex1 + "," + level + ")");
@@ -296,7 +296,7 @@ public class DistributedFmm3d {
 
     def getEnergy() : Double {
         // TODO n^2 calculation - to check - remove this
-        
+        /*
         var directEnergy : Double = 0.0;
         for ((i) in 0..(atoms.length - 1)) {
             for ((j) in 0..(i - 1)) {
@@ -305,7 +305,7 @@ public class DistributedFmm3d {
             }
         }
         Console.OUT.println("directEnergy = " + directEnergy);
-        
+        */
         val lowestLevelRegion : Region(2) = [0..(Math.pow(8,numLevels) as Int)-1,numLevels..numLevels];
         val lowestLevelDist = boxes.dist | lowestLevelRegion;
         finish ateach ((boxIndex1,level) in lowestLevelDist) {
