@@ -64,7 +64,7 @@ public class LocalExpansion extends Expansion {
             for (var j : Int = l; j<=p; j++) { // TODO XTENLANG-504
                 for (var k : Int = l-j+m; k<=-l+j+m; k++) { // TODO XTENLANG-504
                     val C_lmjk = shift.terms(j-l, k-m);
-                    atomic {this.terms(l,m) = this.terms(l,m) + C_lmjk * source.terms(j,k);}
+                    this.terms(l,m) = this.terms(l,m) + C_lmjk * source.terms(j,k);
                 }
             }
         }
@@ -93,7 +93,7 @@ public class LocalExpansion extends Expansion {
                         val kPlusM : Int = (k+m);
                         val B_lmjk = transform.terms(jPlusL, kPlusM);
                         //Console.OUT.println("source.terms.dist(" + j + "," + k + ") = " + source.terms.dist(j,k));
-                        atomic {this.terms(l,m) = this.terms(l,m) + B_lmjk * O_jk;}
+                        this.terms(l,m) = this.terms(l,m) + B_lmjk * O_jk;
                     }
                 }
             }
