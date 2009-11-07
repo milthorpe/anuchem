@@ -153,26 +153,28 @@ public class DistributedFmm3d {
      * lowest level box that contains the atom.
      */
     def multipoleLowestLevel() {
-        finish foreach ((i) in 0..atoms.length-1) {
-            val atom = atoms(i);
-            val boxLocation = getLowestLevelBoxLocation(atom);
-            val boxIndex = FmmBox.getBoxIndex(boxLocation, numLevels);
-            //Console.OUT.println("atoms(" + i + ") => box(" + boxIndex + ")");
-            val parentBox = getParentBox(boxIndex, numLevels);
-            //Console.OUT.println("boxIndex = " + boxIndex + " numLevels = " + numLevels);
+        finish {
+            for ((i) in 0..atoms.length-1) {
+                val atom = atoms(i);
+                val boxLocation = getLowestLevelBoxLocation(atom);
+                val boxIndex = FmmBox.getBoxIndex(boxLocation, numLevels);
+                //Console.OUT.println("atoms(" + i + ") => box(" + boxIndex + ")");
+                val parentBox = getParentBox(boxIndex, numLevels);
+                //Console.OUT.println("boxIndex = " + boxIndex + " numLevels = " + numLevels);
 
-            at (boxes.dist(boxIndex, numLevels)) {
-                atomic {
-                    var box : FmmBox = boxes(boxIndex, numLevels);
-                    if (box == null) {
-                        box = new FmmLeafBox(numLevels, boxLocation, numTerms, parentBox);
-                        boxes(boxIndex, numLevels) = box;
+                async (boxes.dist(boxIndex, numLevels)) {
+                    atomic {
+                        var box : FmmBox = boxes(boxIndex, numLevels);
+                        if (box == null) {
+                            box = new FmmLeafBox(numLevels, boxLocation, numTerms, parentBox);
+                            boxes(boxIndex, numLevels) = box;
+                        }
+                        val remoteAtom = new Atom(atom);
+                        val leafBox = box as FmmLeafBox!;
+                        leafBox.atoms.add(remoteAtom);
+                        val boxCentre = leafBox.getCentre(size).sub(remoteAtom.centre);
+                        leafBox.multipoleExp.add(MultipoleExpansion.getOlm(remoteAtom.charge, boxCentre, numTerms));
                     }
-                    val remoteAtom = new Atom(atom);
-                    val leafBox = box as FmmLeafBox!;
-                    leafBox.atoms.add(remoteAtom);
-                    val boxCentre = leafBox.getCentre(size).sub(remoteAtom.centre);
-                    leafBox.multipoleExp.add(MultipoleExpansion.getOlm(remoteAtom.charge, boxCentre, numTerms));
                 }
             }
         }
