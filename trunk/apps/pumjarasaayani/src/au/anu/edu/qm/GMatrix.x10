@@ -378,7 +378,7 @@ public class GMatrix extends Matrix {
                               validIdx(3) = true; validIdx(4) = true;
                               validIdx(5) = true; validIdx(6) = true;
                               validIdx(7) = true;
-
+ 
                               // filter unique elements
                               filterUniqueElements(idx_loc, jdx_loc, kdx_loc, ldx_loc, validIdx);
 
