@@ -15,7 +15,7 @@ import x10x.vector.Vector;
 
 public class GMatrix extends Matrix {
     public def compute(twoE:TwoElectronIntegrals{self.at(this)}, density:Density{self.at(this)}) : void {
-        if (twoE.isDirect()) { computeDirect3(twoE, density); return; }
+        if (twoE.isDirect()) { computeDirect4(twoE, density); return; }
 
         val noOfBasisFunctions = density.getRowCount();
         val densityOneD = new Vector();
@@ -312,6 +312,97 @@ public class GMatrix extends Matrix {
         finish ateach(var(x,y) in gMatrix.dist)
                   gMatrix(x,y) *= 0.5;
     }  
+
+    private def computeDirect4(twoE:TwoElectronIntegrals{self.at(this)}, density:Density{self.at(this)}) : void {
+        val N = density.getRowCount();
+
+        makeZero();
+
+        val gMatrix = getMatrix();
+        val dMatrix = density.getMatrix();
+
+        // TODO: x10 - parallel
+        var i:Int, j:Int, k:Int, l:Int, ij:Int, kl:Int;
+        var idx:Array[Int]{rank==1}, jdx:Array[Int]{rank==1}, 
+            kdx:Array[Int]{rank==1}, ldx:Array[Int]{rank==1};
+        idx = Array.make[Int]([0..8]);
+        jdx = Array.make[Int]([0..8]);
+        kdx = Array.make[Int]([0..8]);
+        ldx = Array.make[Int]([0..8]);
+        
+        finish {
+          for(i=0; i<N; i++) {
+            idx(0) = i; jdx(1) = i; jdx(2) = i; idx(3) = i;
+            kdx(4) = i; ldx(5) = i; kdx(6) = i; ldx(7) = i;
+            for(j=0; j<(i+1); j++) {
+                ij = i * (i+1) / 2+j;
+                jdx(0) = j; idx(1) = j; idx(2) = j; jdx(3) = j;
+                ldx(4) = j; kdx(5) = j; ldx(6) = j; kdx(7) = j;
+                for(k=0; k<N; k++) {
+                    kdx(0) = k; kdx(1) = k; ldx(2) = k; ldx(3) = k;
+                    jdx(4) = k; jdx(5) = k; idx(6) = k; idx(7) = k;
+                    for(l=0; l<(k+1); l++) {
+                        kl = k * (k+1) / 2+l;
+                        if (ij >= kl) { 
+                         val i_loc = i, j_loc = j, k_loc = k, l_loc = l;
+                         val idx_loc:Array[Int]{rank==1} = Array.make[Int]([0..8]), 
+                             jdx_loc:Array[Int]{rank==1} = Array.make[Int]([0..8]), 
+                             kdx_loc:Array[Int]{rank==1} = Array.make[Int]([0..8]), 
+                             ldx_loc:Array[Int]{rank==1} = Array.make[Int]([0..8]);
+
+                         for(var midx:Int=0; midx<8; midx++) {
+                            idx_loc(midx) = idx(midx);
+                            jdx_loc(midx) = jdx(midx);
+                            kdx_loc(midx) = kdx(midx);
+                            ldx_loc(midx) = ldx(midx);
+                         } // end for
+
+                         async {
+                           var twoEIntVal:Double, twoEIntVal2:Double, twoEIntValHalf:Double;
+                           var validIdx:Array[Boolean]{rank==1} = Array.make[Boolean]([0..8]);
+                           validIdx(0) = true;
+
+                           twoEIntVal     = twoE.compute2E(i_loc,j_loc,k_loc,l_loc);
+                           twoEIntVal2    = twoEIntVal + twoEIntVal;
+                           twoEIntValHalf = 0.5 * twoEIntVal;
+
+                           setGMatrixElements(gMatrix, dMatrix, i_loc, j_loc, k_loc, l_loc,
+                                               twoEIntVal2, twoEIntValHalf);
+
+                           // special case
+                           if ((i_loc|j_loc|k_loc|l_loc) != 0) {
+                              // (if unique)
+                              ldx_loc(0) = l_loc; ldx_loc(1) = l_loc; kdx_loc(2) = l_loc; kdx_loc(3) = l_loc;
+                              idx_loc(4) = l_loc; idx_loc(5) = l_loc; jdx_loc(6) = l_loc; jdx_loc(7) = l_loc;
+                              validIdx(1) = true; validIdx(2) = true;
+                              validIdx(3) = true; validIdx(4) = true;
+                              validIdx(5) = true; validIdx(6) = true;
+                              validIdx(7) = true;
+
+                              // filter unique elements
+                              filterUniqueElements(idx_loc, jdx_loc, kdx_loc, ldx_loc, validIdx);
+
+                              // and evaluate them
+                              for(var m:Int=1; m<8; m++) {
+                                 if (validIdx(m)) {
+                                    setGMatrixElements(gMatrix, dMatrix, 
+                                                idx_loc(m), jdx_loc(m), kdx_loc(m), ldx_loc(m),
+                                                twoEIntVal2, twoEIntValHalf);
+                                 } // end if
+                              } // end for m
+                           }  // end if
+                         } // async block
+                       } // end if
+                    } // end l loop
+                } // end k loop
+            } // end j loop
+          } // end i loop
+        } // finish block
+
+        // half the elements
+        finish ateach(var(a,b) in gMatrix.dist)
+                  gMatrix(a,b) *= 0.5;
+    }
 
     /** find unique elements and mark the onces that are not */
     private def filterUniqueElements(idx:Array[Int]{rank==1}, jdx:Array[Int]{rank==1},

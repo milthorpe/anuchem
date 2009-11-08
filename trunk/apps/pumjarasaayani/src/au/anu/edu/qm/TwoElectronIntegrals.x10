@@ -270,7 +270,6 @@ public class TwoElectronIntegrals {
                     kcNorm = cNorms.get(k);
 
                     for(l=0; l<nd; l++) {
-
                         jij += iaCoef * jbCoef * kcCoef
                                * dCoefs.get(l)
                                * coulombRepulsion(

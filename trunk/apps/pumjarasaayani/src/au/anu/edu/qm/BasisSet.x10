@@ -82,6 +82,7 @@ public class BasisSet {
        if (name.equals("sto3g")) {
           var orbType:String;
           val hBasis = new AtomicBasis();
+          hBasis.make();
           val hOrb   = new Orbital();
           orbType = "S";
           hOrb.make(orbType as String{self.at(this)});
@@ -92,6 +93,7 @@ public class BasisSet {
           basisInfo.put("H", hBasis);
 
           val cBasis = new AtomicBasis();
+          cBasis.make();
           val cOrb1  = new Orbital();
           orbType = "S";
           cOrb1.make(orbType as String{self.at(this)});
@@ -116,6 +118,7 @@ public class BasisSet {
           basisInfo.put("C", cBasis);    
 
           val nBasis = new AtomicBasis();
+          nBasis.make();
           val nOrb1  = new Orbital();
           orbType = "S";
           nOrb1.make(orbType as String{self.at(this)});
@@ -140,6 +143,7 @@ public class BasisSet {
           basisInfo.put("N", nBasis);    
 
           val oBasis = new AtomicBasis();
+          oBasis.make();
           val oOrb1  = new Orbital();
           orbType = "S";
           oOrb1.make(orbType as String{self.at(this)});
