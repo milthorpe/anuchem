@@ -2,7 +2,7 @@
 <!DOCTYPE project [<!ENTITY buildfile SYSTEM "file:./build-user.xml">]>
 <project name="X10 Linear Algebra project" default="build" basedir=".">
     <property name="x10.testlib" location="${user.home}/x10-17/x10.tests/examples/x10lib"/>
-    <property name="x10x.xlalib" location="${user.home}/projects/x10lib/x10x.lib/xla/src"/>
+    <property name="x10x.xlalib" location="${user.home}/projects/x10lib/x10x.lib/xla2/src"/>
     <property name="bash.exe" value="bash"/>    
     <property name="optimize" value="false" />
 	<property name="target" location="${basedir}/target" />
@@ -80,11 +80,11 @@
         <pathconvert property="src.list" refid="changed.src.files" dirsep="/" pathsep=" ">
             <map from="${basedir}${file.separator}src${file.separator}" to=""/>
         </pathconvert>
-        <echo message="x10c++ ${src.list}"/>
+        <echo message="x10c++ -NO_CHECKS=false ${x10c.optimize} -x10rt pgas_sockets ${src.list}"/>
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/src">
             <arg value="-c"/> 
-            <arg value="'x10c++' ${x10c.optimize} -sourcepath .:${x10x.xlalib} -d ${target-src} ${src.list}"/>
+            <arg value="'x10c++' -NO_CHECKS=false -x10rt pgas_sockets ${x10c.optimize} -sourcepath .:${x10x.xlalib} -d ${target-src} ${src.list}"/>
         </exec>
     </target>
 
@@ -115,7 +115,7 @@
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/test">
             <arg value="-c"/>
-            <arg value="'x10c++' ${x10c.optimize} -sourcepath ${x10.testlib}:${basedir}/src:.:${x10x.xlalib} -classpath ${target-src} -d ${target-test} ${test.list}"/>
+            <arg value="'x10c++' -NO_CHECKS=false -x10rt pgas_sockets ${x10c.optimize} -sourcepath ${x10.testlib}:${basedir}/src:.:${x10x.xlalib} -classpath ${target-src} -d ${target-test} ${test.list}"/>
         </exec>
     </target>
 
