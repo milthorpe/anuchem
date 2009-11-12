@@ -211,11 +211,11 @@ public class TwoElectronIntegrals {
             lc = c.getTotalAngularMomentum(),
             ld = d.getTotalAngularMomentum();
 
-        if (la+lb+lc+ld > 0) { return coulombOrg(a,b,c,d); }
-        else                 { return coulombHGP(a,b,c,d); }
+        if (la+lb+lc+ld > 0) { return coulombFlat(a,b,c,d); }
+        else                 { return coulombRec(a,b,c,d);  }
     }
 
-    private def coulombOrg(a:ContractedGaussian{self.at(this)}, b:ContractedGaussian{self.at(this)},
+    private def coulombFlat(a:ContractedGaussian{self.at(this)}, b:ContractedGaussian{self.at(this)},
                            c:ContractedGaussian{self.at(this)}, d:ContractedGaussian{self.at(this)}) : Double {
          var jij:Double = 0.0;
 
@@ -290,7 +290,7 @@ public class TwoElectronIntegrals {
                  * c.getNormalization() * d.getNormalization() * jij);
     }
 
-    private def coulombHGP(a:ContractedGaussian{self.at(this)}, b:ContractedGaussian{self.at(this)},
+    private def coulombRec(a:ContractedGaussian{self.at(this)}, b:ContractedGaussian{self.at(this)},
                            c:ContractedGaussian{self.at(this)}, d:ContractedGaussian{self.at(this)}) : Double {
 
           val jij = contrHrr(a.getOrigin() as Atom{self.at(this)}, a.getPower() as Power{self.at(this)},

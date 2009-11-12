@@ -15,7 +15,7 @@ import x10x.vector.Vector;
 
 public class GMatrix extends Matrix {
     public def compute(twoE:TwoElectronIntegrals{self.at(this)}, density:Density{self.at(this)}) : void {
-        if (twoE.isDirect()) { computeDirect5(twoE, density); return; }
+        if (twoE.isDirect()) { computeDirect6(twoE, density); return; }
 
         val noOfBasisFunctions = density.getRowCount();
         val densityOneD = new Vector();
@@ -550,6 +550,164 @@ public class GMatrix extends Matrix {
                   gMatrix(x,y) *= 0.5;
     }
   
+    private def computeDirect6(twoE:TwoElectronIntegrals{self.at(this)}, density:Density{self.at(this)}) : void {
+        val N = density.getRowCount();
+
+        makeZero();
+
+        val gMatrix = getMatrix();
+        val dMatrix = density.getMatrix();
+
+        var i:Int, j:Int, k:Int, l:Int, m:Int, ij:Int, kl:Int;
+        var idx_i:Int, jdx_i:Int, kdx_i:Int, ldx_i:Int;
+        var idx:Array[Int]{rank==1}, jdx:Array[Int]{rank==1},
+            kdx:Array[Int]{rank==1}, ldx:Array[Int]{rank==1};
+        idx = Array.make[Int]([0..8]);
+        jdx = Array.make[Int]([0..8]);
+        kdx = Array.make[Int]([0..8]);
+        ldx = Array.make[Int]([0..8]);
+
+        val molecule = twoE.getMolecule();
+        val bfs = twoE.getBasisFunctions().getBasisFunctions();
+        val noOfBasisFunctions = bfs.size();
+
+        val noOfAtoms = molecule.getNumberOfAtoms();
+        var a:Int, b:Int, c:Int, d:Int;
+        var naFunc:Int, nbFunc:Int, ncFunc:Int, ndFunc:Int, twoEIndx:Int;
+        var aFunc:ArrayList[ContractedGaussian{self.at(this)}]{self.at(this)},
+            bFunc:ArrayList[ContractedGaussian{self.at(this)}]{self.at(this)},
+            cFunc:ArrayList[ContractedGaussian{self.at(this)}]{self.at(this)},
+            dFunc:ArrayList[ContractedGaussian{self.at(this)}]{self.at(this)};
+        var iaFunc:ContractedGaussian{self.at(this)}, jbFunc:ContractedGaussian{self.at(this)},
+            kcFunc:ContractedGaussian{self.at(this)}, ldFunc:ContractedGaussian{self.at(this)};
+
+        val gMatrixList:ArrayList[GMatrix]{self.at(this)} = new ArrayList[GMatrix]();
+
+        // center a
+        finish {
+          for(a=0; a<noOfAtoms; a++) {
+            aFunc = molecule.getAtom(a).getBasisFunctions();
+            naFunc = aFunc.size();
+            // basis functions on a
+            for(i=0; i<naFunc; i++) {
+                iaFunc = aFunc.get(i);
+                idx_i = iaFunc.getIndex();
+                idx(0) = idx_i; jdx(1) = idx_i; jdx(2) = idx_i; idx(3) = idx_i;
+                kdx(4) = idx_i; ldx(5) = idx_i; kdx(6) = idx_i; ldx(7) = idx_i;
+
+                // center b
+                for(b=0; b<=a; b++) {
+                    bFunc = molecule.getAtom(b).getBasisFunctions();
+                    nbFunc = (b<a) ? bFunc.size() : i+1;
+                    // basis functions on b
+                    for(j=0; j<nbFunc; j++) {
+                        jbFunc = bFunc.get(j);
+                        jdx_i = jbFunc.getIndex();
+                        jdx(0) = jdx_i; idx(1) = jdx_i; idx(2) = jdx_i; jdx(3) = jdx_i;
+                        ldx(4) = jdx_i; kdx(5) = jdx_i; ldx(6) = jdx_i; kdx(7) = jdx_i;
+                        ij = idx_i * (idx_i+1) / 2+jdx_i;
+
+                        // center c
+                        for(c=0; c<noOfAtoms; c++) {
+                            cFunc = molecule.getAtom(c).getBasisFunctions();
+                            ncFunc = cFunc.size();
+                            // basis functions on c
+                            for(k=0; k<ncFunc; k++) {
+                                kcFunc = cFunc.get(k);
+                                kdx_i = kcFunc.getIndex();
+                                kdx(0) = kdx_i; kdx(1) = kdx_i; ldx(2) = kdx_i; ldx(3) = kdx_i;
+                                jdx(4) = kdx_i; jdx(5) = kdx_i; idx(6) = kdx_i; idx(7) = kdx_i;
+
+                                // center d
+                                for(d=0; d<=c; d++) {
+                                    dFunc = molecule.getAtom(d).getBasisFunctions();
+                                    ndFunc = (d<c) ? dFunc.size() : k+1;
+                                    // basis functions on d
+                                    for(l=0; l<ndFunc; l++) {
+                                        ldFunc = dFunc.get(l);
+                                        ldx_i = ldFunc.getIndex();
+
+                                        kl = kdx_i * (kdx_i+1) / 2+ldx_i;
+                                        if (ij >= kl) { 
+                                          val i_loc = idx_i, j_loc = jdx_i, k_loc = kdx_i, l_loc = ldx_i;
+                                          val idx_loc:Array[Int]{rank==1} = Array.make[Int]([0..8]),
+                                              jdx_loc:Array[Int]{rank==1} = Array.make[Int]([0..8]),
+                                              kdx_loc:Array[Int]{rank==1} = Array.make[Int]([0..8]),
+                                              ldx_loc:Array[Int]{rank==1} = Array.make[Int]([0..8]);
+
+                                          for(var midx:Int=0; midx<8; midx++) {
+                                             idx_loc(midx) = idx(midx);
+                                             jdx_loc(midx) = jdx(midx);
+                                             kdx_loc(midx) = kdx(midx);
+                                             ldx_loc(midx) = ldx(midx);
+                                          } // end for
+
+                                          async {
+                                            var twoEIntVal:Double, twoEIntVal2:Double, twoEIntValHalf:Double;
+                                            twoEIntVal     = twoE.compute2E(i_loc, j_loc, k_loc, l_loc);
+                                            twoEIntVal2    = twoEIntVal + twoEIntVal;
+                                            twoEIntValHalf = 0.5 * twoEIntVal;
+                                            var validIdx:Array[Boolean]{rank==1} = Array.make[Boolean]([0..8]);
+                                            validIdx(0) = true;
+
+                                            val gMat_loc = GMatrix.make(new GMatrix(), N) as GMatrix{self.at(this)};
+                                            gMat_loc.makeZero();
+                                            val gMatrix_loc = gMat_loc.getMatrix();
+
+                                            setGMatrixElementsNoAtomic(gMatrix_loc, dMatrix, i_loc, j_loc, k_loc, l_loc,
+                                                                       twoEIntVal2, twoEIntValHalf);
+
+                                            // if not special case
+                                            if ((i_loc|j_loc|k_loc|l_loc) != 0) {
+                                              // else this is symmetry unique integral, so need to
+                                              // use this value for all 8 combinations
+                                              // (if unique)
+                                              ldx_loc(0) = l_loc; ldx_loc(1) = l_loc; kdx_loc(2) = l_loc; kdx_loc(3) = l_loc;
+                                              idx_loc(4) = l_loc; idx_loc(5) = l_loc; jdx_loc(6) = l_loc; jdx_loc(7) = l_loc;
+                                              validIdx(1) = true; validIdx(2) = true;
+                                              validIdx(3) = true; validIdx(4) = true;
+                                              validIdx(5) = true; validIdx(6) = true;
+                                              validIdx(7) = true;
+
+                                              // filter unique elements
+                                              filterUniqueElements(idx_loc, jdx_loc, kdx_loc, ldx_loc, validIdx);
+
+                                              // and evaluate them
+                                              for(var m:Int=1; m<8; m++) {
+                                                if (validIdx(m)) {
+                                                  setGMatrixElementsNoAtomic(gMatrix_loc, dMatrix,
+                                                                             idx_loc(m), jdx_loc(m), kdx_loc(m), ldx_loc(m),
+                                                                             twoEIntVal2, twoEIntValHalf);
+                                                } // end if
+                                              } // end m
+                                            } // end if
+
+                                            gMatrixList.add(gMat_loc);
+                                          } // async block
+                                        }  // end if
+                                    } // end l
+                                } // end d
+                            } // end k
+                        } // end c
+                    } // end j
+                } // end b
+            } // end i
+          } // end a
+        } // finish block
+
+        finish foreach(gMat in gMatrixList) {
+           val gMat_loc = (gMat as GMatrix{self.at(this)}).getMatrix();
+
+           finish ateach(var(x,y) in gMatrix.dist) 
+                  gMatrix(x,y) += gMat_loc(x,y);
+
+        } // end foreach
+
+        // half the elements
+        finish ateach(var(x,y) in gMatrix.dist)
+                  gMatrix(x,y) *= 0.5;
+    }
+
     /** find unique elements and mark the onces that are not */
     private def filterUniqueElements(idx:Array[Int]{rank==1}, jdx:Array[Int]{rank==1},
                                      kdx:Array[Int]{rank==1}, ldx:Array[Int]{rank==1},
@@ -569,7 +727,37 @@ public class GMatrix extends Matrix {
     private def setGMatrixElements(gMatrix:Array[Double]{rank==2}, dMatrix:Array[Double]{rank==2},
                                    i:Int, j:Int, k:Int, l:Int,
                                    twoEIntVal2:Double, twoEIntValHalf:Double) : void {
-        gMatrix(i,j) += dMatrix(k,l) * twoEIntVal2;
+        val v1 = dMatrix(k,l) * twoEIntVal2;
+        val v2 = dMatrix(i,j) * twoEIntVal2;
+        val v3 = dMatrix(j,l) * twoEIntValHalf;
+        val v4 = dMatrix(j,k) * twoEIntValHalf;
+        val v5 = dMatrix(i,l) * twoEIntValHalf;
+        val v6 = dMatrix(i,k) * twoEIntValHalf;
+
+        atomic {
+          gMatrix(i,j) += v1;
+          gMatrix(k,l) += v2;
+          gMatrix(i,k) -= v3; 
+          gMatrix(i,l) -= v4;
+          gMatrix(j,k) -= v5;
+          gMatrix(j,l) -= v6; 
+        } // atomic 
+
+        /**
+        atomic gMatrix(i,j) += dMatrix(k,l) * twoEIntVal2;
+        atomic gMatrix(k,l) += dMatrix(i,j) * twoEIntVal2;
+        atomic gMatrix(i,k) -= dMatrix(j,l) * twoEIntValHalf;
+        atomic gMatrix(i,l) -= dMatrix(j,k) * twoEIntValHalf;
+        atomic gMatrix(j,k) -= dMatrix(i,l) * twoEIntValHalf;
+        atomic gMatrix(j,l) -= dMatrix(i,k) * twoEIntValHalf;
+        */
+    }
+
+    /** Set the GMatrix value for a given combination */
+    private def setGMatrixElementsNoAtomic(gMatrix:Array[Double]{rank==2}, dMatrix:Array[Double]{rank==2},
+                                           i:Int, j:Int, k:Int, l:Int,
+                                           twoEIntVal2:Double, twoEIntValHalf:Double) : void {
+        gMatrix(i,j) += dMatrix(k,l) * twoEIntVal2;;
         gMatrix(k,l) += dMatrix(i,j) * twoEIntVal2;
         gMatrix(i,k) -= dMatrix(j,l) * twoEIntValHalf;
         gMatrix(i,l) -= dMatrix(j,k) * twoEIntValHalf;
