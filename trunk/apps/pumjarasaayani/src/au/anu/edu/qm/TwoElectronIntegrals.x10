@@ -345,7 +345,22 @@ public class TwoElectronIntegrals {
         val nbx = bx.region.max(0);
         val nby = by.region.max(0);
         val nbz = bz.region.max(0);
+        val maxam = nbx+nby+nbz;
+        val fmt:Array[Double]{rank==1,self.at(this)} = Array.make[Double]([0..maxam+1]);
+
+        // compute FmT
+        computeFmt(maxam, 0.25*radiusPQSquared/delta, fmt);
+
         // TODO: x10 parallel
+        for(i=0; i<nbx; i++) {
+            for(j=0; j<nby; j++) {
+                for(k=0; k<nbz; k++) {
+                    sum += bx(i) * by(j) * bz(k) * fmt(i+j+k);
+                } // end for
+            } // end for
+        } // end for
+
+        /**
         for(i=0; i<nbx; i++) {
             for(j=0; j<nby; j++) {
                 for(k=0; k<nbz; k++) {
@@ -355,12 +370,47 @@ public class TwoElectronIntegrals {
                 } // end for
             } // end for
         } // end for
+        **/
 
         return (2.0 * Math.pow(Math.PI, 2.5)
                   / (gamma1 * gamma2 * Math.sqrt(gamma1+gamma2))
                   * Math.exp(-aAlpha*bAlpha*radiusABSquared/gamma1)
                   * Math.exp(-cAlpha*dAlpha*radiusCDSquared/gamma2)
                   * sum * aNorm * bNorm * cNorm * dNorm);
+    }
+
+    protected def computeFmt(maxam:Int, T:Double, fmt:Array[Double]{rank==1,self.at(this)}) {
+        var m:Int, i:Int;
+        var num:Double, denom:Double, term:Double, sum:Double;
+        val threshold = 1.0e-15;
+
+        // lifted!
+
+        if (T > 30.0){
+           fmt(0) = Math.sqrt(Math.PI/T)*0.5;
+           
+           // TODO: x10 parallel
+           for (m=1; m <= maxam; m++) {
+               fmt(m) = fmt(m-1) *(m-0.5) / T;
+           } // end for
+
+        } else {
+           denom = maxam + 0.5;
+           term  = 0.5 / denom;
+           sum   = term;
+           i     = 0;
+           while (term > threshold)  {
+             i++;
+             denom = (denom + 1.0);
+             term  = term * T / denom;
+             sum   = sum + term;
+           } // end while
+
+           fmt(maxam) = Math.exp(-T) * sum;
+           for (m=maxam-1; m >= 0; m--) {
+              fmt(m) = (2.0 * T * fmt(m+1) + Math.exp(-T)) / (2.0 * m + 1);
+           } // end for
+        } // end if
     }
 
     /**

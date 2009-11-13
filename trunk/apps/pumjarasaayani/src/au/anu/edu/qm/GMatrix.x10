@@ -15,7 +15,7 @@ import x10x.vector.Vector;
 
 public class GMatrix extends Matrix {
     public def compute(twoE:TwoElectronIntegrals{self.at(this)}, density:Density{self.at(this)}) : void {
-        if (twoE.isDirect()) { computeDirect6(twoE, density); return; }
+        if (twoE.isDirect()) { computeDirect5(twoE, density); return; }
 
         val noOfBasisFunctions = density.getRowCount();
         val densityOneD = new Vector();
