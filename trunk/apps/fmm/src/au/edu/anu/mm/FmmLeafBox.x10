@@ -9,7 +9,7 @@ import x10x.vector.Point3d;
  * @author milthorpe
  */
 public class FmmLeafBox extends FmmBox {
-    public val atoms : GrowableRail[Atom]{self.location==this.location} = new GrowableRail[Atom]();
+    public val atoms : GrowableRail[Atom]{self.home==this.home} = new GrowableRail[Atom]();
 
     public def this(level : Int, gridLoc : GridLocation, numTerms : Int, parent : FmmBox) { 
         super(level, gridLoc, numTerms, parent);

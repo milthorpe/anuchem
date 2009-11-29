@@ -45,6 +45,11 @@ public class FmmBox {
         //return gridLoc(0) * dim * dim + gridLoc(1) * dim + gridLoc(2);
     }
 
+    public static global def getBoxLocation(index : Int, level : Int) : GridLocation {
+        dim : Int = Math.pow2(level) as Int;
+        return GridLocation(index / (dim * dim), (index / dim) % dim, index % dim);
+    }
+
     public global def getCentre(size : Double) : Point3d {
         dim : Int = Math.pow2(level);
         sideLength : Double = size / dim;
@@ -65,25 +70,29 @@ public class FmmBox {
      * boxes separating them.
      */
     public global def wellSeparated(ws : Int, box2 : FmmBox) : Boolean {
+        return wellSeparated(ws, box2.gridLoc);
+    }
+
+    /**
+     * Returns true if this box is well-separated from <code>box2Loc</code>
+     * on the same level, i.e. if there are at least <code>ws</code>
+     * boxes separating them.
+     */
+    public global def wellSeparated(ws : Int, box2Loc : GridLocation) : Boolean {
         if (level < 2)
             return false;
-        //if (this == box2)
-        //    return false;
         // TODO can do reduction on a Rail?
-        val box2GridLoc = box2.gridLoc;
-        return Math.abs(gridLoc.x - box2GridLoc.x) > ws 
-            || Math.abs(gridLoc.y - box2GridLoc.y) > ws 
-            || Math.abs(gridLoc.z - box2GridLoc.z) > ws;
-        /*
-        return Math.abs(gridLoc(0) - box2GridLoc(0)) > ws 
-            || Math.abs(gridLoc(1) - box2GridLoc(1)) > ws 
-            || Math.abs(gridLoc(2) - box2GridLoc(2)) > ws;
-        */
+        return Math.abs(gridLoc.x - box2Loc.x) > ws 
+            || Math.abs(gridLoc.y - box2Loc.y) > ws 
+            || Math.abs(gridLoc.z - box2Loc.z) > ws;
     }
 
     public global def getTranslationIndex(box2 : FmmBox) : GridLocation {
-        return GridLocation(gridLoc.x - box2.gridLoc.x, gridLoc.y - box2.gridLoc.y, gridLoc.z - box2.gridLoc.z);
-        //return [gridLoc(0) - box2.gridLoc(0), gridLoc(1) - box2.gridLoc(1), gridLoc(2) - box2.gridLoc(2)];
+        return getTranslationIndex(box2.gridLoc);
+    }
+
+    public global def getTranslationIndex(loc2 : GridLocation) : GridLocation {
+        return GridLocation(gridLoc.x - loc2.x, gridLoc.y - loc2.y, gridLoc.z - loc2.z);
     }
 }
 

@@ -30,9 +30,9 @@ public class Atom {
      * but transferring all fields to the current place.
      */
     public def this(atom : Atom) {
-        this.centre = at (atom.location) {atom.centre};
-        this.charge = at (atom.location) {atom.charge};
-        this.force = at (atom.location) {atom.force};
+        this.centre = at (atom.home) {atom.centre};
+        this.charge = at (atom.home) {atom.charge};
+        this.force = at (atom.home) {atom.force};
     }
 
     public def this(centre : Point3d) { 
