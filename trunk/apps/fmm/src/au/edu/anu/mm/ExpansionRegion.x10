@@ -3,7 +3,9 @@ package au.edu.anu.mm;
 import x10.array.BaseRegion;
 import x10.array.U;
 
-public class ExpansionRegion extends BaseRegion{self.rank==2}  {
+public class ExpansionRegion extends BaseRegion  {
+    // XTENLANG-49
+    static type ExpansionRegion(rank:nat) = ExpansionRegion{self.rank==rank};
     global val p : Int;
 
     /**
@@ -11,7 +13,7 @@ public class ExpansionRegion extends BaseRegion{self.rank==2}  {
      * or local expansion of the given dimension.
      * @param p the dimension of the expansion
      */
-    public def this(p : Int) {
+    public def this(p : Int): ExpansionRegion(2) {
         super(2, false, true);
         this.p = p;
     }
