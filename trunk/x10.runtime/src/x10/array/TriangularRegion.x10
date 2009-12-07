@@ -1,6 +1,9 @@
 package x10.array;
 
-public class TriangularRegion extends BaseRegion{rank==2} {
+public class TriangularRegion extends BaseRegion {
+    // XTENLANG-49
+    static type TriangularRegion(rank:nat) = TriangularRegion{self.rank==rank};
+
     global val dim : Int;
     global val rowMin : Int;
     global val colMin : Int;
@@ -10,8 +13,8 @@ public class TriangularRegion extends BaseRegion{rank==2} {
      * Constructs a new TriangularRegion 
      * @param p the dimension of the triangular array
      */
-    public def this(rowMin: Int, colMin: Int, size: Int, lower: Boolean) {
-        super(size, false, true);
+    public def this(rowMin: Int, colMin: Int, size: Int, lower: Boolean): TriangularRegion(2) {
+        super(2, false, true);
         this.dim = size;
         this.rowMin = rowMin;
         this.colMin = colMin;
