@@ -57,8 +57,8 @@ public class LocalExpansion extends Expansion {
      * @param shift the multipole expansion of the translation
      * @param source the source local expansion, centred at the origin
      */
-    public global def translateAndAddLocal(shift : MultipoleExpansion,
-                                         source : LocalExpansion) {
+    public global def translateAndAddLocal(shift : MultipoleExpansion!,
+                                         source : LocalExpansion!) {
         val p : Int = source.terms.region.max(0);
         for (val (l,m): Point in this.terms) {
             for (var j : Int = l; j<=p; j++) { // TODO XTENLANG-504
@@ -83,7 +83,7 @@ public class LocalExpansion extends Expansion {
                                          source : MultipoleExpansion) {
         val p : Int = source.terms.region.max(0);
         for (val (j,k): Point in source.terms) {
-            val O_jk : Complex = source.terms(j,k);
+            val O_jk = source.terms(j,k);
             for (var l : Int = 0; l <= p-j; l++) { // TODO XTENLANG-504
                 for (var m : Int = -l; m<=l; m++) { // TODO XTENLANG-504
                     if (Math.abs(k+m) <= (j+l)) {
