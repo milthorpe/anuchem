@@ -1,6 +1,5 @@
 package au.edu.anu.mm;
 
-import x10.util.GrowableRail;
 import x10x.vector.Point3d;
 
 /**

@@ -15,7 +15,7 @@ public class FmmLeafBox extends FmmBox {
         super(level, gridLoc, numTerms, parent);
     }
 
-    public def addAtom(atom : Atom) {
+    public atomic def addAtom(atom : Atom) {
         atoms.add(atom);
     }
 }

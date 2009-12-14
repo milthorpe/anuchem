@@ -24,11 +24,9 @@ public class Expansion {
         this.terms = Array.make[Complex](expRegion->here, (Point) => Complex.ZERO);
     }
 
-    public global def add(e : Expansion!) {
-        atomic {
-            for (val p in terms.region) {
-                this.terms(p) = this.terms(p) + e.terms(p);
-            }
+    public global atomic def add(e : Expansion!) {
+        for (val p in terms.region) {
+            this.terms(p) = this.terms(p) + e.terms(p);
         }
     }
 
