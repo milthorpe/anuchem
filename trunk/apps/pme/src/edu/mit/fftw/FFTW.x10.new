@@ -1,0 +1,21 @@
+package edu.mit.fftw;
+
+import x10.compiler.Native;
+import x10.compiler.NativeRep;
+
+public class FFTW {
+    const ESTIMATE = 0;
+    const MEASURE = 1;
+    const OUT_OF_PLACE = 0;
+    const IN_PLACE = 8;
+    const USE_WISDOM = 16;
+    /** guarantee plan is read-only so that the same plan can be used in parallel by multiple threads */
+    const THREADSAFE = 128;
+    /** internal flag, forces buffering in fftwnd transforms */
+    const FORCE_BUFFERED = 256;
+    /** internal flag, prevents use of vector recursion */
+    const NO_VECTOR_RECURSE = 512;    
+
+    //@Native("c++", "fftwEstimate1d(#1, #2, #3, (#4 ? -1 : 1))")
+    public extern static def fftwEstimate1D() : Void;
+}

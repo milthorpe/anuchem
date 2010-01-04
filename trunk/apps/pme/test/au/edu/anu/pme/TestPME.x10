@@ -28,7 +28,7 @@ public class TestPME {
                 }
             }
         } else {
-            Console.ERR.println("usage: TestFmm3d numParticles [density] [numTerms] [wellSpaced]");
+            Console.ERR.println("usage: TestPME numParticles [density] [numTerms] [wellSpaced]");
             return;
         }
 
