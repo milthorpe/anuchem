@@ -5,13 +5,19 @@ package au.edu.anu.fft;
  */
 public class DFT {
 	public static def dft1D(input : Rail[Complex]!, forward : boolean) : Rail[Complex]! {
-        val N = input.length;
-        val output = Rail.make[Complex](N, (Int) => Complex.ZERO);
-        for (var m:int=0; m<output.length; m++) {
+        val sign = forward ? -1.0 : 1.0;
+        val n = input.length;
+        val N = n as Double;
+        val output = Rail.make[Complex](n, (Int) => Complex.ZERO);
+        for (var m:int=0; m<n; m++) {
+            val mDivN = (m as Double)* sign * 2.0 * Math.PI / N ;
+            var mKDivN : Double = 0.0;
             var sum : Complex = Complex.ZERO;        
-            for (var k:int=0; k<input.length; k++) {
-                output(m) = output(m) + input(k) * Complex.exp(Complex.I * 2.0 * Math.PI * ((m * k) / N)); 
+            for (var k:int=0; k<n; k++) {
+                sum = sum + input(k) * Complex.exp(Complex.I * mKDivN); 
+                mKDivN += mDivN;
             }
+            output(m) = sum;
         }
         return output;
     }
