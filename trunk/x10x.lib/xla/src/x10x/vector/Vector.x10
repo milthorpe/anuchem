@@ -88,7 +88,7 @@ public class Vector {
     /**
      * The size of this matrix
      */
-    public def getSize() : Int = vec.region.max(0);
+    public global def getSize() : Int = vec.region.max(0);
  
     /**
      * Actual data stored
@@ -200,7 +200,7 @@ public class Vector {
         return res;
     }
 
-    public def toString() : String {
+    public global safe def toString() : String {
          var str : String = "";
          val N = getSize();
 

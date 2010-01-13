@@ -139,8 +139,8 @@ public class Matrix {
     public def dist() : Dist{rank==2} = distribution;
 
     public def getMatrix() : Array[Double]{rank==2} = mat;
-    public def getRowCount() : Int = mat.region.max(0);
-    public def getColCount() : Int = mat.region.max(1);
+    public global def getRowCount() : Int = mat.region.max(0);
+    public global def getColCount() : Int = mat.region.max(1);
 
     /**
      * Perform symmetric orthogonalization of this matrix
@@ -207,10 +207,9 @@ public class Matrix {
          val N1  = x.getRowCount();
          val M   = x.getColCount();
          val res:Matrix{self.at(this)} = Matrix.make(N, M) as Matrix{self.at(this)};
-         var cij:Double;
 
          finish ateach(val(i, j) in res.mat.dist) {
-            cij = 0.0;
+            var cij:Double = 0.0;
             for(var k:Int=0; k<N1; k++) 
                cij += mat(i, k) * x.mat(k, j);
             res.mat(i, j) = cij;
@@ -293,7 +292,7 @@ public class Matrix {
        return sum; 
     }
 
-    public def toString() : String { 
+    public global safe def toString() : String { 
          var str : String = "";
          val N = getRowCount();
          val M = getColCount();
