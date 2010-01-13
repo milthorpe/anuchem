@@ -187,7 +187,7 @@ public class GMatrix extends Matrix {
         } // end i loop
 
         // half the elements
-        finish ateach(var(a,b) in gMatrix.dist)
+        finish ateach(val(a,b) in gMatrix.dist)
                   gMatrix(a,b) *= 0.5;
     }
 
@@ -313,7 +313,7 @@ public class GMatrix extends Matrix {
         } // end a
 
         // half the elements
-        finish ateach(var(x,y) in gMatrix.dist)
+        finish ateach(val(x,y) in gMatrix.dist)
                   gMatrix(x,y) *= 0.5;
     }  
 
@@ -404,7 +404,7 @@ public class GMatrix extends Matrix {
         } // finish block
 
         // half the elements
-        finish ateach(var(a,b) in gMatrix.dist)
+        finish ateach(val(a,b) in gMatrix.dist)
                   gMatrix(a,b) *= 0.5;
     }
 
@@ -546,7 +546,7 @@ public class GMatrix extends Matrix {
         } // finish block
 
         // half the elements
-        finish ateach(var(x,y) in gMatrix.dist)
+        finish ateach(val(x,y) in gMatrix.dist)
                   gMatrix(x,y) *= 0.5;
     }
   
@@ -698,13 +698,13 @@ public class GMatrix extends Matrix {
         finish foreach(gMat in gMatrixList) {
            val gMat_loc = (gMat as GMatrix{self.at(this)}).getMatrix();
 
-           finish ateach(var(x,y) in gMatrix.dist) 
+           finish ateach(val(x,y) in gMatrix.dist) 
                   gMatrix(x,y) += gMat_loc(x,y);
 
         } // end foreach
 
         // half the elements
-        finish ateach(var(x,y) in gMatrix.dist)
+        finish ateach(val(x,y) in gMatrix.dist)
                   gMatrix(x,y) *= 0.5;
     }
 

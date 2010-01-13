@@ -43,11 +43,11 @@ public class Molecule {
        return ne;
     }
 
-    public def toString() : String {
+    public global safe def toString() : String {
        var str:String = "";
 
        for(atm:Atom{self.at(this)} in atomList) 
-         str += atm.getSymbol() + " " + atm.getX() + " " + atm.getY() + " " + atm.getZ() + "\n";
+         str += atm.toString() + "\n";
 
        return str;
     }

@@ -50,5 +50,9 @@ public class Atom {
 
         return (x*x + y*y + z*z);
     }
+
+    public global safe def toString() : String {
+        return symbol + " " + x + " " + y + " " + z;
+    }
 }
 

@@ -98,6 +98,91 @@ public class TwoElectronIntegrals {
                          ka:ContractedGaussian{self.at(this)}, la:ContractedGaussian{self.at(this)}) : Double {
         return coulomb(ia, ja, ka, la);
     }
+ 
+    public interface TwoEAvailable {
+        public def coulomb(i:Int, j:Int, k:Int, l:Int, twoE:Double) : void;
+    }
+
+    public def compute2E(i:Int, j:Int, k:Int, l:Int, twoEUpdate:TwoEAvailable) : void {        
+         var jij:Double = 0.0;
+
+         val a = contractedList.get(i);
+         val b = contractedList.get(j);
+         val c = contractedList.get(k);
+         val d = contractedList.get(l);
+
+         val aExps   = a.getExponents();
+         val aCoefs  = a.getCoefficients();
+         val aNorms  = a.getPrimNorms();
+         val aOrigin = a.getOrigin();
+         val aPower  = a.getPower();
+
+         val bExps   = b.getExponents();
+         val bCoefs  = b.getCoefficients();
+         val bNorms  = b.getPrimNorms();
+         val bOrigin = b.getOrigin();
+         val bPower  = b.getPower();
+
+         val cExps   = c.getExponents();
+         val cCoefs  = c.getCoefficients();
+         val cNorms  = c.getPrimNorms();
+         val cOrigin = c.getOrigin();
+         val cPower  = c.getPower();
+
+         val dExps   = d.getExponents();
+         val dCoefs  = d.getCoefficients();
+         val dNorms  = d.getPrimNorms();
+         val dOrigin = d.getOrigin();
+         val dPower  = d.getPower();
+
+         var ii:Int, jj:Int, kk:Int, ll:Int;
+         var iaExp:Double, iaCoef:Double, iaNorm:Double,
+             jbExp:Double, jbCoef:Double, jbNorm:Double,
+             kcExp:Double, kcCoef:Double, kcNorm:Double;
+
+         val na = aExps.size();
+         val nb = bExps.size();
+         val nc = cExps.size();
+         val nd = dExps.size();
+
+         // TODO: x10 parallel
+         for(ii=0; ii<na; ii++) {
+             iaCoef = aCoefs.get(ii);
+             iaExp  = aExps.get(ii);
+             iaNorm = aNorms.get(ii);
+
+             for(jj=0; jj<nb; jj++) {
+                jbCoef = bCoefs.get(jj);
+                jbExp  = bExps.get(jj);
+                jbNorm = bNorms.get(jj);
+
+                for(kk=0; kk<nc; kk++) {
+                    kcCoef = cCoefs.get(kk);
+                    kcExp  = cExps.get(kk);
+                    kcNorm = cNorms.get(kk);
+
+                    for(ll=0; ll<nd; ll++) {
+                        jij += iaCoef * jbCoef * kcCoef
+                               * dCoefs.get(ll)
+                               * coulombRepulsion(
+                                         aOrigin, iaNorm, aPower, iaExp,
+                                         bOrigin, jbNorm, bPower, jbExp,
+                                         cOrigin, kcNorm, cPower, kcExp,
+                                         dOrigin,
+                                         dNorms.get(ll),
+                                         dPower,
+                                         dExps.get(ll)
+                                        ); 
+                    } // end l loop
+                } // end k loop
+             } // end j loop
+         } // end i loop
+
+         jij = a.getNormalization() * b.getNormalization()
+                 * c.getNormalization() * d.getNormalization() * jij;
+
+         twoEUpdate.coulomb(i,j,k,l, jij);
+    }
 
     protected def compute2E() : void {
         val bfs = basisFunctions.getBasisFunctions();
