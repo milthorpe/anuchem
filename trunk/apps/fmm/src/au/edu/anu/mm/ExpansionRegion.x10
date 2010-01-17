@@ -5,7 +5,7 @@ import x10.array.U;
 
 public class ExpansionRegion extends BaseRegion  {
     // XTENLANG-49
-    static type ExpansionRegion(rank:nat) = ExpansionRegion{self.rank==rank};
+    static type ExpansionRegion(rank:Int) = ExpansionRegion{self.rank==rank};
     global val p : Int;
 
     /**
@@ -132,7 +132,7 @@ public class ExpansionRegion extends BaseRegion  {
         } 
     }
 
-    public global def toString(): String {
+    public global safe def toString(): String {
         return "ExpansionRegion (p = " + p + ")";
     }
 }

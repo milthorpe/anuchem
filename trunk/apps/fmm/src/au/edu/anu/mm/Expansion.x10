@@ -30,7 +30,7 @@ public class Expansion {
         }
     }
 
-    public global def toString() : String {
+    public global safe def toString() : String {
         val p : Int = terms.region.max(0);
         val s = new StringBuilder();
         for (val(i) : Point in [0..p]) {
