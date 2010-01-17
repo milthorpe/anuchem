@@ -2,7 +2,7 @@ package x10.array;
 
 public class TriangularRegion extends BaseRegion {
     // XTENLANG-49
-    static type TriangularRegion(rank:nat) = TriangularRegion{self.rank==rank};
+    static type TriangularRegion(rank:Int) = TriangularRegion{self.rank==rank};
 
     global val dim : Int;
     global val rowMin : Int;
@@ -150,7 +150,7 @@ public class TriangularRegion extends BaseRegion {
         } 
     }
 
-    public global def toString(): String {
+    public global safe def toString(): String {
         val triangleString = "triangular region " + colMin + ".." + (colMin + dim) + "," + rowMin + ".." + (rowMin + dim);
         if (lower) {
             return "lower " + triangleString;
