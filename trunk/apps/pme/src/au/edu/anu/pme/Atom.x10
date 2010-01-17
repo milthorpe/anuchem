@@ -42,5 +42,9 @@ public class Atom {
     public def pairEnergy(atom2 : Atom) : Double {
         return charge * (atom2.charge) / centre.distance(atom2.centre);
     }
+
+    public global safe def toString() : String {
+        return "atom: charge = " + charge + " centre = " + centre;
+    }
 }
 

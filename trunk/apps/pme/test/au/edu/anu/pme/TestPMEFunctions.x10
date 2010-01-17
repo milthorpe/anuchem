@@ -13,16 +13,38 @@ public class TestPMEFunctions {
     private static val R = new Random(RANDOM_SEED);
 
     public static def main(args : Rail[String]!) {
-        val atoms : Rail[Atom] = ValRail.make[Atom](5, (i : Int) => new Atom(new Point3d(randomUnit(), randomUnit(), randomUnit()), i%3==4?1:-1));
-        val topLeftFront = new Point3d(-1.0, -1.0, -1.0);
-        val pme = new PME(topLeftFront, 2.0, atoms);
+        val atoms = ValRail.make[Atom](2, (i : Int) => new Atom(new Point3d(randomUnit(), randomUnit(), randomUnit()), i%3==4?1:-1));
+        val gridSize = ValRail.make[Int](3, (Int) => 12);
+        val pme = new PME(2.0, gridSize, atoms);
         val v = new Vector3d(0.6, -0.4, 0.33);
         val r = pme.getScaledFractionalCoordinates(v);
         Console.OUT.println(r);
+
+        val m404 = pme.bSpline(4, 0.4);
+        Console.OUT.println("M_4(0.4) = " + m404);
+
+        for (var a : int=0; a<atoms.length; a++) {
+            Console.OUT.println(atoms(a));
+        }
+
+        val q = pme.getGriddedCharges(2);
+        Console.OUT.println(q);
+        for (p in q) {
+            if (q(p) != 0.0) {
+                Console.OUT.println(p + " = " + q(p));
+            }
+        }
+
+        val B = pme.getBArray(4);
+        for (p in B) {
+            if (B(p) != 0.0) {
+                Console.OUT.println(p + " = " + B(p));
+            }
+        }
     }
 
     static def randomUnit() : Double {
-        return (R.nextDouble() - 0.5) * 2.0;
+        return (R.nextDouble()) * 2.0;
     }
 }
 

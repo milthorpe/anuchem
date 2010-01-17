@@ -4,11 +4,8 @@ import x10x.vector.Point3d;
 import x10x.vector.Vector3d;
 
 public class PME {
-	/** The cartesian location of the top-left-front corner of the simulation cube. */
-    public val topLeftFront : Point3d;
-
-    /** The length of a side of the simulation cube. */
-    public val size : Double;
+    /** The number of grid lines in each dimension of the simulation unit cell. */
+    public val gridSize : ValRail[Int](3);
 
     /** The edges of the unit cell. TODO: non-cubic cells */
     public val edges : ValRail[Vector3d](3);
@@ -17,15 +14,18 @@ public class PME {
     public val edgeReciprocals : ValRail[Vector3d](3);
 
 	val atoms : ValRail[Atom];
+
+    val gridRegion : Region(3);
 	
-    public def this(topLeftFront : Point3d,
-            size : Double,
+    public def this(size : Double,
+            gridSize : ValRail[Int](3),
             atoms : ValRail[Atom]) {
-	    this.topLeftFront = topLeftFront;
-        this.size = size;
+        this.gridSize = gridSize;
         this.edges = [new Vector3d(size, 0.0, 0.0), new Vector3d(0.0, size, 0.0), new Vector3d(0.0, 0.0, size)];
         this.edgeReciprocals = [new Vector3d(1.0 / size, 0.0, 0.0), new Vector3d(0.0, 1.0 / size, 0.0), new Vector3d(0.0, 0.0, 1.0 / size)];
         this.atoms = atoms;
+        val r = Region.makeRectangular(0, gridSize(0)-1);
+        gridRegion = (r * [0..(gridSize(1)-1)] * [0..(gridSize(2)-1)]) as Region(3);
     }
 	
     public def calculateEnergy() : Double {
@@ -36,14 +36,99 @@ public class PME {
                 directEnergy += 2 * pairEnergy;
             }
         }
-         Console.OUT.println("directEnergy = " + directEnergy);
-         return directEnergy;
+        Console.OUT.println("directEnergy = " + directEnergy);
+        return directEnergy;
+    }
+
+    /** 
+     * Calculates the gridded charge array Q as defined in Eq. 4.6,
+     * using Cardinal B-spline interpolation.
+     */
+    public def getGriddedCharges(n : Int) : Array[Double](3) {
+        val Q = Array.make[Double](gridRegion);
+        for ((i) in 0..atoms.length-1) {
+            val atom = atoms(i);
+            val q = atom.charge;
+            val u = getScaledFractionalCoordinates(new Vector3d(atom.centre));
+            val u1i = u.i as Int;
+            val u2i = u.j as Int;
+            val u3i = u.k as Int;
+            for (k(k1,k2,k3) : Point(3) in [u1i-n..u1i+n,u2i-n..u2i+n,u3i-n..u3i+n]) {
+                for ((n1, n2, n3) : Point(3) in [-1..1,-1..1,-1..1]) { // TODO: for n > gridSize
+                    Q(k) += q * bSpline(n, u.i - k1 - n1 * gridSize(0))
+                                 * bSpline(n, u.j - k2 - n2 * gridSize(1))
+                                 * bSpline(n, u.k - k3 - n3 * gridSize(2));
+                }
+            }
+        }
+        /*
+        // Works exactly as per definition, but horribly inefficient.
+        for (k(k1, k2, k3) in gridRegion) {
+            var sum : Double = 0.0;
+            for ((i) in 0..atoms.length-1) {
+                val atom = atoms(i);
+                val q = atom.charge;
+                val u = getScaledFractionalCoordinates(new Vector3d(atom.centre));
+                val u1i = u.i;
+                val u2i = u.j;
+                val u3i = u.k;
+                for ((n1, n2, n3) : Point(3) in [-n..n,-n..n,-n..n]) {
+                    sum += q * bSpline(n, u1i - k1 - n1 * gridSize(0))
+                             * bSpline(n, u2i - k2 - n2 * gridSize(1))
+                             * bSpline(n, u3i - k3 - n3 * gridSize(2));
+                 }
+            }
+            Q(k) = su
+        }*/
+        return Q;
+    }
+
+    public def getBArray(n : Int) {
+        val B = Array.make[Double](gridRegion);
+        for (m(m1,m2,m3) in gridRegion) {
+            // TODO: use proper array regions!
+            val m1D = m1 as Double;
+            val m2D = m2 as Double;
+            val m3D = m3 as Double;
+            var sumK : Complex = Complex.ZERO;
+            for ((k) in 0..(n-2)) {
+                sumK = sumK + bSpline(n, k+1) * (2.0 * Math.PI * Complex.I * m1D * k * gridSize(0)).exp();
+            }
+            val b1 = ((2.0 * Math.PI * Complex.I * (n - 1.0) * m1D / gridSize(0)).exp()
+                    * 1.0 / sumK).abs();
+            sumK = Complex.ZERO;
+            for ((k) in 0..(n-2)) {
+                sumK = sumK + bSpline(n, k+1) * (2.0 * Math.PI * Complex.I * m2D * k * gridSize(1)).exp();
+            }
+            val b2 = ((2.0 * Math.PI * Complex.I * (n - 1.0) * m2D / gridSize(1)).exp()
+                    * 1.0 / sumK).abs();
+            sumK = Complex.ZERO;
+            for ((k) in 0..(n-2)) {
+                sumK = sumK + bSpline(n, k+1) * (2.0 * Math.PI * Complex.I * m3D * k * gridSize(2)).exp();
+            }
+            val b3 = ((2.0 * Math.PI * Complex.I * (n - 1.0) * m3D / gridSize(2)).exp()
+                    * 1.0 / sumK).abs();
+            B(m) = b1 * b1 * b2 * b2 * b3 * b3;
+        }
+        return B;
+    }
+
+
+    /* 
+     * Gets the nth order B-spline M_n(u) as per Eq. 4.1
+     */
+    public def bSpline(n : Int, u : Double) : Double {
+        if (u < 0.0 || u > n) {
+            return 0.0;
+        } else if (n == 2) {
+            return 1.0 - Math.abs(u - 1.0);
+        } else {
+            return u / (n - 1) * bSpline(n-1, u) + (n - u) / (n - 1) * bSpline(n-1, u-1.0);
+        }
     }
     
+    /** Gets scaled fractional coordinate u as per Eq. 3.1 */
     public def getScaledFractionalCoordinates(r : Vector3d) : Vector3d {
-        return new Vector3d(r.dot(edgeReciprocals(0)), r.dot(edgeReciprocals(1)), r.dot(edgeReciprocals(2)));
+        return new Vector3d(edgeReciprocals(0).mul(gridSize(0)).dot(r), edgeReciprocals(1).mul(gridSize(1)).dot(r), edgeReciprocals(2).mul(gridSize(2)).dot(r));
     }
-
-
-    public def w2(u : Double) = Math.abs(u) <= 1 ? 1 : 0;
 }

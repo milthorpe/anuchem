@@ -35,13 +35,13 @@ public class TestPME {
         
         /* Assign particles to random locations within a -1..1 3D box, with unit charge (1/3 are negative). */
         val atoms : Rail[Atom] = ValRail.make[Atom](numParticles, (i : Int) => new Atom(new Point3d(randomUnit(), randomUnit(), randomUnit()), i%3==4?1:-1));
-        val topLeftFront = new Point3d(-1.0, -1.0, -1.0);
-        val energy : Double = new PME(topLeftFront, 2.0, atoms).calculateEnergy();
+        val gridSize = ValRail.make[Int](3, (Int) => 10);
+        val energy : Double = new PME(2.0, gridSize, atoms).calculateEnergy();
         Console.OUT.println("energy = " + energy);
     }
 
     static def randomUnit() : Double {
-        return (R.nextDouble() - 0.5) * 2.0;
+        return (R.nextDouble()) * 2.0;
     }
 }
 
