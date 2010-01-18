@@ -53,11 +53,22 @@ public class PME {
             val u1i = u.i as Int;
             val u2i = u.j as Int;
             val u3i = u.k as Int;
-            for (k(k1,k2,k3) : Point(3) in [u1i-n..u1i+n,u2i-n..u2i+n,u3i-n..u3i+n]) {
-                for ((n1, n2, n3) : Point(3) in [-1..1,-1..1,-1..1]) { // TODO: for n > gridSize
-                    Q(k) += q * bSpline(n, u.i - k1 - n1 * gridSize(0))
-                                 * bSpline(n, u.j - k2 - n2 * gridSize(1))
-                                 * bSpline(n, u.k - k3 - n3 * gridSize(2));
+            /*val spreadRegion = [ ..((u1i+n)%gridSize(0)), 
+                                 ((u2i-n)%gridSize(1))..((u2i+n)%gridSize(1)),
+                                 ((u3i-n)%gridSize(2))..((u3i+n)%gridSize(2)) ] as Region(3);
+            Console.OUT.println("spreadRegion = " + spreadRegion);*/
+            for (var kk1:Int=u1i-n;kk1<=u1i+n;kk1++) {
+                val k1=(kk1+gridSize(0))%gridSize(0);
+                for (var kk2:Int=u2i-n;kk2<=u2i+n;kk2++) {
+                    val k2=(kk2+gridSize(1))%gridSize(1);
+                    for (var kk3:Int=u3i-n;kk3<=u3i+n;kk3++) {
+                        val k3=(kk3+gridSize(2))%gridSize(2);
+            //for (k(k1,k2,k3) : Point(3) in spreadRegion) {
+                //for ((n1, n2, n3) : Point(3) in [-1..1,-1..1,-1..1]) { // TODO: for n > gridSize
+                        Q(k1,k2,k3) += q * bSpline(n, (u.i - kk1) % gridSize(0))
+                                     * bSpline(n, (u.j - kk2) % gridSize(1))
+                                     * bSpline(n, (u.k - kk3) % gridSize(2));
+                    }
                 }
             }
         }

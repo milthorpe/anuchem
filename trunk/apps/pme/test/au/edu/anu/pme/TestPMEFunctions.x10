@@ -13,7 +13,7 @@ public class TestPMEFunctions {
     private static val R = new Random(RANDOM_SEED);
 
     public static def main(args : Rail[String]!) {
-        val atoms = ValRail.make[Atom](2, (i : Int) => new Atom(new Point3d(randomUnit(), randomUnit(), randomUnit()), i%3==4?1:-1));
+        val atoms = ValRail.make[Atom](3, (i : Int) => new Atom(new Point3d(randomUnit(), randomUnit(), randomUnit()), i%3==4?1:-1));
         val gridSize = ValRail.make[Int](3, (Int) => 12);
         val pme = new PME(2.0, gridSize, atoms);
         val v = new Vector3d(0.6, -0.4, 0.33);
@@ -27,18 +27,21 @@ public class TestPMEFunctions {
             Console.OUT.println(atoms(a));
         }
 
-        val q = pme.getGriddedCharges(2);
+        val q = pme.getGriddedCharges(4);
         Console.OUT.println(q);
+        var nonZero : Int = 0;
         for (p in q) {
             if (q(p) != 0.0) {
-                Console.OUT.println(p + " = " + q(p));
+                nonZero++;
+                //Console.OUT.println(p + " = " + q(p));
             }
         }
+        Console.OUT.println("nonZero = " + nonZero);
 
         val B = pme.getBArray(4);
         for (p in B) {
             if (B(p) != 0.0) {
-                Console.OUT.println(p + " = " + B(p));
+            //    Console.OUT.println(p + " = " + B(p));
             }
         }
     }
