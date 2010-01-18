@@ -15,6 +15,10 @@ public class Vector3d extends Tuple3d {
         super(i, j, k);
     }
 
+    public def this(t : Tuple3d) {
+        super(t.i, t.j, t.k);
+    }
+
     public global def dot(vec : Vector3d) : Double {
         return this.i * vec.i + this.j * vec.j + this.k * vec.k;
     }
