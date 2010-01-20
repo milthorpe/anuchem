@@ -134,14 +134,23 @@ public class PME {
      * Calculates the array C as defined by Eq 3.9
      * @param beta the Ewald coefficient beta
      */
-    public def getCArray(beta : Int) {
+    public def getCArray(beta : Double) {
         val C = Array.make[Double](gridRegion);
         val V = getVolume();
         Console.OUT.println("V = " + V);
         for (m(m1,m2,m3) in gridRegion) {
-            val mSquared = m1 * m1 + m2 * m2 + m3 * m3;
-            C(m) = 1.0 / (Math.PI * V) * (-(Math.PI*Math.PI) * mSquared / (beta * beta)).exp() / mSquared;
+            val m1prime = m1 <= K1/2 ? m1 : m1 - K1;
+            val m2prime = m2 <= K2/2 ? m2 : m2 - K2;
+            val m3prime = m3 <= K3/2 ? m3 : m3 - K3;
+            val mVec = edgeReciprocals(0).mul(m1prime).add(edgeReciprocals(1).mul(m2prime)).add(edgeReciprocals(2).mul(m3prime));
+            //Console.OUT.println("mVec = " + mVec);
+            val mSquared = mVec.dot(mVec);
+            //Console.OUT.println("mSquared = " + mSquared);
+            //val mSquared = m1 * m1 + m2 * m2 + m3 * m3;
+            C(m) = Math.exp(-(Math.PI*Math.PI) * mSquared / (beta * beta)) / (mSquared * Math.PI * V);
         }
+        C(0,0,0) = 0.0;
+        return C;
     }
 
     /* 
@@ -166,6 +175,6 @@ public class PME {
      * Gets the volume V of the unit cell.
      */
     public def getVolume() {
-        return edges(0).cross(edges(1)).dot(edges(2);
+        return edges(0).cross(edges(1)).dot(edges(2));
     }
 }

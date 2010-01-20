@@ -41,14 +41,11 @@ public class TestPMEFunctions {
         val B = pme.getBArray(4);
         var sum : Double = 0.0;
         for (p in B) {
-            if (B(p) != 0.0) {
-                sum += B(p);
-            }
+            sum += B(p);
         }
         Console.OUT.println("sum B = " + sum);
 
         val C = pme.getCArray(0.35);
-        var sum : Double = 0.0;
         for (p in C) {
             if (C(p) != 0.0) {
                 Console.OUT.println(p + " = " + C(p));
