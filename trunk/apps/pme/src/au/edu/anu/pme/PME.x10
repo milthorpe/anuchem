@@ -21,19 +21,35 @@ public class PME {
 	val atoms : ValRail[Atom];
 
     val gridRegion : Region(3);
-	
-    public def this(size : Double,
+    
+    /** The order of B-spline interpolation */
+    val n : Int;
+
+    /** The Ewald coefficient beta */
+    val beta : Double;
+
+    /**
+     * Creates a new particle mesh Ewald method.
+     * @param size the side length of the unit cube // TODO non-cubic boxes
+     * @param n the order of B-spline interpolation
+     * @param beta the Ewald coefficient beta
+     */
+    public def this(edges : ValRail[Vector3d](3),
             gridSize : ValRail[Int](3),
-            atoms : ValRail[Atom]) {
+            atoms : ValRail[Atom],
+            n : Int,
+            beta : Double) {
         this.gridSize = gridSize;
         K1 = gridSize(0) as Double;
         K2 = gridSize(1) as Double;
         K3 = gridSize(2) as Double;
-        this.edges = [new Vector3d(size, 0.0, 0.0), new Vector3d(0.0, size, 0.0), new Vector3d(0.0, 0.0, size)];
-        this.edgeReciprocals = [new Vector3d(1.0 / size, 0.0, 0.0), new Vector3d(0.0, 1.0 / size, 0.0), new Vector3d(0.0, 0.0, 1.0 / size)];
+        this.edges = edges;
+        this.edgeReciprocals = ValRail.make[Vector3d](3, (i : Int) => edges(i).inverse());
         this.atoms = atoms;
         val r = Region.makeRectangular(0, gridSize(0)-1);
         gridRegion = (r * [0..(gridSize(1)-1)] * [0..(gridSize(2)-1)]) as Region(3);
+        this.n = n;
+        this.beta = beta;
     }
 	
     public def calculateEnergy() : Double {
@@ -51,9 +67,8 @@ public class PME {
     /** 
      * Calculates the gridded charge array Q as defined in Eq. 4.6,
      * using Cardinal B-spline interpolation.
-     * @param n the order of B-spline interpolation
      */
-    public def getGriddedCharges(n : Int) : Array[Double](3) {
+    public def getGriddedCharges() : Array[Double](3) {
         val Q = Array.make[Double](gridRegion);
         for ((i) in 0..atoms.length-1) {
             val atom = atoms(i);
@@ -100,10 +115,16 @@ public class PME {
     }
 
     /**
-     * Calculates the array B as defined by Eq 4.8 and 4.4
-     * @param n the order of B-spline interpolation
+     * Calculates the reciprocal pair potential theta_rec used in Eq. 4.7
      */
-    public def getBArray(n : Int) {
+    public def getReciprocalPairPotential() {
+
+    } 
+
+    /**
+     * Calculates the array B as defined by Eq 4.8 and 4.4
+     */
+    public def getBArray() {
         val B = Array.make[Double](gridRegion);
         for (m(m1,m2,m3) in gridRegion) {
             // TODO: use proper array regions!
@@ -132,9 +153,11 @@ public class PME {
 
     /**
      * Calculates the array C as defined by Eq 3.9
-     * @param beta the Ewald coefficient beta
      */
-    public def getCArray(beta : Double) {
+    public def getCArray() {
+        for (var i : Int = 0; i<3; i++) {
+            Console.OUT.println(edgeReciprocals(i));
+        }
         val C = Array.make[Double](gridRegion);
         val V = getVolume();
         Console.OUT.println("V = " + V);

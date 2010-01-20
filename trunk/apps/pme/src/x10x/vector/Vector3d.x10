@@ -67,6 +67,14 @@ public class Vector3d extends Tuple3d {
         return new Vector3d(i * norm, j * norm, k * norm);
     }
 
+    /** 
+     * Returns the geometric inverse of this vector a^(-1) = a / ||a||^2
+     */
+    public global def inverse() : Vector3d {
+        val l2 = lengthSquared();
+        return new Vector3d(i / l2, j / l2, k / l2);
+    }
+
     public global def negate() : Vector3d {
         return new Vector3d(-i, -j, -k);
     }

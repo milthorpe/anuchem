@@ -2,6 +2,7 @@ package au.edu.anu.pme;
 
 import x10.util.Random;
 import x10x.vector.Point3d;
+import x10x.vector.Vector3d;
 
 /**
  * Tests the Distributed Particle Mesh Ewald implementation.
@@ -35,8 +36,10 @@ public class TestPME {
         
         /* Assign particles to random locations within a -1..1 3D box, with unit charge (1/3 are negative). */
         val atoms : Rail[Atom] = ValRail.make[Atom](numParticles, (i : Int) => new Atom(new Point3d(randomUnit(), randomUnit(), randomUnit()), i%3==4?1:-1));
+        val size = 2.0; // side length of cubic unit cell
+        val edges = [new Vector3d(size, 0.0, 0.0), new Vector3d(0.0, size, 0.0), new Vector3d(0.0, 0.0, size)];
         val gridSize = ValRail.make[Int](3, (Int) => 10);
-        val energy : Double = new PME(2.0, gridSize, atoms).calculateEnergy();
+        val energy : Double = new PME(edges, gridSize, atoms, 4, 0.35).calculateEnergy();
         Console.OUT.println("energy = " + energy);
     }
 

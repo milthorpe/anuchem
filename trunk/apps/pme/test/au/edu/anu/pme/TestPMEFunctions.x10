@@ -14,8 +14,10 @@ public class TestPMEFunctions {
 
     public static def main(args : Rail[String]!) {
         val atoms = ValRail.make[Atom](3, (i : Int) => new Atom(new Point3d(randomUnit(), randomUnit(), randomUnit()), i%3==4?1:-1));
+        val size = 2.0; // side length of cubic unit cell
+        val edges = [new Vector3d(size, 0.0, 0.0), new Vector3d(0.0, size, 0.0), new Vector3d(0.0, 0.0, size)];
         val gridSize = ValRail.make[Int](3, (Int) => 12);
-        val pme = new PME(2.0, gridSize, atoms);
+        val pme = new PME(edges, gridSize, atoms, 4, 0.35);
         val v = new Vector3d(0.6, -0.4, 0.33);
         val r = pme.getScaledFractionalCoordinates(v);
         Console.OUT.println(r);
@@ -27,7 +29,7 @@ public class TestPMEFunctions {
             Console.OUT.println(atoms(a));
         }
 
-        val q = pme.getGriddedCharges(4);
+        val q = pme.getGriddedCharges();
         Console.OUT.println(q);
         var nonZero : Int = 0;
         for (p in q) {
@@ -38,14 +40,14 @@ public class TestPMEFunctions {
         }
         Console.OUT.println("nonZero = " + nonZero);
 
-        val B = pme.getBArray(4);
+        val B = pme.getBArray();
         var sum : Double = 0.0;
         for (p in B) {
             sum += B(p);
         }
         Console.OUT.println("sum B = " + sum);
 
-        val C = pme.getCArray(0.35);
+        val C = pme.getCArray();
         for (p in C) {
             if (C(p) != 0.0) {
                 Console.OUT.println(p + " = " + C(p));
