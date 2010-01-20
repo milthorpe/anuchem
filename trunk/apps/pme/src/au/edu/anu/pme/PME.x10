@@ -2,6 +2,7 @@ package au.edu.anu.pme;
 
 import x10x.vector.Point3d;
 import x10x.vector.Vector3d;
+import au.edu.anu.fft.DFT;
 
 public class PME {
     /** The number of grid lines in each dimension of the simulation unit cell. */
@@ -61,15 +62,34 @@ public class PME {
             }
         }
         Console.OUT.println("directEnergy = " + directEnergy);
-        return directEnergy;
+
+        val Q = getGriddedCharges();
+        Console.OUT.println("Q");
+        val Qinv = DFT.dft3D(Q, false);
+        Console.OUT.println("Qinv");
+        val B = getBArray();
+        Console.OUT.println("B");
+        val C = getCArray();
+        Console.OUT.println("C");
+        val BdotC = Array.make[Complex](gridRegion, (p : Point(gridRegion.rank)) => Complex(B(p) * C(p), 0.0));
+        Console.OUT.println("BdotC");
+        val thetaRecConvQ = DFT.dft3D(Array.make[Complex](gridRegion, (p : Point(gridRegion.rank)) => BdotC(p) * Qinv(p)), true);
+        Console.OUT.println("thetaRecConvQ");
+        var sum : Complex = Complex.ZERO;
+        for (m in gridRegion) {
+            sum = sum + Q(m) * thetaRecConvQ(m);
+        }
+        sum = sum / 2.0;
+        Console.OUT.println("reciprocalEnergy = " + sum);
+        return sum.re;
     }
 
     /** 
      * Calculates the gridded charge array Q as defined in Eq. 4.6,
      * using Cardinal B-spline interpolation.
      */
-    public def getGriddedCharges() : Array[Double](3) {
-        val Q = Array.make[Double](gridRegion);
+    public def getGriddedCharges() : Array[Complex](3)!{self.rect,self.zeroBased} {
+        val Q = Array.make[Complex](gridRegion, (Point) => Complex.ZERO);
         for ((i) in 0..atoms.length-1) {
             val atom = atoms(i);
             val q = atom.charge;
@@ -85,7 +105,8 @@ public class PME {
                     for (var kk3:Int=u3i-splineOrder;kk3<=u3i+splineOrder;kk3++) {
                         val k3=(kk3+gridSize(2))%gridSize(2);
                 //for ((n1, n2, n3) : Point(3) in [-1..1,-1..1,-1..1]) { // TODO: for n > gridSize
-                        Q(k1,k2,k3) += q * bSpline(splineOrder, (u.i - kk1) % gridSize(0))
+                        Q(k1,k2,k3) = Q(k1,k2,k3) + q
+                                     * bSpline(splineOrder, (u.i - kk1) % gridSize(0))
                                      * bSpline(splineOrder, (u.j - kk2) % gridSize(1))
                                      * bSpline(splineOrder, (u.k - kk3) % gridSize(2));
                     }
@@ -155,9 +176,6 @@ public class PME {
      * Calculates the array C as defined by Eq 3.9
      */
     public def getCArray() {
-        for (var i : Int = 0; i<3; i++) {
-            Console.OUT.println(edgeReciprocals(i));
-        }
         val C = Array.make[Double](gridRegion);
         val V = getVolume();
         Console.OUT.println("V = " + V);

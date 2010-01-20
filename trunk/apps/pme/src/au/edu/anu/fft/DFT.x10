@@ -22,15 +22,18 @@ public class DFT {
         return output;
     }
 
-    public static def dft1D(input : Array[Complex](3)!{self.rect,self.zeroBased}, forward : boolean) : Array[Complex](3)! {
+    public static def dft3D(input : Array[Complex](3)!{self.rect,self.zeroBased}, forward : boolean) : Array[Complex](3)! {
         val sign = forward ? -1.0 : 1.0;
         val r = input.region;
         val n1 = r.max(0) + 1;
         val n2 = r.max(1) + 1;
         val n3 = r.max(2) + 1;
-        val N1 = n1 as Double;
-        val N2 = n2 as Double;
-        val N3 = n3 as Double;
+        val invN1 = 1.0 / (n1 as Double);
+        val invN2 = 1.0 / (n2 as Double);
+        val invN3 = 1.0 / (n3 as Double);
+
+        val s = sign * 2.0 * Math.PI * Complex.I;
+
         val output = Array.make[Complex](input.region);
         for (var m1:int=0; m1<n1; m1++) {
             for (var m2:int=0; m2<n2; m2++) {
@@ -39,7 +42,7 @@ public class DFT {
                     for (var k1:int=0; k1<n1; k1++) {
                         for (var k2:int=0; k2<n2; k2++) {
                             for (var k3:int=0; k3<n3; k3++) {
-                                val component = sign * 2.0 * Math.PI * Complex.I * ((m1 * k1 as Double) / N1 + (m2 * k2 as Double) / N2 + (m3 * k3 as Double) / N3);
+                                val component = s * (m1 * k1 * invN1 + m2 * k2 * invN2 + m3 * k3 * invN3);
                                 sum = sum + input(k1, k2, k3) * component.exp();
                             }
                         }

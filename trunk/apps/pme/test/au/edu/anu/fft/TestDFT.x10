@@ -46,13 +46,13 @@ public class TestDFT {
         }
 
         Console.OUT.println("\noutput");
-        val output = DFT.dft1D(input, false);
+        val output = DFT.dft3D(input, false);
         for (p in output) {
             Console.OUT.println(output(p));
         }
 
         Console.OUT.println("\nroundtrip");
-        val roundtrip = DFT.dft1D(output, true);
+        val roundtrip = DFT.dft3D(output, true);
         for (p in roundtrip) {
             Console.OUT.println(roundtrip(p) / (N*N*N));
         }
