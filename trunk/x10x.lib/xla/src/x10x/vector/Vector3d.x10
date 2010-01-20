@@ -29,6 +29,10 @@ public class Vector3d extends Tuple3d {
                             i * vec.j - j * vec.i);
     }
 
+    public global def add(b: Vector3d) : Vector3d {
+        return new Vector3d(i + b.i, j + b.j, k + b.k);
+    }
+
     public global def mul(c : Double) : Vector3d {
         return new Vector3d(this.i * c, this.j * c, this.k * c);
     }
