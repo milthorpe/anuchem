@@ -7,6 +7,11 @@ public class PME {
     /** The number of grid lines in each dimension of the simulation unit cell. */
     public val gridSize : ValRail[Int](3);
 
+    /** Double representations of the various grid dimensions */
+    public val K1 : Double;
+    public val K2 : Double; 
+    public val K3 : Double;
+
     /** The edges of the unit cell. TODO: non-cubic cells */
     public val edges : ValRail[Vector3d](3);
 
@@ -21,6 +26,9 @@ public class PME {
             gridSize : ValRail[Int](3),
             atoms : ValRail[Atom]) {
         this.gridSize = gridSize;
+        K1 = gridSize(0) as Double;
+        K2 = gridSize(1) as Double;
+        K3 = gridSize(2) as Double;
         this.edges = [new Vector3d(size, 0.0, 0.0), new Vector3d(0.0, size, 0.0), new Vector3d(0.0, 0.0, size)];
         this.edgeReciprocals = [new Vector3d(1.0 / size, 0.0, 0.0), new Vector3d(0.0, 1.0 / size, 0.0), new Vector3d(0.0, 0.0, 1.0 / size)];
         this.atoms = atoms;
@@ -53,17 +61,13 @@ public class PME {
             val u1i = u.i as Int;
             val u2i = u.j as Int;
             val u3i = u.k as Int;
-            /*val spreadRegion = [ ..((u1i+n)%gridSize(0)), 
-                                 ((u2i-n)%gridSize(1))..((u2i+n)%gridSize(1)),
-                                 ((u3i-n)%gridSize(2))..((u3i+n)%gridSize(2)) ] as Region(3);
-            Console.OUT.println("spreadRegion = " + spreadRegion);*/
+            // TODO: not currently possible to do "wraparound" Region in X10
             for (var kk1:Int=u1i-n;kk1<=u1i+n;kk1++) {
                 val k1=(kk1+gridSize(0))%gridSize(0);
                 for (var kk2:Int=u2i-n;kk2<=u2i+n;kk2++) {
                     val k2=(kk2+gridSize(1))%gridSize(1);
                     for (var kk3:Int=u3i-n;kk3<=u3i+n;kk3++) {
                         val k3=(kk3+gridSize(2))%gridSize(2);
-            //for (k(k1,k2,k3) : Point(3) in spreadRegion) {
                 //for ((n1, n2, n3) : Point(3) in [-1..1,-1..1,-1..1]) { // TODO: for n > gridSize
                         Q(k1,k2,k3) += q * bSpline(n, (u.i - kk1) % gridSize(0))
                                      * bSpline(n, (u.j - kk2) % gridSize(1))
@@ -103,22 +107,19 @@ public class PME {
             val m3D = m3 as Double;
             var sumK : Complex = Complex.ZERO;
             for ((k) in 0..(n-2)) {
-                sumK = sumK + bSpline(n, k+1) * (2.0 * Math.PI * Complex.I * m1D * k * gridSize(0)).exp();
+                sumK = sumK + bSpline(n, k+1) * (2.0 * Math.PI * Complex.I * m1D * k / K1).exp();
             }
-            val b1 = ((2.0 * Math.PI * Complex.I * (n - 1.0) * m1D / gridSize(0)).exp()
-                    * 1.0 / sumK).abs();
+            val b1 = ((2.0 * Math.PI * Complex.I * (n - 1.0) * m1D / K1).exp() / sumK).abs();
             sumK = Complex.ZERO;
             for ((k) in 0..(n-2)) {
-                sumK = sumK + bSpline(n, k+1) * (2.0 * Math.PI * Complex.I * m2D * k * gridSize(1)).exp();
+                sumK = sumK + bSpline(n, k+1) * (2.0 * Math.PI * Complex.I * m2D * k / K2).exp();
             }
-            val b2 = ((2.0 * Math.PI * Complex.I * (n - 1.0) * m2D / gridSize(1)).exp()
-                    * 1.0 / sumK).abs();
+            val b2 = ((2.0 * Math.PI * Complex.I * (n - 1.0) * m2D / K2).exp() / sumK).abs();
             sumK = Complex.ZERO;
             for ((k) in 0..(n-2)) {
-                sumK = sumK + bSpline(n, k+1) * (2.0 * Math.PI * Complex.I * m3D * k * gridSize(2)).exp();
+                sumK = sumK + bSpline(n, k+1) * (2.0 * Math.PI * Complex.I * m3D * k / K3).exp();
             }
-            val b3 = ((2.0 * Math.PI * Complex.I * (n - 1.0) * m3D / gridSize(2)).exp()
-                    * 1.0 / sumK).abs();
+            val b3 = ((2.0 * Math.PI * Complex.I * (n - 1.0) * m3D / K3).exp() / sumK).abs();
             B(m) = b1 * b1 * b2 * b2 * b3 * b3;
         }
         return B;

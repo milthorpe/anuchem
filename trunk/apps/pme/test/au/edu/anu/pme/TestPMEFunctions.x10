@@ -39,11 +39,13 @@ public class TestPMEFunctions {
         Console.OUT.println("nonZero = " + nonZero);
 
         val B = pme.getBArray(4);
+        var sum : Double = 0.0;
         for (p in B) {
             if (B(p) != 0.0) {
-            //    Console.OUT.println(p + " = " + B(p));
+                sum += B(p);
             }
         }
+        Console.OUT.println("sum B = " + sum);
     }
 
     static def randomUnit() : Double {
