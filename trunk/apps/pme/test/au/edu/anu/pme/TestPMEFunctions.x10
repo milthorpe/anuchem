@@ -17,7 +17,7 @@ public class TestPMEFunctions {
         val size = 2.0; // side length of cubic unit cell
         val edges = [new Vector3d(size, 0.0, 0.0), new Vector3d(0.0, size, 0.0), new Vector3d(0.0, 0.0, size)];
         val gridSize = ValRail.make[Int](3, (Int) => 12);
-        val pme = new PME(edges, gridSize, atoms, 4, 0.35);
+        val pme = new PME(edges, gridSize, atoms, 4, 0.35, 9.0);
         val v = new Vector3d(0.6, -0.4, 0.33);
         val r = pme.getScaledFractionalCoordinates(v);
         Console.OUT.println(r);
@@ -33,7 +33,7 @@ public class TestPMEFunctions {
         Console.OUT.println(q);
         var nonZero : Int = 0;
         for (p in q) {
-            if (q(p) != 0.0) {
+            if (q(p) != Complex.ZERO) {
                 nonZero++;
                 //Console.OUT.println(p + " = " + q(p));
             }

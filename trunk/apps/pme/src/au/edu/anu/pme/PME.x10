@@ -29,6 +29,9 @@ public class PME {
     /** The Ewald coefficient beta */
     val beta : Double;
 
+    /** The direct sum cutoff distance in Angstroms */
+    val cutoff : Double;
+
     /**
      * Creates a new particle mesh Ewald method.
      * @param size the side length of the unit cube // TODO non-cubic boxes
@@ -39,7 +42,8 @@ public class PME {
             gridSize : ValRail[Int](3),
             atoms : ValRail[Atom],
             splineOrder : Int,
-            beta : Double) {
+            beta : Double,
+            cutoff : Double) {
         this.gridSize = gridSize;
         K1 = gridSize(0) as Double;
         K2 = gridSize(1) as Double;
@@ -51,17 +55,39 @@ public class PME {
         gridRegion = (r * [0..(gridSize(1)-1)] * [0..(gridSize(2)-1)]) as Region(3);
         this.splineOrder = splineOrder;
         this.beta = beta;
+        this.cutoff = cutoff;
     }
 	
     public def calculateEnergy() : Double {
         var directEnergy : Double = 0.0;
+        var directSum : Double = 0.0;
+        var selfEnergy: Double = 0.0;
+        var correctionEnergy : Double = 0.0;
         for ((i) in 0..(atoms.length - 1)) {
+            selfEnergy += beta / Math.sqrt(Math.PI) * atoms(i).charge * atoms(i).charge;
             for ((j) in 0..(i - 1)) {
                 val pairEnergy : Double = atoms(j).pairEnergy(atoms(i));
                 directEnergy += 2 * pairEnergy;
+                val rjri = new Vector3d(atoms(j).centre.sub(atoms(i).centre));
+                val distance = rjri.length();
+                Console.OUT.println("beta * distance = " + (beta * distance) + " erf = " + Math.erf(beta * distance));
+                correctionEnergy += atoms(i).charge * atoms(j).charge * Math.erf(beta * distance) / distance;
+                for (var n1:Int = -1; n1<=1; n1++) {
+                    for (var n2:Int = -1; n2<=1; n2++) {
+                        for (var n3:Int = -1; n3<=1; n3++) {
+                            val imageDistance = rjri.add(edges(0).mul(n1)).add(edges(1).mul(n2)).add(edges(2).mul(n3)).length();
+                            if (imageDistance < cutoff) {
+                                directSum += atoms(i).charge * atoms(j).charge * Math.erfc(beta * imageDistance) / imageDistance;
+                            }
+                        }
+                    }
+                }
             }
         }
         Console.OUT.println("directEnergy = " + directEnergy);
+        Console.OUT.println("directSum = " + directSum);
+        Console.OUT.println("selfEnergy = " + selfEnergy);
+        Console.OUT.println("correctionEnergy = " + correctionEnergy);
 
         val Q = getGriddedCharges();
         Console.OUT.println("Q");
@@ -73,15 +99,16 @@ public class PME {
         Console.OUT.println("C");
         val BdotC = Array.make[Complex](gridRegion, (p : Point(gridRegion.rank)) => Complex(B(p) * C(p), 0.0));
         Console.OUT.println("BdotC");
+        val size = (K1*K2*K3);
         val thetaRecConvQ = DFT.dft3D(Array.make[Complex](gridRegion, (p : Point(gridRegion.rank)) => BdotC(p) * Qinv(p)), true);
         Console.OUT.println("thetaRecConvQ");
-        var sum : Complex = Complex.ZERO;
+        var reciprocalEnergy : Complex = Complex.ZERO;
         for (m in gridRegion) {
-            sum = sum + Q(m) * thetaRecConvQ(m);
+            reciprocalEnergy = reciprocalEnergy + Q(m) * thetaRecConvQ(m);
         }
-        sum = sum / 2.0;
-        Console.OUT.println("reciprocalEnergy = " + sum);
-        return sum.re;
+        reciprocalEnergy = reciprocalEnergy / 2.0;
+        Console.OUT.println("reciprocalEnergy = " + reciprocalEnergy);
+        return directSum + reciprocalEnergy.re - correctionEnergy - selfEnergy;
     }
 
     /** 
