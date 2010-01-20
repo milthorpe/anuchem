@@ -51,6 +51,7 @@ public class PME {
     /** 
      * Calculates the gridded charge array Q as defined in Eq. 4.6,
      * using Cardinal B-spline interpolation.
+     * @param n the order of B-spline interpolation
      */
     public def getGriddedCharges(n : Int) : Array[Double](3) {
         val Q = Array.make[Double](gridRegion);
@@ -98,6 +99,10 @@ public class PME {
         return Q;
     }
 
+    /**
+     * Calculates the array B as defined by Eq 4.8 and 4.4
+     * @param n the order of B-spline interpolation
+     */
     public def getBArray(n : Int) {
         val B = Array.make[Double](gridRegion);
         for (m(m1,m2,m3) in gridRegion) {
@@ -125,6 +130,19 @@ public class PME {
         return B;
     }
 
+    /**
+     * Calculates the array C as defined by Eq 3.9
+     * @param beta the Ewald coefficient beta
+     */
+    public def getCArray(beta : Int) {
+        val C = Array.make[Double](gridRegion);
+        val V = getVolume();
+        Console.OUT.println("V = " + V);
+        for (m(m1,m2,m3) in gridRegion) {
+            val mSquared = m1 * m1 + m2 * m2 + m3 * m3;
+            C(m) = 1.0 / (Math.PI * V) * (-(Math.PI*Math.PI) * mSquared / (beta * beta)).exp() / mSquared;
+        }
+    }
 
     /* 
      * Gets the nth order B-spline M_n(u) as per Eq. 4.1
@@ -142,5 +160,12 @@ public class PME {
     /** Gets scaled fractional coordinate u as per Eq. 3.1 */
     public def getScaledFractionalCoordinates(r : Vector3d) : Vector3d {
         return new Vector3d(edgeReciprocals(0).mul(gridSize(0)).dot(r), edgeReciprocals(1).mul(gridSize(1)).dot(r), edgeReciprocals(2).mul(gridSize(2)).dot(r));
+    }
+
+    /**
+     * Gets the volume V of the unit cell.
+     */
+    public def getVolume() {
+        return edges(0).cross(edges(1)).dot(edges(2);
     }
 }

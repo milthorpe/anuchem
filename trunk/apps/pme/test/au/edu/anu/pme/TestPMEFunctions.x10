@@ -46,6 +46,14 @@ public class TestPMEFunctions {
             }
         }
         Console.OUT.println("sum B = " + sum);
+
+        val C = pme.getCArray(0.35);
+        var sum : Double = 0.0;
+        for (p in C) {
+            if (C(p) != 0.0) {
+                Console.OUT.println(p + " = " + C(p));
+            }
+        }
     }
 
     static def randomUnit() : Double {
