@@ -27,7 +27,7 @@
         </copy>
     </target>
 
-	<target name="jar" depends="build-src-java,test">
+	<target name="jar" depends="build-src-java">
         <jar jarfile="${target}/${jar}">
             <fileset dir="${target-src}" includes="**/*.class" excludes="${jar}"/>
         </jar>
@@ -36,9 +36,9 @@
     <target name="build-src-java" depends="check-src-java" unless="src.uptodate">
         <echo message="Building source tree"/>
 
-        <fileset id="changed.src.files" dir="${basedir}/src" includes="**/*.x10">
+        <fileset id="changed.src.files" dir="${basedir}/src" includes="**/*3d.x10">
             <depend targetdir="${target}/classes">
-                <mapper type="glob" from="*.x10" to="*.java"/>
+                <mapper type="glob" from="*3d.x10" to="*.java"/>
             </depend>
         </fileset>
 

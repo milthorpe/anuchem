@@ -15,9 +15,7 @@ public class Tuple3d {
         this.k = k;
     }
 
-    public global safe def toString() : String {
-        return ("(" + i + "i + " + j + "j + " + k + "k)");
-    }
+    public global safe def toString() = ("(" + i + "i + " + j + "j + " + k + "k)");
     
     public global def add(b: Tuple3d) : Tuple3d {
         return new Tuple3d(i + b.i, j + b.j, k + b.k);
