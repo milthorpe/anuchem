@@ -65,11 +65,9 @@ public class JacobiDiagonalizer {
 
           //for(var ip:Int = 0; ip<n-1; ip++) { for(var iq:Int = ip+1; iq<n; iq++) {
 
-
-          //finish ateach(var(ip, iq) in a.dist) {
-          for(plc in a.dist.places()) {
+          finish foreach(plc in a.dist.places()) {
+            at(plc) {
              for(val(ip, iq) in a.dist.get(plc)) {
-             finish async at(plc) {
              // x10.io.Console.OUT.println(ip + " , " + iq);
              // x10.io.Console.OUT.println(a.dist.contains(Point.make(ip, iq)));
 
@@ -122,9 +120,7 @@ public class JacobiDiagonalizer {
                    } // end if
                 } // end if
              } // end if
-           }}}
-          // }}
-          //} // end ateach
+           }}} // end foreach
 
           finish ateach(val(ip) in b.dist) {
              b(ip) += z(ip);
