@@ -21,7 +21,7 @@ public class ShellList {
     } 
 
     public def addShellPrimitive(cg:ContractedGaussian{self.at(this)}) : void {
-        var shell:Shell{self.at(this)} = getShell(cg.getTotalAngularMomentum())
+        var shell:Shell{self.at(this)} = getShell(cg.getTotalAngularMomentum());
         if (shell == null) {
            shell = new Shell(cg.getTotalAngularMomentum());
            shellList.put(cg.getTotalAngularMomentum(), shell);
