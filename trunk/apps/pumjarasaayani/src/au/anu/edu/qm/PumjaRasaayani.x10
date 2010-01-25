@@ -62,7 +62,7 @@ public class PumjaRasaayani {
 
         val bsf:BasisFunctions{self.at(this)}  = new BasisFunctions();
         bsf.make(mol, basisName, "basis");
-        Console.OUT.println("\nSetting up basis functions over.");
+        Console.OUT.println("\nUsing " + bsf.getBasisFunctions().size() + " basis functions.");
         
         val oneE:OneElectronIntegrals{self.at(this)} = new OneElectronIntegrals();
         oneE.make(bsf, mol);
