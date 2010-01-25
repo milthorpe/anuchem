@@ -251,7 +251,7 @@ public class TwoElectronIntegrals {
                  for(i=0; i<=maxam; i++) {
                     val shell = shellList.getShell(i).getShellPrimitives();
                     j = 0;
-                    foreach(val shellprim in shell) {
+                    for(val shellprim in shell) {
                        val powers = (shellprim as ContractedGaussian{self.at(this)}).getPower();
                        val lp = powers.getL();
                        val mp = powers.getM();
@@ -265,7 +265,7 @@ public class TwoElectronIntegrals {
                  for(i=0; i<=angMomAB; i++) {
                     val shellAB = shellList.getShell(i).getShellPrimitives();
                     var pp:Int = 0;
-                    foreach(val shellprimAB in shellAB) {
+                    for(val shellprimAB in shellAB) {
                       val powersAB = (shellprimAB as ContractedGaussian{self.at(this)}).getPower();
                       val lp = powersAB.getL();
                       val mp = powersAB.getM();
@@ -274,7 +274,7 @@ public class TwoElectronIntegrals {
                       for(j=0; j<=angMomCD; j++) {
                         val shellCD = shellList.getShell(j).getShellPrimitives();
                         var qq:Int = 0;
-                        foreach(val shellprimCD in shellCD) {
+                        for(val shellprimCD in shellCD) {
                           val powersCD = (shellprimCD as ContractedGaussian{self.at(this)}).getPower();
                           val lq = powersCD.getL();
                           val mq = powersCD.getM();
@@ -306,7 +306,7 @@ public class TwoElectronIntegrals {
                  for(i=0; i<=angMomAB; i++) {
                    val shellAB = shellList.getShell(i).getShellPrimitives();
                    var pp:Int = 0;
-                   foreach(val shellprimAB in shellAB) {
+                   for(val shellprimAB in shellAB) {
                      val npint = Array.make[Double]([0..maxam2+1, 0..((maxam2+1)*(maxam2+2)/2)+1]);
 
                      for (k=0; k<=maxam; k++)
@@ -318,7 +318,7 @@ public class TwoElectronIntegrals {
 
                      val shellD = shellList.getShell(dAng).getShellPrimitives();
                      dd = 0;
-                     foreach(val shellprimD in shellD) {
+                     for(val shellprimD in shellD) {
                         val powersD = (shellprimD as ContractedGaussian{self.at(this)}).getPower();
                         val lp = powersD.getL();
                         val mp = powersD.getM();
@@ -326,7 +326,7 @@ public class TwoElectronIntegrals {
 
                         val shellC = shellList.getShell(cAng).getShellPrimitives();
                         cc = 0;
-                        foreach(val shellprimC in shellC) {
+                        for(val shellprimC in shellC) {
                            val powersC = (shellprimC as ContractedGaussian{self.at(this)}).getPower();
                            val lq = powersC.getL();
                            val mq = powersC.getM();
