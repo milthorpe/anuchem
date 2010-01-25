@@ -127,14 +127,11 @@ public class GMatrix extends Matrix {
         // TODO: x10 - parallel
         var i:Int, j:Int, k:Int, l:Int, m:Int, ij:Int, kl:Int;
         var twoEIntVal:Double, twoEIntVal2:Double, twoEIntValHalf:Double;
-        var idx:Array[Int]{rank==1}, jdx:Array[Int]{rank==1}, 
-            kdx:Array[Int]{rank==1}, ldx:Array[Int]{rank==1};
-        idx = Array.make[Int]([0..8]);
-        jdx = Array.make[Int]([0..8]);
-        kdx = Array.make[Int]([0..8]);
-        ldx = Array.make[Int]([0..8]);
-        var validIdx:Array[Boolean]{rank==1} = Array.make[Boolean]([0..8]);
-        validIdx(0) = true;
+        val idx = Rail.make[Int](8);
+        val jdx = Rail.make[Int](8);
+        val kdx = Rail.make[Int](8);
+        val ldx = Rail.make[Int](8);
+        val validIdx = Rail.make[Boolean](8, (Int)=>true);
 
         for(i=0; i<N; i++) {
             idx(0) = i; jdx(1) = i; jdx(2) = i; idx(3) = i;
@@ -164,10 +161,6 @@ public class GMatrix extends Matrix {
                            // (if unique)
                            ldx(0) = l; ldx(1) = l; kdx(2) = l; kdx(3) = l;
                            idx(4) = l; idx(5) = l; jdx(6) = l; jdx(7) = l;
-                           validIdx(1) = true; validIdx(2) = true;
-                           validIdx(3) = true; validIdx(4) = true;
-                           validIdx(5) = true; validIdx(6) = true;
-                           validIdx(7) = true;
 
                            // filter unique elements
                            filterUniqueElements(idx, jdx, kdx, ldx, validIdx);
@@ -202,14 +195,11 @@ public class GMatrix extends Matrix {
         var i:Int, j:Int, k:Int, l:Int, m:Int, ij:Int, kl:Int;
         var idx_i:Int, jdx_i:Int, kdx_i:Int, ldx_i:Int;
         var twoEIntVal:Double, twoEIntVal2:Double, twoEIntValHalf:Double;
-        var idx:Array[Int]{rank==1}, jdx:Array[Int]{rank==1},
-            kdx:Array[Int]{rank==1}, ldx:Array[Int]{rank==1};
-        idx = Array.make[Int]([0..8]);
-        jdx = Array.make[Int]([0..8]);
-        kdx = Array.make[Int]([0..8]);
-        ldx = Array.make[Int]([0..8]);
-        var validIdx:Array[Boolean]{rank==1} = Array.make[Boolean]([0..8]);
-        validIdx(0) = true;
+        val idx = Rail.make[Int](8);
+        val jdx = Rail.make[Int](8);
+        val kdx = Rail.make[Int](8);
+        val ldx = Rail.make[Int](8);
+        val validIdx = Rail.make[Boolean](8, (Int)=>true);
 
         val molecule = twoE.getMolecule();
         val bfs = twoE.getBasisFunctions().getBasisFunctions();
@@ -286,10 +276,6 @@ public class GMatrix extends Matrix {
                                           // (if unique)
                                           ldx(0) = ldx_i; ldx(1) = ldx_i; kdx(2) = ldx_i; kdx(3) = ldx_i;
                                           idx(4) = ldx_i; idx(5) = ldx_i; jdx(6) = ldx_i; jdx(7) = ldx_i;
-                                          validIdx(1) = true; validIdx(2) = true;
-                                          validIdx(3) = true; validIdx(4) = true;
-                                          validIdx(5) = true; validIdx(6) = true;
-                                          validIdx(7) = true;
 
                                           // filter unique elements
                                           filterUniqueElements(idx, jdx, kdx, ldx, validIdx);
@@ -327,12 +313,10 @@ public class GMatrix extends Matrix {
 
         // TODO: x10 - parallel
         var i:Int, j:Int, k:Int, l:Int, ij:Int, kl:Int;
-        var idx:Array[Int]{rank==1}, jdx:Array[Int]{rank==1}, 
-            kdx:Array[Int]{rank==1}, ldx:Array[Int]{rank==1};
-        idx = Array.make[Int]([0..8]);
-        jdx = Array.make[Int]([0..8]);
-        kdx = Array.make[Int]([0..8]);
-        ldx = Array.make[Int]([0..8]);
+        val idx = Rail.make[Int](8);
+        val jdx = Rail.make[Int](8);
+        val kdx = Rail.make[Int](8);
+        val ldx = Rail.make[Int](8);
         
         finish {
           for(i=0; i<N; i++) {
@@ -349,10 +333,10 @@ public class GMatrix extends Matrix {
                         kl = k * (k+1) / 2+l;
                         if (ij >= kl) { 
                          val i_loc = i, j_loc = j, k_loc = k, l_loc = l;
-                         val idx_loc:Array[Int]{rank==1} = Array.make[Int]([0..8]), 
-                             jdx_loc:Array[Int]{rank==1} = Array.make[Int]([0..8]), 
-                             kdx_loc:Array[Int]{rank==1} = Array.make[Int]([0..8]), 
-                             ldx_loc:Array[Int]{rank==1} = Array.make[Int]([0..8]);
+                         val idx_loc = Rail.make[Int](8);
+                         val jdx_loc = Rail.make[Int](8);
+                         val kdx_loc = Rail.make[Int](8);
+                         val ldx_loc = Rail.make[Int](8);
 
                          for(var midx:Int=0; midx<8; midx++) {
                             idx_loc(midx) = idx(midx);
@@ -363,8 +347,7 @@ public class GMatrix extends Matrix {
 
                          async {
                            var twoEIntVal:Double, twoEIntVal2:Double, twoEIntValHalf:Double;
-                           var validIdx:Array[Boolean]{rank==1} = Array.make[Boolean]([0..8]);
-                           validIdx(0) = true;
+                           val validIdx = Rail.make[Boolean](8, (Int)=>true);
 
                            twoEIntVal     = twoE.compute2E(i_loc,j_loc,k_loc,l_loc);
                            twoEIntVal2    = twoEIntVal + twoEIntVal;
@@ -378,10 +361,6 @@ public class GMatrix extends Matrix {
                               // (if unique)
                               ldx_loc(0) = l_loc; ldx_loc(1) = l_loc; kdx_loc(2) = l_loc; kdx_loc(3) = l_loc;
                               idx_loc(4) = l_loc; idx_loc(5) = l_loc; jdx_loc(6) = l_loc; jdx_loc(7) = l_loc;
-                              validIdx(1) = true; validIdx(2) = true;
-                              validIdx(3) = true; validIdx(4) = true;
-                              validIdx(5) = true; validIdx(6) = true;
-                              validIdx(7) = true;
 
                               // filter unique elements
                               filterUniqueElements(idx_loc, jdx_loc, kdx_loc, ldx_loc, validIdx);
@@ -418,12 +397,10 @@ public class GMatrix extends Matrix {
 
         var i:Int, j:Int, k:Int, l:Int, m:Int, ij:Int, kl:Int;
         var idx_i:Int, jdx_i:Int, kdx_i:Int, ldx_i:Int;
-        var idx:Array[Int]{rank==1}, jdx:Array[Int]{rank==1},
-            kdx:Array[Int]{rank==1}, ldx:Array[Int]{rank==1};
-        idx = Array.make[Int]([0..8]);
-        jdx = Array.make[Int]([0..8]);
-        kdx = Array.make[Int]([0..8]);
-        ldx = Array.make[Int]([0..8]);
+        val idx = Rail.make[Int](8);
+        val jdx = Rail.make[Int](8);
+        val kdx = Rail.make[Int](8);
+        val ldx = Rail.make[Int](8);
 
         val molecule = twoE.getMolecule();
         val bfs = twoE.getBasisFunctions().getBasisFunctions();
@@ -486,10 +463,10 @@ public class GMatrix extends Matrix {
                                         kl = kdx_i * (kdx_i+1) / 2+ldx_i;
                                         if (ij >= kl) { 
                                           val i_loc = idx_i, j_loc = jdx_i, k_loc = kdx_i, l_loc = ldx_i;
-                                          val idx_loc:Array[Int]{rank==1} = Array.make[Int]([0..8]),
-                                              jdx_loc:Array[Int]{rank==1} = Array.make[Int]([0..8]),
-                                              kdx_loc:Array[Int]{rank==1} = Array.make[Int]([0..8]),
-                                              ldx_loc:Array[Int]{rank==1} = Array.make[Int]([0..8]);
+                                          val idx_loc = Rail.make[Int](8);
+                                          val jdx_loc = Rail.make[Int](8);
+                                          val kdx_loc = Rail.make[Int](8);
+                                          val ldx_loc = Rail.make[Int](8);
 
                                           for(var midx:Int=0; midx<8; midx++) {
                                              idx_loc(midx) = idx(midx);
@@ -503,8 +480,7 @@ public class GMatrix extends Matrix {
                                             twoEIntVal     = twoE.compute2E(i_loc, j_loc, k_loc, l_loc);
                                             twoEIntVal2    = twoEIntVal + twoEIntVal;
                                             twoEIntValHalf = 0.5 * twoEIntVal;
-                                            var validIdx:Array[Boolean]{rank==1} = Array.make[Boolean]([0..8]);
-                                            validIdx(0) = true;
+                                            val validIdx = Rail.make[Boolean](8, (Int)=>true);
 
                                             setGMatrixElements(gMatrix, dMatrix, i_loc, j_loc, k_loc, l_loc,
                                                               twoEIntVal2, twoEIntValHalf);
@@ -516,10 +492,6 @@ public class GMatrix extends Matrix {
                                               // (if unique)
                                               ldx_loc(0) = l_loc; ldx_loc(1) = l_loc; kdx_loc(2) = l_loc; kdx_loc(3) = l_loc;
                                               idx_loc(4) = l_loc; idx_loc(5) = l_loc; jdx_loc(6) = l_loc; jdx_loc(7) = l_loc;
-                                              validIdx(1) = true; validIdx(2) = true;
-                                              validIdx(3) = true; validIdx(4) = true;
-                                              validIdx(5) = true; validIdx(6) = true;
-                                              validIdx(7) = true;
 
                                               // filter unique elements
                                               filterUniqueElements(idx_loc, jdx_loc, kdx_loc, ldx_loc, validIdx);
@@ -560,12 +532,10 @@ public class GMatrix extends Matrix {
 
         var i:Int, j:Int, k:Int, l:Int, m:Int, ij:Int, kl:Int;
         var idx_i:Int, jdx_i:Int, kdx_i:Int, ldx_i:Int;
-        var idx:Array[Int]{rank==1}, jdx:Array[Int]{rank==1},
-            kdx:Array[Int]{rank==1}, ldx:Array[Int]{rank==1};
-        idx = Array.make[Int]([0..8]);
-        jdx = Array.make[Int]([0..8]);
-        kdx = Array.make[Int]([0..8]);
-        ldx = Array.make[Int]([0..8]);
+        val idx = Rail.make[Int](8);
+        val jdx = Rail.make[Int](8);
+        val kdx = Rail.make[Int](8);
+        val ldx = Rail.make[Int](8);
 
         val molecule = twoE.getMolecule();
         val bfs = twoE.getBasisFunctions().getBasisFunctions();
@@ -630,10 +600,10 @@ public class GMatrix extends Matrix {
                                         kl = kdx_i * (kdx_i+1) / 2+ldx_i;
                                         if (ij >= kl) { 
                                           val i_loc = idx_i, j_loc = jdx_i, k_loc = kdx_i, l_loc = ldx_i;
-                                          val idx_loc:Array[Int]{rank==1} = Array.make[Int]([0..8]),
-                                              jdx_loc:Array[Int]{rank==1} = Array.make[Int]([0..8]),
-                                              kdx_loc:Array[Int]{rank==1} = Array.make[Int]([0..8]),
-                                              ldx_loc:Array[Int]{rank==1} = Array.make[Int]([0..8]);
+                                          val idx_loc = Rail.make[Int](8);
+                                          val jdx_loc = Rail.make[Int](8);
+                                          val kdx_loc = Rail.make[Int](8);
+                                          val ldx_loc = Rail.make[Int](8);
 
                                           for(var midx:Int=0; midx<8; midx++) {
                                              idx_loc(midx) = idx(midx);
@@ -647,8 +617,7 @@ public class GMatrix extends Matrix {
                                             twoEIntVal     = twoE.compute2E(i_loc, j_loc, k_loc, l_loc);
                                             twoEIntVal2    = twoEIntVal + twoEIntVal;
                                             twoEIntValHalf = 0.5 * twoEIntVal;
-                                            var validIdx:Array[Boolean]{rank==1} = Array.make[Boolean]([0..8]);
-                                            validIdx(0) = true;
+                                            val validIdx = Rail.make[Boolean](8, (Int)=>true);
 
                                             val gMat_loc = GMatrix.make(new GMatrix(), N) as GMatrix{self.at(this)};
                                             gMat_loc.makeZero();
@@ -664,10 +633,6 @@ public class GMatrix extends Matrix {
                                               // (if unique)
                                               ldx_loc(0) = l_loc; ldx_loc(1) = l_loc; kdx_loc(2) = l_loc; kdx_loc(3) = l_loc;
                                               idx_loc(4) = l_loc; idx_loc(5) = l_loc; jdx_loc(6) = l_loc; jdx_loc(7) = l_loc;
-                                              validIdx(1) = true; validIdx(2) = true;
-                                              validIdx(3) = true; validIdx(4) = true;
-                                              validIdx(5) = true; validIdx(6) = true;
-                                              validIdx(7) = true;
 
                                               // filter unique elements
                                               filterUniqueElements(idx_loc, jdx_loc, kdx_loc, ldx_loc, validIdx);
@@ -718,12 +683,10 @@ public class GMatrix extends Matrix {
 
         var i:Int, j:Int, k:Int, l:Int, m:Int, ij:Int, kl:Int;
         var idx_i:Int, jdx_i:Int, kdx_i:Int, ldx_i:Int;
-        var idx:Array[Int]{rank==1}, jdx:Array[Int]{rank==1},
-            kdx:Array[Int]{rank==1}, ldx:Array[Int]{rank==1};
-        idx = Array.make[Int]([0..8]);
-        jdx = Array.make[Int]([0..8]);
-        kdx = Array.make[Int]([0..8]);
-        ldx = Array.make[Int]([0..8]);
+        val idx = Rail.make[Int](8);
+        val jdx = Rail.make[Int](8);
+        val kdx = Rail.make[Int](8);
+        val ldx = Rail.make[Int](8);
 
         val molecule = twoE.getMolecule();
         val bfs = twoE.getBasisFunctions().getBasisFunctions();
@@ -800,9 +763,9 @@ public class GMatrix extends Matrix {
     }
 
     /** find unique elements and mark the onces that are not */
-    private def filterUniqueElements(idx:Array[Int]{rank==1}, jdx:Array[Int]{rank==1},
-                                     kdx:Array[Int]{rank==1}, ldx:Array[Int]{rank==1},
-                                     validIdx:Array[Boolean]{rank==1}) : void {
+    private def filterUniqueElements(idx:Rail[Int]!, jdx:Rail[Int]!,
+                                     kdx:Rail[Int]!, ldx:Rail[Int]!,
+                                     validIdx:Rail[Boolean]!) : void {
         var i:Int, j:Int, k:Int, l:Int, m:Int, n:Int;
         
         for(m=0; m<8; m++) {
