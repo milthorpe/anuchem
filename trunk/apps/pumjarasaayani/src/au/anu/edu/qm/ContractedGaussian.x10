@@ -39,6 +39,7 @@ public class ContractedGaussian {
     public def getPower() : Power{self.at(this)} = power;
     public def getNormalization() = normalization;
     public def getPrimitives() : ArrayList[PrimitiveGaussian{self.at(this)}]{self.at(this)} = primitives;
+    public def getPrimitive(i:Int) : PrimitiveGaussian{self.at(this)} = primitives.get(i);
     public def getExponents() : ArrayList[Double]{self.at(this)} = exponents;
     public def getCoefficients() : ArrayList[Double]{self.at(this)} = coefficients;
     public def getPrimNorms() : ArrayList[Double]{self.at(this)} = primNorms;
@@ -52,6 +53,9 @@ public class ContractedGaussian {
     public def setIndex(idx:Int) {
        index = idx;
     }
+
+    public def distanceFrom(cg:ContractedGaussian) : Double = centeredAtom.distanceFrom(cg.centeredAtom);
+    public def distanceSquaredFrom(cg:ContractedGaussian) : Double = centeredAtom.distanceSquaredFrom(cg.centeredAtom);
 
     public def addPrimitive(exp:Double, coeff:Double) {
         val pg:PrimitiveGaussian{self.at(this)} = new PrimitiveGaussian();

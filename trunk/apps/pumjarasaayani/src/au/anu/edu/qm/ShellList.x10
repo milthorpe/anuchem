@@ -33,7 +33,7 @@ public class ShellList {
         shell.addShellPrimitive(cg);
     }
 
-    public def getNumberOfShell() : Int = shellList.size();
-    public def getShell(am:Int) : Shell = shellList.get(am) as Shell;
+    public def getNumberOfShells() : Int = shellList.size();
+    public def getShell(am:Int) : Shell{self.at(this)} = shellList.get(am) as Shell{self.at(this)};
 }
 

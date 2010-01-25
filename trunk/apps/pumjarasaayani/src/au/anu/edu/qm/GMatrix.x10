@@ -15,7 +15,7 @@ import x10x.vector.Vector;
 
 public class GMatrix extends Matrix {
     public def compute(twoE:TwoElectronIntegrals{self.at(this)}, density:Density{self.at(this)}) : void {
-        if (twoE.isDirect()) { computeDirect5(twoE, density); return; }
+        if (twoE.isDirect()) { computeDirect4(twoE, density); return; }
 
         val noOfBasisFunctions = density.getRowCount();
         val densityOneD = new Vector();
@@ -706,6 +706,97 @@ public class GMatrix extends Matrix {
         // half the elements
         finish ateach(val(x,y) in gMatrix.dist)
                   gMatrix(x,y) *= 0.5;
+    }
+
+    private def computeDirect7(twoE:TwoElectronIntegrals{self.at(this)}, density:Density{self.at(this)}) : void {
+        val N = density.getRowCount();
+
+        makeZero();
+
+        val gMatrix = getMatrix();
+        val dMatrix = density.getMatrix();
+
+        var i:Int, j:Int, k:Int, l:Int, m:Int, ij:Int, kl:Int;
+        var idx_i:Int, jdx_i:Int, kdx_i:Int, ldx_i:Int;
+        var idx:Array[Int]{rank==1}, jdx:Array[Int]{rank==1},
+            kdx:Array[Int]{rank==1}, ldx:Array[Int]{rank==1};
+        idx = Array.make[Int]([0..8]);
+        jdx = Array.make[Int]([0..8]);
+        kdx = Array.make[Int]([0..8]);
+        ldx = Array.make[Int]([0..8]);
+
+        val molecule = twoE.getMolecule();
+        val bfs = twoE.getBasisFunctions().getBasisFunctions();
+        val shellList = twoE.getBasisFunctions().getShellList();
+        val noOfBasisFunctions = bfs.size();
+
+        val noOfAtoms = molecule.getNumberOfAtoms();
+        var a:Int, b:Int, c:Int, d:Int;
+        var naFunc:Int, nbFunc:Int, ncFunc:Int, ndFunc:Int, twoEIndx:Int;
+        var aFunc:ArrayList[ContractedGaussian{self.at(this)}]{self.at(this)},
+            bFunc:ArrayList[ContractedGaussian{self.at(this)}]{self.at(this)},
+            cFunc:ArrayList[ContractedGaussian{self.at(this)}]{self.at(this)},
+            dFunc:ArrayList[ContractedGaussian{self.at(this)}]{self.at(this)};
+        var iaFunc:ContractedGaussian{self.at(this)}, jbFunc:ContractedGaussian{self.at(this)},
+            kcFunc:ContractedGaussian{self.at(this)}, ldFunc:ContractedGaussian{self.at(this)};
+
+        // center a
+        for(a=0; a<noOfAtoms; a++) {
+            aFunc = molecule.getAtom(a).getBasisFunctions();
+            naFunc = aFunc.size();
+            // basis functions on a
+            for(i=0; i<naFunc; i++) {
+                iaFunc = aFunc.get(i);
+                idx_i = iaFunc.getIndex();
+                idx(0) = idx_i; jdx(1) = idx_i; jdx(2) = idx_i; idx(3) = idx_i;
+                kdx(4) = idx_i; ldx(5) = idx_i; kdx(6) = idx_i; ldx(7) = idx_i;
+
+                // center b
+                for(b=0; b<=a; b++) {
+                    bFunc = molecule.getAtom(b).getBasisFunctions();
+                    nbFunc = (b<a) ? bFunc.size() : i+1;
+                    // basis functions on b
+                    for(j=0; j<nbFunc; j++) {
+                        jbFunc = bFunc.get(j);
+                        jdx_i = jbFunc.getIndex();
+                        jdx(0) = jdx_i; idx(1) = jdx_i; idx(2) = jdx_i; jdx(3) = jdx_i;
+                        ldx(4) = jdx_i; kdx(5) = jdx_i; ldx(6) = jdx_i; kdx(7) = jdx_i;
+                        ij = idx_i * (idx_i+1) / 2+jdx_i;
+
+                        // center c
+                        for(c=0; c<noOfAtoms; c++) {
+                            cFunc = molecule.getAtom(c).getBasisFunctions();
+                            ncFunc = cFunc.size();
+                            // basis functions on c
+                            for(k=0; k<ncFunc; k++) {
+                                kcFunc = cFunc.get(k);
+                                kdx_i = kcFunc.getIndex();
+                                kdx(0) = kdx_i; kdx(1) = kdx_i; ldx(2) = kdx_i; ldx(3) = kdx_i;
+                                jdx(4) = kdx_i; jdx(5) = kdx_i; idx(6) = kdx_i; idx(7) = kdx_i;
+
+                                // center d
+                                for(d=0; d<=c; d++) {
+                                    dFunc = molecule.getAtom(d).getBasisFunctions();
+                                    ndFunc = (d<c) ? dFunc.size() : k+1;
+                                    // basis functions on d
+                                    for(l=0; l<ndFunc; l++) {
+                                        ldFunc = dFunc.get(l);
+                                        ldx_i = ldFunc.getIndex();
+
+                                        kl = kdx_i * (kdx_i+1) / 2+ldx_i;
+                                        if (ij >= kl) {
+            	                           twoE.compute2EAndRecord(aFunc.get(i), bFunc.get(j), cFunc.get(k), dFunc.get(l), 
+                                                                   i, j, k, l, shellList, this);
+                                        } // end if
+				    } // end l
+				} // center d
+                            } // end k
+                        } // center c
+                    } // end j
+                } // center b
+            } // end i
+        } // center a
+         
     }
 
     /** find unique elements and mark the onces that are not */

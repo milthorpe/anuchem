@@ -51,6 +51,10 @@ public class Atom {
         return (x*x + y*y + z*z);
     }
 
+    public def sub(atm:Atom) : Atom{self.at(this)} {
+        return new Atom(this.x - atm.x, this.y - atm.y, this.z - atm.z);
+    }
+
     public global safe def toString() : String {
         return symbol + " " + x + " " + y + " " + z;
     }
