@@ -184,7 +184,8 @@ public class TwoElectronIntegrals {
          twoEUpdate.coulomb(i,j,k,l, jij);
     }
 
-    /* Note: M_D  routines mostly taken from Alistair's code, with a few changes */
+    /* Note: M_D  routines mostly taken from Alistair's code, with a few changes 
+       direct update to GMtarix is based on the code in GMatrix.compute..() */
     public def compute2EAndRecord(a:ContractedGaussian{self.at(this)}, b:ContractedGaussian{self.at(this)}, 
                                   c:ContractedGaussian{self.at(this)}, d:ContractedGaussian{self.at(this)}, 
                                   idx:Int, jdx:Int, kdx:Int, ldx:Int, shellList:ShellList{self.at(this)}, 
