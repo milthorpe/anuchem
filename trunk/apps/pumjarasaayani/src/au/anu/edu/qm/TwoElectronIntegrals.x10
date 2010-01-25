@@ -184,8 +184,8 @@ public class TwoElectronIntegrals {
          twoEUpdate.coulomb(i,j,k,l, jij);
     }
 
-    /* Note: M_D  routines mostly taken from Alistair's code, with a few changes 
-       direct update to GMtarix is based on the code in GMatrix.compute..() */
+    /* Note: M_D  routines mostly taken from Alistair's code, with a few changes. 
+       Direct update to GMtarix is based on the code in GMatrix.compute..() */
     public def compute2EAndRecord(a:ContractedGaussian{self.at(this)}, b:ContractedGaussian{self.at(this)}, 
                                   c:ContractedGaussian{self.at(this)}, d:ContractedGaussian{self.at(this)}, 
                                   idx:Int, jdx:Int, kdx:Int, ldx:Int, shellList:ShellList{self.at(this)}, 
@@ -200,7 +200,7 @@ public class TwoElectronIntegrals {
            for(val bPrim in bPrims) {
 
              // TODO:
-             val pcdint:Array[Double]{rank==3, self.at(this)} = Array.make[Double]([0..1,0..1,0..1]);
+             val pcdint:Rail[Double]{rank==3, self.at(this)} = Rail.make[Double]([0..1,0..1,0..1]);
 
              for(val cPrim in cPrims) {
                for(val dPrim in dPrims) {
@@ -231,9 +231,9 @@ public class TwoElectronIntegrals {
                  val maxam2 = 2*maxam;
                  val pqd    = (maxam2+1)*(maxam2+2)/2;
                  val fmt = Rail.make[Double](maxam+1);
-                 val zeroM:Array[Double]{rank==1,self.at(this)} = Array.make[Double]([0..maxam+1]);
-                 val rM:Array[Double]{rank==2,self.at(this)} = Array.make[Double]([0..maxam+1, 0..shellList.getNumberOfShells()]);
-                 val pqInts:Array[Double]{rank==2,self.at(this)} = Array.make[Double]([0..(maxam2+1)*(pqd+1), 0..(maxam2+1)*(pqd+1)]);
+                 val zeroM:Rail[Double]{rank==1,self.at(this)} = Rail.make[Double]([0..maxam+1]);
+                 val rM:Rail[Double]{rank==2,self.at(this)} = Rail.make[Double]([0..maxam+1, 0..shellList.getNumberOfShells()]);
+                 val pqInts:Rail[Double]{rank==2,self.at(this)} = Rail.make[Double]([0..(maxam2+1)*(pqd+1), 0..(maxam2+1)*(pqd+1)]);
                  val pqdim = maxam2+1;
 
                  var i:Int, j:Int, k:Int, l:Int;
@@ -308,7 +308,7 @@ public class TwoElectronIntegrals {
                    val shellAB = shellList.getShell(i).getShellPrimitives();
                    var pp:Int = 0;
                    for(val shellprimAB in shellAB) {
-                     val npint = Array.make[Double]([0..maxam2+1, 0..((maxam2+1)*(maxam2+2)/2)+1]);
+                     val npint = Rail.make[Double]([0..maxam2+1, 0..((maxam2+1)*(maxam2+2)/2)+1]);
 
                      for (k=0; k<=maxam; k++)
                        for (l=0; l<=(maxam2+1)*(maxam2+2)/2; l++)
@@ -355,7 +355,7 @@ public class TwoElectronIntegrals {
     }
 
     protected def mdRecurse(r:Atom{self.at(this)}, 
-                            zeroM:Array[Double]{rank==1,self.at(this)},
+                            zeroM:Rail[Double]{rank==1,self.at(this)},
                             i:Int, j:Int, k:Int, m:Int) : Double {
          var res:Double;
 
@@ -380,7 +380,7 @@ public class TwoElectronIntegrals {
 
     protected def mdr1(xa:Int, ya:Int, za:Int, xb:Int, yb:Int, zb:Int, xp:Int, yp:Int, zp:Int,
                           coorda:Atom{self.at(this)}, coordb:Atom{self.at(this)}, coordp:Atom{self.at(this)}, zeta:Double,
-                          pint:Array[Double]{rank==2, self.at(this)}) : Double {
+                          pint:Rail[Double]{rank==2, self.at(this)}) : Double {
          var res:Double;
          var ptot:Int, idx:Int;
 
