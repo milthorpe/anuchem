@@ -21,19 +21,15 @@ public class ShellList {
     } 
 
     public def addShellPrimitive(cg:ContractedGaussian{self.at(this)}) : void {
-        var shell:Shell{self.at(this)} = null; 
-        
-        try {
-           shell = shellList.get(cg.getTotalAngularMomentum()) as Shell{self.at(this)};
-        } catch (e:NullPointerException) {
+        var shell:Shell{self.at(this)} = getShell(cg.getTotalAngularMomentum())
+        if (shell == null) {
            shell = new Shell(cg.getTotalAngularMomentum());
            shellList.put(cg.getTotalAngularMomentum(), shell);
-        } // end try .. catch 
-
+        }
         shell.addShellPrimitive(cg);
     }
 
     public def getNumberOfShells() : Int = shellList.size();
-    public def getShell(am:Int) : Shell{self.at(this)} = shellList.get(am) as Shell{self.at(this)};
+    public def getShell(am:Int) = shellList.getOrElse(am, null);
 }
 

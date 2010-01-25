@@ -64,8 +64,6 @@ public class PowerList {
        return _theInstance;
     }
 
-    public def getPowers(orbitalType:String) : Array[Power]{self.at(this),rank==1} {
-       return (powerList.get(orbitalType) as Array[Power]{self.at(this),rank==1});
-    }
+    public def getPowers(orbitalType:String) = powerList.getOrElse(orbitalType, null);
 }
 

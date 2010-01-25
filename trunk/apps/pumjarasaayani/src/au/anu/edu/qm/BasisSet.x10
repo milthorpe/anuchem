@@ -171,10 +171,6 @@ public class BasisSet {
 
     public def getName() = this.name;
 
-    public def getBasis(atom:Atom{self.at(this)}) : AtomicBasis{self.at(this)} {
-        val bas = basisInfo.get(atom.getSymbol());
-
-        return (bas as AtomicBasis{self.at(this)});
-    }
+    public def getBasis(atom:Atom{self.at(this)}) = basisInfo.getOrElse(atom.getSymbol(), null);
 }
 

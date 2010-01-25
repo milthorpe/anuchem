@@ -68,9 +68,6 @@ public class AtomInfo {
         return _theInstance;
     }    
 
-    public def getAtomicNumber(atm:Atom{self.at(this)}) : Int {
-        val sym = atm.getSymbol();
-        return (atomicNumbers.get(sym) as Int);
-    }
+    public def getAtomicNumber(atm:Atom{self.at(this)}) = atomicNumbers.getOrElse(atm.getSymbol(), -1);
 }
 
