@@ -170,15 +170,11 @@ public class PrimitiveGaussian {
                                  prod.origin.getZ() - center.getZ(), prod.exponent);
 
         var sum:Double = 0.0;
-        var i:Int, j:Int, k:Int;
-        val nax = ax.region.max(0);
-        val nay = ay.region.max(0);
-        val naz = az.region.max(0);
 
         // TODO : x10 - parallel
-        for(i = 0; i<nax; i++) {
-            for(j = 0; j<nay; j++) {
-                for(k = 0; k<naz; k++) {
+        for(var i : Int = 0; i<ax.length; i++) {
+            for(var j : Int = 0; j<ay.length; j++) {
+                for(var k : Int = 0; k<az.length; k++) {
                     sum += ax(i) * ay(j) * az(k)
                           * IntegralsUtils.computeFGamma(i + j + k,
                                                         rCPSquared * prod.exponent);
@@ -194,9 +190,9 @@ public class PrimitiveGaussian {
      * <i> "THO eq. 2.18 and 3.1 <i>
      */
     private def constructAArray(l1:Int, l2:Int, pa:Double, pb:Double,
-                                cp:Double, gamma:Double) : Array[Double]{rank==1} {
+                                cp:Double, gamma:Double) {
         val iMax    = l1 + l2 + 1;
-        val a:Array[Double]{rank==1} = Array.make[Double]([0..iMax]);
+        val a = Rail.make[Double](iMax);
 
         var i:Int, r:Int, u:Int, index:Int;
 

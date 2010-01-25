@@ -418,12 +418,10 @@ public class GMatrix extends Matrix {
 
         var i:Int, j:Int, k:Int, l:Int, m:Int, ij:Int, kl:Int;
         var idx_i:Int, jdx_i:Int, kdx_i:Int, ldx_i:Int;
-        var idx:Array[Int]{rank==1}, jdx:Array[Int]{rank==1},
-            kdx:Array[Int]{rank==1}, ldx:Array[Int]{rank==1};
-        idx = Array.make[Int]([0..8]);
-        jdx = Array.make[Int]([0..8]);
-        kdx = Array.make[Int]([0..8]);
-        ldx = Array.make[Int]([0..8]);
+        val idx = Rail.make[Int](8);
+        val jdx = Rail.make[Int](8);
+        val kdx = Rail.make[Int](8);
+        val ldx = Rail.make[Int](8);
 
         val molecule = twoE.getMolecule();
         val bfs = twoE.getBasisFunctions().getBasisFunctions();
@@ -486,10 +484,10 @@ public class GMatrix extends Matrix {
                                         kl = kdx_i * (kdx_i+1) / 2+ldx_i;
                                         if (ij >= kl) { 
                                           val i_loc = idx_i, j_loc = jdx_i, k_loc = kdx_i, l_loc = ldx_i;
-                                          val idx_loc:Array[Int]{rank==1} = Array.make[Int]([0..8]),
-                                              jdx_loc:Array[Int]{rank==1} = Array.make[Int]([0..8]),
-                                              kdx_loc:Array[Int]{rank==1} = Array.make[Int]([0..8]),
-                                              ldx_loc:Array[Int]{rank==1} = Array.make[Int]([0..8]);
+                                          val idx_loc = Rail.make[Int](8);
+                                          val jdx_loc = Rail.make[Int](8);
+                                          val kdx_loc = Rail.make[Int](8);
+                                          val ldx_loc = Rail.make[Int](8);
 
                                           for(var midx:Int=0; midx<8; midx++) {
                                              idx_loc(midx) = idx(midx);
@@ -503,7 +501,7 @@ public class GMatrix extends Matrix {
                                             twoEIntVal     = twoE.compute2E(i_loc, j_loc, k_loc, l_loc);
                                             twoEIntVal2    = twoEIntVal + twoEIntVal;
                                             twoEIntValHalf = 0.5 * twoEIntVal;
-                                            var validIdx:Array[Boolean]{rank==1} = Array.make[Boolean]([0..8]);
+                                            val validIdx = Rail.make[Boolean](8);
                                             validIdx(0) = true;
 
                                             setGMatrixElements(gMatrix, dMatrix, i_loc, j_loc, k_loc, l_loc,

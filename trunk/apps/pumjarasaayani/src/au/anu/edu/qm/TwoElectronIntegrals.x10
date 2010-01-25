@@ -230,7 +230,7 @@ public class TwoElectronIntegrals {
                  val maxam  = angMomAB+angMomCD;
                  val maxam2 = 2*maxam;
                  val pqd    = (maxam2+1)*(maxam2+2)/2;
-                 val fmt:Array[Double]{rank==1,self.at(this)} = Array.make[Double]([0..maxam+1]);
+                 val fmt = Rail.make[Double](maxam+1);
                  val zeroM:Array[Double]{rank==1,self.at(this)} = Array.make[Double]([0..maxam+1]);
                  val rM:Array[Double]{rank==2,self.at(this)} = Array.make[Double]([0..maxam+1, 0..shellList.getNumberOfShells()]);
                  val pqInts:Array[Double]{rank==2,self.at(this)} = Array.make[Double]([0..(maxam2+1)*(pqd+1), 0..(maxam2+1)*(pqd+1)]);
@@ -663,11 +663,11 @@ public class TwoElectronIntegrals {
 
         var sum:Double = 0.0;
         var i:Int, j:Int, k:Int;
-        val nbx = bx.region.max(0);
-        val nby = by.region.max(0);
-        val nbz = bz.region.max(0);
+        val nbx = bx.length;
+        val nby = by.length;
+        val nbz = bz.length;
         val maxam = nbx+nby+nbz;
-        val fmt:Array[Double]{rank==1,self.at(this)} = Array.make[Double]([0..maxam+1]);
+        val fmt = Rail.make[Double](maxam+1);
 
         // compute FmT
         computeFmt(maxam, 0.25*radiusPQSquared/delta, fmt);
@@ -700,7 +700,7 @@ public class TwoElectronIntegrals {
                   * sum * aNorm * bNorm * cNorm * dNorm);
     }
 
-    protected def computeFmt(maxam:Int, T:Double, fmt:Array[Double]{rank==1,self.at(this)}) {
+    protected def computeFmt(maxam:Int, T:Double, fmt:Rail[Double]!) {
         var m:Int, i:Int;
         var num:Double, denom:Double, term:Double, sum:Double;
         val threshold = 1.0e-15;
@@ -1105,9 +1105,9 @@ public class TwoElectronIntegrals {
      */
     private def constructBArray(l1:Int, l2:Int, l3:Int, l4:Int,
                   p:Double, a:Double, b:Double, q:Double, c:Double, d:Double,
-                  g1:Double, g2:Double, delta:Double) : Array[Double]{rank==1} {
+                  g1:Double, g2:Double, delta:Double) : Rail[Double]! {
         val iMax = l1+l2+l3+l4+1;  // hold all the values (max angular momentum)
-        val bArr:Array[Double]{rank==1} = Array.make[Double]([0..iMax]);
+        val bArr = Rail.make[Double](iMax);
 
         var i1:Int, i2:Int, r1:Int, r2:Int, u:Int, index:Int;
 
