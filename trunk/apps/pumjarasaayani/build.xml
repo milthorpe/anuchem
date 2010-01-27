@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE project [<!ENTITY buildfile SYSTEM "file:./build-user.xml">]>
 <project name="X10 Linear Algebra project" default="build" basedir=".">
-    <property name="x10.testlib" location="${user.home}/x10-trunk/x10.tests/examples/x10lib"/>
-    <property name="x10x.xlalib" location="${user.home}/anu-x10/x10x.lib/xla/src"/>
+    <property name="x10.testlib" location="${user.home}/x10-17/x10.tests/examples/x10lib"/>
+    <property name="x10x.xlalib" location="${user.home}/projects/x10lib/x10x.lib/xla2/src"/>
     <property name="bash.exe" value="bash"/>    
     <property name="optimize" value="true" />
     <property name="nochecks" value="false" />
