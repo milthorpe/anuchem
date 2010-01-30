@@ -34,6 +34,7 @@ public class BasisFunctions {
         var basisSet:BasisSet{self.at(this)} = new BasisSet(); 
         basisSet.make(basisName, basisDir);
         var indx:Int = 0;
+        var intIndx:Int = 0;
 
         for(var atmno:Int=0; atmno<molecule.getNumberOfAtoms(); atmno++) {
             val atom      = molecule.getAtom(atmno);
@@ -52,12 +53,14 @@ public class BasisFunctions {
                   var cg:ContractedGaussian{self.at(this)} = new ContractedGaussian();
                   cg.make(atom, pList(l));   
                   cg.setIndex(indx++);
+                  cg.setIntIndex(intIndx);
               
                   val coeff:ArrayList[Double]{self.at(this)} = orb.getCoefficients();
                   val exps:ArrayList[Double]{self.at(this)}  = orb.getExponents();
 
                   for(var i:Int=0; i<coeff.size(); i++) {
                      cg.addPrimitive(exps.get(i), coeff.get(i));
+                     intIndx++;
                   } // end for
 
                   cg.normalize();

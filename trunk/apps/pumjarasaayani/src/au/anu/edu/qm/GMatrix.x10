@@ -748,8 +748,10 @@ public class GMatrix extends Matrix {
 
                                         kl = kdx_i * (kdx_i+1) / 2+ldx_i;
                                         if (ij >= kl) {
+                                           Console.OUT.println("h-st");
             	                           twoE.compute2EAndRecord(aFunc.get(i), bFunc.get(j), cFunc.get(k), dFunc.get(l), 
-                                                                   i, j, k, l, shellList, this);
+                                                                   i, j, k, l, shellList, this, density);
+                                           Console.OUT.println("h-ed");
                                         } // end if
 				    } // end l
 				} // center d

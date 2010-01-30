@@ -189,18 +189,27 @@ public class TwoElectronIntegrals {
     public def compute2EAndRecord(a:ContractedGaussian{self.at(this)}, b:ContractedGaussian{self.at(this)}, 
                                   c:ContractedGaussian{self.at(this)}, d:ContractedGaussian{self.at(this)}, 
                                   idx:Int, jdx:Int, kdx:Int, ldx:Int, shellList:ShellList{self.at(this)}, 
-                                  gMatrix:GMatrix) : void {
+                                  gMat:GMatrix{self.at(this)}, dMat:Density{self.at(this)}) : void {
          val aPrims = a.getPrimitives();
          val bPrims = b.getPrimitives();
          val cPrims = c.getPrimitives();
          val dPrims = d.getPrimitives();
+
+         val gMatrix = gMat.getMatrix();
+         val dMatrix = dMat.getMatrix();
+
+         val angMomAB = a.getTotalAngularMomentum() + b.getTotalAngularMomentum();
+         val angMomCD = c.getTotalAngularMomentum() + d.getTotalAngularMomentum();
+
+         val maxam  = angMomAB+angMomCD;
+         val maxam2 = 2*maxam;
 
 
          for(val aPrim in aPrims) {
            for(val bPrim in bPrims) {
 
              // TODO:
-             val pcdint:Array[Double]{rank==3, self.at(this)} = Array.make[Double]([0..1,0..1,0..1]);
+             val pcdint:Array[Double]{rank==3, self.at(this)} = Array.make[Double]([0..((maxam+1)*(maxam+2)/2), 0..((maxam+1)*(maxam+2)/2), 0..maxam2*((maxam2+1)*(maxam2+2)/2)]);
 
              for(val cPrim in cPrims) {
                for(val dPrim in dPrims) {
@@ -224,11 +233,6 @@ public class TwoElectronIntegrals {
                  val delta  = 0.25 * (1/gamma1 + 1/gamma2);   
                  val eta    = (gamma1*gamma2)/(gamma1+gamma2);  
 
-                 val angMomAB = a.getTotalAngularMomentum() + b.getTotalAngularMomentum();
-                 val angMomCD = c.getTotalAngularMomentum() + d.getTotalAngularMomentum();
-
-                 val maxam  = angMomAB+angMomCD;
-                 val maxam2 = 2*maxam;
                  val pqd    = (maxam2+1)*(maxam2+2)/2;
                  val fmt = Rail.make[Double](maxam+1);
                  val zeroM:Array[Double]{rank==1,self.at(this)} = Array.make[Double]([0..maxam+1]);
@@ -314,8 +318,8 @@ public class TwoElectronIntegrals {
                        for (l=0; l<=(maxam2+1)*(maxam2+2)/2; l++)
                           npint(k,l) = pqInts(i*pqdim+pp, k*pqdim+l);
 
-	             val dAng = d.getPrimitive(ldx).getMaximumAngularMomentum();
-	             val cAng = c.getPrimitive(kdx).getMaximumAngularMomentum();
+	             val dAng = dPrim.getMaximumAngularMomentum();
+	             val cAng = cPrim.getMaximumAngularMomentum();
 
                      val shellD = shellList.getShell(dAng).getShellPrimitives();
                      dd = 0;
@@ -348,6 +352,79 @@ public class TwoElectronIntegrals {
 
                  // TODO:
                  // form [ab|cd], and update the GMatrix elements accordingly
+                 val dAng = dPrim.getMaximumAngularMomentum();
+                 val cAng = cPrim.getMaximumAngularMomentum();
+                 val bAng = bPrim.getMaximumAngularMomentum();
+                 val aAng = aPrim.getMaximumAngularMomentum();
+
+                 var bb:Int, aa:Int;
+
+                 for(dd=0; dd<((dAng+1)*(dAng+2)/2); dd++) {
+                     for(cc=0; cc<((cAng+1)*(cAng+2)/2); cc++) {
+                        val npint = Array.make[Double]([0..maxam2+1, 0..((maxam2+1)*(maxam2+2)/2)+1]);
+
+                        for (k=0; k<=maxam; k++)
+                          for (l=0; l<=(maxam2+1)*(maxam2+2)/2; l++)
+                            npint(k,l) = pcdint(dd, cc, k*pqdim+l);
+
+                        val shellB = shellList.getShell(bAng).getShellPrimitives();
+                        bb = 0;
+                        for(val shellprimB in shellB) {
+                          val powersB = (shellprimB as ContractedGaussian{self.at(this)}).getPower();
+                          val lp = powersB.getL();
+                          val mp = powersB.getM();
+                          val np = powersB.getN();
+
+                          val shellA = shellList.getShell(aAng).getShellPrimitives();
+                          aa = 0;
+                          for(val shellprimA in shellA) {
+                             val powersA = (shellprimA as ContractedGaussian{self.at(this)}).getPower();
+                             val lq = powersA.getL();
+                             val mq = powersA.getM();
+                             val nq = powersA.getN();
+ 
+                             val ii = a.getIntIndex() + aa;
+                             val jj = b.getIntIndex() + bb;
+                             val kk = c.getIntIndex() + cc;
+                             val ll = d.getIntIndex() + dd;
+
+                             if (ii >= jj && kk >=ll) {
+                                val iijj = ii*(ii+1)/2 + jj;
+                                val kkll = kk*(kk+1)/2 + ll;
+
+                                if (iijj >= kkll) {
+                                    val twoEIntVal = mdr1(lp, mp, np, lq, mq, nq, 0, 0, 0,
+                                                       b.getCenteredAtom(), a.getCenteredAtom(),
+                                                       p, eta, npint);
+                                    val twoEIntVal2    = twoEIntVal + twoEIntVal;
+                                    val twoEIntValHalf = 0.5 * twoEIntVal;
+
+                                    val v1 = dMatrix(kk,ll) * twoEIntVal2;
+                                    val v2 = dMatrix(ii,jj) * twoEIntVal2;
+                                    val v3 = dMatrix(jj,ll) * twoEIntValHalf;
+                                    val v4 = dMatrix(jj,kk) * twoEIntValHalf;
+                                    val v5 = dMatrix(ii,ll) * twoEIntValHalf;
+                                    val v6 = dMatrix(ii,kk) * twoEIntValHalf;
+
+                                    // atomic {
+                                      gMatrix(ii,jj) += v1;
+                                      gMatrix(kk,ll) += v2;
+                                      gMatrix(ii,kk) -= v3;
+                                      gMatrix(ii,ll) -= v4;
+                                      gMatrix(jj,kk) -= v5;
+                                      gMatrix(jj,ll) -= v6;
+                                    // } // atomic
+                                }
+                             }
+
+                             aa++;
+                          }
+
+                          bb++;
+                        }
+
+                     }
+                 }
               }
             }
           }

@@ -47,11 +47,18 @@ public class ContractedGaussian {
     public def getMaximumAngularMomentum() = power.getMaximumAngularMomentum();
     public def getMinimumAngularMomentum() = power.getMinimumAngularMomentum();
 
-    var index:Int;
+    global var index:Int;
     public def getIndex() = index;
     
     public def setIndex(idx:Int) {
        index = idx;
+    }
+
+    global var intIndex:Int;
+    public def getIntIndex() = intIndex;
+
+    public def setIntIndex(idx:Int) {
+       intIndex = idx;
     }
 
     public def distanceFrom(cg:ContractedGaussian) : Double = centeredAtom.distanceFrom(cg.centeredAtom);
