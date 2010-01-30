@@ -3,6 +3,7 @@ package au.edu.anu.mm;
 import x10x.vector.Point3d;
 import x10x.vector.Vector3d;
 import x10x.vector.Tuple3d;
+import au.edu.anu.chem.mm.MMAtom;
 
 /**
  * This class implements the Fast Multipole Method for electrostatic
@@ -34,7 +35,7 @@ public class Fmm3d {
     /** All boxes in the octree division of space. */
     val boxes : Array[FmmBox!](2);
 
-    val atoms : ValRail[Atom];
+    val atoms : ValRail[MMAtom];
 
     /** A cache of transformations from multipole to local at the same level. */
     val multipoleTransforms : Array[LocalExpansion!](4);
@@ -57,7 +58,7 @@ public class Fmm3d {
                     ws : Int,
                     topLeftFront : Point3d,
                     size : Double,
-                    atoms : ValRail[Atom]) {
+                    atoms : ValRail[MMAtom]) {
         val numLevels = Math.max(2, (Math.log(atoms.length / density) / Math.log(8.0) + 1.0 as Int));
         this.numLevels = numLevels;
         var nBox : Int = 0;
@@ -276,7 +277,7 @@ public class Fmm3d {
 
                     // direct calculation with all atoms in same box
                     for ((sameBoxAtomIndex) in 0..atomIndex1-1) {
-                        val sameBoxAtom = box1.atoms(sameBoxAtomIndex) as Atom!;
+                        val sameBoxAtom = box1.atoms(sameBoxAtomIndex) as MMAtom!;
                         val pairEnergy : Double = sameBoxAtom.pairEnergy(atom1);
                         fmmEnergy += 2 * pairEnergy;
                     }
@@ -287,7 +288,7 @@ public class Fmm3d {
                         if (box2 != null) {
                             if (!box2.wellSeparated(ws, box1)) {
                                 for ((atomIndex2) in 0..box2.atoms.length()-1) {
-                                    val atom2 = box2.atoms(atomIndex2) as Atom!;
+                                    val atom2 = box2.atoms(atomIndex2) as MMAtom!;
                                     val pairEnergy : Double = atom2.pairEnergy(atom1);
                                     fmmEnergy += 2 * pairEnergy;
                                 }
@@ -301,7 +302,7 @@ public class Fmm3d {
         return fmmEnergy;
     }
 
-    private def getLowestLevelBoxLocation(atom : Atom) : GridLocation {
+    private def getLowestLevelBoxLocation(atom : MMAtom) : GridLocation {
         return GridLocation(atom.centre.i / size * dimLowestLevelBoxes + dimLowestLevelBoxes / 2 as Int, atom.centre.j / size * dimLowestLevelBoxes + dimLowestLevelBoxes / 2 as Int, atom.centre.k / size * dimLowestLevelBoxes + dimLowestLevelBoxes / 2 as Int);
         /*
         index : ValRail[Int](3) = [ atom.centre.i / size * dimLowestLevelBoxes + dimLowestLevelBoxes / 2 as Int, atom.centre.j / size * dimLowestLevelBoxes + dimLowestLevelBoxes / 2 as Int, atom.centre.k / size * dimLowestLevelBoxes + dimLowestLevelBoxes / 2 as Int ];

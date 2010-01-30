@@ -3,6 +3,7 @@ package au.edu.anu.pme;
 import x10.util.Random;
 import x10x.vector.Point3d;
 import x10x.vector.Vector3d;
+import au.edu.anu.chem.mm.MMAtom;
 
 /**
  * Tests the Distributed Particle Mesh Ewald implementation.
@@ -43,7 +44,7 @@ public class TestPME {
         }
 
         /* Assign particles to random locations within a 40 Angstrom 3D box, with unit charge (1/3 are negative). */
-        val atoms : Rail[Atom] = ValRail.make[Atom](numParticles, (i : Int) => new Atom(new Point3d(randomUnit(), randomUnit(), randomUnit()), i%3==4?1:-1));
+        val atoms = ValRail.make[MMAtom](numParticles, (i : Int) => new MMAtom(new Point3d(randomUnit(), randomUnit(), randomUnit()), i%3==4?1:-1));
         val size = 40.0; // side length of cubic unit cell
         val edges = [new Vector3d(size, 0.0, 0.0), new Vector3d(0.0, size, 0.0), new Vector3d(0.0, 0.0, size)];
         val g = gridSize;

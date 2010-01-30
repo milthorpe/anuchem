@@ -3,6 +3,7 @@ package au.edu.anu.pme;
 import x10x.vector.Point3d;
 import x10x.vector.Vector3d;
 import au.edu.anu.fft.DFT;
+import au.edu.anu.chem.mm.MMAtom;
 
 public class PME {
     /** The number of grid lines in each dimension of the simulation unit cell. */
@@ -19,7 +20,7 @@ public class PME {
     /** The conjugate reciprocal vectors for each dimension. */
     public val edgeReciprocals : ValRail[Vector3d](3);
 
-	val atoms : ValRail[Atom];
+	val atoms : ValRail[MMAtom];
 
     val gridRegion : Region(3);
     
@@ -40,7 +41,7 @@ public class PME {
      */
     public def this(edges : ValRail[Vector3d](3),
             gridSize : ValRail[Int](3),
-            atoms : ValRail[Atom],
+            atoms : ValRail[MMAtom],
             splineOrder : Int,
             beta : Double,
             cutoff : Double) {

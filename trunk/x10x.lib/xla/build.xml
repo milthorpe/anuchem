@@ -1,17 +1,25 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE project [<!ENTITY buildfile SYSTEM "file:./build-user.xml">]>
 <project name="X10 Linear Algebra project" default="build" basedir=".">
+    <property environment="env"/>
+    <property name="x10home" location="${env.X10HOME}" />
     <property name="x10.testlib" location="${user.home}/x10-trunk/x10.tests/examples/x10lib"/>
     <property name="bash.exe" value="bash"/>    
     <property name="optimize" value="true" />
+    <property name="nochecks" value="true" />
 	<property name="target" location="${basedir}/target" />
 	<property name="target-src" location="${target}/classes" />
 	<property name="target-test" location="${target}/test-classes" />
 	<property name="lib" location="${basedir}/lib" />
 	<property name="jar" value="xla.jar"/>
+    <property name="ar" value="xla.a"/>
 
     <condition property="x10c.optimize" value="-O" else="">
         <istrue value="${optimize}" />
+    </condition>
+
+    <condition property="x10c.nochecks" value="-NO_CHECKS" else="">
+        <istrue value="${nochecks}" />
     </condition>
 
 	<target name="init">
@@ -20,14 +28,22 @@
 
     <target name="build" depends="dist"/>
 
-	<target name="dist" depends="jar">
+	<target name="dist" depends="jar,ar">
         <mkdir dir="${lib}"/>
         <copy todir="${lib}">
             <fileset dir="${target}" includes="${jar}"/>
+            <fileset dir="${target}" includes="${ar}"/>
         </copy>
     </target>
 
-	<target name="jar" depends="build-src-java,test">
+    <target name="ar" depends="build-src-cpp">
+        <exec executable="${bash.exe}" failonerror="true" dir="${target}">
+            <arg value="-c"/>
+            <arg value="'ar' rcs ${ar} classes/*.o"/>
+        </exec>
+    </target>
+
+	<target name="jar" depends="build-src-java">
         <jar jarfile="${target}/${jar}">
             <fileset dir="${target-src}" includes="**/*.class" excludes="${jar}"/>
         </jar>
@@ -69,7 +85,20 @@
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/src">
             <arg value="-c"/>
-            <arg value="'x10c++' ${x10c.optimize} -sourcepath . -commandlineonly -d ${target-src} ${src.list}"/>
+            <arg value="'x10c++' ${x10c.optimize} ${x10c.nochecks} -c -report postcompile=1 -sourcepath . -commandlineonly -d ${target-src} ${src.list}"/>
+        </exec>
+
+        <fileset id="generated.cpp.files" dir="${target}/classes">
+            <include name="**/*.cc" />
+        </fileset>
+
+        <pathconvert property="cpp.list" refid="generated.cpp.files" dirsep="/" pathsep=" ">
+            <map from="${basedir}${file.separator}src${file.separator}" to=""/>
+        </pathconvert>
+
+        <exec executable="${bash.exe}" failonerror="true" dir="${target}/classes">
+            <arg value="-c"/>
+            <arg value="'g++' -c -g -I${x10home}/include -I. -DX10_USE_BDWGC -O2 -DNDEBUG -finline-functions -DNO_CHECKS -Wno-long-long -Wno-unused-parameter -pthread -msse2 -mfpmath=sse ${cpp.list}"/>
         </exec>
     </target>
 

@@ -2,6 +2,7 @@ package au.edu.anu.mm;
 
 import x10.util.Random;
 import x10x.vector.Point3d;
+import au.edu.anu.chem.mm.MMAtom;
 
 /**
  * Tests the FMM 3D implementation.
@@ -11,7 +12,7 @@ public class TestFmm3d {
     private const RANDOM_SEED = 10101110L;
     private static val R = new Random(RANDOM_SEED);
 
-    public static def main(args: Rail[String]!) {
+    public static def main(args : Rail[String]!) {
         var numParticles : Int;
         var density : Double = 3.0;
         var numTerms : Int = 10;
@@ -34,9 +35,9 @@ public class TestFmm3d {
 
         
         /* Assign particles to random locations within a -1..1 3D box, with unit charge (1/3 are negative). */
-        val atoms : Rail[Atom] = ValRail.make[Atom](numParticles, (i : Int) => new Atom(new Point3d(randomUnit(), randomUnit(), randomUnit()), i%3==4?1:-1));
+        val atoms = ValRail.make[MMAtom](numParticles, (i : Int) => new MMAtom(new Point3d(randomUnit(), randomUnit(), randomUnit()), i%3==4?1:-1));
         val topLeftFront = new Point3d(-1.0, -1.0, -1.0);
-        val energy : Double = new Fmm3d(density, numTerms, wellSpaced, topLeftFront, 2.0, atoms).calculateEnergy();
+        val energy = new Fmm3d(density, numTerms, wellSpaced, topLeftFront, 2.0, atoms).calculateEnergy();
         Console.OUT.println("energy = " + energy);
     }
 

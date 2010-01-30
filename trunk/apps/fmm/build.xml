@@ -7,6 +7,9 @@
 	<property name="x10.runtime.extensions" location="../../x10.runtime"/>
 	<property name="xre.src" location="${x10.runtime.extensions}/src"/>
 	<property name="xre.lib" location="${x10.runtime.extensions}/lib/x10re.jar"/>
+    <property name="anuchem" location="../../anu-chem"/>
+	<property name="anuchem.src" location="${anuchem}/src"/>
+	<property name="anuchem.lib" location="${anuchem}/lib/anu-chem.jar"/>
     <property name="x10.testlib" location="${user.home}/x10-trunk/x10.tests/examples/x10lib"/>
     <property environment="env"/>
     <property name="bash.exe" value="bash"/>    
@@ -70,7 +73,7 @@
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/src">
             <arg value="-c"/>
-            <arg value="'x10c' ${x10c.optimize} -sourcepath ${xre.src}:${xla.src}:. -classpath ${xre.lib}:${xla.lib} -d ${target-src} ${src.list}"/>
+            <arg value="'x10c' ${x10c.optimize} -sourcepath .:${xre.src}:${xla.src}:${anuchem.src} -classpath ${xre.lib}:${xla.lib}:${anuchem.lib} -d ${target-src} ${src.list}"/>
         </exec>
     </target>
 
@@ -86,11 +89,11 @@
         <pathconvert property="src.list" refid="changed.src.files" dirsep="/" pathsep=" ">
             <map from="${basedir}${file.separator}src${file.separator}" to=""/>
         </pathconvert>
-        <echo message="x10c++ -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} ${x10c.inline-optimizations} -sourcepath .:${xre.src}:${xla.src} ${src.list} ${basedir}/${testclass}"/>
+        <echo message="x10c++ -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} ${x10c.inline-optimizations} -sourcepath .:${xre.src}:${xla.src}:${anuchem.src} ${src.list} ${basedir}/${testclass}"/>
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/src">
             <arg value="-c"/>
-            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} ${x10c.inline-optimizations} -report postcompile=1 -sourcepath .:${xre.src}:${xla.src} -d ${target-src} ${src.list} ${basedir}/${testclass}"/>
+            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} ${x10c.inline-optimizations} -report postcompile=1 -sourcepath .:${xre.src}:${xla.src}:${anuchem.src} -d ${target-src} ${src.list} ${basedir}/${testclass}"/>
         </exec>
     </target>
 
@@ -130,13 +133,13 @@
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/test">
             <arg value="-c"/>
-            <arg value="'x10c' ${x10c.optimize} -sourcepath ${xre.src}:${xla.src}:${x10.testlib}:${basedir}/src:. -classpath ${xre.lib}:${xla.lib}:${target-src} -commandlineonly -d ${target-test} ${test.list}"/>
+            <arg value="'x10c' ${x10c.optimize} -sourcepath .:${basedir}/src:${xre.src}:${xla.src}:${anuchem.src}:${x10.testlib} -classpath ${xre.lib}:${xla.lib}:${anuchem.lib}:${target-src} -commandlineonly -d ${target-test} ${test.list}"/>
         </exec>
     </target>
 
     <target name="test" depends="build-test">
         <apply executable="x10" failonerror="true" dir="${target-test}" relative="true" addsourcefile="false">
-            <arg line="-t -v -mx 128M -classpath ${xre.lib}:${xla.lib}:${target-src}:${target-test}"/>
+            <arg line="-t -v -mx 128M -classpath ${xre.lib}:${xla.lib}:${anuchem.lib}:${target-src}:${target-test}"/>
             <targetfile/>
 
             <fileset dir="${target-test}" includes="**/Test*.java"/>

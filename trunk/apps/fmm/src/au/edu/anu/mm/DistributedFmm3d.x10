@@ -3,6 +3,7 @@ package au.edu.anu.mm;
 import x10x.vector.Point3d;
 import x10x.vector.Vector3d;
 import x10x.vector.Tuple3d;
+import au.edu.anu.chem.mm.MMAtom;
 
 /**
  * This class implements the Fast Multipole Method for electrostatic
@@ -34,7 +35,7 @@ public class DistributedFmm3d {
     /** All boxes in the octree division of space. */
     global val boxes : Array[FmmBox](2);
 
-    val atoms : ValRail[Atom];
+    val atoms : ValRail[MMAtom];
 
     /** A cache of transformations from multipole to local at the same level. */
     global val multipoleTransforms : Array[LocalExpansion](5);
@@ -61,7 +62,7 @@ public class DistributedFmm3d {
                     ws : Int,
                     topLeftFront : Point3d,
                     size : Double,
-                    atoms : ValRail[Atom]) {
+                    atoms : ValRail[MMAtom]) {
         val numLevels = Math.max(2, (Math.log(atoms.length / density) / Math.log(8.0) + 1.0 as Int));
         this.numLevels = numLevels;
 
@@ -163,7 +164,7 @@ public class DistributedFmm3d {
                 val parentBox = getParentBox(boxIndex, numLevels);
                 //Console.OUT.println("boxIndex = " + boxIndex + " numLevels = " + numLevels);
                 at (boxes.dist(boxIndex, numLevels)) {
-                    val remoteAtom = new Atom(atom);
+                    val remoteAtom = new MMAtom(atom);
                     var box : FmmBox;
                     atomic {
                         box = boxes(boxIndex, numLevels);
@@ -308,7 +309,7 @@ public class DistributedFmm3d {
                 //Console.OUT.println("getEnergy: box(" + boxIndex1 + "," + numLevels + ")");
                 for ((atomIndex1) in 0..box1.atoms.length()-1) {
                     // TODO should be able to use a shared var for atom energy
-                    val atom1 = box1.atoms(atomIndex1) as Atom!;
+                    val atom1 = box1.atoms(atomIndex1) as MMAtom!;
                     val box1Centre = atom1.centre.sub(box1.getCentre(size));
                     val farFieldEnergy = box1.localExp.getPotential(atom1.charge, box1Centre);
                     //Console.OUT.println("farFieldEnergy " + farFieldEnergy + " at " + this.home);
@@ -348,7 +349,7 @@ public class DistributedFmm3d {
         return fmmEnergy;
     }
 
-    private global def getLowestLevelBoxLocation(atom : Atom) : GridLocation {
+    private global def getLowestLevelBoxLocation(atom : MMAtom) : GridLocation {
         return  GridLocation(atom.centre.i / size * dimLowestLevelBoxes + dimLowestLevelBoxes / 2 as Int, atom.centre.j / size * dimLowestLevelBoxes + dimLowestLevelBoxes / 2 as Int, atom.centre.k / size * dimLowestLevelBoxes + dimLowestLevelBoxes / 2 as Int);
         /*index : ValRail[Int]{length==3} = [ atom.centre.i / size * dimLowestLevelBoxes + dimLowestLevelBoxes / 2 as Int, atom.centre.j / size * dimLowestLevelBoxes + dimLowestLevelBoxes / 2 as Int, atom.centre.k / size * dimLowestLevelBoxes + dimLowestLevelBoxes / 2 as Int ];
         return index;*/
@@ -384,10 +385,10 @@ public class DistributedFmm3d {
     /**
      * Gets the pairwise interaction energy between the given atom and all atoms in the given box.
      */
-    public global def getPairwiseInteractionForBox(atom : Atom, box : FmmLeafBox!) : Double {
+    public global def getPairwiseInteractionForBox(atom : MMAtom, box : FmmLeafBox!) : Double {
         var boxEnergy : Double = 0.0;
         for ((atomIndex2) in 0..box.atoms.length()-1) {
-            val atom2 = box.atoms(atomIndex2) as Atom!;
+            val atom2 = box.atoms(atomIndex2) as MMAtom!;
             val pairEnergy : Double = atom2.pairEnergy(atom);
             boxEnergy += 2 * pairEnergy;
         }
