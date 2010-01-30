@@ -8,14 +8,34 @@
 	<property name="xre.src" location="${x10.runtime.extensions}/src"/>
 	<property name="xre.lib" location="${x10.runtime.extensions}/lib/x10re.jar"/>
     <property name="x10.testlib" location="${user.home}/x10-trunk/x10.tests/examples/x10lib"/>
+    <property environment="env"/>
     <property name="bash.exe" value="bash"/>    
-    <property name="optimize" value="true" />
-	<property name="target" location="${basedir}/target" />
-	<property name="target-src" location="${target}/classes" />
-	<property name="target-test" location="${target}/test-classes" />
+    <property name="optimize" value="true"/>
+    <property name="nochecks" value="true"/>
+    <property name="inline-optimizations" value="false"/>
+    <property name="profile"  value="true"/>
+    <property name="x10rt" value="mpi"/>
+	<property name="target" location="${basedir}/target"/>
+	<property name="target-src" location="${target}/classes"/>
+	<property name="target-test" location="${target}/test-classes"/>
+    <property name="bin" location="${basedir}/bin"/>
+	<property name="exe" value="fmm3d"/>
+    <property name="testclass" value="test/au/edu/anu/mm/TestDistributedFmm3d.x10"/>
 
     <condition property="x10c.optimize" value="-O" else="">
-        <istrue value="${optimize}" />
+        <istrue value="${optimize}"/>
+    </condition>
+
+    <condition property="x10c.nochecks" value="-NO_CHECKS" else="">
+        <istrue value="${nochecks}"/>
+    </condition>
+
+    <condition property="x10c.inline-optimizations" value="-INLINE_OPTIMIZATIONS" else="">
+        <istrue value="${inline-optimizations}"/>
+    </condition>
+
+    <condition property="x10c.profile" value="-post 'g++ -g -pg'" else="">
+        <istrue value="${profile}"/>
     </condition>
 
 	<target name="init">
@@ -23,6 +43,16 @@
 	</target>
 
     <target name="build" depends="build-src-java,test"/>
+
+    <target name="exe" depends="build-src-cpp">
+        <mkdir dir="${bin}"/>
+        <copy file="${target}/classes/a.out" tofile="${bin}/${exe}"/>
+
+        <exec executable="chmod" failonerror="true" dir="${bin}">
+            <arg value="+x"/>
+            <arg value="${exe}"/>
+        </exec>
+    </target>
 
     <target name="build-src-java" depends="check-src-java" unless="src.uptodate.java">
         <echo message="Building source tree"/>
@@ -40,7 +70,7 @@
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/src">
             <arg value="-c"/>
-            <arg value="'x10c' ${x10c.optimize} -sourcepath ${xre.src}:${xla.src}:. -classpath ${xre.lib}:${xla.lib} -commandlineonly -d ${target-src} ${src.list}"/>
+            <arg value="'x10c' ${x10c.optimize} -sourcepath ${xre.src}:${xla.src}:. -classpath ${xre.lib}:${xla.lib} -d ${target-src} ${src.list}"/>
         </exec>
     </target>
 
@@ -56,11 +86,11 @@
         <pathconvert property="src.list" refid="changed.src.files" dirsep="/" pathsep=" ">
             <map from="${basedir}${file.separator}src${file.separator}" to=""/>
         </pathconvert>
-        <echo message="x10c++ ${src.list}"/>
+        <echo message="x10c++ -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} ${x10c.inline-optimizations} -sourcepath .:${xre.src}:${xla.src} ${src.list} ${basedir}/${testclass}"/>
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/src">
             <arg value="-c"/>
-            <arg value="'x10c++' ${x10c.optimize} -c -sourcepath . -commandlineonly -d ${target-src} ${src.list}"/>
+            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} ${x10c.inline-optimizations} -report postcompile=1 -sourcepath .:${xre.src}:${xla.src} -d ${target-src} ${src.list} ${basedir}/${testclass}"/>
         </exec>
     </target>
 
@@ -106,10 +136,10 @@
 
     <target name="test" depends="build-test">
         <apply executable="x10" failonerror="true" dir="${target-test}" relative="true" addsourcefile="false">
-            <arg line="-t -v -mx 128M -classpath ${xre.lib}:${xla.lib}:${target-src}:${target-test}" />
+            <arg line="-t -v -mx 128M -classpath ${xre.lib}:${xla.lib}:${target-src}:${target-test}"/>
             <targetfile/>
 
-            <fileset dir="${target-test}" includes="**/Test*.java" />
+            <fileset dir="${target-test}" includes="**/Test*.java"/>
             <mapper type="glob" from="*.java" to="*"/>
         </apply>
     </target>
@@ -143,7 +173,8 @@
     </target>
 
 	<target name="clean">
-		<delete dir="target" />
+		<delete dir="target"/>
+        <delete dir="bin"/>
 	</target>
 
 </project>
