@@ -2,10 +2,13 @@
 <!DOCTYPE project [<!ENTITY buildfile SYSTEM "file:./build-user.xml">]>
 <project name="X10 Linear Algebra project" default="build" basedir=".">
     <property name="x10.testlib" location="${user.home}/x10-17/x10.tests/examples/x10lib"/>
-    <property name="x10x.xlalib" location="${user.home}/projects/x10lib/x10x.lib/xla2/src"/>
+    <property name="x10x.xlalib" location="../../x10x.lib/xla/src"/>
+    <property name="anuchem" location="../../anu-chem"/>
+    <property name="anuchem.src" location="${anuchem}/src"/>
+    <property name="anuchem.lib" location="${anuchem}/lib/anu-chem.jar"/>
     <property name="bash.exe" value="bash"/>    
     <property name="optimize" value="true" />
-    <property name="nochecks" value="false" />
+    <property name="nochecks" value="true" />
     <property name="profile"  value="false" />
     <property name="x10rt" value="standalone" />
 	<property name="target" location="${basedir}/target" />
@@ -75,7 +78,7 @@
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/src">
             <arg value="-c"/>
-            <arg value="'x10c' ${x10c.nochecks} ${x10c.profile} ${x10c.optimize} -sourcepath .:${x10x.xlalib} -d ${target-src} ${src.list}"/>
+            <arg value="'x10c' ${x10c.nochecks} ${x10c.profile} ${x10c.optimize} -sourcepath .:${x10x.xlalib}:${anuchem.src} -d ${target-src} ${src.list}"/>
         </exec>
     </target>
 
@@ -91,11 +94,11 @@
         <pathconvert property="src.list" refid="changed.src.files" dirsep="/" pathsep=" ">
             <map from="${basedir}${file.separator}src${file.separator}" to=""/>
         </pathconvert>
-        <echo message="x10c++ -x10rt ${x10rt} ${src.list}"/>
+        <echo message="x10c++ -x10rt ${x10rt} -sourcepath .:${x10x.xlalib}:${anuchem.src} ${src.list}"/>
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/src">
             <arg value="-c"/> 
-            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.nochecks} ${x10c.profile} ${x10c.optimize} -sourcepath .:${x10x.xlalib} -d ${target-src} ${src.list}"/>
+            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.nochecks} ${x10c.profile} ${x10c.optimize} -sourcepath .:${x10x.xlalib}:${anuchem.src} -d ${target-src} ${src.list}"/>
         </exec>
     </target>
 
@@ -126,7 +129,7 @@
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/test">
             <arg value="-c"/>
-            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.nochecks} ${x10c.profile} ${x10c.optimize} -sourcepath ${x10.testlib}:${basedir}/src:.:${x10x.xlalib} -classpath ${target-src} -d ${target-test} ${test.list}"/>
+            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.nochecks} ${x10c.profile} ${x10c.optimize} -sourcepath ${x10.testlib}:${basedir}/src:.:${x10x.xlalib}:${anuchem.src} -classpath ${target-src} -d ${target-test} ${test.list}"/>
         </exec>
     </target>
 
