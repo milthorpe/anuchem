@@ -8,17 +8,18 @@
 
 package au.anu.edu.qm;
 
-import x10.util.*;
+import x10.util.ArrayList;
+import au.edu.anu.chem.Molecule;
 
 public class BasisFunctions { 
-    global var molecule:Molecule{self.at(this)};
+    global var molecule:Molecule[QMAtom]{self.at(this)};
     global var basisName:String;
     global var basisFunctions:ArrayList[ContractedGaussian{self.at(this)}]{self.at(this)};
     global var shellList:ShellList{self.at(this)};
 
     public def this() { }
 
-    public def make(mol:Molecule{self.at(this)}, basNam:String, basisDir:String) { 
+    public def make(mol:Molecule[QMAtom]{self.at(this)}, basNam:String, basisDir:String) { 
         this.molecule  = mol;
         this.basisName = basNam;
 
@@ -51,7 +52,7 @@ public class BasisFunctions {
 
                for(var l:Int=0; l<pListSiz; l++) {
                   var cg:ContractedGaussian{self.at(this)} = new ContractedGaussian();
-                  cg.make(atom, pList(l));   
+                  cg.make(atom.centre, pList(l));
                   cg.setIndex(indx++);
                   cg.setIntIndex(intIndx);
               

@@ -7,17 +7,19 @@
  */
 
 package au.anu.edu.qm;
+import au.edu.anu.chem.AtomInfo;
+import au.edu.anu.chem.Molecule;
 
 public class OneElectronIntegrals { 
     global var basisFunctions:BasisFunctions{self.at(this)};
-    global var molecule:Molecule{self.at(this)};
+    global var molecule:Molecule[QMAtom]{self.at(this)};
     global var hCore:HCore{self.at(this)};
     global var overlap:Overlap{self.at(this)};
 
     public def this() {
     }
 
-    public def make(bfs:BasisFunctions{self.at(this)}, mol:Molecule{self.at(this)}) { 
+    public def make(bfs:BasisFunctions{self.at(this)}, mol:Molecule[QMAtom]{self.at(this)}) { 
        this.basisFunctions = bfs;
        this.molecule = mol;
 
@@ -31,7 +33,8 @@ public class OneElectronIntegrals {
     public def getHCore() : HCore{self.at(this)} = hCore;
     public def getOverlap() : Overlap{self.at(this)} = overlap;
     public def getBasisFunctions() : BasisFunctions{self.at(this)} = basisFunctions;
-    public def getMolecule() : Molecule{self.at(this)} = molecule;
+    // public def getMolecule[QMAtom]() = molecule;
+    public def getMolecule() = molecule;
 
     protected def compute1E() : void {
        val bfs  = basisFunctions.getBasisFunctions();
@@ -59,7 +62,7 @@ public class OneElectronIntegrals {
              // x10.io.Console.OUT.println("K = " + i + ", " + j + " = " + h(i, j));
 
              for(var k:Int=0; k<nat; k++)
-                h(i,j) += atno(k) * bfi.nuclear(bfj, atms.get(k));
+                h(i,j) += atno(k) * bfi.nuclear(bfj, atms.get(k).centre);
           } // end for
        } // end for
     }

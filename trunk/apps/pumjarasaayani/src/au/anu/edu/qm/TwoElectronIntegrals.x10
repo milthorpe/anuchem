@@ -8,11 +8,13 @@
 
 package au.anu.edu.qm;
 
-import x10.util.*;
+import x10.util.ArrayList;
+import x10x.vector.Point3d;
+import au.edu.anu.chem.Molecule;
 
 public class TwoElectronIntegrals { 
     global var basisFunctions:BasisFunctions{self.at(this)};
-    global var molecule:Molecule{self.at(this)};
+    global var molecule:Molecule[QMAtom]{self.at(this)};
     global var twoEInts:Array[Double]{self.at(this), rank==1};
     global var contractedList:ArrayList[ContractedGaussian{self.at(this)}]{self.at(this)};
     var direct:Boolean;
@@ -63,7 +65,7 @@ public class TwoElectronIntegrals {
         } // end if
     }
 
-    public def make(bfs:BasisFunctions{self.at(this)}, mol:Molecule{self.at(this)}, isDirect:Boolean) {
+    public def make(bfs:BasisFunctions{self.at(this)}, mol:Molecule[QMAtom]{self.at(this)}, isDirect:Boolean) {
         basisFunctions = bfs;
         molecule       = mol;
         direct         = isDirect;        
@@ -86,7 +88,7 @@ public class TwoElectronIntegrals {
 
     public def isDirect() : Boolean = direct;
     public def getNumberOfIntegrals() : Int = noOfIntegrals;
-    public def getMolecule() : Molecule{self.at(this)} = molecule;
+    public def getMolecule() : Molecule[QMAtom]{self.at(this)} = molecule;
     public def getBasisFunctions() : BasisFunctions{self.at(this)} = basisFunctions;
 
     public def compute2E(i:Int, j:Int, k:Int, l:Int) : Double {
@@ -222,11 +224,11 @@ public class TwoElectronIntegrals {
                  val cAlpha = cPrim.getExponent();
                  val dAlpha = dPrim.getExponent();
 
-                 val p:Atom{self.at(this)} = gaussianProductCenter(aAlpha, a.getCenteredAtom(), bAlpha, b.getCenteredAtom());
-                 val q:Atom{self.at(this)} = gaussianProductCenter(cAlpha, c.getCenteredAtom(), dAlpha, d.getCenteredAtom());
+                 val p:Point3d{self.at(this)} = gaussianProductCenter(aAlpha, a.getCenter(), bAlpha, b.getCenter());
+                 val q:Point3d{self.at(this)} = gaussianProductCenter(cAlpha, c.getCenter(), dAlpha, d.getCenter());
 
-                 val r:Atom{self.at(this)} = q.sub(p);
-                 val radiusPQSquared = p.distanceSquaredFrom(q);
+                 val r:Point3d{self.at(this)} = new Point3d(q.sub(p));
+                 val radiusPQSquared = p.distanceSquared(q);
 
                  val gamma1 = aAlpha + bAlpha;
                  val gamma2 = cAlpha + dAlpha;
@@ -338,7 +340,7 @@ public class TwoElectronIntegrals {
                            val nq = powersC.getN();
 
                            pcdint(dd,cc,i*pqdim+pp) += mdr1(lp, mp, np, lq, mq, nq, 0, 0, 0,
-                                                          d.getCenteredAtom(), c.getCenteredAtom(),
+                                                          d.getCenter(), c.getCenter(),
                                                           q, eta, npint);
                            cc++;
                         }
@@ -394,7 +396,7 @@ public class TwoElectronIntegrals {
 
                                 if (iijj >= kkll) {
                                     val twoEIntVal = mdr1(lp, mp, np, lq, mq, nq, 0, 0, 0,
-                                                       b.getCenteredAtom(), a.getCenteredAtom(),
+                                                       b.getCenter(), a.getCenter(),
                                                        p, eta, npint);
                                     val twoEIntVal2    = twoEIntVal + twoEIntVal;
                                     val twoEIntValHalf = 0.5 * twoEIntVal;
@@ -431,23 +433,23 @@ public class TwoElectronIntegrals {
         }
     }
 
-    protected def mdRecurse(r:Atom{self.at(this)}, 
+    protected def mdRecurse(r:Point3d{self.at(this)}, 
                             zeroM:Array[Double]{rank==1,self.at(this)},
                             i:Int, j:Int, k:Int, m:Int) : Double {
          var res:Double;
 
          if (i >= 2) {
-           res = r.getX()*mdRecurse(r,zeroM,i-1,j,k,m+1)-(i-1)*mdRecurse(r,zeroM,i-2,j,k,m+1);
+           res = r.i*mdRecurse(r,zeroM,i-1,j,k,m+1)-(i-1)*mdRecurse(r,zeroM,i-2,j,k,m+1);
          } else if (j >= 2 ) {
-           res = r.getY()*mdRecurse(r,zeroM,i,j-1,k,m+1)-(j-1)*mdRecurse(r,zeroM,i,j-2,k,m+1);
+           res = r.j*mdRecurse(r,zeroM,i,j-1,k,m+1)-(j-1)*mdRecurse(r,zeroM,i,j-2,k,m+1);
          } else if (k >= 2 ) {
-           res = r.getZ()*mdRecurse(r,zeroM,i,j,k-1,m+1)-(k-1)*mdRecurse(r,zeroM,i,j,k-2,m+1);
+           res = r.k*mdRecurse(r,zeroM,i,j,k-1,m+1)-(k-1)*mdRecurse(r,zeroM,i,j,k-2,m+1);
          } else if (i == 1 ) {
-           res = r.getX()*mdRecurse(r,zeroM,i-1,j,k,m+1);
+           res = r.i*mdRecurse(r,zeroM,i-1,j,k,m+1);
          } else if (j == 1 ) {
-           res = r.getY()*mdRecurse(r,zeroM,i,j-1,k,m+1);
+           res = r.j*mdRecurse(r,zeroM,i,j-1,k,m+1);
          } else if (k == 1 ) {
-           res = r.getZ()*mdRecurse(r,zeroM,i,j,k-1,m+1);
+           res = r.k*mdRecurse(r,zeroM,i,j,k-1,m+1);
          } else {
            res = zeroM(m);
          } // end if
@@ -456,34 +458,34 @@ public class TwoElectronIntegrals {
     }
 
     protected def mdr1(xa:Int, ya:Int, za:Int, xb:Int, yb:Int, zb:Int, xp:Int, yp:Int, zp:Int,
-                          coorda:Atom{self.at(this)}, coordb:Atom{self.at(this)}, coordp:Atom{self.at(this)}, zeta:Double,
+                          coorda:Point3d{self.at(this)}, coordb:Point3d{self.at(this)}, coordp:Point3d{self.at(this)}, zeta:Double,
                           pint:Array[Double]{rank==2, self.at(this)}) : Double {
          var res:Double;
          var ptot:Int, idx:Int;
 
          if (xa != 0 ){
            res =   mdr1(xa-1, ya, za, xb, yb, zb, xp-1, yp, zp, coorda, coordb, coordp, zeta, pint)*xp
-                    + mdr1(xa-1, ya, za, xb, yb, zb, xp  , yp, zp, coorda, coordb, coordp, zeta, pint)*(coordp.getX()-coorda.getX())
+                    + mdr1(xa-1, ya, za, xb, yb, zb, xp  , yp, zp, coorda, coordb, coordp, zeta, pint)*(coordp.i-coorda.i)
                     + mdr1(xa-1, ya, za, xb, yb, zb, xp+1, yp, zp, coorda, coordb, coordp, zeta, pint)/(2.0*zeta);
          } else if (ya != 0) {
            res =   mdr1(xa, ya-1, za, xb, yb, zb, xp, yp-1, zp, coorda, coordb, coordp, zeta, pint)*yp
-                    + mdr1(xa, ya-1, za, xb, yb, zb, xp, yp  , zp, coorda, coordb, coordp, zeta, pint)*(coordp.getY()-coorda.getY())
+                    + mdr1(xa, ya-1, za, xb, yb, zb, xp, yp  , zp, coorda, coordb, coordp, zeta, pint)*(coordp.j-coorda.j)
                     + mdr1(xa, ya-1, za, xb, yb, zb, xp, yp+1, zp, coorda, coordb, coordp, zeta, pint)/(2.0*zeta);
          } else if (za != 0) {
            res =   mdr1(xa, ya, za-1, xb, yb, zb, xp, yp, zp-1, coorda, coordb, coordp, zeta, pint)*zp
-                    + mdr1(xa, ya, za-1, xb, yb, zb, xp, yp, zp  , coorda, coordb, coordp, zeta, pint)*(coordp.getZ()-coorda.getZ())
+                    + mdr1(xa, ya, za-1, xb, yb, zb, xp, yp, zp  , coorda, coordb, coordp, zeta, pint)*(coordp.k-coorda.k)
                     + mdr1(xa, ya, za-1, xb, yb, zb, xp, yp, zp+1, coorda, coordb, coordp, zeta, pint)/(2.0*zeta);
          } else if (xb != 0 ) {
            res =   mdr1(xa, ya, za, xb-1, yb, zb, xp-1, yp, zp, coorda, coordb, coordp, zeta, pint)*xp
-                    + mdr1(xa, ya, za, xb-1, yb, zb, xp  , yp, zp, coorda, coordb, coordp, zeta, pint)*(coordp.getX()-coordb.getX())
+                    + mdr1(xa, ya, za, xb-1, yb, zb, xp  , yp, zp, coorda, coordb, coordp, zeta, pint)*(coordp.i-coordb.i)
                     + mdr1(xa, ya, za, xb-1, yb, zb, xp+1, yp, zp, coorda, coordb, coordp, zeta, pint)/(2.0*zeta);
          } else if (yb != 0) {
            res =   mdr1(xa, ya, za, xb, yb-1, zb, xp, yp-1, zp, coorda, coordb, coordp, zeta, pint)*yp
-                    + mdr1(xa, ya, za, xb, yb-1, zb, xp, yp  , zp, coorda, coordb, coordp, zeta, pint)*(coordp.getY()-coordb.getY())
+                    + mdr1(xa, ya, za, xb, yb-1, zb, xp, yp  , zp, coorda, coordb, coordp, zeta, pint)*(coordp.j-coordb.j)
                     + mdr1(xa, ya, za, xb, yb-1, zb, xp, yp+1, zp, coorda, coordb, coordp, zeta, pint)/(2.0*zeta);
          } else if (zb != 0) {
            res =   mdr1(xa, ya, za, xb, yb, zb-1, xp, yp, zp-1, coorda, coordb, coordp, zeta, pint)*zp
-                    + mdr1(xa, ya, za, xb, yb, zb-1, xp, yp, zp  , coorda, coordb, coordp, zeta, pint)*(coordp.getZ()-coordb.getZ())
+                    + mdr1(xa, ya, za, xb, yb, zb-1, xp, yp, zp  , coorda, coordb, coordp, zeta, pint)*(coordp.k-coordb.k)
                     + mdr1(xa, ya, za, xb, yb, zb-1, xp, yp, zp+1, coorda, coordb, coordp, zeta, pint)/(2.0*zeta);
          } else if ( xp < 0 || yp < 0 || zp < 0) {
            res = 1.0;
@@ -691,13 +693,13 @@ public class TwoElectronIntegrals {
     private def coulombRec(a:ContractedGaussian{self.at(this)}, b:ContractedGaussian{self.at(this)},
                            c:ContractedGaussian{self.at(this)}, d:ContractedGaussian{self.at(this)}) : Double {
 
-          val jij = contrHrr(a.getOrigin() as Atom{self.at(this)}, a.getPower() as Power{self.at(this)},
+          val jij = contrHrr(a.getOrigin() as Point3d{self.at(this)}, a.getPower() as Power{self.at(this)},
                              a.getCoefficients(), a.getExponents(), a.getPrimNorms(),
-                             b.getOrigin() as Atom{self.at(this)}, b.getPower() as Power{self.at(this)},
+                             b.getOrigin() as Point3d{self.at(this)}, b.getPower() as Power{self.at(this)},
                              b.getCoefficients(), b.getExponents(), b.getPrimNorms(),
-                             c.getOrigin() as Atom{self.at(this)}, b.getPower() as Power{self.at(this)},
+                             c.getOrigin() as Point3d{self.at(this)}, b.getPower() as Power{self.at(this)},
                              c.getCoefficients(), c.getExponents(), c.getPrimNorms(),
-                             d.getOrigin() as Atom{self.at(this)}, d.getPower() as Power{self.at(this)},
+                             d.getOrigin() as Point3d{self.at(this)}, d.getPower() as Power{self.at(this)},
                              d.getCoefficients(), d.getExponents(), d.getPrimNorms()
                             );
 
@@ -706,18 +708,18 @@ public class TwoElectronIntegrals {
     }
 
     private def coulombRepulsion(
-                    a:Atom{self.at(this)}, aNorm:Double, aPower:Power{self.at(this)}, aAlpha:Double,
-                    b:Atom{self.at(this)}, bNorm:Double, bPower:Power{self.at(this)}, bAlpha:Double,
-                    c:Atom{self.at(this)}, cNorm:Double, cPower:Power{self.at(this)}, cAlpha:Double,
-                    d:Atom{self.at(this)}, dNorm:Double, dPower:Power{self.at(this)}, dAlpha:Double) : Double {
+                    a:Point3d!, aNorm:Double, aPower:Power!, aAlpha:Double,
+                    b:Point3d!, bNorm:Double, bPower:Power!, bAlpha:Double,
+                    c:Point3d!, cNorm:Double, cPower:Power!, cAlpha:Double,
+                    d:Point3d!, dNorm:Double, dPower:Power!, dAlpha:Double) : Double {
 
-        val radiusABSquared = a.distanceSquaredFrom(b);
-        val radiusCDSquared = c.distanceSquaredFrom(d);
+        val radiusABSquared = a.distanceSquared(b);
+        val radiusCDSquared = c.distanceSquared(d);
 
-        val p:Atom{self.at(this)} = gaussianProductCenter(aAlpha, a, bAlpha, b);
-        val q:Atom{self.at(this)} = gaussianProductCenter(cAlpha, c, dAlpha, d);
+        val p:Point3d{self.at(this)} = gaussianProductCenter(aAlpha, a, bAlpha, b);
+        val q:Point3d{self.at(this)} = gaussianProductCenter(cAlpha, c, dAlpha, d);
 
-        val radiusPQSquared = p.distanceSquaredFrom(q);
+        val radiusPQSquared = p.distanceSquared(q);
 
         val gamma1 = aAlpha + bAlpha;
         val gamma2 = cAlpha + dAlpha;
@@ -725,17 +727,17 @@ public class TwoElectronIntegrals {
 
         val bx = constructBArray(
                    aPower.getL(), bPower.getL(), cPower.getL(), dPower.getL(),
-                   p.getX(), a.getX(), b.getX(), q.getX(), c.getX(), d.getX(),
+                   p.i, a.i, b.i, q.i, c.i, d.i,
                    gamma1, gamma2, delta);
 
         val by = constructBArray(
                    aPower.getM(), bPower.getM(), cPower.getM(), dPower.getM(),
-                   p.getY(), a.getY(), b.getY(), q.getY(), c.getY(), d.getY(),
+                   p.j, a.j, b.j, q.j, c.j, d.j,
                    gamma1, gamma2, delta);
 
         val bz = constructBArray(
                    aPower.getN(), bPower.getN(), cPower.getN(), dPower.getN(),
-                   p.getZ(), a.getZ(), b.getZ(), q.getZ(), c.getZ(), d.getZ(),
+                   p.k, a.k, b.k, q.k, c.k, d.k,
                    gamma1, gamma2, delta);
 
         var sum:Double = 0.0;
@@ -815,13 +817,13 @@ public class TwoElectronIntegrals {
      * recursively form the columb repulsion term using HGP, stage one: form HRR 
      * HRR (Horizontal Recurrance Relation)
      */
-    protected def contrHrr(a:Atom{self.at(this)}, aPower:Power{self.at(this)}, aCoeff:ArrayList[Double]{self.at(this)},
+    protected def contrHrr(a:Point3d{self.at(this)}, aPower:Power{self.at(this)}, aCoeff:ArrayList[Double]{self.at(this)},
                            aExps:ArrayList[Double]{self.at(this)}, aNorms:ArrayList[Double]{self.at(this)},
-                           b:Atom{self.at(this)}, bPower:Power{self.at(this)}, bCoeff:ArrayList[Double]{self.at(this)},
+                           b:Point3d{self.at(this)}, bPower:Power{self.at(this)}, bCoeff:ArrayList[Double]{self.at(this)},
                            bExps:ArrayList[Double]{self.at(this)}, bNorms:ArrayList[Double]{self.at(this)},
-                           c:Atom{self.at(this)}, cPower:Power{self.at(this)}, cCoeff:ArrayList[Double]{self.at(this)},
+                           c:Point3d{self.at(this)}, cPower:Power{self.at(this)}, cCoeff:ArrayList[Double]{self.at(this)},
                            cExps:ArrayList[Double]{self.at(this)}, cNorms:ArrayList[Double]{self.at(this)},
-                           d:Atom{self.at(this)}, dPower:Power{self.at(this)}, dCoeff:ArrayList[Double]{self.at(this)},
+                           d:Point3d{self.at(this)}, dPower:Power{self.at(this)}, dCoeff:ArrayList[Double]{self.at(this)},
                            dExps:ArrayList[Double]{self.at(this)}, dNorms:ArrayList[Double]{self.at(this)}) : Double {
         val la = aPower.getL(), ma = aPower.getM(), na = aPower.getN();
         val lb = bPower.getL(), mb = bPower.getM(), nb = bPower.getN();
@@ -834,7 +836,7 @@ public class TwoElectronIntegrals {
                              b, newBPower, bCoeff, bExps, bNorms,
                              c, cPower, cCoeff, cExps, cNorms,
                              d, dPower, dCoeff, dExps, dNorms)
-                   + (a.getX()-b.getX())
+                   + (a.i-b.i)
                      * contrHrr(a, aPower, aCoeff, aExps, aNorms,
                                 b, newBPower, bCoeff, bExps, bNorms,
                                 c, cPower, cCoeff, cExps, cNorms,
@@ -845,7 +847,7 @@ public class TwoElectronIntegrals {
                              b, newBPower, bCoeff, bExps, bNorms,
                              c, cPower, cCoeff, cExps, cNorms,
                              d, dPower, dCoeff, dExps, dNorms)
-                   + (a.getY()-b.getY())
+                   + (a.j-b.j)
                      * contrHrr(a, aPower, aCoeff, aExps, aNorms,
                                 b, newBPower, bCoeff, bExps, bNorms,
                                 c, cPower, cCoeff, cExps, cNorms,
@@ -856,7 +858,7 @@ public class TwoElectronIntegrals {
                              b, newBPower, bCoeff, bExps, bNorms,
                              c, cPower, cCoeff, cExps, cNorms,
                              d, dPower, dCoeff, dExps, dNorms)
-                   + (a.getZ()-b.getZ())
+                   + (a.k-b.k)
                      * contrHrr(a, aPower, aCoeff, aExps, aNorms,
                                 b, newBPower, bCoeff, bExps, bNorms,
                                 c, cPower, cCoeff, cExps, cNorms,
@@ -867,7 +869,7 @@ public class TwoElectronIntegrals {
                              b, bPower, bCoeff, bExps, bNorms,
                              c, new Power(lc+1,mc,nc), cCoeff, cExps, cNorms,
                              d, newDPower, dCoeff, dExps, dNorms)
-                   + (c.getX()-d.getX())
+                   + (c.i-d.i)
                      * contrHrr(a, aPower, aCoeff, aExps, aNorms, 
                                 b, bPower, bCoeff, bExps, bNorms,
                                 c, cPower, cCoeff, cExps, cNorms,
@@ -878,7 +880,7 @@ public class TwoElectronIntegrals {
                              b, bPower, bCoeff, bExps, bNorms,
                              c, new Power(lc,mc+1,nc), cCoeff, cExps, cNorms,
                              d, newDPower, dCoeff, dExps, dNorms)
-                   + (c.getY()-d.getY())
+                   + (c.j-d.j)
                      * contrHrr(a, aPower, aCoeff, aExps, aNorms,
                                 b, bPower, bCoeff, bExps, bNorms,
                                 c, cPower, cCoeff, cExps, cNorms,
@@ -889,7 +891,7 @@ public class TwoElectronIntegrals {
                              b, bPower, bCoeff, bExps, bNorms,
                              c, new Power(lc,mc,nc+1), cCoeff, cExps, cNorms,
                              d, newDPower, dCoeff, dExps, dNorms)
-                + (c.getZ()-d.getZ())
+                + (c.k-d.k)
                     * contrHrr(a, aPower, aCoeff, aExps, aNorms,
                                b, bPower, bCoeff, bExps, bNorms,
                                c, cPower, cCoeff, cExps, cNorms,
@@ -905,13 +907,13 @@ public class TwoElectronIntegrals {
     /**
      * VRR (Vertical Recurrance Relation) contribution
      */
-    protected def contrVrr(a:Atom{self.at(this)}, aPower:Power{self.at(this)}, aCoeff:ArrayList[Double]{self.at(this)},
+    protected def contrVrr(a:Point3d{self.at(this)}, aPower:Power{self.at(this)}, aCoeff:ArrayList[Double]{self.at(this)},
                            aExps:ArrayList[Double]{self.at(this)}, aNorms:ArrayList[Double]{self.at(this)},
-                           b:Atom{self.at(this)}, bCoeff:ArrayList[Double]{self.at(this)},
+                           b:Point3d{self.at(this)}, bCoeff:ArrayList[Double]{self.at(this)},
                            bExps:ArrayList[Double]{self.at(this)}, bNorms:ArrayList[Double]{self.at(this)},
-                           c:Atom{self.at(this)}, cPower:Power{self.at(this)}, cCoeff:ArrayList[Double]{self.at(this)},
+                           c:Point3d{self.at(this)}, cPower:Power{self.at(this)}, cCoeff:ArrayList[Double]{self.at(this)},
                            cExps:ArrayList[Double]{self.at(this)}, cNorms:ArrayList[Double]{self.at(this)},
-                           d:Atom{self.at(this)}, dCoeff:ArrayList[Double]{self.at(this)},
+                           d:Point3d{self.at(this)}, dCoeff:ArrayList[Double]{self.at(this)},
                            dExps:ArrayList[Double]{self.at(this)}, dNorms:ArrayList[Double]{self.at(this)}) : Double {
         var res:Double = 0.0;
 
@@ -955,10 +957,10 @@ public class TwoElectronIntegrals {
      * VRR (Vertical Recurrance Relation)
      */
     protected def vrrWrapper(
-                         a:Atom{self.at(this)}, aNorm:Double, aPower:Power{self.at(this)}, aAlpha:Double,
-                         b:Atom{self.at(this)}, bNorm:Double, bAlpha:Double,
-                         c:Atom{self.at(this)}, cNorm:Double, cPower:Power{self.at(this)}, cAlpha:Double,
-                         d:Atom{self.at(this)}, dNorm:Double, dAlpha:Double, m:Int) : Double {
+                         a:Point3d{self.at(this)}, aNorm:Double, aPower:Power{self.at(this)}, aAlpha:Double,
+                         b:Point3d{self.at(this)}, bNorm:Double, bAlpha:Double,
+                         c:Point3d{self.at(this)}, cNorm:Double, cPower:Power{self.at(this)}, cAlpha:Double,
+                         d:Point3d{self.at(this)}, dNorm:Double, dAlpha:Double, m:Int) : Double {
         return vrr(a, aNorm, aPower, aAlpha, b, bNorm, bAlpha,
                    c, cNorm, cPower, cAlpha, d, dNorm, dAlpha, m);
     }
@@ -966,10 +968,10 @@ public class TwoElectronIntegrals {
     /**
      * VRR (Vertical Recurrance Relation)
      */
-    protected def vrr(a:Atom{self.at(this)}, aNorm:Double, aPower:Power{self.at(this)}, aAlpha:Double,
-                      b:Atom{self.at(this)}, bNorm:Double, bAlpha:Double,
-                      c:Atom{self.at(this)}, cNorm:Double, cPower:Power{self.at(this)}, cAlpha:Double,
-                      d:Atom{self.at(this)}, dNorm:Double, dAlpha:Double, m:Int) : Double {
+    protected def vrr(a:Point3d{self.at(this)}, aNorm:Double, aPower:Power{self.at(this)}, aAlpha:Double,
+                      b:Point3d{self.at(this)}, bNorm:Double, bAlpha:Double,
+                      c:Point3d{self.at(this)}, cNorm:Double, cPower:Power{self.at(this)}, cAlpha:Double,
+                      d:Point3d{self.at(this)}, dNorm:Double, dAlpha:Double, m:Int) : Double {
         var res:Double = 0.0;
 
         val p = gaussianProductCenter(aAlpha, a, bAlpha, b);
@@ -990,11 +992,11 @@ public class TwoElectronIntegrals {
         
         if (nc > 0) {
            val newCPower = new Power(lc, mc, nc-1);
-           res = (q.getZ()-c.getZ())*vrr(a, aNorm, aPower, aAlpha,
+           res = (q.k-c.k)*vrr(a, aNorm, aPower, aAlpha,
                                          b, bNorm, bAlpha,
                                          c, cNorm, newCPower, cAlpha,
                                          d, dNorm, dAlpha, m)
-               + (w.getZ()-q.getZ())*vrr(a, aNorm, aPower, aAlpha,
+               + (w.k-q.k)*vrr(a, aNorm, aPower, aAlpha,
                                          b, bNorm, bAlpha,
                                          c, cNorm, newCPower, cAlpha,
                                          d, dNorm, dAlpha, m+1);
@@ -1023,11 +1025,11 @@ public class TwoElectronIntegrals {
            return res;
         } else if (mc > 0) {
             val newCPower = new Power(lc, mc-1, nc);
-            res = (q.getY()-c.getY())*vrr(a, aNorm, aPower, aAlpha,
+            res = (q.j-c.j)*vrr(a, aNorm, aPower, aAlpha,
                                           b, bNorm, bAlpha,
                                           c, cNorm, newCPower, cAlpha,
                                           d, dNorm, dAlpha, m)
-                + (w.getY()-q.getY())*vrr(a, aNorm, aPower, aAlpha,
+                + (w.j-q.j)*vrr(a, aNorm, aPower, aAlpha,
                                           b, bNorm, bAlpha,
                                           c, cNorm, newCPower, cAlpha,
                                           d, dNorm, dAlpha, m+1);
@@ -1056,11 +1058,11 @@ public class TwoElectronIntegrals {
             return res;
         } else if (lc > 0) {
             val newCPower = new Power(lc-1, mc, nc);
-            res = (q.getX()-c.getX())*vrr(a, aNorm, aPower, aAlpha,
+            res = (q.i-c.i)*vrr(a, aNorm, aPower, aAlpha,
                                           b, bNorm, bAlpha,
                                           c, cNorm, newCPower, cAlpha,
                                           d, dNorm, dAlpha, m)
-                + (w.getX()-q.getX())*vrr(a, aNorm, aPower, aAlpha,
+                + (w.i-q.i)*vrr(a, aNorm, aPower, aAlpha,
                                           b, bNorm, bAlpha,
                                           c, cNorm, newCPower, cAlpha,
                                           d, dNorm, dAlpha, m+1);
@@ -1089,11 +1091,11 @@ public class TwoElectronIntegrals {
             return res;
         } else if (na > 0) {
             val newAPower = new Power(la, ma, na-1);
-            res = (p.getZ()-a.getZ())*vrr(a, aNorm, newAPower, aAlpha,
+            res = (p.k-a.k)*vrr(a, aNorm, newAPower, aAlpha,
                                           b, bNorm, bAlpha,
                                           c, cNorm, cPower, cAlpha,
                                           d, dNorm, dAlpha, m) 
-                + (w.getZ()-p.getZ())*vrr(a, aNorm, newAPower, aAlpha,
+                + (w.k-p.k)*vrr(a, aNorm, newAPower, aAlpha,
                                           b, bNorm, bAlpha,
                                           c, cNorm, cPower, cAlpha,
                                           d, dNorm, dAlpha, m+1);
@@ -1113,11 +1115,11 @@ public class TwoElectronIntegrals {
             return res;
         } else if (ma > 0) {
             val newAPower = new Power(la, ma-1, na);
-            res = (p.getY()-a.getY())*vrr(a, aNorm, newAPower, aAlpha,
+            res = (p.j-a.j)*vrr(a, aNorm, newAPower, aAlpha,
                                           b, aNorm, aAlpha,
                                           c, aNorm, cPower, cAlpha,
                                           d, aNorm, dAlpha, m)
-                + (w.getY()-p.getY())*vrr(a, aNorm, newAPower, aAlpha,
+                + (w.j-p.j)*vrr(a, aNorm, newAPower, aAlpha,
                                           b, aNorm, aAlpha,
                                           c, aNorm, cPower, cAlpha,
                                           d, aNorm, dAlpha, m+1);
@@ -1139,11 +1141,11 @@ public class TwoElectronIntegrals {
             return res;
         } else if (la > 0) {
             val newAPower = new Power(la-1, ma, na);
-            res = (p.getX()-a.getX())*vrr(a, aNorm, newAPower, aAlpha,
+            res = (p.i-a.i)*vrr(a, aNorm, newAPower, aAlpha,
                                           b, aNorm, aAlpha,
                                           c, aNorm, cPower, cAlpha,
                                           d, aNorm, dAlpha, m)
-                + (w.getX()-p.getX())*vrr(a, aNorm, newAPower, aAlpha,
+                + (w.i-p.i)*vrr(a, aNorm, newAPower, aAlpha,
                                           b, aNorm, aAlpha,
                                           c, aNorm, cPower, cAlpha,
                                           d, aNorm, dAlpha, m+1);
@@ -1163,11 +1165,11 @@ public class TwoElectronIntegrals {
             return res;
         } // end if
 
-        val rab2 = a.distanceSquaredFrom(b);
+        val rab2 = a.distanceSquared(b);
         val Kab  = sqrt2PI / zeta * Math.exp(-aAlpha*bAlpha / zeta*rab2);
-        val rcd2 = c.distanceSquaredFrom(d);
+        val rcd2 = c.distanceSquared(d);
         val Kcd  = sqrt2PI / eta * Math.exp(-cAlpha*dAlpha / eta*rcd2);
-        val rpq2 = p.distanceSquaredFrom(q);
+        val rpq2 = p.distanceSquared(q);
         val T    = zeta*eta / zetaPlusEta*rpq2;
 
         res = aNorm*bNorm*cNorm*dNorm*Kab*Kcd/Math.sqrt(zetaPlusEta)
@@ -1245,16 +1247,16 @@ public class TwoElectronIntegrals {
     }
 
     /** Product of two gaussians */
-    public def gaussianProductCenter(alpha1:Double, a:Atom{self.at(this)},  
-                                    alpha2:Double, b:Atom{self.at(this)}) : Atom{self.at(this)} {
+    public def gaussianProductCenter(alpha1:Double, a:Point3d{self.at(this)},  
+                                    alpha2:Double, b:Point3d{self.at(this)}) : Point3d{self.at(this)} {
         val gamma:Double = alpha1 + alpha2;
-        val atm:Atom{self.at(this)} =  new Atom(
-                         (alpha1 * a.getX() + alpha2 * b.getX()) / gamma,
-                         (alpha1 * a.getY() + alpha2 * b.getY()) / gamma,
-                         (alpha1 * a.getZ() + alpha2 * b.getZ()) / gamma
+        val center:Point3d{self.at(this)} =  new Point3d(
+                         (alpha1 * a.i + alpha2 * b.i) / gamma,
+                         (alpha1 * a.j + alpha2 * b.j) / gamma,
+                         (alpha1 * a.k + alpha2 * b.k) / gamma
                        );
 
-        return atm;
+        return center;
     }
 }
 

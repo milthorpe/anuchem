@@ -10,9 +10,11 @@
 package au.anu.edu.qm;
 
 import x10.io.Console;
+import au.edu.anu.chem.Molecule;
+import x10x.vector.Point3d;
 
 public class PumjaRasaayani { 
-    global var mol:Molecule{self.at(this)};
+    global var mol:Molecule[QMAtom]{self.at(this)};
     var basisName:String;
 
     public def this() { }
@@ -36,12 +38,12 @@ public class PumjaRasaayani {
     } 
 
     private def initDefault() { 
-        mol = new Molecule();
+        mol = new Molecule[QMAtom]();
         mol.make("h2");
 
         // H2, 1 a.u. apart
-        mol.addAtom(new Atom("H", 0.0, 0.0, 0.0));
-        mol.addAtom(new Atom("H", 1.0, 0.0, 0.0));
+        mol.addAtom(new QMAtom("H", new Point3d(0.0, 0.0, 0.0)));
+        mol.addAtom(new QMAtom("H", new Point3d(1.0, 0.0, 0.0)));
 
         // H2O - differed till HashMap is fixed
         // mol.addAtom(new Atom("O", -0.015283, 0.044743, 6.043909));

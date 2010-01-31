@@ -8,8 +8,10 @@
 
 package au.anu.edu.qm;
 
+import x10x.vector.Point3d;
+
 public class PrimitiveGaussian { 
-    global var origin:Atom{self.at(this)};
+    global var origin:Point3d{self.at(this)};
     global var power:Power{self.at(this)};
     global var exponent:Double;
     global var coefficient:Double;
@@ -17,18 +19,18 @@ public class PrimitiveGaussian {
 
     public def this() { }
 
-    public def make(atm:Atom{self.at(this)}, pwr:Power{self.at(this)}, exp:Double, coeff:Double) { 
-        origin = atm;
-        power  = pwr;
-        exponent    = exp;
-        coefficient = coeff;
+    public def make(origin:Point3d{self.at(this)}, power:Power{self.at(this)}, exponent:Double, coefficient:Double) { 
+        this.origin = origin;
+        this.power = power;
+        this.exponent = exponent;
+        this.coefficient = coefficient;
     } 
 
-    public def getOrigin() : Atom{self.at(this)} = origin;
-    public def getPower()  : Power{self.at(this)} = power;
-    public def getExponent() : Double = exponent;
-    public def getCoefficient() : Double = coefficient;
-    public def getNormalization() : Double = normalization;
+    public def getOrigin() = origin;
+    public def getPower() = power;
+    public def getExponent() = exponent;
+    public def getCoefficient() = coefficient;
+    public def getNormalization() = normalization;
     public def getTotalAngularMomentum() = power.getTotalAngularMomentum();
     public def getMaximumAngularMomentum() = power.getMaximumAngularMomentum();
     public def getMinimumAngularMomentum() = power.getMinimumAngularMomentum();
@@ -39,18 +41,18 @@ public class PrimitiveGaussian {
     }
 
     private def ovrlp(pg:PrimitiveGaussian{self.at(this)}) : Double {
-        val radiusABSquared = origin.distanceSquaredFrom(pg.origin);
+        val radiusABSquared = origin.distanceSquared(pg.origin);
         val prod = mul(pg);
 
         val wx = overlap1D(power.getL(), pg.power.getL(),
-                            prod.origin.getX() - origin.getX(),
-                            prod.origin.getX() - pg.origin.getX(), prod.exponent);
+                            prod.origin.i - origin.i,
+                            prod.origin.i - pg.origin.i, prod.exponent);
         val wy = overlap1D(power.getM(), pg.power.getM(),
-                            prod.origin.getY() - origin.getY(),
-                            prod.origin.getY() - pg.origin.getY(), prod.exponent);
+                            prod.origin.j - origin.j,
+                            prod.origin.j - pg.origin.j, prod.exponent);
         val wz = overlap1D(power.getN(), pg.power.getN(),
-                            prod.origin.getZ() - origin.getZ(),
-                            prod.origin.getZ() - pg.origin.getZ(), prod.exponent);
+                            prod.origin.k - origin.k,
+                            prod.origin.k - pg.origin.k, prod.exponent);
 
         return (Math.pow(Math.PI / prod.exponent, 1.5)
                              * Math.exp((-exponent * pg.exponent * radiusABSquared) / prod.exponent)
@@ -60,10 +62,10 @@ public class PrimitiveGaussian {
 
     public def mul(pg:PrimitiveGaussian{self.at(this)}) : PrimitiveGaussian{self.at(this)} {
         val gamma = exponent + pg.exponent;
-        val newOrigin = new Atom(
-                         (exponent * origin.getX() + pg.exponent * pg.origin.getX()) / gamma,
-                         (exponent * origin.getY() + pg.exponent * pg.origin.getY()) / gamma,
-                         (exponent * origin.getZ() + pg.exponent * pg.origin.getZ()) / gamma
+        val newOrigin = new Point3d(
+                         (exponent * origin.i + pg.exponent * pg.origin.i) / gamma,
+                         (exponent * origin.j + pg.exponent * pg.origin.j) / gamma,
+                         (exponent * origin.k + pg.exponent * pg.origin.k) / gamma
                         );
         val pgres:PrimitiveGaussian{self.at(this)} = new PrimitiveGaussian();
         pgres.make(newOrigin, new Power(0,0,0), gamma, 0.0);
@@ -148,26 +150,26 @@ public class PrimitiveGaussian {
      *
      * <i> Taken from THO eq. 2.12 <i>
      */
-    public def nuclear(pg:PrimitiveGaussian{self.at(this)}, center:Atom{self.at(this)}) :Double {
+    public def nuclear(pg:PrimitiveGaussian{self.at(this)}, center:Point3d{self.at(this)}) :Double {
         val prod = mul(pg); 
-        val rABSquared = origin.distanceSquaredFrom(pg.origin);
-        val rCPSquared = center.distanceSquaredFrom(prod.origin);
+        val rABSquared = origin.distanceSquared(pg.origin);
+        val rCPSquared = center.distanceSquared(prod.origin);
         var nterm:Double = 0.0;
 
         val ax = constructAArray(power.getL(), pg.power.getL(),
-                                 prod.origin.getX() - origin.getX(),
-                                 prod.origin.getX() - pg.origin.getX(),
-                                 prod.origin.getX() - center.getX(), prod.exponent);
+                                 prod.origin.i - origin.i,
+                                 prod.origin.i - pg.origin.i,
+                                 prod.origin.i - center.i, prod.exponent);
 
         val ay = constructAArray(power.getM(), pg.power.getM(),
-                                 prod.origin.getY() - origin.getY(),
-                                 prod.origin.getY() - pg.origin.getY(),
-                                 prod.origin.getY() - center.getY(), prod.exponent);
+                                 prod.origin.j - origin.j,
+                                 prod.origin.j - pg.origin.j,
+                                 prod.origin.j - center.j, prod.exponent);
 
         val az = constructAArray(power.getN(), pg.power.getN(),
-                                 prod.origin.getZ() - origin.getZ(),
-                                 prod.origin.getZ() - pg.origin.getZ(),
-                                 prod.origin.getZ() - center.getZ(), prod.exponent);
+                                 prod.origin.k - origin.k,
+                                 prod.origin.k - pg.origin.k,
+                                 prod.origin.k - center.k, prod.exponent);
 
         var sum:Double = 0.0;
 

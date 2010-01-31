@@ -9,7 +9,8 @@
 package au.anu.edu.qm;
 
 import x10.io.*;
-import x10.util.*;
+import x10.util.HashMap;
+import au.edu.anu.chem.Atom;
 
 public class BasisSet { 
     global var name:String;
@@ -171,6 +172,6 @@ public class BasisSet {
 
     public def getName() = this.name;
 
-    public def getBasis(atom:Atom{self.at(this)}) = basisInfo.getOrElse(atom.getSymbol(), null);
+    public def getBasis(atom:Atom{self.at(this)}) = basisInfo.getOrElse(atom.symbol, null);
 }
 

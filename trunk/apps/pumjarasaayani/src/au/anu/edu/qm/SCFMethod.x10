@@ -8,8 +8,11 @@
 
 package au.anu.edu.qm;
 
+import au.edu.anu.chem.AtomInfo;
+import au.edu.anu.chem.Molecule;
+
 public abstract class SCFMethod { 
-    protected global var molecule:Molecule{self.at(this)};
+    protected global var molecule:Molecule[QMAtom]{self.at(this)};
     protected global var oneE:OneElectronIntegrals{self.at(this)};
     protected global var twoE:TwoElectronIntegrals{self.at(this)};
 
@@ -18,7 +21,7 @@ public abstract class SCFMethod {
 
     public def this() { }
 
-    public def make(mol:Molecule{self.at(this)},  
+    public def make(mol:Molecule[QMAtom]{self.at(this)},  
                     oneE:OneElectronIntegrals{self.at(this)}, 
                     twoE:TwoElectronIntegrals{self.at(this)}) { 
         this.molecule = mol;
@@ -46,7 +49,7 @@ public abstract class SCFMethod {
         var i:Int, j:Int;
         val noOfAtoms = molecule.getNumberOfAtoms();
         
-        var atomI:Atom{self.at(this)}, atomJ:Atom{self.at(this)};
+        var atomI:QMAtom{self.at(this)}, atomJ:QMAtom{self.at(this)};
         
         // read in the atomic numbers
         atomicNumbers:Array[Int]{rank==1} = Array.make[Int]([0..noOfAtoms]);
@@ -63,7 +66,7 @@ public abstract class SCFMethod {
                 atomJ = molecule.getAtom(j);
                 
                 eNuke += atomicNumbers(i) * atomicNumbers(j) 
-                         / atomI.distanceFrom(atomJ);
+                         / atomI.centre.distance(atomJ.centre);
             } // end for
         } // end for
         

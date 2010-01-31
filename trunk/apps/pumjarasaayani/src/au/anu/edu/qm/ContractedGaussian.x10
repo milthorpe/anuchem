@@ -8,13 +8,14 @@
 
 package au.anu.edu.qm;
 
-import x10.util.*;
+import x10.util.ArrayList;
+import x10x.vector.Point3d;
 
 public class ContractedGaussian { 
-    global var centeredAtom:Atom{self.at(this)};
-    global var power:Power{self.at(this)};
-    global var normalization:Double;
-    global var primitives:ArrayList[PrimitiveGaussian{self.at(this)}]{self.at(this)};
+    global var center : Point3d{self.at(this)};
+    global var power : Power{self.at(this)};
+    global var normalization : Double;
+    global var primitives : ArrayList[PrimitiveGaussian{self.at(this)}]{self.at(this)};
  
     global var exponents:ArrayList[Double]{self.at(this)};
     global var coefficients:ArrayList[Double]{self.at(this)};
@@ -22,10 +23,9 @@ public class ContractedGaussian {
 
     public def this() { }
 
-    public def make(atm:Atom{self.at(this)}, pwr:Power{self.at(this)}) { 
-        this.centeredAtom = atm;
+    public def make(center:Point3d{self.at(this)}, pwr:Power{self.at(this)}) { 
+        this.center = center;
         this.power = pwr;
-        
         normalization = 1.0; 
         primitives = new ArrayList[PrimitiveGaussian{self.at(this)}]();
 
@@ -34,9 +34,9 @@ public class ContractedGaussian {
         primNorms = new ArrayList[Double]();
     } 
 
-    public def getOrigin() : Atom{self.at(this)} = centeredAtom;
-    public def getCenteredAtom() : Atom{self.at(this)} = centeredAtom;
-    public def getPower() : Power{self.at(this)} = power;
+    public def getOrigin() = center;
+    public def getCenter() = center;
+    public def getPower() = power;
     public def getNormalization() = normalization;
     public def getPrimitives() : ArrayList[PrimitiveGaussian{self.at(this)}]{self.at(this)} = primitives;
     public def getPrimitive(i:Int) : PrimitiveGaussian{self.at(this)} = primitives.get(i);
@@ -61,19 +61,19 @@ public class ContractedGaussian {
        intIndex = idx;
     }
 
-    public def distanceFrom(cg:ContractedGaussian) : Double = centeredAtom.distanceFrom(cg.centeredAtom);
-    public def distanceSquaredFrom(cg:ContractedGaussian) : Double = centeredAtom.distanceSquaredFrom(cg.centeredAtom);
+    public def distanceFrom(cg:ContractedGaussian) : Double = center.distance(cg.center);
+    public def distanceSquaredFrom(cg:ContractedGaussian) : Double = center.distanceSquared(cg.center);
 
     public def addPrimitive(exp:Double, coeff:Double) {
         val pg:PrimitiveGaussian{self.at(this)} = new PrimitiveGaussian();
-        pg.make(centeredAtom, power, exp, coeff);
+        pg.make(center, power, exp, coeff);
         primitives.add(pg);
 
         exponents.add(exp);
         coefficients.add(coeff);
     }
 
-    public def overlap(cg:ContractedGaussian{self.at(this)}) : Double {
+    public def overlap(cg:ContractedGaussian!) : Double {
         val cgPrimitives = cg.getPrimitives();
         var i:Int, j:Int;
         var sij:Double = 0.0;
@@ -109,7 +109,7 @@ public class ContractedGaussian {
         return normalization * cg.normalization * tij;
     }
 
-    public def nuclear(cg:ContractedGaussian{self.at(this)}, center:Atom{self.at(this)}) : Double {
+    public def nuclear(cg:ContractedGaussian{self.at(this)}, center:Point3d{self.at(this)}) : Double {
         var vij:Double = 0.0;
         var i:Int, j:Int;
         val cgPrimitives = cg.getPrimitives();
