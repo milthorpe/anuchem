@@ -9,6 +9,10 @@ public class Point3d extends Tuple3d {
         super(i, j, k);
     }
 
+    public def this(t : Tuple3d) {
+        super(t.i, t.j, t.k);
+    }
+
     public global def distanceSquared(b : Point3d) {
         return (i - b.i) * (i - b.i)
              + (j - b.j) * (j - b.j)
