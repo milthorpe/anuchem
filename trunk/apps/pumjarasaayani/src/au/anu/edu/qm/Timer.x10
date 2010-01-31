@@ -1,5 +1,7 @@
 /** lifted from HPC benchmarks example */
 
+package au.anu.edu.qm;
+
 final public class Timer {
     public val total:Rail[Long]!;
     public val count:Rail[Long]!;

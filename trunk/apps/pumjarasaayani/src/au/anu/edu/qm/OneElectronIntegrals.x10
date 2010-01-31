@@ -33,7 +33,6 @@ public class OneElectronIntegrals {
     public def getHCore() : HCore{self.at(this)} = hCore;
     public def getOverlap() : Overlap{self.at(this)} = overlap;
     public def getBasisFunctions() : BasisFunctions{self.at(this)} = basisFunctions;
-    // public def getMolecule[QMAtom]() = molecule;
     public def getMolecule() = molecule;
 
     protected def compute1E() : void {

@@ -15,7 +15,15 @@ import x10x.vector.Vector;
 
 public class GMatrix extends Matrix {
     public def compute(twoE:TwoElectronIntegrals{self.at(this)}, density:Density{self.at(this)}) : void {
-        if (twoE.isDirect()) { computeDirect5(twoE, density); return; }
+        if (twoE.isDirect()) { 
+           val timer = new Timer(1);
+
+           timer.start(0);
+           computeDirect5(twoE, density); 
+           timer.stop(0);
+           Console.OUT.println ("    Time to construct GMatrix: " + (timer.total(0) as Double) / 1e9 + " seconds");
+           return; 
+        } // end if 
 
         val noOfBasisFunctions = density.getRowCount();
         val densityOneD = new Vector();
