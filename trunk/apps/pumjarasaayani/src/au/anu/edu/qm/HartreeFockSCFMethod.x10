@@ -8,8 +8,14 @@
 
 package au.anu.edu.qm;
 
+import au.edu.anu.chem.Molecule;
+
 public class HartreeFockSCFMethod extends SCFMethod { 
-    public def this() { }
+    public def this(mol:Molecule[QMAtom]!,  
+                    oneE:OneElectronIntegrals!, 
+                    twoE:TwoElectronIntegrals!) {
+        super(mol, oneE, twoE);
+    }
 
     public def scf() : void {
         x10.io.Console.OUT.println("Starting RHF-SCF ... ");        

@@ -11,15 +11,13 @@ package au.anu.edu.qm;
 import x10x.vector.Point3d;
 
 public class PrimitiveGaussian { 
-    global var origin:Point3d{self.at(this)};
-    global var power:Power{self.at(this)};
-    global var exponent:Double;
-    global var coefficient:Double;
+    global val origin:Point3d{self.at(this)};
+    global val power:Power{self.at(this)};
+    global val exponent:Double;
+    global val coefficient:Double;
     global var normalization:Double;
 
-    public def this() { }
-
-    public def make(origin:Point3d{self.at(this)}, power:Power{self.at(this)}, exponent:Double, coefficient:Double) { 
+    public def this(origin:Point3d!, power:Power!, exponent:Double, coefficient:Double) { 
         this.origin = origin;
         this.power = power;
         this.exponent = exponent;
@@ -67,8 +65,7 @@ public class PrimitiveGaussian {
                          (exponent * origin.j + pg.exponent * pg.origin.j) / gamma,
                          (exponent * origin.k + pg.exponent * pg.origin.k) / gamma
                         );
-        val pgres:PrimitiveGaussian{self.at(this)} = new PrimitiveGaussian();
-        pgres.make(newOrigin, new Power(0,0,0), gamma, 0.0);
+        val pgres:PrimitiveGaussian{self.at(this)} = new PrimitiveGaussian(newOrigin, new Power(0,0,0), gamma, 0.0);
 
         return pgres;
     }
@@ -120,23 +117,18 @@ public class PrimitiveGaussian {
 
         var term:Double = pg.exponent * (2 * (l2+m2+n2) + 3) * ovrlp(pg);
 
-        val p1:PrimitiveGaussian{self.at(this)} = new PrimitiveGaussian();
-        val p2:PrimitiveGaussian{self.at(this)} = new PrimitiveGaussian();
-        val p3:PrimitiveGaussian{self.at(this)} = new PrimitiveGaussian();
-        val p4:PrimitiveGaussian{self.at(this)} = new PrimitiveGaussian();
-        val p5:PrimitiveGaussian{self.at(this)} = new PrimitiveGaussian();
-        val p6:PrimitiveGaussian{self.at(this)} = new PrimitiveGaussian();
+        val origin = pg.origin as Point3d!;
 
-        p1.make(pg.origin, new Power(l2+2, m2, n2), pg.exponent, pg.coefficient);
-        p2.make(pg.origin, new Power(l2, m2+2, n2), pg.exponent, pg.coefficient);
-        p3.make(pg.origin, new Power(l2, m2, n2+2), pg.exponent, pg.coefficient);
+        val p1 = new PrimitiveGaussian(origin, new Power(l2+2, m2, n2), pg.exponent, pg.coefficient);
+        val p2 = new PrimitiveGaussian(origin, new Power(l2, m2+2, n2), pg.exponent, pg.coefficient);
+        val p3 = new PrimitiveGaussian(origin, new Power(l2, m2, n2+2), pg.exponent, pg.coefficient);
 
         term += -2.0 * Math.pow(pg.exponent, 2.0)
                      * (ovrlp(p1) + ovrlp(p2) + ovrlp(p3));
 
-        p4.make(pg.origin, new Power(l2-2, m2, n2), pg.exponent, pg.coefficient);
-        p5.make(pg.origin, new Power(l2, m2-2, n2), pg.exponent, pg.coefficient);
-        p6.make(pg.origin, new Power(l2, m2, n2-2), pg.exponent, pg.coefficient);
+        val p4 = new PrimitiveGaussian(origin, new Power(l2-2, m2, n2), pg.exponent, pg.coefficient);
+        val p5 = new PrimitiveGaussian(origin, new Power(l2, m2-2, n2), pg.exponent, pg.coefficient);
+        val p6 = new PrimitiveGaussian(origin, new Power(l2, m2, n2-2), pg.exponent, pg.coefficient);
 
         term += -0.5 * ((l2 * (l2 - 1)) * ovrlp(p4)
                         + (m2 * (m2 - 1)) * ovrlp(p5)

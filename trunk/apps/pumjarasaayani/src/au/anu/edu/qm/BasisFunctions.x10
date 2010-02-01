@@ -9,17 +9,16 @@
 package au.anu.edu.qm;
 
 import x10.util.ArrayList;
+import x10x.vector.Point3d;
 import au.edu.anu.chem.Molecule;
 
 public class BasisFunctions { 
-    global var molecule:Molecule[QMAtom]{self.at(this)};
-    global var basisName:String;
-    global var basisFunctions:ArrayList[ContractedGaussian{self.at(this)}]{self.at(this)};
-    global var shellList:ShellList{self.at(this)};
+    global val molecule:Molecule[QMAtom]{self.at(this)};
+    global val basisName:String;
+    global val basisFunctions:ArrayList[ContractedGaussian{self.at(this)}]{self.at(this)};
+    global val shellList:ShellList{self.at(this)};
 
-    public def this() { }
-
-    public def make(mol:Molecule[QMAtom]{self.at(this)}, basNam:String, basisDir:String) { 
+    public def this(mol:Molecule[QMAtom]!, basNam:String, basisDir:String) { 
         this.molecule  = mol;
         this.basisName = basNam;
 
@@ -27,13 +26,11 @@ public class BasisFunctions {
         initBasisFunctions(basisDir);
 
         shellList = new ShellList();
-        shellList.make();
         initShellList();
     } 
 
     private def initBasisFunctions(basisDir:String) {
-        var basisSet:BasisSet{self.at(this)} = new BasisSet(); 
-        basisSet.make(basisName, basisDir);
+        var basisSet:BasisSet{self.at(this)} = new BasisSet(basisName, basisDir);
         var indx:Int = 0;
         var intIndx:Int = 0;
 
@@ -51,8 +48,9 @@ public class BasisFunctions {
                val pListSiz = pList.region.max(0); 
 
                for(var l:Int=0; l<pListSiz; l++) {
-                  var cg:ContractedGaussian{self.at(this)} = new ContractedGaussian();
-                  cg.make(atom.centre, pList(l));
+                  val center = atom.centre as Point3d!;
+                  val power = pList(l) as Power!;
+                  var cg:ContractedGaussian{self.at(this)} = new ContractedGaussian(center, power);
                   cg.setIndex(indx++);
                   cg.setIntIndex(intIndx);
               

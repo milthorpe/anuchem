@@ -12,18 +12,16 @@ import au.edu.anu.chem.AtomInfo;
 import au.edu.anu.chem.Molecule;
 
 public abstract class SCFMethod { 
-    protected global var molecule:Molecule[QMAtom]{self.at(this)};
-    protected global var oneE:OneElectronIntegrals{self.at(this)};
-    protected global var twoE:TwoElectronIntegrals{self.at(this)};
+    protected global val molecule:Molecule[QMAtom]{self.at(this)};
+    protected global val oneE:OneElectronIntegrals{self.at(this)};
+    protected global val twoE:TwoElectronIntegrals{self.at(this)};
 
     protected var maxIteration:Int;
     protected var energyTolerance:Double;
 
-    public def this() { }
-
-    public def make(mol:Molecule[QMAtom]{self.at(this)},  
-                    oneE:OneElectronIntegrals{self.at(this)}, 
-                    twoE:TwoElectronIntegrals{self.at(this)}) { 
+    public def this(mol:Molecule[QMAtom]!,  
+                    oneE:OneElectronIntegrals!, 
+                    twoE:TwoElectronIntegrals!) { 
         this.molecule = mol;
         this.oneE     = oneE;
         this.twoE     = twoE;

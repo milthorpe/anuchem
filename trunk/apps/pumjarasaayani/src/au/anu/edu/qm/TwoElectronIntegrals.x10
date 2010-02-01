@@ -13,62 +13,17 @@ import x10x.vector.Point3d;
 import au.edu.anu.chem.Molecule;
 
 public class TwoElectronIntegrals { 
-    global var basisFunctions:BasisFunctions{self.at(this)};
-    global var molecule:Molecule[QMAtom]{self.at(this)};
-    global var twoEInts:Array[Double]{self.at(this), rank==1};
-    global var contractedList:ArrayList[ContractedGaussian{self.at(this)}]{self.at(this)};
-    var direct:Boolean;
-    var noOfIntegrals:Int;
+    global val basisFunctions:BasisFunctions{self.at(this)};
+    global val molecule:Molecule[QMAtom]{self.at(this)};
+    global val twoEInts:Array[Double]{self.at(this), rank==1};
+    global val contractedList:ArrayList[ContractedGaussian{self.at(this)}]{self.at(this)};
+    val direct:Boolean;
+    val noOfIntegrals:Int;
 
-    public def this() {
-        // Dummy constructor
-        twoEInts = Array.make[Double]([0..1]);
-        contractedList = new ArrayList[ContractedGaussian{self.at(this)}]();
-        basisFunctions = null;
-        direct = false;
-        noOfIntegrals = 0;
-    }
-
-    public def make(bfs:BasisFunctions{self.at(this)}) { 
-        basisFunctions = bfs;
-        direct = false;
-
-        val noOfBasisFunctions = basisFunctions.getBasisFunctions().size();
-        noOfIntegrals = noOfBasisFunctions * (noOfBasisFunctions + 1)
-                          * (noOfBasisFunctions * noOfBasisFunctions
-                             + noOfBasisFunctions + 2) / 8;
-
-        this.contractedList = null;
-
-        // allocate required memory
-        twoEInts = Array.make[Double]([0..noOfIntegrals]);
-        compute2E();
-    }
-
-    public def make(bfs:BasisFunctions{self.at(this)}, isDirect:Boolean) {
-        basisFunctions = bfs;
-        direct = isDirect;
-
-        val noOfBasisFunctions = basisFunctions.getBasisFunctions().size();
-        noOfIntegrals = noOfBasisFunctions * (noOfBasisFunctions + 1)
-                          * (noOfBasisFunctions * noOfBasisFunctions
-                             + noOfBasisFunctions + 2) / 8;
-
-        if (!direct) { 
-           // allocate required memory
-           twoEInts = Array.make[Double]([0..noOfIntegrals]);
-           this.contractedList = null;
-           compute2EShellPair();
-        } else { 
-           this.contractedList = basisFunctions.getBasisFunctions();
-           twoEInts = Array.make[Double]([0..1]);
-        } // end if
-    }
-
-    public def make(bfs:BasisFunctions{self.at(this)}, mol:Molecule[QMAtom]{self.at(this)}, isDirect:Boolean) {
-        basisFunctions = bfs;
-        molecule       = mol;
-        direct         = isDirect;        
+    public def this(basisFunctions:BasisFunctions!, molecule:Molecule[QMAtom]!, direct:Boolean) {
+        this.basisFunctions = basisFunctions;
+        this.molecule = molecule;
+        this.direct = direct;        
 
         val noOfBasisFunctions = basisFunctions.getBasisFunctions().size();
         noOfIntegrals = noOfBasisFunctions * (noOfBasisFunctions + 1)
@@ -79,17 +34,17 @@ public class TwoElectronIntegrals {
            // allocate required memory
            twoEInts = Array.make[Double]([0..noOfIntegrals]);
            this.contractedList = null;
-           compute2EShellPair();
+           compute2EShellPair(molecule);
         } else {
            this.contractedList = basisFunctions.getBasisFunctions();
            twoEInts = Array.make[Double]([0..1]);
         } // end if
     }
 
-    public def isDirect() : Boolean = direct;
+    public def isDirect() = direct;
     public def getNumberOfIntegrals() : Int = noOfIntegrals;
-    public def getMolecule() : Molecule[QMAtom]{self.at(this)} = molecule;
     public def getBasisFunctions() : BasisFunctions{self.at(this)} = basisFunctions;
+    public def getMolecule() = molecule;
 
     public def compute2E(i:Int, j:Int, k:Int, l:Int) : Double {
         return coulomb(contractedList.get(i), contractedList.get(j), 
@@ -537,7 +492,7 @@ public class TwoElectronIntegrals {
         } // end of i loop       
     }
 
-    protected def compute2EShellPair() : void {
+    protected def compute2EShellPair(molecule:Molecule[QMAtom]!) : void {
         val bfs = basisFunctions.getBasisFunctions();
         val noOfBasisFunctions = bfs.size();
 

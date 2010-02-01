@@ -17,13 +17,11 @@ public class PumjaRasaayani {
     global var mol:Molecule[QMAtom]{self.at(this)};
     var basisName:String;
 
-    public def this() { }
-
-    public def make() {
+    public def this() {
         initDefault();
     } 
 
-    public def make(inpFile:String) {     
+    public def this(inpFile:String) {     
         try {
           val inp = new JobInput();
           inp.make(inpFile);
@@ -62,40 +60,27 @@ public class PumjaRasaayani {
 
         Console.OUT.println("\nSetting up basis set: " + basisName);
 
-        val bsf:BasisFunctions{self.at(this)}  = new BasisFunctions();
-        bsf.make(mol, basisName, "basis");
+        val bsf = new BasisFunctions(mol, basisName, "basis");
         Console.OUT.println("\nUsing " + bsf.getBasisFunctions().size() + " basis functions.");
         
-        val oneE:OneElectronIntegrals{self.at(this)} = new OneElectronIntegrals();
-        oneE.make(bsf, mol);
+        val oneE = new OneElectronIntegrals(bsf, mol);
         Console.OUT.println("\nComputed one-electron integrals.");
         Console.OUT.println("HCore");
         Console.OUT.println(oneE.getHCore());   
         Console.OUT.println("Overlap");
         Console.OUT.println(oneE.getOverlap());   
 
-        val twoE:TwoElectronIntegrals{self.at(this)} = new TwoElectronIntegrals(); 
-        twoE.make(bsf, mol, true);
+        val twoE = new TwoElectronIntegrals(bsf, mol, true);
         Console.OUT.println("\nNumber of 2E integrals: " + twoE.getNumberOfIntegrals());
         Console.OUT.println("\nComputed two-electron integrals. If direct, this is skipped for now.");
         Console.OUT.println("Is Direct: " + twoE.isDirect());
 
-        val hfscf:HartreeFockSCFMethod{self.at(this)} = new HartreeFockSCFMethod();
-        hfscf.make(mol, oneE, twoE);
+        val hfscf = new HartreeFockSCFMethod(mol, oneE, twoE);
         hfscf.scf();
     }
 
-    public def make(ag:Rail[String]) {
-        val args:Rail[String]{self.at(this)} = ag as Rail[String]{self.at(this)}; 
-
-        if (args.length == 0) make();
-        else                  make(args(0));
-    }
-
-    public static def main(args:Rail[String]) {
-        val qmApp   = new PumjaRasaayani();
-
-        qmApp.make(args);
+    public static def main(args:Rail[String]!) {
+        val qmApp = args.length == 0 ? new PumjaRasaayani() : new PumjaRasaayani(args(0));
         qmApp.runIt();
     }
 }

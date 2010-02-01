@@ -11,11 +11,9 @@ package au.anu.edu.qm;
 import x10.util.*;
 
 public class AtomicBasis { 
-    global var orbitals:ArrayList[Orbital{self.at(this)}]{self.at(this)};
+    global val orbitals:ArrayList[Orbital{self.at(this)}]{self.at(this)};
 
-    public def this() { }
-
-    public def make() { 
+    public def this() { 
        orbitals = new ArrayList[Orbital{self.at(this)}]();
     } 
 

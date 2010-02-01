@@ -11,31 +11,25 @@ import au.edu.anu.chem.AtomInfo;
 import au.edu.anu.chem.Molecule;
 
 public class OneElectronIntegrals { 
-    global var basisFunctions:BasisFunctions{self.at(this)};
-    global var molecule:Molecule[QMAtom]{self.at(this)};
-    global var hCore:HCore{self.at(this)};
-    global var overlap:Overlap{self.at(this)};
+    global val basisFunctions:BasisFunctions{self.at(this)};
+    global val hCore:HCore{self.at(this)};
+    global val overlap:Overlap{self.at(this)};
 
-    public def this() {
-    }
-
-    public def make(bfs:BasisFunctions{self.at(this)}, mol:Molecule[QMAtom]{self.at(this)}) { 
+    public def this(bfs:BasisFunctions!, mol:Molecule[QMAtom]!) { 
        this.basisFunctions = bfs;
-       this.molecule = mol;
 
        val nbf  = basisFunctions.getBasisFunctions().size();
        hCore    = HCore.make(new HCore(), nbf) as HCore{self.at(this)};
        overlap  = Overlap.make(new Overlap(), nbf) as Overlap{self.at(this)};
 
-       compute1E();
+       compute1E(mol);
     } 
 
-    public def getHCore() : HCore{self.at(this)} = hCore;
-    public def getOverlap() : Overlap{self.at(this)} = overlap;
-    public def getBasisFunctions() : BasisFunctions{self.at(this)} = basisFunctions;
-    public def getMolecule() = molecule;
+    public def getHCore() = hCore;
+    public def getOverlap() = overlap;
+    public def getBasisFunctions() = basisFunctions;
 
-    protected def compute1E() : void {
+    protected def compute1E(molecule:Molecule[QMAtom]!) : void {
        val bfs  = basisFunctions.getBasisFunctions();
        val nbf  = bfs.size();
        val nat  = molecule.getNumberOfAtoms();

@@ -12,18 +12,16 @@ import x10.util.ArrayList;
 import x10x.vector.Point3d;
 
 public class ContractedGaussian { 
-    global var center : Point3d{self.at(this)};
-    global var power : Power{self.at(this)};
+    global val center : Point3d{self.at(this)};
+    global val power : Power{self.at(this)};
+    global val primitives : ArrayList[PrimitiveGaussian{self.at(this)}]{self.at(this)};
+    global val exponents:ArrayList[Double]{self.at(this)};
+    global val coefficients:ArrayList[Double]{self.at(this)};
+    global val primNorms:ArrayList[Double]{self.at(this)};
+
     global var normalization : Double;
-    global var primitives : ArrayList[PrimitiveGaussian{self.at(this)}]{self.at(this)};
- 
-    global var exponents:ArrayList[Double]{self.at(this)};
-    global var coefficients:ArrayList[Double]{self.at(this)};
-    global var primNorms:ArrayList[Double]{self.at(this)};
 
-    public def this() { }
-
-    public def make(center:Point3d{self.at(this)}, pwr:Power{self.at(this)}) { 
+    public def this(center:Point3d!, pwr:Power!) { 
         this.center = center;
         this.power = pwr;
         normalization = 1.0; 
@@ -65,8 +63,7 @@ public class ContractedGaussian {
     public def distanceSquaredFrom(cg:ContractedGaussian) : Double = center.distanceSquared(cg.center);
 
     public def addPrimitive(exp:Double, coeff:Double) {
-        val pg:PrimitiveGaussian{self.at(this)} = new PrimitiveGaussian();
-        pg.make(center, power, exp, coeff);
+        val pg = new PrimitiveGaussian(center, power, exp, coeff);
         primitives.add(pg);
 
         exponents.add(exp);
