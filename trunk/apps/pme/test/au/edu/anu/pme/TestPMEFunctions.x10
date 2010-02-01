@@ -17,7 +17,7 @@ public class TestPMEFunctions {
         val atoms = ValRail.make[MMAtom](3, (i : Int) => new MMAtom(new Point3d(randomUnit(), randomUnit(), randomUnit()), i%3==4?1:-1));
         val size = 2.0; // side length of cubic unit cell
         val edges = [new Vector3d(size, 0.0, 0.0), new Vector3d(0.0, size, 0.0), new Vector3d(0.0, 0.0, size)];
-        val gridSize = ValRail.make[Int](3, (Int) => 12);
+        val gridSize = ValRail.make[Int](3, (Int) => 4);
         val pme = new PME(edges, gridSize, atoms, 4, 0.35, 9.0);
         val v = new Vector3d(0.6, -0.4, 0.33);
         val r = pme.getScaledFractionalCoordinates(v);
@@ -28,6 +28,10 @@ public class TestPMEFunctions {
 
         for (var a : int=0; a<atoms.length; a++) {
             Console.OUT.println(atoms(a));
+        }
+
+        for (var i : Int=0; i<3; i++) {
+            Console.OUT.println("edge * rec = " + pme.edges(i).dot(pme.edgeReciprocals(i)));
         }
 
         val q = pme.getGriddedCharges();
@@ -45,13 +49,23 @@ public class TestPMEFunctions {
         var sum : Double = 0.0;
         for (p in B) {
             sum += B(p);
+            if (B(p) != 0.0) {
+                Console.OUT.println("B" + p + " = " + B(p));
+            }
         }
         Console.OUT.println("sum B = " + sum);
 
         val C = pme.getCArray();
         for (p in C) {
             if (C(p) != 0.0) {
-                Console.OUT.println(p + " = " + C(p));
+                Console.OUT.println("C" + p + " = " + C(p));
+            }
+        }
+
+        val BdotC = Array.make[Complex](B.region, (p : Point(B.region.rank)) => Complex(B(p) * C(p), 0.0));
+        for (p in BdotC) {
+            if (BdotC(p) != Complex.ZERO) {
+                Console.OUT.println("BdotC" + p + " = " + BdotC(p));
             }
         }
     }
