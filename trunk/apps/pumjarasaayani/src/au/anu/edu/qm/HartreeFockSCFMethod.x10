@@ -58,12 +58,21 @@ public class HartreeFockSCFMethod extends SCFMethod {
             
             // make the G matrix
             gMatrix.compute(twoE, density);
-            
+           
+            val timer = new Timer(2);
+
+            timer.start(0);
             // make fock matrix
             fock.compute(hCore, gMatrix);
+            timer.stop(0);
+            Console.OUT.println ("    Time to construct Fock: " + (timer.total(0) as Double) / 1e9 + " seconds");
+ 
             
+            timer.start(1);
             // compute the new MOs
             mos.compute(fock, overlap);
+            timer.stop(1);
+            Console.OUT.println ("    Time to form MOS: " + (timer.total(1) as Double) / 1e9 + " seconds");
          
             // compute the total energy at this point
             eOne = density.mul(hCore).trace();
