@@ -1,7 +1,11 @@
 /**
  * This class represents an Atom for the purpose of quantum
  * chemical and other computational chemistry codes.
+ *
  * @author milthorpe
+ *
+ * @modified ganesh - toString() to simply print coordinate values insted of 
+ *                    default (i, j , k) print.
  */
 package au.edu.anu.chem;
 
@@ -25,7 +29,7 @@ public class Atom {
     }
 
     public global safe def toString() : String {
-        return symbol + " " + centre;
+        return symbol + " " + centre.i + " " + centre.j + " " + centre.k;
     }
 }
 
