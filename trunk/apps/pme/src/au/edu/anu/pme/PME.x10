@@ -69,23 +69,29 @@ public class PME {
         var selfEnergy: Double = 0.0;
         var correctionEnergy : Double = 0.0;
         for ((i) in 0..(atoms.length - 1)) {
-            selfEnergy -= beta / Math.sqrt(Math.PI) * atoms(i).charge * atoms(i).charge;
-            for ((j) in 0..(i - 1)) {
-                val pairEnergy : Double = atoms(j).pairEnergy(atoms(i));
-                directEnergy += 2 * pairEnergy;
+            selfEnergy += atoms(i).charge * atoms(i).charge;
+            for ((j) in 0..(atoms.length - 1)) {
+                val chargeProduct = atoms(i).charge * atoms(j).charge;
+                
                 val rjri = new Vector3d(atoms(j).centre.sub(atoms(i).centre));
                 val distance = rjri.length();
-                Console.OUT.println("beta * distance = " + (beta * distance) + " erf = " + Math.erf(beta * distance));
-                correctionEnergy -= atoms(i).charge * atoms(j).charge * Math.erf(beta * distance) / distance;
+
+                // TODO remove comparison with direct energy
+                if (i!=j) {
+                    directEnergy += chargeProduct / distance; 
+                    Console.OUT.println("distance = " + distance + " directEnergy component = " + chargeProduct / distance);
+                }
+
+                //Console.OUT.println("beta * distance = " + (beta * distance) + " erf = " + Math.erf(beta * distance));
+                //correctionEnergy -= atoms(i).charge * atoms(j).charge * Math.erf(beta * distance) / distance;
                 for (var n1:Int = -1; n1<=1; n1++) {
                     for (var n2:Int = -1; n2<=1; n2++) {
                         for (var n3:Int = -1; n3<=1; n3++) {
-                            if ((n1 & n2 & n3) != 0) {
+                            if (! (i==j && (n1 & n2 & n3) == 0)) {
                                 val imageDistance = rjri.add(edges(0).mul(n1)).add(edges(1).mul(n2)).add(edges(2).mul(n3)).length();
-                                Console.OUT.println("imageDistance = " + imageDistance);
                                 if (imageDistance < cutoff) {
-                                    val imageDirectComponent = atoms(i).charge * atoms(j).charge * Math.erfc(beta * imageDistance) / imageDistance;
-                                    Console.OUT.println("imageDirectComponent = " + imageDirectComponent);
+                                    val imageDirectComponent = atoms(i).charge * atoms(j).charge * Math.erfc(beta) * imageDistance / imageDistance;
+                                    Console.OUT.println("imageDistance = " + imageDistance + " imageDirectComponent = " + imageDirectComponent);
                                     directSum += imageDirectComponent;
                                 }
                             }
@@ -94,10 +100,10 @@ public class PME {
                 }
             }
         }
-        Console.OUT.println("directEnergy = " + directEnergy);
-        Console.OUT.println("directSum = " + directSum);
-        Console.OUT.println("selfEnergy = " + selfEnergy);
-        Console.OUT.println("correctionEnergy = " + correctionEnergy);
+        selfEnergy = -beta / Math.sqrt(Math.PI) * selfEnergy;
+        directEnergy = directEnergy / 2.0;
+        directSum = directSum / 2.0;
+        
 
         val Q = getGriddedCharges();
         Console.OUT.println("Q");
@@ -109,7 +115,6 @@ public class PME {
         Console.OUT.println("C");
         val BdotC = Array.make[Double](gridRegion, (p : Point(gridRegion.rank)) => B(p) * C(p));
         Console.OUT.println("BdotC");
-        val size = (K1*K2*K3);
         val thetaRecConvQ = DFT.dft3D(Array.make[Complex](gridRegion, (p : Point(gridRegion.rank)) => BdotC(p) * Qinv(p)), true);
         Console.OUT.println("thetaRecConvQ");
         /*for (p in thetaRecConvQ) {
@@ -121,11 +126,15 @@ public class PME {
         for (m in gridRegion) {
             val gridPointContribution = Q(m) * thetaRecConvQ(m);
             if (gridPointContribution.re != 0.0) {
-                Console.OUT.println("gridPointContribution( " + m + ") = " + gridPointContribution);
+                //Console.OUT.println("gridPointContribution( " + m + ") = " + gridPointContribution);
             }
             reciprocalEnergy = reciprocalEnergy + gridPointContribution;
         }
         reciprocalEnergy = reciprocalEnergy / 2.0;
+        Console.OUT.println("directEnergy = " + directEnergy);
+        Console.OUT.println("directSum = " + directSum);
+        Console.OUT.println("selfEnergy = " + selfEnergy);
+        Console.OUT.println("correctionEnergy = " + correctionEnergy);
         Console.OUT.println("reciprocalEnergy = " + reciprocalEnergy);
         return directSum + reciprocalEnergy.re + (correctionEnergy + selfEnergy);
     }
@@ -140,24 +149,29 @@ public class PME {
             val atom = atoms(i);
             val q = atom.charge;
             val u = getScaledFractionalCoordinates(new Vector3d(atom.centre));
-            val u1i = u.i as Int;
-            val u2i = u.j as Int;
-            val u3i = u.k as Int;
-            // TODO: not currently possible to do "wraparound" Region in X10
-            for (var kk1:Int=u1i-splineOrder;kk1<=u1i+splineOrder;kk1++) {
-                val k1=(kk1+gridSize(0))%gridSize(0);
-                for (var kk2:Int=u2i-splineOrder;kk2<=u2i+splineOrder;kk2++) {
-                    val k2=(kk2+gridSize(1))%gridSize(1);
-                    for (var kk3:Int=u3i-splineOrder;kk3<=u3i+splineOrder;kk3++) {
-                        val k3=(kk3+gridSize(2))%gridSize(2);
-                //for ((n1, n2, n3) : Point(3) in [-1..1,-1..1,-1..1]) { // TODO: for n > gridSize
-                        Q(k1,k2,k3) = Q(k1,k2,k3) + q
-                                     * bSpline(splineOrder, (u.i - kk1) % gridSize(0))
-                                     * bSpline(splineOrder, (u.j - kk2) % gridSize(1))
-                                     * bSpline(splineOrder, (u.k - kk3) % gridSize(2));
+            Console.OUT.println("atom( " + i + " ) charge = " + q + " coords = " + u);
+            var atomContribution : Double = 0.0;
+            for (k(k1,k2,k3) in gridRegion) {
+                //val n1 = 0;
+                //val n2 = 0;
+                //val n3 = 0;
+                for (var n1:Int = -1; n1<=1; n1++) {
+                    for (var n2:Int = -1; n2<=1; n2++) {
+                        for (var n3:Int = -1; n3<=1; n3++) {
+                            val gridPointContribution = q
+                                         * bSpline(splineOrder, (u.i - k1 - n1*K1))
+                                         * bSpline(splineOrder, (u.j - k2 - n2*K2))
+                                         * bSpline(splineOrder, (u.k - k3 - n3*K3));
+                            if (gridPointContribution != 0.0) {
+                                //Console.OUT.println("Q" + k + " += " + gridPointContribution + " n1: " + n1 + " n2: " + n2 + " n3 " + n3);
+                                Q(k1,k2,k3) = Q(k1,k2,k3) + gridPointContribution;
+                            }
+                            atomContribution += gridPointContribution;
+                        }
                     }
                 }
             }
+            Console.OUT.println("atomContribution = " + atomContribution);
         }
         /*
         // Works exactly as per definition, but horribly inefficient.
@@ -193,27 +207,34 @@ public class PME {
      */
     public def getBArray() {
         val B = Array.make[Double](gridRegion);
-        for (m(m1,m2,m3) in gridRegion) {
-            // TODO: use proper array regions!
+        //for (m(m1,m2,m3) in gridRegion) {
+        for (var m1 : Int = 0; m1 < K1; m1++) {
             val m1D = m1 as Double;
-            val m2D = m2 as Double;
-            val m3D = m3 as Double;
-            var sumK : Complex = Complex.ZERO;
+            var sumK1 : Complex = Complex.ZERO;
             for ((k) in 0..(splineOrder-2)) {
-                sumK = sumK + bSpline(splineOrder, k+1) * (2.0 * Math.PI * m1D * k / K1 * Complex.I).exp();
+                sumK1 = sumK1 + bSpline(splineOrder, k+1) * (2.0 * Math.PI * m1D * k / K1 * Complex.I).exp();
             }
-            val b1 = ((2.0 * Math.PI * (splineOrder - 1.0) * m1D / K1* Complex.I).exp() / sumK).abs();
-            sumK = Complex.ZERO;
-            for ((k) in 0..(splineOrder-2)) {
-                sumK = sumK + bSpline(splineOrder, k+1) * (2.0 * Math.PI * m2D * k / K2 * Complex.I).exp();
+            val b1 = ((2.0 * Math.PI * (splineOrder - 1.0) * m1D / K1* Complex.I).exp() / sumK1).abs();
+
+            for (var m2 : Int = 0; m2 < K2; m2++) {
+                val m2D = m2 as Double;
+                var sumK2 : Complex = Complex.ZERO;
+                for ((k) in 0..(splineOrder-2)) {
+                    sumK2 = sumK2 + bSpline(splineOrder, k+1) * (2.0 * Math.PI * m2D * k / K2 * Complex.I).exp();
+                }
+                val b2 = ((2.0 * Math.PI * (splineOrder - 1.0) * m2D / K2 * Complex.I).exp() / sumK2).abs();
+                
+                for (var m3 : Int = 0; m3 < K3; m3++) {
+                    val m3D = m3 as Double;
+                    var sumK3 : Complex = Complex.ZERO;
+                    for ((k) in 0..(splineOrder-2)) {
+                        sumK3 = sumK3 + bSpline(splineOrder, k+1) * (2.0 * Math.PI * m3D * k / K3 * Complex.I).exp();
+                    }
+                    val b3 = ((2.0 * Math.PI * (splineOrder - 1.0) * m3D / K3 * Complex.I).exp() / sumK3).abs();
+
+                    B(m1,m2,m3) = b1 * b1 * b2 * b2 * b3 * b3;
+                }
             }
-            val b2 = ((2.0 * Math.PI * (splineOrder - 1.0) * m2D / K2 * Complex.I).exp() / sumK).abs();
-            sumK = Complex.ZERO;
-            for ((k) in 0..(splineOrder-2)) {
-                sumK = sumK + bSpline(splineOrder, k+1) * (2.0 * Math.PI * m3D * k / K3 * Complex.I).exp();
-            }
-            val b3 = ((2.0 * Math.PI * (splineOrder - 1.0) * m3D / K3 * Complex.I).exp() / sumK).abs();
-            B(m) = b1 * b1 * b2 * b2 * b3 * b3;
         }
         return B;
     }
@@ -233,8 +254,8 @@ public class PME {
             //Console.OUT.println("mVec = " + mVec);
             val mSquared = mVec.dot(mVec);
             //Console.OUT.println("mSquared = " + mSquared);
-            //Console.OUT.println("numerator (exp) = " + Math.exp(-(Math.PI*Math.PI) * mSquared / (beta * beta)));
-            //Console.OUT.println("denominator = " + (mSquared * Math.PI * V));
+            Console.OUT.println("numerator (exp) = " + Math.exp(-(Math.PI*Math.PI) * mSquared / (beta * beta)));
+            Console.OUT.println("denominator = " + (mSquared * Math.PI * V));
             C(m) = Math.exp(-(Math.PI*Math.PI) * mSquared / (beta * beta)) / (mSquared * Math.PI * V);
             //Console.OUT.println("C" + m + " = " + C(m));
         }
