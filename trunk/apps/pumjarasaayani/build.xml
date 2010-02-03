@@ -10,6 +10,7 @@
     <property name="optimize" value="true" />
     <property name="nochecks" value="true" />
     <property name="profile"  value="false" />
+    <property name="heapprofile" value="false" />
     <property name="x10rt" value="standalone" />
 	<property name="target" location="${basedir}/target" />
 	<property name="target-src" location="${target}/classes" />
@@ -26,8 +27,12 @@
         <istrue value="${nochecks}" />
     </condition>
 
-    <condition property="x10c.profile" value="-post 'g++ -pg'" else="">
+    <condition property="post.profile" value="-pg" else="">
         <istrue value="${profile}" />
+    </condition>
+
+    <condition property="post.heapprofile" value="-ltcmalloc" else="">
+        <istrue value="${heapprofile}" />
     </condition>
 
     <target name="init">
@@ -78,7 +83,7 @@
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/src">
             <arg value="-c"/>
-            <arg value="'x10c' ${x10c.nochecks} ${x10c.profile} ${x10c.optimize} -sourcepath .:${x10x.xlalib}:${anuchem.src} -d ${target-src} ${src.list}"/>
+            <arg value="'x10c' ${x10c.nochecks} ${x10c.optimize} -sourcepath .:${x10x.xlalib}:${anuchem.src} -d ${target-src} ${src.list}"/>
         </exec>
     </target>
 
@@ -98,7 +103,7 @@
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/src">
             <arg value="-c"/> 
-            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.nochecks} ${x10c.profile} ${x10c.optimize} -sourcepath .:${x10x.xlalib}:${anuchem.src} -d ${target-src} ${src.list}"/>
+            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.nochecks} ${x10c.optimize} -report postcompile=1 -post 'g++ -g ${x10c.optimize} ${post.profile} ${post.heapprofile}' -sourcepath .:${x10x.xlalib}:${anuchem.src} -d ${target-src} ${src.list}"/>
         </exec>
     </target>
 
