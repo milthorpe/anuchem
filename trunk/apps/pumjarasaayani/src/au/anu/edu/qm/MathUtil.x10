@@ -5,30 +5,36 @@
  *
  * @author: V.Ganesh
  */
-
 package au.anu.edu.qm;
 
 public final class MathUtil { 
-    public def this() { 
-    } 
-
-    public static def binomialPrefactor(s:Int, ia:Int, ib:Int, xpa:Double, xpb:Double): Double {
+    /**
+     * Returns the coefficient of x^j in the expansion of
+     * (x+a)^l * (x+b)^m
+     */
+    public static def binomialPrefactor(j:Int, l:Int, m:Int, a:Double, b:Double): Double {
         var sum:Double = 0.0;
-
-        for(var t:Int = 0; t<(s+1); t++) {
-            if(((s-ia) <= t) && (t <= ib)) {
-                sum += binomial(ia, s-t) * binomial(ib, t)
-                      * Math.pow(xpa, ia-s+t) * Math.pow(xpb, ib-t);
-            } // end if
-        } // end for
-
+        for(var t:Int = 0; t<(j+1); t++) {
+            if(((j-l) <= t) && (t <= m)) {
+                sum += binomial(l, j-t) * binomial(m, t)
+                      * Math.pow(a, l-j+t) * Math.pow(b, m-t);
+            }
+        }
         return sum;
     }
-   
+
+    /**
+     * Returns the binomial coefficient
+     * (i)      
+     * (j) = i! / (i-j)!j!
+     */
     public static def binomial(i:Int, j:Int) : Double {
         return (factorial(i) / factorial(j) / factorial(i - j));
     } 
 
+    /**
+     * Returns the factorial n!
+     */
     public static def factorial(var n:Int) : Long {
         var value:Long = 1;
         
@@ -40,6 +46,11 @@ public final class MathUtil {
         return value;
     }
 
+    /**
+     * Returns the double factorial n!! =
+     * 1,          if n==0 || n==1
+     * n((n-2)!),  if n > 1
+     */
     public static def factorial2(var n:Int) : Long {
         var value:Long = 1;
         
