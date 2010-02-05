@@ -23,8 +23,8 @@ public class TestPMEFunctions {
         val r = pme.getScaledFractionalCoordinates(v);
         Console.OUT.println(r);
 
-        val m404 = pme.bSpline(4, 0.4);
-        Console.OUT.println("M_4(0.4) = " + m404);
+        val m404 = pme.bSpline(4, 3);
+        Console.OUT.println("M_4(3) = " + m404);
 
         for (var a : int=0; a<atoms.length; a++) {
             Console.OUT.println(atoms(a));
@@ -61,7 +61,7 @@ public class TestPMEFunctions {
         val BdotC = Array.make[Complex](B.region, (p : Point(B.region.rank)) => Complex(B(p) * C(p), 0.0));
         for (p in BdotC) {
             if (BdotC(p) != Complex.ZERO) {
-                //Console.OUT.println("BdotC" + p + " = " + BdotC(p));
+                Console.OUT.println("BdotC" + p + " = " + BdotC(p));
             }
         }
     }

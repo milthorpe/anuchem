@@ -46,7 +46,7 @@ public class TestPME {
         }
 
         /* Assign particles to random locations within a 40 Angstrom 3D box, with unit charge (1/3 are negative). */
-        val atoms = ValRail.make[MMAtom](numParticles, (i : Int) => new MMAtom(new Point3d(randomUnit(), randomUnit(), randomUnit()), i%3==0?1:-1));
+        val atoms = ValRail.make[MMAtom](numParticles, (i : Int) => new MMAtom(new Point3d(randomUnit() + size/2.0, randomUnit() + size/2.0, randomUnit() + size/2.0), i%3==4?1:-1));
         val edges = [new Vector3d(size, 0.0, 0.0), new Vector3d(0.0, size, 0.0), new Vector3d(0.0, 0.0, size)];
         val g = gridSize;
         val gridSizes = ValRail.make[Int](3, (Int) => g);
@@ -55,7 +55,7 @@ public class TestPME {
     }
 
     static def randomUnit() : Double {
-        return (R.nextDouble()) * size;
+        return (R.nextDouble()) * 4.0;
     }
 }
 
