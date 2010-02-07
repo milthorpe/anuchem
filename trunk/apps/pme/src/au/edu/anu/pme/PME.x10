@@ -4,6 +4,7 @@ import x10x.vector.Point3d;
 import x10x.vector.Vector3d;
 import au.edu.anu.fft.DFT;
 import au.edu.anu.chem.mm.MMAtom;
+import edu.mit.fftw.FFTW;
 
 public class PME {
     /** The number of grid lines in each dimension of the simulation unit cell. */
@@ -106,7 +107,14 @@ public class PME {
         
         val Q = getGriddedCharges();
         Console.OUT.println("Q");
+
         val Qinv = DFT.dft3D(Q, false);
+
+        //val Qinv = Array.make[Complex](gridRegion);
+        //val plan : FFTW.FFTWPlan = FFTW.fftwPlan3D(K1, K2, K3, Q, Qinv, false);
+        //FFTW.fftwExecute(plan);
+        //FFTW.fftwDestroyPlan(plan);
+        
         Console.OUT.println("Qinv");
 
         val B = getBArray();
@@ -117,7 +125,15 @@ public class PME {
         val BdotC = Array.make[Double](gridRegion, (p : Point(gridRegion.rank)) => B(p) * C(p));
         Console.OUT.println("BdotC");
 
-        val thetaRecConvQ = DFT.dft3D(Array.make[Complex](gridRegion, (p : Point(gridRegion.rank)) => BdotC(p) * Qinv(p)), true);
+        val thetaRecConvQInv = Array.make[Complex](gridRegion, (p : Point(gridRegion.rank)) => BdotC(p) * Qinv(p));
+
+        //val thetaRecConvQ = Array.make[Complex](gridRegion);
+
+        //val plan2 : FFTW.FFTWPlan = FFTW.fftwPlan3D(K1, K2, K3, thetaRecConvQInv, thetaRecConvQ, true);
+        //FFTW.fftwExecute(plan2);
+        //FFTW.fftwDestroyPlan(plan2);
+        
+        val thetaRecConvQ = DFT.dft3D(thetaRecConvQInv, true);
         /*for (p in thetaRecConvQ) {
             if (thetaRecConvQ(p) != Complex.ZERO) {
                 Console.OUT.println(p + " = " + thetaRecConvQ(p));

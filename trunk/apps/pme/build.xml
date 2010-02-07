@@ -14,10 +14,10 @@
     <property environment="env"/>
     <property name="bash.exe" value="bash"/>    
     <property name="optimize" value="true"/>
-    <property name="nochecks" value="true"/>
+    <property name="nochecks" value="false"/>
     <property name="inline-optimizations" value="false"/>
     <property name="profile"  value="true"/>
-    <property name="x10rt" value="mpi"/>
+    <property name="x10rt" value="standalone"/>
 	<property name="target" location="${basedir}/target"/>
 	<property name="target-src" location="${target}/classes"/>
 	<property name="target-test" location="${target}/test-classes"/>
@@ -37,8 +37,8 @@
         <istrue value="${inline-optimizations}"/>
     </condition>
 
-    <condition property="x10c.profile" value="-post 'g++ -g -pg'" else="">
-        <istrue value="${profile}"/>
+    <condition property="post.profile" value="-pg" else="">
+        <istrue value="${profile}" />
     </condition>
 
 	<target name="init">
@@ -77,7 +77,7 @@
         </exec>
     </target>
 
-    <target name="build-src-cpp" depends="check-src-cpp" unless="src.uptodate.cpp">
+    <target name="build-src-cpp" depends="check-src-cpp,build-fftw-wrapper" unless="src.uptodate.cpp">
         <echo message="Building source tree"/>
 
         <fileset id="changed.src.files" dir="${basedir}/src" includes="**/*.x10">
@@ -91,9 +91,26 @@
         </pathconvert>
         <echo message="x10c++ -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} ${x10c.inline-optimizations} -sourcepath .:${xre.src}:${xla.src}:${anuchem.src} ${src.list} ${basedir}/${testclass}"/>
 
+        <copy todir="${target}/classes">
+            <fileset id="cpp.files" dir="${basedir}/src" includes="**/*.h,**/*.struct_h,**/*.cc"/>
+        </copy>
+
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/src">
             <arg value="-c"/>
-            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} ${x10c.inline-optimizations} -report postcompile=1 -sourcepath .:${xre.src}:${xla.src}:${anuchem.src} -d ${target-src} ${src.list} ${basedir}/${testclass}"/>
+            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} ${x10c.inline-optimizations} -report postcompile=1 -post 'g++ ${x10c.optimize} ${post.profile} -Wall # # -lfftw3' -sourcepath .:${xre.src}:${xla.src}:${anuchem.src} -d ${target-src} ${src.list} ${basedir}/${testclass}"/>
+        </exec>
+    </target>
+
+    <target name="build-fftw-wrapper" depends="check-src-fftw" unless="src.uptodate.fftw">
+        <echo message="Building FFTW wrapper"/>
+
+        <copy todir="${target}/classes">
+            <fileset id="cpp.files" dir="${basedir}/src" includes="**/*.h,**/*.cc"/>
+        </copy>
+
+        <exec executable="${bash.exe}" failonerror="true" dir="${target}/classes/edu/mit/fftw">
+            <arg value="-c"/>
+            <arg value="'gcc' -c FFTW.cc -include /usr/local/include/fftw3.h -lfftw3"/>
         </exec>
     </target>
 
@@ -114,6 +131,14 @@
         <uptodate property="src.uptodate.cpp">
             <srcfiles refid="src.files"/>
             <globmapper from="*.x10" to="${target-src}/*.cc" handledirsep="true"/>
+        </uptodate>
+    </target>
+
+    <target name="check-src-fftw" depends="init-src">
+        <fileset id="fftw.files" dir="${basedir}/src" includes="**/*.h,**/*.cc"/>
+        <uptodate property="src.uptodate.fftw">
+            <srcfiles refid="fftw.files"/>
+            <globmapper from="*" to="${target-src}/*" handledirsep="true"/>
         </uptodate>
     </target>
     
