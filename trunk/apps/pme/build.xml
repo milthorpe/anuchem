@@ -11,6 +11,8 @@
 	<property name="anuchem.src" location="${anuchem}/src"/>
 	<property name="anuchem.lib" location="${anuchem}/lib/anu-chem.jar"/>
     <property name="x10.testlib" location="${user.home}/x10-trunk/x10.tests/examples/x10lib"/>
+    <property name="fftw3.include" location="/scratch/fftw/include" />
+    <property name="fftw3.lib" location="/scratch/fftw/lib" />
     <property environment="env"/>
     <property name="bash.exe" value="bash"/>    
     <property name="optimize" value="true"/>
@@ -45,7 +47,7 @@
         <mkdir dir="${target}"/>
 	</target>
 
-    <target name="build" depends="build-src-java,test"/>
+    <target name="build" depends="exe"/>
 
     <target name="exe" depends="build-src-cpp">
         <mkdir dir="${bin}"/>
@@ -97,7 +99,7 @@
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/src">
             <arg value="-c"/>
-            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} ${x10c.inline-optimizations} -report postcompile=1 -post 'g++ ${x10c.optimize} ${post.profile} -Wall # # -lfftw3' -sourcepath .:${xre.src}:${xla.src}:${anuchem.src} -d ${target-src} ${src.list} ${basedir}/${testclass}"/>
+            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} ${x10c.inline-optimizations} -report postcompile=1 -post 'g++ ${x10c.optimize} ${post.profile} -Wall -I${fftw3.include} # # -L${fftw3.lib} -lfftw3' -sourcepath .:${xre.src}:${xla.src}:${anuchem.src} -d ${target-src} ${src.list} ${basedir}/${testclass}"/>
         </exec>
     </target>
 
@@ -110,7 +112,7 @@
 
         <exec executable="${bash.exe}" failonerror="true" dir="${target}/classes/edu/mit/fftw">
             <arg value="-c"/>
-            <arg value="'gcc' -c FFTW.cc -include /usr/local/include/fftw3.h -lfftw3"/>
+            <arg value="'gcc' -c FFTW.cc -I${fftw3.include}"/>
         </exec>
     </target>
 
