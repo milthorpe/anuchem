@@ -25,7 +25,7 @@
 	<property name="target-test" location="${target}/test-classes"/>
     <property name="bin" location="${basedir}/bin"/>
 	<property name="exe" value="pme"/>
-    <property name="testclass" value="test/au/edu/anu/pme/TestPME.x10"/>
+    <property name="testclass" value="test/edu/mit/fftw/TestFFTW.x10"/>
 
     <condition property="x10c.optimize" value="-O" else="">
         <istrue value="${optimize}"/>
