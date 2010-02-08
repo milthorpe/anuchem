@@ -12,14 +12,14 @@ import au.edu.anu.chem.mm.MMAtom;
 public class TestPME {
     private const RANDOM_SEED = 10101110L;
     private static val R = new Random(RANDOM_SEED);
-    /* side length of cubic unit cell */
-    private const size = 40.0;
+    /* side length of cubic unit cell in Angstroms */
+    private const size = 80.0;
 
     public static def main(args : Rail[String]!) {
         var numParticles : Int;
         var ewaldCoefficient : Double = 0.35;
         var cutoff : Double = 9.0;
-        var gridSize : Int = 12;
+        var gridSize : Int = 20;
         var splineOrder : Int = 4;
         if (args.length > 0) {
             numParticles = Int.parseInt(args(0));
@@ -45,8 +45,8 @@ public class TestPME {
             return;
         }
 
-        /* Assign particles to random locations within a 40 Angstrom 3D box, with unit charge (1/3 are negative). */
-        val atoms = ValRail.make[MMAtom](numParticles, (i : Int) => new MMAtom(new Point3d(randomUnit() + size/2.0, randomUnit() + size/2.0, randomUnit() + size/2.0), i%3==4?1:-1));
+        /* Assign particles to random locations within a cubic 3D box, with unit charge (1/2 are negative). */
+        val atoms = ValRail.make[MMAtom](numParticles, (i : Int) => new MMAtom(new Point3d(randomUnit() + size/2.0, randomUnit() + size/2.0, randomUnit() + size/2.0), i%2==0?1:-1));
         val edges = [new Vector3d(size, 0.0, 0.0), new Vector3d(0.0, size, 0.0), new Vector3d(0.0, 0.0, size)];
         val g = gridSize;
         val gridSizes = ValRail.make[Int](3, (Int) => g);
@@ -55,7 +55,7 @@ public class TestPME {
     }
 
     static def randomUnit() : Double {
-        return (R.nextDouble()) * 4.0;
+        return (R.nextDouble()) * 2.0 - 1.0;
     }
 }
 

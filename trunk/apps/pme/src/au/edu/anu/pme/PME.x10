@@ -2,9 +2,9 @@ package au.edu.anu.pme;
 
 import x10x.vector.Point3d;
 import x10x.vector.Vector3d;
-import au.edu.anu.fft.DFT;
 import au.edu.anu.chem.mm.MMAtom;
 import edu.mit.fftw.FFTW;
+import x10.array.BaseArray;
 
 public class PME {
     /** The number of grid lines in each dimension of the simulation unit cell. */
@@ -15,7 +15,7 @@ public class PME {
     public val K2 : Double; 
     public val K3 : Double;
 
-    /** The edges of the unit cell. TODO: non-cubic cells */
+    /** The edges of the unit cell. */
     public val edges : ValRail[Vector3d](3);
 
     /** The conjugate reciprocal vectors for each dimension. */
@@ -36,9 +36,12 @@ public class PME {
 
     /**
      * Creates a new particle mesh Ewald method.
-     * @param size the side length of the unit cube // TODO non-cubic boxes
-     * @param n the order of B-spline interpolation
+     * @param edges the edge vectors of the unit cell
+     * @param gridSize the number of grid lines in each dimension of the unit cell
+     * @param atoms the atoms in the unit cell
+     * @param splineOrder the order n of B-spline interpolation
      * @param beta the Ewald coefficient beta
+     * @param cutoff the distance in Angstroms beyond which direct interactions are ignored
      */
     public def this(edges : ValRail[Vector3d](3),
             gridSize : ValRail[Int](3),
@@ -68,32 +71,24 @@ public class PME {
         var directEnergy : Double = 0.0;
         var directSum : Double = 0.0;
         var selfEnergy: Double = 0.0;
-        var correctionEnergy : Double = 0.0;
+        var correctionEnergy : Double = 0.0; // TODO masklist
         for ((i) in 0..(atoms.length - 1)) {
             selfEnergy += atoms(i).charge * atoms(i).charge;
             for ((j) in 0..(atoms.length - 1)) {
-                val chargeProduct = atoms(i).charge * atoms(j).charge;
-                
                 val rjri = new Vector3d(atoms(j).centre.sub(atoms(i).centre));
-                val distance = rjri.length();
-
-                // TODO remove comparison with direct energy
-                if (i!=j) {
-                    directEnergy += chargeProduct / distance; 
-                    ////Console.OUT.println("distance = " + distance + " directEnergy component = " + chargeProduct / distance);
-                }
-
-                //Console.OUT.println("beta * distance = " + (beta * distance) + " erf = " + Math.erf(beta * distance));
-                // TODO correctionEnergy -= atoms(i).charge * atoms(j).charge * Math.erf(beta * distance) / distance;
                 for (var n1:Int = -1; n1<=1; n1++) {
                     for (var n2:Int = -1; n2<=1; n2++) {
                         for (var n3:Int = -1; n3<=1; n3++) {
-                            if (! (i==j && (n1 & n2 & n3) == 0)) {
+                            if (! (i==j && (n1 | n2 | n3) == 0)) {
                                 val imageDistance = rjri.add(edges(0).mul(n1)).add(edges(1).mul(n2)).add(edges(2).mul(n3)).length();
+                                val chargeProduct = atoms(i).charge * atoms(j).charge;
+                                directEnergy += chargeProduct / imageDistance;
                                 if (imageDistance < cutoff) {
                                     val imageDirectComponent = chargeProduct * Math.erfc(beta * imageDistance) / imageDistance;
                                     //Console.OUT.println("imageDistance = " + imageDistance + " imageDirectComponent = " + imageDirectComponent);
                                     directSum += imageDirectComponent;
+                                    //Console.OUT.println("distance = " + distance + " directEnergy component = " + chargeProduct / distance);
+                                    
                                 }
                             }
                         }
@@ -104,16 +99,25 @@ public class PME {
         selfEnergy = -beta / Math.sqrt(Math.PI) * selfEnergy;
         directEnergy = directEnergy / 2.0;
         directSum = directSum / 2.0;
+
+        Console.OUT.println("directSum / selfEnergy");
         
         val Q = getGriddedCharges();
         Console.OUT.println("Q");
+        /*
+        for (p in Q) {
+            if (Q(p) != Complex.ZERO) {
+                Console.OUT.println(p + " = " + Q(p));
+            }
+        }
+        */
 
-        val Qinv = DFT.dft3D(Q, false);
+        //val Qinv = DFT.dft3D(Q, false);
 
-        //val Qinv = Array.make[Complex](gridRegion);
-        //val plan : FFTW.FFTWPlan = FFTW.fftwPlan3D(K1, K2, K3, Q, Qinv, false);
-        //FFTW.fftwExecute(plan);
-        //FFTW.fftwDestroyPlan(plan);
+        val Qinv = Array.make[Complex](gridRegion);
+        val plan : FFTW.FFTWPlan = FFTW.fftwPlan3d(gridSize(0), gridSize(1), gridSize(2), Q as BaseArray[Complex], Qinv as BaseArray[Complex], false);
+        FFTW.fftwExecute(plan);
+        FFTW.fftwDestroyPlan(plan);
         
         Console.OUT.println("Qinv");
 
@@ -126,14 +130,13 @@ public class PME {
         Console.OUT.println("BdotC");
 
         val thetaRecConvQInv = Array.make[Complex](gridRegion, (p : Point(gridRegion.rank)) => BdotC(p) * Qinv(p));
+        val thetaRecConvQ = Array.make[Complex](gridRegion);
 
-        //val thetaRecConvQ = Array.make[Complex](gridRegion);
-
-        //val plan2 : FFTW.FFTWPlan = FFTW.fftwPlan3D(K1, K2, K3, thetaRecConvQInv, thetaRecConvQ, true);
-        //FFTW.fftwExecute(plan2);
-        //FFTW.fftwDestroyPlan(plan2);
+        val plan2 : FFTW.FFTWPlan = FFTW.fftwPlan3d(gridSize(0), gridSize(1), gridSize(2), thetaRecConvQInv as BaseArray[Complex], thetaRecConvQ as BaseArray[Complex], true);
+        FFTW.fftwExecute(plan2);
+        FFTW.fftwDestroyPlan(plan2);
         
-        val thetaRecConvQ = DFT.dft3D(thetaRecConvQInv, true);
+        //val thetaRecConvQ = DFT.dft3D(thetaRecConvQInv, true);
         /*for (p in thetaRecConvQ) {
             if (thetaRecConvQ(p) != Complex.ZERO) {
                 Console.OUT.println(p + " = " + thetaRecConvQ(p));
@@ -148,7 +151,9 @@ public class PME {
         Console.OUT.println("selfEnergy = " + selfEnergy);
         Console.OUT.println("correctionEnergy = " + correctionEnergy);
         Console.OUT.println("reciprocalEnergy = " + reciprocalEnergy);
-        Console.OUT.println("error = " + (directEnergy - (directSum + reciprocalEnergy.re + (correctionEnergy + selfEnergy))));
+        val total = directSum + reciprocalEnergy.re + (correctionEnergy + selfEnergy);
+        val error = directEnergy - total;
+        Console.OUT.println("error = " + error + " relative error = " + Math.abs(error) / Math.abs(total));
         return directSum + reciprocalEnergy.re + (correctionEnergy + selfEnergy);
     }
 
@@ -163,20 +168,25 @@ public class PME {
             val q = atom.charge;
             val u = getScaledFractionalCoordinates(new Vector3d(atom.centre));
             //Console.OUT.println("atom( " + i + " ) charge = " + q + " coords = " + u);
-            var atomContribution : Double = 0.0;
-            for (k(k1,k2,k3) in gridRegion) {
-                for (var n1:Int = -1; n1<=1; n1++) {
-                    for (var n2:Int = -1; n2<=1; n2++) {
-                        for (var n3:Int = -1; n3<=1; n3++) {
-                            val gridPointContribution = q
-                                         * bSpline(splineOrder, (u.i - k1 - n1*K1))
-                                         * bSpline(splineOrder, (u.j - k2 - n2*K2))
-                                         * bSpline(splineOrder, (u.k - k3 - n3*K3));
-                            if (gridPointContribution != 0.0) {
-                                //Console.OUT.println("Q" + k + " += " + gridPointContribution + " n1: " + n1 + " n2: " + n2 + " n3 " + n3);
-                                Q(k1,k2,k3) += gridPointContribution;
+            //var atomContribution : Double = 0.0;
+            //finish foreach (k(k1,k2,k3) in gridRegion) {
+            for (var k1 : Int = 0; k1 < gridSize(0); k1++) {
+                for (var k2 : Int = 0; k2 < gridSize(1); k2++) {
+                    for (var k3 : Int = 0; k3 < gridSize(2); k3++) {
+                        for (var n1:Int = -1; n1<=1; n1++) {
+                            for (var n2:Int = -1; n2<=1; n2++) {
+                                for (var n3:Int = -1; n3<=1; n3++) {
+                                    val gridPointContribution = q
+                                                 * bSpline(splineOrder, (u.i - k1 - n1*K1))
+                                                 * bSpline(splineOrder, (u.j - k2 - n2*K2))
+                                                 * bSpline(splineOrder, (u.k - k3 - n3*K3));
+                                    if (gridPointContribution != 0.0) {
+                                        Q(k1,k2,k3) += gridPointContribution;
+                                        //Console.OUT.println("Q(" + k1 + "," + k2 + "," + k3 + ") += " + gridPointContribution + " n1: " + n1 + " n2: " + n2 + " n3 " + n3);
+                                    }
+                                    //atomContribution += gridPointContribution;
+                                }
                             }
-                            atomContribution += gridPointContribution;
                         }
                     }
                 }
@@ -250,7 +260,7 @@ public class PME {
         val C = Array.make[Double](gridRegion);
         val V = getVolume();
         //Console.OUT.println("V = " + V);
-        for (m(m1,m2,m3) in gridRegion) {
+        finish foreach (m(m1,m2,m3) in gridRegion) {
             val m1prime = m1 <= K1/2 ? m1 : m1 - K1;
             val m2prime = m2 <= K2/2 ? m2 : m2 - K2;
             val m3prime = m3 <= K3/2 ? m3 : m3 - K3;
