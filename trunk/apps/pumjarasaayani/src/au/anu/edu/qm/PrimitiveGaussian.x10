@@ -14,7 +14,7 @@ public class PrimitiveGaussian {
     global val origin:Point3d{self.at(this)};
     global val power:Power{self.at(this)};
     global val exponent:Double;
-    global val coefficient:Double;
+    global var coefficient:Double;
     global var normalization:Double;
 
     public def this(origin:Point3d!, power:Power!, exponent:Double, coefficient:Double) { 
@@ -33,6 +33,7 @@ public class PrimitiveGaussian {
     public def getMaximumAngularMomentum() = power.getMaximumAngularMomentum();
     public def getMinimumAngularMomentum() = power.getMinimumAngularMomentum();
 
+    public def setCoefficient(coef:Double) { coefficient = coef; }
 
     public def overlap(pg:PrimitiveGaussian{self.at(this)}) : Double {
         return normalization * pg.normalization * ovrlp(pg);

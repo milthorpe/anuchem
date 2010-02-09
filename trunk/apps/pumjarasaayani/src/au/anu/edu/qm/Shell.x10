@@ -23,6 +23,8 @@ public class Shell {
     public def getShellPrimitives() = shellPrimitives;
     public def getNumberOfShellPrimitives() = shellPrimitives.size();
 
+    public def getShellPrimitive(i:Int) = shellPrimitives.get(i);
+
     public def addShellPrimitive(cg:ContractedGaussian) : void {
        shellPrimitives.add(cg);
     }

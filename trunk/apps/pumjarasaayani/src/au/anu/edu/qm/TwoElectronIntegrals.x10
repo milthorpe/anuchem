@@ -9,6 +9,8 @@
 package au.anu.edu.qm;
 
 import x10.util.ArrayList;
+
+import x10x.matrix.Matrix;
 import x10x.vector.Point3d;
 import au.edu.anu.chem.Molecule;
 
@@ -141,103 +143,172 @@ public class TwoElectronIntegrals {
          twoEUpdate.coulomb(i,j,k,l, jij);
     }
 
+    private val sq2pi = Math.pow((2.0/Math.PI), 0.5);
+
     /* Note: M_D  routines mostly taken from Alistair's code, with a few changes. 
        Direct update to GMtarix is based on the code in GMatrix.compute..() */
     public def compute2EAndRecord(a:ContractedGaussian{self.at(this)}, b:ContractedGaussian{self.at(this)}, 
                                   c:ContractedGaussian{self.at(this)}, d:ContractedGaussian{self.at(this)}, 
-                                  idx:Int, jdx:Int, kdx:Int, ldx:Int, shellList:ShellList{self.at(this)}, 
-                                  gMat:GMatrix{self.at(this)}, dMat:Density{self.at(this)}) : void {
+                                  shellList:ShellList{self.at(this)}, 
+                                  jMat:Matrix{self.at(this)}, kMat:Matrix{self.at(this)},
+                                  dMat:Density{self.at(this)}) : void {
          val aPrims = a.getPrimitives();
          val bPrims = b.getPrimitives();
          val cPrims = c.getPrimitives();
          val dPrims = d.getPrimitives();
 
-         val gMatrix = gMat.getMatrix();
+         val aCen  = a.getCenter();
+         val bCen  = b.getCenter();
+         val cCen  = c.getCenter();
+         val dCen  = d.getCenter();
+
+         val dAng  = d.getMaximumAngularMomentum();
+         val cAng  = c.getMaximumAngularMomentum();
+         val bAng  = b.getMaximumAngularMomentum();
+         val aAng  = a.getMaximumAngularMomentum();
+
+         val dLim = ((dAng+1)*(dAng+2)/2);
+         val cLim = ((cAng+1)*(cAng+2)/2);
+         val bLim = ((bAng+1)*(bAng+2)/2);
+         val aLim = ((aAng+1)*(aAng+2)/2);
+
+         val dStrt = d.getIntIndex();
+         val cStrt = c.getIntIndex();
+         val bStrt = b.getIntIndex();
+         val aStrt = a.getIntIndex();
+
+         val jMatrix = jMat.getMatrix();
+         val kMatrix = kMat.getMatrix();
          val dMatrix = dMat.getMatrix();
 
-         val angMomAB = a.getTotalAngularMomentum() + b.getTotalAngularMomentum();
-         val angMomCD = c.getTotalAngularMomentum() + d.getTotalAngularMomentum();
+         val angMomAB = a.getMaximumAngularMomentum() + b.getMaximumAngularMomentum();
+         val angMomCD = c.getMaximumAngularMomentum() + d.getMaximumAngularMomentum();
+         val angMomABCD = angMomAB+angMomCD;
 
-         val maxam  = angMomAB+angMomCD;
+         val maxam  = angMomABCD; // shellList.getMaximumAngularMomentum();
          val maxam2 = 2*maxam;
+         val maxam4 = 4*maxam;
+         val maxamN = ((maxam+1)*(maxam+2)/2);
+         val maxam2M  = ((maxam2+1)*(maxam2+2)/2);
+         val maxam2N  = ((maxam2+1)*((maxam2+1)*(maxam2+2)/2));
+         val pqd = (maxam2+1)*(maxam2+2)/2;
+         val pqdim = ((maxam2+1)*(maxam2+2)/2);
 
+         var i:Int, j:Int, k:Int, l:Int;
+         var bb:Int, aa:Int;
+         var dd:Int, cc:Int;
+
+         val fmt = Rail.make[Double](maxam+1);
+         val zeroM = Rail.make[Double](maxam+1);
+         val rM:Array[Double]{rank==2,self.at(this)} = Array.make[Double]([0..maxam4, 0..((maxam4+1)*(maxam4+2)/2)]);
+         val pqInts:Array[Double]{rank==2,self.at(this)} = Array.make[Double]([0..(maxam2+1)*(pqd+1), 0..(maxam2+1)*(pqd+1)]);
+         val npint:Array[Double]{rank==2,self.at(this)} = Array.make[Double]([0..maxam2+1, 0..maxam2M+1]);
+         val pcdint:Array[Double]{rank==3, self.at(this)} = Array.make[Double]([0..maxamN, 
+                                                                                0..maxamN, 
+                                                                                0..maxam2N]);
 
          for(val aPrim in aPrims) {
            for(val bPrim in bPrims) {
 
-             // TODO:
-             val pcdint:Array[Double]{rank==3, self.at(this)} = Array.make[Double]([0..((maxam+1)*(maxam+2)/2), 0..((maxam+1)*(maxam+2)/2), 0..maxam2*((maxam2+1)*(maxam2+2)/2)]);
+             for(i=0; i<maxamN; i++) 
+               for(j=0; j<maxamN; j++) 
+                  for(k=0; k<maxam2N; k++) 
+                     pcdint(i,j,k) = 0.0;
+
+             val radiusABSquared = a.distanceSquaredFrom(b); 
+             val aAlpha = aPrim.getExponent();
+             val bAlpha = bPrim.getExponent();
+             val gamma1 = aAlpha + bAlpha;
+             val aCoeff = aPrim.getCoefficient();
+             val bCoeff = bPrim.getCoefficient();
+
+             val p:Point3d{self.at(this)} = gaussianProductCenter(aAlpha, aCen, bAlpha, bCen);
+             val Gab = Math.exp(-aAlpha*bAlpha*radiusABSquared/gamma1);
+             val Up = aCoeff*bCoeff*Gab*Math.pow((Math.PI/gamma1),1.5);
+             // Console.OUT.println("Coeff: " + aCoeff + " " + bCoeff);
+             // Console.OUT.println("Zeta, Gab, Up: " + gamma1 + " " + Gab + " " + Up);
+
 
              for(val cPrim in cPrims) {
                for(val dPrim in dPrims) {
 
-                 val radiusABSquared = a.distanceSquaredFrom(b);
                  val radiusCDSquared = c.distanceSquaredFrom(d);
 
-                 val aAlpha = aPrim.getExponent();
-                 val bAlpha = bPrim.getExponent();
                  val cAlpha = cPrim.getExponent();
                  val dAlpha = dPrim.getExponent();
 
-                 val p:Point3d{self.at(this)} = gaussianProductCenter(aAlpha, a.getCenter(), bAlpha, b.getCenter());
-                 val q:Point3d{self.at(this)} = gaussianProductCenter(cAlpha, c.getCenter(), dAlpha, d.getCenter());
+                 val cCoeff = cPrim.getCoefficient();
+                 val dCoeff = dPrim.getCoefficient();
+
+                 val gamma2 = cAlpha + dAlpha;
+                 val eta    = (gamma1*gamma2)/(gamma1+gamma2);
+
+                 val q:Point3d{self.at(this)} = gaussianProductCenter(cAlpha, cCen, dAlpha, dCen);
+                 val Gcd = Math.exp(-cAlpha*dAlpha*radiusCDSquared/gamma2);
+                 val Uq = cCoeff*dCoeff*Gcd*Math.pow((Math.PI/gamma2),1.5); 
+                 // Console.OUT.println("Coeff: " + cCoeff + " " + dCoeff);
+                 // Console.OUT.println("Zeta, Gcd, Uq: " + gamma2 + " " + Gcd + " " + Uq);
 
                  val r:Point3d{self.at(this)} = new Point3d(q.sub(p));
-                 val radiusPQSquared = p.distanceSquared(q);
+                 val radiusPQSquared:Double = p.distanceSquared(q);  
+                 val Upq = Up*Uq;
+                 val T = p.distanceSquared(q) * eta;
 
-                 val gamma1 = aAlpha + bAlpha;
-                 val gamma2 = cAlpha + dAlpha;
-                 val delta  = 0.25 * (1/gamma1 + 1/gamma2);   
-                 val eta    = (gamma1*gamma2)/(gamma1+gamma2);  
 
-                 val pqd    = (maxam2+1)*(maxam2+2)/2;
-                 val fmt = Rail.make[Double](maxam+1);
-                 val zeroM:Array[Double]{rank==1,self.at(this)} = Array.make[Double]([0..maxam+1]);
-                 val rM:Array[Double]{rank==2,self.at(this)} = Array.make[Double]([0..maxam+1, 0..shellList.getNumberOfShells()]);
-                 val pqInts:Array[Double]{rank==2,self.at(this)} = Array.make[Double]([0..(maxam2+1)*(pqd+1), 0..(maxam2+1)*(pqd+1)]);
-                 val pqdim = maxam2+1;
-
-                 var i:Int, j:Int, k:Int, l:Int;
+                 // Console.OUT.println("Computing FmT");
+                 // Console.OUT.println("T value: " + T);
+                 // Console.OUT.println("maxam: " + maxam);
 
                  // compute FmT
-                 computeFmt(maxam, 0.25*radiusPQSquared/delta, fmt);
+                 computeFmt(angMomABCD, T, fmt);
         
                  // convert to GmT
-                 for(i=0; i<maxam; i++) fmt(i) *= sqrt2PI;
+                 for(i=0; i<=angMomABCD; i++) { 
+                     fmt(i) *= sq2pi; 
+                     // Console.OUT.println(fmt(i));
+                 }
+
+                 // Console.OUT.println("Computing [0]m");
+
+                 // Console.OUT.println("Up, Uq, Upq: " + Up + " " + Uq + " " + Upq);
 
                  // compute [0]m
-                 for(i=0; i<=maxam; i++)
-                    zeroM(i) = radiusPQSquared * Math.pow(2.0*eta, i+0.5) * fmt(i);
+                 for(i=0; i<=angMomABCD; i++) {
+                    zeroM(i) = Upq * Math.pow(2.0*eta, i+0.5) * fmt(i);
+                    // Console.OUT.println(Upq + " " + zeroM(i));
+                 }
+
+                 // Console.OUT.println("Computing [r]m");
+                 // Console.OUT.println("abcd_ang: " + angMomABCD);
 
                  // form [r]m using MD (recursion)
-                 for(i=0; i<=maxam; i++) {
-                    val shell = shellList.getShell(i).getShellPrimitives();
-                    j = 0;
-                    for(val shellprim in shell) {
-                       val powers = (shellprim as ContractedGaussian{self.at(this)}).getPower();
+                 for(i=0; i<=angMomABCD; i++) {
+                    val shell = shellList.getPowers(i);
+                    for(j=0; j<((i+1)*(i+2)/2); j++) {
+                       val powers = shell(j);
                        val lp = powers.getL();
                        val mp = powers.getM();
                        val np = powers.getN();
                        rM(i,j) = mdRecurse(r, zeroM, lp, mp, np, 0);
-                       j++;
+                       // Console.OUT.println(rM(i,j));
                     }
                  }
  
+                 // Console.OUT.println("Computing [p|q] ");
+
                  // form [p|q] 
                  for(i=0; i<=angMomAB; i++) {
-                    val shellAB = shellList.getShell(i).getShellPrimitives();
-                    var pp:Int = 0;
-                    for(val shellprimAB in shellAB) {
-                      val powersAB = (shellprimAB as ContractedGaussian{self.at(this)}).getPower();
+                    val shellAB = shellList.getPowers(i);
+                    for (var pp:Int = 0; pp<((i+1)*(i+2)/2); pp++) {
+                      val powersAB = shellAB(pp);
                       val lp = powersAB.getL();
                       val mp = powersAB.getM();
                       val np = powersAB.getN();
                    
                       for(j=0; j<=angMomCD; j++) {
-                        val shellCD = shellList.getShell(j).getShellPrimitives();
-                        var qq:Int = 0;
-                        for(val shellprimCD in shellCD) {
-                          val powersCD = (shellprimCD as ContractedGaussian{self.at(this)}).getPower();
+                        val shellCD = shellList.getPowers(j);
+                        for (var qq:Int = 0; qq<((j+1)*(j+2)/2); qq++) {
+                          val powersCD = shellCD(qq);
                           val lq = powersCD.getL();
                           val mq = powersCD.getM();
                           val nq = powersCD.getN();
@@ -254,142 +325,179 @@ public class TwoElectronIntegrals {
                           else
                              pqInts(i*pqdim+pp, j*pqdim+qq) = -rM(rtyp, rr);
 
-                          qq++;
+                          // Console.OUT.println(pqInts(i*pqdim+pp, j*pqdim+qq));
                         } 
                       } 
-
-                      pp++;
                     }
                  }   
 
-                 var dd:Int, cc:Int;
+                 // Console.OUT.println("Computing [p|cd] ");
 
                  // form [p|cd]
                  for(i=0; i<=angMomAB; i++) {
-                   val shellAB = shellList.getShell(i).getShellPrimitives();
-                   var pp:Int = 0;
-                   for(val shellprimAB in shellAB) {
-                     val npint = Array.make[Double]([0..maxam2+1, 0..((maxam2+1)*(maxam2+2)/2)+1]);
+                   for(var pp:Int = 0; pp < ((i+1)*(i+2)/2); pp++) {
 
-                     for (k=0; k<=maxam; k++)
-                       for (l=0; l<=(maxam2+1)*(maxam2+2)/2; l++)
+                     for (k=0; k<=maxam2; k++)
+                       for (l=0; l<=maxam2M; l++)
                           npint(k,l) = pqInts(i*pqdim+pp, k*pqdim+l);
 
-	             val dAng = dPrim.getMaximumAngularMomentum();
-	             val cAng = cPrim.getMaximumAngularMomentum();
-
-                     val shellD = shellList.getShell(dAng).getShellPrimitives();
-                     dd = 0;
-                     for(val shellprimD in shellD) {
-                        val powersD = (shellprimD as ContractedGaussian{self.at(this)}).getPower();
+                     val shellD = shellList.getPowers(dAng);
+                     
+                     for(dd = 0; dd<dLim; dd++) {
+                        val powersD = shellD(dd);
                         val lp = powersD.getL();
                         val mp = powersD.getM();
                         val np = powersD.getN();
 
-                        val shellC = shellList.getShell(cAng).getShellPrimitives();
-                        cc = 0;
-                        for(val shellprimC in shellC) {
-                           val powersC = (shellprimC as ContractedGaussian{self.at(this)}).getPower();
+                        val shellC = shellList.getPowers(cAng);
+                        for(cc = 0; cc<cLim; cc++) {
+                           val powersC = shellC(cc);
                            val lq = powersC.getL();
                            val mq = powersC.getM();
                            val nq = powersC.getN();
 
                            pcdint(dd,cc,i*pqdim+pp) += mdr1(lp, mp, np, lq, mq, nq, 0, 0, 0,
-                                                          d.getCenter(), c.getCenter(),
-                                                          q, eta, npint);
-                           cc++;
+                                                            dCen, cCen,
+                                                            q, gamma2, npint);
+                           // Console.OUT.println(pcdint(dd,cc,i*pqdim+pp));
                         }
-
-                        dd++;
                      }
-
-                     pp++;
                    }
                  }
+               } // dPrim
+              } // cPrim
 
-                 // TODO:
-                 // form [ab|cd], and update the GMatrix elements accordingly
-                 val dAng = dPrim.getMaximumAngularMomentum();
-                 val cAng = cPrim.getMaximumAngularMomentum();
-                 val bAng = bPrim.getMaximumAngularMomentum();
-                 val aAng = aPrim.getMaximumAngularMomentum();
+              // Console.OUT.println("Computing [ab|cd] ");
 
-                 var bb:Int, aa:Int;
+              // form [ab|cd], and update the GMatrix elements accordingly
+              val iidx  = Rail.make[Int](8);
+              val jjdx  = Rail.make[Int](8);
+              val kkdx  = Rail.make[Int](8);
+              val lldx  = Rail.make[Int](8);
 
-                 for(dd=0; dd<((dAng+1)*(dAng+2)/2); dd++) {
-                     for(cc=0; cc<((cAng+1)*(cAng+2)/2); cc++) {
-                        val npint = Array.make[Double]([0..maxam2+1, 0..((maxam2+1)*(maxam2+2)/2)+1]);
+              // Console.OUT.println("ang: " + dAng + " " + cAng + " " + bAng + " " + aAng);
+              // Console.OUT.println("strt: " + dStrt + " " + cStrt + " " + bStrt + " " + aStrt);
 
-                        for (k=0; k<=maxam; k++)
-                          for (l=0; l<=(maxam2+1)*(maxam2+2)/2; l++)
-                            npint(k,l) = pcdint(dd, cc, k*pqdim+l);
+              for(dd=0; dd<dLim; dd++) {
+                  val ll = dStrt + dd;
+                  lldx(0) = ll; lldx(1) = ll; kkdx(2) = ll; kkdx(3) = ll;
+                  iidx(4) = ll; iidx(5) = ll; jjdx(6) = ll; jjdx(7) = ll;
 
-                        val shellB = shellList.getShell(bAng).getShellPrimitives();
-                        bb = 0;
-                        for(val shellprimB in shellB) {
-                          val powersB = (shellprimB as ContractedGaussian{self.at(this)}).getPower();
+                  for(cc=0; cc<cLim; cc++) {
+                      val kk = cStrt + cc;
+
+                      kkdx(0) = kk; kkdx(1) = kk; lldx(2) = kk; lldx(3) = kk;
+                      jjdx(4) = kk; jjdx(5) = kk; iidx(6) = kk; iidx(7) = kk;
+
+                      for (k=0; k<=maxam2; k++)
+                        for (l=0; l<=maxam2M; l++)
+                           npint(k,l) = pcdint(dd, cc, k*pqdim+l);
+
+                      val shellB = shellList.getPowers(bAng);
+                      for(bb = 0; bb<bLim; bb++) {
+                          val jj = bStrt + bb;
+                          val powersB = shellB(bb);
                           val lp = powersB.getL();
                           val mp = powersB.getM();
                           val np = powersB.getN();
 
-                          val shellA = shellList.getShell(aAng).getShellPrimitives();
-                          aa = 0;
-                          for(val shellprimA in shellA) {
-                             val powersA = (shellprimA as ContractedGaussian{self.at(this)}).getPower();
+                          jjdx(0) = jj; iidx(1) = jj; iidx(2) = jj; jjdx(3) = jj;
+                          lldx(4) = jj; kkdx(5) = jj; lldx(6) = jj; kkdx(7) = jj;
+
+
+                          val shellA = shellList.getPowers(aAng);
+                          for(aa = 0; aa<aLim; aa++) {
+                             val powersA = shellA(aa);
                              val lq = powersA.getL();
                              val mq = powersA.getM();
                              val nq = powersA.getN();
  
-                             val ii = a.getIntIndex() + aa;
-                             val jj = b.getIntIndex() + bb;
-                             val kk = c.getIntIndex() + cc;
-                             val ll = d.getIntIndex() + dd;
+                             val ii = aStrt + aa;
 
                              if (ii >= jj && kk >=ll) {
                                 val iijj = ii*(ii+1)/2 + jj;
                                 val kkll = kk*(kk+1)/2 + ll;
 
-                                if (iijj >= kkll) {
+                                if (iijj >= kkll) {                                   
                                     val twoEIntVal = mdr1(lp, mp, np, lq, mq, nq, 0, 0, 0,
-                                                       b.getCenter(), a.getCenter(),
-                                                       p, eta, npint);
-                                    val twoEIntVal2    = twoEIntVal + twoEIntVal;
-                                    val twoEIntValHalf = 0.5 * twoEIntVal;
+                                                          bCen, aCen,
+                                                          p, gamma1, npint);
 
-                                    val v1 = dMatrix(kk,ll) * twoEIntVal2;
-                                    val v2 = dMatrix(ii,jj) * twoEIntVal2;
-                                    val v3 = dMatrix(jj,ll) * twoEIntValHalf;
-                                    val v4 = dMatrix(jj,kk) * twoEIntValHalf;
-                                    val v5 = dMatrix(ii,ll) * twoEIntValHalf;
-                                    val v6 = dMatrix(ii,kk) * twoEIntValHalf;
+                                    val validIdx = Rail.make[Boolean](8, (Int)=>true);
 
-                                    // atomic {
-                                      gMatrix(ii,jj) += v1;
-                                      gMatrix(kk,ll) += v2;
-                                      gMatrix(ii,kk) -= v3;
-                                      gMatrix(ii,ll) -= v4;
-                                      gMatrix(jj,kk) -= v5;
-                                      gMatrix(jj,ll) -= v6;
-                                    // } // atomic
+                                    // Console.OUT.println("integral : " + ii + ", " + jj + ", " + kk + ", " + ll + " : " + twoEIntVal);
+
+                                    setJKMatrixElements(jMatrix, kMatrix, dMatrix, ii, jj, kk, ll, twoEIntVal);
+
+                                    // special case
+                                    if ((ii|jj|kk|ll) == 0) continue;
+                                    iidx(0) = ii; jjdx(1) = ii; jjdx(2) = ii; iidx(3) = ii;
+                                    kkdx(4) = ii; lldx(5) = ii; kkdx(6) = ii; lldx(7) = ii;
+
+                                    // else this is symmetry unique integral, so need to
+                                    // use this value for all 8 combinations
+                                    // (if unique)
+
+                                    // filter unique elements
+                                    filterUniqueElements(iidx, jjdx, kkdx, lldx, validIdx);
+
+                                    // and evaluate them
+                                    for(var m:Int=1; m<8; m++) {
+                                        if (validIdx(m)) {
+                                           setJKMatrixElements(jMatrix, kMatrix, dMatrix, iidx(m), jjdx(m), kkdx(m), lldx(m), twoEIntVal);
+                                        } // end if
+                                    } // end m
                                 }
                              }
-
-                             aa++;
                           }
-
-                          bb++;
-                        }
-
-                     }
-                 }
+                      }
+                  }
               }
-            }
-          }
+           }
         }
     }
 
+
+    // TODO: following three are duplicate methods from GMatrix, must be cleaned
+
+    /** find unique elements and mark the onces that are not */
+    private def filterUniqueElements(idx:Rail[Int]!, jdx:Rail[Int]!,
+                                     kdx:Rail[Int]!, ldx:Rail[Int]!,
+                                     validIdx:Rail[Boolean]!) : void {
+        var i:Int, j:Int, k:Int, l:Int, m:Int, n:Int;
+
+        for(m=0; m<8; m++) {
+            i = idx(m); j = jdx(m); k = kdx(m); l = ldx(m);
+            for(n=m+1; n<8; n++) {
+                if (i==idx(n) && j==jdx(n) && k==kdx(n) && l==ldx(n))
+                    validIdx(n) = false;
+            } // end for
+        } // end for
+    }
+
+    /** Set the J and K value for a given combination */
+    private def setJKMatrixElements(jMatrix:Array[Double]{rank==2}, kMatrix:Array[Double]{rank==2},
+                                    dMatrix:Array[Double]{rank==2},
+                                    i:Int, j:Int, k:Int, l:Int, twoEIntVal:Double) : void {
+        val v1 = dMatrix(k,l) * twoEIntVal;
+        val v2 = dMatrix(i,j) * twoEIntVal;
+        val v3 = dMatrix(j,l) * twoEIntVal;
+        val v4 = dMatrix(j,k) * twoEIntVal;
+        val v5 = dMatrix(i,l) * twoEIntVal;
+        val v6 = dMatrix(i,k) * twoEIntVal;
+
+        atomic {
+          jMatrix(i,j) += v1;
+          jMatrix(k,l) += v2;
+          kMatrix(i,k) += v3;
+          kMatrix(i,l) += v4;
+          kMatrix(j,k) += v5;
+          kMatrix(j,l) += v6;
+        } // atomic
+    }
+
     protected def mdRecurse(r:Point3d{self.at(this)}, 
-                            zeroM:Array[Double]{rank==1,self.at(this)},
+                            zeroM:Rail[Double]!,
                             i:Int, j:Int, k:Int, m:Int) : Double {
          var res:Double;
 

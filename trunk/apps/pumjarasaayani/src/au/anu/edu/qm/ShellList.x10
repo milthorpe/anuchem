@@ -12,21 +12,39 @@ import x10.util.*;
 
 public class ShellList { 
     global val shellList:HashMap[Int, Shell{self.at(this)}]{self.at(this)};
+    global val powerList:HashMap[Int, Array[Power{self.at(this)}]{rank==1, self.at(this)}]{self.at(this)};
+
+    var maxam:Int;
 
     public def this() { 
         shellList = new HashMap[Int, Shell{self.at(this)}]();
+        powerList = new HashMap[Int, Array[Power{self.at(this)}]{rank==1, self.at(this)}]();
+        maxam = 0;
+    }
+
+    public def initPowerList() : void {
+        val maxam4 = (maxam*4)+3;
+  
+        val pList = PowerList.getInstance() as PowerList{self.at(this)};
+        for(var i:Int=0; i<=maxam4; i++)
+           powerList.put(i, pList.generatePowerList(i)); 
     }
 
     public def addShellPrimitive(cg:ContractedGaussian{self.at(this)}) : void {
-        var shell:Shell{self.at(this)} = getShell(cg.getTotalAngularMomentum());
+        val am = cg.getMaximumAngularMomentum();
+        maxam  = Math.max(am, maxam);
+
+        var shell:Shell{self.at(this)} = getShell(am);
         if (shell == null) {
-           shell = new Shell(cg.getTotalAngularMomentum());
-           shellList.put(cg.getTotalAngularMomentum(), shell);
+           shell = new Shell(am);
+           shellList.put(am, shell);
         }
         shell.addShellPrimitive(cg);
     }
 
-    public def getNumberOfShells() : Int = shellList.size();
+    public def getMaximumAngularMomentum() = maxam;
+    public def getNumberOfShells() = shellList.size();
     public def getShell(am:Int) = shellList.getOrElse(am, null);
+    public def getPowers(am:Int) = powerList.getOrElse(am, null);
 }
 

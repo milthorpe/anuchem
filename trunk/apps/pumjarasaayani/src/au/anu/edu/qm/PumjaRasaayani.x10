@@ -43,11 +43,6 @@ public class PumjaRasaayani {
         mol.addAtom(new QMAtom("H", new Point3d(0.0, 0.0, 0.0)));
         mol.addAtom(new QMAtom("H", new Point3d(1.0, 0.0, 0.0)));
 
-        // H2O - differed till HashMap is fixed
-        // mol.addAtom(new Atom("O", -0.015283, 0.044743, 6.043909));
-        // mol.addAtom(new Atom("H", -0.195295, 0.167197, 6.999322));
-        // mol.addAtom(new Atom("H", 0.962423, -0.010198, 6.013442));
-
         // default basis is sto3g
         basisName = "sto3g";
     }
@@ -65,10 +60,10 @@ public class PumjaRasaayani {
         
         val oneE = new OneElectronIntegrals(bsf, mol);
         Console.OUT.println("\nComputed one-electron integrals.");
-        Console.OUT.println("HCore");
-        Console.OUT.println(oneE.getHCore());   
-        Console.OUT.println("Overlap");
-        Console.OUT.println(oneE.getOverlap());   
+        // Console.OUT.println("HCore");
+        // Console.OUT.println(oneE.getHCore());   
+        // Console.OUT.println("Overlap");
+        // Console.OUT.println(oneE.getOverlap());   
 
         val twoE = new TwoElectronIntegrals(bsf, mol, true);
         Console.OUT.println("\nNumber of 2E integrals: " + twoE.getNumberOfIntegrals());

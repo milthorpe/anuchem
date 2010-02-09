@@ -30,7 +30,7 @@ public class BasisFunctions {
     } 
 
     private def initBasisFunctions(basisDir:String) {
-        var basisSet:BasisSet{self.at(this)} = new BasisSet(basisName, basisDir);
+        val basisSet:BasisSet{self.at(this)} = new BasisSet(basisName, basisDir);
         var indx:Int = 0;
         var intIndx:Int = 0;
 
@@ -47,25 +47,45 @@ public class BasisFunctions {
                val pList = PowerList.getInstance().getPowers(typ);
                val pListSiz = pList.region.max(0); 
 
+               val coeff:ArrayList[Double]{self.at(this)} = orb.getCoefficients();
+               val exps:ArrayList[Double]{self.at(this)}  = orb.getExponents();
+
+               val norm = Rail.make[Double](coeff.size(), (Int)=>1.0);
+
                for(var l:Int=0; l<pListSiz; l++) {
                   val center = atom.centre as Point3d!;
                   val power = pList(l) as Power!;
-                  var cg:ContractedGaussian{self.at(this)} = new ContractedGaussian(center, power);
+                  val cg:ContractedGaussian{self.at(this)} = new ContractedGaussian(center, power);
                   cg.setIndex(indx++);
                   cg.setIntIndex(intIndx);
               
-                  val coeff:ArrayList[Double]{self.at(this)} = orb.getCoefficients();
-                  val exps:ArrayList[Double]{self.at(this)}  = orb.getExponents();
-
                   for(var i:Int=0; i<coeff.size(); i++) {
                      cg.addPrimitive(exps.get(i), coeff.get(i));
-                     intIndx++;
                   } // end for
 
                   cg.normalize();
-                  atombfs.add(cg);
+
                   basisFunctions.add(cg);
                } // end for
+
+               val am = orb.getAngularMomentum();
+               val acg:ContractedGaussian{self.at(this)} = new ContractedGaussian(atom.centre as Point3d!, 
+                                                                                  new Power(am, 0, 0) as Power!);
+               acg.setIntIndex(intIndx);
+
+               for(var i:Int=0; i<coeff.size(); i++) {
+                   acg.addPrimitive(exps.get(i), coeff.get(i));
+               } // end for
+
+               acg.normalize();
+
+               for(var i:Int=0; i<coeff.size(); i++) {
+                   val pg = acg.getPrimitive(i);
+                   pg.setCoefficient(coeff.get(i) * acg.getNormalization() * pg.getNormalization());
+               } // end for
+
+               atombfs.add(acg);
+               intIndx += ((am+1)*(am+2)/2);
             } // end for          
 
             atom.setBasisFunctions(atombfs);  
@@ -74,6 +94,7 @@ public class BasisFunctions {
 
     private def initShellList() {
         for(cg in basisFunctions) shellList.addShellPrimitive(cg);
+        shellList.initPowerList();
     }
 
     public def getBasisName() = this.basisName;
