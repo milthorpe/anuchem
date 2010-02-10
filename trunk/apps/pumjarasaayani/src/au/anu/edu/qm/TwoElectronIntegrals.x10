@@ -203,7 +203,7 @@ public class TwoElectronIntegrals {
          val rM:Array[Double]{rank==2,self.at(this)} = Array.make[Double]([0..maxam4, 0..((maxam4+1)*(maxam4+2)/2)]);
          val pqInts:Array[Double]{rank==2,self.at(this)} = Array.make[Double]([0..(maxam2+1)*(pqd+1), 0..(maxam2+1)*(pqd+1)]);
          val npint:Array[Double]{rank==2,self.at(this)} = Array.make[Double]([0..maxam2+1, 0..maxam2M+1]);
-         val pcdint:Array[Double]{rank==3, self.at(this)} = Array.make[Double]([0..maxamN, 
+         val pcdint:Array[Double]{rank==3,self.at(this)} = Array.make[Double]([0..maxamN, 
                                                                                 0..maxamN, 
                                                                                 0..maxam2N]);
 

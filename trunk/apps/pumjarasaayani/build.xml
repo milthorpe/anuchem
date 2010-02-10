@@ -10,6 +10,7 @@
     <property name="optimize" value="true" />
     <property name="nochecks" value="true" />
     <property name="profile"  value="false" />
+    <property name="inlineopt" value="true" />
     <property name="heapprofile" value="false" />
     <property name="x10rt" value="standalone" />
 	<property name="target" location="${basedir}/target" />
@@ -29,6 +30,10 @@
 
     <condition property="post.profile" value="-pg" else="">
         <istrue value="${profile}" />
+    </condition>
+  
+    <condition property="x10c.inlineopt" value="-INLINE_OPTIMIZATIONS=true" else="">
+        <istrue value="${inlineopt}" />
     </condition>
 
     <condition property="post.heapprofile" value="-ltcmalloc" else="">
@@ -103,7 +108,7 @@
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/src">
             <arg value="-c"/> 
-            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.nochecks} ${x10c.optimize} -report postcompile=1 -post 'g++ -g ${x10c.optimize} ${post.profile} ${post.heapprofile}' -sourcepath .:${x10x.xlalib}:${anuchem.src} -d ${target-src} ${src.list}"/>
+            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.nochecks} ${x10c.optimize} ${x10c.inlineopt} -report postcompile=1 -post 'g++ -g ${x10c.optimize} ${post.profile} ${post.heapprofile}' -sourcepath .:${x10x.xlalib}:${anuchem.src} -d ${target-src} ${src.list}"/>
         </exec>
     </target>
 
@@ -134,7 +139,7 @@
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/test">
             <arg value="-c"/>
-            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.nochecks} ${x10c.profile} ${x10c.optimize} -sourcepath ${x10.testlib}:${basedir}/src:.:${x10x.xlalib}:${anuchem.src} -classpath ${target-src} -d ${target-test} ${test.list}"/>
+            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.nochecks} ${x10c.inlineopt} ${x10c.profile} ${x10c.optimize} -sourcepath ${x10.testlib}:${basedir}/src:.:${x10x.xlalib}:${anuchem.src} -classpath ${target-src} -d ${target-test} ${test.list}"/>
         </exec>
     </target>
 
@@ -165,7 +170,7 @@
 		<echo message="x10c ${test.list} ${x10.testlib}/harness/x10Test.x10"/>
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/test">
             <arg value="-c"/>
-            <arg value="'x10c' ${x10c.nochecks} ${x10c.profile} ${x10c.optimize} -sourcepath . -d ${target-test} ${x10.testlib}/harness/x10Test.x10"/>
+            <arg value="'x10c' ${x10c.nochecks} ${x10c.inlineopt} ${x10c.profile} ${x10c.optimize} -sourcepath . -d ${target-test} ${x10.testlib}/harness/x10Test.x10"/>
         </exec>
     </target>
 
