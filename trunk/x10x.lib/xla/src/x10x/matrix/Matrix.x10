@@ -292,6 +292,18 @@ public class Matrix {
        return sum; 
     }
 
+    public def getRowVector(rowIdx:Int) : Vector {
+       val N = getColCount();
+
+       val vec = Vector.make(N) as Vector!;
+       val vecVal = vec.getVector();
+
+       for(var i:Int=0; i<N; i++)
+           vecVal(i) = mat(rowIdx, i);
+
+       return vec;
+    }
+
     public global safe def toString() : String { 
          var str : String = "";
          val N = getRowCount();
