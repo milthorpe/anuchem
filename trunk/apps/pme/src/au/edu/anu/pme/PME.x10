@@ -177,9 +177,9 @@ public class PME {
                             for (var n2:Int = -1; n2<=1; n2++) {
                                 for (var n3:Int = -1; n3<=1; n3++) {
                                     val gridPointContribution = q
-                                                 * bSpline(splineOrder, (u.i - k1 - n1*K1))
-                                                 * bSpline(splineOrder, (u.j - k2 - n2*K2))
-                                                 * bSpline(splineOrder, (u.k - k3 - n3*K3));
+                                                 * bSpline4((u.i - k1 - n1*K1))
+                                                 * bSpline4((u.j - k2 - n2*K2))
+                                                 * bSpline4((u.k - k3 - n3*K3));
                                     if (gridPointContribution != 0.0) {
                                         Q(k1,k2,k3) += gridPointContribution;
                                         //Console.OUT.println("Q(" + k1 + "," + k2 + "," + k3 + ") += " + gridPointContribution + " n1: " + n1 + " n2: " + n2 + " n3 " + n3);
@@ -225,7 +225,7 @@ public class PME {
             val m1D = m1 as Double;
             var sumK1 : Complex = Complex.ZERO;
             for ((k) in 0..(splineOrder-2)) {
-                sumK1 = sumK1 + bSpline(splineOrder, k+1) * (2.0 * Math.PI * m1D * k / K1 * Complex.I).exp();
+                sumK1 = sumK1 + bSpline4(k+1) * (2.0 * Math.PI * m1D * k / K1 * Complex.I).exp();
             }
             val b1 = ((2.0 * Math.PI * (splineOrder - 1.0) * m1D / K1* Complex.I).exp() / sumK1).abs();
 
@@ -233,7 +233,7 @@ public class PME {
                 val m2D = m2 as Double;
                 var sumK2 : Complex = Complex.ZERO;
                 for ((k) in 0..(splineOrder-2)) {
-                    sumK2 = sumK2 + bSpline(splineOrder, k+1) * (2.0 * Math.PI * m2D * k / K2 * Complex.I).exp();
+                    sumK2 = sumK2 + bSpline4(k+1) * (2.0 * Math.PI * m2D * k / K2 * Complex.I).exp();
                 }
                 val b2 = ((2.0 * Math.PI * (splineOrder - 1.0) * m2D / K2 * Complex.I).exp() / sumK2).abs();
                 
@@ -241,7 +241,7 @@ public class PME {
                     val m3D = m3 as Double;
                     var sumK3 : Complex = Complex.ZERO;
                     for ((k) in 0..(splineOrder-2)) {
-                        sumK3 = sumK3 + bSpline(splineOrder, k+1) * (2.0 * Math.PI * m3D * k / K3 * Complex.I).exp();
+                        sumK3 = sumK3 + bSpline4(k+1) * (2.0 * Math.PI * m3D * k / K3 * Complex.I).exp();
                     }
                     val b3 = ((2.0 * Math.PI * (splineOrder - 1.0) * m3D / K3 * Complex.I).exp() / sumK3).abs();
                     //Console.OUT.println("b1 = " + b1 + " b2 = " + b2 + " b3 = " + b3);
@@ -280,13 +280,46 @@ public class PME {
     /* 
      * Gets the nth order B-spline M_n(u) as per Eq. 4.1
      */
-    public def bSpline(n : Int, u : Double) : Double {
+    public static safe def bSpline(n : Int, u : Double) : Double {
         if (u < 0.0 || u > n) {
             return 0.0;
         } else if (n == 2) {
             return 1.0 - Math.abs(u - 1.0);
         } else {
             return u / (n - 1) * bSpline(n-1, u) + (n - u) / (n - 1) * bSpline(n-1, u-1.0);
+        }
+    }
+
+    /* 
+     * Gets the 4th order B-spline M_4(u) as per Eq. 4.1
+     */
+    private static safe def bSpline4(u : Double) : Double {
+        if (u <= 0.0 || u >= 4) {
+            return 0.0;
+        } else {
+            return u / 3 * bSpline3(u) + (4 - u) / 3 * bSpline3(u-1.0);
+        }
+    }
+
+    /* 
+     * Gets the 3rd order B-spline M_3(u) as per Eq. 4.1
+     */
+    private static safe def bSpline3(u : Double) : Double {
+        if (u <= 0.0 || u >= 3) {
+            return 0.0;
+        } else {
+            return u / 2 * bSpline2(u) + (3 - u) / 2 * bSpline2(u-1.0);
+        }
+    }
+
+    /* 
+     * Gets the 2nd order B-spline M_2(u) as per Eq. 4.1
+     */
+    private static safe def bSpline2(u : Double) : Double {
+        if (u <= 0.0 || u >= 2) {
+            return 0.0;
+        } else {
+            return 1.0 - Math.abs(u - 1.0);
         }
     }
     
@@ -298,7 +331,7 @@ public class PME {
     /**
      * Gets the volume V of the unit cell.
      */
-    public def getVolume() {
+    public safe def getVolume() {
         return edges(0).cross(edges(1)).dot(edges(2));
     }
 }

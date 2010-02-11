@@ -23,7 +23,7 @@ public class TestPMEFunctions {
         val r = pme.getScaledFractionalCoordinates(v);
         Console.OUT.println(r);
 
-        val m404 = pme.bSpline(4, 3);
+        val m404 = pme.bSpline(4, 0);
         Console.OUT.println("M_4(3) = " + m404);
 
         for (var a : int=0; a<atoms.length; a++) {
