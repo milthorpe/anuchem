@@ -81,24 +81,20 @@ public class PME {
             for ((j) in 0..(atoms.length - 1)) {
                 val rjri = new Vector3d(atoms(j).centre.sub(atoms(i).centre));
                 // rough (non-Euclidean, 1D) distance cutoff to avoid unnecessary distance calculations
-                if ((rjri.i < cutoff || rjri.i > gridSize(0) - cutoff)
-                 && (rjri.j < cutoff || rjri.j > gridSize(1) - cutoff)
-                 && (rjri.k < cutoff || rjri.k > gridSize(2) - cutoff)) {
                 // for (p(n1,n2,n3) in imageTranslations) {
-                    for (var n1:Int = -1; n1<=1; n1++) {
-                        for (var n2:Int = -1; n2<=1; n2++) {
-                            for (var n3:Int = -1; n3<=1; n3++) {
-                                if (! (i==j && (n1 | n2 | n3) == 0)) {
-                                    val imageDistance = rjri.add(imageTranslations(n1,n2,n3)).length();
-                                    val chargeProduct = atoms(i).charge * atoms(j).charge;
-                                    directEnergy += chargeProduct / imageDistance;
-                                    if (imageDistance < cutoff) {
-                                        val imageDirectComponent = chargeProduct * Math.erfc(beta * imageDistance) / imageDistance;
-                                        //Console.OUT.println("imageDistance = " + imageDistance + " imageDirectComponent = " + imageDirectComponent);
-                                        directSum += imageDirectComponent;
-                                        //Console.OUT.println("distance = " + distance + " directEnergy component = " + chargeProduct / distance);
-                                        
-                                    }
+                for (var n1:Int = -1; n1<=1; n1++) {
+                    for (var n2:Int = -1; n2<=1; n2++) {
+                        for (var n3:Int = -1; n3<=1; n3++) {
+                            if (! (i==j && (n1 | n2 | n3) == 0)) {
+                                val imageDistance = rjri.add(imageTranslations(n1,n2,n3)).length();
+                                val chargeProduct = atoms(i).charge * atoms(j).charge;
+                                directEnergy += chargeProduct / imageDistance;
+                                if (imageDistance < cutoff) {
+                                    val imageDirectComponent = chargeProduct * Math.erfc(beta * imageDistance) / imageDistance;
+                                    //Console.OUT.println("imageDistance = " + imageDistance + " imageDirectComponent = " + imageDirectComponent);
+                                    directSum += imageDirectComponent;
+                                    //Console.OUT.println("distance = " + distance + " directEnergy component = " + chargeProduct / distance);
+                                    
                                 }
                             }
                         }
