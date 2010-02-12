@@ -169,7 +169,7 @@ public class PME {
      */
     public def getGriddedCharges() : Array[Complex](3)!{self.rect,self.zeroBased} {
         val Q = Array.make[Double](gridRegion);
-        for ((i) in 0..atoms.length-1) {
+        finish foreach ((i) in 0..atoms.length-1) {
             val atom = atoms(i);
             val q = atom.charge;
             val u = getScaledFractionalCoordinates(new Vector3d(atom.centre));
@@ -187,9 +187,11 @@ public class PME {
                                      * bSpline4(u.j - k2)
                                      * bSpline4(u.k - k3);
 
+                        atomic {
                         Q((k1 + gridSize(0)) % gridSize(0),
                           (k2 + gridSize(1)) % gridSize(1),
                           (k3 + gridSize(2)) % gridSize(2)) += gridPointContribution;
+                        }
                         /*
                         Console.OUT.println("Q(" + (k1 + gridSize(0)) % gridSize(0) + "," + 
                                                    (k2 + gridSize(1)) % gridSize(1) + "," + 
@@ -230,7 +232,7 @@ public class PME {
     public def getBArray() {
         val B = Array.make[Double](gridRegion);
         // TODO for (m(m1,m2,m3) in gridRegion) {
-        for (var m1 : Int = 0; m1 < K1; m1++) {
+        finish foreach ((m1) in 0..gridSize(0)-1) {
             val m1D = m1 as Double;
             var sumK1 : Complex = Complex.ZERO;
             for ((k) in 0..(splineOrder-2)) {
@@ -238,7 +240,7 @@ public class PME {
             }
             val b1 = ((2.0 * Math.PI * (splineOrder - 1.0) * m1D / K1* Complex.I).exp() / sumK1).abs();
 
-            for (var m2 : Int = 0; m2 < K2; m2++) {
+            for (var m2 : Int = 0; m2 < gridSize(1); m2++) {
                 val m2D = m2 as Double;
                 var sumK2 : Complex = Complex.ZERO;
                 for ((k) in 0..(splineOrder-2)) {
@@ -246,7 +248,7 @@ public class PME {
                 }
                 val b2 = ((2.0 * Math.PI * (splineOrder - 1.0) * m2D / K2 * Complex.I).exp() / sumK2).abs();
                 
-                for (var m3 : Int = 0; m3 < K3; m3++) {
+                for (var m3 : Int = 0; m3 < gridSize(2); m3++) {
                     val m3D = m3 as Double;
                     var sumK3 : Complex = Complex.ZERO;
                     for ((k) in 0..(splineOrder-2)) {
