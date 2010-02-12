@@ -169,25 +169,28 @@ public class PME {
             val u = getScaledFractionalCoordinates(new Vector3d(atom.centre));
             //Console.OUT.println("atom( " + i + " ) charge = " + q + " coords = " + u);
             //var atomContribution : Double = 0.0;
-            //finish foreach (k(k1,k2,k3) in gridRegion) {
-            for (var k1 : Int = 0; k1 < gridSize(0); k1++) {
-                for (var k2 : Int = 0; k2 < gridSize(1); k2++) {
-                    for (var k3 : Int = 0; k3 < gridSize(2); k3++) {
-                        for (var n1:Int = -1; n1<=1; n1++) {
-                            for (var n2:Int = -1; n2<=1; n2++) {
-                                for (var n3:Int = -1; n3<=1; n3++) {
-                                    val gridPointContribution = q
-                                                 * bSpline4((u.i - k1 - n1*K1))
-                                                 * bSpline4((u.j - k2 - n2*K2))
-                                                 * bSpline4((u.k - k3 - n3*K3));
-                                    if (gridPointContribution != 0.0) {
-                                        Q(k1,k2,k3) += gridPointContribution;
-                                        //Console.OUT.println("Q(" + k1 + "," + k2 + "," + k3 + ") += " + gridPointContribution + " n1: " + n1 + " n2: " + n2 + " n3 " + n3);
-                                    }
-                                    //atomContribution += gridPointContribution;
-                                }
-                            }
-                        }
+
+            val u1c = Math.ceil(u.i) as Int;
+            val u2c = Math.ceil(u.j) as Int;
+            val u3c = Math.ceil(u.k) as Int;
+            for (var k1 : Int = u1c - splineOrder; k1 < u1c; k1++) {
+                for (var k2 : Int = u2c - splineOrder; k2 < u2c; k2++) {
+                    for (var k3 : Int = u3c - splineOrder; k3 < u3c; k3++) {
+                        val gridPointContribution = q
+                                     * bSpline4(u.i - k1)
+                                     * bSpline4(u.j - k2)
+                                     * bSpline4(u.k - k3);
+
+                        Q((k1 + gridSize(0)) % gridSize(0),
+                          (k2 + gridSize(1)) % gridSize(1),
+                          (k3 + gridSize(2)) % gridSize(2)) += gridPointContribution;
+                        /*
+                        Console.OUT.println("Q(" + (k1 + gridSize(0)) % gridSize(0) + "," + 
+                                                   (k2 + gridSize(1)) % gridSize(1) + "," + 
+                                                   (k3 + gridSize(2)) % gridSize(2) + 
+                        ") += " + gridPointContribution);
+                        atomContribution += gridPointContribution;
+                        */
                     }
                 }
             }
