@@ -22,6 +22,12 @@ public class TwoElectronIntegrals {
     val direct:Boolean;
     val noOfIntegrals:Int;
 
+    global val fmt:Rail[Double]!, zeroM:Rail[Double]!;
+    global val rM:Array[Double]{rank==2,self.at(this)};
+    global val pqInts:Array[Double]{rank==2,self.at(this)};
+    global val npint:Array[Double]{rank==2,self.at(this)};
+    global val pcdint:Array[Double]{rank==3,self.at(this)};
+
     public def this(basisFunctions:BasisFunctions!, molecule:Molecule[QMAtom]!, direct:Boolean) {
         this.basisFunctions = basisFunctions;
         this.molecule = molecule;
@@ -41,6 +47,26 @@ public class TwoElectronIntegrals {
            this.contractedList = basisFunctions.getBasisFunctions();
            twoEInts = Array.make[Double]([0..1]);
         } // end if
+
+    
+        // scratch scpace needed for direct calculation    
+        val shellList = basisFunctions.getShellList();
+
+        // allocate scratch memory
+        val maxam  = shellList.getMaximumAngularMomentum()*4;
+        val maxam2 = 2*maxam;
+        val maxam4 = 4*maxam;
+        val maxamN = ((maxam+1)*(maxam+2)/2);
+        val maxam2M  = ((maxam2+1)*(maxam2+2)/2);
+        val maxam2N  = ((maxam2+1)*((maxam2+1)*(maxam2+2)/2));
+
+
+        fmt    = Rail.make[Double](maxam+1) as Rail[Double]!;
+        zeroM  = Rail.make[Double](maxam+1) as Rail[Double]!;
+        rM     = Array.make[Double]([0..maxam4, 0..((maxam4+1)*(maxam4+2)/2)]);
+        pqInts = Array.make[Double]([0..(maxam2+1)*(maxam2M+1), 0..(maxam2+1)*(maxam2M+1)]);
+        npint  = Array.make[Double]([0..maxam2+1, 0..maxam2M+1]);
+        pcdint = Array.make[Double]([0..maxamN, 0..maxamN, 0..maxam2N]);
     }
 
     public def isDirect() = direct;
@@ -145,6 +171,7 @@ public class TwoElectronIntegrals {
 
     private val sq2pi = Math.pow((2.0/Math.PI), 0.5);
 
+
     /* Note: M_D  routines mostly taken from Alistair's code, with a few changes. 
        Direct update to GMtarix is based on the code in GMatrix.compute..() */
     public def compute2EAndRecord(a:ContractedGaussian{self.at(this)}, b:ContractedGaussian{self.at(this)}, 
@@ -191,21 +218,23 @@ public class TwoElectronIntegrals {
          val maxamN = ((maxam+1)*(maxam+2)/2);
          val maxam2M  = ((maxam2+1)*(maxam2+2)/2);
          val maxam2N  = ((maxam2+1)*((maxam2+1)*(maxam2+2)/2));
-         val pqd = (maxam2+1)*(maxam2+2)/2;
          val pqdim = ((maxam2+1)*(maxam2+2)/2);
 
          var i:Int, j:Int, k:Int, l:Int;
          var bb:Int, aa:Int;
          var dd:Int, cc:Int;
 
+         // ---------
+         // local allocation overides global
          val fmt = Rail.make[Double](maxam+1);
          val zeroM = Rail.make[Double](maxam+1);
          val rM:Array[Double]{rank==2,self.at(this)} = Array.make[Double]([0..maxam4, 0..((maxam4+1)*(maxam4+2)/2)]);
-         val pqInts:Array[Double]{rank==2,self.at(this)} = Array.make[Double]([0..(maxam2+1)*(pqd+1), 0..(maxam2+1)*(pqd+1)]);
+         val pqInts:Array[Double]{rank==2,self.at(this)} = Array.make[Double]([0..(maxam2+1)*(maxam2M+1), 0..(maxam2+1)*(maxam2M+1)]);
          val npint:Array[Double]{rank==2,self.at(this)} = Array.make[Double]([0..maxam2+1, 0..maxam2M+1]);
          val pcdint:Array[Double]{rank==3,self.at(this)} = Array.make[Double]([0..maxamN, 
                                                                                 0..maxamN, 
                                                                                 0..maxam2N]);
+         // ---------
 
          for(val aPrim in aPrims) {
            for(val bPrim in bPrims) {

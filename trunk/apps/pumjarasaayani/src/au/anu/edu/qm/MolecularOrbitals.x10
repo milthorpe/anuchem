@@ -20,6 +20,7 @@ public class MolecularOrbitals extends Matrix {
         val x:Matrix{self.at(this)} = overlap.getSHalf();
         val a:Matrix{self.at(this)} = theMat.similarityTransform(x);
         val diag = new JacobiDiagonalizer();
+        // val diag = new NativeDiagonalizer();
 
         diag.diagonalize(a);
         orbitalEnergies = diag.getEigenValues().getVector();

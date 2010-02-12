@@ -16,6 +16,7 @@ import x10x.vector.Point3d;
 public class PumjaRasaayani { 
     global var mol:Molecule[QMAtom]{self.at(this)};
     var basisName:String;
+    var gMatType:Int;
 
     public def this() {
         initDefault();
@@ -28,11 +29,18 @@ public class PumjaRasaayani {
         
           mol = inp.getMolecule();
           basisName = inp.getBasisName();
+
+          gMatType = 0;
         } catch(e:Exception) {
           Console.OUT.println("Unable to read input file: " + inpFile); 
           Console.OUT.println("Using defaults!");
           initDefault();
         } // end of try .. catch block
+    }
+
+    public def this(inpFile:String, gMatType:Int) {
+        this(inpFile);
+        this.gMatType = gMatType;
     } 
 
     private def initDefault() { 
@@ -70,12 +78,12 @@ public class PumjaRasaayani {
         Console.OUT.println("\nComputed two-electron integrals. If direct, this is skipped for now.");
         Console.OUT.println("Is Direct: " + twoE.isDirect());
 
-        val hfscf = new HartreeFockSCFMethod(mol, oneE, twoE);
+        val hfscf = new HartreeFockSCFMethod(mol, oneE, twoE, gMatType);
         hfscf.scf();
     }
 
     public static def main(args:Rail[String]!) {
-        val qmApp = args.length == 0 ? new PumjaRasaayani() : new PumjaRasaayani(args(0));
+        val qmApp = args.length == 0 ? new PumjaRasaayani() : args.length == 1 ? new PumjaRasaayani(args(0)) : new PumjaRasaayani(args(0), Int.parseInt(args(1)));
         qmApp.runIt();
     }
 }

@@ -15,12 +15,33 @@ import x10x.vector.Vector;
 
 public class GMatrix extends Matrix {
 
-    public def compute(twoE:TwoElectronIntegrals{self.at(this)}, density:Density{self.at(this)}) : void {
+    public def compute(twoE:TwoElectronIntegrals{self.at(this)}, density:Density{self.at(this)}, gMatType:Int) : void {
         if (twoE.isDirect()) { 
            val timer = new Timer(1);
 
            timer.start(0);
-           computeDirectAsyncNew(twoE, density); 
+           switch(gMatType) {
+           case 0:
+               Console.OUT.println("   GMatrix.computeDirectSerialOld: " + gMatType);
+               computeDirectSerialOld(twoE, density); 
+               break;
+           case 1:
+               Console.OUT.println("   GMatrix.computeDirectAsyncOld: " + gMatType);
+               computeDirectAsyncOld(twoE, density); 
+               break;
+           case 2:
+               Console.OUT.println("   GMatrix.computeDirectSerialNew: " + gMatType);
+               computeDirectSerialNew(twoE, density); 
+               break;
+           case 3:
+               Console.OUT.println("   GMatrix.computeDirectAsyncNew: " + gMatType);
+               computeDirectAsyncNew(twoE, density); 
+               break;
+           default:
+               Console.OUT.println("   GMatrix.computeDirectSerialOld: " + gMatType);
+               computeDirectSerialOld(twoE, density); 
+               break;
+           } // end switch .. case
            timer.stop(0);
            Console.OUT.println ("    Time to construct GMatrix: " + (timer.total(0) as Double) / 1e9 + " seconds");
            return; 

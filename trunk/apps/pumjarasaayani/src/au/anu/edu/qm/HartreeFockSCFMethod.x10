@@ -11,10 +11,14 @@ package au.anu.edu.qm;
 import au.edu.anu.chem.Molecule;
 
 public class HartreeFockSCFMethod extends SCFMethod { 
+    val gMatType:Int;
+
     public def this(mol:Molecule[QMAtom]!,  
                     oneE:OneElectronIntegrals!, 
-                    twoE:TwoElectronIntegrals!) {
+                    twoE:TwoElectronIntegrals!, gMatType:Int) {
         super(mol, oneE, twoE);
+
+        this.gMatType = gMatType;
     }
 
     public def scf() : void {
@@ -57,7 +61,7 @@ public class HartreeFockSCFMethod extends SCFMethod {
             density.compute(noOfOccupancies, mos);
             
             // make the G matrix
-            gMatrix.compute(twoE, density);
+            gMatrix.compute(twoE, density, gMatType);
            
             val timer = new Timer(2);
 
