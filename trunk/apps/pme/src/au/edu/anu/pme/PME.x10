@@ -76,9 +76,10 @@ public class PME {
         var directSum : Double = 0.0;
         var selfEnergy: Double = 0.0;
         var correctionEnergy : Double = 0.0; // TODO masklist
-        for ((i) in 0..(atoms.length - 1)) {
+        for (var i : Int = 0; i < atoms.length; i++) {
             selfEnergy += atoms(i).charge * atoms(i).charge;
-            for ((j) in 0..(atoms.length - 1)) {
+            // NOTE include i==j as this contributes image components
+            for (var j : Int = 0; j < atoms.length; j++) {
                 val rjri = new Vector3d(atoms(j).centre.sub(atoms(i).centre));
                 // rough (non-Euclidean, 1D) distance cutoff to avoid unnecessary distance calculations
                 // for (p(n1,n2,n3) in imageTranslations) {
@@ -236,25 +237,25 @@ public class PME {
             val m1D = m1 as Double;
             var sumK1 : Complex = Complex.ZERO;
             for ((k) in 0..(splineOrder-2)) {
-                sumK1 = sumK1 + bSpline4(k+1) * (2.0 * Math.PI * m1D * k / K1 * Complex.I).exp();
+                sumK1 = sumK1 + bSpline4(k+1) * Math.exp(2.0 * Math.PI * m1D * k / K1 * Complex.I);
             }
-            val b1 = ((2.0 * Math.PI * (splineOrder - 1.0) * m1D / K1* Complex.I).exp() / sumK1).abs();
+            val b1 = (Math.exp(2.0 * Math.PI * (splineOrder - 1.0) * m1D / K1* Complex.I) / sumK1).abs();
 
             for (var m2 : Int = 0; m2 < gridSize(1); m2++) {
                 val m2D = m2 as Double;
                 var sumK2 : Complex = Complex.ZERO;
                 for ((k) in 0..(splineOrder-2)) {
-                    sumK2 = sumK2 + bSpline4(k+1) * (2.0 * Math.PI * m2D * k / K2 * Complex.I).exp();
+                    sumK2 = sumK2 + bSpline4(k+1) * Math.exp(2.0 * Math.PI * m2D * k / K2 * Complex.I);
                 }
-                val b2 = ((2.0 * Math.PI * (splineOrder - 1.0) * m2D / K2 * Complex.I).exp() / sumK2).abs();
+                val b2 = (Math.exp(2.0 * Math.PI * (splineOrder - 1.0) * m2D / K2 * Complex.I) / sumK2).abs();
                 
                 for (var m3 : Int = 0; m3 < gridSize(2); m3++) {
                     val m3D = m3 as Double;
                     var sumK3 : Complex = Complex.ZERO;
                     for ((k) in 0..(splineOrder-2)) {
-                        sumK3 = sumK3 + bSpline4(k+1) * (2.0 * Math.PI * m3D * k / K3 * Complex.I).exp();
+                        sumK3 = sumK3 + bSpline4(k+1) * Math.exp(2.0 * Math.PI * m3D * k / K3 * Complex.I);
                     }
-                    val b3 = ((2.0 * Math.PI * (splineOrder - 1.0) * m3D / K3 * Complex.I).exp() / sumK3).abs();
+                    val b3 = (Math.exp(2.0 * Math.PI * (splineOrder - 1.0) * m3D / K3 * Complex.I) / sumK3).abs();
                     //Console.OUT.println("b1 = " + b1 + " b2 = " + b2 + " b3 = " + b3);
                     B(m1,m2,m3) = b1 * b1 * b2 * b2 * b3 * b3;
                     //Console.OUT.println("B(" + m1 + "," + m2 + "," + m3 + ") = " + B(m1,m2,m3));

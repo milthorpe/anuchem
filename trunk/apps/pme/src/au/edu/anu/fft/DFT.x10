@@ -14,7 +14,7 @@ public class DFT {
             var mKDivN : Double = 0.0;
             var sum : Complex = Complex.ZERO;        
             for (var k:int=0; k<n; k++) {
-                sum = sum + input(k) * (Complex.I * mKDivN).exp(); 
+                sum = sum + input(k) * Math.exp(Complex.I * mKDivN); 
                 mKDivN += mDivN;
             }
             output(m) = sum;
@@ -43,7 +43,7 @@ public class DFT {
                         for (var k2:int=0; k2<n2; k2++) {
                             for (var k3:int=0; k3<n3; k3++) {
                                 val component = s * (m1 * k1 * invN1 + m2 * k2 * invN2 + m3 * k3 * invN3);
-                                sum = sum + input(k1, k2, k3) * component.exp();
+                                sum = sum + input(k1, k2, k3) * Math.exp(component);
                             }
                         }
                     }
