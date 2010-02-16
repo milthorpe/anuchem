@@ -62,6 +62,10 @@
     <target name="build-src-java" depends="check-src-java" unless="src.uptodate.java">
         <echo message="Building source tree"/>
 
+        <copy todir="${target}/classes">
+            <fileset id="java.files" dir="${basedir}/src" includes="**/FFTW*.java"/>
+        </copy>
+
         <fileset id="changed.src.files" dir="${basedir}/src" includes="**/*.x10">
             <depend targetdir="${target}/classes">
                 <mapper type="glob" from="*.x10" to="*.java"/>
@@ -164,7 +168,7 @@
         </exec>
     </target>
 
-    <target name="test" depends="build-test">
+    <target name="test" depends="build-src-java,build-test">
         <apply executable="x10" failonerror="true" dir="${target-test}" relative="true" addsourcefile="false">
             <arg line="-t -v -mx 128M -classpath ${xre.lib}:${xla.lib}:${anuchem.lib}:${target-src}:${target-test}"/>
             <targetfile/>
