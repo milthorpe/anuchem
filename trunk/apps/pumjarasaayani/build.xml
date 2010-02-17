@@ -1,24 +1,35 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE project [<!ENTITY buildfile SYSTEM "file:./build-user.xml">]>
 <project name="X10 Linear Algebra project" default="build" basedir=".">
-    <property name="x10.testlib" location="${user.home}/x10-17/x10.tests/examples/x10lib"/>
+    <property name="x10.runtime.extensions" location="/scratch/ganesh/projects/x10-trunk/x10.runtime"/>
+    <property name="xre.src" location="${x10.runtime.extensions}/src"/>
+    <property name="xre.lib" location="${x10.runtime.extensions}/lib/x10re.jar"/>
+    <property name="x10.testlib" location="/scratch/ganesh/projects/x10-trunk/x10.tests/examples/x10lib"/>
+
     <property name="x10x.xlalib" location="../../x10x.lib/xla/src"/>
     <property name="anuchem" location="../../anu-chem"/>
     <property name="anuchem.src" location="${anuchem}/src"/>
     <property name="anuchem.lib" location="${anuchem}/lib/anu-chem.jar"/>
     <property name="bash.exe" value="bash"/>    
     <property name="optimize" value="true" />
-    <property name="nochecks" value="true" />
+    <property name="nochecks" value="false" />
     <property name="profile"  value="false" />
-    <property name="inlineopt" value="true" />
+    <property name="inlineopt" value="false" />
     <property name="heapprofile" value="false" />
-    <property name="x10rt" value="standalone" />
-	<property name="target" location="${basedir}/target" />
-	<property name="target-src" location="${target}/classes" />
-	<property name="target-test" location="${target}/test-classes" />
-	<property name="bin" location="${basedir}/bin" />
-	<property name="exe" value="pumjarasaayani.exe"/>
-	<property name="jar" value="pumjarasaayani.jar"/>
+
+    <property name="gsl.include" location="/scratch/ganesh/gsl/include" />
+    <property name="gsl.lib" location="/scratch/ganesh/gsl/lib" />
+
+    <property name="usenativegsl" value="true" />
+
+    <!-- <property name="x10rt" value="standalone" /> -->
+    <property name="x10rt" value="pgas_sockets" /> 
+    <property name="target" location="${basedir}/target" />
+    <property name="target-src" location="${target}/classes" />
+    <property name="target-test" location="${target}/test-classes" />
+    <property name="bin" location="${basedir}/bin" />
+    <property name="exe" value="pumjarasaayani.exe"/>
+    <property name="jar" value="pumjarasaayani.jar"/>
 
     <condition property="x10c.optimize" value="-O" else="">
         <istrue value="${optimize}" />
@@ -38,6 +49,10 @@
 
     <condition property="post.heapprofile" value="-ltcmalloc" else="">
         <istrue value="${heapprofile}" />
+    </condition>
+    
+    <condition property="post.usenativegsl" value="-I${gsl.include} # # -L${gsl.lib} -lgsl -lgslcblas" else="">
+        <istrue value="${usenativegsl}" />
     </condition>
 
     <target name="init">
@@ -92,7 +107,7 @@
         </exec>
     </target>
 
-    <target name="build-src" depends="check-src" unless="src.uptodate">
+    <target name="build-src" depends="check-src,build-gsl-wrapper" unless="src.uptodate">
         <echo message="Building source tree"/>
 
         <fileset id="changed.src.files" dir="${basedir}/src" includes="**/*.x10">
@@ -108,11 +123,11 @@
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/src">
             <arg value="-c"/> 
-            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.nochecks} ${x10c.optimize} ${x10c.inlineopt} -report postcompile=1 -post 'g++ -g ${x10c.optimize} ${post.profile} ${post.heapprofile}' -sourcepath .:${x10x.xlalib}:${anuchem.src} -d ${target-src} ${src.list}"/>
+            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.nochecks} ${x10c.optimize} ${x10c.inlineopt} -report postcompile=1 -post 'g++ -g ${x10c.optimize} ${post.profile} ${post.heapprofile} ${post.usenativegsl}' -sourcepath .:${xre.src}:${x10x.xlalib}:${anuchem.src} -d ${target-src} ${src.list}"/>
         </exec>
     </target>
 
-	<target name="init-src" depends="init">
+    <target name="init-src" depends="init">
         <mkdir dir="${target-src}"/>
 	</target>
 
@@ -122,6 +137,27 @@
             <srcfiles refid="src.files"/>
             <globmapper from="*.x10" to="${target-src}/*.cc" handledirsep="true"/>
         </uptodate>
+    </target>
+
+    <target name="check-src-gsl" depends="init-src">
+        <fileset id="gsl.files" dir="${basedir}/src" includes="**/*.h,**/*.cc"/>
+        <uptodate property="src.uptodate.gsl">
+            <srcfiles refid="gsl.files"/>
+            <globmapper from="*" to="${target-src}/*" handledirsep="true"/>
+        </uptodate>
+    </target>
+
+    <target name="build-gsl-wrapper" depends="check-src-gsl" unless="src.uptodate.gsl">
+        <echo message="Building GSL wrapper"/>
+
+        <copy todir="${target}/classes">
+            <fileset id="cpp.files" dir="${basedir}/src" includes="**/*.h,**/*.cc"/>
+        </copy>
+
+        <exec executable="${bash.exe}" failonerror="true" dir="${target}/classes/org/gnu/gsl">
+            <arg value="-c"/>
+            <arg value="'gcc' -c GSL.cc -I${gsl.include}"/>
+        </exec>
     </target>
     
     <target name="build-test" depends="check-test,build-harness" unless="test.uptodate">
