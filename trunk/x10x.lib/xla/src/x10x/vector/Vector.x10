@@ -24,7 +24,7 @@ public class Vector {
     public static def make(siz:Int) : Vector { 
         val newVector = new Vector();
 
-        newVector.region       = 0..siz;
+        newVector.region       = 0..(siz-1);
         newVector.distribution = Dist.makeBlock(newVector.region, 0);
         newVector.vec          = Array.make[Double](newVector.distribution);
 
@@ -35,7 +35,7 @@ public class Vector {
      * Construct a Vector of dimention N, with default block distribution
      */
     public static def make(newVector:Vector, siz:Int) : Vector {
-        newVector.region       = 0..siz;
+        newVector.region       = 0..(siz-1);
         newVector.distribution = Dist.makeBlock(newVector.region, 0);
         newVector.vec          = Array.make[Double](newVector.distribution);
 
@@ -88,7 +88,7 @@ public class Vector {
     /**
      * The size of this matrix
      */
-    public global def getSize() : Int = vec.region.max(0);
+    public global def getSize() : Int = vec.region.max(0)+1;
  
     /**
      * Actual data stored

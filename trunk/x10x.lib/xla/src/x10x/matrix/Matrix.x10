@@ -27,7 +27,7 @@ public class Matrix {
     public static def make(siz:Int) : Matrix {
         val newMatrix = new Matrix();
 
-        newMatrix.region       = [0..siz, 0..siz];
+        newMatrix.region       = [0..(siz-1), 0..(siz-1)];
         newMatrix.distribution = Dist.makeBlock(newMatrix.region, 1);
         newMatrix.mat          = Array.make[Double](newMatrix.distribution);
 
@@ -55,7 +55,7 @@ public class Matrix {
      * @param siz the size of this matrix
      */
     public static def make(newMatrix:Matrix, siz:Int) : Matrix {
-        newMatrix.region       = [0..siz, 0..siz];
+        newMatrix.region       = [0..(siz-1), 0..(siz-1)];
         newMatrix.distribution = Dist.makeBlock(newMatrix.region, 1);
         newMatrix.mat          = Array.make[Double](newMatrix.distribution);
 
@@ -83,7 +83,7 @@ public class Matrix {
     public static def make(row:Int, col:Int) : Matrix {
         val newMatrix = new Matrix();
 
-        newMatrix.region       = [0..row, 0..col];
+        newMatrix.region       = [0..(row-1), 0..(col-1)];
         newMatrix.distribution = Dist.makeBlock(newMatrix.region, 1);
         newMatrix.mat          = Array.make[Double](newMatrix.distribution);
 
@@ -96,7 +96,7 @@ public class Matrix {
      * @param siz the size of this matrix
      */
     public static def make(newMatrix:Matrix, row:Int, col:Int) : Matrix {
-        newMatrix.region       = [0..row, 0..col];
+        newMatrix.region       = [0..(row-1), 0..(col-1)];
         newMatrix.distribution = Dist.makeBlock(newMatrix.region, 1);
         newMatrix.mat          = Array.make[Double](newMatrix.distribution);
 
@@ -139,15 +139,15 @@ public class Matrix {
     public def dist() : Dist{rank==2} = distribution;
 
     public def getMatrix() : Array[Double]{rank==2} = mat;
-    public global def getRowCount() : Int = mat.region.max(0);
-    public global def getColCount() : Int = mat.region.max(1);
+    public global def getRowCount() : Int = mat.region.max(0)+1;
+    public global def getColCount() : Int = mat.region.max(1)+1;
 
     /**
      * Perform symmetric orthogonalization of this matrix
      */
     public def symmetricOrthogonalization() : Matrix{self.at(this)} { 
         val diag = new JacobiDiagonalizer();
-        
+       
         diag.diagonalize(this);
         
         val rowCount     = getRowCount(); 
@@ -158,9 +158,23 @@ public class Matrix {
         
         sHalf.makeIdentity();
 
-        for(var i:Int=0; i<rowCount; i++) 
-            sHalf.mat(i, i) /= Math.sqrt(eigenValues(i));
-        
+        val sqrtEVal = Rail.make[Double](rowCount);
+
+        finish foreach(plc in eigenValues.dist.places()) {
+             for(val(i) in eigenValues.dist.get(plc)) {
+                 sqrtEVal(i) = at(plc) { return Math.sqrt(eigenValues(i)); };
+             }
+        }
+
+        finish foreach(plc in sHalf.mat.dist.places()) {
+             for(val(i, j) in sHalf.mat.dist.get(plc)) {
+                 if (i == j) { 
+                    val sqVal = sqrtEVal(i);
+                    at(plc) { sHalf.mat(i, i) /= sqVal; };
+                 }
+             }
+        }
+
         return (sHalf.similarityTransformT(eigenVectors) as Matrix{self.at(this)}); 
     }
 
@@ -168,8 +182,6 @@ public class Matrix {
      * Make the current Matrix as Identity
      */
     public def makeIdentity() : void {
-        val N = getRowCount();
-
         finish ateach(val(i,j) in mat.dist)
            if (i == j) mat(i, j) = 1.0;
            else        mat(i, j) = 0.0;
@@ -179,8 +191,6 @@ public class Matrix {
      * Fill the current Matrix with zero
      */
     public def makeZero() : void {
-        val N = getRowCount();
-
         finish ateach(val(i,j) in mat.dist)
            mat(i, j) = 0.0;
     }
@@ -206,12 +216,14 @@ public class Matrix {
          val N   = getRowCount();
          val N1  = x.getRowCount();
          val M   = x.getColCount();
-         val res:Matrix{self.at(this)} = Matrix.make(N, M) as Matrix{self.at(this)};
+         val res = Matrix.make(N, M) as Matrix{self.at(this)};
 
+         // TODO:
          finish ateach(val(i, j) in res.mat.dist) {
             var cij:Double = 0.0;
-            for(var k:Int=0; k<N1; k++) 
+            for(var k:Int=0; k<N1; k++) {
                cij += mat(i, k) * x.mat(k, j);
+            }
             res.mat(i, j) = cij;
          } // end for  
 
@@ -224,7 +236,7 @@ public class Matrix {
     public def add(x:Matrix{self.at(this)}) : Matrix{self.at(this)} {
          val N   = getRowCount();
          val M   = getColCount();
-         val res:Matrix{self.at(this)} = Matrix.make(N, M) as Matrix{self.at(this)};
+         val res = Matrix.make(N, M) as Matrix{self.at(this)};
 
          finish foreach(val(i, j) in res.mat.region)
             res.mat(i, j) = mat(i, j) + x.mat(i, j);
@@ -238,7 +250,7 @@ public class Matrix {
     public def sub(x:Matrix{self.at(this)}) : Matrix{self.at(this)} {
          val N   = getRowCount();
          val M   = getColCount();
-         val res:Matrix{self.at(this)} = Matrix.make(N, M) as Matrix{self.at(this)};
+         val res = Matrix.make(N, M) as Matrix{self.at(this)};
 
          finish foreach(val(i, j) in res.mat.region)
             res.mat(i, j) = mat(i, j) - x.mat(i, j);
@@ -252,15 +264,26 @@ public class Matrix {
     public def transpose() : Matrix{self.at(this)} {
          val N   = getRowCount();
          val M   = getColCount();
-         val res:Matrix{self.at(this)} = Matrix.make(M, N) as Matrix{self.at(this)};
+         val res = Matrix.make(Dist.make([0..(M-1), 0..(N-1)])) as Matrix{self.at(this)};
 
          var i:Int, j:Int;
 
-         for(i=0; i<N; i++)
-           for(j=0; j<M; j++)
-             res.mat(j, i) = mat(i, j);
+         finish foreach(plc in mat.dist.places()) {
+             for(val(i, j) in mat.dist.get(plc)) {
+                 res.mat(j, i) = at(plc) { return mat(i, j); }; 
+             }
+         }
+
+         val distRes = Matrix.make(M, N) as Matrix{self.at(this)};
+
+         finish foreach(plc in distRes.mat.dist.places()) {
+             for(val(i, j) in distRes.mat.dist.get(plc)) {
+                val r = res.mat(i, j);
+                at(plc) { distRes.mat(i, j) = r; }
+             }
+         }
  
-         return res;
+         return distRes;
     }
 
     /**
@@ -268,12 +291,20 @@ public class Matrix {
      */
     public def trace() : Double {
          val N = getRowCount();
-         var tr:Double = 0.0;
+         val tr = Rail.make[Double](1);
+         
+         tr(0) = 0.0;
+         finish foreach(plc in mat.dist.places()) {
+             for(val(i, j) in mat.dist.get(plc)) {
+                 if (i==j) {
+                     val trLoc = at(plc) { return mat(i, i); };
+
+                     atomic tr(0) += trLoc;
+                 }
+             }
+         }
         
-         for(var i:Int=0; i<N; i++)
-            tr += mat(i, i);
-        
-         return tr;
+         return tr(0);
     }
 
     /**
@@ -281,15 +312,21 @@ public class Matrix {
      */
     public def sumOffDiagonal() : Double {
        // sum off diagonal elements of A
-       var sum:Double = 0.0;
+       val sum = Rail.make[Double](1);
        val N = getRowCount();
 
-       // TODO: change this 
-       for(var i:Int = 0; i<N-1; i++)
-         for(var j:Int = i+1; j<N; j++)
-            sum += Math.abs(mat(i,j));
+       sum(0) = 0.0;
+       finish foreach(plc in mat.dist.places()) {
+             for(val(i, j) in mat.dist.get(plc)) {
+                 if (i!=j && j>i) {
+                     val sumLoc = at(plc) { return Math.abs(mat(i, j)); };
+                     
+                     atomic sum(0) += sumLoc;
+                 }
+             }
+       }
 
-       return sum; 
+       return sum(0); 
     }
 
     public def getRowVector(rowIdx:Int) : Vector {
@@ -298,6 +335,7 @@ public class Matrix {
        val vec = Vector.make(N) as Vector!;
        val vecVal = vec.getVector();
 
+       // TODO:
        for(var i:Int=0; i<N; i++)
            vecVal(i) = mat(rowIdx, i);
 
@@ -308,12 +346,14 @@ public class Matrix {
          var str : String = "";
          val N = getRowCount();
          val M = getColCount();
-         
+        
+         // TODO: 
          for(var i:Int=0; i<N; i++) {
             for(var j:Int=0; j<M; j++)  
                str += mat(i, j) + " ";
             str += "\n";
          } // end for
+
 
          return str;
     }
