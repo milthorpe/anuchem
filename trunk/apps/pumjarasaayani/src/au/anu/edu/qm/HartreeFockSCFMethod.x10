@@ -22,8 +22,6 @@ public class HartreeFockSCFMethod extends SCFMethod {
     }
 
     public def scf() : void {
-        x10.io.Console.OUT.println("Starting RHF-SCF ... ");        
-        
         // check first if closed shell run?
         val noOfElectrons = molecule.getNumberOfElectrons();
         val noOfOccupancies = noOfElectrons / 2;
@@ -45,6 +43,7 @@ public class HartreeFockSCFMethod extends SCFMethod {
 
         var eOne:Double, eTwo:Double;
 
+        Console.OUT.println ("    Initializing matrices ...");
         // init memory for the matrices
         val N = hCore.getRowCount();
         val gMatrix:GMatrix{self.at(this)}       = GMatrix.make(new GMatrix(), N) as GMatrix{self.at(this)};
@@ -52,8 +51,11 @@ public class HartreeFockSCFMethod extends SCFMethod {
         val density:Density{self.at(this)}       = Density.make(new Density(), N) as Density{self.at(this)};
         val fock:Fock{self.at(this)}             = Fock.make(new Fock(), N) as Fock{self.at(this)};
 
+        Console.OUT.println("    Forming initial guess ...");
         // compute initial MOs
         mos.compute(hCore, overlap);
+
+        x10.io.Console.OUT.println("    Starting RHF-SCF ... ");        
 
         // start the SCF cycle
         for(var scfIteration:Int=0; scfIteration<maxIteration; scfIteration++) {

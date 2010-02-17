@@ -13,11 +13,11 @@ import x10x.vector.Point3d;
 import au.edu.anu.chem.Atom;
 
 public class QMAtom extends Atom {
-    public def this(symbol : String, centre : Point3d) {
+    public def this(symbol : String, centre : Point3d!) {
         super(symbol, centre);
     }
 
-    public def this(centre : Point3d) {
+    public def this(centre : Point3d!) {
         super(centre);
     }
 

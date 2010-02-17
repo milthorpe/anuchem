@@ -33,31 +33,33 @@ public class OneElectronIntegrals {
        val bfs  = basisFunctions.getBasisFunctions();
        val nbf  = bfs.size();
        val nat  = molecule.getNumberOfAtoms();
-       val atno = Array.make[Double]([0..nat]);
+       val atno = Rail.make[Double](nat);
        val ai   = AtomInfo.getInstance();
        val atms = molecule.getAtoms();
 
-       for(var i:Int=0; i<nat; i++) atno(i) = ai.getAtomicNumber(atms.get(i));
+       for(var i:Int=0; i<nat; i++) 
+           atno(i) = ai.getAtomicNumber(atms.get(i));
 
        val ovr = overlap.getMatrix();
        val h   = hCore.getMatrix();
 
-       // TODO : x10 - parallel
-       for(var i:Int=0; i<nbf; i++) {
-          var bfi:ContractedGaussian{self.at(this)} = bfs.get(i);
+       finish foreach(plc in h.dist.places()) {
+             for(val(i, j) in h.dist.get(plc)) {
+                 val bfi = bfs.get(i);
+                 val bfj = bfs.get(j);
 
-          for(var j:Int=0; j<nbf; j++) {
-             var bfj:ContractedGaussian{self.at(this)} = bfs.get(j);
-             
-             ovr(i,j) = bfi.overlap(bfj); 
-             h(i,j)   = bfi.kinetic(bfj);
+                 val oVal = bfi.overlap(bfj);
+                 val hVal = bfi.kinetic(bfj);
 
-             // x10.io.Console.OUT.println("K = " + i + ", " + j + " = " + h(i, j));
+                 at(plc) { ovr(i,j) = oVal; h(i, j) = hVal; }
 
-             for(var k:Int=0; k<nat; k++)
-                h(i,j) += atno(k) * bfi.nuclear(bfj, atms.get(k).centre);
-          } // end for
-       } // end for
+                 for(var k:Int=0; k<nat; k++) {
+                    val aVal = atno(k) * bfi.nuclear(bfj, atms.get(k).centre);
+
+                    at(plc) { h(i,j) += aVal; }
+                 }
+             }
+       }
     }
 }
 
