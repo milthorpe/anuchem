@@ -38,6 +38,12 @@ public class PME {
     /** Translation vectors for neighbouring unit cells (the 26 cells surrounding the origin cell) */
     val imageTranslations : Array[Vector3d](3);
 
+    // TODO should be shared local to calculateEnergy()
+    var directEnergy : Double = 0.0;
+    var directSum : Double = 0.0;
+    var selfEnergy: Double = 0.0;
+    var correctionEnergy : Double = 0.0; // TODO masklist
+
     /**
      * Creates a new particle mesh Ewald method.
      * @param edges the edge vectors of the unit cell
@@ -73,12 +79,9 @@ public class PME {
     }
 	
     public def calculateEnergy() : Double {
-        var directEnergy : Double = 0.0;
-        var directSum : Double = 0.0;
-        var selfEnergy: Double = 0.0;
-        var correctionEnergy : Double = 0.0; // TODO masklist
-        for (var i : Int = 0; i < atoms.length; i++) {
-            selfEnergy += atoms(i).charge * atoms(i).charge;
+        finish foreach ((i) in 0..atoms.length-1) {
+            var myDirectEnergy : Double = 0.0;
+            var myDirectSum : Double = 0.0;
             // NOTE include i==j as this contributes image components
             for (var j : Int = 0; j < atoms.length; j++) {
                 val rjri = Vector3d(atoms(j).centre.sub(atoms(i).centre as Tuple3d));
@@ -90,11 +93,11 @@ public class PME {
                             if (! (i==j && (n1 | n2 | n3) == 0)) {
                                 val imageDistance = rjri.add(imageTranslations(n1,n2,n3)).length();
                                 val chargeProduct = atoms(i).charge * atoms(j).charge;
-                                directEnergy += chargeProduct / imageDistance;
+                                myDirectEnergy += chargeProduct / imageDistance;
                                 if (imageDistance < cutoff) {
                                     val imageDirectComponent = chargeProduct * Math.erfc(beta * imageDistance) / imageDistance;
                                     //Console.OUT.println("imageDistance = " + imageDistance + " imageDirectComponent = " + imageDirectComponent);
-                                    directSum += imageDirectComponent;
+                                    myDirectSum += imageDirectComponent;
                                     //Console.OUT.println("distance = " + distance + " directEnergy component = " + chargeProduct / distance);
                                     
                                 }
@@ -102,6 +105,11 @@ public class PME {
                         }
                     }
                 }
+            }
+            atomic {
+                directEnergy += myDirectEnergy;
+                directSum += myDirectSum;
+                selfEnergy += atoms(i).charge * atoms(i).charge;
             }
         }
         selfEnergy = -beta / Math.sqrt(Math.PI) * selfEnergy;
@@ -190,9 +198,9 @@ public class PME {
                                      * bSpline4(u.k - k3);
 
                         atomic {
-                        Q((k1 + gridSize(0)) % gridSize(0),
-                          (k2 + gridSize(1)) % gridSize(1),
-                          (k3 + gridSize(2)) % gridSize(2)) += gridPointContribution;
+                            Q((k1 + gridSize(0)) % gridSize(0),
+                              (k2 + gridSize(1)) % gridSize(1),
+                              (k3 + gridSize(2)) % gridSize(2)) += gridPointContribution;
                         }
                         /*
                         Console.OUT.println("Q(" + (k1 + gridSize(0)) % gridSize(0) + "," + 
