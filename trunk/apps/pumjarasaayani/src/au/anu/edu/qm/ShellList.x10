@@ -12,13 +12,13 @@ import x10.util.*;
 
 public class ShellList { 
     global val shellList:HashMap[Int, Shell{self.at(this)}]{self.at(this)};
-    global val powerList:HashMap[Int, Array[Power{self.at(this)}]{rank==1, self.at(this)}]{self.at(this)};
+    global val powerList:HashMap[Int, ValRail[Power]]{self.at(this)};
 
     var maxam:Int;
 
     public def this() { 
         shellList = new HashMap[Int, Shell{self.at(this)}]();
-        powerList = new HashMap[Int, Array[Power{self.at(this)}]{rank==1, self.at(this)}]();
+        powerList = new HashMap[Int, ValRail[Power]]();
         maxam = 0;
     }
 

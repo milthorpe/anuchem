@@ -1,7 +1,7 @@
 package au.edu.anu.mm;
 
-import harness.x10Test;
 import x10x.vector.Point3d;
+import x10x.vector.Tuple3d;
 
 /**
  * Test multipole expansions
@@ -9,19 +9,19 @@ import x10x.vector.Point3d;
  */
 class TestMultipoleExpansion extends MathTest {
     public def run(): boolean {
-        val p : Int = 3; // multipole level
+        val p = 3; // multipole level
 
-        val x = new Point3d(1.0, 2.0, -1.0);
-        val Olm = MultipoleExpansion.getOlm(1.5, x, p);
+        val x = Point3d(1.0, 2.0, -1.0);
+        val Olm = MultipoleExpansion.getOlm(1.5, x as Tuple3d, p);
         Console.OUT.println("multipole expansion:\n" + Olm.toString());
 
         val target = new MultipoleExpansion(p);
-        val translation = MultipoleExpansion.getOlm(new Point3d(2.0, -3.0, 1.0), p);
+        val translation = MultipoleExpansion.getOlm(Point3d(2.0, -3.0, 1.0) as Tuple3d, p);
         target.translateAndAddMultipole(translation, Olm);
         Console.OUT.println("translated multipole:\n" + target.toString());
 
         val roundtrip = new MultipoleExpansion(p);
-        val reverseTranslation = MultipoleExpansion.getOlm(new Point3d(-2.0, 3.0, -1.0), p);
+        val reverseTranslation = MultipoleExpansion.getOlm(Point3d(-2.0, 3.0, -1.0) as Tuple3d, p);
         roundtrip.translateAndAddMultipole(reverseTranslation, target);
         Console.OUT.println("translated multipole - roundtrip:\n" + roundtrip.toString());
 		for ((i): Point in [0..p]) {
@@ -31,7 +31,7 @@ class TestMultipoleExpansion extends MathTest {
         }
 
         val localExp = new LocalExpansion(p);
-        val transformation = LocalExpansion.getMlm(new Point3d(2.0, -3.0, 1.0), p);
+        val transformation = LocalExpansion.getMlm(Point3d(2.0, -3.0, 1.0) as Tuple3d, p);
         localExp.transformAndAddToLocal(transformation, Olm);
         Console.OUT.println("transformed multipole:\n" + localExp.toString());
 

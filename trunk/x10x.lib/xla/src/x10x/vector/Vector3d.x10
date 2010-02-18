@@ -1,10 +1,10 @@
 package x10x.vector;
 
 /** 
- * This class represents a 3D vector
- * @author V.Ganesh
+ * This class represents a vector in 3D cartesian space.
+ * @author V.Ganesh, milthorpe
  */
-public class Vector3d extends Tuple3d {
+public struct Vector3d(i : Double, j : Double, k : Double) implements Tuple3d {
     public static val NULL = new Vector3d(0, 0, 0);
 
     public static val UX = new Vector3d(1.0, 0, 0);
@@ -12,49 +12,59 @@ public class Vector3d extends Tuple3d {
     public static val UZ = new Vector3d(0, 0, 1.0);
     
     public def this(i : Double, j : Double, k : Double) {
-        super(i, j, k);
+        property(i, j, k);
     }
 
     public def this(t : Tuple3d) {
-        super(t.i, t.j, t.k);
+        property(t.i(), t.j(), t.k());
     }
 
-    public global def dot(vec : Vector3d) : Double {
+    public global safe def toString() = ("(" + i + "i + " + j + "j + " + k + "k)");
+    
+    public global safe def add(b: Tuple3d) : Tuple3d {
+        return Vector3d(i + b.i(), j + b.j(), k + b.k()) as Tuple3d;
+    }
+
+    public global safe def add(b: Vector3d) : Vector3d {
+        return Vector3d(i + b.i(), j + b.j(), k + b.k());
+    }
+
+    public global safe def sub(b: Tuple3d) : Tuple3d {
+        return Vector3d(i - b.i(), j - b.j(), k - b.k()) as Tuple3d;
+    }
+
+    public global safe def dot(vec : Vector3d) : Double {
         return this.i * vec.i + this.j * vec.j + this.k * vec.k;
     }
 
-    public global def cross(vec : Vector3d) : Vector3d {
-        return new Vector3d(j * vec.k - k * vec.j,
+    public global safe def cross(vec : Vector3d) : Vector3d {
+        return Vector3d(j * vec.k - k * vec.j,
                             k * vec.i - i * vec.k,
                             i * vec.j - j * vec.i);
     }
 
-    public global def add(b: Vector3d) : Vector3d {
-        return new Vector3d(i + b.i, j + b.j, k + b.k);
+    public global safe def mul(c : Double) : Vector3d {
+        return Vector3d(this.i * c, this.j * c, this.k * c);
     }
 
-    public global def mul(c : Double) : Vector3d {
-        return new Vector3d(this.i * c, this.j * c, this.k * c);
-    }
-
-    public global def mixedProduct(v2 : Vector3d, v3 : Vector3d) : Double {
+    public global safe def mixedProduct(v2 : Vector3d, v3 : Vector3d) : Double {
         return this.dot(v2.cross(v3));
     }
 
-    public global def lengthSquared() : Double {
+    public global safe def lengthSquared() : Double {
         return i * i + j * j + k * k;
     }
 
-    public global def length() : Double {
+    public global safe def length() : Double {
         return Math.sqrt(i * i + j * j + k * k);
     }
 
     /* Should which name to use - length or magnitude? */
-    public global def magnitude() : Double {
+    public global safe def magnitude() : Double {
         return Math.sqrt(i * i + j * j + k * k);
     }
 
-    public global def angleWith(vec : Vector3d) : Double {
+    public global safe def angleWith(vec : Vector3d) : Double {
         val aDotb = this.dot(vec);
         val ab    = magnitude() * vec.magnitude();
         
@@ -64,19 +74,19 @@ public class Vector3d extends Tuple3d {
     public global def normalize() : Vector3d {
         val norm = 1.0 / length();
 
-        return new Vector3d(i * norm, j * norm, k * norm);
+        return Vector3d(i * norm, j * norm, k * norm);
     }
 
     /** 
      * Returns the geometric inverse of this vector a^(-1) = a / ||a||^2
      */
-    public global def inverse() : Vector3d {
+    public global safe def inverse() : Vector3d {
         val l2 = lengthSquared();
-        return new Vector3d(i / l2, j / l2, k / l2);
+        return Vector3d(i / l2, j / l2, k / l2);
     }
 
-    public global def negate() : Vector3d {
-        return new Vector3d(-i, -j, -k);
+    public global safe def negate() : Vector3d {
+        return Vector3d(-i, -j, -k);
     }
 }
 

@@ -11,13 +11,13 @@ package au.anu.edu.qm;
 import x10x.vector.Point3d;
 
 public class PrimitiveGaussian { 
-    global val origin:Point3d{self.at(this)};
-    global val power:Power{self.at(this)};
+    global val origin:Point3d;
+    global val power:Power;
     global val exponent:Double;
     global var coefficient:Double;
     global var normalization:Double;
 
-    public def this(origin:Point3d!, power:Power!, exponent:Double, coefficient:Double) { 
+    public def this(origin:Point3d, power:Power, exponent:Double, coefficient:Double) { 
         this.origin = origin;
         this.power = power;
         this.exponent = exponent;
@@ -118,7 +118,7 @@ public class PrimitiveGaussian {
 
         var term:Double = pg.exponent * (2 * (l2+m2+n2) + 3) * ovrlp(pg);
 
-        val origin = pg.origin as Point3d!;
+        val origin = pg.origin;
 
         val p1 = new PrimitiveGaussian(origin, new Power(l2+2, m2, n2), pg.exponent, pg.coefficient);
         val p2 = new PrimitiveGaussian(origin, new Power(l2, m2+2, n2), pg.exponent, pg.coefficient);
@@ -143,7 +143,7 @@ public class PrimitiveGaussian {
      *
      * <i> Taken from THO eq. 2.12 <i>
      */
-    public def nuclear(pg:PrimitiveGaussian{self.at(this)}, center:Point3d{self.at(this)}) :Double {
+    public def nuclear(pg:PrimitiveGaussian{self.at(this)}, center:Point3d) :Double {
         val prod = mul(pg); 
         val rABSquared = origin.distanceSquared(pg.origin);
         val rCPSquared = center.distanceSquared(prod.origin);

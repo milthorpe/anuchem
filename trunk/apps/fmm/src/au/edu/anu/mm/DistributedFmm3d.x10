@@ -113,10 +113,10 @@ public class DistributedFmm3d {
                 for (val(placeId,level,i,j,k) in multipoleTranslations.dist | here) {
                     dim : Int = Math.pow2(level);
                     sideLength : Double = size / dim;
-                    translationVector : Vector3d = new Vector3d((i*2-1) * 0.5 * sideLength,
-                                                                     (j*2-1) * 0.5 * sideLength,
-                                                                     (k*2-1) * 0.5 * sideLength);
-                    multipoleTranslations(Point.make([placeId, level, i, j, k])) = MultipoleExpansion.getOlm(translationVector, numTerms);
+                    val translationVector = Vector3d((i*2-1) * 0.5 * sideLength,
+                                                     (j*2-1) * 0.5 * sideLength,
+                                                     (k*2-1) * 0.5 * sideLength);
+                    multipoleTranslations(Point.make([placeId, level, i, j, k])) = MultipoleExpansion.getOlm(translationVector as Tuple3d, numTerms);
                 } 
             }
         }
@@ -176,7 +176,7 @@ public class DistributedFmm3d {
                     val leafBox = box as FmmLeafBox!;
                     leafBox.atoms.add(remoteAtom);
                     val boxCentre = leafBox.getCentre(size).sub(remoteAtom.centre);
-                    leafBox.multipoleExp.add(MultipoleExpansion.getOlm(remoteAtom.charge, boxCentre, numTerms));
+                    leafBox.multipoleExp.add(MultipoleExpansion.getOlm(remoteAtom.charge, boxCentre as Tuple3d, numTerms));
                 }
             }
         }
@@ -216,10 +216,10 @@ public class DistributedFmm3d {
             for (val(placeId,level,i,j,k) in multipoleTransforms.dist | here) {
                 dim : Int = Math.pow2(level);
                 sideLength : Double = size / dim;
-                translationVector : Vector3d = new Vector3d(i * sideLength,
-                                                            j * sideLength,
-                                                            k * sideLength);
-                multipoleTransforms(Point.make([placeId, level, i, j, k])) = LocalExpansion.getMlm(translationVector, numTerms);
+                val translationVector = Vector3d(i * sideLength,
+                                                 j * sideLength,
+                                                 k * sideLength);
+                multipoleTransforms(Point.make([placeId, level, i, j, k])) = LocalExpansion.getMlm(translationVector as Tuple3d, numTerms);
             }
         }
 
@@ -311,7 +311,7 @@ public class DistributedFmm3d {
                     // TODO should be able to use a shared var for atom energy
                     val atom1 = box1.atoms(atomIndex1) as MMAtom!;
                     val box1Centre = atom1.centre.sub(box1.getCentre(size));
-                    val farFieldEnergy = box1.localExp.getPotential(atom1.charge, box1Centre);
+                    val farFieldEnergy = box1.localExp.getPotential(atom1.charge, box1Centre as Tuple3d);
                     //Console.OUT.println("farFieldEnergy " + farFieldEnergy + " at " + this.home);
                     thisBoxEnergy += farFieldEnergy;
 

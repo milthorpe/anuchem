@@ -2,6 +2,7 @@ package au.edu.anu.pme;
 
 import x10x.vector.Point3d;
 import x10x.vector.Vector3d;
+import x10x.vector.Tuple3d;
 import au.edu.anu.chem.mm.MMAtom;
 import edu.mit.fftw.FFTW;
 import x10.array.BaseArray;
@@ -80,7 +81,7 @@ public class PME {
             selfEnergy += atoms(i).charge * atoms(i).charge;
             // NOTE include i==j as this contributes image components
             for (var j : Int = 0; j < atoms.length; j++) {
-                val rjri = new Vector3d(atoms(j).centre.sub(atoms(i).centre));
+                val rjri = Vector3d(atoms(j).centre.sub(atoms(i).centre as Tuple3d));
                 // rough (non-Euclidean, 1D) distance cutoff to avoid unnecessary distance calculations
                 // for (p(n1,n2,n3) in imageTranslations) {
                 for (var n1:Int = -1; n1<=1; n1++) {
@@ -173,7 +174,7 @@ public class PME {
         finish foreach ((i) in 0..atoms.length-1) {
             val atom = atoms(i);
             val q = atom.charge;
-            val u = getScaledFractionalCoordinates(new Vector3d(atom.centre));
+            val u = getScaledFractionalCoordinates(Vector3d(atom.centre as Tuple3d));
             //Console.OUT.println("atom( " + i + " ) charge = " + q + " coords = " + u);
             //var atomContribution : Double = 0.0;
 

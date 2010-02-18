@@ -251,7 +251,7 @@ public class TwoElectronIntegrals {
              val aCoeff = aPrim.getCoefficient();
              val bCoeff = bPrim.getCoefficient();
 
-             val p:Point3d{self.at(this)} = gaussianProductCenter(aAlpha, aCen, bAlpha, bCen);
+             val p:Point3d = gaussianProductCenter(aAlpha, aCen, bAlpha, bCen);
              val Gab = Math.exp(-aAlpha*bAlpha*radiusABSquared/gamma1);
              val Up = aCoeff*bCoeff*Gab*Math.pow((Math.PI/gamma1),1.5);
              // Console.OUT.println("Coeff: " + aCoeff + " " + bCoeff);
@@ -272,13 +272,13 @@ public class TwoElectronIntegrals {
                  val gamma2 = cAlpha + dAlpha;
                  val eta    = (gamma1*gamma2)/(gamma1+gamma2);
 
-                 val q:Point3d{self.at(this)} = gaussianProductCenter(cAlpha, cCen, dAlpha, dCen);
+                 val q:Point3d = gaussianProductCenter(cAlpha, cCen, dAlpha, dCen);
                  val Gcd = Math.exp(-cAlpha*dAlpha*radiusCDSquared/gamma2);
                  val Uq = cCoeff*dCoeff*Gcd*Math.pow((Math.PI/gamma2),1.5); 
                  // Console.OUT.println("Coeff: " + cCoeff + " " + dCoeff);
                  // Console.OUT.println("Zeta, Gcd, Uq: " + gamma2 + " " + Gcd + " " + Uq);
 
-                 val r:Point3d{self.at(this)} = new Point3d(q.sub(p));
+                 val r = q.sub(p);
                  val radiusPQSquared:Double = p.distanceSquared(q);  
                  val Upq = Up*Uq;
                  val T = p.distanceSquared(q) * eta;
@@ -525,7 +525,7 @@ public class TwoElectronIntegrals {
         } // atomic
     }
 
-    protected def mdRecurse(r:Point3d{self.at(this)}, 
+    protected def mdRecurse(r:Point3d, 
                             zeroM:Rail[Double]!,
                             i:Int, j:Int, k:Int, m:Int) : Double {
          var res:Double;
@@ -550,7 +550,7 @@ public class TwoElectronIntegrals {
     }
 
     protected def mdr1(xa:Int, ya:Int, za:Int, xb:Int, yb:Int, zb:Int, xp:Int, yp:Int, zp:Int,
-                          coorda:Point3d{self.at(this)}, coordb:Point3d{self.at(this)}, coordp:Point3d{self.at(this)}, zeta:Double,
+                          coorda:Point3d, coordb:Point3d, coordp:Point3d, zeta:Double,
                           pint:Array[Double]{rank==2, self.at(this)}) : Double {
          var res:Double;
          var ptot:Int, idx:Int;
@@ -785,13 +785,13 @@ public class TwoElectronIntegrals {
     private def coulombRec(a:ContractedGaussian{self.at(this)}, b:ContractedGaussian{self.at(this)},
                            c:ContractedGaussian{self.at(this)}, d:ContractedGaussian{self.at(this)}) : Double {
 
-          val jij = contrHrr(a.getOrigin() as Point3d{self.at(this)}, a.getPower() as Power{self.at(this)},
+          val jij = contrHrr(a.getOrigin(), a.getPower(),
                              a.getCoefficients(), a.getExponents(), a.getPrimNorms(),
-                             b.getOrigin() as Point3d{self.at(this)}, b.getPower() as Power{self.at(this)},
+                             b.getOrigin(), b.getPower(),
                              b.getCoefficients(), b.getExponents(), b.getPrimNorms(),
-                             c.getOrigin() as Point3d{self.at(this)}, b.getPower() as Power{self.at(this)},
+                             c.getOrigin(), b.getPower(),
                              c.getCoefficients(), c.getExponents(), c.getPrimNorms(),
-                             d.getOrigin() as Point3d{self.at(this)}, d.getPower() as Power{self.at(this)},
+                             d.getOrigin(), d.getPower(),
                              d.getCoefficients(), d.getExponents(), d.getPrimNorms()
                             );
 
@@ -800,16 +800,16 @@ public class TwoElectronIntegrals {
     }
 
     private def coulombRepulsion(
-                    a:Point3d!, aNorm:Double, aPower:Power!, aAlpha:Double,
-                    b:Point3d!, bNorm:Double, bPower:Power!, bAlpha:Double,
-                    c:Point3d!, cNorm:Double, cPower:Power!, cAlpha:Double,
-                    d:Point3d!, dNorm:Double, dPower:Power!, dAlpha:Double) : Double {
+                    a:Point3d, aNorm:Double, aPower:Power, aAlpha:Double,
+                    b:Point3d, bNorm:Double, bPower:Power, bAlpha:Double,
+                    c:Point3d, cNorm:Double, cPower:Power, cAlpha:Double,
+                    d:Point3d, dNorm:Double, dPower:Power, dAlpha:Double) : Double {
 
         val radiusABSquared = a.distanceSquared(b);
         val radiusCDSquared = c.distanceSquared(d);
 
-        val p:Point3d{self.at(this)} = gaussianProductCenter(aAlpha, a, bAlpha, b);
-        val q:Point3d{self.at(this)} = gaussianProductCenter(cAlpha, c, dAlpha, d);
+        val p:Point3d = gaussianProductCenter(aAlpha, a, bAlpha, b);
+        val q:Point3d = gaussianProductCenter(cAlpha, c, dAlpha, d);
 
         val radiusPQSquared = p.distanceSquared(q);
 
@@ -909,13 +909,13 @@ public class TwoElectronIntegrals {
      * recursively form the columb repulsion term using HGP, stage one: form HRR 
      * HRR (Horizontal Recurrance Relation)
      */
-    protected def contrHrr(a:Point3d{self.at(this)}, aPower:Power{self.at(this)}, aCoeff:ArrayList[Double]{self.at(this)},
+    protected def contrHrr(a:Point3d, aPower:Power, aCoeff:ArrayList[Double]{self.at(this)},
                            aExps:ArrayList[Double]{self.at(this)}, aNorms:ArrayList[Double]{self.at(this)},
-                           b:Point3d{self.at(this)}, bPower:Power{self.at(this)}, bCoeff:ArrayList[Double]{self.at(this)},
+                           b:Point3d, bPower:Power, bCoeff:ArrayList[Double]{self.at(this)},
                            bExps:ArrayList[Double]{self.at(this)}, bNorms:ArrayList[Double]{self.at(this)},
-                           c:Point3d{self.at(this)}, cPower:Power{self.at(this)}, cCoeff:ArrayList[Double]{self.at(this)},
+                           c:Point3d, cPower:Power, cCoeff:ArrayList[Double]{self.at(this)},
                            cExps:ArrayList[Double]{self.at(this)}, cNorms:ArrayList[Double]{self.at(this)},
-                           d:Point3d{self.at(this)}, dPower:Power{self.at(this)}, dCoeff:ArrayList[Double]{self.at(this)},
+                           d:Point3d, dPower:Power, dCoeff:ArrayList[Double]{self.at(this)},
                            dExps:ArrayList[Double]{self.at(this)}, dNorms:ArrayList[Double]{self.at(this)}) : Double {
         val la = aPower.getL(), ma = aPower.getM(), na = aPower.getN();
         val lb = bPower.getL(), mb = bPower.getM(), nb = bPower.getN();
@@ -999,13 +999,13 @@ public class TwoElectronIntegrals {
     /**
      * VRR (Vertical Recurrance Relation) contribution
      */
-    protected def contrVrr(a:Point3d{self.at(this)}, aPower:Power{self.at(this)}, aCoeff:ArrayList[Double]{self.at(this)},
+    protected def contrVrr(a:Point3d, aPower:Power, aCoeff:ArrayList[Double]{self.at(this)},
                            aExps:ArrayList[Double]{self.at(this)}, aNorms:ArrayList[Double]{self.at(this)},
-                           b:Point3d{self.at(this)}, bCoeff:ArrayList[Double]{self.at(this)},
+                           b:Point3d, bCoeff:ArrayList[Double]{self.at(this)},
                            bExps:ArrayList[Double]{self.at(this)}, bNorms:ArrayList[Double]{self.at(this)},
-                           c:Point3d{self.at(this)}, cPower:Power{self.at(this)}, cCoeff:ArrayList[Double]{self.at(this)},
+                           c:Point3d, cPower:Power, cCoeff:ArrayList[Double]{self.at(this)},
                            cExps:ArrayList[Double]{self.at(this)}, cNorms:ArrayList[Double]{self.at(this)},
-                           d:Point3d{self.at(this)}, dCoeff:ArrayList[Double]{self.at(this)},
+                           d:Point3d, dCoeff:ArrayList[Double]{self.at(this)},
                            dExps:ArrayList[Double]{self.at(this)}, dNorms:ArrayList[Double]{self.at(this)}) : Double {
         var res:Double = 0.0;
 
@@ -1049,10 +1049,10 @@ public class TwoElectronIntegrals {
      * VRR (Vertical Recurrance Relation)
      */
     protected def vrrWrapper(
-                         a:Point3d{self.at(this)}, aNorm:Double, aPower:Power{self.at(this)}, aAlpha:Double,
-                         b:Point3d{self.at(this)}, bNorm:Double, bAlpha:Double,
-                         c:Point3d{self.at(this)}, cNorm:Double, cPower:Power{self.at(this)}, cAlpha:Double,
-                         d:Point3d{self.at(this)}, dNorm:Double, dAlpha:Double, m:Int) : Double {
+                         a:Point3d, aNorm:Double, aPower:Power, aAlpha:Double,
+                         b:Point3d, bNorm:Double, bAlpha:Double,
+                         c:Point3d, cNorm:Double, cPower:Power, cAlpha:Double,
+                         d:Point3d, dNorm:Double, dAlpha:Double, m:Int) : Double {
         return vrr(a, aNorm, aPower, aAlpha, b, bNorm, bAlpha,
                    c, cNorm, cPower, cAlpha, d, dNorm, dAlpha, m);
     }
@@ -1060,10 +1060,10 @@ public class TwoElectronIntegrals {
     /**
      * VRR (Vertical Recurrance Relation)
      */
-    protected def vrr(a:Point3d{self.at(this)}, aNorm:Double, aPower:Power{self.at(this)}, aAlpha:Double,
-                      b:Point3d{self.at(this)}, bNorm:Double, bAlpha:Double,
-                      c:Point3d{self.at(this)}, cNorm:Double, cPower:Power{self.at(this)}, cAlpha:Double,
-                      d:Point3d{self.at(this)}, dNorm:Double, dAlpha:Double, m:Int) : Double {
+    protected def vrr(a:Point3d, aNorm:Double, aPower:Power, aAlpha:Double,
+                      b:Point3d, bNorm:Double, bAlpha:Double,
+                      c:Point3d, cNorm:Double, cPower:Power, cAlpha:Double,
+                      d:Point3d, dNorm:Double, dAlpha:Double, m:Int) : Double {
         var res:Double = 0.0;
 
         val p = gaussianProductCenter(aAlpha, a, bAlpha, b);
@@ -1339,10 +1339,10 @@ public class TwoElectronIntegrals {
     }
 
     /** Product of two gaussians */
-    public def gaussianProductCenter(alpha1:Double, a:Point3d{self.at(this)},  
-                                    alpha2:Double, b:Point3d{self.at(this)}) : Point3d{self.at(this)} {
+    public def gaussianProductCenter(alpha1:Double, a:Point3d,  
+                                    alpha2:Double, b:Point3d) : Point3d {
         val gamma:Double = alpha1 + alpha2;
-        val center:Point3d{self.at(this)} =  new Point3d(
+        val center:Point3d =  new Point3d(
                          (alpha1 * a.i + alpha2 * b.i) / gamma,
                          (alpha1 * a.j + alpha2 * b.j) / gamma,
                          (alpha1 * a.k + alpha2 * b.k) / gamma

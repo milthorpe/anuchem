@@ -12,7 +12,7 @@ import x10.util.*;
 
 public class PowerList { 
 
-    global var powerList:HashMap[String,Array[Power{self.at(this)}]{self.at(this),rank==1}]{self.at(this)};
+    global var powerList:HashMap[String,ValRail[Power]]{self.at(this)};
     global var initCalled:Boolean;
 
     private def this() {
@@ -20,7 +20,7 @@ public class PowerList {
     }
 
     private def init() : void {
-       powerList = new HashMap[String,Array[Power{self.at(this)}]{self.at(this),rank==1}](); 
+       powerList = new HashMap[String,ValRail[Power]](); 
        powerList.put("S", generatePowerList(0));
        powerList.put("P", generatePowerList(1));
        powerList.put("D", generatePowerList(2));
@@ -29,22 +29,21 @@ public class PowerList {
        initCalled = true;
     }
 
-    public def generatePowerList(maxAngularMomentum:Int) : Array[Power{self.at(this)}]{self.at(this),rank==1} {
+    public def generatePowerList(maxAngularMomentum:Int) : ValRail[Power] {
         var n:Int = ((maxAngularMomentum+1)*(maxAngularMomentum+2)/2);
 
-        val pList:Array[Power{self.at(this)}]{self.at(this),rank==1} = Array.make[Power{self.at(this)}]([0..n]);
+        val pList = Rail.make[Power](n);
 
         var idx:Int = 0;
         // for(var i:Int=maxAngularMomentum; i>=0; i--) {
         //    for(var j:Int=maxAngularMomentum-i; j>=0; j--) {
         for(var i:Int=0; i<=maxAngularMomentum; i++) {
             for(var j:Int=0; j<=maxAngularMomentum-i; j++) {
-                var pwr:Power{self.at(this)} = new Power(i, j, maxAngularMomentum-i-j);
-                pList(idx++) = pwr;
+                pList(idx++) = new Power(i, j, maxAngularMomentum-i-j);
             }
         }
 
-        return pList;
+        return pList as ValRail[Power];
     }
 
 

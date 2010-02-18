@@ -5,16 +5,13 @@
  *
  * @author: V.Ganesh
  */
-
 package au.anu.edu.qm;
 
-public class Power { 
-    val l:Int, m:Int, n:Int;
-
-    public def this() { l = m = n = 0; }
+public struct Power(l:Int, m:Int, n:Int) { 
+    public def this() { property(0,0,0); }
 
     public def this(l:Int, m:Int, n:Int) { 
-        this.l = l; this.m = m; this.n = n;
+        property(l, m, n);
     } 
 
     public def getL() : Int = this.l;

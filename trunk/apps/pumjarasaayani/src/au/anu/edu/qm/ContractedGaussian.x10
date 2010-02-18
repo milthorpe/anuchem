@@ -12,8 +12,8 @@ import x10.util.ArrayList;
 import x10x.vector.Point3d;
 
 public class ContractedGaussian { 
-    global val center : Point3d{self.at(this)};
-    global val power : Power{self.at(this)};
+    global val center : Point3d;
+    global val power : Power;
     global val primitives : ArrayList[PrimitiveGaussian{self.at(this)}]{self.at(this)};
     global val exponents:ArrayList[Double]{self.at(this)};
     global val coefficients:ArrayList[Double]{self.at(this)};
@@ -21,7 +21,7 @@ public class ContractedGaussian {
 
     global var normalization : Double;
 
-    public def this(center:Point3d!, pwr:Power!) { 
+    public def this(center:Point3d, pwr:Power) { 
         this.center = center;
         this.power = pwr;
         normalization = 1.0; 
@@ -106,7 +106,7 @@ public class ContractedGaussian {
         return normalization * cg.normalization * tij;
     }
 
-    public def nuclear(cg:ContractedGaussian{self.at(this)}, center:Point3d{self.at(this)}) : Double {
+    public def nuclear(cg:ContractedGaussian{self.at(this)}, center : Point3d) : Double {
         var vij:Double = 0.0;
         var i:Int, j:Int;
         val cgPrimitives = cg.getPrimitives();
