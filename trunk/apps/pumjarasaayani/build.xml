@@ -1,11 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE project [<!ENTITY buildfile SYSTEM "file:./build-user.xml">]>
-<project name="X10 Linear Algebra project" default="build" basedir=".">
-    <property name="x10.runtime.extensions" location="/scratch/ganesh/projects/x10-trunk/x10.runtime"/>
-    <property name="xre.src" location="${x10.runtime.extensions}/src"/>
-    <property name="xre.lib" location="${x10.runtime.extensions}/lib/x10re.jar"/>
-    <property name="x10.testlib" location="/scratch/ganesh/projects/x10-trunk/x10.tests/examples/x10lib"/>
-
+<project name="Pumja Rasaayani" default="build" basedir=".">
+    <property name="x10.testlib" location="${user.home}/x10-trunk/x10.tests/examples/x10lib"/>
     <property name="x10x.xlalib" location="../../x10x.lib/xla/src"/>
     <property name="anuchem" location="../../anu-chem"/>
     <property name="anuchem.src" location="${anuchem}/src"/>
@@ -123,7 +119,7 @@
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/src">
             <arg value="-c"/> 
-            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.nochecks} ${x10c.optimize} ${x10c.inlineopt} -report postcompile=1 -post 'g++ -g ${x10c.optimize} ${post.profile} ${post.heapprofile} ${post.usenativegsl}' -sourcepath .:${xre.src}:${x10x.xlalib}:${anuchem.src} -d ${target-src} ${src.list}"/>
+            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.nochecks} ${x10c.optimize} ${x10c.inlineopt} -report postcompile=1 -post 'g++ -g ${x10c.optimize} ${post.profile} ${post.heapprofile} ${post.usenativegsl}' -sourcepath .:${x10x.xlalib}:${anuchem.src} -d ${target-src} ${src.list}"/>
         </exec>
     </target>
 
