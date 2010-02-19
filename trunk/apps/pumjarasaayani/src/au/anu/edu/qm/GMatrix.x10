@@ -30,12 +30,15 @@ public class GMatrix extends Matrix {
                computeDirectAsyncOld(twoE, density); 
                break;
            case 2:
+               Console.OUT.println("   GMatrix.computeDirectAsyncOldNoAtomic: " + gMatType);
+               computeDirectAsyncOldNoAtomic(twoE, density); 
+           case 3:
                Console.OUT.println("   GMatrix.computeDirectSerialNew: " + gMatType);
                computeDirectSerialNew(twoE, density); 
                break;
-           case 3:
-               Console.OUT.println("   GMatrix.computeDirectLowMemNew: " + gMatType);
-               computeDirectLowMemNew(twoE, density); 
+           case 4:
+               Console.OUT.println("   GMatrix.computeDirectLowMemNewNoAtomic: " + gMatType);
+               computeDirectLowMemNewNoAtomic(twoE, density); 
                break;
            default:
                Console.OUT.println("   GMatrix.computeDirectSerialOld: " + gMatType);
@@ -243,6 +246,74 @@ public class GMatrix extends Matrix {
                   gMatrix(x,y) = jMatrix(x,y) - (0.25*kMatrix(x,y));
     }
 
+    private def computeDirectAsyncOldNoAtomic(twoE:TwoElectronIntegrals{self.at(this)}, density:Density{self.at(this)}) : void {
+        val N = density.getRowCount();
+         
+        val molecule = twoE.getMolecule();
+
+        makeZero();
+
+        val gMatrix = getMatrix();
+        val dMatrix = density.getMatrix();
+
+        var i:Int, j:Int, k:Int, l:Int, m:Int, ij:Int, kl:Int;
+        val idx = Rail.make[Int](8);
+        val jdx = Rail.make[Int](8);
+        val kdx = Rail.make[Int](8);
+        val ldx = Rail.make[Int](8);
+
+        val compute = Rail.make[ComputeOld!](Runtime.INIT_THREADS);
+
+        for(i=0; i<Runtime.INIT_THREADS; i++) {
+            compute(i) = new ComputeOld(new TwoElectronIntegrals(twoE.getBasisFunctions(), molecule, true), density);
+        } // end for
+
+
+        finish {
+          for(i=0; i<N; i++) {
+            idx(0) = i; jdx(1) = i; jdx(2) = i; idx(3) = i;
+            kdx(4) = i; ldx(5) = i; kdx(6) = i; ldx(7) = i;
+            for(j=0; j<(i+1); j++) {
+                ij = i * (i+1) / 2+j;
+                jdx(0) = j; idx(1) = j; idx(2) = j; jdx(3) = j;
+                ldx(4) = j; kdx(5) = j; ldx(6) = j; kdx(7) = j;
+                for(k=0; k<N; k++) {
+                    kdx(0) = k; kdx(1) = k; ldx(2) = k; ldx(3) = k;
+                    jdx(4) = k; jdx(5) = k; idx(6) = k; idx(7) = k;
+                    for(l=0; l<(k+1); l++) {
+                        kl = k * (k+1) / 2+l;
+                        if (ij >= kl) { 
+                           
+                           var setIt:Boolean = false;
+
+                           outer: while(!setIt) {
+                               for(var ix:Int=0; ix<Runtime.INIT_THREADS; ix++) {
+                                   setIt = compute(ix).setValue(i, j, k, l, idx, jdx, kdx, ldx);
+                                   if (setIt) {
+                                      val ix_loc = ix;
+                                      async compute(ix_loc).compute();
+                                      break outer;
+                                   } // end if
+                               } // end for
+                           } // end while
+                       } // end if                        
+                    } // end l loop
+                } // end k loop
+            } // end j loop
+          } // end i loop
+        } // finish
+
+        // form the G matrix
+        for(var ix:Int=0; ix<Runtime.INIT_THREADS; ix++) {
+             val jMatrix = compute(ix).getJMat().getMatrix();
+             val kMatrix = compute(ix).getKMat().getMatrix();
+
+             finish ateach(val(x,y) in gMatrix.dist) {
+                   gMatrix(x,y) += jMatrix(x,y) - (0.25*kMatrix(x,y));
+             } // finish
+        } // end for
+    }
+
     private def computeDirectSerialNew(twoE:TwoElectronIntegrals{self.at(this)}, density:Density{self.at(this)}) : void {
         val N = density.getRowCount();
 
@@ -325,7 +396,7 @@ public class GMatrix extends Matrix {
                   gMatrix(x,y) = jMatrix(x,y) - (0.25*kMatrix(x,y));     
     }
 
-    private def computeDirectLowMemNew(twoE:TwoElectronIntegrals{self.at(this)}, density:Density{self.at(this)}) : void {
+    private def computeDirectLowMemNewNoAtomic(twoE:TwoElectronIntegrals{self.at(this)}, density:Density{self.at(this)}) : void {
         val N = density.getRowCount();
 
         makeZero();
@@ -459,6 +530,134 @@ public class GMatrix extends Matrix {
           kMatrix(j,l) += v6;
         } // atomic
     }
+
+    /** Compute class for the old code */
+    class ComputeOld {
+        var computing:Boolean = false;
+
+        var i:Int, j:Int, k:Int, l:Int;
+
+        val twoEI:TwoElectronIntegrals!;
+        val jMat:Matrix!, kMat:Matrix!;
+        val density:Density!;
+        val idx_loc:Rail[Int]!;
+        val jdx_loc:Rail[Int]!;
+        val kdx_loc:Rail[Int]!;
+        val ldx_loc:Rail[Int]!;
+        val validIdx:Rail[Boolean]!;
+
+        val jMatrix:Array[Double]{rank==2};
+        val kMatrix:Array[Double]{rank==2};
+        val dMatrix:Array[Double]{rank==2};
+    
+        public def this(te:TwoElectronIntegrals, den:Density) {
+            twoEI = te as TwoElectronIntegrals!;
+            density = den as Density!;
+
+            idx_loc = Rail.make[Int](8);
+            jdx_loc = Rail.make[Int](8);
+            kdx_loc = Rail.make[Int](8);
+            ldx_loc = Rail.make[Int](8);
+ 
+            validIdx = Rail.make[Boolean](8, (Int)=>true);
+
+            val N = density.getRowCount();
+
+            jMat = Matrix.make(N) as Matrix!;
+            kMat = Matrix.make(N) as Matrix!;
+
+            jMatrix = jMat.getMatrix();
+            kMatrix = kMat.getMatrix();
+            dMatrix = density.getMatrix();
+
+            jMat.makeZero();
+            kMat.makeZero();
+        }
+
+        public def compute() {
+            val twoEIntVal = twoEI.compute2E(i, j, k, l);
+
+            for(var m:Int=0; m<8; m++) validIdx(m) = true;
+
+            setJKMatrixElements(i, j, k, l, twoEIntVal);
+
+            // if not special case
+            if ((i|j|k|l) != 0) {
+               // else this is symmetry unique integral, so need to
+               // use this value for all 8 combinations
+               // (if unique)
+               ldx_loc(0) = l; ldx_loc(1) = l; kdx_loc(2) = l; kdx_loc(3) = l;
+               idx_loc(4) = l; idx_loc(5) = l; jdx_loc(6) = l; jdx_loc(7) = l;
+
+               // filter unique elements
+               filterUniqueElements();
+
+               // and evaluate them
+               for(var m:Int=1; m<8; m++) {
+                   if (validIdx(m)) {
+                       setJKMatrixElements(idx_loc(m), jdx_loc(m), kdx_loc(m), ldx_loc(m), twoEIntVal);
+                   } // end if
+               } // end m
+            } // end if
+
+            computing = false;
+        }
+
+        /** find unique elements and mark the onces that are not */
+        private def filterUniqueElements() : void {
+           var i:Int, j:Int, k:Int, l:Int, m:Int, n:Int;
+
+           for(m=0; m<8; m++) {
+              i = idx_loc(m); j = jdx_loc(m); k = kdx_loc(m); l = ldx_loc(m);
+              for(n=m+1; n<8; n++) {
+                  if (i==idx_loc(n) && j==jdx_loc(n) && k==kdx_loc(n) && l==ldx_loc(n))
+                      validIdx(n) = false;
+              } // end for
+           } // end for
+        }
+
+        /** Set the J and K value for a given combination */
+        private def setJKMatrixElements(i:Int, j:Int, k:Int, l:Int, twoEIntVal:Double) : void {
+           val v1 = dMatrix(k,l) * twoEIntVal;
+           val v2 = dMatrix(i,j) * twoEIntVal;
+           val v3 = dMatrix(j,l) * twoEIntVal;
+           val v4 = dMatrix(j,k) * twoEIntVal;
+           val v5 = dMatrix(i,l) * twoEIntVal;
+           val v6 = dMatrix(i,k) * twoEIntVal;
+
+           jMatrix(i,j) += v1;
+           jMatrix(k,l) += v2;
+           kMatrix(i,k) += v3;
+           kMatrix(i,l) += v4;
+           kMatrix(j,k) += v5;
+           kMatrix(j,l) += v6;
+        }
+
+        public def setValue(i:Int, j:Int, k:Int, l:Int, 
+                            idx:Rail[Int]!, jdx:Rail[Int]!, kdx:Rail[Int]!, ldx:Rail[Int]!) : Boolean {
+            if (computing) return false;
+
+            this.i = i;
+            this.j = j;
+            this.k = k;
+            this.l = l;
+
+            for(var m:Int=0; m<8; m++) { 
+               idx_loc(m) = idx(m);
+               jdx_loc(m) = jdx(m);
+               kdx_loc(m) = kdx(m);
+               ldx_loc(m) = ldx(m);
+            } // end for
+
+            computing = true;
+
+            return true;
+        }
+
+        public def getJMat() = jMat;
+        public def getKMat() = kMat;
+    }
+
 
     /** Compute class for the new code */
     class ComputeNew {
