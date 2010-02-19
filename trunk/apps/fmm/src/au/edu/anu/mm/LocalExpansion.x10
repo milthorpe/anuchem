@@ -57,14 +57,15 @@ public class LocalExpansion extends Expansion {
      * @param shift the multipole expansion of the translation
      * @param source the source local expansion, centred at the origin
      */
-    public global safe def translateAndAddLocal(shift : MultipoleExpansion!,
+    public safe def translateAndAddLocal(shift : MultipoleExpansion!,
                                          source : LocalExpansion!) {
-        val p : Int = source.terms.region.max(0);
-        for (val (l,m): Point in this.terms) {
-            for (var j : Int = l; j<=p; j++) { // TODO XTENLANG-504
-                for (var k : Int = l-j+m; k<=-l+j+m; k++) { // TODO XTENLANG-504
+        val p = terms.region.max(0);
+        for ((l,m) in terms) {
+            for ((j) in l..p) {
+                for ((k) in (l-j+m)..(-l+j+m)) {
                     val C_lmjk = shift.terms(j-l, k-m);
-                    this.terms(l,m) = this.terms(l,m) + C_lmjk * source.terms(j,k);
+                    val O_jk = at(source.terms) {source.terms(j,k)};
+                    this.terms(l,m) = this.terms(l,m) + C_lmjk * O_jk;
                 }
             }
         }
@@ -79,11 +80,11 @@ public class LocalExpansion extends Expansion {
      * @param b the vector along which to translate the multipole
      * @param source the source multipole expansion, centred at the origin
      */
-    public global def transformAndAddToLocal(transform : LocalExpansion,
+    public def transformAndAddToLocal(transform : LocalExpansion!,
                                          source : MultipoleExpansion) {
-        val p : Int = source.terms.region.max(0);
-        for (val (j,k): Point in source.terms) {
-            val O_jk = source.terms(j,k);
+        val p : Int = terms.region.max(0);
+        for (val (j,k): Point in terms) {
+            val O_jk = at(source) {source.terms(j,k)};
             for (var l : Int = 0; l <= p-j; l++) { // TODO XTENLANG-504
                 for (var m : Int = -l; m<=l; m++) { // TODO XTENLANG-504
                     if (Math.abs(k+m) <= (j+l)) {
@@ -106,7 +107,7 @@ public class LocalExpansion extends Expansion {
      * @param q the charge at point v
      * @param v the location of charge q
      */
-    public global safe def getPotential(q : Double,
+    public safe def getPotential(q : Double,
                                 v : Tuple3d) : Double {
         val numTerms = terms.region.max(0);
         val transform = MultipoleExpansion.getOlm(q, v, numTerms);

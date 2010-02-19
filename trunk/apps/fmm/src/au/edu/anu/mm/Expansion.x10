@@ -14,7 +14,7 @@ import x10.util.StringBuilder;
  */
 public class Expansion {
     /** The terms X_{lm} (with m >= 0) in this expansion */
-    public global val terms : Array[Complex](2);
+    public val terms : Array[Complex](2);
 
     public def this(p : Int) {
         //var expRegion : Region(2) = [0..p,-p..p];
@@ -24,13 +24,17 @@ public class Expansion {
         this.terms = Array.make[Complex](expRegion->here, (Point) => Complex.ZERO);
     }
 
-    public global atomic def add(e : Expansion!) {
+    public atomic def add(e : Expansion!) {
         for (val p in terms.region) {
             this.terms(p) = this.terms(p) + e.terms(p);
         }
     }
 
     public global safe def toString() : String {
+        return at(this) {toStringLocal()};
+    }
+
+    private safe def toStringLocal() : String {
         val p : Int = terms.region.max(0);
         val s = new StringBuilder();
         for (val(i) : Point in [0..p]) {

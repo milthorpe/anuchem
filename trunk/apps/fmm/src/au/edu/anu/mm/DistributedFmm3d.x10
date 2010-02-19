@@ -329,14 +329,12 @@ public class DistributedFmm3d {
                         val otherBoxRegion : Region(2) = [0..boxIndex1-1,numLevels..numLevels];
                         val otherBoxDist = boxes.dist | otherBoxRegion;
                         for ((boxIndex2,level) in otherBoxDist) {
-                            val box2 = boxes(boxIndex2, level) as FmmLeafBox!;
-                            if (box2 != null) {
+                            val box2Loc = FmmBox.getBoxLocation(boxIndex2,level);
+                            if (!box1.wellSeparated(ws, box2Loc)) {
                                 //Console.OUT.println(boxIndex1 + " vs. " + boxIndex2 + " ws = " + ws);
-                                if (!box2.wellSeparated(ws, box1)) {
-                                    val box2Energy : Double = at (boxes.dist(boxIndex2, level)) getPairwiseInteractionForBox(atom1, box2 as FmmLeafBox!);
-                                    //Console.OUT.println("pair energy: " + boxIndex1 + "-" + atomIndex1 + " with box " + boxIndex2 + " = " + box2Energy);
-                                    thisBoxEnergy += box2Energy;
-                                }
+                                val box2Energy = at (boxes.dist(boxIndex2, level)) getPairwiseInteractionForBox(atom1, boxIndex2);
+                                //Console.OUT.println("pair energy: " + boxIndex1 + "-" + atomIndex1 + " with box " + boxIndex2 + " = " + box2Energy);
+                                thisBoxEnergy += box2Energy;
                             }
                         }
                     }
@@ -385,12 +383,15 @@ public class DistributedFmm3d {
     /**
      * Gets the pairwise interaction energy between the given atom and all atoms in the given box.
      */
-    public global def getPairwiseInteractionForBox(atom : MMAtom, box : FmmLeafBox!) : Double {
+    public global def getPairwiseInteractionForBox(atom : MMAtom, boxIndex : Int) : Double {
         var boxEnergy : Double = 0.0;
-        for ((atomIndex2) in 0..box.atoms.length()-1) {
-            val atom2 = box.atoms(atomIndex2) as MMAtom!;
-            val pairEnergy : Double = atom2.pairEnergy(atom);
-            boxEnergy += 2 * pairEnergy;
+        val box = boxes(boxIndex, numLevels) as FmmLeafBox!;
+        if (box != null) {
+            for ((atomIndex2) in 0..box.atoms.length()-1) {
+                val atom2 = box.atoms(atomIndex2) as MMAtom!;
+                val pairEnergy : Double = atom2.pairEnergy(atom);
+                boxEnergy += 2 * pairEnergy;
+            }
         }
         return boxEnergy;
     }
