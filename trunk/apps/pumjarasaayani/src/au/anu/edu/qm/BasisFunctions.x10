@@ -48,8 +48,6 @@ public class BasisFunctions {
                val coeff:ArrayList[Double]{self.at(this)} = orb.getCoefficients();
                val exps:ArrayList[Double]{self.at(this)}  = orb.getExponents();
 
-               val norm = Rail.make[Double](coeff.size(), (Int)=>1.0);
-
                for(var l:Int=0; l<pList.length; l++) {
                   val center = atom.centre;
                   val power = pList(l);
@@ -75,18 +73,60 @@ public class BasisFunctions {
                    acg.addPrimitive(exps.get(i), coeff.get(i));
                } // end for
 
-               acg.normalize();
-
-               for(var i:Int=0; i<coeff.size(); i++) {
-                   val pg = acg.getPrimitive(i);
-                   pg.setCoefficient(coeff.get(i) * acg.getNormalization() * pg.getNormalization());
-               } // end for
-
                atombfs.add(acg);
                intIndx += ((am+1)*(am+2)/2);
             } // end for          
 
             atom.setBasisFunctions(atombfs);  
+        } // end for
+
+        // normalization of atom basis functions : mostly from Alistair's code, this essentially same as the above 
+        // code, except is performed over a differently arranged set of ContractedGaussian's 
+        val fact1 = Math.pow(2.0/Math.PI, 0.75);
+        for(var atmno:Int=0; atmno<molecule.getNumberOfAtoms(); atmno++) {
+            val atom = molecule.getAtom(atmno);
+            val bfs  = atom.getBasisFunctions();
+            val nbf  = bfs.size();
+
+            for(var i:Int=0; i<nbf; i++) {
+                val bfi    = bfs.get(i);
+                var lm:Int = bfi.getTotalAngularMomentum();
+                var denom:Double = 1.0;
+
+                while(lm>1) { denom *= (2.0*lm-1.0); lm--; }
+              
+                val lmn   = bfi.getTotalAngularMomentum();
+                val fact2 = Math.pow(2.0, lmn) / Math.pow(denom, 0.5);
+              
+                val prms  = bfi.getPrimitives(); 
+                for(var j:Int=0; j<prms.size(); j++) {
+                    val prmj = prms.get(j); 
+                    val fact3 = Math.pow(prmj.getExponent(), (2.0*lmn+3.0)/4.0);
+                    prmj.setCoefficient(prmj.getCoefficient()*fact1*fact2*fact3);
+                } // end for
+
+                val pi3O2By2Tlmn = Math.pow(Math.PI, 1.5) / Math.pow(2.0, lmn); 
+                val factC = denom * pi3O2By2Tlmn;
+                var factA:Double = 0.0, factB:Double = 0.0;
+                var coefExpoSum:Double = 0.0;
+
+                for(var k:Int=0; k<prms.size(); k++) {
+                   val prmk = prms(k);
+                   for(var l:Int=0; l<prms.size(); l++) {
+                       val prml = prms(l);
+
+                       factA = prmk.getCoefficient() * prml.getCoefficient();
+                       factB = Math.pow(prmk.getExponent() + prml.getExponent(), lmn+1.5);
+                       coefExpoSum += factA/factB;
+                   } // end for
+                } // end for 
+
+                val norm = Math.pow(coefExpoSum*factC, -0.5);
+                for(var j:Int=0; j<prms.size(); j++) {
+                    val prmj = prms.get(j); 
+                    prmj.setCoefficient(prmj.getCoefficient()*norm);
+                } // end for 
+            } // end for
         } // end for
     }
 

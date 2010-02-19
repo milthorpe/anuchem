@@ -212,7 +212,8 @@ public class TwoElectronIntegrals {
          val angMomCD = c.getMaximumAngularMomentum() + d.getMaximumAngularMomentum();
          val angMomABCD = angMomAB+angMomCD;
 
-         val maxam  = angMomABCD; // shellList.getMaximumAngularMomentum();
+         val sham   = shellList.getMaximumAngularMomentum();
+         val maxam  = angMomABCD; // sham+sham+sham+sham; // angMomABCD; 
          val maxam2 = 2*maxam;
          val maxam4 = 4*maxam;
          val maxamN = ((maxam+1)*(maxam+2)/2);
@@ -224,6 +225,7 @@ public class TwoElectronIntegrals {
          var bb:Int, aa:Int;
          var dd:Int, cc:Int;
 
+         /**
          // ---------
          // local allocation overides global
          val fmt = Rail.make[Double](maxam+1);
@@ -235,6 +237,7 @@ public class TwoElectronIntegrals {
                                                                                 0..maxamN, 
                                                                                 0..maxam2N]);
          // ---------
+         **/
 
          for(val aPrim in aPrims) {
            for(val bPrim in bPrims) {
@@ -515,14 +518,14 @@ public class TwoElectronIntegrals {
         val v5 = dMatrix(i,l) * twoEIntVal;
         val v6 = dMatrix(i,k) * twoEIntVal;
 
-        atomic {
+        // atomic {
           jMatrix(i,j) += v1;
           jMatrix(k,l) += v2;
           kMatrix(i,k) += v3;
           kMatrix(i,l) += v4;
           kMatrix(j,k) += v5;
           kMatrix(j,l) += v6;
-        } // atomic
+        // } // atomic
     }
 
     protected def mdRecurse(r:Point3d, 

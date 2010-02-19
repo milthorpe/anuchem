@@ -8,9 +8,9 @@
     <property name="anuchem.lib" location="${anuchem}/lib/anu-chem.jar"/>
     <property name="bash.exe" value="bash"/>    
     <property name="optimize" value="true" />
-    <property name="nochecks" value="false" />
+    <property name="nochecks" value="true" />
     <property name="profile"  value="false" />
-    <property name="inlineopt" value="false" />
+    <property name="inlineopt" value="true" />
     <property name="heapprofile" value="false" />
 
     <property name="gsl.include" location="/scratch/ganesh/gsl/include" />
@@ -18,8 +18,8 @@
 
     <property name="usenativegsl" value="true" />
 
-    <!-- <property name="x10rt" value="standalone" /> -->
-    <property name="x10rt" value="pgas_sockets" /> 
+    <property name="x10rt" value="standalone" /> 
+    <!-- <property name="x10rt" value="pgas_sockets" />  -->
     <property name="target" location="${basedir}/target" />
     <property name="target-src" location="${target}/classes" />
     <property name="target-test" location="${target}/test-classes" />

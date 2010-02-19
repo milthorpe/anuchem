@@ -36,11 +36,13 @@ public class ContractedGaussian {
     public def getCenter() = center;
     public def getPower() = power;
     public def getNormalization() = normalization;
+    public def setNormalization(n:Double) : Void { normalization = n; }
     public def getPrimitives() : ArrayList[PrimitiveGaussian{self.at(this)}]{self.at(this)} = primitives;
     public def getPrimitive(i:Int) : PrimitiveGaussian{self.at(this)} = primitives.get(i);
     public def getExponents() : ArrayList[Double]{self.at(this)} = exponents;
     public def getCoefficients() : ArrayList[Double]{self.at(this)} = coefficients;
     public def getPrimNorms() : ArrayList[Double]{self.at(this)} = primNorms;
+    public def getPrimNorm(i:Int) = primNorms(i);
     public def getTotalAngularMomentum() = power.getTotalAngularMomentum();
     public def getMaximumAngularMomentum() = power.getMaximumAngularMomentum();
     public def getMinimumAngularMomentum() = power.getMinimumAngularMomentum();

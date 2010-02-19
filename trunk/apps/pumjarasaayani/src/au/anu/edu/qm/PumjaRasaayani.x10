@@ -55,7 +55,10 @@ public class PumjaRasaayani {
         basisName = "sto3g";
     }
 
-    public def runIt() {
+    public def runIt() {       
+        val timer = new Timer(1);
+        timer.start(0);
+
         Console.OUT.println("PumjaRasaayani shunya.eak, Quantum Chemisty program in x10, v0.1");
 
         Console.OUT.println("\nInput deck:");
@@ -80,6 +83,8 @@ public class PumjaRasaayani {
 
         val hfscf = new HartreeFockSCFMethod(mol, oneE, twoE, gMatType);
         hfscf.scf();
+        timer.stop(0);
+        Console.OUT.println ("\n-End of SCF-\n\nTotal time since start: " + (timer.total(0) as Double) / 1e9 + " seconds\n");
     }
 
     public static def main(args:Rail[String]!) {

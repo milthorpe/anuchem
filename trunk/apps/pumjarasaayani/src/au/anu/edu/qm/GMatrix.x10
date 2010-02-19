@@ -34,8 +34,8 @@ public class GMatrix extends Matrix {
                computeDirectSerialNew(twoE, density); 
                break;
            case 3:
-               Console.OUT.println("   GMatrix.computeDirectAsyncNew: " + gMatType);
-               computeDirectAsyncNew(twoE, density); 
+               Console.OUT.println("   GMatrix.computeDirectLowMemNew: " + gMatType);
+               computeDirectLowMemNew(twoE, density); 
                break;
            default:
                Console.OUT.println("   GMatrix.computeDirectSerialOld: " + gMatType);
@@ -325,7 +325,7 @@ public class GMatrix extends Matrix {
                   gMatrix(x,y) = jMatrix(x,y) - (0.25*kMatrix(x,y));     
     }
 
-    private def computeDirectAsyncNew(twoE:TwoElectronIntegrals{self.at(this)}, density:Density{self.at(this)}) : void {
+    private def computeDirectLowMemNew(twoE:TwoElectronIntegrals{self.at(this)}, density:Density{self.at(this)}) : void {
         val N = density.getRowCount();
 
         makeZero();
@@ -333,87 +333,95 @@ public class GMatrix extends Matrix {
         val gMatrix = getMatrix();
         val dMatrix = density.getMatrix();
 
-        val jMat = Matrix.make(N) as Matrix{self.at(this)};
-        val kMat = Matrix.make(N) as Matrix{self.at(this)};
-
-        jMat.makeZero();
-        kMat.makeZero();
-
-        val jMatrix = jMat.getMatrix();
-        val kMatrix = kMat.getMatrix();
-
-        var i:Int, j:Int, k:Int, l:Int;
-
         val molecule = twoE.getMolecule();
         val bfs = twoE.getBasisFunctions().getBasisFunctions();
         val shellList = twoE.getBasisFunctions().getShellList();
         val noOfBasisFunctions = bfs.size();
 
         val noOfAtoms = molecule.getNumberOfAtoms();
-        var a:Int, b:Int, c:Int, d:Int;
-        var naFunc:Int, nbFunc:Int, ncFunc:Int, ndFunc:Int, twoEIndx:Int;
-        var aFunc:ArrayList[ContractedGaussian{self.at(this)}]{self.at(this)},
-            bFunc:ArrayList[ContractedGaussian{self.at(this)}]{self.at(this)},
-            cFunc:ArrayList[ContractedGaussian{self.at(this)}]{self.at(this)},
-            dFunc:ArrayList[ContractedGaussian{self.at(this)}]{self.at(this)};
-        var iaFunc:ContractedGaussian{self.at(this)}, jbFunc:ContractedGaussian{self.at(this)},
-            kcFunc:ContractedGaussian{self.at(this)}, ldFunc:ContractedGaussian{self.at(this)};
 
+        // create another future to feed in the futures created above
+        var i:Int, j:Int, k:Int, l:Int;
+        var a:Int, b:Int, c:Int, d:Int;
+        var iaFunc:ContractedGaussian{self.at(this)}, jbFunc:ContractedGaussian{self.at(this)},
+              kcFunc:ContractedGaussian{self.at(this)}, ldFunc:ContractedGaussian{self.at(this)};
+        var naFunc:Int, nbFunc:Int, ncFunc:Int, ndFunc:Int;
+        var aFunc:ArrayList[ContractedGaussian{self.at(this)}]{self.at(this)},
+              bFunc:ArrayList[ContractedGaussian{self.at(this)}]{self.at(this)},
+              cFunc:ArrayList[ContractedGaussian{self.at(this)}]{self.at(this)},
+              dFunc:ArrayList[ContractedGaussian{self.at(this)}]{self.at(this)};
+
+        val compute = Rail.make[ComputeNew!](Runtime.INIT_THREADS);
+
+        for(i=0; i<Runtime.INIT_THREADS; i++) {
+            compute(i) = new ComputeNew(new TwoElectronIntegrals(twoE.getBasisFunctions(), molecule, true),
+                                        shellList, density);
+        } // end for
+
+        // center a
         finish {
-          // center a
           for(a=0; a<noOfAtoms; a++) {
             aFunc = molecule.getAtom(a).getBasisFunctions();
             naFunc = aFunc.size();
             // basis functions on a
             for(i=0; i<naFunc; i++) {
-                iaFunc = aFunc.get(i);
+               iaFunc = aFunc.get(i);
 
-                // center b
-                for(b=0; b<=a; b++) {
-                    bFunc = molecule.getAtom(b).getBasisFunctions();
-                    nbFunc = (b<a) ? bFunc.size() : i+1;
-                    // basis functions on b
-                    for(j=0; j<nbFunc; j++) {
-                        jbFunc = bFunc.get(j);
+               // center b
+               for(b=0; b<=a; b++) {
+                   bFunc = molecule.getAtom(b).getBasisFunctions();
+                   nbFunc = (b<a) ? bFunc.size() : i+1;
+                   // basis functions on b
+                   for(j=0; j<nbFunc; j++) {
+                       jbFunc = bFunc.get(j);
 
-                        // center c
-                        for(c=0; c<noOfAtoms; c++) {
-                            cFunc = molecule.getAtom(c).getBasisFunctions();
-                            ncFunc = cFunc.size();
-                            // basis functions on c
-                            for(k=0; k<ncFunc; k++) {
-                                kcFunc = cFunc.get(k);
+                       // center c
+                       for(c=0; c<noOfAtoms; c++) {
+                           cFunc = molecule.getAtom(c).getBasisFunctions();
+                           ncFunc = cFunc.size();
+                           // basis functions on c
+                           for(k=0; k<ncFunc; k++) {
+                               kcFunc = cFunc.get(k);
 
-                                // center d
-                                for(d=0; d<=c; d++) {
-                                    dFunc = molecule.getAtom(d).getBasisFunctions();
-                                    ndFunc = (d<c) ? dFunc.size() : k+1;
-                                    // basis functions on d
-                                    for(l=0; l<ndFunc; l++) {
-                                        ldFunc = dFunc.get(l);
+                               // center d
+                               for(d=0; d<=c; d++) {
+                                   dFunc = molecule.getAtom(d).getBasisFunctions();
+                                   ndFunc = (d<c) ? dFunc.size() : k+1;
+                                   // basis functions on d
+                                   for(l=0; l<ndFunc; l++) {
+                                       ldFunc = dFunc.get(l);
 
-                                        val iaFunc_loc = iaFunc;
-                                        val jbFunc_loc = jbFunc;
-                                        val kcFunc_loc = kcFunc;
-                                        val ldFunc_loc = ldFunc;
-
-                                        async {                                         
-              	                           twoE.compute2EAndRecord(iaFunc_loc, jbFunc_loc, kcFunc_loc, ldFunc_loc, 
-                                                                   shellList, jMat, kMat, density);
-                                        }
-				    } // end l
-				} // center d
-                            } // end k
-                        } // center c
-                    } // end j
-                } // center b
+                                       var setIt:Boolean = false;
+                                       
+                                       outer: while(!setIt) {
+                                           for(var idx:Int=0; idx<Runtime.INIT_THREADS; idx++) { 
+                                               setIt = compute(idx).setValue(iaFunc, jbFunc, kcFunc, ldFunc);                                               
+                                               if (setIt) {
+                                                  val idx_loc = idx;
+                                                  async compute(idx_loc).compute();
+                                                  break outer;
+                                               } // end if
+                                           } // end for
+                                       } // end while
+				   } // end l
+			       } // center d
+                           } // end k
+                       } // center c
+                   } // end j
+               } // center b
             } // end i
           } // center a
         } // finish
-      
+        
         // form the G matrix
-        finish ateach(val(x,y) in gMatrix.dist)
-                  gMatrix(x,y) = jMatrix(x,y) - (0.25*kMatrix(x,y));     
+        for(var idx:Int=0; idx<Runtime.INIT_THREADS; idx++) { 
+             val jMatrix = compute(idx).getJMat().getMatrix();
+             val kMatrix = compute(idx).getKMat().getMatrix();
+             
+             finish ateach(val(x,y) in gMatrix.dist) {
+                   gMatrix(x,y) += jMatrix(x,y) - (0.25*kMatrix(x,y));     
+             } // finish
+        } // end for
     }
 
     /** find unique elements and mark the onces that are not */
@@ -450,6 +458,57 @@ public class GMatrix extends Matrix {
           kMatrix(j,k) += v5;
           kMatrix(j,l) += v6;
         } // atomic
+    }
+
+    /** Compute class for the new code */
+    class ComputeNew {
+        var computing:Boolean = false;
+
+        var i:ContractedGaussian!, j:ContractedGaussian!, 
+            k:ContractedGaussian!, l:ContractedGaussian!;
+
+        val twoEI:TwoElectronIntegrals!;
+        val shellList:ShellList;
+        val jMat:Matrix!, kMat:Matrix!;
+        val density:Density;
+
+        public def this(te:TwoElectronIntegrals, sh:ShellList, den:Density) { 
+            twoEI = te as TwoElectronIntegrals!;
+            shellList = sh;
+            density = den;
+
+            val N = density.getRowCount();
+
+            jMat = Matrix.make(N) as Matrix!;
+            kMat = Matrix.make(N) as Matrix!;
+
+            jMat.makeZero();
+            kMat.makeZero();
+        }
+
+        public def compute() {
+            twoEI.compute2EAndRecord(i as ContractedGaussian!, j as ContractedGaussian!, 
+                                     k as ContractedGaussian!, l as ContractedGaussian!,  
+                                     shellList as ShellList!, 
+                                     jMat as Matrix!, kMat as Matrix!, density as Density!);
+            computing = false;
+        }
+        
+        public def setValue(i:ContractedGaussian!, j:ContractedGaussian!,
+                            k:ContractedGaussian!, l:ContractedGaussian!) : Boolean {
+            if (computing) return false;
+
+            this.i = i;
+            this.j = j;
+            this.k = k;
+            this.l = l;
+            computing = true;
+
+            return true;
+        }
+
+        public def getJMat() = jMat;
+        public def getKMat() = kMat;
     }
 }
 
