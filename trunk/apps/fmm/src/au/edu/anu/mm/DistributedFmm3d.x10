@@ -340,7 +340,7 @@ public class DistributedFmm3d {
                     }
                 }
                 val thisBoxEnergyFinal = thisBoxEnergy;
-                at (this.home) {atomic {fmmEnergy += thisBoxEnergyFinal;}}
+                async (this.home) {atomic {fmmEnergy += thisBoxEnergyFinal;}}
             }
         }
 
