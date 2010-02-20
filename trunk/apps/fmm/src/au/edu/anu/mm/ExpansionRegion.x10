@@ -36,12 +36,12 @@ public class ExpansionRegion extends BaseRegion  {
 
     /**
      * Returns the number of points in this region.
-     * These expansions have a peculiarly shaped region(abs(x0)<=x1 && x0<=p)
+     * These expansions have a peculiarly shaped region(abs(x1)<=x0 && 0<=x0<=p)
      * (X10 gives it as (x0+x1>=0 && x0-x1>=0 && x0<=3),
-     * which gives a size of p^2 + 2(p+1).
+     * which gives a size of (p+1)^2.
      */
     public global def size() : Int { 
-        return p * p + 2 * (p + 1);
+        return (p+1) * (p+1);
     }
 
     public global def contains(p: Point): boolean {

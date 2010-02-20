@@ -16,6 +16,10 @@ public class LocalExpansion extends Expansion {
         super(p);
     }
 
+    public def this(p : Int, data : ValRail[Complex]) {
+        super(p, data);
+    }
+
     /**
      * Calculate the local Taylor-type expansion M_{lm} (with m >= 0) for a single point v.
      */
@@ -60,11 +64,12 @@ public class LocalExpansion extends Expansion {
     public safe def translateAndAddLocal(shift : MultipoleExpansion!,
                                          source : LocalExpansion!) {
         val p = terms.region.max(0);
+        val localSource = LocalExpansion.getLocalCopy(p, source);
         for ((l,m) in terms) {
             for ((j) in l..p) {
                 for ((k) in (l-j+m)..(-l+j+m)) {
                     val C_lmjk = shift.terms(j-l, k-m);
-                    val O_jk = at(source.terms) {source.terms(j,k)};
+                    val O_jk = localSource.terms(j,k);
                     this.terms(l,m) = this.terms(l,m) + C_lmjk * O_jk;
                 }
             }
@@ -83,8 +88,9 @@ public class LocalExpansion extends Expansion {
     public def transformAndAddToLocal(transform : LocalExpansion!,
                                          source : MultipoleExpansion) {
         val p : Int = terms.region.max(0);
+        val localSource = MultipoleExpansion.getLocalCopy(p, source);
         for (val (j,k): Point in terms) {
-            val O_jk = at(source) {source.terms(j,k)};
+            val O_jk = localSource.terms(j,k);
             for (var l : Int = 0; l <= p-j; l++) { // TODO XTENLANG-504
                 for (var m : Int = -l; m<=l; m++) { // TODO XTENLANG-504
                     if (Math.abs(k+m) <= (j+l)) {
@@ -117,6 +123,15 @@ public class LocalExpansion extends Expansion {
             potential += (terms(p) * transform.terms(p)).re;
         }
         return potential;
+    }
+
+    /**
+     * TODO this should not be necessary once XTENLANG-787 is resolved
+     * @return a local copy of a local expansion from another place
+     */
+    static def getLocalCopy(p : Int, source : LocalExpansion) : LocalExpansion! {
+        val data = at (source) {getData(p, source)};
+        return new LocalExpansion(p, data);
     }
 }
 

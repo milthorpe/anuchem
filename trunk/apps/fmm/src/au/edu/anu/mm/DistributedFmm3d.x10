@@ -383,7 +383,7 @@ public class DistributedFmm3d {
     /**
      * Gets the pairwise interaction energy between the given atom and all atoms in the given box.
      */
-    public global def getPairwiseInteractionForBox(atom : MMAtom, boxIndex : Int) : Double {
+    private global def getPairwiseInteractionForBox(atom : MMAtom, boxIndex : Int) : Double {
         var boxEnergy : Double = 0.0;
         val box = boxes(boxIndex, numLevels) as FmmLeafBox!;
         if (box != null) {
@@ -396,7 +396,7 @@ public class DistributedFmm3d {
         return boxEnergy;
     }
 
-    public global def getMultipoleForBox(p : Point(2)) : MultipoleExpansion {
+    private global def getMultipoleForBox(p : Point(2)) : MultipoleExpansion {
         val box = boxes(p) as FmmBox!;
         return box == null ? null : box.multipoleExp;
     }

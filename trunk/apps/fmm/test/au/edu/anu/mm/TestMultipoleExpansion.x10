@@ -35,6 +35,14 @@ class TestMultipoleExpansion extends MathTest {
         localExp.transformAndAddToLocal(transformation, Olm);
         Console.OUT.println("transformed multipole:\n" + localExp.toString());
 
+        // test copy
+        val localCopy = MultipoleExpansion.getLocalCopy(p, roundtrip);
+		for ((i): Point in [0..p]) {
+            for ((j): Point in [-i..i]) {
+                chk(roundtrip.terms(i,j) == localCopy.terms(i,j));
+		    }
+        }        
+
         return true;
     }
 

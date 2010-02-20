@@ -7,7 +7,7 @@ import x10.util.StringBuilder;
  * <a href="info:doi/10.1063/1.468354">
  *      Derivation and efficient implementation of the fast multipole method
  * </a>, White and Head-Gordon, 1994.
- * These expansions have a peculiarly shaped region(abs(x0)<=x1 && x0<=p)
+ * These expansions have a peculiarly shaped region(abs(x0)<=x1 && 0<=x1<=p)
  * (X10 gives it as (x0+x1>=0 && x0-x1>=0 && x0<=3), which is constructed
  * here by subtracting two halfspaces from a rectangular region. 
  * @author milthorpe
@@ -22,6 +22,11 @@ public class Expansion {
         //expRegion = expRegion - Region.makeHalfspace([1,-1],1);
         val expRegion = new ExpansionRegion(p);
         this.terms = Array.make[Complex](expRegion->here, (Point) => Complex.ZERO);
+    }
+
+    public def this(p : Int, data : ValRail[Complex]) {
+        val expRegion = new ExpansionRegion(p);
+        this.terms = Array.make[Complex](expRegion->here, ((i,j) : Point) => data(i*i + i+j));
     }
 
     public atomic def add(e : Expansion!) {
@@ -45,4 +50,15 @@ public class Expansion {
 		}
         return s.toString();
     }
+
+    /**
+     * TODO this should not be necessary once XTENLANG-787 is resolved
+     * @return the expansion terms, shoehorned into a ValRail
+     */
+    protected static def getData(p : Int, source : Expansion!) : ValRail[Complex] {
+        return ValRail.make[Complex]((p+1)*(p+1), (i : Int) => source.terms(squareFloor(i), (i - squareFloor(i)*squareFloor(i)-squareFloor(i))));
+    }
+
+    /** The nearest square below <code>i</code> */
+    protected static safe def squareFloor(i : Int) = (Math.sqrt(i as Double) as Int);
 }
