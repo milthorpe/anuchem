@@ -171,6 +171,11 @@ public class TwoElectronIntegrals {
 
     private val sq2pi = Math.pow((2.0/Math.PI), 0.5);
 
+    private val iidx  = Rail.make[Int](8);
+    private val jjdx  = Rail.make[Int](8);
+    private val kkdx  = Rail.make[Int](8);
+    private val lldx  = Rail.make[Int](8);
+    private val validIdx = Rail.make[Boolean](8);
 
     /* Note: M_D  routines mostly taken from Alistair's code, with a few changes. 
        Direct update to GMtarix is based on the code in GMatrix.compute..() */
@@ -402,10 +407,6 @@ public class TwoElectronIntegrals {
               // Console.OUT.println("Computing [ab|cd] ");
 
               // form [ab|cd], and update the GMatrix elements accordingly
-              val iidx  = Rail.make[Int](8);
-              val jjdx  = Rail.make[Int](8);
-              val kkdx  = Rail.make[Int](8);
-              val lldx  = Rail.make[Int](8);
 
               // Console.OUT.println("ang: " + dAng + " " + cAng + " " + bAng + " " + aAng);
               // Console.OUT.println("strt: " + dStrt + " " + cStrt + " " + bStrt + " " + aStrt);
@@ -455,7 +456,6 @@ public class TwoElectronIntegrals {
                                                           bCen, aCen,
                                                           p, gamma1, npint);
 
-                                    val validIdx = Rail.make[Boolean](8, (Int)=>true);
 
                                     // Console.OUT.println("integral : " + ii + ", " + jj + ", " + kk + ", " + ll + " : " + twoEIntVal);
 
@@ -469,6 +469,8 @@ public class TwoElectronIntegrals {
                                     // else this is symmetry unique integral, so need to
                                     // use this value for all 8 combinations
                                     // (if unique)
+
+                                    for(var valIdx:Int=0; valIdx<8; valIdx++) validIdx(valIdx) = true;
 
                                     // filter unique elements
                                     filterUniqueElements(iidx, jjdx, kkdx, lldx, validIdx);
