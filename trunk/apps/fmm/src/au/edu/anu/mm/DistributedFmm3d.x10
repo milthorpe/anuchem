@@ -45,7 +45,8 @@ public class DistributedFmm3d {
 
     // TODO use shared local variable within getEnergy() - 
     // not currently possible due to <a href="http://jira.codehaus.org/browse/XTENLANG-505"/>
-    var fmmEnergy : Double = 0.0;
+    // TODO global var?  does that even make sense?
+    global var fmmEnergy : Double = 0.0;
 
     /**
      * Initialises a fast multipole method electrostatics calculation
