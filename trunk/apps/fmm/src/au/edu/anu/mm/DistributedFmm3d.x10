@@ -193,11 +193,13 @@ public class DistributedFmm3d {
             val thisLevelDist = boxes.dist | thisLevelRegion;
             finish ateach (p in thisLevelDist) {
                 //Console.OUT.println("childIndex = " + childIndex + " childLevel = " + childLevel + " dist " + boxes.dist(childIndex,childLevel));
-                val child = boxes(p) as FmmBox!;
-                if (child != null) {
-                    val parent = child.parent as FmmBox!;
-                    val shift = multipoleTranslations(Point.make([here.id, child.level, (child.gridLoc.x+1)%2, (child.gridLoc.y+1)%2, (child.gridLoc.z+1)%2])) as MultipoleExpansion!;
-                    parent.multipoleExp.translateAndAddMultipole(shift, child.multipoleExp);
+                if (boxes(p) != null) {
+                    val child = boxes(p) as FmmBox!;
+                    at (child.parent.home) {
+                        val parent = child.parent as FmmBox!;
+                        val shift = multipoleTranslations(Point.make([here.id, child.level, (child.gridLoc.x+1)%2, (child.gridLoc.y+1)%2, (child.gridLoc.z+1)%2])) as MultipoleExpansion!;
+                        parent.multipoleExp.translateAndAddMultipole(shift, child.multipoleExp);
+                    }
                 }
             }
         }
