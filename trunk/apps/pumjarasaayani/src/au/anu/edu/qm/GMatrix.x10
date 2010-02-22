@@ -32,6 +32,7 @@ public class GMatrix extends Matrix {
            case 2:
                Console.OUT.println("   GMatrix.computeDirectAsyncOldNoAtomic: " + gMatType);
                computeDirectAsyncOldNoAtomic(twoE, density); 
+               break;
            case 3:
                Console.OUT.println("   GMatrix.computeDirectSerialNew: " + gMatType);
                computeDirectSerialNew(twoE, density); 
