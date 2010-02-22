@@ -51,6 +51,6 @@ public class DFT {
                 }
             }
         }
-        return output;
+        return output as Array[Complex](3)!;
     }
 }

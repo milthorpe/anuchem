@@ -22,9 +22,9 @@ public class PME {
     /** The conjugate reciprocal vectors for each dimension. */
     public val edgeReciprocals : ValRail[Vector3d](3);
 
-	val atoms : ValRail[MMAtom];
+    global val gridRegion : Region(3);
 
-    val gridRegion : Region(3);
+	val atoms : ValRail[MMAtom];
     
     /** The order of B-spline interpolation */
     val splineOrder : Int;
@@ -71,7 +71,8 @@ public class PME {
         this.splineOrder = splineOrder;
         this.beta = beta;
         this.cutoff = cutoff;
-        this.imageTranslations = Array.make[Vector3d]([-1..1,-1..1,-1..1], (p(i,j,k) : Point(3)) => (edges(0).mul(i)).add(edges(1).mul(j)).add(edges(2).mul(k)));
+        val imageTranslationRegion = [-1..1,-1..1,-1..1] as Region(3);
+        this.imageTranslations = Array.make[Vector3d](imageTranslationRegion, (p(i,j,k) : Point(3)) => (edges(0).mul(i)).add(edges(1).mul(j)).add(edges(2).mul(k)));
         Console.OUT.println("PME for " + atoms.length + " particles.");
         Console.OUT.println("Box edges: " + edges + " volume: " + getVolume());
         Console.OUT.println("Grid size: " + gridSize);
@@ -79,6 +80,10 @@ public class PME {
     }
 	
     public def calculateEnergy() : Double {
+        // TODO do we need multi-threaded FFTW, or multiple activities (with FFT) per place?
+        FFTW.fftwInitThreads();
+        FFTW.fftwPlanWithNThreads(Runtime.INIT_THREADS);
+
         finish foreach ((i) in 0..atoms.length-1) {
             var myDirectEnergy : Double = 0.0;
             var myDirectSum : Double = 0.0;
@@ -170,6 +175,7 @@ public class PME {
         val total = directSum + reciprocalEnergy.re + (correctionEnergy + selfEnergy);
         val error = directEnergy - total;
         Console.OUT.println("error = " + error + " relative error = " + Math.abs(error) / Math.abs(total));
+        FFTW.fftwCleanupThreads();
         return directSum + reciprocalEnergy.re + (correctionEnergy + selfEnergy);
     }
 
@@ -177,7 +183,7 @@ public class PME {
      * Calculates the gridded charge array Q as defined in Eq. 4.6,
      * using Cardinal B-spline interpolation.
      */
-    public def getGriddedCharges() : Array[Complex](3)!{self.rect,self.zeroBased} {
+    public def getGriddedCharges() : Array[Complex](3){self.region==gridRegion} {
         val Q = Array.make[Double](gridRegion);
         finish foreach ((i) in 0..atoms.length-1) {
             val atom = atoms(i);

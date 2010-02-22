@@ -4,6 +4,14 @@
 namespace edu {
     namespace mit {
         namespace fftw {
+            int FFTWWrapper::fftwInitThreads() {
+                return fftw_init_threads();
+            }
+
+            void FFTWWrapper::fftwPlanWithNThreads(int nThreads) {
+                fftw_plan_with_nthreads(nThreads);
+            }
+
             FFTW_FFTWPlan FFTWWrapper::fftwPlanDft1d(int N, fftw_complex* input, fftw_complex* output, bool forward) {
                 return fftw_plan_dft_1d(N, input, output, forward?-1:1, FFTW_ESTIMATE);
             }
@@ -18,6 +26,10 @@ namespace edu {
 
             void FFTWWrapper::fftwDestroyPlan(FFTW_FFTWPlan p) {
                 fftw_destroy_plan(p);
+            }
+
+            void FFTWWrapper::fftwCleanupThreads() {
+                fftw_cleanup_threads();
             }
         }
     }
