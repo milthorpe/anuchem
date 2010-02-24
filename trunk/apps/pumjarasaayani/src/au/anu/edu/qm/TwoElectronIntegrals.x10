@@ -28,6 +28,8 @@ public class TwoElectronIntegrals {
     global val npint:Array[Double]{rank==2,self.at(this)};
     global val pcdint:Array[Double]{rank==3,self.at(this)};
 
+    private val maxam:Int, maxam2:Int, maxam4:Int, maxamN:Int, maxam2M:Int, maxam2N:Int, pqdim:Int;
+
     public def this(basisFunctions:BasisFunctions!, molecule:Molecule[QMAtom]!, direct:Boolean) {
         this.basisFunctions = basisFunctions;
         this.molecule = molecule;
@@ -53,20 +55,25 @@ public class TwoElectronIntegrals {
         val shellList = basisFunctions.getShellList();
 
         // allocate scratch memory
-        val maxam  = shellList.getMaximumAngularMomentum()*4;
-        val maxam2 = 2*maxam;
-        val maxam4 = 4*maxam;
-        val maxamN = ((maxam+1)*(maxam+2)/2);
-        val maxam2M  = ((maxam2+1)*(maxam2+2)/2);
-        val maxam2N  = ((maxam2+1)*((maxam2+1)*(maxam2+2)/2));
+        maxam  = shellList.getMaximumAngularMomentum();
+        maxam2 = 2*maxam;
+        maxam4 = 4*maxam;
+        maxamN = ((maxam+1)*(maxam+2)/2);
+        maxam2M  = ((maxam2+1)*(maxam2+2)/2);
+        maxam2N  = ((maxam2+1)*(maxam2M+1));
+        pqdim = maxam2M+1;
+
+        // Console.OUT.println("alloc: " + maxam + " " + maxam2N);
 
 
-        fmt    = Rail.make[Double](maxam+1) as Rail[Double]!;
-        zeroM  = Rail.make[Double](maxam+1) as Rail[Double]!;
-        rM     = Array.make[Double]([0..maxam4, 0..((maxam4+1)*(maxam4+2)/2)]);
-        pqInts = Array.make[Double]([0..(maxam2+1)*(maxam2M+1), 0..(maxam2+1)*(maxam2M+1)]);
+        fmt    = Rail.make[Double](maxam4+1) as Rail[Double]!;
+        zeroM  = Rail.make[Double](maxam4+1) as Rail[Double]!;
+        rM     = Array.make[Double]([0..maxam4+1, 0..((maxam4+1)*(maxam4+2)/2)]);
+        pqInts = Array.make[Double]([0..maxam2N, 0..maxam2N]);
         npint  = Array.make[Double]([0..maxam2+1, 0..maxam2M+1]);
-        pcdint = Array.make[Double]([0..maxamN, 0..maxamN, 0..maxam2N]);
+        pcdint = Array.make[Double]([0..maxamN+1, 0..maxamN+1, 0..maxam2N]);
+
+        // Console.OUT.println("alloc2: " + pcdint.region.size());
     }
 
     public def isDirect() = direct;
@@ -217,39 +224,16 @@ public class TwoElectronIntegrals {
          val angMomCD = c.getMaximumAngularMomentum() + d.getMaximumAngularMomentum();
          val angMomABCD = angMomAB+angMomCD;
 
-         val sham   = shellList.getMaximumAngularMomentum();
-         val maxam  = angMomABCD; // sham+sham+sham+sham; // angMomABCD; 
-         val maxam2 = 2*maxam;
-         val maxam4 = 4*maxam;
-         val maxamN = ((maxam+1)*(maxam+2)/2);
-         val maxam2M  = ((maxam2+1)*(maxam2+2)/2);
-         val maxam2N  = ((maxam2+1)*((maxam2+1)*(maxam2+2)/2));
-         val pqdim = ((maxam2+1)*(maxam2+2)/2);
-
          var i:Int, j:Int, k:Int, l:Int;
          var bb:Int, aa:Int;
          var dd:Int, cc:Int;
 
-         /**
-         // ---------
-         // local allocation overides global
-         val fmt = Rail.make[Double](maxam+1);
-         val zeroM = Rail.make[Double](maxam+1);
-         val rM:Array[Double]{rank==2,self.at(this)} = Array.make[Double]([0..maxam4, 0..((maxam4+1)*(maxam4+2)/2)]);
-         val pqInts:Array[Double]{rank==2,self.at(this)} = Array.make[Double]([0..(maxam2+1)*(maxam2M+1), 0..(maxam2+1)*(maxam2M+1)]);
-         val npint:Array[Double]{rank==2,self.at(this)} = Array.make[Double]([0..maxam2+1, 0..maxam2M+1]);
-         val pcdint:Array[Double]{rank==3,self.at(this)} = Array.make[Double]([0..maxamN, 
-                                                                                0..maxamN, 
-                                                                                0..maxam2N]);
-         // ---------
-         **/
-
          for(val aPrim in aPrims) {
            for(val bPrim in bPrims) {
 
-             for(i=0; i<maxamN; i++) 
-               for(j=0; j<maxamN; j++) 
-                  for(k=0; k<maxam2N; k++) 
+             for(i=0; i<=maxamN+1; i++) 
+               for(j=0; j<=maxamN+1; j++) 
+                  for(k=0; k<=maxam2N; k++) 
                      pcdint(i,j,k) = 0.0;
 
              val radiusABSquared = a.distanceSquaredFrom(b); 
@@ -326,7 +310,7 @@ public class TwoElectronIntegrals {
                        val lp = powers.getL();
                        val mp = powers.getM();
                        val np = powers.getN();
-                       rM(i,j) = mdRecurse(r, zeroM, lp, mp, np, 0);
+                       rM(i,j) = mdRecurse(r, zeroM, lp, mp, np, 0);  // can use vrr() instead
                        // Console.OUT.println(rM(i,j));
                     }
                  }
@@ -374,9 +358,11 @@ public class TwoElectronIntegrals {
                  for(i=0; i<=angMomAB; i++) {
                    for(var pp:Int = 0; pp < ((i+1)*(i+2)/2); pp++) {
 
-                     for (k=0; k<=maxam2; k++)
-                       for (l=0; l<=maxam2M; l++)
+                     for (k=0; k<=maxam2; k++) {
+                       for (l=0; l<=maxam2M; l++) {
                           npint(k,l) = pqInts(i*pqdim+pp, k*pqdim+l);
+                       } 
+                     }
 
                      val shellD = shellList.getPowers(dAng);
                      
@@ -393,10 +379,13 @@ public class TwoElectronIntegrals {
                            val mq = powersC.getM();
                            val nq = powersC.getN();
 
+                           // Console.OUT.println("md: [" + maxam + "] " + dd + " " + cc + " " + (i*pqdim+pp));
+
                            pcdint(dd,cc,i*pqdim+pp) += mdr1(lp, mp, np, lq, mq, nq, 0, 0, 0,
                                                             dCen, cCen,
-                                                            q, gamma2, npint);
-                           // Console.OUT.println(pcdint(dd,cc,i*pqdim+pp));
+                                                            q, gamma2, npint);   // can use hrr() instead
+
+                           // Console.OUT.println("md-done: " + dd + " " + cc + " " + i*pqdim+pp);
                         }
                      }
                    }
@@ -454,7 +443,7 @@ public class TwoElectronIntegrals {
                                 if (iijj >= kkll) {                                   
                                     val twoEIntVal = mdr1(lp, mp, np, lq, mq, nq, 0, 0, 0,
                                                           bCen, aCen,
-                                                          p, gamma1, npint);
+                                                          p, gamma1, npint);  // can use hrr instead
 
 
                                     // Console.OUT.println("integral : " + ii + ", " + jj + ", " + kk + ", " + ll + " : " + twoEIntVal);
@@ -837,11 +826,12 @@ public class TwoElectronIntegrals {
                    p.k, a.k, b.k, q.k, c.k, d.k,
                    gamma1, gamma2, delta);
 
-        var sum:Double = 0.0;
-        var i:Int, j:Int, k:Int;
         val nbx = bx.length;
         val nby = by.length;
         val nbz = bz.length;
+
+        var sum:Double = 0.0;
+        var i:Int, j:Int, k:Int;
         val maxam = nbx+nby+nbz;
         val fmt = Rail.make[Double](maxam+1);
 
