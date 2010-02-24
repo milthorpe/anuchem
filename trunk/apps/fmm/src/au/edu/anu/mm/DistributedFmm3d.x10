@@ -157,7 +157,7 @@ public class DistributedFmm3d {
      */
     def multipoleLowestLevel() {
         finish {
-            foreach ((i) in 0..atoms.length-1) {
+            for ((i) in 0..atoms.length-1) {
                 val atom = atoms(i);
                 val boxLocation = getLowestLevelBoxLocation(atom);
                 val boxIndex = FmmBox.getBoxIndex(boxLocation, numLevels);
@@ -191,15 +191,19 @@ public class DistributedFmm3d {
         for (var level: Int = numLevels; level > 2; level--) {
             val thisLevelRegion : Region(2) = [0..((Math.pow(8,level) as Int)-1),level..level];
             val thisLevelDist = boxes.dist | thisLevelRegion;
-            finish ateach (p in thisLevelDist) {
-                //Console.OUT.println("childIndex = " + childIndex + " childLevel = " + childLevel + " dist " + boxes.dist(childIndex,childLevel));
+            //finish ateach (p in thisLevelDist) {
+            for (p in thisLevelDist) {
+                at (boxes.dist(p)) {
+                //Console.OUT.println(p + " dist " + boxes.dist(p));
                 if (boxes(p) != null) {
                     val child = boxes(p) as FmmBox!;
+                    val childExp = child.multipoleExp;
                     at (child.parent.home) {
                         val parent = child.parent as FmmBox!;
                         val shift = multipoleTranslations(Point.make([here.id, child.level, (child.gridLoc.x+1)%2, (child.gridLoc.y+1)%2, (child.gridLoc.z+1)%2])) as MultipoleExpansion!;
-                        parent.multipoleExp.translateAndAddMultipole(shift, child.multipoleExp);
+                        parent.multipoleExp.translateAndAddMultipole(shift, childExp);
                     }
+                }
                 }
             }
         }
