@@ -25,13 +25,13 @@ public class Molecule[T]{T <: Atom} {
         this.name = name;
     }
 
-    public def getName() : String = this.name;
-    public def addAtom(atm:T{self.at(this)})  : void { atomList.add(atm); }
-    public def getAtom(index:Int) : T{self.at(this)} = atomList.get(index) as T{self.at(this)};
-    public def getAtoms() : ArrayList[T{self.at(this)}]{self.at(this)} = atomList;
-    public def getNumberOfAtoms() : Int = atomList.size();
+    public global def getName() : String = this.name;
+    public global def addAtom(atm:T{self.at(this)})  : void { atomList.add(atm); }
+    public global def getAtom(index:Int) : T{self.at(this)} = atomList.get(index) as T{self.at(this)};
+    public global def getAtoms() : ArrayList[T{self.at(this)}]{self.at(this)} = atomList;
+    public global def getNumberOfAtoms() : Int = atomList.size();
 
-    public def getNumberOfElectrons() : int {
+    public global def getNumberOfElectrons() : int {
        val ai = AtomInfo.getInstance();
        var ne:Int = 0;
 

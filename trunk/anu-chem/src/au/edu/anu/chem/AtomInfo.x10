@@ -67,6 +67,6 @@ public class AtomInfo {
         return _theInstance;
     }
 
-    public def getAtomicNumber(atm:Atom{self.at(this)}) = atomicNumbers.getOrElse(atm.symbol, -1);
+    public global def getAtomicNumber(atm:Atom{self.at(this)}) = atomicNumbers.getOrElse(atm.symbol, -1);
 }
 
