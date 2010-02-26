@@ -310,7 +310,7 @@ public class TwoElectronIntegrals {
                        val lp = powers.getL();
                        val mp = powers.getM();
                        val np = powers.getN();
-                       rM(i,j) = mdRecurse(r, zeroM, lp, mp, np, 0);  // can use vrr() instead
+                       rM(i,j) = mdRecurse(r, lp, mp, np, 0);  // can use vrr() instead
                        // Console.OUT.println(rM(i,j));
                     }
                  }
@@ -383,7 +383,7 @@ public class TwoElectronIntegrals {
 
                            pcdint(dd,cc,i*pqdim+pp) += mdr1(lp, mp, np, lq, mq, nq, 0, 0, 0,
                                                             dCen, cCen,
-                                                            q, gamma2, npint);   // can use hrr() instead
+                                                            q, gamma2);   // can use hrr() instead
 
                            // Console.OUT.println("md-done: " + dd + " " + cc + " " + i*pqdim+pp);
                         }
@@ -443,7 +443,7 @@ public class TwoElectronIntegrals {
                                 if (iijj >= kkll) {                                   
                                     val twoEIntVal = mdr1(lp, mp, np, lq, mq, nq, 0, 0, 0,
                                                           bCen, aCen,
-                                                          p, gamma1, npint);  // can use hrr instead
+                                                          p, gamma1);  // can use hrr instead
 
 
                                     // Console.OUT.println("integral : " + ii + ", " + jj + ", " + kk + ", " + ll + " : " + twoEIntVal);
@@ -520,22 +520,21 @@ public class TwoElectronIntegrals {
     }
 
     protected def mdRecurse(r:Point3d, 
-                            zeroM:Rail[Double]!,
                             i:Int, j:Int, k:Int, m:Int) : Double {
          var res:Double;
 
          if (i >= 2) {
-           res = r.i*mdRecurse(r,zeroM,i-1,j,k,m+1)-(i-1)*mdRecurse(r,zeroM,i-2,j,k,m+1);
+           res = r.i*mdRecurse(r,i-1,j,k,m+1)-(i-1)*mdRecurse(r,i-2,j,k,m+1);
          } else if (j >= 2 ) {
-           res = r.j*mdRecurse(r,zeroM,i,j-1,k,m+1)-(j-1)*mdRecurse(r,zeroM,i,j-2,k,m+1);
+           res = r.j*mdRecurse(r,i,j-1,k,m+1)-(j-1)*mdRecurse(r,i,j-2,k,m+1);
          } else if (k >= 2 ) {
-           res = r.k*mdRecurse(r,zeroM,i,j,k-1,m+1)-(k-1)*mdRecurse(r,zeroM,i,j,k-2,m+1);
+           res = r.k*mdRecurse(r,i,j,k-1,m+1)-(k-1)*mdRecurse(r,i,j,k-2,m+1);
          } else if (i == 1 ) {
-           res = r.i*mdRecurse(r,zeroM,i-1,j,k,m+1);
+           res = r.i*mdRecurse(r,i-1,j,k,m+1);
          } else if (j == 1 ) {
-           res = r.j*mdRecurse(r,zeroM,i,j-1,k,m+1);
+           res = r.j*mdRecurse(r,i,j-1,k,m+1);
          } else if (k == 1 ) {
-           res = r.k*mdRecurse(r,zeroM,i,j,k-1,m+1);
+           res = r.k*mdRecurse(r,i,j,k-1,m+1);
          } else {
            res = zeroM(m);
          } // end if
@@ -544,46 +543,44 @@ public class TwoElectronIntegrals {
     }
 
     protected def mdr1(xa:Int, ya:Int, za:Int, xb:Int, yb:Int, zb:Int, xp:Int, yp:Int, zp:Int,
-                          coorda:Point3d, coordb:Point3d, coordp:Point3d, zeta:Double,
-                          pint:Array[Double]{rank==2, self.at(this)}) : Double {
+                          coorda:Point3d, coordb:Point3d, coordp:Point3d, zeta:Double) : Double {
          var res:Double;
          var ptot:Int, idx:Int;
 
          if (xa != 0 ){
-           res =   mdr1(xa-1, ya, za, xb, yb, zb, xp-1, yp, zp, coorda, coordb, coordp, zeta, pint)*xp
-                    + mdr1(xa-1, ya, za, xb, yb, zb, xp  , yp, zp, coorda, coordb, coordp, zeta, pint)*(coordp.i-coorda.i)
-                    + mdr1(xa-1, ya, za, xb, yb, zb, xp+1, yp, zp, coorda, coordb, coordp, zeta, pint)/(2.0*zeta);
+           res =   mdr1(xa-1, ya, za, xb, yb, zb, xp-1, yp, zp, coorda, coordb, coordp, zeta)*xp
+                    + mdr1(xa-1, ya, za, xb, yb, zb, xp  , yp, zp, coorda, coordb, coordp, zeta)*(coordp.i-coorda.i)
+                    + mdr1(xa-1, ya, za, xb, yb, zb, xp+1, yp, zp, coorda, coordb, coordp, zeta)/(2.0*zeta);
          } else if (ya != 0) {
-           res =   mdr1(xa, ya-1, za, xb, yb, zb, xp, yp-1, zp, coorda, coordb, coordp, zeta, pint)*yp
-                    + mdr1(xa, ya-1, za, xb, yb, zb, xp, yp  , zp, coorda, coordb, coordp, zeta, pint)*(coordp.j-coorda.j)
-                    + mdr1(xa, ya-1, za, xb, yb, zb, xp, yp+1, zp, coorda, coordb, coordp, zeta, pint)/(2.0*zeta);
+           res =   mdr1(xa, ya-1, za, xb, yb, zb, xp, yp-1, zp, coorda, coordb, coordp, zeta)*yp
+                    + mdr1(xa, ya-1, za, xb, yb, zb, xp, yp  , zp, coorda, coordb, coordp, zeta)*(coordp.j-coorda.j)
+                    + mdr1(xa, ya-1, za, xb, yb, zb, xp, yp+1, zp, coorda, coordb, coordp, zeta)/(2.0*zeta);
          } else if (za != 0) {
-           res =   mdr1(xa, ya, za-1, xb, yb, zb, xp, yp, zp-1, coorda, coordb, coordp, zeta, pint)*zp
-                    + mdr1(xa, ya, za-1, xb, yb, zb, xp, yp, zp  , coorda, coordb, coordp, zeta, pint)*(coordp.k-coorda.k)
-                    + mdr1(xa, ya, za-1, xb, yb, zb, xp, yp, zp+1, coorda, coordb, coordp, zeta, pint)/(2.0*zeta);
+           res =   mdr1(xa, ya, za-1, xb, yb, zb, xp, yp, zp-1, coorda, coordb, coordp, zeta)*zp
+                    + mdr1(xa, ya, za-1, xb, yb, zb, xp, yp, zp  , coorda, coordb, coordp, zeta)*(coordp.k-coorda.k)
+                    + mdr1(xa, ya, za-1, xb, yb, zb, xp, yp, zp+1, coorda, coordb, coordp, zeta)/(2.0*zeta);
          } else if (xb != 0 ) {
-           res =   mdr1(xa, ya, za, xb-1, yb, zb, xp-1, yp, zp, coorda, coordb, coordp, zeta, pint)*xp
-                    + mdr1(xa, ya, za, xb-1, yb, zb, xp  , yp, zp, coorda, coordb, coordp, zeta, pint)*(coordp.i-coordb.i)
-                    + mdr1(xa, ya, za, xb-1, yb, zb, xp+1, yp, zp, coorda, coordb, coordp, zeta, pint)/(2.0*zeta);
+           res =   mdr1(xa, ya, za, xb-1, yb, zb, xp-1, yp, zp, coorda, coordb, coordp, zeta)*xp
+                    + mdr1(xa, ya, za, xb-1, yb, zb, xp  , yp, zp, coorda, coordb, coordp, zeta)*(coordp.i-coordb.i)
+                    + mdr1(xa, ya, za, xb-1, yb, zb, xp+1, yp, zp, coorda, coordb, coordp, zeta)/(2.0*zeta);
          } else if (yb != 0) {
-           res =   mdr1(xa, ya, za, xb, yb-1, zb, xp, yp-1, zp, coorda, coordb, coordp, zeta, pint)*yp
-                    + mdr1(xa, ya, za, xb, yb-1, zb, xp, yp  , zp, coorda, coordb, coordp, zeta, pint)*(coordp.j-coordb.j)
-                    + mdr1(xa, ya, za, xb, yb-1, zb, xp, yp+1, zp, coorda, coordb, coordp, zeta, pint)/(2.0*zeta);
+           res =   mdr1(xa, ya, za, xb, yb-1, zb, xp, yp-1, zp, coorda, coordb, coordp, zeta)*yp
+                    + mdr1(xa, ya, za, xb, yb-1, zb, xp, yp  , zp, coorda, coordb, coordp, zeta)*(coordp.j-coordb.j)
+                    + mdr1(xa, ya, za, xb, yb-1, zb, xp, yp+1, zp, coorda, coordb, coordp, zeta)/(2.0*zeta);
          } else if (zb != 0) {
-           res =   mdr1(xa, ya, za, xb, yb, zb-1, xp, yp, zp-1, coorda, coordb, coordp, zeta, pint)*zp
-                    + mdr1(xa, ya, za, xb, yb, zb-1, xp, yp, zp  , coorda, coordb, coordp, zeta, pint)*(coordp.k-coordb.k)
-                    + mdr1(xa, ya, za, xb, yb, zb-1, xp, yp, zp+1, coorda, coordb, coordp, zeta, pint)/(2.0*zeta);
+           res =   mdr1(xa, ya, za, xb, yb, zb-1, xp, yp, zp-1, coorda, coordb, coordp, zeta)*zp
+                    + mdr1(xa, ya, za, xb, yb, zb-1, xp, yp, zp  , coorda, coordb, coordp, zeta)*(coordp.k-coordb.k)
+                    + mdr1(xa, ya, za, xb, yb, zb-1, xp, yp, zp+1, coorda, coordb, coordp, zeta)/(2.0*zeta);
          } else if ( xp < 0 || yp < 0 || zp < 0) {
            res = 1.0;
          } else {
            ptot=xp+yp+zp;
            idx = xp*(2*(xp+yp+zp)-xp+3)/2+yp;
-           res = pint(ptot, idx);
+           res = npint(ptot, idx);
          } // end if
 
          return res;
     }
-
 
     protected def compute2E() : void {
         val bfs = basisFunctions.getBasisFunctions();

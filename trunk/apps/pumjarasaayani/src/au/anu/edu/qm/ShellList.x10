@@ -23,7 +23,7 @@ public class ShellList {
     }
 
     public def initPowerList() : void {
-        val maxam4 = (maxam*4)+3;
+        val maxam4 = (maxam*4)+2;
   
         val pList = PowerList.getInstance() as PowerList{self.at(this)};
         for(var i:Int=0; i<=maxam4; i++)
