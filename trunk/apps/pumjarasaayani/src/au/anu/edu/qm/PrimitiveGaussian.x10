@@ -44,13 +44,13 @@ public class PrimitiveGaussian {
         val radiusABSquared = origin.distanceSquared(pg.origin);
         val prod = mul(pg);
 
-        val wx = overlap1D(power.getL(), pg.power.getL(),
+        val wx = overlap1D(power.l, pg.power.l,
                             prod.origin.i - origin.i,
                             prod.origin.i - pg.origin.i, prod.exponent);
-        val wy = overlap1D(power.getM(), pg.power.getM(),
+        val wy = overlap1D(power.m, pg.power.m,
                             prod.origin.j - origin.j,
                             prod.origin.j - pg.origin.j, prod.exponent);
-        val wz = overlap1D(power.getN(), pg.power.getN(),
+        val wz = overlap1D(power.n, pg.power.n,
                             prod.origin.k - origin.k,
                             prod.origin.k - pg.origin.k, prod.exponent);
 
@@ -62,12 +62,12 @@ public class PrimitiveGaussian {
 
     public def mul(pg:PrimitiveGaussian{self.at(this)}) : PrimitiveGaussian{self.at(this)} {
         val gamma = exponent + pg.exponent;
-        val newOrigin = new Point3d(
+        val newOrigin = Point3d(
                          (exponent * origin.i + pg.exponent * pg.origin.i) / gamma,
                          (exponent * origin.j + pg.exponent * pg.origin.j) / gamma,
                          (exponent * origin.k + pg.exponent * pg.origin.k) / gamma
                         );
-        val pgres:PrimitiveGaussian{self.at(this)} = new PrimitiveGaussian(newOrigin, new Power(0,0,0), gamma, 0.0);
+        val pgres:PrimitiveGaussian{self.at(this)} = new PrimitiveGaussian(newOrigin, Power(0,0,0), gamma, 0.0);
 
         return pgres;
     }
@@ -92,9 +92,9 @@ public class PrimitiveGaussian {
     val PI_RAISE_TO_1DOT5 = Math.pow(Math.PI, 1.5);
 
     public def normalize() : void {
-       val l = power.getL(); 
-       val m = power.getM();
-       val n = power.getN();       
+       val l = power.l; 
+       val m = power.m;
+       val n = power.n;       
         
        normalization = Math.sqrt(Math.pow(2, 2 * (l + m + n) + 1.5) *
                                    Math.pow(exponent, l + m + n + 1.5) /
@@ -110,27 +110,27 @@ public class PrimitiveGaussian {
      * <i> Taken from THO eq. 2.12 <i>
      */
     public def kinetic(pg:PrimitiveGaussian{self.at(this)}) : Double {
-        val l1 = power.getL();
-        val m1 = power.getM();
-        val n1 = power.getN();
-        val l2 = pg.power.getL();
-        val m2 = pg.power.getM();
-        val n2 = pg.power.getN();
+        val l1 = power.l;
+        val m1 = power.m;
+        val n1 = power.n;
+        val l2 = pg.power.l;
+        val m2 = pg.power.m;
+        val n2 = pg.power.n;
 
         var term:Double = pg.exponent * (2 * (l2+m2+n2) + 3) * ovrlp(pg);
 
         val origin = pg.origin;
 
-        val p1 = new PrimitiveGaussian(origin, new Power(l2+2, m2, n2), pg.exponent, pg.coefficient);
-        val p2 = new PrimitiveGaussian(origin, new Power(l2, m2+2, n2), pg.exponent, pg.coefficient);
-        val p3 = new PrimitiveGaussian(origin, new Power(l2, m2, n2+2), pg.exponent, pg.coefficient);
+        val p1 = new PrimitiveGaussian(origin, Power(l2+2, m2, n2), pg.exponent, pg.coefficient);
+        val p2 = new PrimitiveGaussian(origin, Power(l2, m2+2, n2), pg.exponent, pg.coefficient);
+        val p3 = new PrimitiveGaussian(origin, Power(l2, m2, n2+2), pg.exponent, pg.coefficient);
 
         term += -2.0 * Math.pow(pg.exponent, 2.0)
                      * (ovrlp(p1) + ovrlp(p2) + ovrlp(p3));
 
-        val p4 = new PrimitiveGaussian(origin, new Power(l2-2, m2, n2), pg.exponent, pg.coefficient);
-        val p5 = new PrimitiveGaussian(origin, new Power(l2, m2-2, n2), pg.exponent, pg.coefficient);
-        val p6 = new PrimitiveGaussian(origin, new Power(l2, m2, n2-2), pg.exponent, pg.coefficient);
+        val p4 = new PrimitiveGaussian(origin, Power(l2-2, m2, n2), pg.exponent, pg.coefficient);
+        val p5 = new PrimitiveGaussian(origin, Power(l2, m2-2, n2), pg.exponent, pg.coefficient);
+        val p6 = new PrimitiveGaussian(origin, Power(l2, m2, n2-2), pg.exponent, pg.coefficient);
 
         term += -0.5 * ((l2 * (l2 - 1)) * ovrlp(p4)
                         + (m2 * (m2 - 1)) * ovrlp(p5)
@@ -150,17 +150,17 @@ public class PrimitiveGaussian {
         val rCPSquared = center.distanceSquared(prod.origin);
         var nterm:Double = 0.0;
 
-        val ax = constructAArray(power.getL(), pg.power.getL(),
+        val ax = constructAArray(power.l, pg.power.l,
                                  prod.origin.i - origin.i,
                                  prod.origin.i - pg.origin.i,
                                  prod.origin.i - center.i, prod.exponent);
 
-        val ay = constructAArray(power.getM(), pg.power.getM(),
+        val ay = constructAArray(power.m, pg.power.m,
                                  prod.origin.j - origin.j,
                                  prod.origin.j - pg.origin.j,
                                  prod.origin.j - center.j, prod.exponent);
 
-        val az = constructAArray(power.getN(), pg.power.getN(),
+        val az = constructAArray(power.n, pg.power.n,
                                  prod.origin.k - origin.k,
                                  prod.origin.k - pg.origin.k,
                                  prod.origin.k - center.k, prod.exponent);

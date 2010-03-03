@@ -22,7 +22,7 @@ public struct Vector3d(i : Double, j : Double, k : Double) implements Tuple3d {
     public global safe def toString() = ("(" + i + "i + " + j + "j + " + k + "k)");
     
     public global safe def add(b: Tuple3d) : Tuple3d {
-        return Vector3d(i + b.i(), j + b.j(), k + b.k()) as Tuple3d;
+        return Vector3d(i + b.i(), j + b.j(), k + b.k());
     }
 
     public global safe def add(b: Vector3d) : Vector3d {
@@ -30,7 +30,7 @@ public struct Vector3d(i : Double, j : Double, k : Double) implements Tuple3d {
     }
 
     public global safe def sub(b: Tuple3d) : Tuple3d {
-        return Vector3d(i - b.i(), j - b.j(), k - b.k()) as Tuple3d;
+        return Vector3d(i - b.i(), j - b.j(), k - b.k());
     }
 
     public global safe def dot(vec : Vector3d) : Double {

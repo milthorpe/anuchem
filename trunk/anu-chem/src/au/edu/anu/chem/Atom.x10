@@ -13,7 +13,7 @@ import x10x.vector.Point3d;
 
 public class Atom { 
     /** The location of the atomic nucleus. */
-    public global var centre : Point3d;
+    public var centre : Point3d;
 
     /** The symbol for this atom species. */
     public global val symbol : String;
@@ -29,7 +29,7 @@ public class Atom {
     }
 
     public global safe def toString() : String {
-        return symbol + " " + centre.i + " " + centre.j + " " + centre.k;
+        return at(this){symbol + " " + centre.i + " " + centre.j + " " + centre.k};
     }
 }
 

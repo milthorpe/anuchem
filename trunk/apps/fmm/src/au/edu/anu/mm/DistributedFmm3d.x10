@@ -35,7 +35,7 @@ public class DistributedFmm3d {
     /** All boxes in the octree division of space. */
     global val boxes : Array[FmmBox](2);
 
-    val atoms : ValRail[MMAtom];
+    val atoms : ValRail[MMAtom!];
 
     /** A cache of transformations from multipole to local at the same level. */
     global val multipoleTransforms : Array[LocalExpansion](5);
@@ -46,7 +46,7 @@ public class DistributedFmm3d {
     // TODO use shared local variable within getEnergy() - 
     // not currently possible due to <a href="http://jira.codehaus.org/browse/XTENLANG-505"/>
     // TODO global var?  does that even make sense?
-    global var fmmEnergy : Double = 0.0;
+    var fmmEnergy : Double = 0.0;
 
     /**
      * Initialises a fast multipole method electrostatics calculation
@@ -63,7 +63,7 @@ public class DistributedFmm3d {
                     ws : Int,
                     topLeftFront : Point3d,
                     size : Double,
-                    atoms : ValRail[MMAtom]) {
+                    atoms : ValRail[MMAtom!]) {
         val numLevels = Math.max(2, (Math.log(atoms.length / density) / Math.log(8.0) + 1.0 as Int));
         this.numLevels = numLevels;
 
@@ -314,7 +314,8 @@ public class DistributedFmm3d {
             if (box1 != null) {
                 shared var thisBoxEnergy : Double = 0.0;
                 //Console.OUT.println("getEnergy: box(" + boxIndex1 + "," + numLevels + ")");
-                for ((atomIndex1) in 0..box1.atoms.length()-1) {
+                val length = box1.atoms.length();
+                for ((atomIndex1) in 0..length-1) {
                     // TODO should be able to use a shared var for atom energy
                     val atom1 = box1.atoms(atomIndex1) as MMAtom!;
                     val box1Centre = atom1.centre.sub(box1.getCentre(size));
@@ -347,14 +348,14 @@ public class DistributedFmm3d {
                     }
                 }
                 val thisBoxEnergyFinal = thisBoxEnergy;
-                async (this.home) {atomic {fmmEnergy += thisBoxEnergyFinal;}}
+                async (this) {atomic {fmmEnergy += thisBoxEnergyFinal;}}
             }
         }
 
         return fmmEnergy;
     }
 
-    private global def getLowestLevelBoxLocation(atom : MMAtom) : GridLocation {
+    private global def getLowestLevelBoxLocation(atom : MMAtom!) : GridLocation {
         return  GridLocation(atom.centre.i / size * dimLowestLevelBoxes + dimLowestLevelBoxes / 2 as Int, atom.centre.j / size * dimLowestLevelBoxes + dimLowestLevelBoxes / 2 as Int, atom.centre.k / size * dimLowestLevelBoxes + dimLowestLevelBoxes / 2 as Int);
         /*index : ValRail[Int]{length==3} = [ atom.centre.i / size * dimLowestLevelBoxes + dimLowestLevelBoxes / 2 as Int, atom.centre.j / size * dimLowestLevelBoxes + dimLowestLevelBoxes / 2 as Int, atom.centre.k / size * dimLowestLevelBoxes + dimLowestLevelBoxes / 2 as Int ];
         return index;*/

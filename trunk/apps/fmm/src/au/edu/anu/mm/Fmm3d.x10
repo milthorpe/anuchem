@@ -35,7 +35,7 @@ public class Fmm3d {
     /** All boxes in the octree division of space. */
     val boxes : Array[FmmBox!](2);
 
-    val atoms : ValRail[MMAtom];
+    val atoms : ValRail[MMAtom!];
 
     /** A cache of transformations from multipole to local at the same level. */
     val multipoleTransforms : Array[LocalExpansion!](4);
@@ -58,7 +58,7 @@ public class Fmm3d {
                     ws : Int,
                     topLeftFront : Point3d,
                     size : Double,
-                    atoms : ValRail[MMAtom]) {
+                    atoms : ValRail[MMAtom!]) {
         val numLevels = Math.max(2, (Math.log(atoms.length / density) / Math.log(8.0) + 1.0 as Int));
         this.numLevels = numLevels;
         var nBox : Int = 0;
@@ -151,8 +151,8 @@ public class Fmm3d {
             val leafBox = box as FmmLeafBox!;
             leafBox.atoms.add(atom);
             //Console.OUT.println("atoms(" + i + ") => box(" + boxIndex + ")");
-            val boxCentre = leafBox.getCentre(size).sub(atom.centre);
-            leafBox.multipoleExp.add(MultipoleExpansion.getOlm(atom.charge, boxCentre as Tuple3d, numTerms));
+            val boxCentre = leafBox.getCentre(size).sub(at(atom){atom.centre});
+            leafBox.multipoleExp.add(MultipoleExpansion.getOlm(at(atom){atom.charge}, boxCentre as Tuple3d, numTerms));
         }
     }
 
@@ -270,7 +270,7 @@ public class Fmm3d {
             val box1 = boxes(boxIndex1, numLevels) as FmmLeafBox!;
             if (box1 != null) {
                 for ((atomIndex1) in 0..box1.atoms.length()-1) {
-                    val atom1 = box1.atoms(atomIndex1);
+                    val atom1 = box1.atoms(atomIndex1) as MMAtom!;
                     val box1Centre = atom1.centre.sub(box1.getCentre(size));
                     val farFieldEnergy = box1.localExp.getPotential(atom1.charge, box1Centre as Tuple3d);
                     fmmEnergy += farFieldEnergy;
@@ -302,12 +302,8 @@ public class Fmm3d {
         return fmmEnergy;
     }
 
-    private def getLowestLevelBoxLocation(atom : MMAtom) : GridLocation {
+    private def getLowestLevelBoxLocation(atom : MMAtom!) : GridLocation {
         return GridLocation(atom.centre.i / size * dimLowestLevelBoxes + dimLowestLevelBoxes / 2 as Int, atom.centre.j / size * dimLowestLevelBoxes + dimLowestLevelBoxes / 2 as Int, atom.centre.k / size * dimLowestLevelBoxes + dimLowestLevelBoxes / 2 as Int);
-        /*
-        index : ValRail[Int](3) = [ atom.centre.i / size * dimLowestLevelBoxes + dimLowestLevelBoxes / 2 as Int, atom.centre.j / size * dimLowestLevelBoxes + dimLowestLevelBoxes / 2 as Int, atom.centre.k / size * dimLowestLevelBoxes + dimLowestLevelBoxes / 2 as Int ];
-        return index;
-        */
     }
 
     private def getParentBox(childIndex : Int, childLevel : Int) : FmmBox {

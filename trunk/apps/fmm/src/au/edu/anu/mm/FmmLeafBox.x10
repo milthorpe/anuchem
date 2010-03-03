@@ -12,7 +12,7 @@ import au.edu.anu.chem.mm.MMAtom;
  * @author milthorpe
  */
 public class FmmLeafBox extends FmmBox {
-    public val atoms = new GrowableRail[MMAtom]();
+    public val atoms : GrowableRail[MMAtom]{self.at(this)} = new GrowableRail[MMAtom]();
 
     public def this(level : Int, gridLoc : GridLocation, numTerms : Int, parent : FmmBox) { 
         super(level, gridLoc, numTerms, parent);

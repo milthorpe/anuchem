@@ -35,14 +35,15 @@ public class TestDistributedFmm3d {
 
         
         /* Assign particles to random locations within a -1..1 3D box, with unit charge (1/3 are negative). */
-        val atoms = ValRail.make[MMAtom](numParticles, (i : Int) => new MMAtom(new Point3d(randomUnit(), randomUnit(), randomUnit()), i%3==4?1:-1));
+        val atoms = ValRail.make[MMAtom!](numParticles, (i : Int) => new MMAtom(new Point3d(randomUnit(), randomUnit(), randomUnit()), i%3==4?1:-1));
         val topLeftFront = new Point3d(-1.0, -1.0, -1.0);
         val energy = new DistributedFmm3d(density, numTerms, wellSpaced, topLeftFront, 2.0, atoms).calculateEnergy();
         Console.OUT.println("energy = " + energy);
     }
 
     static def randomUnit() : Double {
-        return (R.nextDouble() - 0.5) * 2.0;
+        val dub = at(R){R.nextDouble()};
+        return (dub - 0.5) * 2.0;
     }
 }
 

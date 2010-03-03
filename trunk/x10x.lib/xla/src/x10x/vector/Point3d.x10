@@ -16,11 +16,11 @@ public struct Point3d(i : Double, j : Double, k : Double) implements Tuple3d {
     public global safe def toString() = ("(" + i + "i + " + j + "j + " + k + "k)");
     
     public global safe def add(b: Tuple3d) : Tuple3d {
-        return Point3d(i + b.i(), j + b.j(), k + b.k()) as Tuple3d;
+        return Point3d(i + b.i(), j + b.j(), k + b.k());
     }
 
     public global safe def sub(b: Tuple3d) : Tuple3d {
-        return Point3d(i - b.i(), j - b.j(), k - b.k()) as Tuple3d;
+        return Point3d(i - b.i(), j - b.j(), k - b.k());
     }
 
     // TODO - specific sub-typed methods should not be required

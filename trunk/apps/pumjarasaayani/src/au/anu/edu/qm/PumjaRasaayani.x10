@@ -48,8 +48,8 @@ public class PumjaRasaayani {
         mol.make("h2");
 
         // H2, 1 a.u. apart
-        mol.addAtom(new QMAtom("H", new Point3d(0.0, 0.0, 0.0)));
-        mol.addAtom(new QMAtom("H", new Point3d(1.0, 0.0, 0.0)));
+        mol.addAtom(new QMAtom("H", Point3d(0.0, 0.0, 0.0)));
+        mol.addAtom(new QMAtom("H", Point3d(1.0, 0.0, 0.0)));
 
         // default basis is sto3g
         basisName = "sto3g";

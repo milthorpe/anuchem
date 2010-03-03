@@ -29,9 +29,9 @@ public class MMAtom extends Atom {
      * but transferring all fields to the current place.
      */
     public def this(atom : MMAtom) {
-        super(at (atom.home) {atom.centre});
-        this.charge = at (atom.home) {atom.charge};
-        this.force = at (atom.home) {atom.force};
+        super(at (atom) {atom.centre});
+        this.charge = at (atom) {atom.charge};
+        this.force = at (atom) {atom.force};
     }
 
     public def this(centre : Point3d) { 
@@ -39,7 +39,7 @@ public class MMAtom extends Atom {
     }
 
     public def pairEnergy(atom2 : MMAtom) : Double {
-        return charge * (atom2.charge) / centre.distance(atom2.centre);
+        return charge * (at(atom2){atom2.charge}) / centre.distance(at(atom2){atom2.centre});
     }
 }
 
