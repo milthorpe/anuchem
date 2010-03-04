@@ -10,7 +10,7 @@ import x10x.matrix.Matrix;
  * @author V.Ganesh
  */
 public interface Diagonalizer {
-    public def diagonalize(matrix:Matrix{self.at(this.home)}) : void;
+    public def diagonalize(matrix:Matrix!) : void;
     public def getEigenValues()  : Vector;
     public def getEigenVectors() : Matrix;
 }

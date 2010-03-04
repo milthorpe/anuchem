@@ -9,45 +9,26 @@ import x10x.matrix.Matrix;
  * @author V.Ganesh
  */
 public class Vector { 
-    global var vec:Array[Double]{rank==1}; 
-    global var region:Region{rank==1};
-    global var distribution:Dist{rank==1};
-
-    /**
-     * Empty constructor
-     */
-    public def this() { }
+    global val vec:Array[Double]{rank==1}; 
+    global val region:Region{rank==1};
+    global val distribution:Dist{rank==1};
 
     /**
      * Construct a Vector of dimention N, with default block distribution
      */
-    public static def make(siz:Int) : Vector { 
-        val newVector = new Vector();
-
-        newVector.region       = 0..(siz-1);
-        newVector.distribution = Dist.makeBlock(newVector.region, 0);
-        newVector.vec          = Array.make[Double](newVector.distribution);
-
-        return newVector;
-    }
-
-    /**
-     * Construct a Vector of dimention N, with default block distribution
-     */
-    public static def make(newVector:Vector, siz:Int) : Vector {
-        newVector.region       = 0..(siz-1);
-        newVector.distribution = Dist.makeBlock(newVector.region, 0);
-        newVector.vec          = Array.make[Double](newVector.distribution);
-
-        return newVector;
+    public def this(siz:Int) { 
+        region       = 0..(siz-1);
+        distribution = Dist.makeBlock(region, 0);
+        vec          = Array.make[Double](distribution);
     }
 
     /**
      * Construct a Vector from a Matrix
      */
-    public def make(mat:Matrix{self.at(this)}) : Vector {
-        val N = mat.getRowCount();
-        val newVector = Vector.make(N*N);
+    public def this(mat:Matrix!) {
+        this(mat.getRowCount());
+
+        val N = getSize();
          
         var ii:Int = 0;
         val m = mat.getMatrix();
@@ -55,33 +36,25 @@ public class Vector {
         // TODO : x10 - parallel
         for(var i:Int=0; i<N; i++)
            for(var j:Int=0; j<N; j++)
-              newVector.vec(ii++) =  m(i, j);
-
-        return newVector;
+              vec(ii++) =  m(i, j);
     }
 
     /**
      * Construct a Vector of dimention N, with a custom distribution
      */
-    public static def make(dist:Dist{rank==1}) : Vector {
-        val newVector = new Vector();
-
-        newVector.region       = dist.region;
-        newVector.distribution = dist;
-        newVector.vec          = Array.make[Double](newVector.distribution);
-
-        return newVector;
+    public def this(dist:Dist{rank==1}) {
+        region       = dist.region;
+        distribution = dist;
+        vec          = Array.make[Double](distribution);
     }
 
     /**
      * Construct a Vector of dimention N, with a custom distribution
      */
-    public static def make(newVector:Vector, dist:Dist{rank==1}) : Vector {
-        newVector.region       = dist.region;
-        newVector.distribution = dist;
-        newVector.vec          = Array.make[Double](newVector.distribution);
-
-        return newVector;
+    public def this(newVector:Vector, dist:Dist{rank==1}) {
+        region       = dist.region;
+        distribution = dist;
+        vec          = Array.make[Double](distribution);
     }
 
  
@@ -130,7 +103,7 @@ public class Vector {
      */
     public def add(b:Vector) : Vector {
         val N   = getSize();
-        val res = Vector.make(N);
+        val res = new Vector(N);
 
         finish foreach((i) in vec.region) res.vec(i) = vec(i) + b.vec(i);
 
@@ -142,7 +115,7 @@ public class Vector {
      */
     public def sub(b:Vector) : Vector {
         val N   = getSize();
-        val res = Vector.make(N);
+        val res = new Vector(N);
 
         finish foreach((i) in vec.region) res.vec(i) = vec(i) - b.vec(i);
 
@@ -169,7 +142,7 @@ public class Vector {
         val mag = magnitude();
         val N   = getSize();
         
-        val n = Vector.make(N);
+        val n = new Vector(N);
        
         finish foreach((i) in vec.region) n.vec(i) = vec(i) / mag;
         
@@ -181,7 +154,7 @@ public class Vector {
      */
     public def negate() : Vector {
         val N = getSize();
-        val n = Vector.make(N);
+        val n = new Vector(N);
         
         finish foreach((i) in vec.region) n.vec(i) = -vec(i);
         
@@ -193,7 +166,7 @@ public class Vector {
      */
     public def mul(k:Double) : Vector {        
         val N   = getSize();
-        val res = Vector.make(N);
+        val res = new Vector(N);
         
         finish foreach((i) in vec.region) res.vec(i) = vec(i) * k;
         

@@ -10,28 +10,28 @@ import x10x.matrix.Matrix;
  * @author V.Ganesh
  */
 public class JacobiDiagonalizer {
-    global var eigenValuesVec:Vector{self.at(this)}; 
-    global var eigenVectorsMat:Matrix{self.at(this)};
-    global var eigenValues:Array[Double]{rank==1};
-    global var eigenVectors:Array[Double]{rank==2};
-    global var cos:Double, sin:Double, tau:Double;
+    var eigenValuesVec:Vector!; 
+    var eigenVectorsMat:Matrix!;
+    var eigenValues:Array[Double]{rank==1};
+    var eigenVectors:Array[Double]{rank==2};
+    var cos:Double, sin:Double, tau:Double;
 
     global val maxIterations : Int = 100;
 
     public def this() { }
 
-    public def diagonalize(mat:Matrix{self.at(this)}) : void {
+    public def diagonalize(mat:Matrix!) : void {
        val matrix = mat.getMatrix();
        val n  = mat.getRowCount();
        val n1 = n-1;
 
-       eigenVectorsMat = Matrix.make(Dist.make([0..n1,0..n1])) as Matrix{self.at(this)};
+       eigenVectorsMat = new Matrix(Dist.make([0..n1,0..n1])) as Matrix!;
        eigenVectorsMat.makeIdentity();
 
        eigenVectors = eigenVectorsMat.getMatrix();
 
        // clone the matrix (make it single place), do not tamper the actual matrix
-       val aMat:Matrix{self.at(this)} = Matrix.make(Dist.make([0..n1,0..n1])) as Matrix{self.at(this)};
+       val aMat = new Matrix(Dist.make([0..n1,0..n1])) as Matrix!;
        val a = aMat.getMatrix();
 
        finish foreach(plc in matrix.dist.places()) { 
@@ -40,16 +40,16 @@ public class JacobiDiagonalizer {
              }
        }
 
-       eigenValuesVec = Vector.make(Dist.make([0..n1])) as Vector{self.at(this)}; 
+       eigenValuesVec = new Vector(Dist.make([0..n1])) as Vector!; 
        eigenValues = eigenValuesVec.getVector();
       
-       val bVec:Vector{self.at(this)} = Vector.make(Dist.make([0..n1])) as Vector{self.at(this)};
-       val zVec:Vector{self.at(this)} = Vector.make(Dist.make([0..n1])) as Vector{self.at(this)};
+       val bVec = new Vector(Dist.make([0..n1])) as Vector!;
+       val zVec = new Vector(Dist.make([0..n1])) as Vector!;
        val b = bVec.getVector();
        val z = zVec.getVector();
 
        // do diagonalization at Place.FIRST_PLACE
-       finish ateach(val(i,j) in a.dist) {
+       finish foreach(val(i,j) in a.region) {
            if (i == j) { 
                eigenValues(i) = b(i) = a(i,i);
                z(i) = 0.0;
@@ -127,7 +127,7 @@ public class JacobiDiagonalizer {
            // }}} // end foreach
            }} // end for
 
-          finish ateach(val(ip) in b.dist) {
+          finish foreach(val(ip) in b.region) {
              b(ip) += z(ip);
              eigenValues(ip) = b(ip);
              z(ip) = 0.0;
@@ -138,7 +138,7 @@ public class JacobiDiagonalizer {
        eigenVectorsMat = eigenVectorsMat.transpose();
 
        // convert to dist  
-       val distEValVec = Vector.make(n) as Vector{self.at(this)};
+       val distEValVec = new Vector(n) as Vector!;
 
        val distEVal = distEValVec.getVector();
 
@@ -187,8 +187,8 @@ public class JacobiDiagonalizer {
         } // end for
     }
 
-    public def getEigenValues() : Vector{self.at(this)} = eigenValuesVec;
+    public def getEigenValues() : Vector! = eigenValuesVec;
 
-    public def getEigenVectors() : Matrix{self.at(this)} = eigenVectorsMat; 
+    public def getEigenVectors() : Matrix! = eigenVectorsMat; 
 }
 
