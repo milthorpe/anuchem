@@ -11,16 +11,16 @@ import au.edu.anu.chem.AtomInfo;
 import au.edu.anu.chem.Molecule;
 
 public class OneElectronIntegrals { 
-    global val basisFunctions:BasisFunctions{self.at(this)};
-    global val hCore:HCore{self.at(this)};
-    global val overlap:Overlap{self.at(this)};
+    global val basisFunctions:BasisFunctions!;
+    global val hCore:HCore!;
+    global val overlap:Overlap!;
 
     public def this(bfs:BasisFunctions!, mol:Molecule[QMAtom]!) { 
        this.basisFunctions = bfs;
 
        val nbf  = basisFunctions.getBasisFunctions().size();
-       hCore    = HCore.make(new HCore(), nbf) as HCore{self.at(this)};
-       overlap  = Overlap.make(new Overlap(), nbf) as Overlap{self.at(this)};
+       hCore    = new HCore(nbf) as HCore!;
+       overlap  = new Overlap(nbf) as Overlap!;
 
        compute1E(mol);
     } 

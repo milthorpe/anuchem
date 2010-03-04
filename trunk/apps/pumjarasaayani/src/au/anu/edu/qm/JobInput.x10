@@ -13,7 +13,7 @@ import x10x.vector.Point3d;
  *  ...
  */
 public class JobInput { 
-    global var molecule:Molecule[QMAtom]{self.at(this)};
+    var molecule:Molecule[QMAtom]{self.at(this)};
     var basisName:String;
 
     public def this() { } 
@@ -28,8 +28,7 @@ public class JobInput {
        val noOfAtoms = Int.parseInt(fil.readLine());
        val words = fil.readLine().split(" ");
  
-       molecule = new Molecule[QMAtom]();
-       molecule.make(words(0));
+       molecule = new Molecule[QMAtom](words(0));
        basisName = words(1);
 
        for(var i:Int=0; i<noOfAtoms; i++) { 
@@ -38,7 +37,7 @@ public class JobInput {
          // for(var j:Int=0; j<words.size(); j++) x10.io.Console.OUT.println(words.get(j));
 
          molecule.addAtom(new QMAtom(wrd(0), 
-                                   Point3d(Double.parseDouble(wrd(1)),
+                                     new Point3d(Double.parseDouble(wrd(1)),
                                                Double.parseDouble(wrd(2)),
                                                Double.parseDouble(wrd(3))
                                     )

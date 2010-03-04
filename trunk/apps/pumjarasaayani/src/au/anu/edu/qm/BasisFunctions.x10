@@ -43,7 +43,8 @@ public class BasisFunctions {
             for(var orbno:Int=0; orbno<orbitals.size(); orbno++) { 
                val orb = orbitals.get(orbno);
                val typ = orb.getType();
-               val pList = PowerList.getInstance().getPowers(typ);
+               val plInst = PowerList.getInstance();
+               val pList = plInst.getPowers(typ);
 
                val coeff:ArrayList[Double]{self.at(this)} = orb.getCoefficients();
                val exps:ArrayList[Double]{self.at(this)}  = orb.getExponents();
@@ -111,9 +112,9 @@ public class BasisFunctions {
                 var coefExpoSum:Double = 0.0;
 
                 for(var k:Int=0; k<prms.size(); k++) {
-                   val prmk = prms(k);
+                   val prmk = prms.get(k);
                    for(var l:Int=0; l<prms.size(); l++) {
-                       val prml = prms(l);
+                       val prml = prms.get(l);
 
                        factA = prmk.getCoefficient() * prml.getCoefficient();
                        factB = Math.pow(prmk.getExponent() + prml.getExponent(), lmn+1.5);

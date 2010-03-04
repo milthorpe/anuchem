@@ -12,21 +12,13 @@ import x10.util.*;
 
 public class PowerList { 
 
-    global var powerList:HashMap[String,ValRail[Power]]{self.at(this)};
-    global var initCalled:Boolean;
+    static val powerList = new HashMap[String,ValRail[Power]]() as HashMap[String,ValRail[Power]]!; 
 
     private def this() {
-       initCalled = false;
-    }
-
-    private def init() : void {
-       powerList = new HashMap[String,ValRail[Power]](); 
        powerList.put("S", generatePowerList(0));
        powerList.put("P", generatePowerList(1));
        powerList.put("D", generatePowerList(2));
        powerList.put("F", generatePowerList(3)); 
-
-       initCalled = true;
     }
 
     public def generatePowerList(maxAngularMomentum:Int) : ValRail[Power] {
@@ -46,13 +38,10 @@ public class PowerList {
         return pList as ValRail[Power];
     }
 
+    private static val _theInstance = new PowerList() as PowerList!;
 
-    private global static val _theInstance = new PowerList();
-
-    public static def getInstance() : PowerList { 
-       if (!_theInstance.initCalled) _theInstance.init();
-
-       return _theInstance;
+    public static def getInstance() : PowerList! { 
+       return _theInstance as PowerList!;
     }
 
     public def getPowers(orbitalType:String) = powerList.getOrElse(orbitalType, null);

@@ -11,7 +11,11 @@ package au.anu.edu.qm;
 import x10x.matrix.Matrix;
 
 public class Fock extends Matrix {
-    public def compute(hCore:HCore{self.at(this)}, gMatrix:GMatrix{self.at(this)}) : void {
+    public def this(n:Int) {
+        super(n);
+    }
+
+    public def compute(hCore:HCore!, gMatrix:GMatrix!) : void {
         val res = hCore.add(gMatrix).getMatrix();
         val thisMat = getMatrix();
 

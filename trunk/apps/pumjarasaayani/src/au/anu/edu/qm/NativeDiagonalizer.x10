@@ -12,13 +12,13 @@ import x10x.xla.Diagonalizer;
 import org.gnu.gsl.GSL;
 
 public class NativeDiagonalizer implements Diagonalizer {
-    global var eigenValuesVec:Vector{self.at(this)};
-    global var eigenVectorsMat:Matrix{self.at(this)};
+    var eigenValuesVec:Vector!;
+    var eigenVectorsMat:Matrix!;
 
-    public def diagonalize(mat:Matrix{self.at(this)}) : void {
+    public def diagonalize(mat:Matrix!) : void {
          val n:Int = mat.getRowCount();
-         eigenVectorsMat = Matrix.make(n) as Matrix{self.at(this)};
-         eigenValuesVec  = Vector.make(n) as Vector{self.at(this)};
+         eigenVectorsMat = new Matrix(n) as Matrix!;
+         eigenValuesVec  = new Vector(n) as Vector!;
 
          eigenVectorsMat.makeZero();
          eigenValuesVec.makeZero();
@@ -28,7 +28,7 @@ public class NativeDiagonalizer implements Diagonalizer {
          eigenVectorsMat = eigenVectorsMat.transpose();
     }
 
-    public def getEigenValues() : Vector{self.at(this)} = eigenValuesVec;
-    public def getEigenVectors() : Matrix{self.at(this)} = eigenVectorsMat;
+    public def getEigenValues() : Vector! = eigenValuesVec;
+    public def getEigenVectors() : Matrix! = eigenVectorsMat;
 }
 

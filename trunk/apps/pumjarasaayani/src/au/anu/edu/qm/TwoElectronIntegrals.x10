@@ -15,8 +15,8 @@ import x10x.vector.Point3d;
 import au.edu.anu.chem.Molecule;
 
 public class TwoElectronIntegrals { 
-    global val basisFunctions:BasisFunctions{self.at(this)};
-    global val molecule:Molecule[QMAtom]{self.at(this)};
+    global val basisFunctions:BasisFunctions!;
+    global val molecule:Molecule[QMAtom]!;
     global val twoEInts:Array[Double]{self.at(this), rank==1};
     global val contractedList:ArrayList[ContractedGaussian{self.at(this)}]{self.at(this)};
     val direct:Boolean;
@@ -42,12 +42,12 @@ public class TwoElectronIntegrals {
 
         if (!direct) {
            // allocate required memory
-           twoEInts = Array.make[Double]([0..noOfIntegrals]);
+           twoEInts = Array.make[Double]([0..noOfIntegrals]) as Array[Double]{self.at(this), rank==1};
            this.contractedList = null;
            compute2EShellPair(molecule);
         } else {
            this.contractedList = basisFunctions.getBasisFunctions();
-           twoEInts = Array.make[Double]([0..1]);
+           twoEInts = Array.make[Double]([0..1]) as Array[Double]{self.at(this), rank==1};
         } // end if
 
     
@@ -68,10 +68,10 @@ public class TwoElectronIntegrals {
 
         fmt    = Rail.make[Double](maxam4+1) as Rail[Double]!;
         zeroM  = Rail.make[Double](maxam4+1) as Rail[Double]!;
-        rM     = Array.make[Double]([0..maxam4+1, 0..((maxam4+1)*(maxam4+2)/2)]);
-        pqInts = Array.make[Double]([0..maxam2N, 0..maxam2N]);
-        npint  = Array.make[Double]([0..maxam2+1, 0..maxam2M+1]);
-        pcdint = Array.make[Double]([0..maxamN+1, 0..maxamN+1, 0..maxam2N]);
+        rM     = Array.make[Double]([0..maxam4+1, 0..((maxam4+1)*(maxam4+2)/2)]) as Array[Double]{rank==2,self.at(this)};
+        pqInts = Array.make[Double]([0..maxam2N, 0..maxam2N]) as Array[Double]{rank==2,self.at(this)};
+        npint  = Array.make[Double]([0..maxam2+1, 0..maxam2M+1]) as Array[Double]{rank==2,self.at(this)};
+        pcdint = Array.make[Double]([0..maxamN+1, 0..maxamN+1, 0..maxam2N]) as Array[Double]{rank==3,self.at(this)};
 
         // Console.OUT.println("alloc2: " + pcdint.region.size());
     }

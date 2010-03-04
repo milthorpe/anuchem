@@ -13,21 +13,21 @@ import x10x.matrix.Matrix;
 import x10x.vector.Vector;
 
 public class DIISFockExtrapolator {
-    global val fockMatrixList:ArrayList[Fock{self.at(this)}]{self.at(this)};
-    global val errorMatrixList:ArrayList[Matrix{self.at(this)}]{self.at(this)};
+    global val fockMatrixList:ArrayList[Fock!]!;
+    global val errorMatrixList:ArrayList[Matrix!]!;
 
-    global var diisStep:Int = 0;
+    var diisStep:Int = 0;
 
     public def this() {
-        fockMatrixList  = new ArrayList[Fock{self.at(this)}]();
-        errorMatrixList = new ArrayList[Matrix{self.at(this)}]();
+        fockMatrixList  = new ArrayList[Fock!]();
+        errorMatrixList = new ArrayList[Matrix!]();
 
         diisStep = 0;
     }
 
-    public def next(currentFock:Fock{self.at(this)}, overlap:Overlap{self.at(this)}, density:Density{self.at(this)}) : Fock {
+    public def next(currentFock:Fock!, overlap:Overlap!, density:Density!) : Fock {
         val N = currentFock.getRowCount();
-        val newFock:Fock{self.at(this)} = Fock.make(new Fock(), N) as Fock{self.at(this)};
+        val newFock = new Fock(N) as Fock!;
 
         val newFockMat = newFock.getMatrix();
         val curFockMat = currentFock.getMatrix();
@@ -52,8 +52,8 @@ public class DIISFockExtrapolator {
             val noOfIterations = errorMatrixList.size();
             val N1 = noOfIterations + 1;
 
-            val A = Matrix.make(N1) as Matrix{self.at(this)};
-            val B = Vector.make(N1) as Vector{self.at(this)};
+            val A = new Matrix(N1) as Matrix!;
+            val B = new Vector(N1) as Vector!;
 
             val aMatrix = A.getMatrix();
             val bVector = B.getVector();

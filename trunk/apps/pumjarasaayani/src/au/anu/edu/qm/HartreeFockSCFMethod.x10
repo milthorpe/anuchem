@@ -46,10 +46,10 @@ public class HartreeFockSCFMethod extends SCFMethod {
         Console.OUT.println ("    Initializing matrices ...");
         // init memory for the matrices
         val N = hCore.getRowCount();
-        val gMatrix:GMatrix{self.at(this)}       = GMatrix.make(new GMatrix(), N) as GMatrix{self.at(this)};
-        val mos:MolecularOrbitals{self.at(this)} = MolecularOrbitals.make(new MolecularOrbitals(), N) as MolecularOrbitals{self.at(this)};
-        val density:Density{self.at(this)}       = Density.make(new Density(), N) as Density{self.at(this)};
-        val fock:Fock{self.at(this)}             = Fock.make(new Fock(), N) as Fock{self.at(this)};
+        val gMatrix  = new GMatrix(N) as GMatrix!;
+        val mos      = new MolecularOrbitals(N) as MolecularOrbitals!;
+        val density  = new Density(N) as Density!;
+        val fock     = new Fock(N) as Fock!;
 
         Console.OUT.println("    Forming initial guess ...");
         // compute initial MOs

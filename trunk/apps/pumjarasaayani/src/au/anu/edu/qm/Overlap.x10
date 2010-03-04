@@ -11,9 +11,13 @@ package au.anu.edu.qm;
 import x10x.matrix.Matrix;
 
 public class Overlap extends Matrix {
-    var sHalf:Matrix{self.at(this)} = null;
+    var sHalf:Matrix! = null;
 
-    public def getSHalf() : Matrix{self.at(this)} {
+    public def this(n:Int) {
+        super(n);
+    }
+
+    public def getSHalf() : Matrix! {
        if (sHalf == null) sHalf = this.symmetricOrthogonalization();
 
        return sHalf;

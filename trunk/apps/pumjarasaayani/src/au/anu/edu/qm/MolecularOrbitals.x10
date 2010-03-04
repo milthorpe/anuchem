@@ -14,11 +14,15 @@ import x10x.xla.JacobiDiagonalizer;
 public class MolecularOrbitals extends Matrix {
     var orbitalEnergies:Array[Double]{rank==1};
 
+    public def this(n:Int) {
+        super(n);
+    }
+
     public def getOrbitalEnergies() : Array[Double]{rank==1} = orbitalEnergies;
  
-    public def compute(theMat:Matrix{self.at(this)}, overlap:Overlap{self.at(this)}) : void {
-        val x:Matrix{self.at(this)} = overlap.getSHalf();
-        val a:Matrix{self.at(this)} = theMat.similarityTransform(x);
+    public def compute(theMat:Matrix!, overlap:Overlap!) : void {
+        val x = overlap.getSHalf();
+        val a = theMat.similarityTransform(x);
         // val diag = new JacobiDiagonalizer();
         val diag = new NativeDiagonalizer();
 

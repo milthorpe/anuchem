@@ -21,7 +21,7 @@ public class QMAtom extends Atom {
         super(centre);
     }
 
-    global var basisFunctions:ArrayList[ContractedGaussian{self.at(this)}]{self.at(this)};
+    var basisFunctions:ArrayList[ContractedGaussian{self.at(this)}]{self.at(this)};
 
     public def setBasisFunctions(bfs:ArrayList[ContractedGaussian{self.at(this)}]{self.at(this)}) {
         basisFunctions = bfs;

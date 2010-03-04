@@ -14,7 +14,7 @@ import au.edu.anu.chem.Molecule;
 import x10x.vector.Point3d;
 
 public class PumjaRasaayani { 
-    global var mol:Molecule[QMAtom]{self.at(this)};
+    var mol:Molecule[QMAtom]{self.at(this)};
     var basisName:String;
     var gMatType:Int;
 
@@ -44,12 +44,11 @@ public class PumjaRasaayani {
     } 
 
     private def initDefault() { 
-        mol = new Molecule[QMAtom]();
-        mol.make("h2");
+        mol = new Molecule[QMAtom]("h2");
 
         // H2, 1 a.u. apart
-        mol.addAtom(new QMAtom("H", Point3d(0.0, 0.0, 0.0)));
-        mol.addAtom(new QMAtom("H", Point3d(1.0, 0.0, 0.0)));
+        mol.addAtom(new QMAtom("H", new Point3d(0.0, 0.0, 0.0)));
+        mol.addAtom(new QMAtom("H", new Point3d(1.0, 0.0, 0.0)));
 
         // default basis is sto3g
         basisName = "sto3g";
