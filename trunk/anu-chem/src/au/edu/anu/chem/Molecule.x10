@@ -21,10 +21,10 @@ public class Molecule[T]{T <: Atom} {
         this.name = name;
     }
 
-    public def getName() : String = this.name;
-    public def addAtom(atm:T{self.at(this)})  : void { atomList.add(atm); }
+    public def getName() = this.name;
+    public def addAtom(atm:T{self.at(this)}) : void { atomList.add(atm); }
     public def getAtom(index:Int) : T{self.at(this)} = atomList.get(index) as T{self.at(this)};
-    public def getAtoms() : ArrayList[T{self.at(this)}]{self.at(this)} = atomList;
+    public def getAtoms() = atomList;
     public def getNumberOfAtoms() : Int = atomList.size();
 
     public def getNumberOfElectrons() : int {
