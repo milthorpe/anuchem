@@ -11,7 +11,7 @@ import x10.io.*;
 import x10.util.*;
 
 public class AtomInfo {
-    global var atomicNumbers:HashMap[String, Int]{self.at(this)};
+    var atomicNumbers:HashMap[String, Int]{self.at(this)};
     val atomInfoFile = "AtomInfo.conf";
 
     var madeIt:Boolean;
@@ -67,6 +67,6 @@ public class AtomInfo {
         return _theInstance;
     }
 
-    public global def getAtomicNumber(atm:Atom{self.at(this)}) = atomicNumbers.getOrElse(atm.symbol, -1);
+    public def getAtomicNumber(atm:Atom{self.at(this)}) = atomicNumbers.getOrElse(atm.symbol, -1);
 }
 
