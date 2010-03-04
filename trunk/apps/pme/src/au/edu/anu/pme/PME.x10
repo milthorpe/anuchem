@@ -24,7 +24,7 @@ public class PME {
 
     global val gridRegion : Region(3);
 
-	val atoms : ValRail[MMAtom];
+	val atoms : ValRail[MMAtom!];
     
     /** The order of B-spline interpolation */
     val splineOrder : Int;
@@ -55,7 +55,7 @@ public class PME {
      */
     public def this(edges : ValRail[Vector3d](3),
             gridSize : ValRail[Int](3),
-            atoms : ValRail[MMAtom],
+            atoms : ValRail[MMAtom!],
             splineOrder : Int,
             beta : Double,
             cutoff : Double) {

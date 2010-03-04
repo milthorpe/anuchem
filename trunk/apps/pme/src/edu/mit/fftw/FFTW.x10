@@ -36,5 +36,5 @@ public class FFTW {
 
     @NativeRep("c++", "::edu::mit::fftw::FFTW_FFTWPlan", "::edu::mit::fftw::FFTW_FFTWPlan", null)
     @NativeRep("java", "edu.mit.fftw.FFTWPlan", "edu.mit.fftw.FFTWPlan", null)
-    public struct FFTWPlan { };
+    public static struct FFTWPlan { };
 }
