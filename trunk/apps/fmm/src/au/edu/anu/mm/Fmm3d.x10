@@ -102,7 +102,7 @@ public class Fmm3d {
             for (val(level,i,j,k) in multipoleTranslations.region) {
                 dim : Int = Math.pow2(level);
                 sideLength : Double = size / dim;
-                val translationVector = Vector3d((i*2-1) * 0.5 * sideLength,
+                val translationVector = new Vector3d((i*2-1) * 0.5 * sideLength,
                                                                  (j*2-1) * 0.5 * sideLength,
                                                                  (k*2-1) * 0.5 * sideLength);
                 multipoleTranslations(level, i, j, k) = MultipoleExpansion.getOlm(translationVector as Tuple3d, numTerms);
@@ -187,7 +187,7 @@ public class Fmm3d {
         for (val(level,i,j,k) in multipoleTransforms.region) {
             dim : Int = Math.pow2(level);
             sideLength : Double = size / dim;
-            val translationVector = Vector3d(i * sideLength,
+            val translationVector = new Vector3d(i * sideLength,
                                                         j * sideLength,
                                                         k * sideLength);
             multipoleTransforms(level, i, j, k) = LocalExpansion.getMlm(translationVector as Tuple3d, numTerms);

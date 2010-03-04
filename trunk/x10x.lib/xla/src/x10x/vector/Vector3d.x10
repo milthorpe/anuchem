@@ -4,7 +4,7 @@ package x10x.vector;
  * This class represents a vector in 3D cartesian space.
  * @author V.Ganesh, milthorpe
  */
-public struct Vector3d(i : Double, j : Double, k : Double) implements Tuple3d {
+public class Vector3d extends Tuple3d {
     public static val NULL = new Vector3d(0, 0, 0);
 
     public static val UX = new Vector3d(1.0, 0, 0);
@@ -12,25 +12,25 @@ public struct Vector3d(i : Double, j : Double, k : Double) implements Tuple3d {
     public static val UZ = new Vector3d(0, 0, 1.0);
     
     public def this(i : Double, j : Double, k : Double) {
-        property(i, j, k);
+        super(i, j, k);
     }
 
     public def this(t : Tuple3d) {
-        property(t.i(), t.j(), t.k());
+        super(t.i(), t.j(), t.k());
     }
 
     public global safe def toString() = ("(" + i + "i + " + j + "j + " + k + "k)");
     
     public global safe def add(b: Tuple3d) : Tuple3d {
-        return Vector3d(i + b.i(), j + b.j(), k + b.k());
+        return new Vector3d(i + b.i(), j + b.j(), k + b.k());
     }
 
     public global safe def add(b: Vector3d) : Vector3d {
-        return Vector3d(i + b.i(), j + b.j(), k + b.k());
+        return new Vector3d(i + b.i(), j + b.j(), k + b.k());
     }
 
     public global safe def sub(b: Tuple3d) : Tuple3d {
-        return Vector3d(i - b.i(), j - b.j(), k - b.k());
+        return new Vector3d(i - b.i(), j - b.j(), k - b.k());
     }
 
     public global safe def dot(vec : Vector3d) : Double {
@@ -38,13 +38,13 @@ public struct Vector3d(i : Double, j : Double, k : Double) implements Tuple3d {
     }
 
     public global safe def cross(vec : Vector3d) : Vector3d {
-        return Vector3d(j * vec.k - k * vec.j,
+        return new Vector3d(j * vec.k - k * vec.j,
                             k * vec.i - i * vec.k,
                             i * vec.j - j * vec.i);
     }
 
     public global safe def mul(c : Double) : Vector3d {
-        return Vector3d(this.i * c, this.j * c, this.k * c);
+        return new Vector3d(this.i * c, this.j * c, this.k * c);
     }
 
     public global safe def mixedProduct(v2 : Vector3d, v3 : Vector3d) : Double {
@@ -74,7 +74,7 @@ public struct Vector3d(i : Double, j : Double, k : Double) implements Tuple3d {
     public global def normalize() : Vector3d {
         val norm = 1.0 / length();
 
-        return Vector3d(i * norm, j * norm, k * norm);
+        return new Vector3d(i * norm, j * norm, k * norm);
     }
 
     /** 
@@ -82,11 +82,11 @@ public struct Vector3d(i : Double, j : Double, k : Double) implements Tuple3d {
      */
     public global safe def inverse() : Vector3d {
         val l2 = lengthSquared();
-        return Vector3d(i / l2, j / l2, k / l2);
+        return new Vector3d(i / l2, j / l2, k / l2);
     }
 
     public global safe def negate() : Vector3d {
-        return Vector3d(-i, -j, -k);
+        return new Vector3d(-i, -j, -k);
     }
 }
 
