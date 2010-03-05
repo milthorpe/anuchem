@@ -16,7 +16,7 @@
     <property name="optimize" value="true"/>
     <property name="nochecks" value="true"/>
     <property name="inline-optimizations" value="true"/>
-    <property name="profile"  value="false"/>
+    <property name="profile"  value="true"/>
     <property name="x10rt" value="pgas_sockets"/>
 	<property name="target" location="${basedir}/target"/>
 	<property name="target-src" location="${target}/classes"/>
@@ -37,7 +37,7 @@
         <istrue value="${inline-optimizations}"/>
     </condition>
 
-    <condition property="x10c.profile" value="-post 'g++ -g -pg'" else="">
+    <condition property="post.profile" value="-pg" else="">
         <istrue value="${profile}"/>
     </condition>
 
@@ -93,7 +93,7 @@
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/src">
             <arg value="-c"/>
-            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} ${x10c.inline-optimizations} -report postcompile=1 -sourcepath .:${xre.src}:${xla.src}:${anuchem.src} -d ${target-src} ${src.list} ${basedir}/${testclass}"/>
+            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} ${x10c.inline-optimizations} -report postcompile=1 -post 'g++ ${x10c.optimize} ${post.profile} -Wall' -sourcepath .:${xre.src}:${xla.src}:${anuchem.src} -d ${target-src} ${src.list} ${basedir}/${testclass}"/>
         </exec>
     </target>
 
