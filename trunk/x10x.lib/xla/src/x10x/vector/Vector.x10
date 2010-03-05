@@ -178,7 +178,7 @@ public class Vector {
         val N   = getSize();
         val res = Rail.make[Double](1, (Int)=>0.0);
 
-        finish foreach((i) in vec.region) res(0) = Math.max(vec(i), res(0));
+        finish foreach((i) in vec.region) res(0) = Math.max(Math.abs(vec(i)), res(0));
         
         return res(0);       
     }
