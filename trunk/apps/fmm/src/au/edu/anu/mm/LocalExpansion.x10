@@ -64,12 +64,11 @@ public class LocalExpansion extends Expansion {
     public safe def translateAndAddLocal(shift : MultipoleExpansion!,
                                          source : LocalExpansion!) {
         val p = terms.region.max(0);
-        val localSource = LocalExpansion.getLocalCopy(p, source);
         for ((l,m) in terms) {
             for ((j) in l..p) {
                 for ((k) in (l-j+m)..(-l+j+m)) {
                     val C_lmjk = shift.terms(j-l, k-m);
-                    val O_jk = localSource.terms(j,k);
+                    val O_jk = source.terms(j,k);
                     this.terms(l,m) = this.terms(l,m) + C_lmjk * O_jk;
                 }
             }
@@ -86,6 +85,36 @@ public class LocalExpansion extends Expansion {
      * @param source the source multipole expansion, centred at the origin
      */
     public def transformAndAddToLocal(transform : LocalExpansion!,
+                                         source : MultipoleExpansion!) {
+        val p : Int = terms.region.max(0);
+        for (val (j,k): Point in terms) {
+            val O_jk = source.terms(j,k);
+            for (var l : Int = 0; l <= p-j; l++) { // TODO XTENLANG-504
+                for (var m : Int = -l; m<=l; m++) { // TODO XTENLANG-504
+                    if (Math.abs(k+m) <= (j+l)) {
+                        // TODO calculating the indices "on the fly" in the body 
+                        // of the at statement results in a Seg Fault... why?
+                        val jPlusL : Int = (j+l);
+                        val kPlusM : Int = (k+m);
+                        val B_lmjk = transform.terms(jPlusL, kPlusM);
+                        //Console.OUT.println("source.terms.dist(" + j + "," + k + ") = " + source.terms.dist(j,k));
+                        this.terms(l,m) = this.terms(l,m) + B_lmjk * O_jk;
+                    }
+                }
+            }
+        }
+    }
+
+   /** 
+     * Transform a multipole expansion centred around the origin into a
+     * Taylor expansion centred about b, and adds to this expansion.
+     * This corresponds to "Operator B", Equations 13-15 in White & Head-Gordon.
+     * This operator is inexact due to truncation of the series at <em>p</em> poles.
+     * Note: this defines B^lm_jk(b) = M_j+l,k+m(b), therefore restrict l to [0..p-j]
+     * @param b the vector along which to translate the multipole
+     * @param source the source multipole expansion, centred at the origin
+     */
+    public def transformAndAddToLocalDist(transform : LocalExpansion!,
                                          source : MultipoleExpansion) {
         val p : Int = terms.region.max(0);
         val localSource = MultipoleExpansion.getLocalCopy(p, source);

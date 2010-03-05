@@ -164,7 +164,7 @@ public class DistributedFmm3d {
                 //Console.OUT.println("atoms(" + i + ") => box(" + boxIndex + ")");
                 val parentBox = getParentBox(boxIndex, numLevels);
                 //Console.OUT.println("boxIndex = " + boxIndex + " numLevels = " + numLevels);
-                at (boxes.dist(boxIndex, numLevels)) {
+                async (boxes.dist(boxIndex, numLevels)) {
                     val remoteAtom = new MMAtom(atom);
                     var box : FmmBox;
                     atomic {
@@ -173,37 +173,36 @@ public class DistributedFmm3d {
                             box = new FmmLeafBox(numLevels, boxLocation, numTerms, parentBox);
                             boxes(boxIndex, numLevels) = box;
                         }
+                        val leafBox = box as FmmLeafBox!;
+                        leafBox.atoms.add(remoteAtom);
+                        val boxCentre = leafBox.getCentre(size).sub(remoteAtom.centre);
+                        leafBox.multipoleExp.add(MultipoleExpansion.getOlm(remoteAtom.charge, boxCentre, numTerms));
                     }
-                    val leafBox = box as FmmLeafBox!;
-                    leafBox.atoms.add(remoteAtom);
-                    val boxCentre = leafBox.getCentre(size).sub(remoteAtom.centre);
-                    leafBox.multipoleExp.add(MultipoleExpansion.getOlm(remoteAtom.charge, boxCentre as Tuple3d, numTerms));
                 }
             }
         }
     }
 
     /** 
-     * For each atom, creates the multipole expansion and adds it to the
-     * lowest level box that contains the atom.
+     * Starting at the bottom level, combines multipole expansions for <= 8 child
+     * boxes into a single multipole expansion for the parent box.
      */
     def combineMultipoles() {
         for (var level: Int = numLevels; level > 2; level--) {
             val thisLevelRegion : Region(2) = [0..((Math.pow(8,level) as Int)-1),level..level];
             val thisLevelDist = boxes.dist | thisLevelRegion;
             //finish ateach (p in thisLevelDist) {
-            for (p in thisLevelDist) {
-                at (boxes.dist(p)) {
-                //Console.OUT.println(p + " dist " + boxes.dist(p));
-                if (boxes(p) != null) {
-                    val child = boxes(p) as FmmBox!;
+            finish ateach ((boxIndex1, level) in thisLevelDist) {
+                //Console.OUT.println(p + " dist " + boxes.dist(boxIndex1, level));
+                if (boxes(boxIndex1, level) != null) {
+                    val child = boxes(boxIndex1, level) as FmmBox!;
+                    val childLoc = child.gridLoc;
                     val childExp = child.multipoleExp;
-                    at (child.parent.home) {
-                        val parent = child.parent as FmmBox!;
-                        val shift = multipoleTranslations(Point.make([here.id, child.level, (child.gridLoc.x+1)%2, (child.gridLoc.y+1)%2, (child.gridLoc.z+1)%2])) as MultipoleExpansion!;
+                    val parent = child.parent;
+                    at (parent) {
+                        val shift = multipoleTranslations(Point.make([here.id, level, (childLoc.x+1)%2, (childLoc.y+1)%2, (childLoc.z+1)%2])) as MultipoleExpansion!;
                         parent.multipoleExp.translateAndAddMultipole(shift, childExp);
                     }
-                }
                 }
             }
         }
@@ -226,7 +225,7 @@ public class DistributedFmm3d {
                 val translationVector = new Vector3d(i * sideLength,
                                                  j * sideLength,
                                                  k * sideLength);
-                multipoleTransforms(Point.make([placeId, level, i, j, k])) = LocalExpansion.getMlm(translationVector as Tuple3d, numTerms);
+                multipoleTransforms(Point.make([placeId, level, i, j, k])) = LocalExpansion.getMlm(translationVector, numTerms);
             }
         }
 
@@ -234,16 +233,17 @@ public class DistributedFmm3d {
 
         val level2Region : Region(2) = [0..63,2..2];
         val level2Dist = boxes.dist | level2Region;
-        finish ateach (p1(boxIndex1,level) in level2Dist) {
-            val box1 = boxes(p1) as FmmBox!;
+        finish ateach ((boxIndex1,level) in level2Dist) {
+            val box1 = boxes(boxIndex1,level) as FmmBox!;
             if (box1 != null) {
                 //Console.OUT.println("transformToLocal: box(" + boxIndex1 + "," + 2 + ")");
-                for (p2(boxIndex2,level) in level2Dist) {
+                for ((boxIndex2,level) in level2Dist) {
                     if (boxIndex2 != boxIndex1) {
                         val box2Loc = FmmBox.getBoxLocation(boxIndex2,level);
                         if (box1.wellSeparated(ws, box2Loc)) {
-                            val box2MultipoleExp = at (boxes.dist(p2)) getMultipoleForBox(p2);
-                            if (box2MultipoleExp != null) {
+                            val box2 = boxes(boxIndex2,level);
+                            if (box2 != null) {
+                                val box2MultipoleExp = box2.getMultipoleExpansionLocalCopy(numTerms);
                                 val translation = box1.getTranslationIndex(box2Loc);
                                 val transform21 = multipoleTransforms(Point.make([here.id, level, -translation.x, -translation.y, -translation.z])) as LocalExpansion!;
                                 //val box2MultipoleExp = box2MultipoleExpFuture();
@@ -261,19 +261,20 @@ public class DistributedFmm3d {
         for ((thisLevel) in 3..numLevels) {
             val thisLevelRegion : Region(2) = [0..(Math.pow(8,thisLevel) as Int)-1,thisLevel..thisLevel];
             val thisLevelDist = boxes.dist | thisLevelRegion;
-            finish ateach (p1(boxIndex1,level) in thisLevelDist) {
-                if (boxes(p1) != null) {
-                    val box1 = boxes(p1) as FmmBox!;
+            finish ateach ((boxIndex1,level) in thisLevelDist) {
+                val box1 = boxes(boxIndex1,level) as FmmBox!;
+                if (box1 != null) {
                     //Console.OUT.println("transformToLocal: box(" + boxIndex1 + "," + level + ")");
-                    for (p2(boxIndex2,level) in thisLevelDist) {
+                    for ((boxIndex2,level) in thisLevelDist) {
                         if (boxIndex2 != boxIndex1) {
                             val box2Loc = FmmBox.getBoxLocation(boxIndex2,level);
                             if (box1.wellSeparated(ws, box2Loc)) {
                                 val parentIndex = getParentIndex(boxIndex2,level);
                                 val box2ParentLoc = FmmBox.getBoxLocation(parentIndex,level-1);
                                 if (!box1.parent.wellSeparated(ws, box2ParentLoc)) {
-                                    val box2MultipoleExp = at (boxes.dist(p2)) getMultipoleForBox(p2);
-                                    if (box2MultipoleExp != null) {
+                                    val box2 = boxes(boxIndex2,level);
+                                    if (box2 != null) {
+                                        val box2MultipoleExp = box2.getMultipoleExpansionLocalCopy(numTerms);
                                         val translation = box1.getTranslationIndex(box2Loc);
                                         val translateP = Point.make([here.id, level, -translation.x, -translation.y, -translation.z]);
                                         val transform21 = multipoleTransforms(translateP) as LocalExpansion!;
@@ -284,7 +285,7 @@ public class DistributedFmm3d {
                             }
                         }
                     }
-                    val box1ParentExp = at (box1.parent) {box1.parent.localExp};
+                    val box1ParentExp = box1.parent.getLocalExpansionLocalCopy(numTerms);
                     val shift = multipoleTranslations(Point.make([here.id, level, box1.gridLoc.x%2, box1.gridLoc.y%2, box1.gridLoc.z%2])) as MultipoleExpansion!;
                     box1.localExp.translateAndAddLocal(shift, box1ParentExp);
                     //Console.OUT.println("added box1(" + boxIndex1 + "," + level + ") parent");
@@ -312,14 +313,14 @@ public class DistributedFmm3d {
             //Console.OUT.println("boxIndex1 = " + boxIndex1);
             val box1 = boxes(boxIndex1, numLevels) as FmmLeafBox!;
             if (box1 != null) {
-                shared var thisBoxEnergy : Double = 0.0;
+                var thisBoxEnergy : Double = 0.0;
                 //Console.OUT.println("getEnergy: box(" + boxIndex1 + "," + numLevels + ")");
                 val length = box1.atoms.length();
                 for ((atomIndex1) in 0..length-1) {
                     // TODO should be able to use a shared var for atom energy
-                    val atom1 = box1.atoms(atomIndex1) as MMAtom!;
+                    val atom1 = box1.atoms(atomIndex1);
                     val box1Centre = atom1.centre.sub(box1.getCentre(size));
-                    val farFieldEnergy = box1.localExp.getPotential(atom1.charge, box1Centre as Tuple3d);
+                    val farFieldEnergy = box1.localExp.getPotential(atom1.charge, box1Centre);
                     //Console.OUT.println("farFieldEnergy " + farFieldEnergy + " at " + this.home);
                     thisBoxEnergy += farFieldEnergy;
 
@@ -330,19 +331,29 @@ public class DistributedFmm3d {
                         val pairEnergy : Double = atom1.pairEnergy(sameBoxAtom);
                         thisBoxEnergy += 2 * pairEnergy;
                     }
-
-                    if (boxIndex1 > 0) { // EmptyRegion problem
-                        //Console.OUT.println("direct - non-well-sep");
-                        // direct calculation with all atoms in non-well-separated boxes
-                        val otherBoxRegion : Region(2) = [0..boxIndex1-1,numLevels..numLevels];
-                        val otherBoxDist = boxes.dist | otherBoxRegion;
-                        for ((boxIndex2,level) in otherBoxDist) {
-                            val box2Loc = FmmBox.getBoxLocation(boxIndex2,level);
-                            if (!box1.wellSeparated(ws, box2Loc)) {
-                                //Console.OUT.println(boxIndex1 + " vs. " + boxIndex2 + " ws = " + ws);
-                                val box2Energy = at (boxes.dist(boxIndex2, level)) getPairwiseInteractionForBox(atom1, boxIndex2);
-                                //Console.OUT.println("pair energy: " + boxIndex1 + "-" + atomIndex1 + " with box " + boxIndex2 + " = " + box2Energy);
-                                thisBoxEnergy += box2Energy;
+                }
+                if (boxIndex1 > 0) { // EmptyRegion problem
+                    //Console.OUT.println("direct - non-well-sep");
+                    // direct calculation with all atoms in non-well-separated boxes
+                    val otherBoxRegion : Region(2) = [0..boxIndex1-1,numLevels..numLevels];
+                    val otherBoxDist = boxes.dist | otherBoxRegion;
+                    for ((boxIndex2,level) in otherBoxDist) {
+                        var directBox2Energy : Double = 0.0;
+                        val box2Loc = FmmBox.getBoxLocation(boxIndex2,level);
+                        if (!box1.wellSeparated(ws, box2Loc)) {
+                            val packedAtoms = at(boxes.dist(boxIndex2, level)) {getPackedAtomsForBox(boxIndex2, level)};
+                            if (packedAtoms != null) {
+                                for (var i : Int = 0; i < packedAtoms.length(); i+=4) {
+                                    val atom2Centre = new Point3d(packedAtoms(i+1), packedAtoms(i+2), packedAtoms(i+3));
+                                    val atom2Charge = packedAtoms(i);
+                                    for ((atomIndex1) in 0..length-1) {
+                                        val atom1 = box1.atoms(atomIndex1);
+                                        directBox2Energy += atom1.charge * atom2Charge / atom1.centre.distance(atom2Centre);
+                                    }
+                                }
+                                //val directBox2EnergyFinal = 2 * directBox2Energy;
+                                //async (this) {atomic {fmmEnergy += directBox2EnergyFinal;}}
+                                thisBoxEnergy += 2 * directBox2Energy;
                             }
                         }
                     }
@@ -404,9 +415,18 @@ public class DistributedFmm3d {
         return boxEnergy;
     }
 
-    private global def getMultipoleForBox(p : Point(2)) : MultipoleExpansion {
-        val box = boxes(p) as FmmBox!;
+    private global def getMultipoleForBox(boxIndex : Int, level : Int) : MultipoleExpansion {
+        val box = boxes(boxIndex, level) as FmmBox!;
         return box == null ? null : box.multipoleExp;
+    }
+
+    private global def getPackedAtomsForBox(boxIndex : Int, level : Int) {
+        val box = boxes(boxIndex,level) as FmmLeafBox!;
+        if (box != null) {
+            return box.getPackedAtoms();
+        } else {
+            return null;
+        }
     }
 }
 

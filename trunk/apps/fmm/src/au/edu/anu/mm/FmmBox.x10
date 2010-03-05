@@ -93,5 +93,23 @@ public class FmmBox {
     public global def getTranslationIndex(loc2 : GridLocation) : GridLocation {
         return GridLocation(gridLoc.x - loc2.x, gridLoc.y - loc2.y, gridLoc.z - loc2.z);
     }
+
+    /**
+     * TODO this should not be necessary once XTENLANG-787 is resolved
+     * @return a local copy at the current place of this box's multipole expansion
+     */
+    public global def getMultipoleExpansionLocalCopy(p : Int) : MultipoleExpansion! {
+        val data = at (this) {Expansion.getData(p, multipoleExp)};
+        return new MultipoleExpansion(p, data);
+    }
+
+    /**
+     * TODO this should not be necessary once XTENLANG-787 is resolved
+     * @return a local copy at the current place of this box's local expansion
+     */
+    public global def getLocalExpansionLocalCopy(p : Int) : LocalExpansion! {
+        val data = at (this) {Expansion.getData(p, localExp)};
+        return new LocalExpansion(p, data);
+    }
 }
 

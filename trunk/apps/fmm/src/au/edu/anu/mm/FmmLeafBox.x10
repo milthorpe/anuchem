@@ -12,14 +12,47 @@ import au.edu.anu.chem.mm.MMAtom;
  * @author milthorpe
  */
 public class FmmLeafBox extends FmmBox {
-    public val atoms : GrowableRail[MMAtom]{self.at(this)} = new GrowableRail[MMAtom]();
+    public val atoms : GrowableRail[MMAtom{self.at(this)}]{self.at(this)} = new GrowableRail[MMAtom{self.at(this)}]();
 
     public def this(level : Int, gridLoc : GridLocation, numTerms : Int, parent : FmmBox) { 
         super(level, gridLoc, numTerms, parent);
     }
 
-    public atomic def addAtom(atom : MMAtom) {
+    public safe atomic def addAtom(atom : MMAtom{self.at(this)}) {
         atoms.add(atom);
+    }
+    
+    /*
+     * Returns atom charges and coordinates packed into a ValRail of length 4*N
+     * TODO XTENLANG-787 should return a 4*N Array
+     */
+    public def getPackedAtoms() : ValRail[Double] {
+        if (atoms.length() > 0) {
+            return ValRail.make[Double](4*atoms.length(), (i : Int) => getPackedAtomField(i));
+        } else {
+            return null;
+        }
+    }
+
+    /**
+     * Atoms are packed as [charge, centre.i, centre,j, centre.k]
+     * for given i, atom index is i / 4
+     */
+    private def getPackedAtomField(i : Int) : Double {
+        val atomIndex = i / 4;
+        val atom = atoms(atomIndex);
+        switch (i%4) {
+            case 0:
+                return atom.charge;
+            case 1:
+                return atom.centre.i;
+            case 2:
+                return atom.centre.j;
+            case 3:
+                return atom.centre.k;
+            default:
+                return Double.NaN;
+        }
     }
 }
 
