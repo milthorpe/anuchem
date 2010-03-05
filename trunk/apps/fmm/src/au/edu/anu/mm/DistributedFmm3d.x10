@@ -241,9 +241,8 @@ public class DistributedFmm3d {
                     if (boxIndex2 != boxIndex1) {
                         val box2Loc = FmmBox.getBoxLocation(boxIndex2,level);
                         if (box1.wellSeparated(ws, box2Loc)) {
-                            val box2 = boxes(boxIndex2,level);
-                            if (box2 != null) {
-                                val box2MultipoleExp = box2.getMultipoleExpansionLocalCopy(numTerms);
+                            val box2MultipoleExp = getMultipoleExpansionLocalCopy(boxIndex2,level);
+                            if (box2MultipoleExp != null) {
                                 val translation = box1.getTranslationIndex(box2Loc);
                                 val transform21 = multipoleTransforms(Point.make([here.id, level, -translation.x, -translation.y, -translation.z])) as LocalExpansion!;
                                 //val box2MultipoleExp = box2MultipoleExpFuture();
@@ -272,9 +271,8 @@ public class DistributedFmm3d {
                                 val parentIndex = getParentIndex(boxIndex2,level);
                                 val box2ParentLoc = FmmBox.getBoxLocation(parentIndex,level-1);
                                 if (!box1.parent.wellSeparated(ws, box2ParentLoc)) {
-                                    val box2 = boxes(boxIndex2,level);
-                                    if (box2 != null) {
-                                        val box2MultipoleExp = box2.getMultipoleExpansionLocalCopy(numTerms);
+                                    val box2MultipoleExp = getMultipoleExpansionLocalCopy(boxIndex2,level);
+                                    if (box2MultipoleExp != null) {
                                         val translation = box1.getTranslationIndex(box2Loc);
                                         val translateP = Point.make([here.id, level, -translation.x, -translation.y, -translation.z]);
                                         val transform21 = multipoleTransforms(translateP) as LocalExpansion!;
@@ -424,6 +422,19 @@ public class DistributedFmm3d {
         val box = boxes(boxIndex,level) as FmmLeafBox!;
         if (box != null) {
             return box.getPackedAtoms();
+        } else {
+            return null;
+        }
+    }
+
+    /**
+     * TODO this should not be necessary once XTENLANG-787 is resolved
+     * @return a local copy at the current place of this box's multipole expansion
+     */
+    public global def getMultipoleExpansionLocalCopy(boxIndex : Int, level : Int) : MultipoleExpansion! {
+        val data = at (boxes.dist(boxIndex, level)) {boxes(boxIndex, level) != null? Expansion.getData(numTerms, (boxes(boxIndex, level) as FmmBox!).multipoleExp) : null};
+        if (data != null) {
+            return new MultipoleExpansion(numTerms, data);
         } else {
             return null;
         }

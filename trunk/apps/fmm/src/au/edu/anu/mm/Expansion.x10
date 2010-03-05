@@ -55,7 +55,7 @@ public class Expansion {
      * TODO this should not be necessary once XTENLANG-787 is resolved
      * @return the expansion terms, shoehorned into a ValRail
      */
-    protected static def getData(p : Int, source : Expansion!) : ValRail[Complex] {
+    public static def getData(p : Int, source : Expansion!) : ValRail[Complex] {
         return ValRail.make[Complex]((p+1)*(p+1), (i : Int) => source.terms(squareFloor(i), (i - squareFloor(i)*squareFloor(i)-squareFloor(i))));
     }
 
