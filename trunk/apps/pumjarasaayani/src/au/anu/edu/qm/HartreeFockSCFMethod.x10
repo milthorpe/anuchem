@@ -49,13 +49,16 @@ public class HartreeFockSCFMethod extends SCFMethod {
         val gMatrix  = new GMatrix(N) as GMatrix!;
         val mos      = new MolecularOrbitals(N) as MolecularOrbitals!;
         val density  = new Density(N) as Density!;
-        val fock     = new Fock(N) as Fock!;
+
+        var fock:Fock!  = new Fock(N) as Fock!;
 
         Console.OUT.println("    Forming initial guess ...");
         // compute initial MOs
         mos.compute(hCore, overlap);
 
         x10.io.Console.OUT.println("    Starting RHF-SCF ... ");        
+
+        val diis = new DIISFockExtrapolator();
 
         // start the SCF cycle
         for(var scfIteration:Int=0; scfIteration<maxIteration; scfIteration++) {
@@ -70,6 +73,7 @@ public class HartreeFockSCFMethod extends SCFMethod {
             timer.start(0);
             // make fock matrix
             fock.compute(hCore, gMatrix);
+            fock = diis.next(fock, overlap, density);
             timer.stop(0);
             Console.OUT.println ("    Time to construct Fock: " + (timer.total(0) as Double) / 1e9 + " seconds");
  
