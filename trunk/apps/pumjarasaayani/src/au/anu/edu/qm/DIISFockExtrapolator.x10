@@ -42,7 +42,7 @@ public class DIISFockExtrapolator {
         for((i,j) in curFockMat.dist) newFockMat(i,j) = curFockMat(i,j);
         
         val FPS = currentFock.mul(density).mul(overlap);
-        val SPF = density.mul(overlap).mul(currentFock);
+        val SPF = overlap.mul(density).mul(currentFock);
 
         val errorMatrix = new Vector(FPS.sub(SPF)) as Vector!;
         val mxerr = errorMatrix.maxNorm();
