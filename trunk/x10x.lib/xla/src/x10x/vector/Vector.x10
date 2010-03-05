@@ -26,17 +26,15 @@ public class Vector {
      * Construct a Vector from a Matrix
      */
     public def this(mat:Matrix!) {
-        this(mat.getRowCount());
+        this(mat.getRowCount()*mat.getRowCount());
 
         val N = getSize();
          
         var ii:Int = 0;
         val m = mat.getMatrix();
 
-        // TODO : x10 - parallel
-        for(var i:Int=0; i<N; i++)
-           for(var j:Int=0; j<N; j++)
-              vec(ii++) =  m(i, j);
+        for((i,j) in m.region)
+            vec(ii++) =  m(i, j);
     }
 
     /**
@@ -171,6 +169,18 @@ public class Vector {
         finish foreach((i) in vec.region) res.vec(i) = vec(i) * k;
         
         return res;
+    }
+
+    /**
+     * max norm of this vector
+     */
+    public def maxNorm() : Double {
+        val N   = getSize();
+        val res = Rail.make[Double](1, (Int)=>0.0);
+
+        finish foreach((i) in vec.region) res(0) = Math.max(vec(i), res(0));
+        
+        return res(0);       
     }
 
     public global safe def toString() : String {

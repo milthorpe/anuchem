@@ -62,7 +62,7 @@ public class Matrix {
     /**
      * Perform symmetric orthogonalization of this matrix
      */
-    public def symmetricOrthogonalization() : Matrix{self.at(this)} { 
+    public def symmetricOrthogonalization() : Matrix! { 
         val diag = new JacobiDiagonalizer();
        
         diag.diagonalize(this);
@@ -91,7 +91,7 @@ public class Matrix {
              }
         }
 
-        return (sHalf.similarityTransformT(eigenVectors) as Matrix{self.at(this)}); 
+        return (sHalf.similarityTransformT(eigenVectors) as Matrix!); 
     }
 
     /**
@@ -135,13 +135,28 @@ public class Matrix {
          val res = new Matrix(N, M);
 
          // TODO:
-         finish ateach(val(i, j) in res.mat.dist) {
+         finish foreach(val(i, j) in res.mat.region) {
             var cij:Double = 0.0;
             for(var k:Int=0; k<N1; k++) {
                cij += mat(i, k) * x.mat(k, j);
             }
             res.mat(i, j) = cij;
          } // end for  
+
+         return res;
+    }
+
+    /**
+     * Scale each element of this matrix by fac
+     */
+    public def mul(fac:Double) : Matrix! {
+         val N   = getRowCount();
+         val M   = getColCount();
+
+         val res = new Matrix(N, M);
+      
+         finish foreach(val(i, j) in res.mat.region)
+            res.mat(i, j) = mat(i, j) * fac;
 
          return res;
     }
