@@ -19,7 +19,7 @@
     <property name="nochecks" value="true"/>
     <property name="inline-optimizations" value="true"/>
     <property name="profile"  value="false"/>
-    <property name="x10rt" value="standalone"/>
+    <property name="x10rt" value="mpi"/>
 	<property name="target" location="${basedir}/target"/>
 	<property name="target-src" location="${target}/classes"/>
 	<property name="target-test" location="${target}/test-classes"/>

@@ -9,40 +9,40 @@ import x10.array.BaseArray;
 
 public class PME {
     /** The number of grid lines in each dimension of the simulation unit cell. */
-    public val gridSize : ValRail[Int](3);
+    private global val gridSize : ValRail[Int](3);
 
     /** Double representations of the various grid dimensions */
-    public val K1 : Double;
-    public val K2 : Double; 
-    public val K3 : Double;
+    private global val K1 : Double;
+    private global val K2 : Double; 
+    private global val K3 : Double;
 
     /** The edges of the unit cell. */
-    public val edges : ValRail[Vector3d](3);
+    private global val edges : ValRail[Vector3d](3);
 
     /** The conjugate reciprocal vectors for each dimension. */
-    public val edgeReciprocals : ValRail[Vector3d](3);
+    private global val edgeReciprocals : ValRail[Vector3d](3);
 
-    global val gridRegion : Region(3);
-
-	val atoms : ValRail[MMAtom!];
+    private global val gridRegion : Region(3);
     
     /** The order of B-spline interpolation */
-    val splineOrder : Int;
+    private global val splineOrder : Int;
 
     /** The Ewald coefficient beta */
-    val beta : Double;
+    private global val beta : Double;
 
     /** The direct sum cutoff distance in Angstroms */
-    val cutoff : Double;
+    private global val cutoff : Double;
 
     /** Translation vectors for neighbouring unit cells (the 26 cells surrounding the origin cell) */
-    val imageTranslations : Array[Vector3d](3);
+    private global val imageTranslations : Array[Vector3d](3);
+
+	private val atoms : ValRail[MMAtom!];
 
     // TODO should be shared local to calculateEnergy()
-    var directEnergy : Double = 0.0;
-    var directSum : Double = 0.0;
-    var selfEnergy: Double = 0.0;
-    var correctionEnergy : Double = 0.0; // TODO masklist
+    private var directEnergy : Double = 0.0;
+    private var directSum : Double = 0.0;
+    private var selfEnergy: Double = 0.0;
+    private var correctionEnergy : Double = 0.0; // TODO masklist
 
     /**
      * Creates a new particle mesh Ewald method.
@@ -351,14 +351,14 @@ public class PME {
     }
     
     /** Gets scaled fractional coordinate u as per Eq. 3.1 */
-    public def getScaledFractionalCoordinates(r : Vector3d) : Vector3d {
+    public global safe def getScaledFractionalCoordinates(r : Vector3d) : Vector3d {
         return new Vector3d(edgeReciprocals(0).mul(gridSize(0)).dot(r), edgeReciprocals(1).mul(gridSize(1)).dot(r), edgeReciprocals(2).mul(gridSize(2)).dot(r));
     }
 
     /**
      * Gets the volume V of the unit cell.
      */
-    public safe def getVolume() {
+    private global safe def getVolume() {
         return edges(0).cross(edges(1)).dot(edges(2));
     }
 }
