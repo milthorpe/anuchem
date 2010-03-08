@@ -23,6 +23,7 @@ public class PME {
     private global val edgeReciprocals : ValRail[Vector3d](3);
 
     private global val gridRegion : Region(3);
+    private global val gridDist : Dist(3);
     
     /** The order of B-spline interpolation */
     private global val splineOrder : Int;
@@ -68,6 +69,7 @@ public class PME {
         this.atoms = atoms;
         val r = Region.makeRectangular(0, gridSize(0)-1);
         gridRegion = (r * [0..(gridSize(1)-1)] * [0..(gridSize(2)-1)]) as Region(3);
+        gridDist = Dist.makeBlock(gridRegion, 0);
         this.splineOrder = splineOrder;
         this.beta = beta;
         this.cutoff = cutoff;
@@ -77,6 +79,7 @@ public class PME {
         Console.OUT.println("Box edges: " + edges + " volume: " + getVolume());
         Console.OUT.println("Grid size: " + gridSize);
         Console.OUT.println("spline order: " + splineOrder + " Beta: " + beta + " Cutoff: " + cutoff);
+        Console.OUT.println("gridDist = " + gridDist);
     }
 	
     public def calculateEnergy() : Double {
@@ -132,10 +135,11 @@ public class PME {
             }
         }
         */
+        val target = Array.make[Complex](gridDist);
 
         //val Qinv = DFT.dft3D(Q, false);
 
-        val Qinv = Array.make[Complex](gridRegion);
+        val Qinv = Array.make[Complex](gridDist);
         val plan : FFTW.FFTWPlan = FFTW.fftwPlan3d(gridSize(0), gridSize(1), gridSize(2), Q as BaseArray[Complex], Qinv as BaseArray[Complex], false);
         FFTW.fftwExecute(plan);
         FFTW.fftwDestroyPlan(plan);
@@ -147,11 +151,11 @@ public class PME {
         val C = getCArray();
         Console.OUT.println("C");
 
-        val BdotC = Array.make[Double](gridRegion, (p : Point(gridRegion.rank)) => B(p) * C(p));
+        val BdotC = Array.make[Double](gridDist, (p : Point(gridDist.region.rank)) => B(p) * C(p));
         Console.OUT.println("BdotC");
 
-        val thetaRecConvQInv = Array.make[Complex](gridRegion, (p : Point(gridRegion.rank)) => BdotC(p) * Qinv(p));
-        val thetaRecConvQ = Array.make[Complex](gridRegion);
+        val thetaRecConvQInv = Array.make[Complex](gridDist, (p : Point(gridDist.region.rank)) => BdotC(p) * Qinv(p));
+        val thetaRecConvQ = Array.make[Complex](gridDist);
 
         val plan2 : FFTW.FFTWPlan = FFTW.fftwPlan3d(gridSize(0), gridSize(1), gridSize(2), thetaRecConvQInv as BaseArray[Complex], thetaRecConvQ as BaseArray[Complex], true);
         FFTW.fftwExecute(plan2);
@@ -183,8 +187,8 @@ public class PME {
      * Calculates the gridded charge array Q as defined in Eq. 4.6,
      * using Cardinal B-spline interpolation.
      */
-    public def getGriddedCharges() : Array[Complex](3){self.region==gridRegion} {
-        val Q = Array.make[Double](gridRegion);
+    public def getGriddedCharges() : Array[Complex](3){self.dist==gridDist} {
+        val Q = Array.make[Double](gridDist);
         finish foreach ((i) in 0..atoms.length-1) {
             val atom = atoms(i);
             val q = atom.charge;
@@ -203,10 +207,13 @@ public class PME {
                                      * bSpline4(u.j - k2)
                                      * bSpline4(u.k - k3);
 
-                        atomic {
-                            Q((k1 + gridSize(0)) % gridSize(0),
-                              (k2 + gridSize(1)) % gridSize(1),
-                              (k3 + gridSize(2)) % gridSize(2)) += gridPointContribution;
+                        val p = Point.make((k1 + gridSize(0)) % gridSize(0),
+                                           (k2 + gridSize(1)) % gridSize(1),
+                                           (k3 + gridSize(2)) % gridSize(2));
+                        async(Q.dist(p)) {
+                            atomic {
+                                Q(p) += gridPointContribution;
+                            }
                         }
                         /*
                         Console.OUT.println("Q(" + (k1 + gridSize(0)) % gridSize(0) + "," + 
@@ -220,7 +227,7 @@ public class PME {
             }
             //Console.OUT.println("atomContribution = " + atomContribution);
         }
-        val Qcomplex = Array.make[Complex](gridRegion, (m : Point(gridRegion.rank)) => Complex(Q(m), 0.0));
+        val Qcomplex = Array.make[Complex](gridDist, (m : Point(gridDist.region.rank)) => Complex(Q(m), 0.0));
         return Qcomplex;
     }
 
@@ -229,9 +236,9 @@ public class PME {
      * @param thetaRecConvQ the reciprocal pair potential as defined in eq. 4.7
      * @return the approximation to the reciprocal energy ~E_rec as defined in Eq. 4.7
      */
-    private def getReciprocalEnergy(Q : Array[Complex]{self.region==gridRegion}, thetaRecConvQ : Array[Complex]{self.region==gridRegion}) {
+    private def getReciprocalEnergy(Q : Array[Complex]{self.dist==gridDist}, thetaRecConvQ : Array[Complex]{self.dist==gridDist}) {
         var reciprocalEnergy : Complex = Complex.ZERO;
-        for (m in gridRegion) {
+        for (m in gridDist) {
             val gridPointContribution = Q(m) * thetaRecConvQ(m);
             if (gridPointContribution.re != 0.0) {
                 //Console.OUT.println("gridPointContribution( " + m + ") = " + gridPointContribution);
@@ -246,8 +253,8 @@ public class PME {
      * @return the array B as defined by Eq 4.8 and 4.4
      */
     public def getBArray() {
-        val B = Array.make[Double](gridRegion);
-        // TODO for (m(m1,m2,m3) in gridRegion) {
+        val B = Array.make[Double](gridDist);
+        // TODO for (m(m1,m2,m3) in gridDist) {
         finish foreach ((m1) in 0..gridSize(0)-1) {
             val m1D = m1 as Double;
             var sumK1 : Complex = Complex.ZERO;
@@ -284,10 +291,10 @@ public class PME {
      * @return the array C as defined by Eq 3.9
      */
     public def getCArray() {
-        val C = Array.make[Double](gridRegion);
+        val C = Array.make[Double](gridDist);
         val V = getVolume();
         //Console.OUT.println("V = " + V);
-        finish foreach (m(m1,m2,m3) in gridRegion) {
+        finish foreach (m(m1,m2,m3) in gridDist) {
             val m1prime = m1 <= K1/2 ? m1 : m1 - K1;
             val m2prime = m2 <= K2/2 ? m2 : m2 - K2;
             val m3prime = m3 <= K3/2 ? m3 : m3 - K3;
@@ -360,5 +367,52 @@ public class PME {
      */
     private global safe def getVolume() {
         return edges(0).cross(edges(1)).dot(edges(2));
+    }
+
+    /**
+     * "Shuffles" array around all places by transposing the zeroth dimension
+     * to the second, the second to the first and the first to the zeroth.
+     * Assumes NxNxN arrays, and that source and target arrays are block 
+     * distributed along the zeroth dimension.
+     */
+    public def shuffleArray(source : Array[Complex](3){self.dist==gridDist}, 
+                             target : Array[Complex](3){self.dist==gridDist}) {
+/*
+        Console.OUT.println("source: ");
+        for ((p1) in Dist.makeUnique(Place.places)) {
+            at (Place.places(p1)) {
+                Console.OUT.println("place " + here.id);
+                val myChunk = gridDist | here;
+                for (p in myChunk) {
+                    Console.OUT.println(p + " = " + source(p));
+                }
+            }
+        }
+*/
+        for ((p1) in Dist.makeUnique(Place.places)) {
+            at (Place.places(p1)) {
+                val mySource = gridDist | here;
+                for ((p2) in Dist.makeUnique(Place.places)) {
+                    val place2ZeroDimension = (gridDist | Place.places(p2)).region.projection(0);
+                    val myContribution = mySource.region().projection(0) * place2ZeroDimension * mySource.region.projection(2) as Region(3);
+                    for ((i,j,k) in myContribution) {
+                        val s = source(i,j,k);
+                        at(Place.places(p2)) { target(j,k,i) = s;};
+                    }
+                }
+            }
+        }
+/*
+        Console.OUT.println("target: ");
+        for ((p1) in Dist.makeUnique(Place.places)) {
+            at (Place.places(p1)) {
+                Console.OUT.println("place " + here.id);
+                val myChunk = gridDist | here;
+                for (p in myChunk) {
+                    Console.OUT.println(p + " = " + target(p));
+                }
+            }
+        }
+*/
     }
 }
