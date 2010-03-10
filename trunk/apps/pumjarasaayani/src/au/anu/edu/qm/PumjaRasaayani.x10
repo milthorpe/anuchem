@@ -58,7 +58,7 @@ public class PumjaRasaayani {
         val timer = new Timer(1);
         timer.start(0);
 
-        Console.OUT.println("PumjaRasaayani shunya.eak, Quantum Chemisty program in x10, v0.1");
+        Console.OUT.println("PumjaRasaayani shunya.dau, Quantum Chemisty program in x10, v0.2");
 
         Console.OUT.println("\nInput deck:");
         Console.OUT.println(mol);
