@@ -10,9 +10,9 @@ import x10x.vector.Vector;
  * @author V.Ganesh
  */
 public class Matrix { 
-    global val mat:Array[Double]{rank==2};
-    global val region:Region{rank==2};
-    global val distribution:Dist{rank==2};
+    global val mat:Array[Double]{rank==2, self.at(this)};
+    global val region:Region{rank==2, self.at(this)};
+    global val distribution:Dist{rank==2, self.at(this)};
 
     /**
      * Make instance of Matrix class 
@@ -21,8 +21,9 @@ public class Matrix {
      */
     public def this(siz:Int) {
         region       = [0..(siz-1), 0..(siz-1)];
-        distribution = Dist.makeBlock(region, 1);
-        mat          = Array.make[Double](distribution);
+        // distribution = Dist.makeBlock(region, 1) as Dist{rank==2, self.at(this)};
+        distribution = Dist.makeConstant(region) as Dist{rank==2, self.at(this)};
+        mat          = Array.make[Double](distribution) as Array[Double]{rank==2, self.at(this)};
     }
 
     /**
@@ -32,32 +33,33 @@ public class Matrix {
      */
     public def this(row:Int, col:Int) {
         region       = [0..(row-1), 0..(col-1)];
-        distribution = Dist.makeBlock(region, 1);
-        mat          = Array.make[Double](distribution);
+        // distribution = Dist.makeBlock(region, 1) as Dist{rank==2, self.at(this)};
+        distribution = Dist.makeConstant(region) as Dist{rank==2, self.at(this)};
+        mat          = Array.make[Double](distribution) as Array[Double]{rank==2, self.at(this)};
     }
 
     /**
      * Construct a Matrix with a custom distribution
      */
-    public def this(dist:Dist{rank==2}) : Matrix {
-        region       = dist.region;
-        distribution = dist;
-        mat          = Array.make[Double](distribution);
+    public def this(dist:Dist{rank==2}) {
+        distribution = dist as Dist{rank==2, self.at(this)};
+        region       = distribution.region as Region{rank==2, self.at(this)};
+        mat          = Array.make[Double](distribution) as Array[Double]{rank==2, self.at(this)};
     }
 
     /**
      * Get associated region
      */
-    public def region() : Region{rank==2} = region;
+    public def region() = region;
 
     /**
      * Get associated distribution
      */
-    public def dist() : Dist{rank==2} = distribution;
+    public def dist() = distribution;
 
-    public def getMatrix() : Array[Double]{rank==2} = mat;
-    public global def getRowCount() : Int = mat.region.max(0)+1;
-    public global def getColCount() : Int = mat.region.max(1)+1;
+    public def getMatrix() = mat;
+    public global def getRowCount() = mat.region.max(0)+1;
+    public global def getColCount() = mat.region.max(1)+1;
 
     /**
      * Perform symmetric orthogonalization of this matrix
@@ -134,8 +136,7 @@ public class Matrix {
          val M   = x.getColCount();
          val res = new Matrix(N, M);
 
-         // TODO:
-         finish foreach(val(i, j) in res.mat.region) {
+         for(val(i, j) in res.mat.region) {
             var cij:Double = 0.0;
             for(var k:Int=0; k<N1; k++) {
                cij += mat(i, k) * x.mat(k, j);
@@ -271,6 +272,36 @@ public class Matrix {
            vecVal(i) = mat(rowIdx, i);
 
        return vec;
+    }
+
+    public def isUpperTriangular() : Boolean {
+        if (getRowCount() != getColCount()) return false;
+
+        val N = getRowCount();
+        var i:Int, j:Int;
+
+        for(i=0; i<N; i++) {
+            for(j=0; j<i; j++) {
+                if (mat(i, j) != 0) {
+                    return false;
+                } // end if
+            } // end for
+        } // end for
+
+        return true;
+    }
+
+    public def isSingular(p:Int, row:Array[Int]{rank==1}) : Boolean {
+        val N = getColCount();
+        var i:Int;
+
+        for(i=p; i<=N-1; i++) {
+            if (mat(row(p), i) != 0) {
+                return false;
+            } // end if
+        } // end for
+
+        return true;
     }
 
     public global safe def toString() : String { 

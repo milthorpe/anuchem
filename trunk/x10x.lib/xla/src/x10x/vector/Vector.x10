@@ -9,24 +9,25 @@ import x10x.matrix.Matrix;
  * @author V.Ganesh
  */
 public class Vector { 
-    global val vec:Array[Double]{rank==1}; 
-    global val region:Region{rank==1};
-    global val distribution:Dist{rank==1};
+    global val vec:Array[Double]{rank==1, self.at(this)}; 
+    global val region:Region{rank==1, self.at(this)};
+    global val distribution:Dist{rank==1, self.at(this)};
 
     /**
      * Construct a Vector of dimention N, with default block distribution
      */
     public def this(siz:Int) { 
-        region       = 0..(siz-1);
-        distribution = Dist.makeBlock(region, 0);
-        vec          = Array.make[Double](distribution);
+        region       = [0..(siz-1)];
+        // distribution = Dist.makeBlock(region, 0) as Dist{rank==1, self.at(this)};
+        distribution = Dist.makeConstant(region) as Dist{rank==1, self.at(this)};
+        vec          = Array.make[Double](distribution) as Array[Double]{rank==1, self.at(this)};
     }
 
     /**
      * Construct a Vector from a Matrix
      */
     public def this(mat:Matrix!) {
-        this(mat.getRowCount()*mat.getRowCount());
+        this(mat.getRowCount()*mat.getColCount());
 
         val N = getSize();
          
@@ -41,40 +42,30 @@ public class Vector {
      * Construct a Vector of dimention N, with a custom distribution
      */
     public def this(dist:Dist{rank==1}) {
-        region       = dist.region;
-        distribution = dist;
-        vec          = Array.make[Double](distribution);
+        distribution = dist as Dist{rank==1, self.at(this)};
+        region       = distribution.region as Region{rank==1, self.at(this)};
+        vec          = Array.make[Double](distribution) as Array[Double]{rank==1, self.at(this)};
     }
-
-    /**
-     * Construct a Vector of dimention N, with a custom distribution
-     */
-    public def this(newVector:Vector, dist:Dist{rank==1}) {
-        region       = dist.region;
-        distribution = dist;
-        vec          = Array.make[Double](distribution);
-    }
-
  
     /**
      * The size of this matrix
      */
-    public global def getSize() : Int = vec.region.max(0)+1;
+    public global def getSize() = vec.region.max(0)+1;
  
     /**
      * Actual data stored
      */
-    public def getVector() : Array[Double]{rank==1} = vec;
+    public def getVector() = vec;
 
     /**
      * Get associated region
      */ 
-    public def region() : Region{rank==1} = region;
+    public def region() = region;
  
     /**
      * Get associated distribution
      */
-    public def dist() : Dist{rank==1} = distribution;
+    public def dist() = distribution;
 
     /**
      * make this Vector a null vector

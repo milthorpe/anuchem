@@ -18,35 +18,43 @@ public class GaussianElimination extends LinearEquationSolver {
     private var row:Array[Int]{rank==1, self.at(this)};
     private var a:Array[Double]{rank==2, self.at(this)};
     private var x:Array[Double]{rank==1, self.at(this)};
+
+    private var matrixA:Matrix!;
     
     public def this() {
     }
 
     private var n:Int, n1:Int;
 
-    public def findSolution(matrixA:Matrix!, vectorB:Vector!) : Vector! {
-        val N = matrixA.getRowCount();
-        val m = new Matrix(Dist.make([0..N-1, 0..N])) as Matrix!;
-        a = m.getMatrix() as Array[Double]{rank==2, self.at(this)};
-        x = vectorB.getVector() as Array[Double]{rank==1, self.at(this)};
+    public def findSolution(matA:Matrix!, vectorB:Vector!) : Vector! {
+        val N = matA.getRowCount();
+        this.matrixA = new Matrix(N, N+1) as Matrix!;
+        a = this.matrixA.getMatrix(); 
+        x = vectorB.getVector();
 
         var i:Int, j:Int;
 
-        val ta = matrixA.getMatrix();
+        Console.OUT.println("matA: " + matA);
+        Console.OUT.println("vecB: " + vectorB);
+
+        val ta = matA.getMatrix();
         for(i=0; i<N; i++)
             for(j=0; j<N; j++)
                 a(i,j) = ta(i,j);
 
         for(i=0; i<N; i++)
             a(i,N) = x(i);        
+
+        Console.OUT.println("matA1: " + matrixA);
         
-        n  = N-2;
-        n1 = N-1;
-        
+        n  = this.matrixA.getRowCount()-1;
+        n1 = this.matrixA.getColCount()-1;
+
         row = Array.make[Int]([0..n]) as Array[Int]{rank==1, self.at(this)};
         
         // initilize row vector
-        for(j=1; j<=n; j++)
+        row(0) = 0;
+        for(j=1; j<=n; j++) 
             row(j) = j;
 
         // first make the the matrix upper triangular
@@ -75,24 +83,18 @@ public class GaussianElimination extends LinearEquationSolver {
     private def upperTriangularize(doOneScale:Boolean) : Boolean {
         // check if matrix is already upper triangular
         // this check may be removed in future
-        /** 
-         // TODO: skipping this!
         if (matrixA.isUpperTriangular()) {
-            return;
+            return false;
         } // end if
-        **/
 
         for (var p:Int=0; p<=n1; p++) {
             simplePivot(p); // apply simple pivoting
             oneScale(p, doOneScale);    // apply simple 1-scaling
         } // end for
 
-        /** 
-         // TODO: Should ideally be there ...
         if (matrixA.isSingular(n, row)) {
             return false;
         } // end if
-        **/
 
         return true;
     }
@@ -107,7 +109,7 @@ public class GaussianElimination extends LinearEquationSolver {
     public def simplePivot(p:Int) : Boolean {
         var temp:Int = 0;
 
-        if (p >= n) {
+        if (p >= row.region.max(0)+1) {
             return true;
         } // end if
 
@@ -120,7 +122,7 @@ public class GaussianElimination extends LinearEquationSolver {
             // check for keeping things near unity
             if ((Math.abs(a(row(k),p))-1) < (Math.abs(a(row(p),p))-1)) {
                 // switch the indices to represent a
-                // row interchange so as to avoide the overhead
+                // row interchange so as to avoid the overhead
                 // of actually moving the row elements  :)
                 temp   = row(p);
                 row(p) = row(k);
@@ -128,13 +130,9 @@ public class GaussianElimination extends LinearEquationSolver {
             } // end if
         } // end for
 
-        /** 
-         // TODO: Should ideally be there ...
-         // check if singular
         if (matrixA.isSingular(p, row)) {
            return false;
         } // end if
-        */
 
         return true;
     } // end of method simplePivot()
@@ -149,7 +147,7 @@ public class GaussianElimination extends LinearEquationSolver {
     private def oneScale(p:Int, scale:Boolean) {
         var m:Double = 0.0;
 
-        if (p >= n) {
+        if (p >= row.region.max(0)+1) {
             return;
         } // end if
  
