@@ -44,6 +44,7 @@ public class PME {
     private var directSum : Double = 0.0;
     private var selfEnergy: Double = 0.0;
     private var correctionEnergy : Double = 0.0; // TODO masklist
+    private var reciprocalEnergy : Double = 0.0;
 
     /**
      * Creates a new particle mesh Ewald method.
@@ -84,8 +85,8 @@ public class PME {
 	
     public def calculateEnergy() : Double {
         // TODO do we need multi-threaded FFTW, or multiple activities (with FFT) per place?
-        FFTW.fftwInitThreads();
-        FFTW.fftwPlanWithNThreads(Runtime.INIT_THREADS);
+        //FFTW.fftwInitThreads();
+        //FFTW.fftwPlanWithNThreads(Runtime.INIT_THREADS);
 
         finish foreach ((i) in 0..atoms.length-1) {
             var myDirectEnergy : Double = 0.0;
@@ -128,21 +129,21 @@ public class PME {
         
         val Q = getGriddedCharges();
         Console.OUT.println("Q");
-        /*
+/*
         for (p in Q) {
-            if (Q(p) != Complex.ZERO) {
-                Console.OUT.println(p + " = " + Q(p));
+            at (Q.dist(p)) {
+                if (Q(p) != Complex.ZERO) {
+                    Console.OUT.println(p + " = " + Q(p));
+                }
             }
         }
-        */
-        val target = Array.make[Complex](gridDist);
+*/
 
-        //val Qinv = DFT.dft3D(Q, false);
-
+        // do a 3D FFT Qinv = F(Q) with some jiggery-pokery to combine many distributed 1D FFTs
+        val temp = Array.make[Complex](gridDist);        
         val Qinv = Array.make[Complex](gridDist);
-        val plan : FFTW.FFTWPlan = FFTW.fftwPlan3d(gridSize(0), gridSize(1), gridSize(2), Q as BaseArray[Complex], Qinv as BaseArray[Complex], false);
-        FFTW.fftwExecute(plan);
-        FFTW.fftwDestroyPlan(plan);
+        doFFT3d(Q, Qinv, temp, false);
+        //val Qinv = DFT.dft3D(Q, false);
         
         Console.OUT.println("Qinv");
 
@@ -157,9 +158,13 @@ public class PME {
         val thetaRecConvQInv = Array.make[Complex](gridDist, (p : Point(gridDist.region.rank)) => BdotC(p) * Qinv(p));
         val thetaRecConvQ = Array.make[Complex](gridDist);
 
-        val plan2 : FFTW.FFTWPlan = FFTW.fftwPlan3d(gridSize(0), gridSize(1), gridSize(2), thetaRecConvQInv as BaseArray[Complex], thetaRecConvQ as BaseArray[Complex], true);
-        FFTW.fftwExecute(plan2);
-        FFTW.fftwDestroyPlan(plan2);
+        //val plan2 : FFTW.FFTWPlan = FFTW.fftwPlan3d(gridSize(0), gridSize(1), gridSize(2), thetaRecConvQInv as BaseArray[Complex], thetaRecConvQ as BaseArray[Complex], true);
+
+        // do a 3D FFT Qinv = F(Q) with some jiggery-pokery to combine many distributed 1D FFTs
+        doFFT3d(thetaRecConvQInv, thetaRecConvQ, temp, true);
+        //FFTW.fftwExecute(plan2);
+
+        //FFTW.fftwDestroyPlan(plan2);
         
         //val thetaRecConvQ = DFT.dft3D(thetaRecConvQInv, true);
         /*for (p in thetaRecConvQ) {
@@ -169,18 +174,18 @@ public class PME {
         }*/
         Console.OUT.println("thetaRecConvQ");
 
-        val reciprocalEnergy = getReciprocalEnergy(Q, thetaRecConvQ);
+        reciprocalEnergy = getReciprocalEnergy(Q, thetaRecConvQ);
 
         Console.OUT.println("directEnergy = " + directEnergy);
         Console.OUT.println("directSum = " + directSum);
         Console.OUT.println("selfEnergy = " + selfEnergy);
         Console.OUT.println("correctionEnergy = " + correctionEnergy);
         Console.OUT.println("reciprocalEnergy = " + reciprocalEnergy);
-        val total = directSum + reciprocalEnergy.re + (correctionEnergy + selfEnergy);
+        val total = directSum + reciprocalEnergy + (correctionEnergy + selfEnergy);
         val error = directEnergy - total;
         Console.OUT.println("error = " + error + " relative error = " + Math.abs(error) / Math.abs(total));
-        FFTW.fftwCleanupThreads();
-        return directSum + reciprocalEnergy.re + (correctionEnergy + selfEnergy);
+        //FFTW.fftwCleanupThreads();
+        return directSum + reciprocalEnergy + (correctionEnergy + selfEnergy);
     }
 
     /** 
@@ -237,15 +242,19 @@ public class PME {
      * @return the approximation to the reciprocal energy ~E_rec as defined in Eq. 4.7
      */
     private def getReciprocalEnergy(Q : Array[Complex]{self.dist==gridDist}, thetaRecConvQ : Array[Complex]{self.dist==gridDist}) {
-        var reciprocalEnergy : Complex = Complex.ZERO;
-        for (m in gridDist) {
-            val gridPointContribution = Q(m) * thetaRecConvQ(m);
-            if (gridPointContribution.re != 0.0) {
-                //Console.OUT.println("gridPointContribution( " + m + ") = " + gridPointContribution);
+        finish for ((p1) in Dist.makeUnique(Place.places)) {
+            async (Place.places(p1)) {
+                var myReciprocalEnergy : Double = 0.0;
+                // TODO single-place parallel
+                for ((i,j,k) in gridDist | here) {
+                    val gridPointContribution = Q(i,j,k) * thetaRecConvQ(i,j,k);
+                    myReciprocalEnergy = myReciprocalEnergy + gridPointContribution.re;
+                }
+                myReciprocalEnergy = myReciprocalEnergy / 2.0;
+                val myReciprocalEnergyFinal = myReciprocalEnergy;
+                at (this) {atomic{reciprocalEnergy += myReciprocalEnergyFinal;}};
             }
-            reciprocalEnergy = reciprocalEnergy + gridPointContribution;
         }
-        reciprocalEnergy = reciprocalEnergy / 2.0;
         return reciprocalEnergy;
     }
 
@@ -272,14 +281,18 @@ public class PME {
                 val b2 = (Math.exp(2.0 * Math.PI * (splineOrder - 1.0) * m2D / K2 * Complex.I) / sumK2).abs();
                 
                 for (var m3 : Int = 0; m3 < gridSize(2); m3++) {
+                    // TODO smarter distribution
                     val m3D = m3 as Double;
-                    var sumK3 : Complex = Complex.ZERO;
-                    for ((k) in 0..(splineOrder-2)) {
-                        sumK3 = sumK3 + bSpline4(k+1) * Math.exp(2.0 * Math.PI * m3D * k / K3 * Complex.I);
+                    val m = Point.make(m1,m2,m3);
+                    at(B.dist(m)) {
+                        var sumK3 : Complex = Complex.ZERO;
+                        for ((k) in 0..(splineOrder-2)) {
+                            sumK3 = sumK3 + bSpline4(k+1) * Math.exp(2.0 * Math.PI * m3D * k / K3 * Complex.I);
+                        }
+                        val b3 = (Math.exp(2.0 * Math.PI * (splineOrder - 1.0) * m3D / K3 * Complex.I) / sumK3).abs();
+                        //Console.OUT.println("b1 = " + b1 + " b2 = " + b2 + " b3 = " + b3);
+                        B(m) = b1 * b1 * b2 * b2 * b3 * b3;
                     }
-                    val b3 = (Math.exp(2.0 * Math.PI * (splineOrder - 1.0) * m3D / K3 * Complex.I) / sumK3).abs();
-                    //Console.OUT.println("b1 = " + b1 + " b2 = " + b2 + " b3 = " + b3);
-                    B(m1,m2,m3) = b1 * b1 * b2 * b2 * b3 * b3;
                     //Console.OUT.println("B(" + m1 + "," + m2 + "," + m3 + ") = " + B(m1,m2,m3));
                 }
             }
@@ -294,7 +307,7 @@ public class PME {
         val C = Array.make[Double](gridDist);
         val V = getVolume();
         //Console.OUT.println("V = " + V);
-        finish foreach (m(m1,m2,m3) in gridDist) {
+        finish ateach (m(m1,m2,m3) in gridDist) {
             val m1prime = m1 <= K1/2 ? m1 : m1 - K1;
             val m2prime = m2 <= K2/2 ? m2 : m2 - K2;
             val m3prime = m3 <= K3/2 ? m3 : m3 - K3;
@@ -307,7 +320,9 @@ public class PME {
             C(m) = Math.exp(-(Math.PI*Math.PI) * mSquared / (beta * beta)) / (mSquared * Math.PI * V);
             //Console.OUT.println("C" + m + " = " + C(m));
         }
-        C(0,0,0) = 0.0;
+        at (C.dist(0,0,0)) {
+            C(0,0,0) = 0.0;
+        }
         return C;
     }
 
@@ -370,6 +385,61 @@ public class PME {
     }
 
     /**
+     * Do a 3D FFT of the source array, storing the result in target.
+     * This is implemented as three sequential 1D FFTs, swapping data
+     * amongst all places twice to re-orient the array for each dimension.
+     * Makes use of a temp array, which may be the same as either source
+     * or target arrays.
+     */
+    private def doFFT3d(source : Array[Complex](3){self.dist==gridDist}, 
+                        target : Array[Complex](3){self.dist==gridDist},
+                        temp : Array[Complex](3){self.dist==gridDist},
+                        forward : Boolean) {
+        doFFTForOneDimension(source, temp, forward);
+        if (forward) {
+            shuffleArray(temp, target);
+        } else {
+            shuffleArrayReverse(temp, target);
+        }
+        doFFTForOneDimension(target, temp, forward);
+        if (forward) {
+            shuffleArray(temp, target);
+        } else {
+            shuffleArrayReverse(temp, target);
+        }
+        doFFTForOneDimension(target, target, forward);
+    }
+
+    /**
+     * Does a 1D FFT for each 1D slice along the first dimension.
+     */
+    private def doFFTForOneDimension(source : Array[Complex](3){self.dist==gridDist}, 
+                                     target : Array[Complex](3){self.dist==gridDist},
+                                     forward : Boolean) {
+        finish for ((p1) in Dist.makeUnique(Place.places)) {
+            async (Place.places(p1)) {
+                val size = gridSize(1);
+                val oneDSource = Rail.make[Complex](size);
+                val oneDTarget = Rail.make[Complex](size);
+                val plan : FFTW.FFTWPlan = FFTW.fftwPlan1d(size, oneDSource, oneDTarget, forward);
+                val mySource = gridDist | here;
+                val gridRegionWithoutFirst = (mySource.region().projection(0) * mySource.region().projection(2)) as Region(2);
+                for ((i,k) in gridRegionWithoutFirst) {
+                    // TODO need to copy into ValRail?
+                    for(var j : Int = 0; j < size; j++) {
+                        oneDSource(j) = source(i,j,k);
+                    }
+                    FFTW.fftwExecute(plan);
+                    for(var j : Int = 0; j < size; j++) {
+                        target(i,j,k) = oneDTarget(j);
+                    }
+                }
+                FFTW.fftwDestroyPlan(plan);
+            }
+        }
+    }
+
+    /**
      * "Shuffles" array around all places by transposing the zeroth dimension
      * to the second, the second to the first and the first to the zeroth.
      * Assumes NxNxN arrays, and that source and target arrays are block 
@@ -377,22 +447,10 @@ public class PME {
      */
     public def shuffleArray(source : Array[Complex](3){self.dist==gridDist}, 
                              target : Array[Complex](3){self.dist==gridDist}) {
-/*
-        Console.OUT.println("source: ");
-        for ((p1) in Dist.makeUnique(Place.places)) {
-            at (Place.places(p1)) {
-                Console.OUT.println("place " + here.id);
-                val myChunk = gridDist | here;
-                for (p in myChunk) {
-                    Console.OUT.println(p + " = " + source(p));
-                }
-            }
-        }
-*/
-        for ((p1) in Dist.makeUnique(Place.places)) {
-            at (Place.places(p1)) {
+        finish for ((p1) in Dist.makeUnique(Place.places)) {
+            async (Place.places(p1)) {
                 val mySource = gridDist | here;
-                for ((p2) in Dist.makeUnique(Place.places)) {
+                foreach ((p2) in Dist.makeUnique(Place.places)) {
                     val place2ZeroDimension = (gridDist | Place.places(p2)).region.projection(0);
                     val myContribution = mySource.region().projection(0) * place2ZeroDimension * mySource.region.projection(2) as Region(3);
                     for ((i,j,k) in myContribution) {
@@ -402,17 +460,28 @@ public class PME {
                 }
             }
         }
-/*
-        Console.OUT.println("target: ");
+    }
+
+    /**
+     * "Shuffles" array around all places "in reverse" by transposing the zeroth dimension
+     * to the first, the first to the second and the second to the zeroth.
+     * Assumes NxNxN arrays, and that source and target arrays are block 
+     * distributed along the zeroth dimension.
+     */
+    public def shuffleArrayReverse(source : Array[Complex](3){self.dist==gridDist}, 
+                             target : Array[Complex](3){self.dist==gridDist}) {
         for ((p1) in Dist.makeUnique(Place.places)) {
             at (Place.places(p1)) {
-                Console.OUT.println("place " + here.id);
-                val myChunk = gridDist | here;
-                for (p in myChunk) {
-                    Console.OUT.println(p + " = " + target(p));
+                val mySource = gridDist | here;
+                for ((p2) in Dist.makeUnique(Place.places)) {
+                    val place2ZeroDimension = (gridDist | Place.places(p2)).region.projection(0);
+                    val myContribution = mySource.region().projection(0) * mySource.region.projection(1) * place2ZeroDimension  as Region(3);
+                    for ((i,j,k) in myContribution) {
+                        val s = source(i,j,k);
+                        at(Place.places(p2)) { target(k,i,j) = s;};
+                    }
                 }
             }
         }
-*/
     }
 }
