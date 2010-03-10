@@ -1,0 +1,36 @@
+PumjaRasaayani shunya.eak, Quantum Chemisty program in x10, v0.1
+
+Input deck:
+H 0.0 0.0 0.0
+H 1.0 0.0 0.0
+
+
+Setting up basis functions over.
+
+Computed one-electron integrals.
+HCore
+-1.27848854195233 -1.219162970999578 
+-1.219162970999578 -1.27848854195233 
+
+Overlap
+1.0 0.796588419414958 
+0.796588419414958 1.0 
+
+
+Number of 2E integrals: 6
+
+Computed two-electron integrals. If direct, this is skipped for now.
+Starting RHF-SCF ... 
+Nuclear repulsion energy = 1.0 a.u.
+    Nuclear electron attraction energy = -1.390219087444215 a.u.
+    Electron repulsion energy = -0.675780360931093 a.u.
+Cycle #0 Total energy = -1.065999448375308
+    Nuclear electron attraction energy = -1.390219087444215 a.u.
+    Electron repulsion energy = -0.675780360931093 a.u.
+Cycle #1 Total energy = -1.065999448375308
+SCF converged. Final SCF energy = -1.065999448375308 a.u.
+
+real	0m2.015s
+user	0m2.312s
+sys	0m0.020s
+
