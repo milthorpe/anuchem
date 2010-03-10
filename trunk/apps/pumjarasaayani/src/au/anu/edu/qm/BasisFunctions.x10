@@ -12,10 +12,10 @@ import x10.util.ArrayList;
 import au.edu.anu.chem.Molecule;
 
 public class BasisFunctions { 
-    global val molecule:Molecule[QMAtom]{self.at(this)};
+    global val molecule:Molecule[QMAtom]!;
     global val basisName:String;
     global val basisFunctions:ArrayList[ContractedGaussian{self.at(this)}]{self.at(this)};
-    global val shellList:ShellList{self.at(this)};
+    global val shellList:ShellList!;
 
     public def this(mol:Molecule[QMAtom]!, basNam:String, basisDir:String) { 
         this.molecule  = mol;
@@ -32,6 +32,7 @@ public class BasisFunctions {
         val basisSet:BasisSet{self.at(this)} = new BasisSet(basisName, basisDir);
         var indx:Int = 0;
         var intIndx:Int = 0;
+        val plInst = PowerList.getInstance();
 
         for(var atmno:Int=0; atmno<molecule.getNumberOfAtoms(); atmno++) {
             val atom      = molecule.getAtom(atmno);
@@ -43,7 +44,6 @@ public class BasisFunctions {
             for(var orbno:Int=0; orbno<orbitals.size(); orbno++) { 
                val orb = orbitals.get(orbno);
                val typ = orb.getType();
-               val plInst = PowerList.getInstance();
                val pList = plInst.getPowers(typ);
 
                val coeff:ArrayList[Double]{self.at(this)} = orb.getCoefficients();
@@ -67,7 +67,7 @@ public class BasisFunctions {
 
                val am = orb.getAngularMomentum();
                val acg:ContractedGaussian{self.at(this)} = new ContractedGaussian(atom.centre, 
-                                                                                  new Power(am, 0, 0));
+                                                                                  Power(am, 0, 0));
                acg.setIntIndex(intIndx);
 
                for(var i:Int=0; i<coeff.size(); i++) {
@@ -137,7 +137,7 @@ public class BasisFunctions {
     }
 
     public def getBasisName() = this.basisName;
-    public def getBasisFunctions() : ArrayList[ContractedGaussian{self.at(this)}]{self.at(this)} = basisFunctions;
-    public def getShellList() : ShellList{self.at(this)} = shellList;
+    public def getBasisFunctions() = basisFunctions;
+    public def getShellList() = shellList;
 }
 

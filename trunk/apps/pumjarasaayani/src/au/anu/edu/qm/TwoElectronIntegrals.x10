@@ -915,8 +915,8 @@ public class TwoElectronIntegrals {
         val ld = dPower.getL(), md = dPower.getM(), nd = dPower.getN();
 
         if (lb > 0) {
-            val newBPower = new Power(lb-1,mb,nb);
-            return (contrHrr(a, new Power(la+1,ma,na), aCoeff, aExps, aNorms, 
+            val newBPower = Power(lb-1,mb,nb);
+            return (contrHrr(a, Power(la+1,ma,na), aCoeff, aExps, aNorms, 
                              b, newBPower, bCoeff, bExps, bNorms,
                              c, cPower, cCoeff, cExps, cNorms,
                              d, dPower, dCoeff, dExps, dNorms)
@@ -926,8 +926,8 @@ public class TwoElectronIntegrals {
                                 c, cPower, cCoeff, cExps, cNorms,
                                 d, dPower, dCoeff, dExps, dNorms));
         } else if (mb > 0) {
-            val newBPower = new Power(lb,mb-1,nb);
-            return (contrHrr(a, new Power(la,ma+1,na), aCoeff, aExps, aNorms,
+            val newBPower = Power(lb,mb-1,nb);
+            return (contrHrr(a, Power(la,ma+1,na), aCoeff, aExps, aNorms,
                              b, newBPower, bCoeff, bExps, bNorms,
                              c, cPower, cCoeff, cExps, cNorms,
                              d, dPower, dCoeff, dExps, dNorms)
@@ -937,8 +937,8 @@ public class TwoElectronIntegrals {
                                 c, cPower, cCoeff, cExps, cNorms,
                                 d, dPower, dCoeff, dExps, dNorms));
         } else if (nb > 0) {
-            val newBPower = new Power(lb,mb,nb-1);
-            return (contrHrr(a, new Power(la,ma,na+1), aCoeff, aExps, aNorms,
+            val newBPower = Power(lb,mb,nb-1);
+            return (contrHrr(a, Power(la,ma,na+1), aCoeff, aExps, aNorms,
                              b, newBPower, bCoeff, bExps, bNorms,
                              c, cPower, cCoeff, cExps, cNorms,
                              d, dPower, dCoeff, dExps, dNorms)
@@ -948,10 +948,10 @@ public class TwoElectronIntegrals {
                                 c, cPower, cCoeff, cExps, cNorms,
                                 d, dPower, dCoeff, dExps, dNorms));
         } else if (ld > 0) {
-            val newDPower = new Power(ld-1,md,nd);
+            val newDPower = Power(ld-1,md,nd);
             return (contrHrr(a, aPower, aCoeff, aExps, aNorms, 
                              b, bPower, bCoeff, bExps, bNorms,
-                             c, new Power(lc+1,mc,nc), cCoeff, cExps, cNorms,
+                             c, Power(lc+1,mc,nc), cCoeff, cExps, cNorms,
                              d, newDPower, dCoeff, dExps, dNorms)
                    + (c.i-d.i)
                      * contrHrr(a, aPower, aCoeff, aExps, aNorms, 
@@ -959,10 +959,10 @@ public class TwoElectronIntegrals {
                                 c, cPower, cCoeff, cExps, cNorms,
                                 d, newDPower, dCoeff, dExps, dNorms));
         } else if (md > 0) {
-            val newDPower = new Power(ld,md-1,nd);
+            val newDPower = Power(ld,md-1,nd);
             return (contrHrr(a, aPower, aCoeff, aExps, aNorms,
                              b, bPower, bCoeff, bExps, bNorms,
-                             c, new Power(lc,mc+1,nc), cCoeff, cExps, cNorms,
+                             c, Power(lc,mc+1,nc), cCoeff, cExps, cNorms,
                              d, newDPower, dCoeff, dExps, dNorms)
                    + (c.j-d.j)
                      * contrHrr(a, aPower, aCoeff, aExps, aNorms,
@@ -970,10 +970,10 @@ public class TwoElectronIntegrals {
                                 c, cPower, cCoeff, cExps, cNorms,
                                 d, newDPower, dCoeff, dExps, dNorms));
         } else if (nd > 0) {
-            val newDPower = new Power(ld,md,nd-1);
+            val newDPower = Power(ld,md,nd-1);
             return (contrHrr(a, aPower, aCoeff, aExps, aNorms,
                              b, bPower, bCoeff, bExps, bNorms,
-                             c, new Power(lc,mc,nc+1), cCoeff, cExps, cNorms,
+                             c, Power(lc,mc,nc+1), cCoeff, cExps, cNorms,
                              d, newDPower, dCoeff, dExps, dNorms)
                 + (c.k-d.k)
                     * contrHrr(a, aPower, aCoeff, aExps, aNorms,
@@ -1075,7 +1075,7 @@ public class TwoElectronIntegrals {
         val nc = cPower.getN();
         
         if (nc > 0) {
-           val newCPower = new Power(lc, mc, nc-1);
+           val newCPower = Power(lc, mc, nc-1);
            res = (q.k-c.k)*vrr(a, aNorm, aPower, aAlpha,
                                          b, bNorm, bAlpha,
                                          c, cNorm, newCPower, cAlpha,
@@ -1086,7 +1086,7 @@ public class TwoElectronIntegrals {
                                          d, dNorm, dAlpha, m+1);
 
            if (nc > 1) {
-              val newCPower1 = new Power(lc, mc, nc-2);
+              val newCPower1 = Power(lc, mc, nc-2);
               res += 0.5*(nc-1) / eta*(vrr(a, aNorm, aPower, aAlpha,
                                            b, bNorm, bAlpha,
                                            c, cNorm, newCPower1, cAlpha,
@@ -1098,7 +1098,7 @@ public class TwoElectronIntegrals {
            } // end if
 
            if (na > 0) {
-              res += 0.5*na/zetaPlusEta*vrr(a, aNorm, new Power(la, ma, na-1),
+              res += 0.5*na/zetaPlusEta*vrr(a, aNorm, Power(la, ma, na-1),
                                             aAlpha,
                                             b, bNorm, bAlpha,
                                             c, cNorm, newCPower,
@@ -1108,7 +1108,7 @@ public class TwoElectronIntegrals {
 
            return res;
         } else if (mc > 0) {
-            val newCPower = new Power(lc, mc-1, nc);
+            val newCPower = Power(lc, mc-1, nc);
             res = (q.j-c.j)*vrr(a, aNorm, aPower, aAlpha,
                                           b, bNorm, bAlpha,
                                           c, cNorm, newCPower, cAlpha,
@@ -1119,7 +1119,7 @@ public class TwoElectronIntegrals {
                                           d, dNorm, dAlpha, m+1);
 
             if (mc > 1) {
-               val newCPower1 = new Power(lc, mc-2, nc);
+               val newCPower1 = Power(lc, mc-2, nc);
                res += 0.5*(mc-1)/eta*(vrr(a, aNorm, aPower, aAlpha,
                                           b, bNorm, bAlpha,
                                           c, cNorm, newCPower1, cAlpha,
@@ -1131,7 +1131,7 @@ public class TwoElectronIntegrals {
             } // end if
 
             if (ma > 0) {
-                res += 0.5*ma/zetaPlusEta*vrr(a, aNorm, new Power(la, ma-1, na),
+                res += 0.5*ma/zetaPlusEta*vrr(a, aNorm, Power(la, ma-1, na),
                                               aAlpha,
                                               b, bNorm, bAlpha,
                                               c, cNorm, newCPower,
@@ -1141,7 +1141,7 @@ public class TwoElectronIntegrals {
             
             return res;
         } else if (lc > 0) {
-            val newCPower = new Power(lc-1, mc, nc);
+            val newCPower = Power(lc-1, mc, nc);
             res = (q.i-c.i)*vrr(a, aNorm, aPower, aAlpha,
                                           b, bNorm, bAlpha,
                                           c, cNorm, newCPower, cAlpha,
@@ -1152,7 +1152,7 @@ public class TwoElectronIntegrals {
                                           d, dNorm, dAlpha, m+1);
 
             if (lc > 1) {
-               val newCPower1 = new Power(lc-2, mc, nc);
+               val newCPower1 = Power(lc-2, mc, nc);
                res += 0.5*(lc-1)/eta*(vrr(a, aNorm, aPower, aAlpha,
                                           b, bNorm, bAlpha,
                                           c, cNorm, newCPower1, cAlpha,
@@ -1164,7 +1164,7 @@ public class TwoElectronIntegrals {
             } // end if
 
             if (la > 0) {
-                res += 0.5*la/zetaPlusEta*vrr(a, aNorm, new Power(la-1, ma, na),
+                res += 0.5*la/zetaPlusEta*vrr(a, aNorm, Power(la-1, ma, na),
                                               aAlpha,
                                               b, bNorm, bAlpha,
                                               c, cNorm, newCPower,
@@ -1174,7 +1174,7 @@ public class TwoElectronIntegrals {
 
             return res;
         } else if (na > 0) {
-            val newAPower = new Power(la, ma, na-1);
+            val newAPower = Power(la, ma, na-1);
             res = (p.k-a.k)*vrr(a, aNorm, newAPower, aAlpha,
                                           b, bNorm, bAlpha,
                                           c, cNorm, cPower, cAlpha,
@@ -1185,7 +1185,7 @@ public class TwoElectronIntegrals {
                                           d, dNorm, dAlpha, m+1);
 
             if (na > 1) {
-               val newAPower1 = new Power(la, ma, na-2);
+               val newAPower1 = Power(la, ma, na-2);
                res += 0.5*(na-1)/zeta*(vrr(a, aNorm, newAPower1, aAlpha,
                                            b, bNorm, bAlpha,
                                            c, cNorm, cPower, cAlpha,
@@ -1198,7 +1198,7 @@ public class TwoElectronIntegrals {
 
             return res;
         } else if (ma > 0) {
-            val newAPower = new Power(la, ma-1, na);
+            val newAPower = Power(la, ma-1, na);
             res = (p.j-a.j)*vrr(a, aNorm, newAPower, aAlpha,
                                           b, aNorm, aAlpha,
                                           c, aNorm, cPower, cAlpha,
@@ -1209,7 +1209,7 @@ public class TwoElectronIntegrals {
                                           d, aNorm, dAlpha, m+1);
 
             if (ma > 1) {
-               val newAPower1 = new Power(la, ma-2, na);
+               val newAPower1 = Power(la, ma-2, na);
                res += 0.5*(ma-1)/zeta*(vrr(a, aNorm, newAPower1,
                                            aAlpha,
                                            b, aNorm, aAlpha,
@@ -1224,7 +1224,7 @@ public class TwoElectronIntegrals {
             
             return res;
         } else if (la > 0) {
-            val newAPower = new Power(la-1, ma, na);
+            val newAPower = Power(la-1, ma, na);
             res = (p.i-a.i)*vrr(a, aNorm, newAPower, aAlpha,
                                           b, aNorm, aAlpha,
                                           c, aNorm, cPower, cAlpha,
@@ -1235,7 +1235,7 @@ public class TwoElectronIntegrals {
                                           d, aNorm, dAlpha, m+1);
 
             if (la > 1) {
-                val newAPower1 = new Power(la-2, ma, na);
+                val newAPower1 = Power(la-2, ma, na);
                 res += 0.5*(la-1)/zeta*(vrr(a, aNorm, newAPower1, aAlpha,
                                             b, aNorm, aAlpha,
                                             c, aNorm, cPower, cAlpha,

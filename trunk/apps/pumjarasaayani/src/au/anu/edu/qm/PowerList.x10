@@ -12,7 +12,7 @@ import x10.util.*;
 
 public class PowerList { 
 
-    static val powerList = new HashMap[String,ValRail[Power]]() as HashMap[String,ValRail[Power]]!; 
+    val powerList = new HashMap[String,ValRail[Power]]() as HashMap[String,ValRail[Power]]!; 
 
     private def this() {
        powerList.put("S", generatePowerList(0));
@@ -31,7 +31,7 @@ public class PowerList {
         //    for(var j:Int=maxAngularMomentum-i; j>=0; j--) {
         for(var i:Int=0; i<=maxAngularMomentum; i++) {
             for(var j:Int=0; j<=maxAngularMomentum-i; j++) {
-                pList(idx++) = new Power(i, j, maxAngularMomentum-i-j);
+                pList(idx++) = Power(i, j, maxAngularMomentum-i-j);
             }
         }
 
@@ -41,7 +41,8 @@ public class PowerList {
     private static val _theInstance = new PowerList() as PowerList!;
 
     public static def getInstance() : PowerList! { 
-       return _theInstance as PowerList!;
+       // return _theInstance as PowerList!;
+       return new PowerList();
     }
 
     public def getPowers(orbitalType:String) = powerList.getOrElse(orbitalType, null);

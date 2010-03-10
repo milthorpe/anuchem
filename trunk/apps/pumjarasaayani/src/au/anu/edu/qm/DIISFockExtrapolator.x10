@@ -34,12 +34,16 @@ public class DIISFockExtrapolator {
 
     public def next(currentFock:Fock!, overlap:Overlap!, density:Density!) : Fock! {
         val N = currentFock.getRowCount();
-        val newFock = new Fock(N) as Fock!;
+        var newFock:Fock! = new Fock(N) as Fock!;
 
-        var newFockMat:Array[Double]{rank==2, self.at(this)} = newFock.getMatrix() as Array[Double]{rank==2, self.at(this)};
+        val newFockMat = newFock.getMatrix();
         val curFockMat = currentFock.getMatrix();
 
-        for((i,j) in curFockMat.dist) newFockMat(i,j) = curFockMat(i,j);
+        var i:Int, j:Int, k:Int;
+
+        for(i=0; i<N; i++)
+           for(j=0; j<N; j++)
+              newFockMat(i,j) = curFockMat(i,j);
         
         val FPS = currentFock.mul(density).mul(overlap);
         val SPF = overlap.mul(density).mul(currentFock);
@@ -58,7 +62,7 @@ public class DIISFockExtrapolator {
 
                 return currentFock;
             } else {
-                newFockMat = oldFock.mul(0.5).add(currentFock.mul(0.5)).getMatrix() as Array[Double]{rank==2, self.at(this)};
+                newFock = oldFock.mul(0.5).add(currentFock.mul(0.5)) as Fock!;
                 oldFock = currentFock;
 
                 return newFock;
@@ -71,15 +75,12 @@ public class DIISFockExtrapolator {
         newFock.makeZero();
 
         val noOfIterations = errorMatrixList.size();
-        val N1 = noOfIterations + 1;
 
-        val A = new Matrix(N1);
-        val B = new Vector(N1);
+        val A = new Matrix(noOfIterations+1);
+        val B = new Vector(noOfIterations+1);
 
         val aMatrix = A.getMatrix();
         val bVector = B.getVector();
-
-        var i:Int, j:Int, k:Int;
 
         // set up A x = B to be solved
         for (i = 0; i < noOfIterations; i++) {

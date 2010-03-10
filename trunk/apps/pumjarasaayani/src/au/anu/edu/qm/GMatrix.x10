@@ -12,6 +12,7 @@ import x10.util.*;
 
 import x10x.matrix.Matrix;
 import x10x.vector.Vector;
+import x10x.vector.Point3d;
 import au.edu.anu.chem.Molecule;
 
 public class GMatrix extends Matrix {
@@ -342,7 +343,7 @@ public class GMatrix extends Matrix {
         i = 0;
         for(place in Place.places) {
            computeInst(i) = at(place) { 
-                return new ComputePlaceOld(molecule as Molecule[QMAtom]!, basisFunctions, density, place); 
+                return new ComputePlaceOld(molecule, basisFunctions, density, place); 
            };
            i++;
         }
@@ -366,7 +367,7 @@ public class GMatrix extends Matrix {
                                for(place in Place.places) {
                                    val comp_loc = computeInst(ix);
 
-                                   setIt = at(place) { (comp_loc as ComputePlaceOld!).setValue(i_l, j_l, k_l, l_l) };
+                                   setIt = at(comp_loc) { comp_loc.setValue(i_l, j_l, k_l, l_l) };
 
                                    if (setIt) {
                                        break outer;
@@ -386,12 +387,16 @@ public class GMatrix extends Matrix {
         i = 0;
         for(place in Place.places) {
              val comp_loc = computeInst(i);
-             val jMatrix = at(place) { (comp_loc as ComputePlaceOld!).getJMat().getMatrix() };
-             val kMatrix = at(place) { (comp_loc as ComputePlaceOld!).getKMat().getMatrix() };
 
-             finish ateach(val(x,y) in gMatrix.dist) {
-                   gMatrix(x,y) += jMatrix(x,y) - (0.25*kMatrix(x,y));
-             } // finish
+             for(var x:Int=0; x<N; x++) {
+               for(var y:Int=0; y<N; y++) {
+                  val x_loc = x; val y_loc = y;
+                  val jVal = at(comp_loc) { comp_loc.getJMat().getMatrix()(x_loc, y_loc) };
+                  val kVal = at(comp_loc) { comp_loc.getKMat().getMatrix()(x_loc, y_loc) };
+
+                  gMatrix(x,y) += jVal - (0.25*kVal);
+               } // end for
+             } // end for
 
              i++;
         } // end for
@@ -510,7 +515,7 @@ public class GMatrix extends Matrix {
 
         for(i=0; i<Runtime.INIT_THREADS; i++) {
             computeInst(i) = new ComputeNew(new TwoElectronIntegrals(twoE.getBasisFunctions(), molecule, true),
-                                        shellList, density);
+                                            shellList, density);
         } // end for
 
         // center a
@@ -798,9 +803,6 @@ public class GMatrix extends Matrix {
     class ComputePlaceOld {
       
         val thePlace:Place;
-        val density:Density;
-        val molecule:Molecule[QMAtom];
-        val basisFunctions:BasisFunctions;
 
         val computeInst = Rail.make[ComputeOld!](Runtime.INIT_THREADS);
 
@@ -809,15 +811,53 @@ public class GMatrix extends Matrix {
         val kdx = Rail.make[Int](8);
         val ldx = Rail.make[Int](8);
 
+        val density:Density!;
+
         public def this(mol:Molecule[QMAtom], bfs:BasisFunctions, den:Density, tp:Place) {
-            molecule = mol;
-            density  = den;
             thePlace = tp;
-            basisFunctions = bfs;
+
+            val mol_loc = new Molecule[QMAtom]() as Molecule[QMAtom]!;
+            val nAtoms  = at(mol) { mol.getNumberOfAtoms() };
+ 
+            for(var i:Int=0; i<nAtoms; i++) {
+                val i_loc = i;
+                val sym  = at(mol) { mol.getAtom(i_loc).symbol };
+                val x    = at(mol) { mol.getAtom(i_loc).centre.i };
+                val y    = at(mol) { mol.getAtom(i_loc).centre.j };
+                val z    = at(mol) { mol.getAtom(i_loc).centre.k };
+   
+                mol_loc.addAtom(new QMAtom(sym, new Point3d(x, y, z)));
+            } // end for
+
+            // Console.OUT.println("\tStart making local Molecule and BasisFunctions @ " + here);
+
+            val basisName = at(bfs) { bfs.getBasisName() };
+            val bas_loc = new BasisFunctions(mol_loc, basisName, "basis");
+
+            // Console.OUT.println("\tDone making local Molecule and BasisFunctions @ " + here);
+
+            // Console.OUT.println("\tMake local copy of density @ " + here);
+
+            val N = at(den) { den.getRowCount() };
+            val den_loc = new Density(N);
+            density = den_loc;
+            val den_loc_mat = den_loc.getMatrix();
+
+            for(var i:Int=0; i<N; i++) {
+              for(var j:Int=0; j<N; j++) {
+                  val i_loc = i; val j_loc = j;
+
+                  den_loc_mat(i, j) = at(den) { den.getMatrix()(i_loc, j_loc) };
+              } // end for
+            } // end for 
+
+            // Console.OUT.println("\tDone making local copy of density @ " + here);
 
             for(var i:Int=0; i<Runtime.INIT_THREADS; i++) {
-                computeInst(i) = new ComputeOld(new TwoElectronIntegrals(basisFunctions as BasisFunctions!, molecule as Molecule[QMAtom]!, true), density);
+                computeInst(i) = new ComputeOld(new TwoElectronIntegrals(bas_loc, mol_loc, true), den_loc);
             } // end for
+
+            // Console.OUT.println("\tDone initing tasks @ " + here);
         }
 
         public def setValue(i:Int, j:Int, k:Int, l:Int) : Boolean {
@@ -831,7 +871,9 @@ public class GMatrix extends Matrix {
             jdx(4) = k; jdx(5) = k; idx(6) = k; idx(7) = k;
 
             for(var ix:Int=0; ix<Runtime.INIT_THREADS; ix++) {
-               if (computeInst(ix).setValue(i, j, k, l, idx, jdx, kdx, ldx)) {
+               val setIt = computeInst(ix).setValue(i, j, k, l, idx, jdx, kdx, ldx);
+
+               if (setIt) {
                   val ix_loc = ix;
                   async computeInst(ix_loc).compute();
                   return true;
