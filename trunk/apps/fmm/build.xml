@@ -18,7 +18,9 @@
     <property name="inline-optimizations" value="true"/>
     <property name="profile"  value="false"/>
     <property name="mpiPprofile"  value="false"/>
-    <property name="x10rt" value="pgas_sockets"/>
+    <property name="mpiPHome" location="/scratch/mpiP"/>
+    <property name="binutilsHome" location="/scratch/binutils"/>
+    <property name="x10rt" value="mpi"/>
 	<property name="target" location="${basedir}/target"/>
 	<property name="target-src" location="${target}/classes"/>
 	<property name="target-test" location="${target}/test-classes"/>
@@ -42,7 +44,7 @@
         <istrue value="${profile}"/>
     </condition>
 
-    <condition property="link.mpiPprofile" value="-lmpiP -lbfd -liberty -lm" else="">
+    <condition property="link.mpiPprofile" value="-L${binutilsHome}/lib -L${mpiPHome}/lib -lmpiP -lbfd -liberty -lm" else="">
         <istrue value="${mpiPprofile}"/>
     </condition>
 
