@@ -133,11 +133,13 @@ public class DistributedFmm3d {
                     multipoleTransforms(Point.make([placeId, level, i, j, k])) = LocalExpansion.getMlm(translationVector, numTerms);
                 }
             }
+
+            Console.OUT.println("multipoleLowestLevel");
+
+            // can do lowest level without translations/transforms
+            multipoleLowestLevel();
         }
 
-        Console.OUT.println("multipoleLowestLevel");
-
-        multipoleLowestLevel();
         /*
         var nonEmpty : Int = 0;
         for (val (i,j) in boxes.region) {
@@ -206,7 +208,7 @@ public class DistributedFmm3d {
             val thisLevelDist = boxes.dist | thisLevelRegion;
             //finish ateach (p in thisLevelDist) {
             finish ateach ((p1) in Dist.makeUnique(thisLevelDist.places())) {
-                foreach ((boxIndex1,level) in thisLevelDist | here) {
+                finish foreach ((boxIndex1,level) in thisLevelDist | here) {
                     //Console.OUT.println(p + " dist " + boxes.dist(boxIndex1, level));
                     if (boxes(boxIndex1, level) != null) {
                         val child = boxes(boxIndex1, level) as FmmBox!;
@@ -236,7 +238,7 @@ public class DistributedFmm3d {
         val level2Region : Region(2) = [0..63,2..2];
         val level2Dist = boxes.dist | level2Region;
         finish ateach ((p1) in Dist.makeUnique(level2Dist.places())) {
-            foreach ((boxIndex1,level) in level2Dist | here) {
+            finish foreach ((boxIndex1,level) in level2Dist | here) {
                 val box1 = boxes(boxIndex1,level) as FmmBox!;
                 if (box1 != null) {
                     //Console.OUT.println("transformToLocal: box(" + boxIndex1 + "," + 2 + ")");
@@ -265,7 +267,7 @@ public class DistributedFmm3d {
             val thisLevelRegion : Region(2) = [0..(Math.pow(8,thisLevel) as Int)-1,thisLevel..thisLevel];
             val thisLevelDist = boxes.dist | thisLevelRegion;
             finish ateach ((p1) in Dist.makeUnique(thisLevelDist.places())) {
-                foreach ((boxIndex1,level) in thisLevelDist | here) {
+                finish foreach ((boxIndex1,level) in thisLevelDist | here) {
                     val box1 = boxes(boxIndex1,level) as FmmBox!;
                     if (box1 != null) {
                         //Console.OUT.println("transformToLocal: box(" + boxIndex1 + "," + level + ")");
