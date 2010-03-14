@@ -107,17 +107,31 @@ public class DistributedFmm3d {
     }
     
     public def calculateEnergy() : Double {
-        if (numLevels >= 3) {
-            // precompute multipole translations
-            finish ateach ((p) : Point in Dist.makeUnique(Place.places)) {
-                for (val(placeId,level,i,j,k) in multipoleTranslations.dist | here) {
+        finish {
+            if (numLevels >= 3) {
+                // precompute multipole translations
+                finish ateach ((p) : Point in Dist.makeUnique(Place.places)) {
+                    for (val(placeId,level,i,j,k) in multipoleTranslations.dist | here) {
+                        dim : Int = Math.pow2(level);
+                        sideLength : Double = size / dim;
+                        val translationVector = new Vector3d((i*2-1) * 0.5 * sideLength,
+                                                         (j*2-1) * 0.5 * sideLength,
+                                                         (k*2-1) * 0.5 * sideLength);
+                        multipoleTranslations(Point.make([placeId, level, i, j, k])) = MultipoleExpansion.getOlm(translationVector as Tuple3d, numTerms);
+                    } 
+                }
+            }
+
+            // precompute child translations
+            ateach ((p) : Point in Dist.makeUnique(Place.places)) {
+                for (val(placeId,level,i,j,k) in multipoleTransforms.dist | here) {
                     dim : Int = Math.pow2(level);
                     sideLength : Double = size / dim;
-                    val translationVector = new Vector3d((i*2-1) * 0.5 * sideLength,
-                                                     (j*2-1) * 0.5 * sideLength,
-                                                     (k*2-1) * 0.5 * sideLength);
-                    multipoleTranslations(Point.make([placeId, level, i, j, k])) = MultipoleExpansion.getOlm(translationVector as Tuple3d, numTerms);
-                } 
+                    val translationVector = new Vector3d(i * sideLength,
+                                                     j * sideLength,
+                                                     k * sideLength);
+                    multipoleTransforms(Point.make([placeId, level, i, j, k])) = LocalExpansion.getMlm(translationVector, numTerms);
+                }
             }
         }
 
@@ -161,9 +175,9 @@ public class DistributedFmm3d {
                 val boxLocation = getLowestLevelBoxLocation(atom);
                 val boxIndex = FmmBox.getBoxIndex(boxLocation, numLevels);
                 //Console.OUT.println("atoms(" + i + ") => box(" + boxIndex + ")");
-                val parentBox = getParentBox(boxIndex, numLevels);
                 //Console.OUT.println("boxIndex = " + boxIndex + " numLevels = " + numLevels);
                 async (boxes.dist(boxIndex, numLevels)) {
+                    val parentBox = getParentBox(boxIndex, numLevels);
                     val remoteAtom = new MMAtom(atom);
                     var box : FmmBox;
                     atomic {
@@ -217,18 +231,6 @@ public class DistributedFmm3d {
      * non-empty child boxes.
      */
     def transformToLocal() {
-        // precompute child translations
-        finish ateach ((p) : Point in Dist.makeUnique(Place.places)) {
-            for (val(placeId,level,i,j,k) in multipoleTransforms.dist | here) {
-                dim : Int = Math.pow2(level);
-                sideLength : Double = size / dim;
-                val translationVector = new Vector3d(i * sideLength,
-                                                 j * sideLength,
-                                                 k * sideLength);
-                multipoleTransforms(Point.make([placeId, level, i, j, k])) = LocalExpansion.getMlm(translationVector, numTerms);
-            }
-        }
-
         Console.OUT.println("level 2");
 
         val level2Region : Region(2) = [0..63,2..2];
