@@ -1,11 +1,9 @@
 /**
  * The Gaussian elemination solver for A x = B
  *
- * Node: Mostly lifted from MeTA Studio code, except no Matrix singularity 
- * and upper - triangular checks made!
+ * Node: Mostly lifted from MeTA Studio code
  * 
  * @author  V.Ganesh
- * @version 2.0 (Part of MeTA v2.0)
  */
 
 package x10x.xla;
@@ -15,7 +13,7 @@ import x10x.matrix.Matrix;
 
 public class GaussianElimination extends LinearEquationSolver {
 
-    private var row:Array[Int]{rank==1, self.at(this)};
+    private var row:Rail[Int]!;
     private var a:Array[Double]{rank==2, self.at(this)};
     private var x:Array[Double]{rank==1, self.at(this)};
 
@@ -26,7 +24,7 @@ public class GaussianElimination extends LinearEquationSolver {
 
     private var n:Int, n1:Int;
 
-    public def findSolution(matA:Matrix!, vectorB:Vector!) : Vector! {
+    public def findSolution(matA:Matrix!, vectorB:Vector!) : Vector! throws Exception {
         val N = matA.getRowCount();
         this.matrixA = new Matrix(N, N+1) as Matrix!;
         a = this.matrixA.getMatrix(); 
@@ -50,10 +48,9 @@ public class GaussianElimination extends LinearEquationSolver {
         n  = this.matrixA.getRowCount()-1;
         n1 = this.matrixA.getColCount()-1;
 
-        row = Array.make[Int]([0..n]) as Array[Int]{rank==1, self.at(this)};
+        row = Rail.make[Int](this.matrixA.getRowCount(), (Int)=>0);
         
         // initilize row vector
-        row(0) = 0;
         for(j=1; j<=n; j++) 
             row(j) = j;
 
@@ -76,15 +73,17 @@ public class GaussianElimination extends LinearEquationSolver {
             x(k) = (a(row(k),n1) - sum) / a(row(k),k);
         } // end outer for
 
+        Console.OUT.println("sol: " + vectorB);
+
         return vectorB;
     }
 
     /** Upper triangularize the matrix */
-    private def upperTriangularize(doOneScale:Boolean) : Boolean {
+    private def upperTriangularize(doOneScale:Boolean) : Void throws Exception {
         // check if matrix is already upper triangular
         // this check may be removed in future
         if (matrixA.isUpperTriangular()) {
-            return false;
+            return;
         } // end if
 
         for (var p:Int=0; p<=n1; p++) {
@@ -93,10 +92,9 @@ public class GaussianElimination extends LinearEquationSolver {
         } // end for
 
         if (matrixA.isSingular(n, row)) {
-            return false;
+            Console.OUT.println("Singular matrix!");
+            throw new Exception("Singular Matrix");
         } // end if
-
-        return true;
     }
 
     /**
@@ -106,16 +104,16 @@ public class GaussianElimination extends LinearEquationSolver {
      *                 interchanges the ith and jth rows.
      * @param p - The pth iteration in Gaussian elemination.
      */
-    public def simplePivot(p:Int) : Boolean {
+    public def simplePivot(p:Int) : Void throws Exception {
         var temp:Int = 0;
 
-        if (p >= row.region.max(0)+1) {
-            return true;
+        if (p >= n) {
+            return;
         } // end if
 
         // if concerned row's first element is unity
         // or more do not pivot
-        if (Math.abs(a(row(p),p)) >= 1) return true;
+        if (Math.abs(a(row(p),p)) >= 1) return;
 
         var k:Int;
         for(k=(p+1); k<=n; k++) {
@@ -131,10 +129,8 @@ public class GaussianElimination extends LinearEquationSolver {
         } // end for
 
         if (matrixA.isSingular(p, row)) {
-           return false;
+            throw new Exception("Singular Matrix");
         } // end if
-
-        return true;
     } // end of method simplePivot()
 
     /**
@@ -147,7 +143,7 @@ public class GaussianElimination extends LinearEquationSolver {
     private def oneScale(p:Int, scale:Boolean) {
         var m:Double = 0.0;
 
-        if (p >= row.region.max(0)+1) {
+        if (p >= n) {
             return;
         } // end if
  

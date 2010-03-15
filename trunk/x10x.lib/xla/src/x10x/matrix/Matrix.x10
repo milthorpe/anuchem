@@ -291,12 +291,15 @@ public class Matrix {
         return true;
     }
 
-    public def isSingular(p:Int, row:Array[Int]{rank==1}) : Boolean {
+    public def isSingular(p:Int, row:Rail[Int]!) : Boolean {
         val N = getColCount();
         var i:Int;
 
-        for(i=p; i<=N-1; i++) {
-            if (mat(row(p), i) != 0) {
+        Console.OUT.println("isSingular: " + p + " " + row(p) + ", " + N);
+        Console.OUT.println("isSingular: " + this);
+
+        for(i=p; i<=N; i++) {
+            if (mat(row(p), i) != 0.0 && Math.abs(mat(row(p),i))>1e-15) {
                 return false;
             } // end if
         } // end for
