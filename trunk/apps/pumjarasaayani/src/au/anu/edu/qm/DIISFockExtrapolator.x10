@@ -62,7 +62,13 @@ public class DIISFockExtrapolator {
 
                 return currentFock;
             } else {
-                newFock = oldFock.mul(0.5).add(currentFock.mul(0.5)) as Fock!;
+                val nf = oldFock.mul(0.5).add(currentFock.mul(0.5)).getMatrix();
+                for(i=0; i<N; i++) {
+                   for(j=0; j<N; j++) {
+                      newFockMat(i, j) = nf(i, j);
+                   }
+                }
+
                 oldFock = currentFock;
 
                 return newFock;
@@ -76,8 +82,8 @@ public class DIISFockExtrapolator {
 
         val noOfIterations = errorMatrixList.size();
 
-        val A = new Matrix(noOfIterations+1);
-        val B = new Vector(noOfIterations+1);
+        val A = new Matrix(noOfIterations+1) as Matrix!;
+        val B = new Vector(noOfIterations+1) as Vector!;
 
         val aMatrix = A.getMatrix();
         val bVector = B.getVector();
@@ -99,16 +105,35 @@ public class DIISFockExtrapolator {
 
         val gele = new GaussianElimination();
 
-        val solVec = gele.findSolution(A, B).getVector();
+        try {
+          val solVec = gele.findSolution(A, B).getVector();
 
-        for (i = 0; i < noOfIterations; i++) {
-            val prevFockMat = fockMatrixList.get(i).getMatrix();
-            for (j = 0; j < N; j++) {
+          for (i = 0; i < noOfIterations; i++) {
+              val prevFockMat = fockMatrixList.get(i).getMatrix();
+              for (j = 0; j < N; j++) {
                  for (k = 0; k < N; k++) {
                      newFockMat(j,k) += solVec(i) * prevFockMat(j,k);
                  } // end for
-            } // end for
-        } // end for
+              } // end for
+          } // end for
+        } catch(e:Exception) {
+          if (oldFock == null) {
+              oldFock = currentFock;
+
+              return currentFock;
+          } else {
+              val nf = oldFock.mul(0.5).add(currentFock.mul(0.5)).getMatrix();
+              for(i=0; i<N; i++) {
+                 for(j=0; j<N; j++) {
+                    newFockMat(i, j) = nf(i, j);
+                 }
+              }
+
+              oldFock = currentFock;
+
+              return newFock;
+          } // end if
+        } // end catch throw
 
         diisStep++;
 
