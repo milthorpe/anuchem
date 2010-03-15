@@ -383,23 +383,39 @@ public class GMatrix extends Matrix {
           } // end i loop
         } // finish
 
+        val timer = new Timer(1);
+
+        timer.start(0);
+
         // form the G matrix
+        // TODO following need to change once XTENLANG-787 is resolved
         i = 0;
         for(place in Place.places) {
              val comp_loc = computeInst(i);
+             val jVal = at(comp_loc) { comp_loc.getJMatVal() };
+             val kVal = at(comp_loc) { comp_loc.getKMatVal() };
 
+             var ii:Int=0;
              for(var x:Int=0; x<N; x++) {
                for(var y:Int=0; y<N; y++) {
+                  /**
                   val x_loc = x; val y_loc = y;
                   val jVal = at(comp_loc) { comp_loc.getJMat().getMatrix()(x_loc, y_loc) };
                   val kVal = at(comp_loc) { comp_loc.getKMat().getMatrix()(x_loc, y_loc) };
-
+             
                   gMatrix(x,y) += jVal - (0.25*kVal);
+                  **/
+
+                  gMatrix(x,y) += jVal(ii) - (0.25*kVal(ii));
+                  ii++;
                } // end for
              } // end for
 
              i++;
         } // end for
+        
+        timer.stop(0);
+        Console.OUT.println("\tTime for summing up GMatrix bits: " + (timer.total(0) as Double) / 1e9 + " seconds"); 
     }
 
     private def computeDirectSerialNew(twoE:TwoElectronIntegrals!, density:Density!) : void {
@@ -894,7 +910,7 @@ public class GMatrix extends Matrix {
 
             return jM;             
         }
- 
+
         public def getKMat() : Matrix! {
             val N = density.getRowCount();
             var kM:Matrix! = new Matrix(N) as Matrix!;
@@ -905,6 +921,37 @@ public class GMatrix extends Matrix {
             } //  end for
 
             return kM;
+        }
+
+        // TODO following two methods should not be necessary once XTENLANG-787 is resolved
+        public def getJMatVal() : ValRail[Double]! {
+           val jM   = getJMat();
+           val N    = jM.getRowCount();
+           val jMat = jM.getMatrix();
+           val jR   = Rail.make[Double](N*N);
+           var i:Int, j:Int, ii:Int;
+
+           ii = 0;
+           for(i=0; i<N; i++)
+              for(j=0; j<N; j++)
+                 jR(ii++) = jMat(i,j);
+
+           return ValRail.make[Double](N*N, (i:Int)=>jR(i)) as ValRail[Double]!;
+        }
+
+        public def getKMatVal() : ValRail[Double]! {
+           val kM   = getKMat();
+           val N    = kM.getRowCount();
+           val kMat = kM.getMatrix();
+           val kR   = Rail.make[Double](N*N);
+           var i:Int, j:Int, ii:Int;
+
+           ii = 0;
+           for(i=0; i<N; i++)
+              for(j=0; j<N; j++)
+                 kR(ii++) = kMat(i,j);
+
+           return ValRail.make[Double](N*N, (i:Int)=>kR(i)) as ValRail[Double]!;
         }
     }
 }
