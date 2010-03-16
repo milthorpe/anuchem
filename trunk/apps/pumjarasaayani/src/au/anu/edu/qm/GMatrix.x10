@@ -339,7 +339,11 @@ public class GMatrix extends Matrix {
 
         var i:Int, j:Int, k:Int, l:Int, m:Int, ij:Int, kl:Int;
 
-        val computeInst = Rail.make[ComputePlaceOld](Runtime.INIT_THREADS);
+        val nPlaces = Place.places.length;
+        val computeInst = Rail.make[ComputePlaceOld](nPlaces);
+
+        Console.OUT.println("\tNo. of places: " + nPlaces);
+        Console.OUT.println("\tNo. of threads per place: " + Runtime.INIT_THREADS);
 
         i = 0;
         for(place in Place.places) {
@@ -363,18 +367,10 @@ public class GMatrix extends Matrix {
                            val i_l = i, j_l = j, k_l = k, l_l = l;
 
                            outer: while(!setIt) {
-                               var ix:Int = 0;
-      
-                               for(place in Place.places) {
-                                   val comp_loc = computeInst(ix);
-
+                               for(comp_loc in computeInst) {
                                    setIt = at(comp_loc) { comp_loc.setValue(i_l, j_l, k_l, l_l) };
 
-                                   if (setIt) {
-                                       break outer;
-                                   } // end if
-
-                                   ix++;
+                                   if (setIt) break outer;
                                } // end for
                            } // end while
                        } // end if                        
@@ -384,15 +380,15 @@ public class GMatrix extends Matrix {
           } // end i loop
         } // finish
 
+        Console.OUT.println("Finished finish!");
+
         val timer = new Timer(1);
 
         timer.start(0);
 
         // form the G matrix
         // TODO following need to change once XTENLANG-787 is resolved
-        i = 0;
-        for(place in Place.places) {
-             val comp_loc = computeInst(i);
+        for(comp_loc in computeInst) {
              val jVal = at(comp_loc) { comp_loc.getJMatVal() };
              val kVal = at(comp_loc) { comp_loc.getKMatVal() };
 
@@ -411,8 +407,6 @@ public class GMatrix extends Matrix {
                   ii++;
                } // end for
              } // end for
-
-             i++;
         } // end for
         
         timer.stop(0);
@@ -878,6 +872,8 @@ public class GMatrix extends Matrix {
         }
 
         public def setValue(i:Int, j:Int, k:Int, l:Int) : Boolean {
+            Console.OUT.println("In setValue");
+
             idx(0) = i; jdx(1) = i; jdx(2) = i; idx(3) = i;
             kdx(4) = i; ldx(5) = i; kdx(6) = i; ldx(7) = i;
 
@@ -893,10 +889,12 @@ public class GMatrix extends Matrix {
                if (setIt) {
                   val ix_loc = ix;
                   async computeInst(ix_loc).compute();
+                  Console.OUT.println("Out setValue (true)");
                   return true;
                } // end if
             } // end for
 
+            Console.OUT.println("Out setValue (false)");
             return false;
         }
 
