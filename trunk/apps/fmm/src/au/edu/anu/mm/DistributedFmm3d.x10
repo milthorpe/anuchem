@@ -81,7 +81,7 @@ public class DistributedFmm3d {
             val nextLevelDist = Dist.makeBlock(nextLevelRegion, 0);
             boxDistribution = boxDistribution || nextLevelDist;
         }
-        Console.OUT.println("dist: " + boxDistribution);
+        Console.OUT.println("boxDistribution: " + boxDistribution);
         
         // all boxes are null to start.  they will be initialised as needed.
         this.boxes = Array.make[FmmBox](boxDistribution);
@@ -174,7 +174,7 @@ public class DistributedFmm3d {
      * non-empty child boxes.
      */
     def transformToLocal() {
-        Console.OUT.println("transform: level 2");
+        Console.OUT.println("transform level 2");
         val level2Region : Region(2) = [0..63,2..2];
         val level2Dist = boxes.dist | level2Region;
         // TODO XTENLANG-1143
@@ -200,7 +200,7 @@ public class DistributedFmm3d {
         }
         
         for ((thisLevel) in 3..numLevels) {
-            Console.OUT.println("transform: level " + thisLevel);
+            Console.OUT.println("transform level " + thisLevel);
             val thisLevelRegion : Region(2) = [0..(Math.pow(8,thisLevel) as Int)-1,thisLevel..thisLevel];
             val thisLevelDist = boxes.dist | thisLevelRegion;
             // TODO XTENLANG-1143
