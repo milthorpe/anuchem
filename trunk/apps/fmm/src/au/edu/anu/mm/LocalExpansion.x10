@@ -84,7 +84,7 @@ public class LocalExpansion extends Expansion {
      * @param b the vector along which to translate the multipole
      * @param source the source multipole expansion, centred at the origin
      */
-    public def transformAndAddToLocal(transform : LocalExpansion!,
+    public safe def transformAndAddToLocal(transform : LocalExpansion!,
                                          source : MultipoleExpansion!) {
         val p : Int = terms.region.max(0);
         for (val (j,k): Point in terms) {

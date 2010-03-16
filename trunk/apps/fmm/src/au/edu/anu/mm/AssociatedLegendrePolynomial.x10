@@ -11,7 +11,7 @@ public class AssociatedLegendrePolynomial {
 	/**
 	 * Calculate associated Legendre polynomials P_{lm}(x) up to l=p (m.ge.0)
 	 */
-	public static def getPlm(x: double, p : int) : Array[Double](2) {
+	public static safe def getPlm(x: double, p : int) : Array[Double](2) {
         if (Math.abs(x) > 1.0) {
             throw new IllegalArgumentException("abs(x) > 1: Associated Legendre functions are only defined on [-1, 1].");
         }
