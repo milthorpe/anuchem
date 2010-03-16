@@ -34,16 +34,30 @@ public class TestFmm3d {
             return;
         }
 
+        Console.OUT.println("Testing FMM for " + numParticles 
+                          + " particles, target density = " + density
+                          + " numTerms = " + numTerms
+                          + " wellSpaced param = " + wellSpaced);
         
         /* Assign particles to random locations within a -1..1 3D box, with unit charge (1/3 are negative). */
         val atoms = ValRail.make[MMAtom!](numParticles, (i : Int) => new MMAtom(new Point3d(randomUnit(), randomUnit(), randomUnit()), i%3==4?1:-1));
+
         val fmm3d = new Fmm3d(density, numTerms, wellSpaced, 2.0, atoms);
-        val timer = new Timer(1);
-        timer.start(0);
         val energy = fmm3d.calculateEnergy();
-        timer.stop(0);
+        
         Console.OUT.println("energy = " + energy);
-        Console.OUT.printf("Time (one cycle): %g seconds", (timer.total(0) as Double) / 1e9);
+
+        val timer = fmm3d.timer;
+        logTime("Multipole", Fmm3d.TIMER_INDEX_MULTIPOLE, fmm3d.timer);
+        logTime("Direct",    Fmm3d.TIMER_INDEX_DIRECT,    fmm3d.timer);
+        logTime("Combine",   Fmm3d.TIMER_INDEX_COMBINE,   fmm3d.timer);
+        logTime("Transform", Fmm3d.TIMER_INDEX_TRANSFORM, fmm3d.timer);
+        logTime("Far field", Fmm3d.TIMER_INDEX_FARFIELD,  fmm3d.timer);
+        logTime("Total",     Fmm3d.TIMER_INDEX_TOTAL,     fmm3d.timer);
+    }
+
+    private static def logTime(desc : String, timerIndex : Int, timer : Timer!) {
+        Console.OUT.printf(desc + " (one cycle): %g seconds\n", (timer.mean(timerIndex) as Double) / 1e9);
     }
 
     static def randomUnit() : Double {

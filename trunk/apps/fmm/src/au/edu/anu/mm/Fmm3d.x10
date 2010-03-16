@@ -4,6 +4,7 @@ import x10x.vector.Point3d;
 import x10x.vector.Vector3d;
 import x10x.vector.Tuple3d;
 import au.edu.anu.chem.mm.MMAtom;
+import au.edu.anu.util.Timer;
 
 /**
  * This class implements the Fast Multipole Method for electrostatic
@@ -44,6 +45,14 @@ public class Fmm3d {
     var directEnergy : Double = 0.0;
     var farFieldEnergy : Double = 0.0;
 
+    public const TIMER_INDEX_TOTAL : Int = 0;
+    public const TIMER_INDEX_MULTIPOLE : Int = 1;
+    public const TIMER_INDEX_DIRECT : Int = 2;
+    public const TIMER_INDEX_COMBINE : Int = 3;
+    public const TIMER_INDEX_TRANSFORM : Int = 4;
+    public const TIMER_INDEX_FARFIELD : Int = 5;
+    public val timer = new Timer(6);
+
     /**
      * Initialises a fast multipole method electrostatics calculation
      * for the given system of atoms.
@@ -70,7 +79,7 @@ public class Fmm3d {
 
         this.numTerms = numTerms;
         this.ws = ws;
-
+        
         this.size = size;
 
         this.atoms = atoms;
@@ -102,12 +111,15 @@ public class Fmm3d {
     }
     
     public def calculateEnergy() : Double {
+        timer.start(TIMER_INDEX_TOTAL);
         multipoleLowestLevel();
         val directEnergy = future {getDirectEnergy()};
         combineMultipoles();
         transformToLocal();
         farFieldEnergy = getFarFieldEnergy();
-        return directEnergy() + farFieldEnergy;
+        val totalEnergy = directEnergy() + farFieldEnergy;
+        timer.stop(TIMER_INDEX_TOTAL);
+        return totalEnergy;
     }
 
     /** 
@@ -116,6 +128,7 @@ public class Fmm3d {
      */
     def multipoleLowestLevel() {
         Console.OUT.println("multipole lowest level");
+        timer.start(TIMER_INDEX_MULTIPOLE);
         finish {
             for ((i) in 0..atoms.length-1) {
                 val atom = atoms(i);
@@ -139,6 +152,7 @@ public class Fmm3d {
                 }
             }
         }
+        timer.stop(TIMER_INDEX_MULTIPOLE);
     }
 
     /** 
@@ -146,6 +160,7 @@ public class Fmm3d {
      * boxes into a single multipole expansion for the parent box.
      */
     def combineMultipoles() {
+        timer.start(TIMER_INDEX_COMBINE);
         for (var level: Int = numLevels; level > 2; level--) {
             Console.OUT.println("combine level " + level + " => " + (level-1));
             val thisLevelRegion : Region(2) = [0..((Math.pow(8,level) as Int)-1),level..level];
@@ -166,6 +181,7 @@ public class Fmm3d {
                 }
             }
         }
+        timer.stop(TIMER_INDEX_COMBINE);
     }
 
     /**
@@ -177,6 +193,7 @@ public class Fmm3d {
      */
     def transformToLocal() {
         Console.OUT.println("transform level 2");
+        timer.start(TIMER_INDEX_TRANSFORM);
         val level2Region : Region(2) = [0..63,2..2];
         val level2Dist = boxes.dist | level2Region;
         // TODO XTENLANG-1143
@@ -235,6 +252,7 @@ public class Fmm3d {
                 }
             }
         }
+        timer.stop(TIMER_INDEX_TRANSFORM);
     }
 
     /**
@@ -242,7 +260,7 @@ public class Fmm3d {
      * in non-well-separated boxes. 
      */
     def getDirectEnergy() : Double {
-        Console.OUT.println("getDirectEnergy");
+        timer.start(TIMER_INDEX_DIRECT);
         // TODO n^2 calculation - to check - remove this
         /*
         var pairwiseEnergy : Double = 0.0;
@@ -302,12 +320,14 @@ public class Fmm3d {
                 }
             }
         }
+        timer.stop(TIMER_INDEX_DIRECT);
 
         return directEnergy;
     }
 
     def getFarFieldEnergy() : Double {
         Console.OUT.println("getFarFieldEnergy");
+        timer.start(TIMER_INDEX_FARFIELD);
         val lowestLevelRegion : Region(2) = [0..(Math.pow(8,numLevels) as Int)-1,numLevels..numLevels];
         val lowestLevelDist = boxes.dist | lowestLevelRegion;
         // TODO XTENLANG-1143
@@ -329,6 +349,7 @@ public class Fmm3d {
                 }
             }
         }
+        timer.stop(TIMER_INDEX_FARFIELD);
 
         return farFieldEnergy;
     }
