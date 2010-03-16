@@ -14,6 +14,7 @@ import x10x.matrix.Matrix;
 import x10x.vector.Vector;
 import x10x.vector.Point3d;
 import au.edu.anu.chem.Molecule;
+import au.edu.anu.util.Timer;
 
 public class GMatrix extends Matrix {
     public def this(n:Int) {

@@ -9,6 +9,7 @@
 package au.anu.edu.qm;
 
 import au.edu.anu.chem.Molecule;
+import au.edu.anu.util.Timer;
 
 public class HartreeFockSCFMethod extends SCFMethod { 
     val gMatType:Int;
