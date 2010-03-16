@@ -45,12 +45,14 @@ public class Fmm3d {
     var directEnergy : Double = 0.0;
     var farFieldEnergy : Double = 0.0;
 
+    // TODO enum - XTENLANG-1118
     public const TIMER_INDEX_TOTAL : Int = 0;
     public const TIMER_INDEX_MULTIPOLE : Int = 1;
     public const TIMER_INDEX_DIRECT : Int = 2;
     public const TIMER_INDEX_COMBINE : Int = 3;
     public const TIMER_INDEX_TRANSFORM : Int = 4;
     public const TIMER_INDEX_FARFIELD : Int = 5;
+    /** A multi-timer for the several segments of a single getEnergy invocation, indexed by the constants above. */
     public val timer = new Timer(6);
 
     /**

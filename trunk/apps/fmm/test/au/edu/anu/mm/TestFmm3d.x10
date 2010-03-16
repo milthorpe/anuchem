@@ -57,7 +57,7 @@ public class TestFmm3d {
     }
 
     private static def logTime(desc : String, timerIndex : Int, timer : Timer!) {
-        Console.OUT.printf(desc + " (one cycle): %g seconds\n", (timer.mean(timerIndex) as Double) / 1e9);
+        Console.OUT.printf(desc + " (one cycle): %g seconds\n", (timer.total(timerIndex) as Double) / 1e9);
     }
 
     static def randomUnit() : Double {
