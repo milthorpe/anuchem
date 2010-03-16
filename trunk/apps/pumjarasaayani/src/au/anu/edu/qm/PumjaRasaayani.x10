@@ -56,8 +56,10 @@ public class PumjaRasaayani {
     }
 
     var energy:Double = 0.0;
+    val time:Double = 0.0;
 
     public def getEnergy() = energy;
+    public def getTime() = time;
 
     public def runIt() {       
         val timer = new Timer(1);
@@ -89,8 +91,9 @@ public class PumjaRasaayani {
         hfscf.scf();
         timer.stop(0);
         Console.OUT.println ("\n-End of SCF-\n\nTotal time since start: " + (timer.total(0) as Double) / 1e9 + " seconds\n");
-
+        
         energy = hfscf.getEnergy();
+        time   = (timer.total(0) as Double) / 1e9;
     }
 
     public static def main(args:Rail[String]!) {
