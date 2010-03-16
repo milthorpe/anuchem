@@ -13,7 +13,7 @@ import au.edu.anu.chem.mm.MMAtom;
  * </p> 
  * @author milthorpe
  */
-public class DistributedFmm3d {
+public class Fmm3d {
     /** The number of levels in the octree. */
     public global val numLevels : Int;
 

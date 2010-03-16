@@ -5,10 +5,10 @@ import x10x.vector.Point3d;
 import au.edu.anu.chem.mm.MMAtom;
 
 /**
- * Tests the Distributed FMM 3D implementation.
+ * Tests the distributed FMM 3D implementation.
  * @author milthorpe
  */
-public class TestDistributedFmm3d {
+public class TestFmm3d {
     private const RANDOM_SEED = 10101110L;
     private static val R = new Random(RANDOM_SEED);
 
@@ -36,7 +36,7 @@ public class TestDistributedFmm3d {
         
         /* Assign particles to random locations within a -1..1 3D box, with unit charge (1/3 are negative). */
         val atoms = ValRail.make[MMAtom!](numParticles, (i : Int) => new MMAtom(new Point3d(randomUnit(), randomUnit(), randomUnit()), i%3==4?1:-1));
-        val energy = new DistributedFmm3d(density, numTerms, wellSpaced, 2.0, atoms).calculateEnergy();
+        val energy = new Fmm3d(density, numTerms, wellSpaced, 2.0, atoms).calculateEnergy();
         Console.OUT.println("energy = " + energy);
     }
 
