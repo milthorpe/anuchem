@@ -1,0 +1,96 @@
+Introduction:
+------------
+
+Pumjarasaayani is a very basic Quantum chemistry code written in X10 that performs 
+Hartree-Fock (HF) single point energy (SPE) evaluation on a given molecular 
+system using a specified basis set.
+
+Compiling:
+----------
+
+ant clean && ant
+
+Will build the required executable and put it in bin/pumjarasaayani.exe
+
+To run:
+------
+
+The test cases are in directory: test/
+The basis set is in directory: basis/
+
+To test, you need to be in a directory above basis/
+
+Single place:
+
+runx10 bin/pumjarasaayani.exe test/h2o.inp [<gmatype>]
+
+
+Multiple place:
+
+launcher -t <n> bin/pumjarasaayani.exe test/h2o.inp [<gmatype>]
+
+where <n> is number of places
+
+[<gmatype] is:
+0 : default serial G matrix formation
+1 : G matrix formation using pseudo code (1)
+2 : G matrix formation using pseudo code (2)
+3 : serial G matrix formation using a low flop count integral evaluation (but uses recursion)
+4 : 3 , but uses (2) for thread implementation
+5 : Multiplace implementation  
+
+A summary of what is the code does:
+-----------------------------------
+
+1. Single place implementation
+..............................
+
+'nfunc' is number of basis functions used to represent the molecule.
+Each of the compute (i, j, k, l) tasks are completely independent of each other. 
+
+Pseudo code for reference:
+
+Pseudo code (1):
+
+for(i=0; i<nfuncs; i++)
+   for(j=0; j<nfuncs; j++)
+      for(k=0; k<nfuncs; k++)
+          for(l=0; l<nfuncs; l++)
+              async computeAndUpdate(i, j, k, l); and set global G matrix elements, 
+                                                  using atomic block
+
+Pseudo code (2):
+(a) 
+  for(i=0; i<Runtime.INIT_THREADS; i++) {
+            compute(i) = new ComputeTask(..);
+  }
+ 
+(b)
+for(i=0; i<nfuncs; i++)
+   for(j=0; j<nfuncs; j++)
+      for(k=0; k<nfuncs; k++)
+          for(l=0; l<nfuncs; l++) {
+              selected = false;
+              outer: while(!selected) {
+                     for(var ix:Int=0; ix<Runtime.INIT_THREADS; ix++) {
+                            if (selected = compute(ix).select(i, j, k, l)) { 
+                               async compute(ix).doIt(); and set local G matrix elements
+                               break outer; 
+                            }
+                     } 
+          }
+
+(c)
+SUM all partial G matrices 
+
+2. Multi place implementation
+.............................
+
+Use two level parallelism, the first level over places and the second over the 
+number of threads as indicated above.
+
+
+Few benchmarks
+--------------
+
+
