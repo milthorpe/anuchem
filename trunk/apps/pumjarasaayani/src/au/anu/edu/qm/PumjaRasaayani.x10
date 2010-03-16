@@ -56,7 +56,7 @@ public class PumjaRasaayani {
     }
 
     var energy:Double = 0.0;
-    val time:Double = 0.0;
+    var time:Double = 0.0;
 
     public def getEnergy() = energy;
     public def getTime() = time;

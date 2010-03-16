@@ -51,6 +51,10 @@ public class GMatrix extends Matrix {
                Console.OUT.println("   GMatrix.computeDirectOldMultiPlaceNoAtomic: " + gMatType);
  	       computeDirectOldMultiPlaceNoAtomic(twoE, density);
 	       break;
+           case 6:
+               Console.OUT.println("   GMatrix.computeDirectNewMultiPlaceNoAtomic: " + gMatType);
+               computeDirectNewMultiPlaceNoAtomic(twoE, density);
+               break;
            default:
                Console.OUT.println("   GMatrix.computeDirectSerialOld: " + gMatType);
                computeDirectSerialOld(twoE, density); 
@@ -325,7 +329,6 @@ public class GMatrix extends Matrix {
         } // end for
     }
 
-
     private def computeDirectOldMultiPlaceNoAtomic(twoE:TwoElectronIntegrals!, 
                                                    density:Density!) : void {
         val N = density.getRowCount();
@@ -593,6 +596,134 @@ public class GMatrix extends Matrix {
         } // end for
     }
 
+    private def computeDirectNewMultiPlaceNoAtomic(twoE:TwoElectronIntegrals!, 
+                                                   density:Density!) : void {
+        val N = density.getRowCount();
+
+        makeZero();
+
+        val gMatrix = getMatrix();
+        val dMatrix = density.getMatrix();
+
+        val molecule = twoE.getMolecule();
+        val basisFunctions = twoE.getBasisFunctions();
+        val bfs = twoE.getBasisFunctions().getBasisFunctions();
+        val shellList = twoE.getBasisFunctions().getShellList();
+        val noOfBasisFunctions = bfs.size();
+
+        val noOfAtoms = molecule.getNumberOfAtoms();
+
+        // create another future to feed in the futures created above
+        var i:Int, j:Int, k:Int, l:Int;
+        var a:Int, b:Int, c:Int, d:Int;
+        var iaFunc:ContractedGaussian{self.at(this)}, jbFunc:ContractedGaussian{self.at(this)},
+              kcFunc:ContractedGaussian{self.at(this)}, ldFunc:ContractedGaussian{self.at(this)};
+        var naFunc:Int, nbFunc:Int, ncFunc:Int, ndFunc:Int;
+        var aFunc:ArrayList[ContractedGaussian{self.at(this)}]{self.at(this)},
+              bFunc:ArrayList[ContractedGaussian{self.at(this)}]{self.at(this)},
+              cFunc:ArrayList[ContractedGaussian{self.at(this)}]{self.at(this)},
+              dFunc:ArrayList[ContractedGaussian{self.at(this)}]{self.at(this)};
+
+        val nPlaces = Place.places.length;
+        val computeInst = Rail.make[ComputePlaceNew](nPlaces);
+
+        Console.OUT.println("\tNo. of places: " + nPlaces);
+        Console.OUT.println("\tNo. of threads per place: " + Runtime.INIT_THREADS);
+
+        i = 0;
+        for(place in Place.places) {
+           computeInst(i) = at(place) { 
+                return new ComputePlaceNew(molecule, basisFunctions, density, place); 
+           };
+           i++;
+        }
+
+        // center a
+        finish {
+          for(a=0; a<noOfAtoms; a++) {
+            aFunc = molecule.getAtom(a).getBasisFunctions();
+            naFunc = aFunc.size();
+            // basis functions on a
+            for(i=0; i<naFunc; i++) {
+               iaFunc = aFunc.get(i);
+
+               // center b
+               for(b=0; b<=a; b++) {
+                   bFunc = molecule.getAtom(b).getBasisFunctions();
+                   nbFunc = (b<a) ? bFunc.size() : i+1;
+                   // basis functions on b
+                   for(j=0; j<nbFunc; j++) {
+                       jbFunc = bFunc.get(j);
+
+                       // center c
+                       for(c=0; c<noOfAtoms; c++) {
+                           cFunc = molecule.getAtom(c).getBasisFunctions();
+                           ncFunc = cFunc.size();
+                           // basis functions on c
+                           for(k=0; k<ncFunc; k++) {
+                               kcFunc = cFunc.get(k);
+
+                               // center d
+                               for(d=0; d<=c; d++) {
+                                   dFunc = molecule.getAtom(d).getBasisFunctions();
+                                   ndFunc = (d<c) ? dFunc.size() : k+1;
+                                   // basis functions on d
+                                   for(l=0; l<ndFunc; l++) {
+                                       ldFunc = dFunc.get(l);
+
+				       var setIt:Boolean = false;
+                           
+                                       val i_l = i, j_l = j, k_l = k, l_l = l;
+
+                                       outer: while(!setIt) {
+                                         for(comp_loc in computeInst) {
+                                           setIt = at(comp_loc) { comp_loc.setValue(i_l, j_l, k_l, l_l) };
+
+                                           if (setIt) break outer;
+                                         } // end for
+                                       } // end while                               
+				   } // end l
+			       } // center d
+                           } // end k
+                       } // center c
+                   } // end j
+               } // center b
+            } // end i
+          } // center a
+        } // finish
+
+        val timer = new Timer(1);
+
+        timer.start(0);
+
+        // form the G matrix
+        // TODO following need to change once XTENLANG-787 is resolved
+        for(comp_loc in computeInst) {
+             val jVal = at(comp_loc) { comp_loc.getJMatVal() };
+             val kVal = at(comp_loc) { comp_loc.getKMatVal() };
+
+             var ii:Int=0;
+             for(var x:Int=0; x<N; x++) {
+               for(var y:Int=0; y<N; y++) {
+                  /**
+                  val x_loc = x; val y_loc = y;
+                  val jVal = at(comp_loc) { comp_loc.getJMat().getMatrix()(x_loc, y_loc) };
+                  val kVal = at(comp_loc) { comp_loc.getKMat().getMatrix()(x_loc, y_loc) };
+             
+                  gMatrix(x,y) += jVal - (0.25*kVal);
+                  **/
+
+                  gMatrix(x,y) += jVal(ii) - (0.25*kVal(ii));
+                  ii++;
+               } // end for
+             } // end for
+        } // end for
+        
+        timer.stop(0);
+        Console.OUT.println("\tTime for summing up GMatrix bits: " + (timer.total(0) as Double) / 1e9 + " seconds"); 
+    }
+
+
     /** find unique elements and mark the onces that are not */
     private def filterUniqueElements(idx:Rail[Int]!, jdx:Rail[Int]!,
                                      kdx:Rail[Int]!, ldx:Rail[Int]!,
@@ -851,18 +982,17 @@ public class GMatrix extends Matrix {
             val den_loc = new Density(N);
             density = den_loc;
             val den_loc_mat = den_loc.getMatrix();
+            val den_rem = at(den) { den.getValRail() };
+            var i:Int, j:Int, ii:Int;
 
-            for(var i:Int=0; i<N; i++) {
-              for(var j:Int=0; j<N; j++) {
-                  val i_loc = i; val j_loc = j;
-
-                  den_loc_mat(i, j) = at(den) { den.getMatrix()(i_loc, j_loc) };
-              } // end for
-            } // end for 
+            ii = 0 ;  
+            for(i=0; i<N; i++) 
+              for(j=0; j<N; j++) 
+                  den_loc_mat(i, j) = den_rem(ii++);
 
             // Console.OUT.println("\tDone making local copy of density @ " + here);
 
-            for(var i:Int=0; i<Runtime.INIT_THREADS; i++) {
+            for(i=0; i<Runtime.INIT_THREADS; i++) {
                 computeInst(i) = new ComputeOld(new TwoElectronIntegrals(bas_loc, mol_loc, true), den_loc);
             } // end for
 
@@ -918,46 +1048,20 @@ public class GMatrix extends Matrix {
 
         // TODO following two methods should not be necessary once XTENLANG-787 is resolved
         public def getJMatVal() : ValRail[Double]! {
-           val jM   = getJMat();
-           val N    = jM.getRowCount();
-           val jMat = jM.getMatrix();
-           val jR   = Rail.make[Double](N*N);
-           var i:Int, j:Int, ii:Int;
-
-           ii = 0;
-           for(i=0; i<N; i++)
-              for(j=0; j<N; j++)
-                 jR(ii++) = jMat(i,j);
-
-           return ValRail.make[Double](N*N, (i:Int)=>jR(i)) as ValRail[Double]!;
+           return getJMat().getValRail();
         }
 
         public def getKMatVal() : ValRail[Double]! {
-           val kM   = getKMat();
-           val N    = kM.getRowCount();
-           val kMat = kM.getMatrix();
-           val kR   = Rail.make[Double](N*N);
-           var i:Int, j:Int, ii:Int;
-
-           ii = 0;
-           for(i=0; i<N; i++)
-              for(j=0; j<N; j++)
-                 kR(ii++) = kMat(i,j);
-
-           return ValRail.make[Double](N*N, (i:Int)=>kR(i)) as ValRail[Double]!;
+           return getKMat().getValRail();
         }
     }
 
     /** Compute class for the new code - multi place version */
+    // TODO: this is not yet functional
     class ComputePlaceNew {
         val thePlace:Place;
 
         val computeInst = Rail.make[ComputeNew!](Runtime.INIT_THREADS);
-
-        val idx = Rail.make[Int](8);
-        val jdx = Rail.make[Int](8);
-        val kdx = Rail.make[Int](8);
-        val ldx = Rail.make[Int](8);
 
         val density:Density!;
 
@@ -982,7 +1086,9 @@ public class GMatrix extends Matrix {
             // Console.OUT.println("\tStart making local Molecule and BasisFunctions @ " + here);
 
             val basisName = at(bfs) { bfs.getBasisName() };
-            bas_loc = new BasisFunctions(mol_loc, basisName, "basis");
+            val bas_loc = new BasisFunctions(mol_loc, basisName, "basis");
+
+            this.bas_loc = bas_loc;
 
             // Console.OUT.println("\tDone making local Molecule and BasisFunctions @ " + here);
 
@@ -992,35 +1098,24 @@ public class GMatrix extends Matrix {
             val den_loc = new Density(N);
             density = den_loc;
             val den_loc_mat = den_loc.getMatrix();
+            val den_rem = at(den) { den.getValRail() };
+            var i:Int, j:Int, ii:Int;
 
-            for(var i:Int=0; i<N; i++) {
-              for(var j:Int=0; j<N; j++) {
-                  val i_loc = i; val j_loc = j;
-
-                  den_loc_mat(i, j) = at(den) { den.getMatrix()(i_loc, j_loc) };
-              } // end for
-            } // end for 
+            ii = 0 ;
+            for(i=0; i<N; i++)
+              for(j=0; j<N; j++)
+                  den_loc_mat(i, j) = den_rem(ii++);
 
             // Console.OUT.println("\tDone making local copy of density @ " + here);
 
-            for(var i:Int=0; i<Runtime.INIT_THREADS; i++) {
-                // computeInst(i) = new ComputeNew(new TwoElectronIntegrals(bas_loc, mol_loc, true), bas_loc.getShellList(), den_loc);          
-                computeInst(i) = new ComputeNew(null, bas_loc.getShellList(), den_loc);          
+            for(i=0; i<Runtime.INIT_THREADS; i++) {
+                computeInst(i) = new ComputeNew(new TwoElectronIntegrals(bas_loc, mol_loc, true), bas_loc.getShellList(), den_loc);          
             } // end for
 
             // Console.OUT.println("\tDone initing tasks @ " + here);
         }
 
         public def setValue(i:Int, j:Int, k:Int, l:Int) : Boolean {
-            idx(0) = i; jdx(1) = i; jdx(2) = i; idx(3) = i;
-            kdx(4) = i; ldx(5) = i; kdx(6) = i; ldx(7) = i;
-
-            jdx(0) = j; idx(1) = j; idx(2) = j; jdx(3) = j;
-            ldx(4) = j; kdx(5) = j; ldx(6) = j; kdx(7) = j;
-
-            kdx(0) = k; kdx(1) = k; ldx(2) = k; ldx(3) = k;
-            jdx(4) = k; jdx(5) = k; idx(6) = k; idx(7) = k;
-
             val bfs = bas_loc.getBasisFunctions();
 
             for(var ix:Int=0; ix<Runtime.INIT_THREADS; ix++) {
@@ -1063,33 +1158,11 @@ public class GMatrix extends Matrix {
 
         // TODO following two methods should not be necessary once XTENLANG-787 is resolved
         public def getJMatVal() : ValRail[Double]! {
-           val jM   = getJMat();
-           val N    = jM.getRowCount();
-           val jMat = jM.getMatrix();
-           val jR   = Rail.make[Double](N*N);
-           var i:Int, j:Int, ii:Int;
-
-           ii = 0;
-           for(i=0; i<N; i++)
-              for(j=0; j<N; j++)
-                 jR(ii++) = jMat(i,j);
-
-           return ValRail.make[Double](N*N, (i:Int)=>jR(i)) as ValRail[Double]!;
+           return getJMat().getValRail();
         }
 
         public def getKMatVal() : ValRail[Double]! {
-           val kM   = getKMat();
-           val N    = kM.getRowCount();
-           val kMat = kM.getMatrix();
-           val kR   = Rail.make[Double](N*N);
-           var i:Int, j:Int, ii:Int;
-
-           ii = 0;
-           for(i=0; i<N; i++)
-              for(j=0; j<N; j++)
-                 kR(ii++) = kMat(i,j);
-
-           return ValRail.make[Double](N*N, (i:Int)=>kR(i)) as ValRail[Double]!;
+           return getKMat().getValRail();
         }
     }
 }
