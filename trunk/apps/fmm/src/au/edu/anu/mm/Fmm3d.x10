@@ -41,7 +41,8 @@ public class Fmm3d {
     global val multipoleTranslations : Array[MultipoleExpansion](5);
 
     // TODO use shared local variable within getEnergy() - XTENLANG-404
-    var fmmEnergy : Double = 0.0;
+    var directEnergy : Double = 0.0;
+    var farFieldEnergy : Double = 0.0;
 
     /**
      * Initialises a fast multipole method electrostatics calculation
@@ -102,10 +103,11 @@ public class Fmm3d {
     
     public def calculateEnergy() : Double {
         multipoleLowestLevel();
+        val directEnergy = future {getDirectEnergy()};
         combineMultipoles();
         transformToLocal();
-
-        return getEnergy();
+        farFieldEnergy = getFarFieldEnergy();
+        return directEnergy() + farFieldEnergy;
     }
 
     /** 
@@ -235,18 +237,22 @@ public class Fmm3d {
         }
     }
 
-    def getEnergy() : Double {
-        Console.OUT.println("getEnergy");
+    /**
+     * Gets sum of direct (pairwise) energy for all pairs of atoms
+     * in non-well-separated boxes. 
+     */
+    def getDirectEnergy() : Double {
+        Console.OUT.println("getDirectEnergy");
         // TODO n^2 calculation - to check - remove this
         /*
-        var directEnergy : Double = 0.0;
+        var pairwiseEnergy : Double = 0.0;
         for ((i) in 0..(atoms.length - 1)) {
             for ((j) in 0..(i - 1)) {
                 val pairEnergy : Double = atoms(j).pairEnergy(atoms(i));
-                directEnergy += 2 * pairEnergy;
+                pairwiseEnergy += 2 * pairEnergy;
             }
         }
-        Console.OUT.println("directEnergy = " + directEnergy);
+        Console.OUT.println("pairwiseEnergy = " + pairwiseEnergy);
         */
         val lowestLevelRegion : Region(2) = [0..(Math.pow(8,numLevels) as Int)-1,numLevels..numLevels];
         val lowestLevelDist = boxes.dist | lowestLevelRegion;
@@ -260,9 +266,6 @@ public class Fmm3d {
                     val length = box1.atoms.length();
                     for ((atomIndex1) in 0..length-1) {
                         val atom1 = box1.atoms(atomIndex1);
-                        val box1Centre = atom1.centre.sub(box1.getCentre(size));
-                        val farFieldEnergy = box1.localExp.getPotential(atom1.charge, box1Centre);
-                        thisBoxEnergy += farFieldEnergy;
 
                         // direct calculation with all atoms in same box
                         for ((sameBoxAtomIndex) in 0..atomIndex1-1) {
@@ -295,12 +298,39 @@ public class Fmm3d {
                         }
                     }
                     val thisBoxEnergyFinal = thisBoxEnergy;
-                    async (this) {atomic {fmmEnergy += thisBoxEnergyFinal;}}
+                    async (this) {atomic {directEnergy += thisBoxEnergyFinal;}}
                 }
             }
         }
 
-        return fmmEnergy;
+        return directEnergy;
+    }
+
+    def getFarFieldEnergy() : Double {
+        Console.OUT.println("getFarFieldEnergy");
+        val lowestLevelRegion : Region(2) = [0..(Math.pow(8,numLevels) as Int)-1,numLevels..numLevels];
+        val lowestLevelDist = boxes.dist | lowestLevelRegion;
+        // TODO XTENLANG-1143
+        finish ateach ((p1) in Dist.makeUnique(lowestLevelDist.places())) {
+            finish foreach ((boxIndex1,level) in lowestLevelDist | here) {
+                val box1 = boxes(boxIndex1, numLevels) as FmmLeafBox!;
+                if (box1 != null) {
+                    // TODO use shared var - XTENLANG-404
+                    var thisBoxEnergy : Double = 0.0;
+                    val length = box1.atoms.length();
+                    for ((atomIndex1) in 0..length-1) {
+                        val atom1 = box1.atoms(atomIndex1);
+                        val box1Centre = atom1.centre.sub(box1.getCentre(size));
+                        val farFieldEnergy = box1.localExp.getPotential(atom1.charge, box1Centre);
+                        thisBoxEnergy += farFieldEnergy;
+                    }
+                    val thisBoxEnergyFinal = thisBoxEnergy;
+                    async (this) {atomic {farFieldEnergy += thisBoxEnergyFinal;}}
+                }
+            }
+        }
+
+        return farFieldEnergy;
     }
 
     /**
