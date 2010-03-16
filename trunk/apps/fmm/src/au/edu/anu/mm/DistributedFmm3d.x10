@@ -148,10 +148,9 @@ public class DistributedFmm3d {
             Console.OUT.println("combine level " + level + " => " + (level-1));
             val thisLevelRegion : Region(2) = [0..((Math.pow(8,level) as Int)-1),level..level];
             val thisLevelDist = boxes.dist | thisLevelRegion;
-            //finish ateach (p in thisLevelDist) {
+            // TODO XTENLANG-1143
             finish ateach ((p1) in Dist.makeUnique(thisLevelDist.places())) {
                 finish foreach ((boxIndex1,level) in thisLevelDist | here) {
-                    //Console.OUT.println(p + " dist " + boxes.dist(boxIndex1, level));
                     if (boxes(boxIndex1, level) != null) {
                         val child = boxes(boxIndex1, level) as FmmBox!;
                         val childLoc = child.gridLoc;
@@ -234,7 +233,6 @@ public class DistributedFmm3d {
                 }
             }
         }
-        //Console.OUT.println("wellSep = " + wellSep + " nearField = " + nearField);
     }
 
     def getEnergy() : Double {
