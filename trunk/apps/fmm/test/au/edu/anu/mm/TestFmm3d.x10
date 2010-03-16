@@ -3,6 +3,7 @@ package au.edu.anu.mm;
 import x10.util.Random;
 import x10x.vector.Point3d;
 import au.edu.anu.chem.mm.MMAtom;
+import au.edu.anu.util.Timer;
 
 /**
  * Tests the distributed FMM 3D implementation.
@@ -36,8 +37,13 @@ public class TestFmm3d {
         
         /* Assign particles to random locations within a -1..1 3D box, with unit charge (1/3 are negative). */
         val atoms = ValRail.make[MMAtom!](numParticles, (i : Int) => new MMAtom(new Point3d(randomUnit(), randomUnit(), randomUnit()), i%3==4?1:-1));
-        val energy = new Fmm3d(density, numTerms, wellSpaced, 2.0, atoms).calculateEnergy();
+        val fmm3d = new Fmm3d(density, numTerms, wellSpaced, 2.0, atoms);
+        val timer = new Timer(1);
+        timer.start(0);
+        val energy = fmm3d.calculateEnergy();
+        timer.stop(0);
         Console.OUT.println("energy = " + energy);
+        Console.OUT.printf("Time (one cycle): %g seconds", (timer.total(0) as Double) / 1e9);
     }
 
     static def randomUnit() : Double {
