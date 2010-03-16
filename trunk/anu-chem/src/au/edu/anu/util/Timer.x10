@@ -14,5 +14,6 @@ final public class Timer {
     public def start(id:Int) { total(id) -= System.nanoTime(); }
     public def clear(id:Int) { total(id) = 0; }
     public def stop(id:Int) { total(id) += System.nanoTime(); count(id)++; }
+    public def mean(id:Int) = total(id) / count(id);
 }
 
