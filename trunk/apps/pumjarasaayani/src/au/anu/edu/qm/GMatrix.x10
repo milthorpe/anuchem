@@ -872,8 +872,6 @@ public class GMatrix extends Matrix {
         }
 
         public def setValue(i:Int, j:Int, k:Int, l:Int) : Boolean {
-            Console.OUT.println("In setValue");
-
             idx(0) = i; jdx(1) = i; jdx(2) = i; idx(3) = i;
             kdx(4) = i; ldx(5) = i; kdx(6) = i; ldx(7) = i;
 
@@ -889,12 +887,10 @@ public class GMatrix extends Matrix {
                if (setIt) {
                   val ix_loc = ix;
                   async computeInst(ix_loc).compute();
-                  Console.OUT.println("Out setValue (true)");
                   return true;
                } // end if
             } // end for
 
-            Console.OUT.println("Out setValue (false)");
             return false;
         }
 
