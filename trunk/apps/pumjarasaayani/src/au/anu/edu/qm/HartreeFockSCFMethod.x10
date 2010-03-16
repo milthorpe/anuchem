@@ -22,7 +22,7 @@ public class HartreeFockSCFMethod extends SCFMethod {
         this.gMatType = gMatType;
     }
 
-    public def scf() : void {
+    public def scf() : Void {
         // check first if closed shell run?
         val noOfElectrons = molecule.getNumberOfElectrons();
         val noOfOccupancies = noOfElectrons / 2;
@@ -35,8 +35,9 @@ public class HartreeFockSCFMethod extends SCFMethod {
         val hCore   = oneE.getHCore();
         val overlap = oneE.getOverlap();
         
+        energy = 0.0;
+
         var converged:Boolean = false;
-        var energy:Double = 0.0;
         var oldEnergy:Double = 0.0; 
         var nuclearEnergy:Double = nuclearEnergy();
 

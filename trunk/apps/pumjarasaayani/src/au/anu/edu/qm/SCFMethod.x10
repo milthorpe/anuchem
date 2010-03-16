@@ -19,6 +19,8 @@ public abstract class SCFMethod {
     protected var maxIteration:Int;
     protected var energyTolerance:Double;
 
+    protected var energy:Double;
+
     public def this(mol:Molecule[QMAtom]!,  
                     oneE:OneElectronIntegrals!, 
                     twoE:TwoElectronIntegrals!) { 
@@ -26,21 +28,27 @@ public abstract class SCFMethod {
         this.oneE     = oneE;
         this.twoE     = twoE;
 
-        maxIteration    = 100;
-        energyTolerance = 1.0e-5; 
+        val jd = JobDefaults.getInstance();
+
+        maxIteration    = at(jd) { jd.getMaxIterations() };
+        energyTolerance = at(jd) { jd.getEnergyTolerance() }; 
+
+        energy = 0.0;
     } 
 
-    public abstract def scf() : void;
+    public abstract def scf() : Void;
 
-    public def getMaxIteration() : Int = maxIteration;
-    public def setMaxIteration(mxIter:Int) : void {
+    public def getMaxIteration() = maxIteration;
+    public def setMaxIteration(mxIter:Int) : Void {
         maxIteration = mxIter;
     }
 
-    public def getEnergyTolerance() : Double = energyTolerance;
-    public def setEnergyTolerance(eneTol:Double) : void {
+    public def getEnergyTolerance() = energyTolerance;
+    public def setEnergyTolerance(eneTol:Double) : Void {
         energyTolerance = eneTol;
     }
+
+    public def getEnergy() = energy;
 
     public def nuclearEnergy() : Double {
         var eNuke:Double = 0.0;
