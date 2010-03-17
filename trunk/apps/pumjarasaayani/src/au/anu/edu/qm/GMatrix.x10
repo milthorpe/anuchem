@@ -349,6 +349,9 @@ public class GMatrix extends Matrix {
         Console.OUT.println("\tNo. of places: " + nPlaces);
         Console.OUT.println("\tNo. of threads per place: " + Runtime.INIT_THREADS);
 
+        val timer = new Timer(3);
+
+        timer.start(0);
         i = 0;
         for(place in Place.places) {
            computeInst(i) = at(place) { 
@@ -356,7 +359,10 @@ public class GMatrix extends Matrix {
            };
            i++;
         }
+        timer.stop(0);
+        Console.OUT.println("\tTime for setting up place(s) with initial data: " + (timer.total(0) as Double) / 1e9 + " seconds"); 
 
+        timer.start(1);
         finish {
           for(i=0; i<N; i++) {
             for(j=0; j<(i+1); j++) {
@@ -383,10 +389,11 @@ public class GMatrix extends Matrix {
             } // end j loop
           } // end i loop
         } // finish
+        timer.stop(1);
+        Console.OUT.println("\tTime for actual computation: " + (timer.total(1) as Double) / 1e9 + " seconds"); 
 
-        val timer = new Timer(1);
 
-        timer.start(0);
+        timer.start(2);
 
         // form the G matrix
         // TODO following need to change once XTENLANG-787 is resolved
@@ -411,8 +418,8 @@ public class GMatrix extends Matrix {
              } // end for
         } // end for
         
-        timer.stop(0);
-        Console.OUT.println("\tTime for summing up GMatrix bits: " + (timer.total(0) as Double) / 1e9 + " seconds"); 
+        timer.stop(2);
+        Console.OUT.println("\tTime for summing up GMatrix bits: " + (timer.total(2) as Double) / 1e9 + " seconds"); 
     }
 
     private def computeDirectSerialNew(twoE:TwoElectronIntegrals!, density:Density!) : void {

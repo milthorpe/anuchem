@@ -5,6 +5,10 @@ Pumjarasaayani is a very basic Quantum chemistry code written in X10 that perfor
 Hartree-Fock (HF) single point energy (SPE) evaluation on a given molecular 
 system using a specified basis set.
 
+Current restrictions: Only closed shell systems with atoms H, C, N and O are supported.
+No integral screen employed all O(N^4/8) combinations evaluated. 
+No geometrical symmetry is employed.
+
 Compiling:
 ----------
 
@@ -12,11 +16,26 @@ ant clean && ant
 
 Will build the required executable and put it in bin/pumjarasaayani.exe
 
+Dependency for compiling:
+------------------------
+* GSL or equivalent BLAS library, will require rewrite of native wrappers for 
+  any library other than GSL. Though, the code can be compiled with out any
+  native wrappers.
+* anu-chem library
+* x10x.lib library
+
+Code organization:
+-----------------
+* QM code in: au.anu.edu.qm  (Pumjarasaayani.x10 being main entry point)
+* XLA code in: x10x.xla, x10x.matrix and x10x.vector
+* GSL wrapper code in: org.gnu.gsl
+* anu-chem code in: au.edu.anu.chem, anu.edu.anu.util 
+
 To run:
 ------
 
 The test cases are in directory: test/
-The basis set is in directory: basis/
+The basis set is in directory: basis/   [ contains sto-3g, 3-21g, and 6-31g(d,p) ]
 
 To test, you need to be in a directory above basis/
 
@@ -31,16 +50,42 @@ launcher -t <n> bin/pumjarasaayani.exe test/h2o.inp [<gmatype>]
 
 where <n> is number of places
 
-[<gmatype] is:
+[<gmatype>] is:
 0 : default serial G matrix formation
-1 : G matrix formation using pseudo code (1)
-2 : G matrix formation using pseudo code (2)
+1 : G matrix formation using pseudo code (1)  [*]
+2 : G matrix formation using pseudo code (2)  [*] 
 3 : serial G matrix formation using a low flop count integral evaluation (but uses recursion)
-4 : 3 , but uses (2) for thread implementation
-5 : Multiplace implementation  
+4 : 3 , but uses (2) for multithread implementation
+5 : Multiplace implementation   [*]
+
+[*] 1, 2, and 5 are most relevent for timings and scaling at this point
+
+Tests for which all the above runs
+..................................
+h2-sto.inp   h2.inp   h2o.inp   h2o-dp.inp  nh3.inp  nh3-dp.inp  ch4-dp.inp 
+benzene.inp  benzene-dp.inp(*)  h2co.inp(*) aspirin.inp (*)
+
+(*) Indicates it runs, but has convergence problems
+
 
 A summary of what is the code does:
 -----------------------------------
+
+The code solves the Hartree-Fock equations of the form:
+
+   FC = eSC
+
+which is a pseudo-eigen value problem, solved using a self consistent
+field (SCF) procedure. The most expensive step is the formation of the 
+F matrix called the Fock that requires computation of ~O(N^4) two electron integrals. 
+In the code, the F matrix is inturn constructed using Hcore and G matrix. 
+Of these the G matrix computation takes up most of the time and is implemented 
+using X10 parallel constructions in following ways.
+
+For a reference, see previous work:
+
+"Programmability of the HPCS Languages: A Case Study with a Quantum
+Chemistry Kernel", Bernholdt et al. HIPS'08.
 
 1. Single place implementation
 ..............................
@@ -50,7 +95,7 @@ Each of the compute (i, j, k, l) tasks are completely independent of each other.
 
 Pseudo code for reference:
 
-Pseudo code (1):
+Pseudo code (1): GMatrix.computeDirectAsyncOld(), GMatrix.computeDirectLowMemNewNoAtomic()
 
 for(i=0; i<nfuncs; i++)
    for(j=0; j<nfuncs; j++)
@@ -59,7 +104,7 @@ for(i=0; i<nfuncs; i++)
               async computeAndUpdate(i, j, k, l); and set global G matrix elements, 
                                                   using atomic block
 
-Pseudo code (2):
+Pseudo code (2): GMatrix.computeDirectAsyncOldNoAtomic()
 (a) 
   for(i=0; i<Runtime.INIT_THREADS; i++) {
             compute(i) = new ComputeTask(..);
@@ -87,8 +132,20 @@ SUM all partial G matrices
 .............................
 
 Use two level parallelism, the first level over places and the second over the 
-number of threads as indicated above.
+number of threads as indicated above. [ GMatrix.computeDirectOldMultiPlaceNoAtomic(),
+                                        GMatrix.computeDirectNewMultiPlaceNoAtomic() ]
 
+
+Expected performace
+-------------------
+The computation of each (ij|kl) integral use to construct the G matrix is indipendent 
+of each other. However, the time it take to compute an (ij|kl) will variy depending
+on the angular momemtum.  
+
+For a given molecular system and basis set, with proper load balance there should
+be near linear scaling in the time required to construct the G matrix with increase 
+in number of processors. The scaling will flatten if the number of integrals to 
+be evaluated are comparatively less as the number of processors avaliable.
 
 Few benchmarks
 --------------
