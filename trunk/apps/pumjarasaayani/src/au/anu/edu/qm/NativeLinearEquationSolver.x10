@@ -16,7 +16,14 @@ public class NativeLinearEquationSolver extends LinearEquationSolver {
      public def this() {}
  
      public def findSolution(matrixA:Matrix!, vectorB:Vector!) : Vector! throws Exception {
-         throw new Exception("Not implemented!");
+          val N = matrixA.getRowCount();
+          val vectorX = new Vector(N) as Vector!;
+
+          vectorX.makeZero();
+          
+          if (GSL.solve(matrixA, vectorB, vectorX) != 0) throw new Exception("No solution!");
+
+          return vectorX;
      }
 }
 

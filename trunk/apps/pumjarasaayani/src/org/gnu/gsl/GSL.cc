@@ -22,6 +22,22 @@ namespace org {
 
              return returnValue;
          }
+
+         int GSLWrapper::solve(double *A, double *b, double *x, int aSize) {
+             gsl_matrix_view aView = gsl_matrix_view_array(A, aSize, aSize);
+             gsl_vector_view bView = gsl_vector_view_array(b, aSize);
+             gsl_vector_view xView = gsl_vector_view_array(x, aSize);
+             gsl_permutation * p = gsl_permutation_alloc(aSize);
+
+             int info;
+
+             gsl_linalg_LU_decomp(&(aView.matrix), p, &info);
+             gsl_linalg_LU_solve(&(aView.matrix), p, &(bView.vector), &(xView.vector));
+
+             gsl_permutation_free(p);
+
+             return info;
+         }
       } // gsl
    } // gnu
 } // org

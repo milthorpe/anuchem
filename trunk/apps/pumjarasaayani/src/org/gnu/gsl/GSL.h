@@ -12,6 +12,7 @@ namespace org {
          class GSLWrapper {
             public:
                static int eigenSymmv(double *A, double *eval, double *evec, int aSize);
+               static int solve(double *A, double *b, double *x, int aSize);
          }; 
       } // gsl
    } // gnu

@@ -103,7 +103,8 @@ public class DIISFockExtrapolator {
         aMatrix(noOfIterations,noOfIterations) = 0.0;
         bVector(noOfIterations) = -1.0;
 
-        val gele = new GaussianElimination();
+        // val gele = new GaussianElimination();
+        val gele = new NativeLinearEquationSolver();
 
         try {
           val solVec = gele.findSolution(A, B).getVector();
@@ -117,22 +118,9 @@ public class DIISFockExtrapolator {
               } // end for
           } // end for
         } catch(e:Exception) {
-          if (oldFock == null) {
-              oldFock = currentFock;
-
-              return currentFock;
-          } else {
-              val nf = oldFock.mul(0.5).add(currentFock.mul(0.5)).getMatrix();
-              for(i=0; i<N; i++) {
-                 for(j=0; j<N; j++) {
-                    newFockMat(i, j) = nf(i, j);
-                 }
-              }
-
-              oldFock = currentFock;
-
-              return newFock;
-          } // end if
+          diisStep++;
+          
+          return currentFock;
         } // end catch throw
 
         diisStep++;

@@ -46,7 +46,8 @@ runx10 bin/pumjarasaayani.exe test/h2o.inp [<gmatype>]
 
 Multiple place:
 
-launcher -t <n> bin/pumjarasaayani.exe test/h2o.inp [<gmatype>]
+launcher -t <n> bin/pumjarasaayani.exe test/h2o.inp [<gmatype>]  { pgas compiled }
+mpirun -np <n> bin/pumjarasaayani.exe test/h2o.inp [<gmatype>]   { mpi compiled  }
 
 where <n> is number of places
 
@@ -63,7 +64,8 @@ where <n> is number of places
 Tests for which all the above runs
 ..................................
 h2-sto.inp   h2.inp   h2o.inp   h2o-dp.inp  nh3.inp  nh3-dp.inp  ch4-dp.inp 
-benzene.inp  benzene-dp.inp(*)  h2co.inp(*) aspirin.inp (*)
+benzene.inp  benzene-321.inp(*) benzene-dp.inp(*)  h2co.inp(*) aspirin.inp(*) 
+aspirin-321.inp(*)
 
 (*) Indicates it runs, but has convergence problems
 
