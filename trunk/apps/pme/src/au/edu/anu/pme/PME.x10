@@ -5,9 +5,19 @@ import x10x.vector.Vector3d;
 import x10x.vector.Tuple3d;
 import au.edu.anu.chem.mm.MMAtom;
 import edu.mit.fftw.FFTW;
-import x10.array.BaseArray;
+import au.edu.anu.util.Timer;
 
 public class PME {
+    // TODO enum - XTENLANG-1118
+    public const TIMER_INDEX_TOTAL : Int = 0;
+    public const TIMER_INDEX_DIRECT : Int = 1;
+    public const TIMER_INDEX_GRIDCHARGES : Int = 2;
+    public const TIMER_INDEX_INVFFT : Int = 3;
+    public const TIMER_INDEX_THETARECCONVQ : Int = 4;
+    public const TIMER_INDEX_RECIPROCAL : Int = 5;
+    /** A multi-timer for the several segments of a single getEnergy invocation, indexed by the constants above. */
+    public val timer = new Timer(6);
+
     /** The number of grid lines in each dimension of the simulation unit cell. */
     private global val gridSize : ValRail[Int](3);
 
@@ -38,6 +48,10 @@ public class PME {
     private global val imageTranslations : Array[Vector3d](3);
 
 	private val atoms : ValRail[MMAtom!];
+
+    private val B : Array[Double]{self.dist==gridDist};
+    private val C : Array[Double]{self.dist==gridDist};
+    private val BdotC : Array[Double]{self.dist==gridDist};
 
     // TODO should be shared local to calculateEnergy()
     private var directEnergy : Double = 0.0;
@@ -76,18 +90,22 @@ public class PME {
         this.cutoff = cutoff;
         val imageTranslationRegion = [-1..1,-1..1,-1..1] as Region(3);
         this.imageTranslations = Array.make[Vector3d](imageTranslationRegion, (p(i,j,k) : Point(3)) => (edges(0).mul(i)).add(edges(1).mul(j)).add(edges(2).mul(k)));
+
         Console.OUT.println("PME for " + atoms.length + " particles.");
         Console.OUT.println("Box edges: " + edges + " volume: " + getVolume());
         Console.OUT.println("Grid size: " + gridSize);
         Console.OUT.println("spline order: " + splineOrder + " Beta: " + beta + " Cutoff: " + cutoff);
         Console.OUT.println("gridDist = " + gridDist);
+
+        B = getBArray();
+        C = getCArray();
+        BdotC = Array.make[Double](gridDist, (p : Point(gridDist.region.rank)) => B(p) * C(p));
     }
 	
-    public def calculateEnergy() : Double {
-        // TODO do we need multi-threaded FFTW, or multiple activities (with FFT) per place?
-        //FFTW.fftwInitThreads();
-        //FFTW.fftwPlanWithNThreads(Runtime.INIT_THREADS);
+    public def getEnergy() : Double {
+        timer.start(TIMER_INDEX_TOTAL);
 
+        timer.start(TIMER_INDEX_DIRECT);
         finish foreach ((i) in 0..atoms.length-1) {
             var myDirectEnergy : Double = 0.0;
             var myDirectSum : Double = 0.0;
@@ -124,68 +142,35 @@ public class PME {
         selfEnergy = -beta / Math.sqrt(Math.PI) * selfEnergy;
         directEnergy = directEnergy / 2.0;
         directSum = directSum / 2.0;
-
-        Console.OUT.println("directSum / selfEnergy");
+        timer.stop(TIMER_INDEX_DIRECT);
         
         val Q = getGriddedCharges();
-        Console.OUT.println("Q");
-/*
-        for (p in Q) {
-            at (Q.dist(p)) {
-                if (Q(p) != Complex.ZERO) {
-                    Console.OUT.println(p + " = " + Q(p));
-                }
-            }
-        }
-*/
 
-        // do a 3D FFT Qinv = F(Q) with some jiggery-pokery to combine many distributed 1D FFTs
-        val temp = Array.make[Complex](gridDist);        
+        timer.start(TIMER_INDEX_INVFFT);
+        val temp = Array.make[Complex](gridDist); 
         val Qinv = Array.make[Complex](gridDist);
         doFFT3d(Q, Qinv, temp, false);
-        //val Qinv = DFT.dft3D(Q, false);
-        
-        Console.OUT.println("Qinv");
+        timer.stop(TIMER_INDEX_INVFFT);
 
-        val B = getBArray();
-        Console.OUT.println("B");
-        val C = getCArray();
-        Console.OUT.println("C");
-
-        val BdotC = Array.make[Double](gridDist, (p : Point(gridDist.region.rank)) => B(p) * C(p));
-        Console.OUT.println("BdotC");
-
+        timer.start(TIMER_INDEX_THETARECCONVQ);
         val thetaRecConvQInv = Array.make[Complex](gridDist, (p : Point(gridDist.region.rank)) => BdotC(p) * Qinv(p));
         val thetaRecConvQ = Array.make[Complex](gridDist);
-
-        //val plan2 : FFTW.FFTWPlan = FFTW.fftwPlan3d(gridSize(0), gridSize(1), gridSize(2), thetaRecConvQInv as BaseArray[Complex], thetaRecConvQ as BaseArray[Complex], true);
-
-        // do a 3D FFT Qinv = F(Q) with some jiggery-pokery to combine many distributed 1D FFTs
         doFFT3d(thetaRecConvQInv, thetaRecConvQ, temp, true);
-        //FFTW.fftwExecute(plan2);
-
-        //FFTW.fftwDestroyPlan(plan2);
-        
-        //val thetaRecConvQ = DFT.dft3D(thetaRecConvQInv, true);
-        /*for (p in thetaRecConvQ) {
-            if (thetaRecConvQ(p) != Complex.ZERO) {
-                Console.OUT.println(p + " = " + thetaRecConvQ(p));
-            }
-        }*/
-        Console.OUT.println("thetaRecConvQ");
+        timer.stop(TIMER_INDEX_THETARECCONVQ);
 
         reciprocalEnergy = getReciprocalEnergy(Q, thetaRecConvQ);
 
-        Console.OUT.println("directEnergy = " + directEnergy);
-        Console.OUT.println("directSum = " + directSum);
-        Console.OUT.println("selfEnergy = " + selfEnergy);
-        Console.OUT.println("correctionEnergy = " + correctionEnergy);
-        Console.OUT.println("reciprocalEnergy = " + reciprocalEnergy);
-        val total = directSum + reciprocalEnergy + (correctionEnergy + selfEnergy);
-        val error = directEnergy - total;
-        Console.OUT.println("error = " + error + " relative error = " + Math.abs(error) / Math.abs(total));
-        //FFTW.fftwCleanupThreads();
-        return directSum + reciprocalEnergy + (correctionEnergy + selfEnergy);
+        //Console.OUT.println("directEnergy = " + directEnergy);
+        //Console.OUT.println("directSum = " + directSum);
+        //Console.OUT.println("selfEnergy = " + selfEnergy);
+        //Console.OUT.println("correctionEnergy = " + correctionEnergy);
+        //Console.OUT.println("reciprocalEnergy = " + reciprocalEnergy);
+        val totalEnergy = directSum + reciprocalEnergy + (correctionEnergy + selfEnergy);
+        val error = directEnergy - totalEnergy;
+        Console.OUT.println("error = " + error + " relative error = " + Math.abs(error) / Math.abs(totalEnergy));
+
+        timer.stop(TIMER_INDEX_TOTAL);
+        return totalEnergy;
     }
 
     /** 
@@ -193,6 +178,7 @@ public class PME {
      * using Cardinal B-spline interpolation.
      */
     public def getGriddedCharges() : Array[Complex](3){self.dist==gridDist} {
+        timer.start(TIMER_INDEX_GRIDCHARGES);
         val Q = Array.make[Double](gridDist);
         finish foreach ((i) in 0..atoms.length-1) {
             val atom = atoms(i);
@@ -233,6 +219,7 @@ public class PME {
             //Console.OUT.println("atomContribution = " + atomContribution);
         }
         val Qcomplex = Array.make[Complex](gridDist, (m : Point(gridDist.region.rank)) => Complex(Q(m), 0.0));
+        timer.stop(TIMER_INDEX_GRIDCHARGES);
         return Qcomplex;
     }
 
@@ -242,6 +229,7 @@ public class PME {
      * @return the approximation to the reciprocal energy ~E_rec as defined in Eq. 4.7
      */
     private def getReciprocalEnergy(Q : Array[Complex]{self.dist==gridDist}, thetaRecConvQ : Array[Complex]{self.dist==gridDist}) {
+        timer.start(TIMER_INDEX_RECIPROCAL);
         finish for ((p1) in Dist.makeUnique(Place.places)) {
             async (Place.places(p1)) {
                 var myReciprocalEnergy : Double = 0.0;
@@ -255,6 +243,7 @@ public class PME {
                 at (this) {atomic{reciprocalEnergy += myReciprocalEnergyFinal;}};
             }
         }
+        timer.stop(TIMER_INDEX_RECIPROCAL);
         return reciprocalEnergy;
     }
 

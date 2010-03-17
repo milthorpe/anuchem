@@ -4,6 +4,7 @@ import x10.util.Random;
 import x10x.vector.Point3d;
 import x10x.vector.Vector3d;
 import au.edu.anu.chem.mm.MMAtom;
+import au.edu.anu.util.Timer;
 
 /**
  * Tests the Distributed Particle Mesh Ewald implementation.
@@ -50,8 +51,21 @@ public class TestPME {
         val edges = [new Vector3d(size, 0.0, 0.0), new Vector3d(0.0, size, 0.0), new Vector3d(0.0, 0.0, size)];
         val g = gridSize;
         val gridSizes = ValRail.make[Int](3, (Int) => g);
-        val energy : Double = new PME(edges, gridSizes, atoms, splineOrder, ewaldCoefficient, cutoff).calculateEnergy();
+        val pme = new PME(edges, gridSizes, atoms, splineOrder, ewaldCoefficient, cutoff);
+        val energy = pme.getEnergy();
         Console.OUT.println("energy = " + energy);
+
+        val timer = pme.timer;
+        logTime("Direct / Self",     PME.TIMER_INDEX_DIRECT,        pme.timer);
+        logTime("Grid charges",      PME.TIMER_INDEX_GRIDCHARGES,       pme.timer);
+        logTime("Inverse FFT",       PME.TIMER_INDEX_INVFFT,        pme.timer);
+        logTime("ThetaRecConvQ",     PME.TIMER_INDEX_THETARECCONVQ, pme.timer);
+        logTime("Reciprocal energy", PME.TIMER_INDEX_RECIPROCAL,    pme.timer);
+        logTime("Total",             PME.TIMER_INDEX_TOTAL,         pme.timer);
+    }
+
+    private static def logTime(desc : String, timerIndex : Int, timer : Timer!) {
+        Console.OUT.printf(desc + " (one cycle): %g seconds\n", (timer.total(timerIndex) as Double) / 1e9);
     }
 
     static def randomUnit(R : Random) : Double {
