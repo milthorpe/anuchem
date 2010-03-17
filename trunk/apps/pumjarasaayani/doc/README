@@ -6,7 +6,7 @@ Hartree-Fock (HF) single point energy (SPE) evaluation on a given molecular
 system using a specified basis set.
 
 Current restrictions: Only closed shell systems with atoms H, C, N and O are supported.
-No integral screen employed all O(N^4/8) combinations evaluated. 
+No integral screening employed, all O(N^4/8) combinations evaluated. 
 No geometrical symmetry is employed.
 
 Compiling:
@@ -58,6 +58,7 @@ where <n> is number of places
 3 : serial G matrix formation using a low flop count integral evaluation (but uses recursion)
 4 : 3 , but uses (2) for multithread implementation
 5 : Multiplace implementation   [*]
+6 : (4) implemented as multi place code
 
 [*] 1, 2, and 5 are most relevent for timings and scaling at this point
 

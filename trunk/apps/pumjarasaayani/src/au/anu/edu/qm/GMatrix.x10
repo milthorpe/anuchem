@@ -638,6 +638,9 @@ public class GMatrix extends Matrix {
         Console.OUT.println("\tNo. of places: " + nPlaces);
         Console.OUT.println("\tNo. of threads per place: " + Runtime.INIT_THREADS);
 
+        val timer = new Timer(3);
+
+        timer.start(0);
         i = 0;
         for(place in Place.places) {
            computeInst(i) = at(place) { 
@@ -645,7 +648,10 @@ public class GMatrix extends Matrix {
            };
            i++;
         }
+        timer.stop(0);
+        Console.OUT.println("\tTime for setting up place(s) with initial data: " + (timer.total(0) as Double) / 1e9 + " seconds"); 
 
+        timer.start(1);
         // center a
         finish {
           for(a=0; a<noOfAtoms; a++) {
@@ -700,10 +706,10 @@ public class GMatrix extends Matrix {
             } // end i
           } // center a
         } // finish
+        timer.stop(1);
+        Console.OUT.println("\tTime for actual computation: " + (timer.total(1) as Double) / 1e9 + " seconds"); 
 
-        val timer = new Timer(1);
-
-        timer.start(0);
+        timer.start(2);
 
         // form the G matrix
         // TODO following need to change once XTENLANG-787 is resolved
@@ -728,7 +734,7 @@ public class GMatrix extends Matrix {
              } // end for
         } // end for
         
-        timer.stop(0);
+        timer.stop(2);
         Console.OUT.println("\tTime for summing up GMatrix bits: " + (timer.total(0) as Double) / 1e9 + " seconds"); 
     }
 
@@ -1068,7 +1074,6 @@ public class GMatrix extends Matrix {
     }
 
     /** Compute class for the new code - multi place version */
-    // TODO: this is not yet functional
     class ComputePlaceNew {
         val thePlace:Place;
 
