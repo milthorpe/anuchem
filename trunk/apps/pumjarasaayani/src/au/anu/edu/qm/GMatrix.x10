@@ -681,11 +681,12 @@ public class GMatrix extends Matrix {
 
 				       var setIt:Boolean = false;
                            
+                                       val a_l = a, b_l = b, c_l = c, d_l = d;
                                        val i_l = i, j_l = j, k_l = k, l_l = l;
 
                                        outer: while(!setIt) {
                                          for(comp_loc in computeInst) {
-                                           setIt = at(comp_loc) { comp_loc.setValue(i_l, j_l, k_l, l_l) };
+                                           setIt = at(comp_loc) { comp_loc.setValue(a_l, b_l, c_l, d_l, i_l, j_l, k_l, l_l) };
 
                                            if (setIt) break outer;
                                          } // end for
@@ -1075,7 +1076,8 @@ public class GMatrix extends Matrix {
 
         val density:Density!;
 
-        var bas_loc:BasisFunctions!;
+        val bas_loc:BasisFunctions!;
+        val mol_loc:Molecule[QMAtom]!;
 
         public def this(mol:Molecule[QMAtom], bfs:BasisFunctions, den:Density, tp:Place) {
             thePlace = tp;
@@ -1092,6 +1094,8 @@ public class GMatrix extends Matrix {
    
                 mol_loc.addAtom(new QMAtom(sym, new Point3d(x, y, z)));
             } // end for
+
+            this.mol_loc = mol_loc;
 
             // Console.OUT.println("\tStart making local Molecule and BasisFunctions @ " + here);
 
@@ -1125,12 +1129,14 @@ public class GMatrix extends Matrix {
             // Console.OUT.println("\tDone initing tasks @ " + here);
         }
 
-        public def setValue(i:Int, j:Int, k:Int, l:Int) : Boolean {
-            val bfs = bas_loc.getBasisFunctions();
+        public def setValue(a:Int, b:Int, c:Int, d:Int, i:Int, j:Int, k:Int, l:Int) : Boolean {
+            val iFunc = mol_loc.getAtom(a).getBasisFunctions().get(i);
+            val jFunc = mol_loc.getAtom(b).getBasisFunctions().get(j);
+            val kFunc = mol_loc.getAtom(c).getBasisFunctions().get(k);
+            val lFunc = mol_loc.getAtom(d).getBasisFunctions().get(l);
 
             for(var ix:Int=0; ix<Runtime.INIT_THREADS; ix++) {
-               val setIt = computeInst(ix).setValue(bfs.get(i), bfs.get(j), 
-                                                    bfs.get(k), bfs.get(l));
+               val setIt = computeInst(ix).setValue(iFunc, jFunc, kFunc, lFunc);
 
                if (setIt) {
                   val ix_loc = ix;

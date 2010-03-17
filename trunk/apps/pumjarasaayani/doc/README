@@ -82,7 +82,7 @@ field (SCF) procedure. The most expensive step is the formation of the
 F matrix called the Fock that requires computation of ~O(N^4) two electron integrals. 
 In the code, the F matrix is inturn constructed using Hcore and G matrix. 
 Of these the G matrix computation takes up most of the time and is implemented 
-using X10 parallel constructions in following ways.
+using X10 parallel constructs in following ways.
 
 For a reference, see previous work:
 
