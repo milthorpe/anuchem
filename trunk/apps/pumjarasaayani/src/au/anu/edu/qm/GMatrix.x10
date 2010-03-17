@@ -21,6 +21,7 @@ public class GMatrix extends Matrix {
         super(n);
     }
 
+    /** top level method to form the G Matrix, depending on gMatType appropriate functions are called */
     public def compute(twoE:TwoElectronIntegrals!, density:Density!, gMatType:Int) : void {
         if (twoE.isDirect()) { 
            val timer = new Timer(1);
@@ -725,6 +726,8 @@ public class GMatrix extends Matrix {
 
 
     /** find unique elements and mark the onces that are not */
+    /** 8 => is the level of integral symmetry, given (i,j|k.l)
+        there are 8 combinations that are unique */
     private def filterUniqueElements(idx:Rail[Int]!, jdx:Rail[Int]!,
                                      kdx:Rail[Int]!, ldx:Rail[Int]!,
                                      validIdx:Rail[Boolean]!) : void {

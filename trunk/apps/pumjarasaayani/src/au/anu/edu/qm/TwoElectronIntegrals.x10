@@ -95,6 +95,7 @@ public class TwoElectronIntegrals {
         public def coulomb(i:Int, j:Int, k:Int, l:Int, twoE:Double) : void;
     }
 
+    /** Default method: uses THO integrals. */
     public def compute2E(i:Int, j:Int, k:Int, l:Int, twoEUpdate:TwoEAvailable{self.at(this)}) : void {        
          var jij:Double = 0.0;
 
@@ -185,6 +186,7 @@ public class TwoElectronIntegrals {
     private val validIdx = Rail.make[Boolean](8);
 
     /* Note: M_D  routines mostly taken from Alistair's code, with a few changes. 
+       Uses MD recurrance relations to evaluate higher angular momentum integrals.
        Direct update to GMtarix is based on the code in GMatrix.compute..() */
     public def compute2EAndRecord(a:ContractedGaussian{self.at(this)}, b:ContractedGaussian{self.at(this)}, 
                                   c:ContractedGaussian{self.at(this)}, d:ContractedGaussian{self.at(this)}, 
@@ -519,6 +521,8 @@ public class TwoElectronIntegrals {
         // } // atomic
     }
 
+    /** MD recurrance relation steps in following two subroutines */
+
     protected def mdRecurse(r:Point3d, 
                             i:Int, j:Int, k:Int, m:Int) : Double {
          var res:Double;
@@ -581,7 +585,9 @@ public class TwoElectronIntegrals {
 
          return res;
     }
-
+ 
+    /** Method to compute all 2E integrals and store in memory for conventional method,
+        not used for Direct (default) algorithm */
     protected def compute2E() : void {
         val bfs = basisFunctions.getBasisFunctions();
         val noOfBasisFunctions = bfs.size();
@@ -620,6 +626,7 @@ public class TwoElectronIntegrals {
         } // end of i loop       
     }
 
+    /** same as above, except loop based on atom centers */
     protected def compute2EShellPair(molecule:Molecule[QMAtom]!) : void {
         val bfs = basisFunctions.getBasisFunctions();
         val noOfBasisFunctions = bfs.size();
@@ -686,7 +693,7 @@ public class TwoElectronIntegrals {
 
     public def getTwoElectronIntegrals() : Array[Double]{rank==1} = twoEInts;
 
-
+    /** Return coulomb integral for a given pair of <ij|kl> contracted gaussian functions */
     private def coulomb(a:ContractedGaussian{self.at(this)}, b:ContractedGaussian{self.at(this)},
                         c:ContractedGaussian{self.at(this)}, d:ContractedGaussian{self.at(this)}) : Double {
         val la = a.getTotalAngularMomentum(), 
@@ -698,6 +705,7 @@ public class TwoElectronIntegrals {
         else                 { return coulombRec(a,b,c,d);  }
     }
 
+    /** Return coulomb integral for a given pair of <ij|kl> contracted gaussian functions, uses non recursive routine */
     private def coulombFlat(a:ContractedGaussian{self.at(this)}, b:ContractedGaussian{self.at(this)},
                            c:ContractedGaussian{self.at(this)}, d:ContractedGaussian{self.at(this)}) : Double {
          var jij:Double = 0.0;
@@ -863,6 +871,7 @@ public class TwoElectronIntegrals {
                   * sum * aNorm * bNorm * cNorm * dNorm);
     }
 
+    /** Compute the base FmT() - for evaluating integrals */
     protected def computeFmt(maxam:Int, T:Double, fmt:Rail[Double]!) {
         var m:Int, i:Int;
         var num:Double, denom:Double, term:Double, sum:Double;
