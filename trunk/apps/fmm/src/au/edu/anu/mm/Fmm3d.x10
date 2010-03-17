@@ -30,21 +30,6 @@ public class Fmm3d {
     /** The well-separatedness parameter ws. */
     public global val ws : Int;
 
-    /** All boxes in the octree division of space. */
-    global val boxes : Array[FmmBox](2);
-
-    val atoms : ValRail[MMAtom!];
-
-    /** A cache of transformations from multipole to local at the same level. */
-    global val multipoleTransforms : Array[LocalExpansion](5);
-
-    /** A cache of multipole translations between parent box centres and child box centres. */
-    global val multipoleTranslations : Array[MultipoleExpansion](5);
-
-    // TODO use shared local variable within getEnergy() - XTENLANG-404
-    var directEnergy : Double = 0.0;
-    var farFieldEnergy : Double = 0.0;
-
     // TODO enum - XTENLANG-1118
     public const TIMER_INDEX_TOTAL : Int = 0;
     public const TIMER_INDEX_MULTIPOLE : Int = 1;
@@ -54,6 +39,33 @@ public class Fmm3d {
     public const TIMER_INDEX_FARFIELD : Int = 5;
     /** A multi-timer for the several segments of a single getEnergy invocation, indexed by the constants above. */
     public val timer = new Timer(6);
+
+    /** All boxes in the octree division of space. */
+    global val boxes : Array[FmmBox](2);
+
+    val atoms : ValRail[MMAtom!];
+
+    /** 
+     * A cache of transformations from multipole to local at the same level.
+     * Dimensions are:
+     * 0: a "virtual" dimension used to replicate the data across all places
+     *   // TODO should be done as a global array XTENLANG-787
+     * 1: box level in the tree
+     * 2: x translation (difference between x coordinate of boxes)
+     * 3: y translation
+     * 4: z translation
+     */
+    private global val multipoleTransforms : Array[LocalExpansion](5);
+
+    /** 
+     * A cache of multipole translations between parent box centres and child box centres. 
+     * Dimensions as per multipoleTransforms
+     */
+    private global val multipoleTranslations : Array[MultipoleExpansion](5);
+
+    // TODO use shared local variable within getEnergy() - XTENLANG-404
+    private var directEnergy : Double = 0.0;
+    private var farFieldEnergy : Double = 0.0;
 
     /**
      * Initialises a fast multipole method electrostatics calculation
@@ -115,6 +127,7 @@ public class Fmm3d {
     public def calculateEnergy() : Double {
         timer.start(TIMER_INDEX_TOTAL);
         multipoleLowestLevel();
+        // direct energy is independent of all subsequent steps of FMM
         val directEnergy = future {getDirectEnergy()};
         combineMultipoles();
         transformToLocal();
@@ -259,7 +272,9 @@ public class Fmm3d {
 
     /**
      * Gets sum of direct (pairwise) energy for all pairs of atoms
-     * in non-well-separated boxes. 
+     * in non-well-separated boxes. This operations requires only
+     * that atoms have already been assigned to boxes, and so can 
+     * be done in parallel with other steps of the algorithm.
      */
     def getDirectEnergy() : Double {
         timer.start(TIMER_INDEX_DIRECT);
@@ -327,6 +342,12 @@ public class Fmm3d {
         return directEnergy;
     }
 
+    /**
+     * Calculates the sum of far-field interactions for all atoms:
+     * for each atom, calculates the interaction using the local expansion
+     * for the enclosing box, which is the combined contribution of
+     * all atoms in all well-separated boxes.
+     */ 
     def getFarFieldEnergy() : Double {
         Console.OUT.println("getFarFieldEnergy");
         timer.start(TIMER_INDEX_FARFIELD);
@@ -452,7 +473,7 @@ public class Fmm3d {
      * TODO this is a workaround due to lack of Array copy facility - XTENLANG-787
      * @return a local copy at the current place of this box's multipole expansion
      */
-    public global def getMultipoleExpansionLocalCopy(boxIndex : Int, level : Int) : MultipoleExpansion! {
+    private global def getMultipoleExpansionLocalCopy(boxIndex : Int, level : Int) : MultipoleExpansion! {
         val data = at (boxes.dist(boxIndex, level)) {boxes(boxIndex, level) != null? Expansion.getData(numTerms, (boxes(boxIndex, level) as FmmBox!).multipoleExp) : null};
         if (data != null) {
             return new MultipoleExpansion(numTerms, data);
