@@ -55,10 +55,16 @@ public class Expansion {
      * TODO this should not be necessary once XTENLANG-787 is resolved
      * @return the expansion terms, shoehorned into a ValRail
      */
-    public static def getData(p : Int, source : Expansion!) : ValRail[Complex] {
-        return ValRail.make[Complex]((p+1)*(p+1), (i : Int) => source.terms(squareFloor(i), (i - squareFloor(i)*squareFloor(i)-squareFloor(i))));
+    public static safe def getData(p : Int, source : Expansion!) : ValRail[Complex] {
+        Console.OUT.println("getData at " + here);
+        return ValRail.make[Complex]((p+1)*(p+1), (n : Int) => source.terms(mapPoint(n)));
     }
 
-    /** The nearest square below <code>i</code> */
-    protected static safe def squareFloor(i : Int) = (Math.sqrt(i as Double) as Int);
+    private static safe def mapPoint(n : Int) : Point(2) {
+        val i = squareRootFloor(n);
+        return Point.make(i, (n - i*i - i));
+    }
+
+    /** The nearest integer square root below <code>n</code> */
+    protected static safe def squareRootFloor(n : Int) = (Math.sqrt(n as Double) as Int);
 }
