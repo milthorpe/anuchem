@@ -286,112 +286,31 @@ public class TwoElectronIntegrals {
                  computeFmt(angMomABCD, T, fmt);
         
                  // convert to GmT
-                 for(i=0; i<=angMomABCD; i++) { 
-                     fmt(i) *= sq2pi; 
-                     // Console.OUT.println(fmt(i));
-                 }
+                 computeGmt(angMomABCD);
 
                  // Console.OUT.println("Computing [0]m");
 
                  // Console.OUT.println("Up, Uq, Upq: " + Up + " " + Uq + " " + Upq);
 
                  // compute [0]m
-                 for(i=0; i<=angMomABCD; i++) {
-                    zeroM(i) = Upq * Math.pow(2.0*eta, i+0.5) * fmt(i);
-                    // Console.OUT.println(Upq + " " + zeroM(i));
-                 }
+                 computeZeroM(angMomABCD, Upq, eta);
 
                  // Console.OUT.println("Computing [r]m");
                  // Console.OUT.println("abcd_ang: " + angMomABCD);
 
                  // form [r]m using MD (recursion)
-                 for(i=0; i<=angMomABCD; i++) {
-                    val shell = shellList.getPowers(i);
-                    for(j=0; j<((i+1)*(i+2)/2); j++) {
-                       val powers = shell(j);
-                       val lp = powers.getL();
-                       val mp = powers.getM();
-                       val np = powers.getN();
-                       rM(i,j) = mdRecurse(r, lp, mp, np, 0);  // can use vrr() instead
-                       // Console.OUT.println(rM(i,j));
-                    }
-                 }
+                 computeRm(angMomABCD, shellList, r);
  
                  // Console.OUT.println("Computing [p|q] ");
 
                  // form [p|q] 
-                 for(i=0; i<=angMomAB; i++) {
-                    val shellAB = shellList.getPowers(i);
-                    for (var pp:Int = 0; pp<((i+1)*(i+2)/2); pp++) {
-                      val powersAB = shellAB(pp);
-                      val lp = powersAB.getL();
-                      val mp = powersAB.getM();
-                      val np = powersAB.getN();
-                   
-                      for(j=0; j<=angMomCD; j++) {
-                        val shellCD = shellList.getPowers(j);
-                        for (var qq:Int = 0; qq<((j+1)*(j+2)/2); qq++) {
-                          val powersCD = shellCD(qq);
-                          val lq = powersCD.getL();
-                          val mq = powersCD.getM();
-                          val nq = powersCD.getN();
-
-                          val lr = lp+lq;
-                          val mr = mp+mq;
-                          val nr = np+nq;
-                          val rtyp = lr+mr+nr;
-                        
-                          val rr = lr*(2*(lr+mr+nr)-lr+3)/2+mr;
-
-                          if ((lq+mq+nq)%2 == 0)
-                             pqInts(i*pqdim+pp, j*pqdim+qq) =  rM(rtyp, rr);
-                          else
-                             pqInts(i*pqdim+pp, j*pqdim+qq) = -rM(rtyp, rr);
-
-                          // Console.OUT.println(pqInts(i*pqdim+pp, j*pqdim+qq));
-                        } 
-                      } 
-                    }
-                 }   
+                 computePq(angMomAB, angMomCD, shellList);
 
                  // Console.OUT.println("Computing [p|cd] ");
 
                  // form [p|cd]
-                 for(i=0; i<=angMomAB; i++) {
-                   for(var pp:Int = 0; pp < ((i+1)*(i+2)/2); pp++) {
-
-                     for (k=0; k<=maxam2; k++) {
-                       for (l=0; l<=maxam2M; l++) {
-                          npint(k,l) = pqInts(i*pqdim+pp, k*pqdim+l);
-                       } 
-                     }
-
-                     val shellD = shellList.getPowers(dAng);
-                     
-                     for(dd = 0; dd<dLim; dd++) {
-                        val powersD = shellD(dd);
-                        val lp = powersD.getL();
-                        val mp = powersD.getM();
-                        val np = powersD.getN();
-
-                        val shellC = shellList.getPowers(cAng);
-                        for(cc = 0; cc<cLim; cc++) {
-                           val powersC = shellC(cc);
-                           val lq = powersC.getL();
-                           val mq = powersC.getM();
-                           val nq = powersC.getN();
-
-                           // Console.OUT.println("md: [" + maxam + "] " + dd + " " + cc + " " + (i*pqdim+pp));
-
-                           pcdint(dd,cc,i*pqdim+pp) += mdr1(lp, mp, np, lq, mq, nq, 0, 0, 0,
-                                                            dCen, cCen,
-                                                            q, gamma2);   // can use hrr() instead
-
-                           // Console.OUT.println("md-done: " + dd + " " + cc + " " + i*pqdim+pp);
-                        }
-                     }
-                   }
-                 }
+                 computePcd(angMomAB, gamma2, q, dLim, cLim,
+                            dAng, cAng, dCen, cCen, shellList);
                } // dPrim
               } // cPrim
 
@@ -427,7 +346,6 @@ public class TwoElectronIntegrals {
 
                           jjdx(0) = jj; iidx(1) = jj; iidx(2) = jj; jjdx(3) = jj;
                           lldx(4) = jj; kkdx(5) = jj; lldx(6) = jj; kkdx(7) = jj;
-
 
                           val shellA = shellList.getPowers(aAng);
                           for(aa = 0; aa<aLim; aa++) {
@@ -584,6 +502,115 @@ public class TwoElectronIntegrals {
          } // end if
 
          return res;
+    }
+
+    private def computeGmt(angMomABCD:Int) {
+         for(var i:Int=0; i<=angMomABCD; i++) {
+             fmt(i) *= sq2pi;
+             // Console.OUT.println(fmt(i));
+         }
+    }
+
+    private def computeZeroM(angMomABCD:Int, Upq:Double, eta:Double) {
+         for(var i:Int=0; i<=angMomABCD; i++) {
+             zeroM(i) = Upq * Math.pow(2.0*eta, i+0.5) * fmt(i);
+             // Console.OUT.println(Upq + " " + zeroM(i));
+         }
+    }
+
+    private def computeRm(angMomABCD:Int, shellList:ShellList!, r:Point3d) {
+         var i:Int, j:Int;
+
+         for(i=0; i<=angMomABCD; i++) {
+             val shell = shellList.getPowers(i);
+             for(j=0; j<((i+1)*(i+2)/2); j++) {
+                 val powers = shell(j);
+                 val lp = powers.getL();
+                 val mp = powers.getM();
+                 val np = powers.getN();
+                 rM(i,j) = mdRecurse(r, lp, mp, np, 0);  // can use vrr() instead
+                 // Console.OUT.println(rM(i,j));
+             }
+         }
+    }
+
+    private def computePq(angMomAB:Int, angMomCD:Int, shellList:ShellList!) {
+         var i:Int, j:Int, pp:Int, qq:Int;
+         
+         for(i=0; i<=angMomAB; i++) {
+             val shellAB = shellList.getPowers(i);
+             for (pp = 0; pp<((i+1)*(i+2)/2); pp++) {
+                 val powersAB = shellAB(pp);
+                 val lp = powersAB.getL();
+                 val mp = powersAB.getM();
+                 val np = powersAB.getN();
+
+                 for(j=0; j<=angMomCD; j++) {
+                     val shellCD = shellList.getPowers(j);
+                     for (qq = 0; qq<((j+1)*(j+2)/2); qq++) {
+                         val powersCD = shellCD(qq);
+                         val lq = powersCD.getL();
+                         val mq = powersCD.getM();
+                         val nq = powersCD.getN();
+
+                         val lr = lp+lq;
+                         val mr = mp+mq;
+                         val nr = np+nq;
+                         val rtyp = lr+mr+nr;
+
+                         val rr = lr*(2*(lr+mr+nr)-lr+3)/2+mr;
+
+                         if ((lq+mq+nq)%2 == 0)
+                            pqInts(i*pqdim+pp, j*pqdim+qq) =  rM(rtyp, rr);
+                         else
+                            pqInts(i*pqdim+pp, j*pqdim+qq) = -rM(rtyp, rr);
+
+                         // Console.OUT.println(pqInts(i*pqdim+pp, j*pqdim+qq));
+                     }
+                 }
+             }
+         }
+    }
+
+    private def computePcd(angMomAB:Int, gamma2:Double, q:Point3d, dLim:Int, cLim:Int, 
+                           dAng:Int, cAng:Int, dCen:Point3d, cCen:Point3d, shellList:ShellList!) {
+         var i:Int, j:Int, pp:Int, k:Int, l:Int, dd:Int, cc:Int;
+
+         for(i=0; i<=angMomAB; i++) {
+             for(pp=0; pp < ((i+1)*(i+2)/2); pp++) {
+
+                 for (k=0; k<=maxam2; k++) {
+                     for (l=0; l<=maxam2M; l++) {
+                         npint(k,l) = pqInts(i*pqdim+pp, k*pqdim+l);
+                     }
+                 }
+
+                 val shellD = shellList.getPowers(dAng);
+
+                 for(dd = 0; dd<dLim; dd++) {
+                     val powersD = shellD(dd);
+                     val lp = powersD.getL();
+                     val mp = powersD.getM();
+                     val np = powersD.getN();
+
+                     val shellC = shellList.getPowers(cAng);
+                     for(cc = 0; cc<cLim; cc++) {
+                         val powersC = shellC(cc);
+                         val lq = powersC.getL();
+                         val mq = powersC.getM();
+                         val nq = powersC.getN();
+
+                         // Console.OUT.println("md: [" + maxam + "] " + dd + " " + cc + " " + (i*pqdim+pp));
+
+                         pcdint(dd,cc,i*pqdim+pp) += mdr1(lp, mp, np, lq, mq, nq, 0, 0, 0,
+                                                          dCen, cCen,
+                                                          q, gamma2);   // can use hrr() instead
+
+                         // Console.OUT.println("md-done: " + dd + " " + cc + " " + i*pqdim+pp);
+                     }
+                 }
+             }
+         }
     }
  
     /** Method to compute all 2E integrals and store in memory for conventional method,

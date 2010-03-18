@@ -91,12 +91,12 @@ public class BasisFunctions {
 
             for(var i:Int=0; i<nbf; i++) {
                 val bfi    = bfs.get(i);
-                var lm:Int = bfi.getTotalAngularMomentum();
+                var lm:Int = bfi.getMaximumAngularMomentum();
                 var denom:Double = 1.0;
 
                 while(lm>1) { denom *= (2.0*lm-1.0); lm--; }
               
-                val lmn   = bfi.getTotalAngularMomentum();
+                val lmn   = bfi.getMaximumAngularMomentum();
                 val fact2 = Math.pow(2.0, lmn) / Math.pow(denom, 0.5);
               
                 val prms  = bfi.getPrimitives(); 
