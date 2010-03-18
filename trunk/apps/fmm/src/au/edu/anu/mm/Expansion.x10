@@ -56,7 +56,6 @@ public class Expansion {
      * @return the expansion terms, shoehorned into a ValRail
      */
     public static safe def getData(p : Int, source : Expansion!) : ValRail[Complex] {
-        Console.OUT.println("getData at " + here);
         return ValRail.make[Complex]((p+1)*(p+1), (n : Int) => source.terms(mapPoint(n)));
     }
 

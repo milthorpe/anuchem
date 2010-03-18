@@ -142,7 +142,7 @@ public class Fmm3d {
      * lowest level box that contains the atom.
      */
     def multipoleLowestLevel() {
-        Console.OUT.println("multipole lowest level");
+        //Console.OUT.println("multipole lowest level");
         timer.start(TIMER_INDEX_MULTIPOLE);
         finish {
             for ((i) in 0..atoms.length-1) {
@@ -177,7 +177,7 @@ public class Fmm3d {
     def combineMultipoles() {
         timer.start(TIMER_INDEX_COMBINE);
         for (var level: Int = numLevels; level > 2; level--) {
-            Console.OUT.println("combine level " + level + " => " + (level-1));
+            //Console.OUT.println("combine level " + level + " => " + (level-1));
             val thisLevelRegion : Region(2) = [0..((Math.pow(8,level) as Int)-1),level..level];
             val thisLevelDist = boxes.dist | thisLevelRegion;
             finish ateach ((boxIndex1,level) in thisLevelDist) {
@@ -204,7 +204,7 @@ public class Fmm3d {
      * non-empty child boxes.
      */
     def transformToLocal() {
-        Console.OUT.println("transform level 2");
+        //Console.OUT.println("transform level 2");
         timer.start(TIMER_INDEX_TRANSFORM);
         val level2Region : Region(2) = [0..63,2..2];
         val level2Dist = boxes.dist | level2Region;
@@ -228,7 +228,7 @@ public class Fmm3d {
         }
         
         for ((thisLevel) in 3..numLevels) {
-            Console.OUT.println("transform level " + thisLevel);
+            //Console.OUT.println("transform level " + thisLevel);
             val thisLevelRegion : Region(2) = [0..(Math.pow(8,thisLevel) as Int)-1,thisLevel..thisLevel];
             val thisLevelDist = boxes.dist | thisLevelRegion;
             finish ateach ((boxIndex1,level) in thisLevelDist) {
@@ -337,7 +337,7 @@ public class Fmm3d {
      * all atoms in all well-separated boxes.
      */ 
     def getFarFieldEnergy() : Double {
-        Console.OUT.println("getFarFieldEnergy");
+        //Console.OUT.println("getFarFieldEnergy");
         timer.start(TIMER_INDEX_FARFIELD);
         val lowestLevelRegion : Region(2) = [0..(Math.pow(8,numLevels) as Int)-1,numLevels..numLevels];
         val lowestLevelDist = boxes.dist | lowestLevelRegion;
@@ -422,27 +422,6 @@ public class Fmm3d {
         parentDim : Int = Math.pow2(childLevel-1) as Int;
         val gridLoc = FmmBox.getBoxLocation(childIndex, childLevel);
         return gridLoc.x / 2 * parentDim * parentDim + gridLoc.y / 2 * parentDim + gridLoc.z / 2;
-    }
-
-    /**
-     * Gets the pairwise interaction energy between the given atom and all atoms in the given box.
-     */
-    private global def getPairwiseInteractionForBox(atom : MMAtom, boxIndex : Int) : Double {
-        var boxEnergy : Double = 0.0;
-        val box = boxes(boxIndex, numLevels) as FmmLeafBox!;
-        if (box != null) {
-            for ((atomIndex2) in 0..box.atoms.length()-1) {
-                val atom2 = box.atoms(atomIndex2) as MMAtom!;
-                val pairEnergy : Double = atom2.pairEnergy(atom);
-                boxEnergy += 2 * pairEnergy;
-            }
-        }
-        return boxEnergy;
-    }
-
-    private global def getMultipoleForBox(boxIndex : Int, level : Int) : MultipoleExpansion {
-        val box = boxes(boxIndex, level) as FmmBox!;
-        return box == null ? null : box.multipoleExp;
     }
 
     private global def getPackedAtomsForBox(boxIndex : Int, level : Int) {
