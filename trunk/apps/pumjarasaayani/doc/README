@@ -20,7 +20,7 @@ Dependency for compiling:
 ------------------------
 * GSL or equivalent BLAS library, will require rewrite of native wrappers for 
   any library other than GSL. Though, the code can be compiled with out any
-  native wrappers.
+  native wrappers. Required for diagonalization and DIIS.
 * anu-chem library
 * x10x.lib library
 
@@ -65,8 +65,8 @@ where <n> is number of places
 Tests for which all the above runs
 ..................................
 h2-sto.inp   h2.inp   h2o.inp   h2o-dp.inp  nh3.inp  nh3-dp.inp  ch4-dp.inp 
-benzene.inp  benzene-321.inp(*) benzene-dp.inp(*)  h2co.inp(*) aspirin.inp(*) 
-aspirin-321.inp(*)
+benzene.inp  benzene-321.inp benzene-dp.inp(*)  h2co.inp(*) h2co-321.inp
+aspirin.inp(*) aspirin-321.inp(*)
 
 (*) Indicates it runs, but has convergence problems
 
@@ -149,6 +149,7 @@ For a given molecular system and basis set, with proper load balance there shoul
 be near linear scaling in the time required to construct the G matrix with increase 
 in number of processors. The scaling will flatten if the number of integrals to 
 be evaluated are comparatively less as the number of processors avaliable.
+
 
 Few benchmarks
 --------------

@@ -2,7 +2,10 @@
  * DIISFockExtrapolator.x10
  *
  * DIIS based fock extrapolation
- * Note: Mostly lifted from MeTA Studio code, except no Matrix singularity checks made!
+ * Note: Mostly lifted from MeTA Studio code.
+ * For reference see: 
+ * "CONVERGENCE ACCELERATION OF ITERATWE SEQUENCES. THE CASE OF SCF ITERATION", Peter Pulay, Chem. Phys. Lett., 73, 393, 1980.
+ * (opps! thats my birth year ;-))
  *
  * @author: V.Ganesh
  */
@@ -32,6 +35,7 @@ public class DIISFockExtrapolator {
         diisStep = 0;
     }
 
+    /** Generate a new Fock by extrapolating from previous recorded Fock and their difference vectors */
     public def next(currentFock:Fock!, overlap:Overlap!, density:Density!) : Fock! {
         val N = currentFock.getRowCount();
         var newFock:Fock! = new Fock(N) as Fock!;
