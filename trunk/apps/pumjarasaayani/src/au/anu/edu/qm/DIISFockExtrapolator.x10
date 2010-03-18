@@ -16,7 +16,7 @@ import x10x.xla.GaussianElimination;
 
 public class DIISFockExtrapolator {
     global val fockMatrixList:ArrayList[Fock!]!;
-    global val errorMatrixList:ArrayList[Vector!]!;
+    global val errorVectorList:ArrayList[Vector!]!;
 
     global val errorThreshold = 0.1;
 
@@ -27,7 +27,7 @@ public class DIISFockExtrapolator {
 
     public def this() {
         fockMatrixList  = new ArrayList[Fock!]();
-        errorMatrixList = new ArrayList[Vector!]();
+        errorVectorList = new ArrayList[Vector!]();
 
         diisStep = 0;
     }
@@ -48,8 +48,8 @@ public class DIISFockExtrapolator {
         val FPS = currentFock.mul(density).mul(overlap);
         val SPF = overlap.mul(density).mul(currentFock);
 
-        val errorMatrix = new Vector(FPS.sub(SPF)) as Vector!;
-        val mxerr = errorMatrix.maxNorm();
+        val errorVector = new Vector(FPS.sub(SPF)) as Vector!;
+        val mxerr = errorVector.maxNorm();
 
         if (mxerr < errorThreshold && !diisStarted) {
             Console.OUT.println("Starting DIIS...");
@@ -75,12 +75,12 @@ public class DIISFockExtrapolator {
             } // end if
         } // end if
         
-        errorMatrixList.add(errorMatrix);
+        errorVectorList.add(errorVector);
         fockMatrixList.add(currentFock);
 
         newFock.makeZero();
 
-        val noOfIterations = errorMatrixList.size();
+        val noOfIterations = errorVectorList.size();
 
         val A = new Matrix(noOfIterations+1) as Matrix!;
         val B = new Vector(noOfIterations+1) as Vector!;
@@ -91,7 +91,7 @@ public class DIISFockExtrapolator {
         // set up A x = B to be solved
         for (i = 0; i < noOfIterations; i++) {
             for (j = 0; j < noOfIterations; j++) {
-                aMatrix(i,j) = errorMatrixList.get(i).dot(errorMatrixList.get(j));
+                aMatrix(i,j) = errorVectorList.get(i).dot(errorVectorList.get(j));
             } // end for
         } // end for
 

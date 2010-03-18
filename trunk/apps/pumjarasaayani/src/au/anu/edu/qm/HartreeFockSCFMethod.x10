@@ -76,7 +76,7 @@ public class HartreeFockSCFMethod extends SCFMethod {
             // make fock matrix
             fock.compute(hCore, gMatrix);
             // TODO: DIIS to be switched on / off on request 
-            // fock = diis.next(fock, overlap, density);
+            fock = diis.next(fock, overlap, density);
             timer.stop(0);
             Console.OUT.println ("    Time to construct Fock: " + (timer.total(0) as Double) / 1e9 + " seconds");
  
