@@ -16,6 +16,10 @@ ant clean && ant
 
 Will build the required executable and put it in bin/pumjarasaayani.exe
 
+The default build script builds agaist pgas_sockets.
+To build against MPI change ${x10rt} to "mpi" and the 
+${x10.postcompiler} to "mpixx"
+
 Dependency for compiling:
 ------------------------
 * GSL or equivalent BLAS library, will require rewrite of native wrappers for 
@@ -149,6 +153,10 @@ For a given molecular system and basis set, with proper load balance there shoul
 be near linear scaling in the time required to construct the G matrix with increase 
 in number of processors. The scaling will flatten if the number of integrals to 
 be evaluated are comparatively less as the number of processors avaliable.
+
+The current implementation seem to have a bottelneck with the task scheduler 
+kind of approach (Pseudo code 2 above). As time is spent in spinning to so 
+see which place is free to take up a task.
 
 
 Few benchmarks

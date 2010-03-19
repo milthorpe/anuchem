@@ -1073,6 +1073,48 @@ public class GMatrix extends Matrix {
         }
     }
 
+    /** Compute class for the old code - multi place version , using a task pool */
+    class ComputePlaceOldPool extends ComputePlaceOld {
+        val taskPool:Stack[BlockIndices]!;
+        var noMoreTasks:Boolean;
+
+        public def this(mol:Molecule[QMAtom], bfs:BasisFunctions, den:Density, tp:Place) {
+           super(mol, bfs, den, tp);
+
+           taskPool = new Stack[BlockIndices]() as Stack[BlockIndices]!;
+           noMoreTasks = false;
+        }
+
+        public def pushBlockIdx(bIdx:BlockIndices) {
+           taskPool.push(bIdx);
+        }
+
+        public def start() {
+           while(!noMoreTasks && (taskPool.size()!=0)) {
+               for(var ix:Int=0; ix<Runtime.INIT_THREADS; ix++) {
+                   await !computeInst(ix).computing;
+
+                   if (taskPool.size() == 0) continue;
+
+                   val task = taskPool.pop();
+
+                   idx(0) = task.i; jdx(1) = task.i; jdx(2) = task.i; idx(3) = task.i;
+                   kdx(4) = task.i; ldx(5) = task.i; kdx(6) = task.i; ldx(7) = task.i;
+
+                   jdx(0) = task.j; idx(1) = task.j; idx(2) = task.j; jdx(3) = task.j;
+                   ldx(4) = task.j; kdx(5) = task.j; ldx(6) = task.j; kdx(7) = task.j;
+
+                   kdx(0) = task.k; kdx(1) = task.k; ldx(2) = task.k; ldx(3) = task.k;
+                   jdx(4) = task.k; jdx(5) = task.k; idx(6) = task.k; idx(7) = task.k;
+
+                   computeInst(ix).setValue(task.i, task.j, task.k, task.l, idx, jdx, kdx, ldx);
+                   val ix_loc = ix;
+                   async computeInst(ix_loc).compute();
+               } // end for
+           } // end while
+        }
+    }
+
     /** Compute class for the new code - multi place version */
     class ComputePlaceNew {
         val thePlace:Place;
@@ -1184,6 +1226,17 @@ public class GMatrix extends Matrix {
 
         public def getKMatVal() : ValRail[Double]! {
            return getKMat().getValRail();
+        }
+    }
+
+    class BlockIndices {
+        public global val i:Int, j:Int, k:Int, l:Int;
+
+        public def this(i:Int, j:Int, k:Int, l:Int) {
+            this.i = i;
+            this.j = j;
+            this.k = k;
+            this.l = l;
         }
     }
 }
