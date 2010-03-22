@@ -341,7 +341,7 @@ public class Fmm3d {
         timer.start(TIMER_INDEX_FARFIELD);
         val lowestLevelRegion : Region(2) = [0..(Math.pow(8,numLevels) as Int)-1,numLevels..numLevels];
         val lowestLevelDist = boxes.dist | lowestLevelRegion;
-        finish ateach ((boxIndex1,level) in lowestLevelDist | here) {
+        finish ateach ((boxIndex1,level) in lowestLevelDist) {
             val box1 = boxes(boxIndex1, numLevels) as FmmLeafBox!;
             if (box1 != null) {
                 // TODO use shared var - XTENLANG-404
