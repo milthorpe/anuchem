@@ -472,16 +472,15 @@ public class GMatrix extends Matrix {
                     for(l=0; l<(k+1); l++) {
                         kl = k * (k+1) / 2+l;
                         if (ij >= kl) { 
-                           
-                           var setIt:Boolean = false;
-                           
                            val i_l = i, j_l = j, k_l = k, l_l = l;
 
                            if (ix >= nPlaces) ix = 0;
 
-                           val comp_loc = computeInst(ix++);
+                           val comp_loc = computeInst(ix);
 
                            at(comp_loc) { comp_loc.pushBlockIdx(BlockIndices(i_l, j_l, k_l, l_l)); };
+
+                           ix++;
                        } // end if                        
                     } // end l loop
                 } // end k loop

@@ -65,7 +65,7 @@ where <n> is number of places
 6 : (4) implemented as multi place code
 7 : (5) using (static) task pool interface [*]
 
-[*] 1, 2, and 5 are most relevent for timings and scaling at this point
+[*] - most relevent for timings and scaling at this point
 
 Tests for which all the above runs
 ..................................
