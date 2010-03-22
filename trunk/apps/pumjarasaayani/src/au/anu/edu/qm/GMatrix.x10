@@ -56,6 +56,10 @@ public class GMatrix extends Matrix {
                Console.OUT.println("   GMatrix.computeDirectNewMultiPlaceNoAtomic: " + gMatType);
                computeDirectNewMultiPlaceNoAtomic(twoE, density);
                break;
+           case 7:
+               Console.OUT.println("   GMatrix.computeDirectOldMultiPlaceTaskPool: " + gMatType);
+               computeDirectOldMultiPlaceTaskPool(twoE, density);
+               break;
            default:
                Console.OUT.println("   GMatrix.computeDirectSerialOld: " + gMatType);
                computeDirectSerialOld(twoE, density); 
@@ -388,6 +392,106 @@ public class GMatrix extends Matrix {
                 } // end k loop
             } // end j loop
           } // end i loop
+        } // finish
+        timer.stop(1);
+        Console.OUT.println("\tTime for actual computation: " + (timer.total(1) as Double) / 1e9 + " seconds"); 
+
+
+        timer.start(2);
+
+        // form the G matrix
+        // TODO following need to change once XTENLANG-787 is resolved
+        for(comp_loc in computeInst) {
+             val jVal = at(comp_loc) { comp_loc.getJMatVal() };
+             val kVal = at(comp_loc) { comp_loc.getKMatVal() };
+
+             var ii:Int=0;
+             for(var x:Int=0; x<N; x++) {
+               for(var y:Int=0; y<N; y++) {
+                  /**
+                  val x_loc = x; val y_loc = y;
+                  val jVal = at(comp_loc) { comp_loc.getJMat().getMatrix()(x_loc, y_loc) };
+                  val kVal = at(comp_loc) { comp_loc.getKMat().getMatrix()(x_loc, y_loc) };
+             
+                  gMatrix(x,y) += jVal - (0.25*kVal);
+                  **/
+
+                  gMatrix(x,y) += jVal(ii) - (0.25*kVal(ii));
+                  ii++;
+               } // end for
+             } // end for
+        } // end for
+        
+        timer.stop(2);
+        Console.OUT.println("\tTime for summing up GMatrix bits: " + (timer.total(2) as Double) / 1e9 + " seconds"); 
+    }
+
+    private def computeDirectOldMultiPlaceTaskPool(twoE:TwoElectronIntegrals!, 
+                                                   density:Density!) : void {
+        val N = density.getRowCount();
+         
+        val molecule = twoE.getMolecule();
+        val basisFunctions = twoE.getBasisFunctions();
+
+        makeZero();
+
+        val gMatrix = getMatrix();
+
+        var i:Int, j:Int, k:Int, l:Int, m:Int, ij:Int, kl:Int;
+
+        val nPlaces = Place.places.length;
+        val computeInst = Rail.make[ComputePlaceOldPool](nPlaces);
+
+        Console.OUT.println("\tNo. of places: " + nPlaces);
+        Console.OUT.println("\tNo. of threads per place: " + Runtime.INIT_THREADS);
+
+        val timer = new Timer(3);
+
+        timer.start(0);
+        i = 0;
+        for(place in Place.places) {
+           computeInst(i) = at(place) { 
+                return new ComputePlaceOldPool(molecule, basisFunctions, density, place); 
+           };
+           i++;
+        }
+        timer.stop(0);
+        Console.OUT.println("\tTime for setting up place(s) with initial data: " + (timer.total(0) as Double) / 1e9 + " seconds"); 
+
+        timer.start(1);
+        finish {
+          ////
+          // for(comp_loc in computeInst) async at(comp_loc) { comp_loc.start(); };
+          ////
+
+          var ix:Int = 0;
+          for(i=0; i<N; i++) {
+            for(j=0; j<(i+1); j++) {
+                ij = i * (i+1) / 2+j;
+                for(k=0; k<N; k++) {
+                    for(l=0; l<(k+1); l++) {
+                        kl = k * (k+1) / 2+l;
+                        if (ij >= kl) { 
+                           
+                           var setIt:Boolean = false;
+                           
+                           val i_l = i, j_l = j, k_l = k, l_l = l;
+
+                           if (ix >= nPlaces) ix = 0;
+
+                           val comp_loc = computeInst(ix++);
+
+                           at(comp_loc) { comp_loc.pushBlockIdx(BlockIndices(i_l, j_l, k_l, l_l)); };
+                       } // end if                        
+                    } // end l loop
+                } // end k loop
+            } // end j loop
+          } // end i loop
+          
+          ////
+          for(comp_loc in computeInst) async at(comp_loc) { comp_loc.start(); };
+          for(comp_loc in computeInst) async at(comp_loc) { comp_loc.noMoreTasks = true; };
+          ////
         } // finish
         timer.stop(1);
         Console.OUT.println("\tTime for actual computation: " + (timer.total(1) as Double) / 1e9 + " seconds"); 
@@ -846,7 +950,7 @@ public class GMatrix extends Matrix {
                } // end m
             } // end if
 
-            computing = false;
+            atomic computing = false;
         }
 
         /** find unique elements and mark the onces that are not */
@@ -895,7 +999,7 @@ public class GMatrix extends Matrix {
                ldx_loc(m) = ldx(m);
             } // end for
 
-            computing = true;
+            atomic computing = true;
 
             return true;
         }
@@ -1090,9 +1194,11 @@ public class GMatrix extends Matrix {
         }
 
         public def start() {
-           while(!noMoreTasks && (taskPool.size()!=0)) {
+           outer: while(true) {
                for(var ix:Int=0; ix<Runtime.INIT_THREADS; ix++) {
-                   await !computeInst(ix).computing;
+                   if (noMoreTasks && (taskPool.size()==0)) break outer;
+
+                   await (computeInst(ix).computing == false);
 
                    if (taskPool.size() == 0) continue;
 
@@ -1229,15 +1335,10 @@ public class GMatrix extends Matrix {
         }
     }
 
-    class BlockIndices {
-        public global val i:Int, j:Int, k:Int, l:Int;
-
-        public def this(i:Int, j:Int, k:Int, l:Int) {
-            this.i = i;
-            this.j = j;
-            this.k = k;
-            this.l = l;
-        }
+    static struct BlockIndices(i:Int, j:Int, k:Int, l:Int) {
+         public def this(i:Int, j:Int, k:Int, l:Int) {
+             property(i, j, k, l);
+         }
     }
 }
 

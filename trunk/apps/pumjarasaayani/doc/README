@@ -61,8 +61,9 @@ where <n> is number of places
 2 : G matrix formation using pseudo code (2)  [*] 
 3 : serial G matrix formation using a low flop count integral evaluation (but uses recursion)
 4 : 3 , but uses (2) for multithread implementation
-5 : Multiplace implementation   [*]
+5 : Multiplace implementation  using pseudo code akin to (2) [*]
 6 : (4) implemented as multi place code
+7 : (5) using (static) task pool interface [*]
 
 [*] 1, 2, and 5 are most relevent for timings and scaling at this point
 
