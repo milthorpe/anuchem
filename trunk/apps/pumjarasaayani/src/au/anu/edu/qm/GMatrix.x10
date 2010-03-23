@@ -60,6 +60,10 @@ public class GMatrix extends Matrix {
                Console.OUT.println("   GMatrix.computeDirectOldMultiPlaceTaskPool: " + gMatType);
                computeDirectOldMultiPlaceTaskPool(twoE, density);
                break;
+           case 8:
+               Console.OUT.println("   GMatrix.computeDirectOldMultiPlaceStatic: " + gMatType);
+               computeDirectOldMultiPlaceStatic(twoE, density);
+               break;
            default:
                Console.OUT.println("   GMatrix.computeDirectSerialOld: " + gMatType);
                computeDirectSerialOld(twoE, density); 
@@ -425,6 +429,89 @@ public class GMatrix extends Matrix {
         timer.stop(2);
         Console.OUT.println("\tTime for summing up GMatrix bits: " + (timer.total(2) as Double) / 1e9 + " seconds"); 
     }
+
+    private def computeDirectOldMultiPlaceStatic(twoE:TwoElectronIntegrals!, 
+                                                 density:Density!) : void {
+        val N = density.getRowCount();
+         
+        val molecule = twoE.getMolecule();
+        val basisFunctions = twoE.getBasisFunctions();
+
+        makeZero();
+
+        val gMatrix = getMatrix();
+
+        var i:Int, j:Int, k:Int, l:Int, m:Int, ij:Int, kl:Int;
+
+        val nPlaces = Place.places.length;
+        val computeInst = Rail.make[ComputePlaceOldDirect](nPlaces);
+
+        Console.OUT.println("\tNo. of places: " + nPlaces);
+        Console.OUT.println("\tNo. of threads per place: " + Runtime.INIT_THREADS);
+
+        val timer = new Timer(3);
+
+        timer.start(0);
+        i = 0;
+        for(place in Place.places) {
+           computeInst(i++) = at(place) { return new ComputePlaceOldDirect(molecule, basisFunctions, density, place); };
+        }
+        timer.stop(0);
+        Console.OUT.println("\tTime for setting up place(s) with initial data: " + (timer.total(0) as Double) / 1e9 + " seconds"); 
+
+        val workPerPlace = N / nPlaces;
+        val workOn1Place = workPerPlace + (N%nPlaces);
+
+        timer.start(1);
+        finish {
+          
+          var curInd:Int = 0;
+          i = 0;
+          for (place in Place.places) {
+              val comp_loc = computeInst(i++);
+              val st = curInd;
+              if (place == here) {
+                 async at(comp_loc) { comp_loc.compute(st, st+workOn1Place); };
+                 curInd += workOn1Place;
+              } else {
+                 async at(comp_loc) { comp_loc.compute(st, st+workPerPlace); };
+                 curInd += workPerPlace;
+              }
+          } // end for
+        } // finish
+        timer.stop(1);
+        Console.OUT.println("\tTime for actual computation: " + (timer.total(1) as Double) / 1e9 + " seconds"); 
+
+
+        timer.start(2);
+
+        // form the G matrix
+        // TODO following need to change once XTENLANG-787 is resolved
+        for(comp_loc in computeInst) {
+             val jVal = at(comp_loc) { comp_loc.getJMatVal() };
+             val kVal = at(comp_loc) { comp_loc.getKMatVal() };
+
+             var ii:Int=0;
+             for(var x:Int=0; x<N; x++) {
+               for(var y:Int=0; y<N; y++) {
+                  /**
+                  val x_loc = x; val y_loc = y;
+                  val jVal = at(comp_loc) { comp_loc.getJMat().getMatrix()(x_loc, y_loc) };
+                  val kVal = at(comp_loc) { comp_loc.getKMat().getMatrix()(x_loc, y_loc) };
+             
+                  gMatrix(x,y) += jVal - (0.25*kVal);
+                  **/
+
+                  gMatrix(x,y) += jVal(ii) - (0.25*kVal(ii));
+                  ii++;
+               } // end for
+             } // end for
+        } // end for
+        
+        timer.stop(2);
+        Console.OUT.println("\tTime for summing up GMatrix bits: " + (timer.total(2) as Double) / 1e9 + " seconds"); 
+    }
+
 
     private def computeDirectOldMultiPlaceTaskPool(twoE:TwoElectronIntegrals!, 
                                                    density:Density!) : void {
@@ -1217,6 +1304,49 @@ public class GMatrix extends Matrix {
                    async computeInst(ix_loc).compute();
                } // end for
            } // end while
+        }
+    }
+
+    /** Compute class for the old code - multi place version , just a direct compute wrapper */
+    class ComputePlaceOldDirect extends ComputePlaceOld {
+        public def this(mol:Molecule[QMAtom], bfs:BasisFunctions, den:Density, tp:Place) {
+           super(mol, bfs, den, tp);
+        }
+
+        public def compute(i:Int, j:Int, k:Int, l:Int) {
+              for(var ix:Int=0; ix<Runtime.INIT_THREADS; ix++) {
+                   await (computeInst(ix).computing == false);
+
+                   computeInst(ix).setValue(i, j, k, l, idx, jdx, kdx, ldx);
+                   val ix_loc = ix;
+                   async computeInst(ix_loc).compute();
+                   if (ix == 0) break;
+              } // end for
+        }
+
+        public def compute(start:Int, end:Int) {
+              val N = density.getRowCount();
+              var i:Int, j:Int, k:Int, l:Int, m:Int, ij:Int, kl:Int;
+
+              for(i=start; i<end; i++) {
+                idx(0) = i; jdx(1) = i; jdx(2) = i; idx(3) = i;
+                kdx(4) = i; ldx(5) = i; kdx(6) = i; ldx(7) = i;
+                for(j=0; j<(i+1); j++) {
+                   ij = i * (i+1) / 2+j;
+                   jdx(0) = j; idx(1) = j; idx(2) = j; jdx(3) = j;
+                   ldx(4) = j; kdx(5) = j; ldx(6) = j; kdx(7) = j;
+                   for(k=0; k<N; k++) {
+                       kdx(0) = k; kdx(1) = k; ldx(2) = k; ldx(3) = k;
+                       jdx(4) = k; jdx(5) = k; idx(6) = k; idx(7) = k;
+                       for(l=0; l<(k+1); l++) {
+                          kl = k * (k+1) / 2+l;
+                          if (ij >= kl) {
+                              compute(i, j, k, l);
+                          }
+                       }
+                   }
+                }
+              }
         }
     }
 
