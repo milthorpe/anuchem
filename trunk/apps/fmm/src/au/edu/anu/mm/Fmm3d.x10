@@ -149,7 +149,7 @@ public class Fmm3d {
                 val atom = atoms(i);
                 val boxLocation = getLowestLevelBoxLocation(atom);
                 val boxIndex = FmmBox.getBoxIndex(boxLocation, numLevels);
-                async (boxes.dist(boxIndex, numLevels)) {
+                at (boxes.dist(boxIndex, numLevels)) {
                     val parentBox = getParentForChild(boxIndex, numLevels);
                     val remoteAtom = new MMAtom(atom);
                     var box : FmmBox;
@@ -412,7 +412,7 @@ public class Fmm3d {
      * does not exist.  NOTE assumes given box index is distributed
      * to <code>here</code>.
      */
-    private atomic global def getOrCreateParent(parentIndex : int, parentLevel : Int) : FmmBox {
+    private global def getOrCreateParent(parentIndex : int, parentLevel : Int) : FmmBox {
         val parent = boxes(parentIndex, parentLevel);
         if (parent == null) {
             val grandparent = getParentForChild(parentIndex, parentLevel);
