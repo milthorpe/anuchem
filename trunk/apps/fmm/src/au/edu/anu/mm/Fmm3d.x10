@@ -150,7 +150,7 @@ public class Fmm3d {
                 val boxLocation = getLowestLevelBoxLocation(atom);
                 val boxIndex = FmmBox.getBoxIndex(boxLocation, numLevels);
                 async (boxes.dist(boxIndex, numLevels)) {
-                    val parentBox = getParentBox(boxIndex, numLevels);
+                    val parentBox = getParentForChild(boxIndex, numLevels);
                     val remoteAtom = new MMAtom(atom);
                     var box : FmmBox;
                     atomic {
@@ -398,24 +398,31 @@ public class Fmm3d {
         return  GridLocation(atom.centre.i / size * dimLowestLevelBoxes + dimLowestLevelBoxes / 2 as Int, atom.centre.j / size * dimLowestLevelBoxes + dimLowestLevelBoxes / 2 as Int, atom.centre.k / size * dimLowestLevelBoxes + dimLowestLevelBoxes / 2 as Int);
     }
 
-    private global def getParentBox(childIndex : Int, childLevel : Int) : FmmBox {
+    private global def getParentForChild(childIndex : Int, childLevel : Int) : FmmBox {
         if (childLevel == 2)
             return null;
         val parentIndex = getParentIndex(childIndex, childLevel);
         val parentLevel = childLevel - 1;
-        var parent : FmmBox = at (boxes.dist(parentIndex, parentLevel))  boxes(parentIndex, parentLevel);
-        if (parent == null) {
-            parent = at (boxes.dist(parentIndex, parentLevel)) {createNewParent(parentIndex, parentLevel)};
-        }
+        var parent : FmmBox = at (boxes.dist(parentIndex, parentLevel)) {getOrCreateParent(parentIndex, parentLevel)};
         return parent;
     }
 
-    private global def createNewParent(parentIndex : int, parentLevel : Int) : FmmBox {
-        val grandparent = getParentBox(parentIndex, parentLevel);
-        val parentLocation = FmmBox.getBoxLocation(parentIndex, parentLevel);
-        val newParent = new FmmBox(parentLevel, parentLocation, numTerms, grandparent);
-        boxes(parentIndex, parentLevel) = newParent;
-        return newParent;
+    /**
+     * Gets the specified parent box, or creates it if it
+     * does not exist.  NOTE assumes given box index is distributed
+     * to <code>here</code>.
+     */
+    private atomic global def getOrCreateParent(parentIndex : int, parentLevel : Int) : FmmBox {
+        val parent = boxes(parentIndex, parentLevel);
+        if (parent == null) {
+            val grandparent = getParentForChild(parentIndex, parentLevel);
+            val parentLocation = FmmBox.getBoxLocation(parentIndex, parentLevel);
+            val newParent = new FmmBox(parentLevel, parentLocation, numTerms, grandparent);
+            boxes(parentIndex, parentLevel) = newParent;
+            return newParent;
+        } else {
+            return parent;
+        }
     }
 
     private global def getParentIndex(childIndex : Int, childLevel : Int) : Int {
