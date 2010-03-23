@@ -158,11 +158,11 @@ public class Fmm3d {
     def multipoleLowestLevel() {
         //Console.OUT.println("multipole lowest level");
         timer.start(TIMER_INDEX_MULTIPOLE);
-        finish foreach ((i) in 0..atoms.length-1) {
+        finish for ((i) in 0..atoms.length-1) {
             val atom = atoms(i);
             val boxLocation = getLowestLevelBoxLocation(atom);
             val boxIndex = FmmBox.getBoxIndex(boxLocation, numLevels);
-            at (boxes.dist(boxIndex, numLevels)) {
+            async (boxes.dist(boxIndex, numLevels)) {
                 val remoteAtom = new MMAtom(atom);
                 val leafBox = boxes(boxIndex, numLevels) as FmmLeafBox!;
                 leafBox.atoms.add(remoteAtom);
