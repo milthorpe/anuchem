@@ -24,7 +24,7 @@ public class BasisSet {
     } 
 
     public def this(name:String, basisDir:String) {
-       x10.io.Console.OUT.println("\tReading in basis info. for " + name + " from " + basisDir);
+       // x10.io.Console.OUT.println("\tReading in basis info. for " + name + " from " + basisDir);
 
        basisInfo = new HashMap[String, AtomicBasis{self.at(this)}]();
        this.name = name;

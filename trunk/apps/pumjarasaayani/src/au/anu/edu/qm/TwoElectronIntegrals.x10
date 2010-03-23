@@ -230,6 +230,12 @@ public class TwoElectronIntegrals {
          var bb:Int, aa:Int;
          var dd:Int, cc:Int;
 
+         val radiusABSquared = a.distanceSquaredFrom(b); 
+         val radiusCDSquared = c.distanceSquaredFrom(d);
+
+         val shellA = shellList.getPowers(aAng);
+         val shellB = shellList.getPowers(bAng);
+
          for(val aPrim in aPrims) {
            for(val bPrim in bPrims) {
 
@@ -238,7 +244,6 @@ public class TwoElectronIntegrals {
                   for(k=0; k<=maxam2N; k++) 
                      pcdint(i,j,k) = 0.0;
 
-             val radiusABSquared = a.distanceSquaredFrom(b); 
              val aAlpha = aPrim.getExponent();
              val bAlpha = bPrim.getExponent();
              val gamma1 = aAlpha + bAlpha;
@@ -251,11 +256,8 @@ public class TwoElectronIntegrals {
              // Console.OUT.println("Coeff: " + aCoeff + " " + bCoeff);
              // Console.OUT.println("Zeta, Gab, Up: " + gamma1 + " " + Gab + " " + Up);
 
-
              for(val cPrim in cPrims) {
                for(val dPrim in dPrims) {
-
-                 val radiusCDSquared = c.distanceSquaredFrom(d);
 
                  val cAlpha = cPrim.getExponent();
                  val dAlpha = dPrim.getExponent();
@@ -276,7 +278,6 @@ public class TwoElectronIntegrals {
                  val radiusPQSquared:Double = p.distanceSquared(q);  
                  val Upq = Up*Uq;
                  val T = p.distanceSquared(q) * eta;
-
 
                  // Console.OUT.println("Computing FmT");
                  // Console.OUT.println("T value: " + T);
@@ -336,7 +337,6 @@ public class TwoElectronIntegrals {
                         for (l=0; l<=maxam2M; l++)
                            npint(k,l) = pcdint(dd, cc, k*pqdim+l);
 
-                      val shellB = shellList.getPowers(bAng);
                       for(bb = 0; bb<bLim; bb++) {
                           val jj = bStrt + bb;
                           val powersB = shellB(bb);
@@ -347,7 +347,6 @@ public class TwoElectronIntegrals {
                           jjdx(0) = jj; iidx(1) = jj; iidx(2) = jj; jjdx(3) = jj;
                           lldx(4) = jj; kkdx(5) = jj; lldx(6) = jj; kkdx(7) = jj;
 
-                          val shellA = shellList.getPowers(aAng);
                           for(aa = 0; aa<aLim; aa++) {
                              val powersA = shellA(aa);
                              val lq = powersA.getL();

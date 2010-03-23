@@ -441,7 +441,7 @@ public class GMatrix extends Matrix {
 
         val gMatrix = getMatrix();
 
-        var i:Int, j:Int, k:Int, l:Int, m:Int, ij:Int, kl:Int;
+        var i:Int, j:Int;
 
         val nPlaces = Place.places.length;
         val computeInst = Rail.make[ComputePlaceOldDirect](nPlaces);
@@ -454,13 +454,25 @@ public class GMatrix extends Matrix {
         timer.start(0);
         i = 0;
         for(place in Place.places) {
-           computeInst(i++) = at(place) { return new ComputePlaceOldDirect(molecule, basisFunctions, density, place); };
+           computeInst(i) = at(place) { return new ComputePlaceOldDirect(molecule, basisFunctions, density, place); };
+           i++;
         }
+
+        val workPerPlace = Rail.make[Int](nPlaces, (Int)=>0);
+        
+        i = N;
+        while(i > 0) {
+           for(j=0; j<nPlaces; j++) {
+              workPerPlace(j) += (i <= 0) ? 0 : 1;
+              i--;
+           } // end for
+        } // end while
         timer.stop(0);
         Console.OUT.println("\tTime for setting up place(s) with initial data: " + (timer.total(0) as Double) / 1e9 + " seconds"); 
 
-        val workPerPlace = N / nPlaces;
-        val workOn1Place = workPerPlace + (N%nPlaces);
+        Console.OUT.print("\tWorks units per place: ");
+        for(j=0; j<nPlaces; j++) Console.OUT.print(workPerPlace(j) + ", ");
+        Console.OUT.println(" "); 
 
         timer.start(1);
         finish {
@@ -468,20 +480,17 @@ public class GMatrix extends Matrix {
           var curInd:Int = 0;
           i = 0;
           for (place in Place.places) {
-              val comp_loc = computeInst(i++);
+              val comp_loc = computeInst(i);
               val st = curInd;
-              if (place == here) {
-                 async at(comp_loc) { comp_loc.compute(st, st+workOn1Place); };
-                 curInd += workOn1Place;
-              } else {
-                 async at(comp_loc) { comp_loc.compute(st, st+workPerPlace); };
-                 curInd += workPerPlace;
-              }
+              val ed = st + workPerPlace(i);
+
+              async at(comp_loc) { comp_loc.compute(st, ed); };
+              curInd = ed;
+              i++;
           } // end for
         } // finish
         timer.stop(1);
         Console.OUT.println("\tTime for actual computation: " + (timer.total(1) as Double) / 1e9 + " seconds"); 
-
 
         timer.start(2);
 
@@ -532,7 +541,7 @@ public class GMatrix extends Matrix {
         Console.OUT.println("\tNo. of places: " + nPlaces);
         Console.OUT.println("\tNo. of threads per place: " + Runtime.INIT_THREADS);
 
-        val timer = new Timer(3);
+        val timer = new Timer(4);
 
         timer.start(0);
         i = 0;
@@ -551,6 +560,7 @@ public class GMatrix extends Matrix {
           // for(comp_loc in computeInst) async at(comp_loc) { comp_loc.start(); };
           ////
 
+          timer.start(2);
           var ix:Int = 0;
           for(i=0; i<N; i++) {
             for(j=0; j<(i+1); j++) {
@@ -573,6 +583,8 @@ public class GMatrix extends Matrix {
                 } // end k loop
             } // end j loop
           } // end i loop
+          timer.stop(2);
+          Console.OUT.println("\tTime for setting up the queue: " + (timer.total(2) as Double) / 1e9 + " seconds"); 
           
           ////
           for(comp_loc in computeInst) async at(comp_loc) { comp_loc.start(); };
@@ -580,10 +592,10 @@ public class GMatrix extends Matrix {
           ////
         } // finish
         timer.stop(1);
-        Console.OUT.println("\tTime for actual computation: " + (timer.total(1) as Double) / 1e9 + " seconds"); 
+        Console.OUT.println("\tTotal time for computation: " + (timer.total(1) as Double) / 1e9 + " seconds"); 
 
 
-        timer.start(2);
+        timer.start(3);
 
         // form the G matrix
         // TODO following need to change once XTENLANG-787 is resolved
@@ -608,7 +620,7 @@ public class GMatrix extends Matrix {
              } // end for
         } // end for
         
-        timer.stop(2);
+        timer.stop(3);
         Console.OUT.println("\tTime for summing up GMatrix bits: " + (timer.total(2) as Double) / 1e9 + " seconds"); 
     }
 
