@@ -107,8 +107,22 @@ public class Fmm3d {
         }
         Console.OUT.println("boxDistribution: " + boxDistribution);
         
-        // all boxes are null to start.  they will be initialised as needed.
         this.boxes = Array.make[FmmBox](boxDistribution);
+
+        for ((thisLevel) in 2..numLevels-1) {
+            //Console.OUT.println("transform level " + thisLevel);
+            val thisLevelRegion : Region(2) = [0..(Math.pow(8,thisLevel) as Int)-1,thisLevel..thisLevel];
+            val thisLevelDist = boxes.dist | thisLevelRegion;
+            finish ateach ((boxIndex1,level) in thisLevelDist) {
+                boxes(boxIndex1,level) = new FmmBox(level, FmmBox.getBoxLocation(boxIndex1,level), numTerms, getParentForChild(boxIndex1,level));
+            }
+        }
+
+        val lowestLevelRegion : Region(2) = [0..(Math.pow(8,numLevels) as Int)-1,numLevels..numLevels];
+        val lowestLevelDist = boxes.dist | lowestLevelRegion;
+        finish ateach ((boxIndex1,level) in lowestLevelDist) {
+            boxes(boxIndex1,level) = new FmmLeafBox(level, FmmBox.getBoxLocation(boxIndex1,level), numTerms, getParentForChild(boxIndex1,level));
+        }
 
         // two special arrays distributed to all places (this is done by replicating the first index in a cyclic dist across Place.PLACES)
         var wellSpacedLimit : Region(5) = [0..Place.MAX_PLACES-1,2..numLevels,-(ws+3)..ws+3,-(ws+3)..ws+3,-(ws+3)..ws+3];
@@ -144,29 +158,29 @@ public class Fmm3d {
     def multipoleLowestLevel() {
         //Console.OUT.println("multipole lowest level");
         timer.start(TIMER_INDEX_MULTIPOLE);
-        finish {
-            for ((i) in 0..atoms.length-1) {
-                val atom = atoms(i);
-                val boxLocation = getLowestLevelBoxLocation(atom);
-                val boxIndex = FmmBox.getBoxIndex(boxLocation, numLevels);
-                async (boxes.dist(boxIndex, numLevels)) {
-                    val parentBox = getParentBox(boxIndex, numLevels);
-                    val remoteAtom = new MMAtom(atom);
-                    var box : FmmBox;
-                    atomic {
-                        box = boxes(boxIndex, numLevels);
-                        if (box == null) {
-                            box = new FmmLeafBox(numLevels, boxLocation, numTerms, parentBox);
-                            boxes(boxIndex, numLevels) = box;
-                        }
-                        val leafBox = box as FmmLeafBox!;
-                        leafBox.atoms.add(remoteAtom);
-                        val boxCentre = leafBox.getCentre(size).sub(remoteAtom.centre);
-                        leafBox.multipoleExp.add(MultipoleExpansion.getOlm(remoteAtom.charge, boxCentre, numTerms));
-                    }
-                }
+        finish for ((i) in 0..atoms.length-1) {
+            val atom = atoms(i);
+            val boxLocation = getLowestLevelBoxLocation(atom);
+            val boxIndex = FmmBox.getBoxIndex(boxLocation, numLevels);
+            async (boxes.dist(boxIndex, numLevels)) {
+                val remoteAtom = new MMAtom(atom);
+                val leafBox = boxes(boxIndex, numLevels) as FmmLeafBox!;
+                leafBox.atoms.add(remoteAtom);
+                val boxCentre = leafBox.getCentre(size).sub(remoteAtom.centre);
+                leafBox.multipoleExp.add(MultipoleExpansion.getOlm(remoteAtom.charge, boxCentre, numTerms));
             }
         }
+        // post-prune leaf boxes
+        // TODO prune intermediate empty boxes as well
+        val lowestLevelRegion : Region(2) = [0..(Math.pow(8,numLevels) as Int)-1,numLevels..numLevels];
+        val lowestLevelDist = boxes.dist | lowestLevelRegion;
+        finish ateach ((boxIndex1,level) in lowestLevelDist) {
+            val box = boxes(boxIndex1, level) as FmmLeafBox!;
+            if (box.atoms.length() == 0) {
+                boxes(boxIndex1, level) = null;
+            }
+        }
+
         timer.stop(TIMER_INDEX_MULTIPOLE);
     }
 
@@ -398,24 +412,13 @@ public class Fmm3d {
         return  GridLocation(atom.centre.i / size * dimLowestLevelBoxes + dimLowestLevelBoxes / 2 as Int, atom.centre.j / size * dimLowestLevelBoxes + dimLowestLevelBoxes / 2 as Int, atom.centre.k / size * dimLowestLevelBoxes + dimLowestLevelBoxes / 2 as Int);
     }
 
-    private global def getParentBox(childIndex : Int, childLevel : Int) : FmmBox {
+    private global def getParentForChild(childIndex : Int, childLevel : Int) : FmmBox {
         if (childLevel == 2)
             return null;
         val parentIndex = getParentIndex(childIndex, childLevel);
         val parentLevel = childLevel - 1;
-        var parent : FmmBox = at (boxes.dist(parentIndex, parentLevel))  boxes(parentIndex, parentLevel);
-        if (parent == null) {
-            parent = at (boxes.dist(parentIndex, parentLevel)) {createNewParent(parentIndex, parentLevel)};
-        }
+        var parent : FmmBox = at (boxes.dist(parentIndex, parentLevel)) {boxes(parentIndex, parentLevel)};
         return parent;
-    }
-
-    private global def createNewParent(parentIndex : int, parentLevel : Int) : FmmBox {
-        val grandparent = getParentBox(parentIndex, parentLevel);
-        val parentLocation = FmmBox.getBoxLocation(parentIndex, parentLevel);
-        val newParent = new FmmBox(parentLevel, parentLocation, numTerms, grandparent);
-        boxes(parentIndex, parentLevel) = newParent;
-        return newParent;
     }
 
     private global def getParentIndex(childIndex : Int, childLevel : Int) : Int {
