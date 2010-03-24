@@ -64,6 +64,10 @@ public class GMatrix extends Matrix {
                Console.OUT.println("   GMatrix.computeDirectOldMultiPlaceStatic: " + gMatType);
                computeDirectOldMultiPlaceStatic(twoE, density);
                break;
+           case 9:
+               Console.OUT.println("   GMatrix.computeDirectNewMultiPlaceStatic: " + gMatType);
+               computeDirectNewMultiPlaceStatic(twoE, density);
+               break;
            default:
                Console.OUT.println("   GMatrix.computeDirectSerialOld: " + gMatType);
                computeDirectSerialOld(twoE, density); 
@@ -941,6 +945,97 @@ public class GMatrix extends Matrix {
     }
 
 
+    private def computeDirectNewMultiPlaceStatic(twoE:TwoElectronIntegrals!, 
+                                                 density:Density!) : void {
+        val N = density.getRowCount();
+         
+        val molecule = twoE.getMolecule();
+        val basisFunctions = twoE.getBasisFunctions();
+
+        makeZero();
+
+        val gMatrix = getMatrix();
+
+        var i:Int, j:Int;
+
+        val nPlaces = Place.places.length;
+        val computeInst = Rail.make[ComputePlaceNewDirect](nPlaces);
+
+        Console.OUT.println("\tNo. of places: " + nPlaces);
+        Console.OUT.println("\tNo. of threads per place: " + Runtime.INIT_THREADS);
+
+        val timer = new Timer(3);
+
+        timer.start(0);
+        i = 0;
+        for(place in Place.places) {
+           computeInst(i) = at(place) { return new ComputePlaceNewDirect(molecule, basisFunctions, density, place); };
+           i++;
+        }
+
+        val workPerPlace = Rail.make[Int](nPlaces, (Int)=>0);
+        
+        i = molecule.getNumberOfAtoms();
+        while(i > 0) {
+           for(j=0; j<nPlaces; j++) {
+              workPerPlace(j) += (i <= 0) ? 0 : 1;
+              i--;
+           } // end for
+        } // end while
+        timer.stop(0);
+        Console.OUT.println("\tTime for setting up place(s) with initial data: " + (timer.total(0) as Double) / 1e9 + " seconds"); 
+
+        Console.OUT.print("\tWorks units per place: ");
+        for(j=0; j<nPlaces; j++) Console.OUT.print(workPerPlace(j) + ", ");
+        Console.OUT.println(" "); 
+
+        timer.start(1);
+        finish {
+          
+          var curInd:Int = 0;
+          i = 0;
+          for (place in Place.places) {
+              val comp_loc = computeInst(i);
+              val st = curInd;
+              val ed = st + workPerPlace(i);
+
+              async at(comp_loc) { comp_loc.compute(st, ed); };
+              curInd = ed;
+              i++;
+          } // end for
+        } // finish
+        timer.stop(1);
+        Console.OUT.println("\tTime for actual computation: " + (timer.total(1) as Double) / 1e9 + " seconds"); 
+
+        timer.start(2);
+
+        // form the G matrix
+        // TODO following need to change once XTENLANG-787 is resolved
+        for(comp_loc in computeInst) {
+             val jVal = at(comp_loc) { comp_loc.getJMatVal() };
+             val kVal = at(comp_loc) { comp_loc.getKMatVal() };
+
+             var ii:Int=0;
+             for(var x:Int=0; x<N; x++) {
+               for(var y:Int=0; y<N; y++) {
+                  /**
+                  val x_loc = x; val y_loc = y;
+                  val jVal = at(comp_loc) { comp_loc.getJMat().getMatrix()(x_loc, y_loc) };
+                  val kVal = at(comp_loc) { comp_loc.getKMat().getMatrix()(x_loc, y_loc) };
+             
+                  gMatrix(x,y) += jVal - (0.25*kVal);
+                  **/
+
+                  gMatrix(x,y) += jVal(ii) - (0.25*kVal(ii));
+                  ii++;
+               } // end for
+             } // end for
+        } // end for
+        
+        timer.stop(2);
+        Console.OUT.println("\tTime for summing up GMatrix bits: " + (timer.total(2) as Double) / 1e9 + " seconds"); 
+    }
+
     /** find unique elements and mark the onces that are not */
     /** 8 => is the level of integral symmetry, given (i,j|k.l)
         there are 8 combinations that are unique */
@@ -1138,7 +1233,7 @@ public class GMatrix extends Matrix {
                                      k as ContractedGaussian!, l as ContractedGaussian!,  
                                      shellList as ShellList!, 
                                      jMat as Matrix!, kMat as Matrix!, density as Density!);
-            computing = false;
+            atomic computing = false;
         }
         
         public def setValue(i:ContractedGaussian!, j:ContractedGaussian!,
@@ -1149,7 +1244,7 @@ public class GMatrix extends Matrix {
             this.j = j;
             this.k = k;
             this.l = l;
-            computing = true;
+            atomic computing = true;
 
             return true;
         }
@@ -1322,10 +1417,11 @@ public class GMatrix extends Matrix {
     /** Compute class for the old code - multi place version , just a direct compute wrapper */
     class ComputePlaceOldDirect extends ComputePlaceOld {
         public def this(mol:Molecule[QMAtom], bfs:BasisFunctions, den:Density, tp:Place) {
-           super(mol, bfs, den, tp);
+              super(mol, bfs, den, tp);
         }
 
         public def compute(i:Int, j:Int, k:Int, l:Int) {
+              // TODO: this is actually handling only one thread
               for(var ix:Int=0; ix<Runtime.INIT_THREADS; ix++) {
                    await (computeInst(ix).computing == false);
 
@@ -1361,6 +1457,93 @@ public class GMatrix extends Matrix {
               }
         }
     }
+
+    /** Compute class for the new code - multi place version , just a direct compute wrapper */
+    class ComputePlaceNewDirect extends ComputePlaceNew {
+
+        val molecule:Molecule[QMAtom]!;
+
+        public def this(mol:Molecule[QMAtom], bfs:BasisFunctions, den:Density, tp:Place) {
+            super(mol, bfs, den, tp);
+
+            molecule = mol_loc;
+        }
+
+        public def compute(i:ContractedGaussian, j:ContractedGaussian, 
+                           k:ContractedGaussian, l:ContractedGaussian) {
+            // TODO: this is actually handling only one thread
+            for(var ix:Int=0; ix<Runtime.INIT_THREADS; ix++) {
+                await (computeInst(ix).computing == false);
+
+                computeInst(ix).setValue(i as ContractedGaussian!, j as ContractedGaussian!, 
+                                         k as ContractedGaussian!, l as ContractedGaussian!);
+                val ix_loc = ix;
+                async computeInst(ix_loc).compute();
+                if (ix == 0) break;
+            } // end for
+        }
+
+        public def compute(start:Int, end:Int) {
+            var i:Int, j:Int, k:Int, l:Int;
+            var a:Int, b:Int, c:Int, d:Int;
+            var iaFunc:ContractedGaussian{self.at(this)}, jbFunc:ContractedGaussian{self.at(this)},
+                kcFunc:ContractedGaussian{self.at(this)}, ldFunc:ContractedGaussian{self.at(this)};
+            var naFunc:Int, nbFunc:Int, ncFunc:Int, ndFunc:Int;
+            var aFunc:ArrayList[ContractedGaussian{self.at(this)}]{self.at(this)},
+                bFunc:ArrayList[ContractedGaussian{self.at(this)}]{self.at(this)},
+                cFunc:ArrayList[ContractedGaussian{self.at(this)}]{self.at(this)},
+                dFunc:ArrayList[ContractedGaussian{self.at(this)}]{self.at(this)};
+
+            val noOfAtoms = molecule.getNumberOfAtoms();
+
+            for(a=start; a<end; a++) {
+             aFunc = molecule.getAtom(a).getBasisFunctions();
+             naFunc = aFunc.size();
+             // basis functions on a
+             for(i=0; i<naFunc; i++) {
+               iaFunc = aFunc.get(i);
+
+               // center b
+               for(b=0; b<=a; b++) {
+                   bFunc = molecule.getAtom(b).getBasisFunctions();
+                   nbFunc = (b<a) ? bFunc.size() : i+1;
+                   // basis functions on b
+                   for(j=0; j<nbFunc; j++) {
+                       jbFunc = bFunc.get(j);
+
+                       // center c
+                       for(c=0; c<noOfAtoms; c++) {
+                           cFunc = molecule.getAtom(c).getBasisFunctions();
+                           ncFunc = cFunc.size();
+                           // basis functions on c
+                           for(k=0; k<ncFunc; k++) {
+                               kcFunc = cFunc.get(k);
+
+                               // center d
+                               for(d=0; d<=c; d++) {
+                                   dFunc = molecule.getAtom(d).getBasisFunctions();
+                                   ndFunc = (d<c) ? dFunc.size() : k+1;
+                                   // basis functions on d
+                                   for(l=0; l<ndFunc; l++) {
+                                       ldFunc = dFunc.get(l);
+
+                                       var setIt:Boolean = false;
+
+                                       val a_l = a, b_l = b, c_l = c, d_l = d;
+                                       val i_l = i, j_l = j, k_l = k, l_l = l;
+     
+                                       // TODO: 
+                                       compute(iaFunc, jbFunc, kcFunc, ldFunc);
+                                   } // end l
+                               } // center d
+                           } // end k
+                       } // center c
+                   } // end j
+               } // center b
+             } // end i
+          } // center a
+        }
+    } 
 
     /** Compute class for the new code - multi place version */
     class ComputePlaceNew {

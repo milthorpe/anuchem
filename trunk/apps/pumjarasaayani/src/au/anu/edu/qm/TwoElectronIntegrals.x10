@@ -493,7 +493,7 @@ public class TwoElectronIntegrals {
                     + mdr1(xa, ya, za, xb, yb, zb-1, xp, yp, zp  , coorda, coordb, coordp, zeta)*(coordp.k-coordb.k)
                     + mdr1(xa, ya, za, xb, yb, zb-1, xp, yp, zp+1, coorda, coordb, coordp, zeta)/(2.0*zeta);
          } else if ( xp < 0 || yp < 0 || zp < 0) {
-           res = 1.0;
+           res = 0.0; // 1.0;
          } else {
            ptot=xp+yp+zp;
            idx = xp*(2*(xp+yp+zp)-xp+3)/2+yp;
