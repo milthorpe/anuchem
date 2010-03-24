@@ -96,13 +96,17 @@ public class MultipoleExpansion extends Expansion {
                                          source : MultipoleExpansion) {
         val p : Int = terms.region.max(0);
         val localSource = MultipoleExpansion.getLocalCopy(p, source);
-        for (val (j,k): Point in terms) {
-            val O_jk = localSource.terms(j,k);
-            for (var l : Int = j; l<=p; l++) { // TODO XTENLANG-504
-                for (var m : Int = -l; m<=l; m++) { // TODO XTENLANG-504
-                    if (Math.abs(m-k) <= (l-j)) {
-                        val A_lmjk = shift.terms(l-j, m-k);
-                        atomic {this.terms(l,m) = this.terms(l,m) + A_lmjk * O_jk;}
+        // TODO this atomic should be around inner loop update.
+        // however as it's "stop the world" it's more efficient to do it out here
+        atomic {
+            for (val (j,k): Point in terms) {
+                val O_jk = localSource.terms(j,k);
+                for (var l : Int = j; l<=p; l++) { // TODO XTENLANG-504
+                    for (var m : Int = -l; m<=l; m++) { // TODO XTENLANG-504
+                        if (Math.abs(m-k) <= (l-j)) {
+                            val A_lmjk = shift.terms(l-j, m-k);
+                            this.terms(l,m) = this.terms(l,m) + A_lmjk * O_jk;
+                        }
                     }
                 }
             }
