@@ -65,8 +65,11 @@ where <n> is number of places
 6 : (4) implemented as multi place code [*]
 7 : (5) using (static) task pool interface [*]
 8 : (5) using purely static load balancing [*]
+9 : (4) using purely static load balancing [*]
 
 [*] - most relevent for timings and scaling at this point
+
+Note: 8, 9 do not have multi thread implimentation at present, so wont scale on a single place
 
 3, 4 : should actually perform faster, for higher angular momentums, but the 
 recursive routine and array operations seems to take a lot of time:
