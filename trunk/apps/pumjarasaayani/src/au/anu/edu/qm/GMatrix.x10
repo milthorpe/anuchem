@@ -110,6 +110,7 @@ public class GMatrix extends Matrix {
         } // end i loop  
     }
 
+    /* Plain serial version */
     private def computeDirectSerialOld(twoE:TwoElectronIntegrals!, density:Density!) : void {
         val N = density.getRowCount();
 
@@ -184,6 +185,7 @@ public class GMatrix extends Matrix {
 
     }
 
+    /* Simple, but crashes for larger test case, and uses atomic */
     private def computeDirectAsyncOld(twoE:TwoElectronIntegrals!, density:Density!) : void {
         val N = density.getRowCount();
 
@@ -273,6 +275,7 @@ public class GMatrix extends Matrix {
                   gMatrix(x,y) = jMatrix(x,y) - (0.25*kMatrix(x,y));
     }
 
+    /* No atomic used, local GMatrix per thread, but introduces artificial sync */
     private def computeDirectAsyncOldNoAtomic(twoE:TwoElectronIntegrals!, 
                                               density:Density!) : void {
         val N = density.getRowCount();
@@ -342,6 +345,7 @@ public class GMatrix extends Matrix {
         } // end for
     }
 
+    /* multi place version of the above code */
     private def computeDirectOldMultiPlaceNoAtomic(twoE:TwoElectronIntegrals!, 
                                                    density:Density!) : void {
         val N = density.getRowCount();
@@ -434,6 +438,7 @@ public class GMatrix extends Matrix {
         Console.OUT.println("\tTime for summing up GMatrix bits: " + (timer.total(2) as Double) / 1e9 + " seconds"); 
     }
 
+    /** multi place, but uses a static load balance */
     private def computeDirectOldMultiPlaceStatic(twoE:TwoElectronIntegrals!, 
                                                  density:Density!) : void {
         val N = density.getRowCount();
@@ -525,7 +530,7 @@ public class GMatrix extends Matrix {
         Console.OUT.println("\tTime for summing up GMatrix bits: " + (timer.total(2) as Double) / 1e9 + " seconds"); 
     }
 
-
+    /* multi place with tak pool interface */
     private def computeDirectOldMultiPlaceTaskPool(twoE:TwoElectronIntegrals!, 
                                                    density:Density!) : void {
         val N = density.getRowCount();
@@ -1527,11 +1532,6 @@ public class GMatrix extends Matrix {
                                    for(l=0; l<ndFunc; l++) {
                                        ldFunc = dFunc.get(l);
 
-                                       var setIt:Boolean = false;
-
-                                       val a_l = a, b_l = b, c_l = c, d_l = d;
-                                       val i_l = i, j_l = j, k_l = k, l_l = l;
-     
                                        // TODO: 
                                        compute(iaFunc, jbFunc, kcFunc, ldFunc);
                                    } // end l

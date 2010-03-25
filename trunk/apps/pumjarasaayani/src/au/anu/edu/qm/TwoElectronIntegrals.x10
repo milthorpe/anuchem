@@ -898,6 +898,13 @@ public class TwoElectronIntegrals {
     }
 
     /** Compute the base FmT() - for evaluating integrals */
+    protected def computeFmtFGamma(maxam:Int, T:Double, fmt:Rail[Double]!) {
+        for(m=0; m<maxam; m++) { 
+            fmt(m) = IntegralsUtils.computeFGamma(m, T);
+        } // end for
+    }
+
+    /** Compute the base FmT() - for evaluating integrals */
     protected def computeFmt(maxam:Int, T:Double, fmt:Rail[Double]!) {
         var m:Int, i:Int;
         var num:Double, denom:Double, term:Double, sum:Double;

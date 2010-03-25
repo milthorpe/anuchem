@@ -62,7 +62,7 @@ public class PumjaRasaayani {
     public def getTime() = time;
 
     public def runIt() {       
-        val timer = new Timer(1);
+        val timer = new Timer(3);
         timer.start(0);
 
         Console.OUT.println("PumjaRasaayani shunya.dau, Quantum Chemisty program in x10, v0.2");
@@ -72,11 +72,17 @@ public class PumjaRasaayani {
 
         Console.OUT.println("\nSetting up basis set: " + basisName);
 
+        timer.start(1);
         val bsf = new BasisFunctions(mol, basisName, "basis");
         Console.OUT.println("\nUsing " + bsf.getBasisFunctions().size() + " basis functions.");
+        timer.stop(1);
+        Console.OUT.println ("\tTime for setting up basis functions: " + (timer.total(1) as Double) / 1e9 + " seconds\n");
         
+        timer.start(2);
         val oneE = new OneElectronIntegrals(bsf, mol);
         Console.OUT.println("\nComputed one-electron integrals.");
+        timer.stop(2);
+        Console.OUT.println ("\tTime for computing 1E integrals: " + (timer.total(2) as Double) / 1e9 + " seconds\n");
         // Console.OUT.println("HCore");
         // Console.OUT.println(oneE.getHCore());   
         // Console.OUT.println("Overlap");
