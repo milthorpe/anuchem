@@ -310,33 +310,28 @@ public class Fmm3d {
                     for ((sameBoxAtomIndex) in 0..atomIndex1-1) {
                         val sameBoxAtom = box1.atoms(sameBoxAtomIndex);
                         val pairEnergy : Double = atom1.pairEnergy(sameBoxAtom);
-                        thisBoxEnergy += 2 * pairEnergy;
+                        thisBoxEnergy += pairEnergy;
                     }
                 }
-                if (boxIndex1 > 0) { // EmptyRegion problem
-                    // direct calculation with all atoms in non-well-separated boxes
-                    val otherBoxRegion : Region(2) = [0..boxIndex1-1,numLevels..numLevels];
-                    val otherBoxDist = boxes.dist | otherBoxRegion;
-                    for ((boxIndex2,level) in otherBoxDist) {
-                        var directBox2Energy : Double = 0.0;
-                        val box2Loc = FmmBox.getBoxLocation(boxIndex2,level);
-                        if (!box1.wellSeparated(ws, box2Loc)) {
-                            val packedAtoms = at(boxes.dist(boxIndex2, level)) {getPackedAtomsForBox(boxIndex2, level)};
-                            if (packedAtoms != null) {
-                                for (var i : Int = 0; i < packedAtoms.length(); i+=4) {
-                                    val atom2Centre = new Point3d(packedAtoms(i+1), packedAtoms(i+2), packedAtoms(i+3));
-                                    val atom2Charge = packedAtoms(i);
-                                    for ((atomIndex1) in 0..length-1) {
-                                        val atom1 = box1.atoms(atomIndex1);
-                                        directBox2Energy += atom1.charge * atom2Charge / atom1.centre.distance(atom2Centre);
-                                    }
+
+                // direct calculation with all atoms in non-well-separated boxes
+                for ((boxIndex2) in 0..boxIndex1-1) {
+                    val box2Loc = FmmBox.getBoxLocation(boxIndex2,level);
+                    if (!box1.wellSeparated(ws, box2Loc)) {
+                        val packedAtoms = at(boxes.dist(boxIndex2, level)) {getPackedAtomsForBox(boxIndex2, level)};
+                        if (packedAtoms != null) {
+                            for (var i : Int = 0; i < packedAtoms.length(); i+=4) {
+                                val atom2Centre = new Point3d(packedAtoms(i+1), packedAtoms(i+2), packedAtoms(i+3));
+                                val atom2Charge = packedAtoms(i);
+                                for ((atomIndex1) in 0..length-1) {
+                                    val atom1 = box1.atoms(atomIndex1);
+                                    thisBoxEnergy += atom1.charge * atom2Charge / atom1.centre.distance(atom2Centre);
                                 }
-                                thisBoxEnergy += 2 * directBox2Energy;
                             }
                         }
                     }
                 }
-                val thisBoxEnergyFinal = thisBoxEnergy;
+                val thisBoxEnergyFinal = 2 * thisBoxEnergy;
                 async (this) {atomic {directEnergy += thisBoxEnergyFinal;}}
             }
         }
