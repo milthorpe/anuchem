@@ -7,6 +7,12 @@ import au.edu.anu.chem.mm.MMAtom;
 import edu.mit.fftw.FFTW;
 import au.edu.anu.util.Timer;
 
+/**
+ * This class implements a Smooth Particle Mesh Ewald method to calculate
+ * the potential of a system of charged particles, as described in
+ * Essmann et al. "A Smooth Particle Mesh Ewald method", J. Comp. Phys. 101,
+ * pp.8577-8593 (1995) DOI: 10.1063/1.470117
+ */
 public class PME {
     // TODO enum - XTENLANG-1118
     public const TIMER_INDEX_TOTAL : Int = 0;
@@ -49,11 +55,11 @@ public class PME {
 
 	private val atoms : ValRail[MMAtom!];
 
-    private val B : Array[Double]{self.dist==gridDist};
-    private val C : Array[Double]{self.dist==gridDist};
-    private val BdotC : Array[Double]{self.dist==gridDist};
+    private global val B : Array[Double]{self.dist==gridDist};
+    private global val C : Array[Double]{self.dist==gridDist};
+    private global val BdotC : Array[Double]{self.dist==gridDist};
 
-    // TODO should be shared local to calculateEnergy()
+    // TODO should be shared local to calculateEnergy() - XTENLANG-404
     private var directEnergy : Double = 0.0;
     private var directSum : Double = 0.0;
     private var selfEnergy: Double = 0.0;
@@ -99,7 +105,12 @@ public class PME {
 
         B = getBArray();
         C = getCArray();
-        BdotC = Array.make[Double](gridDist, (p : Point(gridDist.region.rank)) => B(p) * C(p));
+        BdotC = Array.make[Double](gridDist);
+        // TODO Array.lift not implemented XTENLANG-376
+        // BdotC = B.lift((b:Double,c:Double)=>b*c, C);
+	    finish ateach(p in gridDist) {
+		    BdotC(p) = B(p) * C(p);
+	    }
     }
 	
     public def getEnergy() : Double {
@@ -112,27 +123,20 @@ public class PME {
             // NOTE include i==j as this contributes image components
             for (var j : Int = 0; j < atoms.length; j++) {
                 val rjri = new Vector3d(atoms(j).centre.sub(atoms(i).centre as Tuple3d));
-                // rough (non-Euclidean, 1D) distance cutoff to avoid unnecessary distance calculations
-                // for (p(n1,n2,n3) in imageTranslations) {
-                for (var n1:Int = -1; n1<=1; n1++) {
-                    for (var n2:Int = -1; n2<=1; n2++) {
-                        for (var n3:Int = -1; n3<=1; n3++) {
-                            if (! (i==j && (n1 | n2 | n3) == 0)) {
-                                val imageDistance = rjri.add(imageTranslations(n1,n2,n3)).length();
-                                val chargeProduct = atoms(i).charge * atoms(j).charge;
-                                myDirectEnergy += chargeProduct / imageDistance;
-                                if (imageDistance < cutoff) {
-                                    val imageDirectComponent = chargeProduct * Math.erfc(beta * imageDistance) / imageDistance;
-                                    //Console.OUT.println("imageDistance = " + imageDistance + " imageDirectComponent = " + imageDirectComponent);
-                                    myDirectSum += imageDirectComponent;
-                                    //Console.OUT.println("distance = " + distance + " directEnergy component = " + chargeProduct / distance);
-                                    
-                                }
-                            }
+                // TODO rough (non-Euclidean, 1D) distance cutoff to avoid unnecessary distance calculations
+                for (p(n1,n2,n3) in imageTranslations) {
+                    if (! (i==j && (n1 | n2 | n3) == 0)) {
+                        val imageDistance = rjri.add(imageTranslations(n1,n2,n3)).length();
+                        val chargeProduct = atoms(i).charge * atoms(j).charge;
+                        myDirectEnergy += chargeProduct / imageDistance;
+                        if (imageDistance < cutoff) {
+                            val imageDirectComponent = chargeProduct * Math.erfc(beta * imageDistance) / imageDistance;
+                            myDirectSum += imageDirectComponent;                                    
                         }
                     }
                 }
             }
+            // TODO this is slow because of lack of optimized atomic - XTENLANG-321
             atomic {
                 directEnergy += myDirectEnergy;
                 directSum += myDirectSum;
@@ -143,6 +147,8 @@ public class PME {
         directEnergy = directEnergy / 2.0;
         directSum = directSum / 2.0;
         timer.stop(TIMER_INDEX_DIRECT);
+
+        //Console.OUT.println("directSum");
         
         val Q = getGriddedCharges();
 
@@ -152,11 +158,15 @@ public class PME {
         doFFT3d(Q, Qinv, temp, false);
         timer.stop(TIMER_INDEX_INVFFT);
 
+        //Console.OUT.println("Qinv");
+
         timer.start(TIMER_INDEX_THETARECCONVQ);
         val thetaRecConvQInv = Array.make[Complex](gridDist, (p : Point(gridDist.region.rank)) => BdotC(p) * Qinv(p));
         val thetaRecConvQ = Array.make[Complex](gridDist);
         doFFT3d(thetaRecConvQInv, thetaRecConvQ, temp, true);
         timer.stop(TIMER_INDEX_THETARECCONVQ);
+
+        //Console.OUT.println("thetaRecConvQ");
 
         reciprocalEnergy = getReciprocalEnergy(Q, thetaRecConvQ);
 
@@ -184,9 +194,6 @@ public class PME {
             val atom = atoms(i);
             val q = atom.charge;
             val u = getScaledFractionalCoordinates(new Vector3d(atom.centre as Tuple3d));
-            //Console.OUT.println("atom( " + i + " ) charge = " + q + " coords = " + u);
-            //var atomContribution : Double = 0.0;
-
             val u1c = Math.ceil(u.i) as Int;
             val u2c = Math.ceil(u.j) as Int;
             val u3c = Math.ceil(u.k) as Int;
@@ -202,21 +209,12 @@ public class PME {
                                            (k2 + gridSize(1)) % gridSize(1),
                                            (k3 + gridSize(2)) % gridSize(2));
                         async(Q.dist(p)) {
-                            atomic {
-                                Q(p) += gridPointContribution;
-                            }
+                            // TODO this is slow because of lack of optimized atomic - XTENLANG-321
+                            atomic { Q(p) += gridPointContribution; }
                         }
-                        /*
-                        Console.OUT.println("Q(" + (k1 + gridSize(0)) % gridSize(0) + "," + 
-                                                   (k2 + gridSize(1)) % gridSize(1) + "," + 
-                                                   (k3 + gridSize(2)) % gridSize(2) + 
-                        ") += " + gridPointContribution);
-                        atomContribution += gridPointContribution;
-                        */
                     }
                 }
             }
-            //Console.OUT.println("atomContribution = " + atomContribution);
         }
         val Qcomplex = Array.make[Complex](gridDist, (m : Point(gridDist.region.rank)) => Complex(Q(m), 0.0));
         timer.stop(TIMER_INDEX_GRIDCHARGES);
@@ -230,18 +228,16 @@ public class PME {
      */
     private def getReciprocalEnergy(Q : Array[Complex]{self.dist==gridDist}, thetaRecConvQ : Array[Complex]{self.dist==gridDist}) {
         timer.start(TIMER_INDEX_RECIPROCAL);
-        finish for ((p1) in Dist.makeUnique(Place.places)) {
-            async (Place.places(p1)) {
-                var myReciprocalEnergy : Double = 0.0;
-                // TODO single-place parallel
-                for ((i,j,k) in gridDist | here) {
-                    val gridPointContribution = Q(i,j,k) * thetaRecConvQ(i,j,k);
-                    myReciprocalEnergy = myReciprocalEnergy + gridPointContribution.re;
-                }
-                myReciprocalEnergy = myReciprocalEnergy / 2.0;
-                val myReciprocalEnergyFinal = myReciprocalEnergy;
-                at (this) {atomic{reciprocalEnergy += myReciprocalEnergyFinal;}};
+        finish ateach ((p1) in Dist.makeUnique(gridDist.places())) {
+            var myReciprocalEnergy : Double = 0.0;
+            // TODO single-place parallel - requires efficient atomic XTENLANG-321
+            for ((i,j,k) in gridDist | here) {
+                val gridPointContribution = Q(i,j,k) * thetaRecConvQ(i,j,k);
+                myReciprocalEnergy = myReciprocalEnergy + gridPointContribution.re;
             }
+            myReciprocalEnergy = myReciprocalEnergy / 2.0;
+            val myReciprocalEnergyFinal = myReciprocalEnergy;
+            at (this) {atomic{reciprocalEnergy += myReciprocalEnergyFinal;}};
         }
         timer.stop(TIMER_INDEX_RECIPROCAL);
         return reciprocalEnergy;
@@ -252,7 +248,7 @@ public class PME {
      */
     public def getBArray() {
         val B = Array.make[Double](gridDist);
-        // TODO for (m(m1,m2,m3) in gridDist) {
+        // TODO ateach (m(m1,m2,m3) in gridDist) {
         finish foreach ((m1) in 0..gridSize(0)-1) {
             val m1D = m1 as Double;
             var sumK1 : Complex = Complex.ZERO;
@@ -270,7 +266,6 @@ public class PME {
                 val b2 = (Math.exp(2.0 * Math.PI * (splineOrder - 1.0) * m2D / K2 * Complex.I) / sumK2).abs();
                 
                 for (var m3 : Int = 0; m3 < gridSize(2); m3++) {
-                    // TODO smarter distribution
                     val m3D = m3 as Double;
                     val m = Point.make(m1,m2,m3);
                     at(B.dist(m)) {
@@ -279,7 +274,6 @@ public class PME {
                             sumK3 = sumK3 + bSpline4(k+1) * Math.exp(2.0 * Math.PI * m3D * k / K3 * Complex.I);
                         }
                         val b3 = (Math.exp(2.0 * Math.PI * (splineOrder - 1.0) * m3D / K3 * Complex.I) / sumK3).abs();
-                        //Console.OUT.println("b1 = " + b1 + " b2 = " + b2 + " b3 = " + b3);
                         B(m) = b1 * b1 * b2 * b2 * b3 * b3;
                     }
                     //Console.OUT.println("B(" + m1 + "," + m2 + "," + m3 + ") = " + B(m1,m2,m3));
@@ -301,13 +295,8 @@ public class PME {
             val m2prime = m2 <= K2/2 ? m2 : m2 - K2;
             val m3prime = m3 <= K3/2 ? m3 : m3 - K3;
             val mVec = edgeReciprocals(0).mul(m1prime).add(edgeReciprocals(1).mul(m2prime)).add(edgeReciprocals(2).mul(m3prime));
-            //Console.OUT.println("mVec = " + mVec);
             val mSquared = mVec.dot(mVec);
-            //Console.OUT.println("mSquared = " + mSquared);
-            //Console.OUT.println("numerator (exp) = " + Math.exp(-(Math.PI*Math.PI) * mSquared / (beta * beta)));
-            //Console.OUT.println("denominator = " + (mSquared * Math.PI * V));
             C(m) = Math.exp(-(Math.PI*Math.PI) * mSquared / (beta * beta)) / (mSquared * Math.PI * V);
-            //Console.OUT.println("C" + m + " = " + C(m));
         }
         at (C.dist(0,0,0)) {
             C(0,0,0) = 0.0;
@@ -376,9 +365,13 @@ public class PME {
     /**
      * Do a 3D FFT of the source array, storing the result in target.
      * This is implemented as three sequential 1D FFTs, swapping data
-     * amongst all places twice to re-orient the array for each dimension.
+     * amongst all places to re-orient the array for each dimension.
      * Makes use of a temp array, which may be the same as either source
      * or target arrays.
+     * TODO the third shuffle can be avoided IF BdotC is calculated 
+     * in the shuffled format.  This is not currently the case.
+     * This operation would have to be renamed "doFFT3dTranspose"
+     * to indicate that the target array has its dimensions transposed.
      */
     private def doFFT3d(source : Array[Complex](3){self.dist==gridDist}, 
                         target : Array[Complex](3){self.dist==gridDist},
@@ -396,35 +389,38 @@ public class PME {
         } else {
             shuffleArrayReverse(temp, target);
         }
-        doFFTForOneDimension(target, target, forward);
+        doFFTForOneDimension(target, temp, forward);
+        if (forward) {
+            shuffleArray(temp, target);
+        } else {
+            shuffleArrayReverse(temp, target);
+        }
     }
 
     /**
-     * Does a 1D FFT for each 1D slice along the first dimension.
+     * Performs a 1D FFT for each 1D slice along the first dimension.
      */
     private def doFFTForOneDimension(source : Array[Complex](3){self.dist==gridDist}, 
                                      target : Array[Complex](3){self.dist==gridDist},
                                      forward : Boolean) {
-        finish for ((p1) in Dist.makeUnique(Place.places)) {
-            async (Place.places(p1)) {
-                val size = gridSize(1);
-                val oneDSource = Rail.make[Complex](size);
-                val oneDTarget = Rail.make[Complex](size);
-                val plan : FFTW.FFTWPlan = FFTW.fftwPlan1d(size, oneDSource, oneDTarget, forward);
-                val mySource = gridDist | here;
-                val gridRegionWithoutFirst = (mySource.region().projection(0) * mySource.region().projection(2)) as Region(2);
-                for ((i,k) in gridRegionWithoutFirst) {
-                    // TODO need to copy into ValRail?
-                    for(var j : Int = 0; j < size; j++) {
-                        oneDSource(j) = source(i,j,k);
-                    }
-                    FFTW.fftwExecute(plan);
-                    for(var j : Int = 0; j < size; j++) {
-                        target(i,j,k) = oneDTarget(j);
-                    }
+        finish ateach ((p1) in Dist.makeUnique(gridDist.places())) {
+            val size = gridSize(1);
+            val oneDSource = Rail.make[Complex](size);
+            val oneDTarget = Rail.make[Complex](size);
+            val plan : FFTW.FFTWPlan = FFTW.fftwPlan1d(size, oneDSource, oneDTarget, forward);
+            val mySource = gridDist | here;
+            val gridRegionWithoutFirst = (mySource.region().projection(0) * mySource.region().projection(2)) as Region(2);
+            for ((i,k) in gridRegionWithoutFirst) {
+                // TODO need to copy into ValRail - can use raw()?
+                for(var j : Int = 0; j < size; j++) {
+                    oneDSource(j) = source(i,j,k);
                 }
-                FFTW.fftwDestroyPlan(plan);
+                FFTW.fftwExecute(plan);
+                for(var j : Int = 0; j < size; j++) {
+                    target(i,j,k) = oneDTarget(j);
+                }
             }
+            FFTW.fftwDestroyPlan(plan);
         }
     }
 
@@ -436,17 +432,16 @@ public class PME {
      */
     public def shuffleArray(source : Array[Complex](3){self.dist==gridDist}, 
                              target : Array[Complex](3){self.dist==gridDist}) {
-        finish for ((p1) in Dist.makeUnique(Place.places)) {
-            async (Place.places(p1)) {
-                val mySource = gridDist | here;
-                foreach ((p2) in Dist.makeUnique(Place.places)) {
-                    val place2ZeroDimension = (gridDist | Place.places(p2)).region.projection(0);
-                    val myContribution = mySource.region().projection(0) * place2ZeroDimension * mySource.region.projection(2) as Region(3);
-                    for ((i,j,k) in myContribution) {
-                        val s = source(i,j,k);
-                        at(Place.places(p2)) { target(j,k,i) = s;};
-                    }
-                }
+        finish ateach ((p1) in Dist.makeUnique(gridDist.places())) {
+            val sourceDist = gridDist | here;
+            val sourceStart = sourceDist.region.min(0);
+            val sourceEnd = sourceDist.region.max(0);
+            foreach (p2 in gridDist.places()) {
+                val targetDist = gridDist | p2;
+                val targetStart = targetDist.region.min(0);
+                val targetEnd = targetDist.region.max(0);
+                val myVal = ValRail.make[Complex]((targetEnd - targetStart + 1) * (sourceEnd - sourceStart + 1) * gridSize(2), (n : Int) => source(mapPoint(n,sourceStart,sourceEnd,targetStart)));
+                at (p2) {this.shuffleChunk(myVal, target, sourceStart, sourceEnd, targetStart, targetEnd);}
             }
         }
     }
@@ -459,16 +454,77 @@ public class PME {
      */
     public def shuffleArrayReverse(source : Array[Complex](3){self.dist==gridDist}, 
                              target : Array[Complex](3){self.dist==gridDist}) {
-        for ((p1) in Dist.makeUnique(Place.places)) {
-            at (Place.places(p1)) {
-                val mySource = gridDist | here;
-                for ((p2) in Dist.makeUnique(Place.places)) {
-                    val place2ZeroDimension = (gridDist | Place.places(p2)).region.projection(0);
-                    val myContribution = mySource.region().projection(0) * mySource.region.projection(1) * place2ZeroDimension  as Region(3);
-                    for ((i,j,k) in myContribution) {
-                        val s = source(i,j,k);
-                        at(Place.places(p2)) { target(k,i,j) = s;};
-                    }
+        finish ateach ((p1) in Dist.makeUnique(gridDist.places())) {
+            val sourceDist = gridDist | here;
+            val sourceStart = sourceDist.region.min(0);
+            val sourceEnd = sourceDist.region.max(0);
+            foreach (p2 in gridDist.places()) {
+                val targetDist = gridDist | p2;
+                val targetStart = targetDist.region.min(0);
+                val targetEnd = targetDist.region.max(0);
+                val myVal = ValRail.make[Complex](gridSize(0) * (targetEnd - targetStart + 1) * (sourceEnd - sourceStart + 1), (n : Int) => source(mapPointReverse(n,sourceStart,sourceEnd,targetStart)));
+                at (p2) {this.shuffleChunkReverse(myVal, target, sourceStart, sourceEnd, targetStart, targetEnd);}
+            }
+        }
+    }
+
+    private global safe def mapPoint(n : Int, iStart : Int, iEnd : Int, jStart : int) : Point(3) {
+        val JOFFSET = (iEnd - iStart+1) * gridSize(0);
+        val IOFFSET = gridSize(1);
+        val j = n / JOFFSET;
+        val i = (n - j * JOFFSET) / IOFFSET;
+        val k = n - j * JOFFSET - i * IOFFSET;
+        return Point.make(i+iStart,j+jStart,k);
+    }
+
+    private global safe def mapPointReverse(n : Int, iStart : Int, iEnd : Int, kStart : int) : Point(3) {
+        val KOFFSET = (iEnd - iStart+1) * gridSize(0);
+        val IOFFSET = gridSize(1);
+        val k = n / KOFFSET;
+        val i = (n - k * KOFFSET) / IOFFSET;
+        val j = n - k * KOFFSET - i * IOFFSET;
+        return Point.make(i+iStart,j,k+kStart);
+    }
+
+    /**
+     * Copies a chunk of a source array into the target array.
+     * The elements are shoehorned into a ValRail of length K * (endI - startI) .
+     */
+    private global safe def shuffleChunk(source : ValRail[Complex],
+                             target : Array[Complex](3){self.dist==gridDist},
+                             sourceStart : Int,
+                             sourceEnd : Int,
+                             targetStart : Int,
+                             targetEnd : Int) : Void {
+        for ((i) in targetStart..targetEnd) {
+            val iOffset = (i-targetStart) * (sourceEnd-sourceStart+1) * gridSize(0);
+            for ((k) in sourceStart..sourceEnd) {
+                val kOffset = (k - sourceStart) * gridSize(1);
+                for (var j : Int = 0; j < gridSize(1); j++) {
+                    val offset = kOffset + iOffset + j;
+                    target(i,j,k) = source(offset);
+                }
+            }
+        }
+    }
+
+    /**
+     * Copies a chunk of a source array into the target array.
+     * The elements are shoehorned into a ValRail of length K * (endI - startI) .
+     */
+    private global safe def shuffleChunkReverse(source : ValRail[Complex],
+                             target : Array[Complex](3){self.dist==gridDist},
+                             sourceStart : Int,
+                             sourceEnd : Int,
+                             targetStart : Int,
+                             targetEnd : Int) : Void {
+        for ((i) in targetStart..targetEnd) {
+            val iOffset = (i-targetStart) * (sourceEnd-sourceStart+1) * gridSize(0);
+            for ((j) in sourceStart..sourceEnd) {
+                val jOffset = (j-sourceStart) * gridSize(1);
+                for (var k : Int = 0; k < gridSize(1); k++) {
+                    val offset = jOffset + iOffset + k;
+                    target(i,j,k) = source(offset);
                 }
             }
         }
