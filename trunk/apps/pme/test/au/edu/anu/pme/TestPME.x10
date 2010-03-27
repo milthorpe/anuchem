@@ -21,8 +21,8 @@ public class TestPME {
         var numParticles : Int;
         var ewaldCoefficient : Double = 0.35;
         var cutoff : Double = 9.0;
-        var gridSize : Int = 40;
-        var splineOrder : Int = 4;
+        var gridSize : Int = 64;
+        var splineOrder : Int = 6;
         if (args.length > 0) {
             numParticles = Int.parseInt(args(0));
             if (args.length > 1) {
@@ -47,7 +47,7 @@ public class TestPME {
             return;
         }
 
-        /* Assign particles to random locations within a cubic 3D box, with unit charge (1/2 are negative). */
+        /* Assign particles to random locations within a small cubic area around the center of the simulation space, with unit charge (1/2 are negative). */
         val atoms = ValRail.make[MMAtom!](numParticles, (i : Int) => new MMAtom(new Point3d(randomUnit(R) + size/2.0, randomUnit(R) + size/2.0, randomUnit(R) + size/2.0), i%2==0?1:-1));
         val edges = [new Vector3d(size, 0.0, 0.0), new Vector3d(0.0, size, 0.0), new Vector3d(0.0, 0.0, size)];
         val g = gridSize;
