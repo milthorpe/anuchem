@@ -4,6 +4,7 @@ import x10.util.Random;
 import x10x.vector.Point3d;
 import x10x.vector.Vector3d;
 import au.edu.anu.chem.mm.MMAtom;
+import au.edu.anu.chem.mm.ElectrostaticDirectMethod;
 import au.edu.anu.util.Timer;
 
 /**
@@ -55,13 +56,19 @@ public class TestPME {
         val energy = pme.getEnergy();
         Console.OUT.println("energy = " + energy);
 
-        val timer = pme.timer;
         logTime("Direct / Self",     PME.TIMER_INDEX_DIRECT,        pme.timer);
-        logTime("Grid charges",      PME.TIMER_INDEX_GRIDCHARGES,       pme.timer);
+        logTime("Grid charges",      PME.TIMER_INDEX_GRIDCHARGES,   pme.timer);
         logTime("Inverse FFT",       PME.TIMER_INDEX_INVFFT,        pme.timer);
         logTime("ThetaRecConvQ",     PME.TIMER_INDEX_THETARECCONVQ, pme.timer);
         logTime("Reciprocal energy", PME.TIMER_INDEX_RECIPROCAL,    pme.timer);
         logTime("Total",             PME.TIMER_INDEX_TOTAL,         pme.timer);
+
+        val direct = new ElectrostaticDirectMethod(atoms);
+        val directEnergy = direct.getEnergy();
+        logTime("cf. Direct calculation", ElectrostaticDirectMethod.TIMER_INDEX_TOTAL, direct.timer);
+        val error = directEnergy - energy;
+        Console.OUT.println("error = " + error + " relative error = " + Math.abs(error) / Math.abs(energy));
+
     }
 
     private static def logTime(desc : String, timerIndex : Int, timer : Timer!) {

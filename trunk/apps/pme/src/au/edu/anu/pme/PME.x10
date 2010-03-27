@@ -35,6 +35,9 @@ public class PME {
     /** The edges of the unit cell. */
     private global val edges : ValRail[Vector3d](3);
 
+    /** The length of an edge of the unit cell. TODO assumes cubic cells */
+    private global val edgeLength : Double;
+
     /** The conjugate reciprocal vectors for each dimension. */
     private global val edgeReciprocals : ValRail[Vector3d](3);
 
@@ -60,7 +63,6 @@ public class PME {
     private global val BdotC : Array[Double]{self.dist==gridDist};
 
     // TODO should be shared local to calculateEnergy() - XTENLANG-404
-    private var directEnergy : Double = 0.0;
     private var directSum : Double = 0.0;
     private var selfEnergy: Double = 0.0;
     private var correctionEnergy : Double = 0.0; // TODO masklist
@@ -86,6 +88,8 @@ public class PME {
         K2 = gridSize(1) as Double;
         K3 = gridSize(2) as Double;
         this.edges = edges;
+        // TODO non-cubic cell
+        this.edgeLength = edges(0).length();
         this.edgeReciprocals = ValRail.make[Vector3d](3, (i : Int) => edges(i).inverse());
         this.atoms = atoms;
         val r = Region.makeRectangular(0, gridSize(0)-1);
@@ -118,33 +122,30 @@ public class PME {
 
         timer.start(TIMER_INDEX_DIRECT);
         finish foreach ((i) in 0..atoms.length-1) {
-            var myDirectEnergy : Double = 0.0;
+            // TODO assume cutoff < edgeLength, so we don't need i==j
             var myDirectSum : Double = 0.0;
-            // NOTE include i==j as this contributes image components
-            for (var j : Int = 0; j < atoms.length; j++) {
+            for (var j : Int = 0; j < i; j++) {
                 val rjri = new Vector3d(atoms(j).centre.sub(atoms(i).centre as Tuple3d));
                 // TODO rough (non-Euclidean, 1D) distance cutoff to avoid unnecessary distance calculations
                 for (p(n1,n2,n3) in imageTranslations) {
                     if (! (i==j && (n1 | n2 | n3) == 0)) {
                         val imageDistance = rjri.add(imageTranslations(n1,n2,n3)).length();
-                        val chargeProduct = atoms(i).charge * atoms(j).charge;
-                        myDirectEnergy += chargeProduct / imageDistance;
                         if (imageDistance < cutoff) {
+                            val chargeProduct = atoms(i).charge * atoms(j).charge;
                             val imageDirectComponent = chargeProduct * Math.erfc(beta * imageDistance) / imageDistance;
                             myDirectSum += imageDirectComponent;                                    
                         }
                     }
                 }
             }
+            
             // TODO this is slow because of lack of optimized atomic - XTENLANG-321
             atomic {
-                directEnergy += myDirectEnergy;
-                directSum += myDirectSum;
+                directSum += myDirectSum * 2;
                 selfEnergy += atoms(i).charge * atoms(i).charge;
             }
         }
         selfEnergy = -beta / Math.sqrt(Math.PI) * selfEnergy;
-        directEnergy = directEnergy / 2.0;
         directSum = directSum / 2.0;
         timer.stop(TIMER_INDEX_DIRECT);
 
@@ -176,8 +177,6 @@ public class PME {
         //Console.OUT.println("correctionEnergy = " + correctionEnergy);
         //Console.OUT.println("reciprocalEnergy = " + reciprocalEnergy);
         val totalEnergy = directSum + reciprocalEnergy + (correctionEnergy + selfEnergy);
-        val error = directEnergy - totalEnergy;
-        Console.OUT.println("error = " + error + " relative error = " + Math.abs(error) / Math.abs(totalEnergy));
 
         timer.stop(TIMER_INDEX_TOTAL);
         return totalEnergy;
