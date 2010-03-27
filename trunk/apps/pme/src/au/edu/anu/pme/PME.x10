@@ -265,7 +265,7 @@ public class PME {
                 for (var m3 : Int = 0; m3 < gridSize(2); m3++) {
                     val m3D = m3 as Double;
                     val m = Point.make(m1,m2,m3);
-                    at(B.dist(m)) {
+                    async(B.dist(m)) {
                         var sumK3 : Complex = Complex.ZERO;
                         for ((k) in 0..(splineOrder-2)) {
                             sumK3 = sumK3 + bSpline4(k+1) * Math.exp(2.0 * Math.PI * m3D * k / K3 * Complex.I);
