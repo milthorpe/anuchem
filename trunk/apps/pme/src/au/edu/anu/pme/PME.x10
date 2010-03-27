@@ -4,7 +4,7 @@ import x10x.vector.Point3d;
 import x10x.vector.Vector3d;
 import x10x.vector.Tuple3d;
 import au.edu.anu.chem.mm.MMAtom;
-import edu.mit.fftw.FFTW;
+import au.edu.anu.fft.Distributed3dFft;
 import au.edu.anu.util.Timer;
 
 /**
@@ -35,9 +35,6 @@ public class PME {
     /** The edges of the unit cell. */
     private global val edges : ValRail[Vector3d](3);
 
-    /** The length of an edge of the unit cell. TODO assumes cubic cells */
-    private global val edgeLength : Double;
-
     /** The conjugate reciprocal vectors for each dimension. */
     private global val edgeReciprocals : ValRail[Vector3d](3);
 
@@ -57,6 +54,8 @@ public class PME {
     private global val imageTranslations : Array[Vector3d](3);
 
 	private val atoms : ValRail[MMAtom!];
+
+    private global val fft : Distributed3dFft;
 
     private global val B : Array[Double]{self.dist==gridDist};
     private global val C : Array[Double]{self.dist==gridDist};
@@ -84,12 +83,11 @@ public class PME {
             beta : Double,
             cutoff : Double) {
         this.gridSize = gridSize;
+        fft = new Distributed3dFft(gridSize(0));
         K1 = gridSize(0) as Double;
         K2 = gridSize(1) as Double;
         K3 = gridSize(2) as Double;
         this.edges = edges;
-        // TODO non-cubic cell
-        this.edgeLength = edges(0).length();
         this.edgeReciprocals = ValRail.make[Vector3d](3, (i : Int) => edges(i).inverse());
         this.atoms = atoms;
         val r = Region.makeRectangular(0, gridSize(0)-1);
@@ -156,7 +154,7 @@ public class PME {
         timer.start(TIMER_INDEX_INVFFT);
         val temp = Array.make[Complex](gridDist); 
         val Qinv = Array.make[Complex](gridDist);
-        doFFT3d(Q, Qinv, temp, false);
+        fft.doFFT3d(Q, Qinv, temp, false);
         timer.stop(TIMER_INDEX_INVFFT);
 
         //Console.OUT.println("Qinv");
@@ -164,7 +162,7 @@ public class PME {
         timer.start(TIMER_INDEX_THETARECCONVQ);
         val thetaRecConvQInv = Array.make[Complex](gridDist, (p : Point(gridDist.region.rank)) => BdotC(p) * Qinv(p));
         val thetaRecConvQ = Array.make[Complex](gridDist);
-        doFFT3d(thetaRecConvQInv, thetaRecConvQ, temp, true);
+        fft.doFFT3d(thetaRecConvQInv, thetaRecConvQ, temp, true);
         timer.stop(TIMER_INDEX_THETARECCONVQ);
 
         //Console.OUT.println("thetaRecConvQ");
@@ -359,173 +357,5 @@ public class PME {
      */
     private global safe def getVolume() {
         return edges(0).cross(edges(1)).dot(edges(2));
-    }
-
-    /**
-     * Do a 3D FFT of the source array, storing the result in target.
-     * This is implemented as three sequential 1D FFTs, swapping data
-     * amongst all places to re-orient the array for each dimension.
-     * Makes use of a temp array, which may be the same as either source
-     * or target arrays.
-     * TODO the third shuffle can be avoided IF BdotC is calculated 
-     * in the shuffled format.  This is not currently the case.
-     * This operation would have to be renamed "doFFT3dTranspose"
-     * to indicate that the target array has its dimensions transposed.
-     */
-    private def doFFT3d(source : Array[Complex](3){self.dist==gridDist}, 
-                        target : Array[Complex](3){self.dist==gridDist},
-                        temp : Array[Complex](3){self.dist==gridDist},
-                        forward : Boolean) {
-        doFFTForOneDimension(source, temp, forward);
-        if (forward) {
-            shuffleArray(temp, target);
-        } else {
-            shuffleArrayReverse(temp, target);
-        }
-        doFFTForOneDimension(target, temp, forward);
-        if (forward) {
-            shuffleArray(temp, target);
-        } else {
-            shuffleArrayReverse(temp, target);
-        }
-        doFFTForOneDimension(target, temp, forward);
-        if (forward) {
-            shuffleArray(temp, target);
-        } else {
-            shuffleArrayReverse(temp, target);
-        }
-    }
-
-    /**
-     * Performs a 1D FFT for each 1D slice along the first dimension.
-     */
-    private def doFFTForOneDimension(source : Array[Complex](3){self.dist==gridDist}, 
-                                     target : Array[Complex](3){self.dist==gridDist},
-                                     forward : Boolean) {
-        finish ateach ((p1) in Dist.makeUnique(gridDist.places())) {
-            val size = gridSize(1);
-            val oneDSource = Rail.make[Complex](size);
-            val oneDTarget = Rail.make[Complex](size);
-            val plan : FFTW.FFTWPlan = FFTW.fftwPlan1d(size, oneDSource, oneDTarget, forward);
-            val mySource = gridDist | here;
-            val gridRegionWithoutFirst = (mySource.region().projection(0) * mySource.region().projection(2)) as Region(2);
-            for ((i,k) in gridRegionWithoutFirst) {
-                // TODO need to copy into ValRail - can use raw()?
-                for(var j : Int = 0; j < size; j++) {
-                    oneDSource(j) = source(i,j,k);
-                }
-                FFTW.fftwExecute(plan);
-                for(var j : Int = 0; j < size; j++) {
-                    target(i,j,k) = oneDTarget(j);
-                }
-            }
-            FFTW.fftwDestroyPlan(plan);
-        }
-    }
-
-    /**
-     * "Shuffles" array around all places by transposing the zeroth dimension
-     * to the second, the second to the first and the first to the zeroth.
-     * Assumes NxNxN arrays, and that source and target arrays are block 
-     * distributed along the zeroth dimension.
-     */
-    public def shuffleArray(source : Array[Complex](3){self.dist==gridDist}, 
-                             target : Array[Complex](3){self.dist==gridDist}) {
-        finish ateach ((p1) in Dist.makeUnique(gridDist.places())) {
-            val sourceDist = gridDist | here;
-            val sourceStart = sourceDist.region.min(0);
-            val sourceEnd = sourceDist.region.max(0);
-            foreach (p2 in gridDist.places()) {
-                val targetDist = gridDist | p2;
-                val targetStart = targetDist.region.min(0);
-                val targetEnd = targetDist.region.max(0);
-                val myVal = ValRail.make[Complex]((targetEnd - targetStart + 1) * (sourceEnd - sourceStart + 1) * gridSize(2), (n : Int) => source(mapPoint(n,sourceStart,sourceEnd,targetStart)));
-                at (p2) {this.shuffleChunk(myVal, target, sourceStart, sourceEnd, targetStart, targetEnd);}
-            }
-        }
-    }
-
-    /**
-     * "Shuffles" array around all places "in reverse" by transposing the zeroth dimension
-     * to the first, the first to the second and the second to the zeroth.
-     * Assumes NxNxN arrays, and that source and target arrays are block 
-     * distributed along the zeroth dimension.
-     */
-    public def shuffleArrayReverse(source : Array[Complex](3){self.dist==gridDist}, 
-                             target : Array[Complex](3){self.dist==gridDist}) {
-        finish ateach ((p1) in Dist.makeUnique(gridDist.places())) {
-            val sourceDist = gridDist | here;
-            val sourceStart = sourceDist.region.min(0);
-            val sourceEnd = sourceDist.region.max(0);
-            foreach (p2 in gridDist.places()) {
-                val targetDist = gridDist | p2;
-                val targetStart = targetDist.region.min(0);
-                val targetEnd = targetDist.region.max(0);
-                val myVal = ValRail.make[Complex](gridSize(0) * (targetEnd - targetStart + 1) * (sourceEnd - sourceStart + 1), (n : Int) => source(mapPointReverse(n,sourceStart,sourceEnd,targetStart)));
-                at (p2) {this.shuffleChunkReverse(myVal, target, sourceStart, sourceEnd, targetStart, targetEnd);}
-            }
-        }
-    }
-
-    private global safe def mapPoint(n : Int, iStart : Int, iEnd : Int, jStart : int) : Point(3) {
-        val JOFFSET = (iEnd - iStart+1) * gridSize(0);
-        val IOFFSET = gridSize(1);
-        val j = n / JOFFSET;
-        val i = (n - j * JOFFSET) / IOFFSET;
-        val k = n - j * JOFFSET - i * IOFFSET;
-        return Point.make(i+iStart,j+jStart,k);
-    }
-
-    private global safe def mapPointReverse(n : Int, iStart : Int, iEnd : Int, kStart : int) : Point(3) {
-        val KOFFSET = (iEnd - iStart+1) * gridSize(0);
-        val IOFFSET = gridSize(1);
-        val k = n / KOFFSET;
-        val i = (n - k * KOFFSET) / IOFFSET;
-        val j = n - k * KOFFSET - i * IOFFSET;
-        return Point.make(i+iStart,j,k+kStart);
-    }
-
-    /**
-     * Copies a chunk of a source array into the target array.
-     * The elements are shoehorned into a ValRail of length K * (endI - startI) .
-     */
-    private global safe def shuffleChunk(source : ValRail[Complex],
-                             target : Array[Complex](3){self.dist==gridDist},
-                             sourceStart : Int,
-                             sourceEnd : Int,
-                             targetStart : Int,
-                             targetEnd : Int) : Void {
-        for ((i) in targetStart..targetEnd) {
-            val iOffset = (i-targetStart) * (sourceEnd-sourceStart+1) * gridSize(0);
-            for ((k) in sourceStart..sourceEnd) {
-                val kOffset = (k - sourceStart) * gridSize(1);
-                for (var j : Int = 0; j < gridSize(1); j++) {
-                    val offset = kOffset + iOffset + j;
-                    target(i,j,k) = source(offset);
-                }
-            }
-        }
-    }
-
-    /**
-     * Copies a chunk of a source array into the target array.
-     * The elements are shoehorned into a ValRail of length K * (endI - startI) .
-     */
-    private global safe def shuffleChunkReverse(source : ValRail[Complex],
-                             target : Array[Complex](3){self.dist==gridDist},
-                             sourceStart : Int,
-                             sourceEnd : Int,
-                             targetStart : Int,
-                             targetEnd : Int) : Void {
-        for ((i) in targetStart..targetEnd) {
-            val iOffset = (i-targetStart) * (sourceEnd-sourceStart+1) * gridSize(0);
-            for ((j) in sourceStart..sourceEnd) {
-                val jOffset = (j-sourceStart) * gridSize(1);
-                for (var k : Int = 0; k < gridSize(1); k++) {
-                    val offset = jOffset + iOffset + k;
-                    target(i,j,k) = source(offset);
-                }
-            }
-        }
     }
 }
