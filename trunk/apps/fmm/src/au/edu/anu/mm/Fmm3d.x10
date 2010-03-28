@@ -41,9 +41,11 @@ public class Fmm3d {
     public val timer = new Timer(6);
 
     /** All boxes in the octree division of space. */
-    global val boxes : Array[FmmBox](2);
+    private global val boxes : Array[FmmBox](2);
 
-    val atoms : ValRail[MMAtom!];
+    /** The atoms in the simulation, divided up into an array of ValRails, one for each place. */
+    private global val atoms : Array[ValRail[MMAtom]](1);
+    //val atoms : ValRail[MMAtom!];
 
     /** 
      * A cache of transformations from multipole to local at the same level.
@@ -79,9 +81,10 @@ public class Fmm3d {
     public def this(density : Double, 
                     numTerms : Int,
                     ws : Int,
-                    size : Double,
-                    atoms : ValRail[MMAtom!]) {
-        val numLevels = Math.max(2, (Math.log(atoms.length / density) / Math.log(8.0) + 1.0 as Int));
+                    size : Double,  
+                    numAtoms : Int,
+                    atoms: Array[ValRail[MMAtom]](1)) {
+        val numLevels = Math.max(2, (Math.log(numAtoms / density) / Math.log(8.0) + 1.0 as Int));
         this.numLevels = numLevels;
 
         var nBox : Int = 0;
@@ -158,16 +161,17 @@ public class Fmm3d {
     def multipoleLowestLevel() {
         //Console.OUT.println("multipole lowest level");
         timer.start(TIMER_INDEX_MULTIPOLE);
-        finish for ((i) in 0..atoms.length-1) {
-            val atom = atoms(i);
-            val boxLocation = getLowestLevelBoxLocation(atom);
-            val boxIndex = FmmBox.getBoxIndex(boxLocation, numLevels);
-            async (boxes.dist(boxIndex, numLevels)) {
-                val remoteAtom = new MMAtom(atom);
+        //finish ateach (p1 in atoms) {
+        finish ateach (p1 in atoms) {
+            val localAtoms = atoms(p1);
+            foreach ((i) in 0..localAtoms.length-1) {
+                val atom = localAtoms(i) as MMAtom!;
+                val boxLocation = getLowestLevelBoxLocation(atom);
+                val boxIndex = FmmBox.getBoxIndex(boxLocation, numLevels);
                 val leafBox = boxes(boxIndex, numLevels) as FmmLeafBox!;
-                leafBox.atoms.add(remoteAtom);
-                val boxCentre = leafBox.getCentre(size).sub(remoteAtom.centre);
-                leafBox.multipoleExp.add(MultipoleExpansion.getOlm(remoteAtom.charge, boxCentre, numTerms));
+                leafBox.atoms.add(atom);
+                val boxCentre = leafBox.getCentre(size).sub(atom.centre);
+                leafBox.multipoleExp.add(MultipoleExpansion.getOlm(atom.charge, boxCentre, numTerms));
             }
         }
         // post-prune leaf boxes
