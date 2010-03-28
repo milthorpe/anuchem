@@ -1,7 +1,6 @@
 package au.edu.anu.mm;
 
 import x10.util.Random;
-import x10.util.GrowableRail;
 import x10x.vector.Point3d;
 import au.edu.anu.chem.mm.MMAtom;
 import au.edu.anu.util.Timer;
@@ -12,17 +11,15 @@ import au.edu.anu.util.Timer;
  */
 public class TestFmm3d {
     private const RANDOM_SEED = 10101110L;
-    private const size = 2.0;
     private static val R = new Random(RANDOM_SEED);
-    private const X_SLICE = size / Place.MAX_PLACES;
 
     public static def main(args : Rail[String]!) {
-        var numAtoms : Int;
-        var density : Double = 60.0;
+        var numParticles : Int;
+        var density : Double = 3.0;
         var numTerms : Int = 10;
         var wellSpaced : Int = 2;
         if (args.length > 0) {
-            numAtoms = Int.parseInt(args(0));
+            numParticles = Int.parseInt(args(0));
             if (args.length > 1) {
                 density = Double.parseDouble(args(1));
                 if (args.length > 2) {
@@ -33,18 +30,19 @@ public class TestFmm3d {
                 }
             }
         } else {
-            Console.ERR.println("usage: TestFmm3d numAtoms [density] [numTerms] [wellSpaced]");
+            Console.ERR.println("usage: TestFmm3d numParticles [density] [numTerms] [wellSpaced]");
             return;
         }
 
-        Console.OUT.println("Testing FMM for " + numAtoms 
-                          + " atoms, target density = " + density
+        Console.OUT.println("Testing FMM for " + numParticles 
+                          + " particles, target density = " + density
                           + " numTerms = " + numTerms
                           + " wellSpaced param = " + wellSpaced);
         
+        /* Assign particles to random locations within a -1..1 3D box, with unit charge (1/3 are negative). */
+        val atoms = ValRail.make[MMAtom!](numParticles, (i : Int) => new MMAtom(new Point3d(randomUnit(), randomUnit(), randomUnit()), i%3==4?1:-1));
 
-
-        val fmm3d = new Fmm3d(density, numTerms, wellSpaced, 2.0, numAtoms, generateAtoms(numAtoms));
+        val fmm3d = new Fmm3d(density, numTerms, wellSpaced, 2.0, atoms);
         val energy = fmm3d.calculateEnergy();
         
         Console.OUT.println("energy = " + energy);
@@ -62,32 +60,9 @@ public class TestFmm3d {
         Console.OUT.printf(desc + " (one cycle): %g seconds\n", (timer.total(timerIndex) as Double) / 1e9);
     }
 
-    /**
-     * Generate an array of ValRails of MMAtoms, one ValRail for each
-     * place.  FMM assumes that the atoms have already been distributed. 
-     */
-    public static def generateAtoms(numAtoms : Int) : Array[ValRail[MMAtom]](1) {
-        val tempAtoms = Array.make[GrowableRail[MMAtom]](Dist.makeUnique(Place.places), (Point) => new GrowableRail[MMAtom]());
-        /* Assign Atoms to random locations within a -1..1 3D box, with unit charge (1/3 are negative). */
-        for (var i : Int = 0; i < numAtoms; i++) {
-            val atom = new MMAtom(new Point3d(randomUnit(), randomUnit(), randomUnit()), i%3==4?1:-1);
-            val p = getPlaceId(atom);
-            at (Place.places(p)) {
-                val remoteAtom = new MMAtom(atom);
-                (tempAtoms(p) as GrowableRail[MMAtom]!).add(remoteAtom);
-            }
-        }
-        val atoms = Array.make[ValRail[MMAtom]](Dist.makeUnique(Place.places), ((p) : Point) => (tempAtoms(p) as GrowableRail[MMAtom]!).toValRail());
-        return atoms;
-    }
-
-    public static safe def getPlaceId(atom : MMAtom!) : Int {
-        return ((atom.centre.i + 0.5 * size) / size * Place.MAX_PLACES) as Int;
-    }
-
     static def randomUnit() : Double {
         val dub = at(R){R.nextDouble()};
-        return dub * (size) - 0.5 * size;
+        return (dub - 0.5) * 2.0;
     }
 }
 
