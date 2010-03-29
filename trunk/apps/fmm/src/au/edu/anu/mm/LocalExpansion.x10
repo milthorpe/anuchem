@@ -64,7 +64,7 @@ public class LocalExpansion extends Expansion {
     public safe def translateAndAddLocal(shift : MultipoleExpansion!,
                                          source : LocalExpansion!) {
         val p = terms.region.max(0);
-        for ((l,m) in terms) {
+        for ((l,m) in terms.dist) {
             for ((j) in l..p) {
                 for ((k) in (l-j+m)..(-l+j+m)) {
                     val C_lmjk = shift.terms(j-l, k-m);
