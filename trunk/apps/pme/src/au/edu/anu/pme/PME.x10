@@ -51,7 +51,7 @@ public class PME {
     private global val cutoff : Double;
 
     /** Translation vectors for neighbouring unit cells (the 26 cells surrounding the origin cell) */
-    private global val imageTranslations : Array[Vector3d](3);
+    private global val imageTranslations : Array[Vector3d](3){rect};
 
 	private val atoms : ValRail[MMAtom!];
 
@@ -96,7 +96,7 @@ public class PME {
         this.splineOrder = splineOrder;
         this.beta = beta;
         this.cutoff = cutoff;
-        val imageTranslationRegion = [-1..1,-1..1,-1..1] as Region(3);
+        val imageTranslationRegion = [-1..1,-1..1,-1..1] as Region(3){rect};
         this.imageTranslations = Array.make[Vector3d](imageTranslationRegion, (p(i,j,k) : Point(3)) => (edges(0).mul(i)).add(edges(1).mul(j)).add(edges(2).mul(k)));
 
         Console.OUT.println("PME for " + atoms.length + " particles.");
@@ -125,7 +125,7 @@ public class PME {
             for (var j : Int = 0; j < i; j++) {
                 val rjri = new Vector3d(atoms(j).centre.sub(atoms(i).centre as Tuple3d));
                 // TODO rough (non-Euclidean, 1D) distance cutoff to avoid unnecessary distance calculations
-                for (p(n1,n2,n3) in imageTranslations) {
+                for ((n1,n2,n3) in imageTranslations) {
                     if (! (i==j && (n1 | n2 | n3) == 0)) {
                         val imageDistance = rjri.add(imageTranslations(n1,n2,n3)).length();
                         if (imageDistance < cutoff) {
