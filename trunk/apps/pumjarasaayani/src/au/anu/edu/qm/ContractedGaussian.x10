@@ -19,6 +19,8 @@ public class ContractedGaussian {
     global val coefficients:ArrayList[Double]{self.at(this)};
     global val primNorms:ArrayList[Double]{self.at(this)};
 
+    global val maxam:Int, minam:Int, totam:Int;
+
     var normalization : Double;
 
     public def this(center:Point3d, pwr:Power) { 
@@ -30,6 +32,10 @@ public class ContractedGaussian {
         exponents = new ArrayList[Double]();
         coefficients = new ArrayList[Double]();
         primNorms = new ArrayList[Double]();
+
+        maxam = power.getMaximumAngularMomentum();
+        minam = power.getMinimumAngularMomentum();
+        totam = power.getTotalAngularMomentum();
     } 
 
     public def getOrigin() = center;
@@ -43,9 +49,9 @@ public class ContractedGaussian {
     public def getCoefficients() : ArrayList[Double]{self.at(this)} = coefficients;
     public def getPrimNorms() : ArrayList[Double]{self.at(this)} = primNorms;
     public def getPrimNorm(i:Int) = primNorms(i);
-    public def getTotalAngularMomentum() = power.getTotalAngularMomentum();
-    public def getMaximumAngularMomentum() = power.getMaximumAngularMomentum();
-    public def getMinimumAngularMomentum() = power.getMinimumAngularMomentum();
+    public def getTotalAngularMomentum() = totam;
+    public def getMaximumAngularMomentum() = maxam;
+    public def getMinimumAngularMomentum() = minam;
 
     var index:Int;
     public def getIndex() = index;

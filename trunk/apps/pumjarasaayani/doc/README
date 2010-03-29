@@ -74,6 +74,8 @@ Note: 8, 9 do not have multi thread implimentation at present, so wont scale on 
 3, 4 : should actually perform faster, for higher angular momentums, but the 
 recursive routine and array operations seems to take a lot of time:
 
+  %   cumulative   self              self     total
+ time   seconds   seconds    calls  ms/call  ms/call  name
  13.95      0.06     0.06 10643732     0.00     0.00  x10::array::FastArray<double>::apply(int, int)
  13.95      0.12     0.06   658350     0.00     0.00  au::anu::edu::qm::TwoElectronIntegrals::mdr1(int, int, int, int, int, int, int, int, int, x10aux::ref<x10x::vector::Point3d>, x10aux::ref<x10x::vector::Point3d>, x10aux::ref<x10x::vector::Point3d>, double)
  11.63      0.17     0.05  8429022     0.00     0.00  x10::array::FastArray<double>::set(double, int, int, int)
