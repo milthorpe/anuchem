@@ -32,24 +32,24 @@ public class FmmBox {
         this.localExp = new LocalExpansion(numTerms);
     }
 
-    public global def index() : Int {
+    public global safe def index() : Int {
         dim : Int = Math.pow2(level) as Int;
         return gridLoc.x * dim * dim + gridLoc.y * dim + gridLoc.z;
         //return gridLoc(0) * dim * dim + gridLoc(1) * dim + gridLoc(2);
     }
 
-    public static def getBoxIndex(gridLoc : GridLocation, level : Int) : Int {
+    public static safe def getBoxIndex(gridLoc : GridLocation, level : Int) : Int {
         dim : Int = Math.pow2(level);
         return gridLoc.x * dim * dim + gridLoc.y * dim + gridLoc.z;
         //return gridLoc(0) * dim * dim + gridLoc(1) * dim + gridLoc(2);
     }
 
-    public static global def getBoxLocation(index : Int, level : Int) : GridLocation {
+    public static safe def getBoxLocation(index : Int, level : Int) : GridLocation {
         dim : Int = Math.pow2(level) as Int;
         return GridLocation(index / (dim * dim), (index / dim) % dim, index % dim);
     }
 
-    public global def getCentre(size : Double) : Point3d {
+    public global safe def getCentre(size : Double) : Point3d {
         dim : Int = Math.pow2(level);
         sideLength : Double = size / dim;
         offset : Double = 0.5 * size;
@@ -68,7 +68,7 @@ public class FmmBox {
      * on the same level, i.e. if there are at least <code>ws</code>
      * boxes separating them.
      */
-    public global def wellSeparated(ws : Int, box2 : FmmBox) : Boolean {
+    public global safe def wellSeparated(ws : Int, box2 : FmmBox) : Boolean {
         return wellSeparated(ws, box2.gridLoc);
     }
 
@@ -77,7 +77,7 @@ public class FmmBox {
      * on the same level, i.e. if there are at least <code>ws</code>
      * boxes separating them.
      */
-    public global def wellSeparated(ws : Int, box2Loc : GridLocation) : Boolean {
+    public global safe def wellSeparated(ws : Int, box2Loc : GridLocation) : Boolean {
         if (level < 2)
             return false;
         // TODO can do reduction on a Rail?
@@ -86,11 +86,11 @@ public class FmmBox {
             || Math.abs(gridLoc.z - box2Loc.z) > ws;
     }
 
-    public global def getTranslationIndex(box2 : FmmBox) : GridLocation {
+    public global safe def getTranslationIndex(box2 : FmmBox) : GridLocation {
         return getTranslationIndex(box2.gridLoc);
     }
 
-    public global def getTranslationIndex(loc2 : GridLocation) : GridLocation {
+    public global safe def getTranslationIndex(loc2 : GridLocation) : GridLocation {
         return GridLocation(gridLoc.x - loc2.x, gridLoc.y - loc2.y, gridLoc.z - loc2.z);
     }
 

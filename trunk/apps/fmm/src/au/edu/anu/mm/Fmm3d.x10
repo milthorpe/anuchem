@@ -86,7 +86,7 @@ public class Fmm3d {
 
         var nBox : Int = 0;
         for ((i) in 2..numLevels) {
-            nBox += Math.pow(8,i) as Int;
+            nBox += Math.pow2(3*i) as Int;
         }
         this.dimLowestLevelBoxes = Math.pow2(numLevels);
         Console.OUT.println("numLevels = " + numLevels + " maxBoxes = " + nBox);
@@ -101,7 +101,7 @@ public class Fmm3d {
         var boxRegion : Region(2) = [0..63, 2..2];
         var boxDistribution : Dist(2) = Dist.makeBlock(boxRegion, 0);
         for ((i) in 3..numLevels) {
-            val nextLevelRegion : Region(2) = [0..(Math.pow(8,i) as Int)-1, i..i];
+            val nextLevelRegion : Region(2) = [0..(Math.pow2(3*i) as Int)-1, i..i];
             val nextLevelDist = Dist.makeBlock(nextLevelRegion, 0);
             boxDistribution = boxDistribution || nextLevelDist;
         }
@@ -111,14 +111,14 @@ public class Fmm3d {
 
         for ((thisLevel) in 2..numLevels-1) {
             //Console.OUT.println("transform level " + thisLevel);
-            val thisLevelRegion : Region(2) = [0..(Math.pow(8,thisLevel) as Int)-1,thisLevel..thisLevel];
+            val thisLevelRegion : Region(2) = [0..(Math.pow2(3*thisLevel) as Int)-1,thisLevel..thisLevel];
             val thisLevelDist = boxes.dist | thisLevelRegion;
             finish ateach ((boxIndex1,level) in thisLevelDist) {
                 boxes(boxIndex1,level) = new FmmBox(level, FmmBox.getBoxLocation(boxIndex1,level), numTerms, getParentForChild(boxIndex1,level));
             }
         }
 
-        val lowestLevelRegion : Region(2) = [0..(Math.pow(8,numLevels) as Int)-1,numLevels..numLevels];
+        val lowestLevelRegion : Region(2) = [0..(Math.pow2(3*numLevels) as Int)-1,numLevels..numLevels];
         val lowestLevelDist = boxes.dist | lowestLevelRegion;
         finish ateach ((boxIndex1,level) in lowestLevelDist) {
             boxes(boxIndex1,level) = new FmmLeafBox(level, FmmBox.getBoxLocation(boxIndex1,level), numTerms, getParentForChild(boxIndex1,level));
@@ -172,7 +172,7 @@ public class Fmm3d {
         }
         // post-prune leaf boxes
         // TODO prune intermediate empty boxes as well
-        val lowestLevelRegion : Region(2) = [0..(Math.pow(8,numLevels) as Int)-1,numLevels..numLevels];
+        val lowestLevelRegion : Region(2) = [0..(Math.pow2(3*numLevels) as Int)-1,numLevels..numLevels];
         val lowestLevelDist = boxes.dist | lowestLevelRegion;
         finish ateach ((boxIndex1,level) in lowestLevelDist) {
             val box = boxes(boxIndex1, level) as FmmLeafBox!;
@@ -192,7 +192,7 @@ public class Fmm3d {
         timer.start(TIMER_INDEX_COMBINE);
         for (var level: Int = numLevels; level > 2; level--) {
             //Console.OUT.println("combine level " + level + " => " + (level-1));
-            val thisLevelRegion : Region(2) = [0..((Math.pow(8,level) as Int)-1),level..level];
+            val thisLevelRegion : Region(2) = [0..((Math.pow2(3*level) as Int)-1),level..level];
             val thisLevelDist = boxes.dist | thisLevelRegion;
             finish ateach ((boxIndex1,level) in thisLevelDist) {
                 if (boxes(boxIndex1, level) != null) {
@@ -225,7 +225,7 @@ public class Fmm3d {
         finish ateach ((boxIndex1,level) in level2Dist) {
             val box1 = boxes(boxIndex1,level) as FmmBox!;
             if (box1 != null) {
-                for ((boxIndex2,level) in level2Dist) {
+                for ((boxIndex2) in 0..63) {
                     if (boxIndex2 != boxIndex1) {
                         val box2Loc = FmmBox.getBoxLocation(boxIndex2,level);
                         if (box1.wellSeparated(ws, box2Loc)) {
@@ -243,12 +243,13 @@ public class Fmm3d {
         
         for ((thisLevel) in 3..numLevels) {
             //Console.OUT.println("transform level " + thisLevel);
-            val thisLevelRegion : Region(2) = [0..(Math.pow(8,thisLevel) as Int)-1,thisLevel..thisLevel];
+            val numBoxes = (Math.pow2(3*thisLevel) as Int);
+            val thisLevelRegion : Region(2) = [0..numBoxes-1,thisLevel..thisLevel];
             val thisLevelDist = boxes.dist | thisLevelRegion;
             finish ateach ((boxIndex1,level) in thisLevelDist) {
                 val box1 = boxes(boxIndex1,level) as FmmBox!;
                 if (box1 != null) {
-                    for ((boxIndex2,level) in thisLevelDist) {
+                    for ((boxIndex2) in 0..numBoxes-1) {
                         if (boxIndex2 != boxIndex1) {
                             val box2Loc = FmmBox.getBoxLocation(boxIndex2,level);
                             if (box1.wellSeparated(ws, box2Loc)) {
@@ -294,7 +295,7 @@ public class Fmm3d {
         }
         Console.OUT.println("pairwiseEnergy = " + pairwiseEnergy);
         */
-        val lowestLevelRegion : Region(2) = [0..(Math.pow(8,numLevels) as Int)-1,numLevels..numLevels];
+        val lowestLevelRegion : Region(2) = [0..(Math.pow2(3*numLevels) as Int)-1,numLevels..numLevels];
         val lowestLevelDist = boxes.dist | lowestLevelRegion;
         finish ateach ((boxIndex1,level) in lowestLevelDist) {
             val box1 = boxes(boxIndex1, numLevels) as FmmLeafBox!;
@@ -309,33 +310,28 @@ public class Fmm3d {
                     for ((sameBoxAtomIndex) in 0..atomIndex1-1) {
                         val sameBoxAtom = box1.atoms(sameBoxAtomIndex);
                         val pairEnergy : Double = atom1.pairEnergy(sameBoxAtom);
-                        thisBoxEnergy += 2 * pairEnergy;
+                        thisBoxEnergy += pairEnergy;
                     }
                 }
-                if (boxIndex1 > 0) { // EmptyRegion problem
-                    // direct calculation with all atoms in non-well-separated boxes
-                    val otherBoxRegion : Region(2) = [0..boxIndex1-1,numLevels..numLevels];
-                    val otherBoxDist = boxes.dist | otherBoxRegion;
-                    for ((boxIndex2,level) in otherBoxDist) {
-                        var directBox2Energy : Double = 0.0;
-                        val box2Loc = FmmBox.getBoxLocation(boxIndex2,level);
-                        if (!box1.wellSeparated(ws, box2Loc)) {
-                            val packedAtoms = at(boxes.dist(boxIndex2, level)) {getPackedAtomsForBox(boxIndex2, level)};
-                            if (packedAtoms != null) {
-                                for (var i : Int = 0; i < packedAtoms.length(); i+=4) {
-                                    val atom2Centre = new Point3d(packedAtoms(i+1), packedAtoms(i+2), packedAtoms(i+3));
-                                    val atom2Charge = packedAtoms(i);
-                                    for ((atomIndex1) in 0..length-1) {
-                                        val atom1 = box1.atoms(atomIndex1);
-                                        directBox2Energy += atom1.charge * atom2Charge / atom1.centre.distance(atom2Centre);
-                                    }
+
+                // direct calculation with all atoms in non-well-separated boxes
+                for ((boxIndex2) in 0..boxIndex1-1) {
+                    val box2Loc = FmmBox.getBoxLocation(boxIndex2,level);
+                    if (!box1.wellSeparated(ws, box2Loc)) {
+                        val packedAtoms = at(boxes.dist(boxIndex2, level)) {getPackedAtomsForBox(boxIndex2, level)};
+                        if (packedAtoms != null) {
+                            for (var i : Int = 0; i < packedAtoms.length(); i+=4) {
+                                val atom2Centre = new Point3d(packedAtoms(i+1), packedAtoms(i+2), packedAtoms(i+3));
+                                val atom2Charge = packedAtoms(i);
+                                for ((atomIndex1) in 0..length-1) {
+                                    val atom1 = box1.atoms(atomIndex1);
+                                    thisBoxEnergy += atom1.charge * atom2Charge / atom1.centre.distance(atom2Centre);
                                 }
-                                thisBoxEnergy += 2 * directBox2Energy;
                             }
                         }
                     }
                 }
-                val thisBoxEnergyFinal = thisBoxEnergy;
+                val thisBoxEnergyFinal = 2 * thisBoxEnergy;
                 async (this) {atomic {directEnergy += thisBoxEnergyFinal;}}
             }
         }
@@ -353,7 +349,7 @@ public class Fmm3d {
     def getFarFieldEnergy() : Double {
         //Console.OUT.println("getFarFieldEnergy");
         timer.start(TIMER_INDEX_FARFIELD);
-        val lowestLevelRegion : Region(2) = [0..(Math.pow(8,numLevels) as Int)-1,numLevels..numLevels];
+        val lowestLevelRegion : Region(2) = [0..(Math.pow2(3*numLevels) as Int)-1,numLevels..numLevels];
         val lowestLevelDist = boxes.dist | lowestLevelRegion;
         finish ateach ((boxIndex1,level) in lowestLevelDist) {
             val box1 = boxes(boxIndex1, numLevels) as FmmLeafBox!;

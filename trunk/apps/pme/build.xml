@@ -19,6 +19,8 @@
     <property name="nochecks" value="true"/>
     <property name="inline-optimizations" value="true"/>
     <property name="profile"  value="false"/>
+    <property name="cpuprofile"  value="false"/>
+    <property name="perftoolsHome" location="/scratch/perftools"/>
     <property name="x10rt" value="mpi"/>
 	<property name="target" location="${basedir}/target"/>
 	<property name="target-src" location="${target}/classes"/>
@@ -41,6 +43,10 @@
 
     <condition property="post.profile" value="-pg" else="">
         <istrue value="${profile}" />
+    </condition>
+
+    <condition property="post.cpuprofile" value="-L${perftoolsHome}/lib -lprofiler" else="">
+        <istrue value="${cpuprofile}"/>
     </condition>
 
 	<target name="init">
@@ -103,7 +109,7 @@
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/src">
             <arg value="-c"/>
-            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} ${x10c.inline-optimizations} -report postcompile=1 -post 'g++ ${x10c.optimize} ${post.profile} -Wall -I${fftw3.include} # # -L${fftw3.lib} -lfftw3_threads -lfftw3' -sourcepath .:${xre.src}:${xla.src}:${anuchem.src} -d ${target-src} ${src.list} ${basedir}/${testclass}"/>
+            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} ${x10c.inline-optimizations} -report postcompile=1 -post 'g++ ${x10c.optimize} ${post.profile} -Wall -I${fftw3.include} # # -L${fftw3.lib} -lfftw3_threads -lfftw3 ${post.cpuprofile}' -sourcepath .:${xre.src}:${xla.src}:${anuchem.src} -d ${target-src} ${src.list} ${basedir}/${testclass}"/>
         </exec>
     </target>
 

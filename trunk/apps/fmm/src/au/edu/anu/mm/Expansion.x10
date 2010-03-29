@@ -1,6 +1,7 @@
 package au.edu.anu.mm;
 
 import x10.util.StringBuilder;
+import x10.array.FastArray;
 
 /**
  * This is the superclass for multipole and local expansions, as used in
@@ -26,7 +27,8 @@ public class Expansion {
 
     public def this(p : Int, data : ValRail[Complex]) {
         val expRegion = new ExpansionRegion(p);
-        this.terms = Array.make[Complex](expRegion->here, ((i,j) : Point) => data(i*i + i+j));
+        this.terms = Array.make[Complex](expRegion->here);
+        data.copyTo(0, (this.terms as FastArray[Complex]).raw(), 0, data.length());
     }
 
     public atomic def add(e : Expansion!) {
@@ -56,12 +58,8 @@ public class Expansion {
      * @return the expansion terms, shoehorned into a ValRail
      */
     public static safe def getData(p : Int, source : Expansion!) : ValRail[Complex] {
-        return ValRail.make[Complex]((p+1)*(p+1), (n : Int) => source.terms(mapPoint(n)));
-    }
-
-    private static safe def mapPoint(n : Int) : Point(2) {
-        val i = squareRootFloor(n);
-        return Point.make(i, (n - i*i - i));
+        // HACK - use raw data - this won't work without NO_CHECKS!!
+        return (source.terms as FastArray[Complex]).raw();
     }
 
     /** The nearest integer square root below <code>n</code> */

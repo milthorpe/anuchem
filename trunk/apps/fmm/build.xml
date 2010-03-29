@@ -14,7 +14,7 @@
     <property environment="env"/>
     <property name="bash.exe" value="bash"/>    
     <property name="optimize" value="true"/>
-    <property name="nochecks" value="false"/>
+    <property name="nochecks" value="true"/>
     <property name="inline-optimizations" value="true"/>
     <property name="profile"  value="false"/>
     <property name="cpuprofile"  value="false"/>

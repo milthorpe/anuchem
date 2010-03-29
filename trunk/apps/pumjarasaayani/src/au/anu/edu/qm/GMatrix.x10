@@ -949,7 +949,6 @@ public class GMatrix extends Matrix {
         Console.OUT.println("\tTime for summing up GMatrix bits: " + (timer.total(0) as Double) / 1e9 + " seconds"); 
     }
 
-
     private def computeDirectNewMultiPlaceStatic(twoE:TwoElectronIntegrals!, 
                                                  density:Density!) : void {
         val N = density.getRowCount();
@@ -1040,6 +1039,90 @@ public class GMatrix extends Matrix {
         timer.stop(2);
         Console.OUT.println("\tTime for summing up GMatrix bits: " + (timer.total(2) as Double) / 1e9 + " seconds"); 
     }
+
+    /** Code snippet 3, Bernholdt paper, TODO: incomplete  */
+    private def computeDirectMultiPlaceNewFuture(twoE:TwoElectronIntegrals!, density:Density!) : void {
+        val N = density.getRowCount();
+
+        makeZero();
+
+        val gMatrix = getMatrix();
+        val dMatrix = density.getMatrix();
+
+        val jMat = new Matrix(N) as Matrix!;
+        val kMat = new Matrix(N) as Matrix!;
+
+        jMat.makeZero();
+        kMat.makeZero();
+
+        val jMatrix = jMat.getMatrix();
+        val kMatrix = kMat.getMatrix();
+
+        var i:Int, j:Int, k:Int, l:Int;
+
+        val molecule = twoE.getMolecule();
+        val bfs = twoE.getBasisFunctions().getBasisFunctions();
+        val shellList = twoE.getBasisFunctions().getShellList();
+        val noOfBasisFunctions = bfs.size();
+
+        val noOfAtoms = molecule.getNumberOfAtoms();
+        var a:Int, b:Int, c:Int, d:Int;
+        var naFunc:Int, nbFunc:Int, ncFunc:Int, ndFunc:Int, twoEIndx:Int;
+        var aFunc:ArrayList[ContractedGaussian{self.at(this)}]{self.at(this)},
+            bFunc:ArrayList[ContractedGaussian{self.at(this)}]{self.at(this)},
+            cFunc:ArrayList[ContractedGaussian{self.at(this)}]{self.at(this)},
+            dFunc:ArrayList[ContractedGaussian{self.at(this)}]{self.at(this)};
+        var iaFunc:ContractedGaussian{self.at(this)}, jbFunc:ContractedGaussian{self.at(this)},
+            kcFunc:ContractedGaussian{self.at(this)}, ldFunc:ContractedGaussian{self.at(this)};
+
+        // center a
+        for(a=0; a<noOfAtoms; a++) {
+            aFunc = molecule.getAtom(a).getBasisFunctions();
+            naFunc = aFunc.size();
+            // basis functions on a
+            for(i=0; i<naFunc; i++) {
+                iaFunc = aFunc.get(i);
+
+                // center b
+                for(b=0; b<=a; b++) {
+                    bFunc = molecule.getAtom(b).getBasisFunctions();
+                    nbFunc = (b<a) ? bFunc.size() : i+1;
+                    // basis functions on b
+                    for(j=0; j<nbFunc; j++) {
+                        jbFunc = bFunc.get(j);
+
+                        // center c
+                        for(c=0; c<noOfAtoms; c++) {
+                            cFunc = molecule.getAtom(c).getBasisFunctions();
+                            ncFunc = cFunc.size();
+                            // basis functions on c
+                            for(k=0; k<ncFunc; k++) {
+                                kcFunc = cFunc.get(k);
+
+                                // center d
+                                for(d=0; d<=c; d++) {
+                                    dFunc = molecule.getAtom(d).getBasisFunctions();
+                                    ndFunc = (d<c) ? dFunc.size() : k+1;
+                                    // basis functions on d
+                                    for(l=0; l<ndFunc; l++) {
+                                        ldFunc = dFunc.get(l);
+
+            	                        twoE.compute2EAndRecord(iaFunc, jbFunc, kcFunc, ldFunc, 
+                                                                shellList, jMat, kMat, density);
+				    } // end l
+				} // center d
+                            } // end k
+                        } // center c
+                    } // end j
+                } // center b
+            } // end i
+        } // center a
+     
+        // form the G matrix
+        finish ateach(val(x,y) in gMatrix.dist)
+                  gMatrix(x,y) = jMatrix(x,y) - (0.25*kMatrix(x,y));     
+    }
+
 
     /** find unique elements and mark the onces that are not */
     /** 8 => is the level of integral symmetry, given (i,j|k.l)
