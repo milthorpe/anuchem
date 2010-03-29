@@ -343,121 +343,6 @@ public class TwoElectronIntegrals {
                           shellList, bAng, aAng,
                           aCen, bCen, p, 2.0*gamma1,
                           twoEInts); 
-
-              // Console.OUT.println("ang: " + dAng + " " + cAng + " " + bAng + " " + aAng);
-              // Console.OUT.println("strt: " + dStrt + " " + cStrt + " " + bStrt + " " + aStrt);
-
-              /**
-              Console.OUT.println("called 2: " + bPrim);
-              for(dd=0; dd<dLim; dd++) {
-                  val ll = dStrt + dd;
-                  lldx(0) = ll; lldx(1) = ll; kkdx(2) = ll; kkdx(3) = ll;
-                  iidx(4) = ll; iidx(5) = ll; jjdx(6) = ll; jjdx(7) = ll;
-
-                  for(cc=0; cc<cLim; cc++) {
-                      val kk = cStrt + cc;
-
-                      kkdx(0) = kk; kkdx(1) = kk; lldx(2) = kk; lldx(3) = kk;
-                      jjdx(4) = kk; jjdx(5) = kk; iidx(6) = kk; iidx(7) = kk;
-
-                      for (k=0; k<=maxam2; k++)
-                        for (l=0; l<=maxam2M; l++)
-                           npint(k,l) = pcdint(dd, cc, k*pqdim+l);
-
-                      for(bb = 0; bb<bLim; bb++) {
-                          val jj = bStrt + bb;
-                          val powersB = shellB(bb);
-                          val lp = powersB.getL();
-                          val mp = powersB.getM();
-                          val np = powersB.getN();
-
-                          jjdx(0) = jj; iidx(1) = jj; iidx(2) = jj; jjdx(3) = jj;
-                          lldx(4) = jj; kkdx(5) = jj; lldx(6) = jj; kkdx(7) = jj;
-
-                          for(aa = 0; aa<aLim; aa++) {
-                             val powersA = shellA(aa);
-                             val lq = powersA.getL();
-                             val mq = powersA.getM();
-                             val nq = powersA.getN();
- 
-                             val ii = aStrt + aa;
-
-                             if (ii >= jj && kk >=ll) {
-                                val iijj = ii*(ii+1)/2 + jj;
-                                val kkll = kk*(kk+1)/2 + ll;
-
-                                if (iijj >= kkll) {                                   
-                                    // val twoEIntVal = mdr1(lp, mp, np, lq, mq, nq, 0, 0, 0,
-                                    //                      bCen, aCen, p, gamma1);  // can use hrr instead
-
-                                    val twoEIntVal = mdHrr(lp, mp, np, lq, mq, nq, 0, 0, 0,
-                                                           p.i-bCen.i, p.j-bCen.j, p.k-bCen.k, 
-                                                           p.i-aCen.i, p.j-aCen.j, p.k-aCen.k, 2.0*gamma1);  // can use hrr instead
-
-
-                                    Console.OUT.println("integral in : " + ii + "," + jj + "," + kk + "," + ll + " : " + twoEIntVal);
-                                    Console.OUT.println("integral act : " + aa + "," + bb + "," + cc + "," + dd + " : " + twoEIntVal);
-
-                                    // setJKMatrixElements(jMatrix, kMatrix, dMatrix, ii, jj, kk, ll, twoEIntVal);
-                                    val v1 = dMatrix(kk,ll) * twoEIntVal;
-                                    val v2 = dMatrix(ii,jj) * twoEIntVal;
-                                    val v3 = dMatrix(jj,ll) * twoEIntVal;
-                                    val v4 = dMatrix(jj,kk) * twoEIntVal;
-                                    val v5 = dMatrix(ii,ll) * twoEIntVal;
-                                    val v6 = dMatrix(ii,kk) * twoEIntVal;
-
-                                    jMatrix(ii,jj) += v1;
-                                    jMatrix(kk,ll) += v2;
-                                    kMatrix(ii,kk) += v3;
-                                    kMatrix(ii,ll) += v4;
-                                    kMatrix(jj,kk) += v5;
-                                    kMatrix(jj,ll) += v6;
-
-                                    // special case
-                                    if ((ii|jj|kk|ll) == 0) continue;
-                                    iidx(0) = ii; jjdx(1) = ii; jjdx(2) = ii; iidx(3) = ii;
-                                    kkdx(4) = ii; lldx(5) = ii; kkdx(6) = ii; lldx(7) = ii;
-
-                                    // else this is symmetry unique integral, so need to
-                                    // use this value for all 8 combinations
-                                    // (if unique)
-
-                                    for(var valIdx:Int=0; valIdx<8; valIdx++) validIdx(valIdx) = true;
-
-                                    // filter unique elements
-                                    filterUniqueElements(iidx, jjdx, kkdx, lldx, validIdx);
-
-                                    // and evaluate them
-                                    for(var m:Int=1; m<8; m++) {
-                                        if (validIdx(m)) {
-                                           // setJKMatrixElements(jMatrix, kMatrix, dMatrix, iidx(m), jjdx(m), kkdx(m), lldx(m), twoEIntVal);
-                                           val ii_l = iidx(m);
-                                           val jj_l = jjdx(m);
-                                           val kk_l = kkdx(m);
-                                           val ll_l = lldx(m);
-
-                                           val v1_l = dMatrix(kk_l,ll_l) * twoEIntVal;
-                                           val v2_l = dMatrix(ii_l,jj_l) * twoEIntVal;
-                                           val v3_l = dMatrix(jj_l,ll_l) * twoEIntVal;
-                                           val v4_l = dMatrix(jj_l,kk_l) * twoEIntVal;
-                                           val v5_l = dMatrix(ii_l,ll_l) * twoEIntVal;
-                                           val v6_l = dMatrix(ii_l,kk_l) * twoEIntVal;
-
-                                           jMatrix(ii_l,jj_l) += v1_l;
-                                           jMatrix(kk_l,ll_l) += v2_l;
-                                           kMatrix(ii_l,kk_l) += v3_l;
-                                           kMatrix(ii_l,ll_l) += v4_l;
-                                           kMatrix(jj_l,kk_l) += v5_l;
-                                           kMatrix(jj_l,ll_l) += v6_l;
-                                        } // end if
-                                    } // end m
-                                }
-                             }
-                          }
-                      }
-                  }
-              } // dd
-              **/
            }
         }
 
@@ -769,30 +654,15 @@ public class TwoElectronIntegrals {
                          val mq = powersA.getM();
                          val nq = powersA.getN();
 
-                         // Console.OUT.println("integral in exp : " + ii + "," + jj + "," + kk + "," + ll);
- 
                          if (ii >= jj && kk >= ll) {
                              val iijj_st = ii*(ii+1)/2 + jj;
                              val kkll_st = kk*(kk+1)/2 + ll;
 
-                             // Console.OUT.println("integral in exp : " + iijj_st + "," + kkll_st);
-
                              if (iijj_st >= kkll_st) {                                   
-                                 val iijj = aa*(aa+1)/2 + bb;
-                                 val kkll = cc*(cc+1)/2 + dd;
                                  val twoEVal = mdHrr(lp, mp, np, lq, mq, nq, 0, 0, 0,
-                                                                             pbi, pbj, pbk,
-                                                                             pai, paj, pak, gamma1);  // can use hrr instead
-
-                                 val l_intIndx = (iijj * (iijj+1) / 2+kkll);
-                                 val g_intIndx = (iijj_st * (iijj_st+1) / 2+kkll_st);
+                                                     pbi, pbj, pbk, pai, paj, pak, gamma1);  // can use hrr instead
 
                                  twoEInts(intIndx++) += twoEVal;
-
-                                 // Console.OUT.println("integral c-in : " + ii + "," + jj + "," + kk + "," + ll + " : " + twoEVal);
-                                 // Console.OUT.println("integral c-act : " + aa + "," + bb + "," + cc + "," + dd + " : " + twoEVal);
-                                 // Console.OUT.println("integral local-c-1d : " + (l_intIndx) + " : " + twoEVal);
-                                 // Console.OUT.println("integral global-c-1d : " + (g_intIndx) + " : " + twoEVal);
                              } // end if
                          } // end if
                      } // for aa
@@ -812,27 +682,22 @@ public class TwoElectronIntegrals {
          var intIndx:Int = 0;
 
          for(dd=0; dd<dLim; dd++) {
-             val ll_st = dd;
              val ll = dStrt + dd;
              lldx(0) = ll; lldx(1) = ll; kkdx(2) = ll; kkdx(3) = ll;
              iidx(4) = ll; iidx(5) = ll; jjdx(6) = ll; jjdx(7) = ll;
 
              for(cc=0; cc<cLim; cc++) {
-                 val kk_st = cc;
                  val kk = cStrt + cc;
                  kkdx(0) = kk; kkdx(1) = kk; lldx(2) = kk; lldx(3) = kk;
                  jjdx(4) = kk; jjdx(5) = kk; iidx(6) = kk; iidx(7) = kk;
 
-
                  for(bb = 0; bb<bLim; bb++) {
-                     val jj_st = bb;
                      val jj = bStrt + bb;
 
                      jjdx(0) = jj; iidx(1) = jj; iidx(2) = jj; jjdx(3) = jj;
                      lldx(4) = jj; kkdx(5) = jj; lldx(6) = jj; kkdx(7) = jj;
 
                      for(aa = 0; aa<aLim; aa++) {
-                         val ii_st = aa;
                          val ii = aStrt + aa;
                   
                          if (ii >= jj && kk >=ll) {
@@ -840,18 +705,7 @@ public class TwoElectronIntegrals {
                              val kkll = kk*(kk+1)/2 + ll;
 
                              if (iijj >= kkll) {
-                                    val iijj_st = ii_st*(ii_st+1)/2 + jj_st;
-                                    val kkll_st = kk_st*(kk_st+1)/2 + ll_st;
-
-                                    val l_intIndx = (iijj_st * (iijj_st+1) / 2+kkll_st);
-                                    val g_intIndx = (iijj * (iijj+1) / 2+kkll);
-
                                     val twoEIntVal = twoEInts(intIndx++); 
-
-                                 // Console.OUT.println("integral f-in : " + ii + "," + jj + "," + kk + "," + ll + " : " + twoEIntVal);
-                                 // Console.OUT.println("integral f-act : " + aa + "," + bb + "," + cc + "," + dd + " : " + twoEIntVal);
-                                 // Console.OUT.println("l_indx : " + l_intIndx + " : " + twoEIntVal);
-                                 // Console.OUT.println("g_indx : " + g_intIndx + " : " + twoEIntVal);
                             
                                     val v1 = dMatrix(kk,ll) * twoEIntVal;
                                     val v2 = dMatrix(ii,jj) * twoEIntVal;
