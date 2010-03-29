@@ -4,6 +4,7 @@ import x10.util.Random;
 import x10x.vector.Point3d;
 import x10x.vector.Vector3d;
 import au.edu.anu.chem.mm.MMAtom;
+//import au.edu.anu.chem.mm.ElectrostaticDirectMethod;
 import au.edu.anu.util.Timer;
 
 /**
@@ -20,8 +21,8 @@ public class TestPME {
         var numParticles : Int;
         var ewaldCoefficient : Double = 0.35;
         var cutoff : Double = 9.0;
-        var gridSize : Int = 40;
-        var splineOrder : Int = 4;
+        var gridSize : Int = 64;
+        var splineOrder : Int = 6;
         if (args.length > 0) {
             numParticles = Int.parseInt(args(0));
             if (args.length > 1) {
@@ -46,7 +47,7 @@ public class TestPME {
             return;
         }
 
-        /* Assign particles to random locations within a cubic 3D box, with unit charge (1/2 are negative). */
+        /* Assign particles to random locations within a small cubic area around the center of the simulation space, with unit charge (1/2 are negative). */
         val atoms = ValRail.make[MMAtom!](numParticles, (i : Int) => new MMAtom(new Point3d(randomUnit(R) + size/2.0, randomUnit(R) + size/2.0, randomUnit(R) + size/2.0), i%2==0?1:-1));
         val edges = [new Vector3d(size, 0.0, 0.0), new Vector3d(0.0, size, 0.0), new Vector3d(0.0, 0.0, size)];
         val g = gridSize;
@@ -55,13 +56,20 @@ public class TestPME {
         val energy = pme.getEnergy();
         Console.OUT.println("energy = " + energy);
 
-        val timer = pme.timer;
         logTime("Direct / Self",     PME.TIMER_INDEX_DIRECT,        pme.timer);
-        logTime("Grid charges",      PME.TIMER_INDEX_GRIDCHARGES,       pme.timer);
+        logTime("Grid charges",      PME.TIMER_INDEX_GRIDCHARGES,   pme.timer);
         logTime("Inverse FFT",       PME.TIMER_INDEX_INVFFT,        pme.timer);
         logTime("ThetaRecConvQ",     PME.TIMER_INDEX_THETARECCONVQ, pme.timer);
         logTime("Reciprocal energy", PME.TIMER_INDEX_RECIPROCAL,    pme.timer);
         logTime("Total",             PME.TIMER_INDEX_TOTAL,         pme.timer);
+
+        //val direct = new ElectrostaticDirectMethod(atoms);
+        //val directEnergy = direct.getEnergy();
+        //logTime("cf. Direct calculation", ElectrostaticDirectMethod.TIMER_INDEX_TOTAL, direct.timer);
+        // direct error comparison is only useful if there is a huge empty border around the particles
+        //val error = directEnergy - energy;
+        //Console.OUT.println("error = " + error + " relative error = " + Math.abs(error) / Math.abs(energy));
+
     }
 
     private static def logTime(desc : String, timerIndex : Int, timer : Timer!) {
@@ -70,7 +78,9 @@ public class TestPME {
 
     static def randomUnit(R : Random) : Double {
         val dub = at(R){R.nextDouble()};
-        return (dub) * 2.0 - 1.0;
+        // uncomment to put a huge empty border around the particles
+        // return (dub) * 2.0 - 1.0;
+        return ((dub)-0.5) * size;
     }
 }
 

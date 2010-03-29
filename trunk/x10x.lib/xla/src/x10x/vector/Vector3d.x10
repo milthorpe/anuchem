@@ -59,6 +59,10 @@ public class Vector3d extends Tuple3d {
         return Math.sqrt(i * i + j * j + k * k);
     }
 
+    public global safe def maxNorm() : Double {
+        return Math.max(Math.max(Math.abs(i), Math.abs(j)), Math.abs(k));
+    }
+
     /* Should which name to use - length or magnitude? */
     public global safe def magnitude() : Double {
         return Math.sqrt(i * i + j * j + k * k);
