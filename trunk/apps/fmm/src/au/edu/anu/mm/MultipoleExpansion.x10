@@ -99,7 +99,7 @@ public class MultipoleExpansion extends Expansion {
         // TODO this atomic should be around inner loop update.
         // however as it's "stop the world" it's more efficient to do it out here
         atomic {
-            for (val (j,k): Point in terms) {
+            for (val (j,k):Point in terms) {
                 val O_jk = localSource.terms(j,k);
                 for (var l : Int = j; l<=p; l++) { // TODO XTENLANG-504
                     for (var m : Int = -l; m<=l; m++) { // TODO XTENLANG-504

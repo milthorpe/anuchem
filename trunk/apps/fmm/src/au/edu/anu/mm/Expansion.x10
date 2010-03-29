@@ -1,7 +1,7 @@
 package au.edu.anu.mm;
 
 import x10.util.StringBuilder;
-import x10.array.FastArray;
+import x10.array.LocalRectArray;
 
 /**
  * This is the superclass for multipole and local expansions, as used in
@@ -15,20 +15,22 @@ import x10.array.FastArray;
  */
 public class Expansion {
     /** The terms X_{lm} (with m >= 0) in this expansion */
-    public val terms : Array[Complex](2);
+    public val terms : LocalRectArray[Complex]{self.rank==2&&self.home==this.home};
 
     public def this(p : Int) {
         //var expRegion : Region(2) = [0..p,-p..p];
         //expRegion = expRegion - Region.makeHalfspace([1,1],1);
         //expRegion = expRegion - Region.makeHalfspace([1,-1],1);
         val expRegion = new ExpansionRegion(p);
-        this.terms = Array.make[Complex](expRegion->here, (Point) => Complex.ZERO);
+        this.terms = new LocalRectArray[Complex](expRegion, (Point) => Complex.ZERO) as LocalRectArray[Complex]{self.rank==2, self.home==this.home}; // FIXME DG: shouldn't need cast
     }
 
     public def this(p : Int, data : ValRail[Complex]) {
         val expRegion = new ExpansionRegion(p);
-        this.terms = Array.make[Complex](expRegion->here);
-        data.copyTo(0, (this.terms as FastArray[Complex]).raw(), 0, data.length());
+	// FIXME: DG.  Change this constructor to take a LocalRectArray# to copyFrom to avoid useless zeroing in new LocalRextArray.
+	val tmp = new LocalRectArray[Complex](expRegion);
+        this.terms = tmp  as LocalRectArray[Complex]{self.rank==2, self.home==this.home, self.home==here}; // FIXME DG: shouldn't need cast
+        data.copyTo(0, tmp.raw(), 0, data.length());
     }
 
     public atomic def add(e : Expansion!) {
@@ -58,8 +60,7 @@ public class Expansion {
      * @return the expansion terms, shoehorned into a ValRail
      */
     public static safe def getData(p : Int, source : Expansion!) : ValRail[Complex] {
-        // HACK - use raw data - this won't work without NO_CHECKS!!
-        return (source.terms as FastArray[Complex]).raw();
+        return source.terms.raw();
     }
 
     /** The nearest integer square root below <code>n</code> */
