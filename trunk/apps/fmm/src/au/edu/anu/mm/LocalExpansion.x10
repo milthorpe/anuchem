@@ -32,17 +32,17 @@ public class LocalExpansion extends Expansion {
         val phifac0 = Complex(Math.cos(v_pole.phi), Math.sin(v_pole.phi));
         var rfac : Double = rfac0;
         var il : Double = 1.0;
-        for (var l : Int = 0; l<=p; l++) {
+        for ((l) in 0..p) {
             il = il * Math.max(l,1);
             var ilm : Double = il;
             var phifac : Complex = Complex.ONE;
             exp.terms(l,0) = phifac * (rfac * pplm(l,0) * ilm);
-            for (var m : Int = 1; m<=l; m++) {
+            for ((m) in 1..l) {
                 ilm = ilm / (l+1-m);
                 phifac = phifac * phifac0;
                 exp.terms(l,m) = phifac * (rfac * pplm(l,m) * ilm);
             }
-            for (var m : Int = -l; m<=-1; m++) {
+            for ((m) in -l..-1) {
                 exp.terms(l,m) = exp.terms(l,-m).conjugate() * ((2*((-m+1)%2)-1 as Double));
             }
             rfac = rfac * rfac0;
@@ -87,10 +87,10 @@ public class LocalExpansion extends Expansion {
     public safe def transformAndAddToLocal(transform : LocalExpansion!,
                                          source : MultipoleExpansion!) {
         val p : Int = terms.region.max(0);
-        for (val (j,k): Point in terms) {
+        for ((j,k) in terms.region) {
             val O_jk = source.terms(j,k);
-            for (var l : Int = 0; l <= p-j; l++) { // TODO XTENLANG-504
-                for (var m : Int = -l; m<=l; m++) { // TODO XTENLANG-504
+            for ((l) in 0..p-j) {
+                for ((m) in -l..l) {
                     if (Math.abs(k+m) <= (j+l)) {
                         // TODO calculating the indices "on the fly" in the body 
                         // of the at statement results in a Seg Fault... why?
@@ -118,10 +118,10 @@ public class LocalExpansion extends Expansion {
                                          source : MultipoleExpansion) {
         val p : Int = terms.region.max(0);
         val localSource = MultipoleExpansion.getLocalCopy(p, source);
-        for (val (j,k): Point in terms) {
+        for ((j,k) in terms.region) {
             val O_jk = localSource.terms(j,k);
-            for (var l : Int = 0; l <= p-j; l++) { // TODO XTENLANG-504
-                for (var m : Int = -l; m<=l; m++) { // TODO XTENLANG-504
+            for ((l) in 0..p-j) {
+                for ((m) in -l..l) {
                     if (Math.abs(k+m) <= (j+l)) {
                         // TODO calculating the indices "on the fly" in the body 
                         // of the at statement results in a Seg Fault... why?
@@ -148,8 +148,8 @@ public class LocalExpansion extends Expansion {
         val transform = MultipoleExpansion.getOlm(q, v, numTerms);
         var potential : Double = 0.0;
         // TODO use lift/reduction?
-        for (p in terms.region) {
-            potential += (terms(p) * transform.terms(p)).re;
+        for ((i,j) in terms.region) {
+            potential += (terms(i,j) * transform.terms(i,j)).re;
         }
         return potential;
     }

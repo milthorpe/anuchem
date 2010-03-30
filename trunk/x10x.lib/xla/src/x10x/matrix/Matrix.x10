@@ -11,6 +11,7 @@ import x10x.vector.Vector;
  */
 public class Matrix { 
     global val mat:Array[Double]{rank==2, self.at(this)};
+
     global val region:Region{rank==2, self.at(this)};
     global val distribution:Dist{rank==2, self.at(this)};
 
@@ -50,6 +51,7 @@ public class Matrix {
     /**
      * Get associated region
      */
+
     public def region() = region;
 
     /**

@@ -10,10 +10,19 @@ package au.anu.edu.qm;
 
 import x10.util.ArrayList;
 
+import x10.array.LocalRectArray;
+
 import x10x.matrix.Matrix;
 import x10x.vector.Point3d;
 import au.edu.anu.chem.Molecule;
 
+/**
+ * Old code based on original integral evaluation paper by:
+ * H. Taketa, S. Huzinaga, and K. O-ohata. H. Phys. Soc. Japan, 21, 2313, 1966.
+ *
+ * New Murchie-Davidson (MD) code based on:
+ * McMurchie, L. E.; Davidson, E. R. J Comput Phys, 26, 218, 1978.
+ */
 public class TwoElectronIntegrals { 
     global val basisFunctions:BasisFunctions!;
     global val molecule:Molecule[QMAtom]!;
@@ -23,10 +32,12 @@ public class TwoElectronIntegrals {
     val noOfIntegrals:Int;
 
     global val fmt:Rail[Double]!, zeroM:Rail[Double]!;
-    global val rM:Array[Double]{rank==2,self.at(this)};
-    global val pqInts:Array[Double]{rank==2,self.at(this)};
-    global val npint:Array[Double]{rank==2,self.at(this)};
-    global val pcdint:Array[Double]{rank==3,self.at(this)};
+
+    // TODO: use of LocalRectArray should eventually be replaced with Array
+    global val rM:LocalRectArray[Double]{rank==2,self.at(this)};
+    global val pqInts:LocalRectArray[Double]{rank==2,self.at(this)};
+    global val npint:LocalRectArray[Double]{rank==2,self.at(this)};
+    global val pcdint:LocalRectArray[Double]{rank==3,self.at(this)};
 
     private val maxam:Int, maxam2:Int, maxam4:Int, maxamN:Int, maxam2M:Int, maxam2N:Int, pqdim:Int;
 
@@ -68,10 +79,20 @@ public class TwoElectronIntegrals {
 
         fmt    = Rail.make[Double](maxam4+1) as Rail[Double]!;
         zeroM  = Rail.make[Double](maxam4+1) as Rail[Double]!;
+
+        /**
         rM     = Array.make[Double]([0..maxam4+1, 0..((maxam4+1)*(maxam4+2)/2)]) as Array[Double]{rank==2,self.at(this)};
         pqInts = Array.make[Double]([0..maxam2N, 0..maxam2N]) as Array[Double]{rank==2,self.at(this)};
         npint  = Array.make[Double]([0..maxam2+1, 0..maxam2M+1]) as Array[Double]{rank==2,self.at(this)};
         pcdint = Array.make[Double]([0..maxamN+1, 0..maxamN+1, 0..maxam2N]) as Array[Double]{rank==3,self.at(this)};
+        **/
+
+
+        rM     = new LocalRectArray[Double]([0..maxam4+1, 0..((maxam4+1)*(maxam4+2)/2)]) as LocalRectArray[Double]{rank==2,self.at(this)};
+        pqInts = new LocalRectArray[Double]([0..maxam2N, 0..maxam2N]) as LocalRectArray[Double]{rank==2,self.at(this)};
+        npint  = new LocalRectArray[Double]([0..maxam2+1, 0..maxam2M+1]) as LocalRectArray[Double]{rank==2,self.at(this)};
+        pcdint = new LocalRectArray[Double]([0..maxamN+1, 0..maxamN+1, 0..maxam2N]) as LocalRectArray[Double]{rank==3,self.at(this)};
+
 
         // Console.OUT.println("alloc2: " + pcdint.region.size());
     }

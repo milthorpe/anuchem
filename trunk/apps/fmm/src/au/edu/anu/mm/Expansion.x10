@@ -34,8 +34,8 @@ public class Expansion {
     }
 
     public atomic def add(e : Expansion!) {
-        for (val p in terms.region) {
-            this.terms(p) = this.terms(p) + e.terms(p);
+        for ((i,j) in terms.region) {
+            this.terms(i,j) = this.terms(i,j) + e.terms(i,j);
         }
     }
 
