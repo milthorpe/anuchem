@@ -14,8 +14,8 @@ import au.edu.anu.chem.mm.MMAtom;
 public class FmmLeafBox extends FmmBox {
     public val atoms : GrowableRail[MMAtom{self.at(this)}]{self.at(this)} = new GrowableRail[MMAtom{self.at(this)}]();
 
-    public def this(level : Int, gridLoc : GridLocation, numTerms : Int, parent : FmmBox) { 
-        super(level, gridLoc, numTerms, parent);
+    public def this(boxIndex : Point(4), numTerms : Int, parent : FmmBox) { 
+        super(boxIndex, numTerms, parent);
     }
 
     public safe atomic def addAtom(atom : MMAtom{self.at(this)}) {

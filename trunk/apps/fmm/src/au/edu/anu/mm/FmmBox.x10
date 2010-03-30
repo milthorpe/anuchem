@@ -11,8 +11,9 @@ public class FmmBox {
     public global val parent : FmmBox;
 
     public global val level : Int;
-
-    public global val gridLoc : GridLocation;
+    public global val x : Int;
+    public global val y : Int;
+    public global val z : Int;
 
     /** The multipole expansion of the charges within this box. */
     public val multipoleExp : MultipoleExpansion{self.at(this)};
@@ -24,9 +25,11 @@ public class FmmBox {
      * Creates a new FmmBox with multipole and local expansions
      * of the given number of terms.
      */
-    public def this(level : Int, gridLoc : GridLocation, numTerms : Int, parent : FmmBox) {
-        this.level = level;
-        this.gridLoc = gridLoc;
+    public def this(boxIndex : Point(4), numTerms : Int, parent : FmmBox) {
+        this.level = boxIndex(0);
+        this.x = boxIndex(1);
+        this.y = boxIndex(2);
+        this.z = boxIndex(3);
         this.parent = parent;
         this.multipoleExp = new MultipoleExpansion(numTerms);
         this.localExp = new LocalExpansion(numTerms);
@@ -34,33 +37,42 @@ public class FmmBox {
 
     public global safe def index() : Int {
         dim : Int = Math.pow2(level) as Int;
-        return gridLoc.x * dim * dim + gridLoc.y * dim + gridLoc.z;
-        //return gridLoc(0) * dim * dim + gridLoc(1) * dim + gridLoc(2);
-    }
-
-    public static safe def getBoxIndex(gridLoc : GridLocation, level : Int) : Int {
-        dim : Int = Math.pow2(level);
-        return gridLoc.x * dim * dim + gridLoc.y * dim + gridLoc.z;
-        //return gridLoc(0) * dim * dim + gridLoc(1) * dim + gridLoc(2);
-    }
-
-    public static safe def getBoxLocation(index : Int, level : Int) : GridLocation {
-        dim : Int = Math.pow2(level) as Int;
-        return GridLocation(index / (dim * dim), (index / dim) % dim, index % dim);
+        return x * dim * dim + y * dim + z;
     }
 
     public global safe def getCentre(size : Double) : Point3d {
         dim : Int = Math.pow2(level);
         sideLength : Double = size / dim;
         offset : Double = 0.5 * size;
-        return new Point3d( (gridLoc.x + 0.5) * sideLength - offset,
-                            (gridLoc.y + 0.5) * sideLength - offset,
-                            (gridLoc.z + 0.5) * sideLength - offset);
-        /*
-        return new Point3d( (gridLoc(0) + 0.5) * sideLength - offset,
-                            (gridLoc(1) + 0.5) * sideLength - offset,
-                            (gridLoc(2) + 0.5) * sideLength - offset);
-        */
+        return new Point3d( (x + 0.5) * sideLength - offset,
+                            (y + 0.5) * sideLength - offset,
+                            (z + 0.5) * sideLength - offset);
+    }
+
+    /**
+     * Returns true if this box is well-separated from <code>boxIndex2</code>
+     * on the same level, i.e. if there are at least <code>ws</code>
+     * boxes separating them.
+     */
+    public global safe def wellSeparated(ws : Int, boxIndex2 : Point(4)) : Boolean {
+        if (level < 2)
+            return false;
+        return Math.abs(x - boxIndex2(1)) > ws 
+            || Math.abs(y - boxIndex2(2)) > ws 
+            || Math.abs(z - boxIndex2(3)) > ws;
+    }
+
+    /**
+     * Returns true if this box is well-separated from <code>boxIndex2</code>
+     * on the same level, i.e. if there are at least <code>ws</code>
+     * boxes separating them.
+     */
+    public global safe def wellSeparated(ws : Int, x2 : Int, y2 : Int, z2 : Int) : Boolean {
+        if (level < 2)
+            return false;
+        return Math.abs(x - x2) > ws 
+            || Math.abs(y - y2) > ws 
+            || Math.abs(z - z2) > ws;
     }
 
     /**
@@ -69,29 +81,23 @@ public class FmmBox {
      * boxes separating them.
      */
     public global safe def wellSeparated(ws : Int, box2 : FmmBox) : Boolean {
-        return wellSeparated(ws, box2.gridLoc);
-    }
-
-    /**
-     * Returns true if this box is well-separated from <code>box2Loc</code>
-     * on the same level, i.e. if there are at least <code>ws</code>
-     * boxes separating them.
-     */
-    public global safe def wellSeparated(ws : Int, box2Loc : GridLocation) : Boolean {
         if (level < 2)
             return false;
-        // TODO can do reduction on a Rail?
-        return Math.abs(gridLoc.x - box2Loc.x) > ws 
-            || Math.abs(gridLoc.y - box2Loc.y) > ws 
-            || Math.abs(gridLoc.z - box2Loc.z) > ws;
+        return Math.abs(x - box2.x) > ws 
+            || Math.abs(y - box2.y) > ws 
+            || Math.abs(z - box2.z) > ws;
     }
 
-    public global safe def getTranslationIndex(box2 : FmmBox) : GridLocation {
-        return getTranslationIndex(box2.gridLoc);
+    public global safe def getTranslationIndex(boxIndex2 : Point(4)) : Point(4) {
+        return Point.make(level, x - boxIndex2(1), y - boxIndex2(2), z - boxIndex2(3));
     }
 
-    public global safe def getTranslationIndex(loc2 : GridLocation) : GridLocation {
-        return GridLocation(gridLoc.x - loc2.x, gridLoc.y - loc2.y, gridLoc.z - loc2.z);
+    public global safe def getTranslationIndex(level2 : Int, x2 : Int, y2 : Int, z2 : Int) : Point(4) {
+        return Point.make(level, x - x2, y - y2, z - z2);
+    }
+
+    public global safe def getTranslationIndex(box2 : FmmBox) : Point(4) {
+        return Point.make(level, x - box2.x, y - box2.y, z - box2.z);
     }
 
     /**
