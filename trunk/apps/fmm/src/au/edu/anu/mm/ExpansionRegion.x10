@@ -122,7 +122,7 @@ public class ExpansionRegion extends BaseRegion  {
         }
 
         final public def next(): Point(2) {
-            nextPoint : Point(2) = [l,m];
+            nextPoint : Point(2) = Point.make(l,m);
             if (m < l) m++;
             else {
                 l++;
