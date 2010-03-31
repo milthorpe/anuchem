@@ -33,17 +33,17 @@ public class MultipoleExpansion extends Expansion {
 
         var rfac : Double = 1.0;
         var il : Double = 1.0;
-        for (var l : Int = 0; l<=p; l++) {
+        for ((l) in 0..p) {
             il = il * Math.max(l,1);
             var ilm : Double = il;
             var phifac : Complex = Complex.ONE;
             exp.terms(l,0) = phifac / ilm * (q * rfac * pplm(l,0)); 
-            for (var m : Int = 1; m<=l; m++) {
+            for ((m) in 1..l) {
                 ilm = ilm*(l+m);
                 phifac = phifac * phifac0;
                 exp.terms(l,m) = phifac / ilm * (q * rfac * pplm(l,m));
             }
-            for (var m : Int = -l; m<=-1; m++) {
+            for ((m) in -l..-1) {
                 exp.terms(l,m) = exp.terms(l,-m).conjugate() * (2*((-m+1)%2)-1);
             }
             rfac = rfac * v_pole.r;
@@ -64,17 +64,17 @@ public class MultipoleExpansion extends Expansion {
 
         var rfac : Double = 1.0;
         var il : Double = 1.0;
-        for (var l : Int = 0; l<=p; l++) {
+        for ((l) in 0..p) {
             il = il * Math.max(l,1);
             var ilm : Double = il;
             var phifac : Complex = Complex.ONE;
             exp.terms(l,0) = phifac / ilm * (rfac * pplm(l,0)); 
-            for (var m : Int = 1; m<=l; m++) {
+            for ((m) in 1..l) {
                 ilm = ilm*(l+m);
                 phifac = phifac * phifac0;
                 exp.terms(l,m) = phifac / ilm * (rfac * pplm(l,m));
             }
-            for (var m : Int = -l; m<=-1; m++) {
+            for ((m) in -l..-1) {
                 exp.terms(l,m) = exp.terms(l,-m).conjugate() * (2*((-m+1)%2)-1);
             }
             rfac = rfac * v_pole.r;
@@ -99,10 +99,10 @@ public class MultipoleExpansion extends Expansion {
         // TODO this atomic should be around inner loop update.
         // however as it's "stop the world" it's more efficient to do it out here
         atomic {
-            for (val (j,k):Point in terms) {
+            for ((j,k) in terms.region) {
                 val O_jk = localSource.terms(j,k);
-                for (var l : Int = j; l<=p; l++) { // TODO XTENLANG-504
-                    for (var m : Int = -l; m<=l; m++) { // TODO XTENLANG-504
+                for ((l) in j..p) {
+                    for ((m) in -l..l) {
                         if (Math.abs(m-k) <= (l-j)) {
                             val A_lmjk = shift.terms(l-j, m-k);
                             this.terms(l,m) = this.terms(l,m) + A_lmjk * O_jk;
