@@ -420,9 +420,10 @@ public class TwoElectronIntegrals {
 
     private def mdRecurse(r:Point3d, i:Int, j:Int, k:Int, m:Int) : Double {
          var res:Double = 0.0;
+         val ijk = i|j|k;
 
-         if ((i|j|k) != 0) {
-           if ((i|j|k) == 1) {
+         if (ijk != 0) {
+           if (ijk == 1) {
              var m_l:Int = m;
              var r_l:Double = 1.0;
              if (i == 1) {
@@ -457,7 +458,6 @@ public class TwoElectronIntegrals {
     private def mdHrr(xa:Int, ya:Int, za:Int, xb:Int, yb:Int, zb:Int, xp:Int, yp:Int, zp:Int,
                       pai:Double, paj:Double, pak:Double, pbi:Double, pbj:Double, pbk:Double, zeta2:Double) : Double {
          var res:Double;
-         var ptot:Int, idx:Int;
 
          if (xa != 0 ) {
            res =   mdHrr(xa-1, ya, za, xb, yb, zb, xp-1, yp, zp, pai, paj, pak, pbi, pbj, pbk, zeta2)*xp
@@ -486,8 +486,8 @@ public class TwoElectronIntegrals {
          } else if ( xp < 0 || yp < 0 || zp < 0) {
            res = 0.0; 
          } else {
-           ptot = xp+yp+zp;
-           idx  = xp*(2*(xp+yp+zp)-xp+3)/2+yp;
+           val ptot = xp+yp+zp;
+           val idx  = xp*(2*(ptot)-xp+3)/2+yp;
            res  = npint(ptot, idx);
          } // end if
 
@@ -646,20 +646,20 @@ public class TwoElectronIntegrals {
 
                      for(aa = 0; aa<aLim; aa++) {
                          val ii = aStrt + aa;
-                         val powersA = shellA(aa);
-                         val lq = powersA.getL();
-                         val mq = powersA.getM();
-                         val nq = powersA.getN();
 
                          if (ii >= jj && kk >= ll) {
                              val iijj_st = ii*(ii+1)/2 + jj;
                              val kkll_st = kk*(kk+1)/2 + ll;
 
                              if (iijj_st >= kkll_st) {                                   
-                                 val twoEVal = mdHrr(lp, mp, np, lq, mq, nq, 0, 0, 0,
-                                                     pbi, pbj, pbk, pai, paj, pak, gamma1);  // can use hrr instead
-
-                                 twoEInts(intIndx++) += twoEVal;
+                                 val powersA = shellA(aa);
+                                 val lq = powersA.getL();
+                                 val mq = powersA.getM();
+                                 val nq = powersA.getN();
+ 
+                                 twoEInts(intIndx) += mdHrr(lp, mp, np, lq, mq, nq, 0, 0, 0,
+                                                            pbi, pbj, pbk, pai, paj, pak, gamma1);  // can use hrr instead
+                                 intIndx++;
                              } // end if
                          } // end if
                      } // for aa

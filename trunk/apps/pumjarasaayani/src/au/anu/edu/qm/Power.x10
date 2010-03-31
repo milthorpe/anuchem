@@ -8,7 +8,7 @@
 package au.anu.edu.qm;
 
 public struct Power(l:Int, m:Int, n:Int) { 
-    global val maxam:Int, minam:Int, totam;
+    global val maxam:Int, minam:Int, totam:Int;
 
     public def this() { property(0,0,0); maxam=minam=totam=0; }
 
