@@ -40,12 +40,17 @@ public class Fmm3d {
     /** A multi-timer for the several segments of a single getEnergy invocation, indexed by the constants above. */
     public val timer = new Timer(6);
 
-    /** All boxes in the octree division of space. */
+    /** All boxes in the octree division of space. 
+     * Dimensions are:
+     * 0: box level in the tree
+     * 1: x coordinate at that level (range 0..2^level)
+     * 2: y coordinate
+     * 3: z coordinate
+     */
     private global val boxes : Array[FmmBox](4);
 
     /** The atoms in the simulation, divided up into an array of ValRails, one for each place. */
     private global val atoms : Array[ValRail[MMAtom]](1);
-    //val atoms : ValRail[MMAtom!];
 
     /** 
      * A cache of transformations from multipole to local at the same level.
@@ -115,7 +120,6 @@ public class Fmm3d {
         this.boxes = Array.make[FmmBox](boxDistribution);
 
         for ((thisLevel) in 2..numLevels-1) {
-            //Console.OUT.println("transform level " + thisLevel);
             val levelDim = Math.pow2(thisLevel) as Int;
             val thisLevelRegion : Region(4) = [thisLevel..thisLevel, 0..levelDim-1, 0..levelDim-1, 0..levelDim-1];
             val thisLevelDist = boxes.dist | thisLevelRegion;
@@ -307,8 +311,8 @@ public class Fmm3d {
         */
         val lowestLevelRegion : Region(4) = [numLevels..numLevels, 0..lowestLevelDim-1, 0..lowestLevelDim-1, 0..lowestLevelDim-1];
         val lowestLevelDist = boxes.dist | lowestLevelRegion;
-        finish ateach (boxIndex1 in lowestLevelDist) {
-            val box1 = boxes(boxIndex1) as FmmLeafBox!;
+        finish ateach ((level1,x1,y1,z1) in lowestLevelDist) {
+            val box1 = boxes(level1,x1,y1,z1) as FmmLeafBox!;
             if (box1 != null) {
                 // TODO use shared var - XTENLANG-404
                 var thisBoxEnergy : Double = 0.0;
@@ -324,15 +328,11 @@ public class Fmm3d {
                     }
                 }
 
-                // direct in same are counted twice
-                thisBoxEnergy *= 2;
-
                 // direct calculation with all atoms in non-well-separated boxes
-                for (boxIndex2 in lowestLevelDist) {
-                    // TODO halve direct energy! use Morton index
-                    if (boxIndex1 != boxIndex2) {
-                        if (!box1.wellSeparated(ws, boxIndex2)) {
-                            val packedAtoms = at(boxes.dist(boxIndex2)) {getPackedAtomsForBox(boxIndex2)};
+                for ((level2,x2, y2, z2) in lowestLevelRegion) {
+                    if (x2 < x1 || (x2 == x1 && y2 < y1) || (x2 == x1 && y2 == y1 && z2 < z1)) {
+                        if (!box1.wellSeparated(ws, x2, y2, z2)) {
+                            val packedAtoms = at(boxes.dist(level2,x2, y2, z2)) {getPackedAtomsForBox(level2,x2, y2, z2)};
                             if (packedAtoms != null) {
                                 for (var i : Int = 0; i < packedAtoms.length(); i+=4) {
                                     val atom2Centre = new Point3d(packedAtoms(i+1), packedAtoms(i+2), packedAtoms(i+3));
@@ -346,7 +346,7 @@ public class Fmm3d {
                         }
                     }
                 }
-                val thisBoxEnergyFinal = thisBoxEnergy;
+                val thisBoxEnergyFinal = 2 * thisBoxEnergy;
                 async (this) {atomic {directEnergy += thisBoxEnergyFinal;}}
             }
         }
@@ -440,8 +440,8 @@ public class Fmm3d {
         return Point.make(level - 1, x / 2 , y / 2, z / 2);
     }
 
-    private global def getPackedAtomsForBox(boxIndex : Point(4)) {
-        val box = boxes(boxIndex) as FmmLeafBox!;
+    private global def getPackedAtomsForBox(level : Int, x : Int, y : Int, z : Int) {
+        val box = boxes(level, x, y, z) as FmmLeafBox!;
         if (box != null) {
             return box.getPackedAtoms();
         } else {
