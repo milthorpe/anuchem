@@ -108,11 +108,11 @@ public class Fmm3d {
         this.atoms = atoms;
 
         var boxRegion : Region(4) = [2..2, 0..3, 0..3, 0..3];
-        var boxDistribution : Dist(4) = Dist.makeBlock(boxRegion, 0);
+        var boxDistribution : Dist(4) = Dist.makeBlock(boxRegion, 1);
         for ((i) in 3..numLevels) {
             val levelDim = Math.pow2(i) as Int;
             val nextLevelRegion : Region(4) = [i..i, 0..levelDim-1, 0..levelDim-1, 0..levelDim-1];
-            val nextLevelDist = Dist.makeBlock(nextLevelRegion, 0);
+            val nextLevelDist = Dist.makeBlock(nextLevelRegion, 1);
             boxDistribution = boxDistribution || nextLevelDist;
         }
         Console.OUT.println("boxDistribution: " + boxDistribution);
