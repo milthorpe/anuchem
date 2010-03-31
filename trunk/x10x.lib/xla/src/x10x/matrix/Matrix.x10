@@ -3,6 +3,8 @@ package x10x.matrix;
 import x10x.xla.*;
 import x10x.vector.Vector;
 
+import x10.array.LocalRectArray;
+
 /**
  * This class represents an (NxM)  Matrix.
  * (Initial DRAFT)
@@ -10,7 +12,7 @@ import x10x.vector.Vector;
  * @author V.Ganesh
  */
 public class Matrix { 
-    global val mat:Array[Double]{rank==2, self.at(this)};
+    global val mat:LocalRectArray[Double]{rank==2, self.at(this)};
 
     global val region:Region{rank==2, self.at(this)};
     global val distribution:Dist{rank==2, self.at(this)};
@@ -24,7 +26,7 @@ public class Matrix {
         region       = [0..(siz-1), 0..(siz-1)];
         // distribution = Dist.makeBlock(region, 1) as Dist{rank==2, self.at(this)};
         distribution = Dist.makeConstant(region) as Dist{rank==2, self.at(this)};
-        mat          = Array.make[Double](distribution) as Array[Double]{rank==2, self.at(this)};
+        mat          = new LocalRectArray[Double](region) as LocalRectArray[Double]{rank==2, self.at(this)};
     }
 
     /**
@@ -36,7 +38,7 @@ public class Matrix {
         region       = [0..(row-1), 0..(col-1)];
         // distribution = Dist.makeBlock(region, 1) as Dist{rank==2, self.at(this)};
         distribution = Dist.makeConstant(region) as Dist{rank==2, self.at(this)};
-        mat          = Array.make[Double](distribution) as Array[Double]{rank==2, self.at(this)};
+        mat          = new LocalRectArray[Double](region) as LocalRectArray[Double]{rank==2, self.at(this)};
     }
 
     /**
@@ -45,7 +47,7 @@ public class Matrix {
     public def this(dist:Dist{rank==2}) {
         distribution = dist as Dist{rank==2, self.at(this)};
         region       = distribution.region as Region{rank==2, self.at(this)};
-        mat          = Array.make[Double](distribution) as Array[Double]{rank==2, self.at(this)};
+        mat          = new LocalRectArray[Double](region) as LocalRectArray[Double]{rank==2, self.at(this)};
     }
 
     /**
