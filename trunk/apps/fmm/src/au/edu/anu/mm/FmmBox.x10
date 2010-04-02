@@ -25,11 +25,11 @@ public class FmmBox {
      * Creates a new FmmBox with multipole and local expansions
      * of the given number of terms.
      */
-    public def this(boxIndex : Point(4), numTerms : Int, parent : FmmBox) {
-        this.level = boxIndex(0);
-        this.x = boxIndex(1);
-        this.y = boxIndex(2);
-        this.z = boxIndex(3);
+    public def this(level : Int, x : Int, y : Int, z : Int, numTerms : Int, parent : FmmBox) {
+        this.level = level;
+        this.x = x;
+        this.y = y;
+        this.z = z;
         this.parent = parent;
         this.multipoleExp = new MultipoleExpansion(numTerms);
         this.localExp = new LocalExpansion(numTerms);
@@ -50,20 +50,7 @@ public class FmmBox {
     }
 
     /**
-     * Returns true if this box is well-separated from <code>boxIndex2</code>
-     * on the same level, i.e. if there are at least <code>ws</code>
-     * boxes separating them.
-     */
-    public global safe def wellSeparated(ws : Int, boxIndex2 : Point(4)) : Boolean {
-        if (level < 2)
-            return false;
-        return Math.abs(x - boxIndex2(1)) > ws 
-            || Math.abs(y - boxIndex2(2)) > ws 
-            || Math.abs(z - boxIndex2(3)) > ws;
-    }
-
-    /**
-     * Returns true if this box is well-separated from <code>boxIndex2</code>
+     * Returns true if this box is well-separated from <code>x,y,z</code>
      * on the same level, i.e. if there are at least <code>ws</code>
      * boxes separating them.
      */
@@ -73,6 +60,19 @@ public class FmmBox {
         return Math.abs(x - x2) > ws 
             || Math.abs(y - y2) > ws 
             || Math.abs(z - z2) > ws;
+    }
+
+    /**
+     * Returns true if this box is well-separated from <code>boxIndex</code>
+     * on the same level, i.e. if there are at least <code>ws</code>
+     * boxes separating them.
+     */
+    public global safe def wellSeparated(ws : Int, boxIndex : Point(3)) : Boolean {
+        if (level < 2)
+            return false;
+        return Math.abs(x - boxIndex(0)) > ws 
+            || Math.abs(y - boxIndex(1)) > ws 
+            || Math.abs(z - boxIndex(2)) > ws;
     }
 
     /**
@@ -116,6 +116,10 @@ public class FmmBox {
     public global def getLocalExpansionLocalCopy(p : Int) : LocalExpansion! {
         val data = at (this) {Expansion.getData(p, localExp)};
         return new LocalExpansion(p, data);
+    }
+
+    public global safe def toString(): String {
+        return "FmmBox level " + level + " (" + x + "," + y + "," + z + ")";
     }
 }
 
