@@ -322,7 +322,11 @@ public class Fmm3d {
                 }
 
                 // direct calculation with all atoms in non-well-separated boxes
-                for ((x2, y2, z2) in lowestLevelBoxes) {
+                // interact with "left half" i.e. only boxes with x1<=x1
+                val nonWellSepBoxes : Region(3) = [Math.max(0,x1-ws)..x1,
+                                                   Math.max(0,y1-ws)..Math.min(lowestLevelDim-1,y1+ws),
+                                                   Math.max(0,z1-ws)..Math.min(lowestLevelDim-1,z1+ws)];
+                for ((x2, y2, z2) in nonWellSepBoxes) {
                     if (x2 < x1 || (x2 == x1 && y2 < y1) || (x2 == x1 && y2 == y1 && z2 < z1)) {
                         if (!box1.wellSeparated(ws, x2, y2, z2)) {
                             val packedAtoms = at(lowestLevelBoxes.dist(x2, y2, z2)) {getPackedAtomsForBox(x2, y2, z2)};
