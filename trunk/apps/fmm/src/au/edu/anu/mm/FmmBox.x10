@@ -15,6 +15,12 @@ public class FmmBox {
     public global val y : Int;
     public global val z : Int;
 
+    /** 
+     * The V-list consists of the children of those boxes 
+     * not well-separated from this box's parent.
+     */
+    private var vList : ValRail[Point(3)];
+
     /** The multipole expansion of the charges within this box. */
     public val multipoleExp : MultipoleExpansion{self.at(this)};
 
@@ -116,6 +122,12 @@ public class FmmBox {
     public global def getLocalExpansionLocalCopy(p : Int) : LocalExpansion! {
         val data = at (this) {Expansion.getData(p, localExp)};
         return new LocalExpansion(p, data);
+    }
+
+    public def getVList() = this.vList;
+
+    public def setVList(vList : ValRail[Point(3)]) {
+        this.vList = vList;
     }
 
     public global safe def toString(): String {

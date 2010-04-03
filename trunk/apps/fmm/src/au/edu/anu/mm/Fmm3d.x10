@@ -1,5 +1,6 @@
 package au.edu.anu.mm;
 
+import x10.util.GrowableRail;
 import x10x.vector.Point3d;
 import x10x.vector.Vector3d;
 import x10x.vector.Tuple3d;
@@ -124,13 +125,18 @@ public class Fmm3d {
             val levelDim = Math.pow2(thisLevel) as Int;
             val thisLevelBoxes = boxesValRail(thisLevel-2);
             finish ateach ((x,y,z) in thisLevelBoxes) {
-                thisLevelBoxes(x,y,z) = new FmmBox(thisLevel, x, y, z, numTerms, getParentForChild(boxesValRail, thisLevel, x,y,z));
+                val box = new FmmBox(thisLevel, x, y, z, numTerms, getParentForChild(boxesValRail, thisLevel, x,y,z));
+                createVList(box);
+                thisLevelBoxes(x,y,z) = box;
             }
         }
         // lowest level
         val lowestLevelBoxes = boxesValRail(numLevels-2);
         finish ateach ((x,y,z) in lowestLevelBoxes) {
-            lowestLevelBoxes(x,y,z) = new FmmLeafBox(numLevels, x, y, z, numTerms, getParentForChild(boxesValRail, numLevels, x,y,z));
+            val box = new FmmLeafBox(numLevels, x, y, z, numTerms, getParentForChild(boxesValRail, numLevels, x,y,z));
+            createUList(box);
+            createVList(box);
+            lowestLevelBoxes(x,y,z) = box;
         }
 
         this.boxes = boxesValRail;
@@ -239,16 +245,13 @@ public class Fmm3d {
         finish ateach ((x1,y1,z1) in highestLevelBoxes) {
             val box1 = highestLevelBoxes(x1,y1,z1) as FmmBox!;
             if (box1 != null) {
-                for ((x2,y2,z2) in highestLevelBoxes) {
-                    if (x1 != x2 || y1 != y2 || z1 != z2) {
-                        if (box1.wellSeparated(ws,x2,y2,z2)) {
-                            val box2MultipoleExp = getMultipoleExpansionLocalCopy(highestLevelBoxes,x2,y2,z2);
-                            if (box2MultipoleExp != null) {
-                                val translation = box1.getTranslationIndex(2,x2,y2,z2);
-                                val transform21 = multipoleTransforms(Point.make([here.id, translation(0), -translation(1), -translation(2), -translation(3)])) as LocalExpansion!;
-                                box1.localExp.transformAndAddToLocal(transform21, box2MultipoleExp);
-                            }
-                        }
+                val vList = box1.getVList();
+                for ((x2,y2,z2) in vList) {
+                    val box2MultipoleExp = getMultipoleExpansionLocalCopy(highestLevelBoxes,x2,y2,z2);
+                    if (box2MultipoleExp != null) {
+                        val translation = box1.getTranslationIndex(2,x2,y2,z2);
+                        val transform21 = multipoleTransforms(Point.make([here.id, translation(0), -translation(1), -translation(2), -translation(3)])) as LocalExpansion!;
+                        box1.localExp.transformAndAddToLocal(transform21, box2MultipoleExp);
                     }
                 }
             }
@@ -260,20 +263,14 @@ public class Fmm3d {
             finish ateach ((x1,y1,z1) in thisLevelBoxes) {
                 val box1 = thisLevelBoxes(x1,y1,z1) as FmmBox!;
                 if (box1 != null) {
-                    for ((x2,y2,z2) in thisLevelBoxes) {
-                    if (x1 != x2 || y1 != y2 || z1 != z2) {
-                            if (box1.wellSeparated(ws,x2,y2,z2)) {
-                                val parentIndex = getParentIndex(x2,y2,z2);
-                                if (!box1.parent.wellSeparated(ws,parentIndex)) {
-                                    val box2MultipoleExp = getMultipoleExpansionLocalCopy(thisLevelBoxes,x2,y2,z2);
-                                    if (box2MultipoleExp != null) {
-                                        val translation = box1.getTranslationIndex(thisLevel,x2,y2,z2);
-                                        val translateP = Point.make([here.id, translation(0), -translation(1), -translation(2), -translation(3)]);
-                                        val transform21 = multipoleTransforms(translateP) as LocalExpansion!;
-                                        box1.localExp.transformAndAddToLocal(transform21, box2MultipoleExp);
-                                    }
-                                }
-                            }
+                    val vList = box1.getVList();
+                    for ((x2,y2,z2) in vList) {
+                        val box2MultipoleExp = getMultipoleExpansionLocalCopy(thisLevelBoxes,x2,y2,z2);
+                        if (box2MultipoleExp != null) {
+                            val translation = box1.getTranslationIndex(thisLevel,x2,y2,z2);
+                            val translateP = Point.make([here.id, translation(0), -translation(1), -translation(2), -translation(3)]);
+                            val transform21 = multipoleTransforms(translateP) as LocalExpansion!;
+                            box1.localExp.transformAndAddToLocal(transform21, box2MultipoleExp);
                         }
                     }
                     val box1ParentExp = box1.parent.getLocalExpansionLocalCopy(numTerms);
@@ -307,6 +304,8 @@ public class Fmm3d {
         finish ateach ((x1,y1,z1) in lowestLevelBoxes) {
             val box1 = lowestLevelBoxes(x1,y1,z1) as FmmLeafBox!;
             if (box1 != null) {
+                val uList = box1.getUList();
+
                 // TODO use shared var - XTENLANG-404
                 var thisBoxEnergy : Double = 0.0;
                 val length = box1.atoms.length();
@@ -322,14 +321,11 @@ public class Fmm3d {
                 }
 
                 // direct calculation with all atoms in non-well-separated boxes
-                // interact with "left half" i.e. only boxes with x1<=x1
-                val nonWellSepBoxes : Region(3) = [Math.max(0,x1-ws)..x1,
-                                                   Math.max(0,y1-ws)..Math.min(lowestLevelDim-1,y1+ws),
-                                                   Math.max(0,z1-ws)..Math.min(lowestLevelDim-1,z1+ws)];
-                for ((x2, y2, z2) in nonWellSepBoxes) {
-                    if (x2 < x1 || (x2 == x1 && y2 < y1) || (x2 == x1 && y2 == y1 && z2 < z1)) {
-                        if (!box1.wellSeparated(ws, x2, y2, z2)) {
-                            val packedAtoms = at(lowestLevelBoxes.dist(x2, y2, z2)) {getPackedAtomsForBox(x2, y2, z2)};
+                // interact with "left half" of uList i.e. only boxes with x1<=x1
+                for (box2Index in uList) {
+                    if (box2Index(0) < x1 || (box2Index(0) == x1 && box2Index(1) < y1) || (box2Index(0) == x1 && box2Index(1) == y1 && box2Index(2) < z1)) {
+                        if (!box1.wellSeparated(ws, box2Index)) {
+                            val packedAtoms = at(lowestLevelBoxes.dist(box2Index)) {getPackedAtomsForBox(box2Index(0), box2Index(1), box2Index(2))};
                             if (packedAtoms != null) {
                                 for (var i : Int = 0; i < packedAtoms.length(); i+=4) {
                                     val atom2Centre = new Point3d(packedAtoms(i+1), packedAtoms(i+2), packedAtoms(i+3));
@@ -451,6 +447,44 @@ public class Fmm3d {
         } else {
             return null;
         }
+    }
+
+    /**
+     * Creates the U-list of <code>box</code>.
+     * The U-list consists of all leaf boxes not well-separated from <code>box</code>.
+     */
+    private global def createUList(box : FmmLeafBox!) {
+        val uList = new GrowableRail[Point(3)]();
+        for ((x) in Math.max(0,box.x-ws)..Math.min(lowestLevelDim-1,box.x+ws)) {
+            for ((y) in Math.max(0,box.y-ws)..Math.min(lowestLevelDim-1,box.y+ws)) {
+                for ((z) in Math.max(0,box.z-ws)..Math.min(lowestLevelDim-1,box.z+ws)) {
+                    uList.add(Point.make(x,y,z));
+                }
+            }
+        }
+        box.setUList(uList.toValRail());
+    }
+
+    /**
+     * Creates the V-list of <code>box</code>.
+     * The V-list consists of the children of those boxes not well-separated from the parent of <code>box</code>.
+     */
+    private global def createVList(box : FmmBox!) {
+        val levelDim = Math.pow2(box.level);
+        val xOffset = box.x%2 == 1 ? -1 : 0;
+        val yOffset = box.y%2 == 1 ? -1 : 0;
+        val zOffset = box.z%2 == 1 ? -1 : 0;
+        val vList = new GrowableRail[Point(3)]();
+        for ((x) in Math.max(0,box.x-2*ws+xOffset)..Math.min(levelDim-1,box.x+2*ws+1+xOffset)) {
+            for ((y) in Math.max(0,box.y-2*ws+yOffset)..Math.min(levelDim-1,box.y+2*ws+1+yOffset)) {
+                for ((z) in Math.max(0,box.z-2*ws+zOffset)..Math.min(levelDim-1,box.z+2*ws+1+zOffset)) {
+                    if (box.wellSeparated(ws, x, y, z)) {
+                        vList.add(Point.make(x,y,z));
+                    }
+                }
+            }
+        }
+        box.setVList(vList.toValRail());
     }
 }
 
