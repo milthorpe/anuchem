@@ -1,6 +1,6 @@
 package au.edu.anu.mm;
 
-import x10.util.GrowableRail;
+import x10.util.*;
 import x10x.vector.Point3d;
 import x10x.vector.Vector3d;
 import x10x.vector.Tuple3d;
@@ -13,6 +13,10 @@ import au.edu.anu.util.Timer;
  * <p>
  * The 3D simulation space is divided in an octree of <code>numLevels</code> levels.
  * </p> 
+ * For more info see
+ * White & Head-Gordon "Derivation and efficient implementation of the fast multipole method", J Chem Phys 101 (8), 1994 
+ * and
+ * Lashuk et al. "A massively parallel adaptive fast-multipole method on heterogeneous architectures", SC 2009
  * @author milthorpe
  */
 public class Fmm3d {
@@ -73,6 +77,11 @@ public class Fmm3d {
      * Dimensions as per multipoleTransforms
      */
     private global val multipoleTranslations : Array[MultipoleExpansion](5);
+
+    /**
+     * An array of locally essential trees (LETs), one for each place.
+     */
+    private global val locallyEssentialTrees : Array[LocallyEssentialTree](1);
 
     // TODO use shared local variable within getEnergy() - XTENLANG-404
     private var directEnergy : Double = 0.0;
@@ -154,6 +163,8 @@ public class Fmm3d {
         }
 
         precomputeTranslations();
+
+        locallyEssentialTrees = createLocallyEssentialTrees();
     }
     
     public def calculateEnergy() : Double {
@@ -241,17 +252,25 @@ public class Fmm3d {
     def transformToLocal() {
         //Console.OUT.println("transform level 2");
         timer.start(TIMER_INDEX_TRANSFORM);
+
+        // start the prefetch of all multipoles required at this place
+        prefetchMultipoles();
+
         val highestLevelBoxes = boxes(0);
-        finish ateach ((x1,y1,z1) in highestLevelBoxes) {
-            val box1 = highestLevelBoxes(x1,y1,z1) as FmmBox!;
-            if (box1 != null) {
-                val vList = box1.getVList();
-                for ((x2,y2,z2) in vList) {
-                    val box2MultipoleExp = getMultipoleExpansionLocalCopy(highestLevelBoxes,x2,y2,z2);
-                    if (box2MultipoleExp != null) {
-                        val translation = box1.getTranslationIndex(2,x2,y2,z2);
-                        val transform21 = multipoleTransforms(Point.make([here.id, translation(0), -translation(1), -translation(2), -translation(3)])) as LocalExpansion!;
-                        box1.localExp.transformAndAddToLocal(transform21, box2MultipoleExp);
+        finish ateach (p1 in Dist.makeUnique(highestLevelBoxes.dist.places())) {
+            val highestLevelMultipoleCopies = locallyEssentialTrees(here.id).multipoleCopies(0);
+            foreach ((x1,y1,z1) in highestLevelBoxes | here) {
+                val box1 = highestLevelBoxes(x1,y1,z1) as FmmBox!;
+                if (box1 != null) {
+                    val vList = box1.getVList();
+                    for ((x2,y2,z2) in vList) {
+                        // here we force on the multipole value for which a future was previously issued
+                        val box2MultipoleExp = highestLevelMultipoleCopies(x2,y2,z2)() as MultipoleExpansion!;
+                        if (box2MultipoleExp != null) {
+                            val translation = box1.getTranslationIndex(2,x2,y2,z2);
+                            val transform21 = multipoleTransforms(Point.make([here.id, translation(0), -translation(1), -translation(2), -translation(3)])) as LocalExpansion!;
+                            box1.localExp.transformAndAddToLocal(transform21, box2MultipoleExp);
+                        }
                     }
                 }
             }
@@ -260,22 +279,25 @@ public class Fmm3d {
         for ((thisLevel) in 3..numLevels) {
             //Console.OUT.println("transform level " + thisLevel);
             val thisLevelBoxes = boxes(thisLevel-2);
-            finish ateach ((x1,y1,z1) in thisLevelBoxes) {
-                val box1 = thisLevelBoxes(x1,y1,z1) as FmmBox!;
-                if (box1 != null) {
-                    val vList = box1.getVList();
-                    for ((x2,y2,z2) in vList) {
-                        val box2MultipoleExp = getMultipoleExpansionLocalCopy(thisLevelBoxes,x2,y2,z2);
-                        if (box2MultipoleExp != null) {
-                            val translation = box1.getTranslationIndex(thisLevel,x2,y2,z2);
-                            val translateP = Point.make([here.id, translation(0), -translation(1), -translation(2), -translation(3)]);
-                            val transform21 = multipoleTransforms(translateP) as LocalExpansion!;
-                            box1.localExp.transformAndAddToLocal(transform21, box2MultipoleExp);
+            finish ateach (p1 in Dist.makeUnique(thisLevelBoxes.dist.places())) {
+                val thisLevelMultipoleCopies = locallyEssentialTrees(here.id).multipoleCopies(thisLevel-2);
+                foreach ((x1,y1,z1) in thisLevelBoxes | here) {
+                    val box1 = thisLevelBoxes(x1,y1,z1) as FmmBox!;
+                    if (box1 != null) {
+                        val vList = box1.getVList();
+                        for ((x2,y2,z2) in vList) {
+                            val box2MultipoleExp = thisLevelMultipoleCopies(x2,y2,z2)() as MultipoleExpansion!;
+                            if (box2MultipoleExp != null) {
+                                val translation = box1.getTranslationIndex(thisLevel,x2,y2,z2);
+                                val translateP = Point.make([here.id, translation(0), -translation(1), -translation(2), -translation(3)]);
+                                val transform21 = multipoleTransforms(translateP) as LocalExpansion!;
+                                box1.localExp.transformAndAddToLocal(transform21, box2MultipoleExp);
+                            }
                         }
+                        val box1ParentExp = box1.parent.getLocalExpansionLocalCopy(numTerms);
+                        val shift = multipoleTranslations(Point.make([here.id, thisLevel, box1.x%2, box1.y%2, box1.z%2])) as MultipoleExpansion!;
+                        box1.localExp.translateAndAddLocal(shift, box1ParentExp);
                     }
-                    val box1ParentExp = box1.parent.getLocalExpansionLocalCopy(numTerms);
-                    val shift = multipoleTranslations(Point.make([here.id, thisLevel, box1.x%2, box1.y%2, box1.z%2])) as MultipoleExpansion!;
-                    box1.localExp.translateAndAddLocal(shift, box1ParentExp);
                 }
             }
         }
@@ -405,6 +427,68 @@ public class Fmm3d {
                                                      j * sideLength,
                                                      k * sideLength);
                     multipoleTransforms(Point.make([placeId, level, i, j, k])) = LocalExpansion.getMlm(translationVector, numTerms);
+                }
+            }
+        }
+    }
+
+    /**
+     * Creates the locally essential tree at each place.  This is
+     * later used to overlap remote retrieval of multipole expansion and
+     * particle data with other computation.
+     */
+    def createLocallyEssentialTrees() : Array[LocallyEssentialTree](1) {
+        val locallyEssentialTrees = Array.make[LocallyEssentialTree](Dist.makeUnique(), (Point)=> null);
+        finish ateach ((p1) in locallyEssentialTrees) {
+            //Console.OUT.println("create locallyEssentialTrees at " + here);
+            val combinedVLists = Rail.make[ValRail[Point(3)]](numLevels-1);
+            val vListMin = Rail.make[ValRail[Int](3)](numLevels-1);
+            val vListMax = Rail.make[ValRail[Int](3)](numLevels-1);
+            for ((thisLevel) in 2..numLevels) {
+                val vMin = Rail.make[Int](3, (Int) => Int.MAX_VALUE);
+                val vMax = Rail.make[Int](3, (Int) => Int.MIN_VALUE);
+                //Console.OUT.println("create combined V-list for level " + thisLevel + " at " + here);
+                val combinedVList = new HashSet[Point(3)]();
+                val thisLevelBoxes = boxes(thisLevel-2);
+                for (boxIndex1 in thisLevelBoxes | here) {
+                    val box1 = thisLevelBoxes(boxIndex1) as FmmBox!;
+                    if (box1 != null) {
+                        val vList = box1.getVList();
+                        //Console.OUT.println("for " + box1);
+                        for (boxIndex2 in vList) {
+                            if (combinedVList.add(boxIndex2)) {
+                                for ((i) in 0..2) {
+                                    // update min,max for each coordinate
+                                    vMin(i) = Math.min(vMin(i), boxIndex2(i));
+                                    vMax(i) = Math.max(vMax(i), boxIndex2(i));        
+                                }
+                                //Console.OUT.println("added " + boxIndex2);
+                            }
+                        }
+                    }
+                }
+                //Console.OUT.println("done " + combinedVList.size());
+                vListMin(thisLevel-2) = vMin as ValRail[Int](3);
+                vListMax(thisLevel-2) = vMax as ValRail[Int](3);
+                combinedVLists(thisLevel-2) = combinedVList.toValRail();
+            }
+            locallyEssentialTrees(p1) = new LocallyEssentialTree(combinedVLists as ValRail[ValRail[Point(3)]], vListMin as ValRail[ValRail[Int](3)], vListMax as ValRail[ValRail[Int](3)]);
+        }
+        return locallyEssentialTrees;
+    }
+
+    /**
+     * "Pre-fetches" the multipole copies for the V-List of the locally
+     * essential tree at each place, using futures.
+     */
+    def prefetchMultipoles() {
+        finish ateach (p1 in locallyEssentialTrees) {
+            val myLET = locallyEssentialTrees(p1) as LocallyEssentialTree!;
+            val combinedVList = myLET.combinedVList;
+            for ((level) in 2..numLevels) {
+                val thisLevelBoxes = boxes(level-2);
+                for ((x,y,z) in combinedVList(level-2)) {
+                    myLET.multipoleCopies(level-2)(x,y,z) = future {getMultipoleExpansionLocalCopy(thisLevelBoxes,x,y,z)};
                 }
             }
         }
