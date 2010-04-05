@@ -56,6 +56,7 @@ public class TestFmm3d {
         logTime("Transform", Fmm3d.TIMER_INDEX_TRANSFORM, fmm3d.timer);
         logTime("Far field", Fmm3d.TIMER_INDEX_FARFIELD,  fmm3d.timer);
         logTime("Total",     Fmm3d.TIMER_INDEX_TOTAL,     fmm3d.timer);
+        Console.OUT.printf("Tree construction: %g seconds\n", (fmm3d.timer.total(Fmm3d.TIMER_INDEX_TREE) as Double) / 1e9);
     }
 
     private static def logTime(desc : String, timerIndex : Int, timer : Timer!) {

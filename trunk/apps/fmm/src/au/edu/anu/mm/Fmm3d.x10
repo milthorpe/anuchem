@@ -42,8 +42,9 @@ public class Fmm3d {
     public const TIMER_INDEX_COMBINE : Int = 3;
     public const TIMER_INDEX_TRANSFORM : Int = 4;
     public const TIMER_INDEX_FARFIELD : Int = 5;
+    public const TIMER_INDEX_TREE : Int = 6;
     /** A multi-timer for the several segments of a single getEnergy invocation, indexed by the constants above. */
-    public val timer = new Timer(6);
+    public val timer = new Timer(7);
 
     /** All boxes in the octree division of space. 
      * ValRail has numLevels-1 elements, for levels [2..numLevels]
@@ -120,51 +121,14 @@ public class Fmm3d {
 
         this.atoms = atoms;
 
-        val boxesTemp = Rail.make[Array[FmmBox](3)](numLevels-1); // there's no level 1
-        for ((thisLevel) in 2..numLevels) {
-            val levelDim = Math.pow2(thisLevel) as Int;
-            val thisLevelRegion : Region(3) = [0..levelDim-1, 0..levelDim-1, 0..levelDim-1];
-            val thisLevelDist = Dist.makeBlock(thisLevelRegion, 0);
-            boxesTemp(thisLevel-2) = Array.make[FmmBox](thisLevelDist);
-            Console.OUT.println("level " + thisLevel + " dist: " + thisLevelDist);
-        }
-        val boxesValRail = boxesTemp as ValRail[Array[FmmBox](3)];
-
-        for ((thisLevel) in 2..numLevels-1) {
-            val levelDim = Math.pow2(thisLevel) as Int;
-            val thisLevelBoxes = boxesValRail(thisLevel-2);
-            finish ateach ((x,y,z) in thisLevelBoxes) {
-                val box = new FmmBox(thisLevel, x, y, z, numTerms, getParentForChild(boxesValRail, thisLevel, x,y,z));
-                createVList(box);
-                thisLevelBoxes(x,y,z) = box;
-            }
-        }
-        // lowest level
-        val lowestLevelBoxes = boxesValRail(numLevels-2);
-        finish ateach ((x,y,z) in lowestLevelBoxes) {
-            val box = new FmmLeafBox(numLevels, x, y, z, numTerms, getParentForChild(boxesValRail, numLevels, x,y,z));
-            createUList(box);
-            createVList(box);
-            lowestLevelBoxes(x,y,z) = box;
-        }
-
-        this.boxes = boxesValRail;
-        this.lowestLevelBoxes = lowestLevelBoxes;
-
-        // two special arrays distributed to all places (this is done by replicating the first index in a cyclic dist across Place.PLACES)
-        var wellSpacedLimit : Region(5) = [0..Place.MAX_PLACES-1,2..numLevels,-(ws+3)..ws+3,-(ws+3)..ws+3,-(ws+3)..ws+3];
-        val multipoleTransformRegion : Region(5) = wellSpacedLimit - ([0..Place.MAX_PLACES-1,2..numLevels,-ws..ws,-ws..ws,-ws..ws] as Region);
-        //Console.OUT.println("multipoleTransformRegion = " + multipoleTransformRegion);
-        this.multipoleTransforms = Array.make[LocalExpansion](Dist.makeCyclic(multipoleTransformRegion,0));
-        if (numLevels >= 3) {
-            this.multipoleTranslations = Array.make[MultipoleExpansion](Dist.makeCyclic([0..Place.MAX_PLACES-1,3..numLevels, 0..1, 0..1, 0..1],0));
-        } else {
-            this.multipoleTranslations = null;
-        }
-
-        precomputeTranslations();
-
-        locallyEssentialTrees = createLocallyEssentialTrees();
+        timer.start(TIMER_INDEX_TREE);
+        val boxes = constructTree();
+        this.boxes = boxes;
+        this.lowestLevelBoxes = boxes(numLevels-2);
+        this.multipoleTranslations = precomputeTranslations();
+        this.multipoleTransforms = precomputeTransforms();
+        this.locallyEssentialTrees = createLocallyEssentialTrees();
+        timer.stop(TIMER_INDEX_TREE);
     }
     
     public def calculateEnergy() : Double {
@@ -410,34 +374,85 @@ public class Fmm3d {
 
     /**
      * Precomputes multipole translations and multipole-to-local transformations,
-     * which are duplicated at each place.
+     * for use in translating multipole expansions from child to parent boxes.
+     * This is distributed to all places by replicating the first index in a 
+     * cyclic dist across Place.PLACES)
+     * TODO workaround due to lack of global immutable arrays - XTENLANG-787
      */
-    private def precomputeTranslations() {
-        finish {
-            if (numLevels >= 3) {
-                ateach ((p) : Point in Dist.makeUnique(Place.places)) {
-                    for (val(placeId,level,i,j,k) in multipoleTranslations.dist | here) {
-                        dim : Int = Math.pow2(level);
-                        sideLength : Double = size / dim;
-                        val translationVector = new Vector3d((i*2-1) * 0.5 * sideLength,
-                                                         (j*2-1) * 0.5 * sideLength,
-                                                         (k*2-1) * 0.5 * sideLength);
-                        multipoleTranslations(Point.make([placeId, level, i, j, k])) = MultipoleExpansion.getOlm(translationVector as Tuple3d, numTerms);
-                    } 
-                }
-            }
-
-            ateach ((p) : Point in Dist.makeUnique(Place.places)) {
-                for (val(placeId,level,i,j,k) in multipoleTransforms.dist | here) {
+    private def precomputeTranslations() : Array[MultipoleExpansion](5) {
+        if (numLevels < 3) {
+            return null;
+        } else {
+            val multipoleTranslations = Array.make[MultipoleExpansion](Dist.makeCyclic([0..Place.MAX_PLACES-1,3..numLevels, 0..1, 0..1, 0..1],0));
+            finish ateach ((p) : Point in Dist.makeUnique(Place.places)) {
+                for (val(placeId,level,i,j,k) in multipoleTranslations.dist | here) {
                     dim : Int = Math.pow2(level);
                     sideLength : Double = size / dim;
-                    val translationVector = new Vector3d(i * sideLength,
-                                                     j * sideLength,
-                                                     k * sideLength);
-                    multipoleTransforms(Point.make([placeId, level, i, j, k])) = LocalExpansion.getMlm(translationVector, numTerms);
+                    val translationVector = new Vector3d((i*2-1) * 0.5 * sideLength,
+                                                         (j*2-1) * 0.5 * sideLength,
+                                                         (k*2-1) * 0.5 * sideLength);
+                    multipoleTranslations(Point.make([placeId, level, i, j, k])) = MultipoleExpansion.getOlm(translationVector as Tuple3d, numTerms);
                 }
             }
+            return multipoleTranslations;
         }
+    }
+
+    /**
+     * Precomputes a multipole transform array for use in transforming
+     * multipole expansions of well-separated boxes to local expansions
+     * at the current box.  This is distributed to all places by replicating 
+     * the first index in a cyclic dist across Place.PLACES)
+     * TODO workaround due to lack of global immutable arrays - XTENLANG-787
+     */
+    private def precomputeTransforms() : Array[LocalExpansion](5) {
+        var wellSpacedLimit : Region(5) = [0..Place.MAX_PLACES-1,2..numLevels,-(ws+3)..ws+3,-(ws+3)..ws+3,-(ws+3)..ws+3];
+        val multipoleTransformRegion : Region(5) = wellSpacedLimit - ([0..Place.MAX_PLACES-1,2..numLevels,-ws..ws,-ws..ws,-ws..ws] as Region);
+        //Console.OUT.println("multipoleTransformRegion = " + multipoleTransformRegion);
+        val multipoleTransforms = Array.make[LocalExpansion](Dist.makeCyclic(multipoleTransformRegion,0));
+        finish ateach ((p) : Point in Dist.makeUnique(Place.places)) {
+            for (val(placeId,level,i,j,k) in multipoleTransforms.dist | here) {
+                dim : Int = Math.pow2(level);
+                sideLength : Double = size / dim;
+                val translationVector = new Vector3d(i * sideLength,
+                                                 j * sideLength,
+                                                 k * sideLength);
+                multipoleTransforms(Point.make([placeId, level, i, j, k])) = LocalExpansion.getMlm(translationVector, numTerms);
+            }
+        }
+        return multipoleTransforms;
+    }
+
+    private def constructTree() : ValRail[Array[FmmBox](3)] {
+        val boxesTemp = Rail.make[Array[FmmBox](3)](numLevels-1); // there's no level 1
+        for ((thisLevel) in 2..numLevels) {
+            val levelDim = Math.pow2(thisLevel) as Int;
+            val thisLevelRegion : Region(3) = [0..levelDim-1, 0..levelDim-1, 0..levelDim-1];
+            val thisLevelDist = Dist.makeBlock(thisLevelRegion, 0);
+            boxesTemp(thisLevel-2) = Array.make[FmmBox](thisLevelDist);
+            Console.OUT.println("level " + thisLevel + " dist: " + thisLevelDist);
+        }
+        val boxesValRail = boxesTemp as ValRail[Array[FmmBox](3)];
+
+        for ((thisLevel) in 2..numLevels-1) {
+            val levelDim = Math.pow2(thisLevel) as Int;
+            val thisLevelBoxes = boxesValRail(thisLevel-2);
+            finish ateach ((x,y,z) in thisLevelBoxes) {
+                val box = new FmmBox(thisLevel, x, y, z, numTerms, getParentForChild(boxesValRail, thisLevel, x,y,z));
+                createVList(box);
+                thisLevelBoxes(x,y,z) = box;
+            }
+        }
+
+        val lowestLevelBoxes = boxesValRail(numLevels-2);
+        finish ateach ((x,y,z) in lowestLevelBoxes) {
+            val box = new FmmLeafBox(numLevels, x, y, z, numTerms, getParentForChild(boxesValRail, numLevels, x,y,z));
+            createUList(box);
+            createVList(box);
+            lowestLevelBoxes(x,y,z) = box;
+        }
+
+        return boxesValRail;
     }
 
     /**
@@ -445,7 +460,7 @@ public class Fmm3d {
      * later used to overlap remote retrieval of multipole expansion and
      * particle data with other computation.
      */
-    def createLocallyEssentialTrees() : Array[LocallyEssentialTree](1) {
+    private def createLocallyEssentialTrees() : Array[LocallyEssentialTree](1) {
         val locallyEssentialTrees = Array.make[LocallyEssentialTree](Dist.makeUnique(), (Point)=> null);
         finish ateach ((p1) in locallyEssentialTrees) {
             val uMin = Rail.make[Int](3, (Int) => Int.MAX_VALUE);
@@ -511,7 +526,7 @@ public class Fmm3d {
      * "Pre-fetches" the multipole copies for the V-List of the locally
      * essential tree at each place, using futures.
      */
-    def prefetchMultipoles() {
+    private def prefetchMultipoles() {
         finish ateach (p1 in locallyEssentialTrees) {
             val myLET = locallyEssentialTrees(p1) as LocallyEssentialTree!;
             val combinedVList = myLET.combinedVList;
@@ -528,7 +543,7 @@ public class Fmm3d {
      * "Pre-fetches" the packed atoms for the U-List of the locally
      * essential tree at each place, using futures.
      */
-    def prefetchPackedAtoms() {
+    private def prefetchPackedAtoms() {
         finish ateach (p1 in locallyEssentialTrees) {
             val myLET = locallyEssentialTrees(p1) as LocallyEssentialTree!;
             val myCombinedUList = myLET.combinedUList;
@@ -595,7 +610,8 @@ public class Fmm3d {
 
     /**
      * Creates the V-list of <code>box</code>.
-     * The V-list consists of the children of those boxes not well-separated from the parent of <code>box</code>.
+     * The V-list consists of the children of those boxes not 
+     * well-separated from the parent of <code>box</code>.
      */
     private global def createVList(box : FmmBox!) {
         val levelDim = Math.pow2(box.level);
