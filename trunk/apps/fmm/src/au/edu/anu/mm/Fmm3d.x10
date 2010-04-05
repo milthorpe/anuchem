@@ -253,7 +253,7 @@ public class Fmm3d {
         //Console.OUT.println("transform level 2");
         timer.start(TIMER_INDEX_TRANSFORM);
 
-        // start the prefetch of all multipoles required at this place
+        // start the prefetch of all multipoles required at each place
         prefetchMultipoles();
 
         val highestLevelBoxes = boxes(0);
@@ -286,6 +286,7 @@ public class Fmm3d {
                     if (box1 != null) {
                         val vList = box1.getVList();
                         for ((x2,y2,z2) in vList) {
+                            // force on the multipole value
                             val box2MultipoleExp = thisLevelMultipoleCopies(x2,y2,z2)() as MultipoleExpansion!;
                             if (box2MultipoleExp != null) {
                                 val translation = box1.getTranslationIndex(thisLevel,x2,y2,z2);
@@ -312,6 +313,9 @@ public class Fmm3d {
      */
     def getDirectEnergy() : Double {
         timer.start(TIMER_INDEX_DIRECT);
+
+        // start the prefetch of all atoms required for direct calculations at each place
+        prefetchPackedAtoms();
         // TODO n^2 calculation - to check - remove this
         /*
         var pairwiseEnergy : Double = 0.0;
@@ -323,46 +327,50 @@ public class Fmm3d {
         }
         Console.OUT.println("pairwiseEnergy = " + pairwiseEnergy);
         */
-        finish ateach ((x1,y1,z1) in lowestLevelBoxes) {
-            val box1 = lowestLevelBoxes(x1,y1,z1) as FmmLeafBox!;
-            if (box1 != null) {
-                val uList = box1.getUList();
+        finish ateach (p1 in Dist.makeUnique(lowestLevelBoxes.dist.places())) {
+            val packedAtoms = locallyEssentialTrees(here.id).packedAtoms;
+            foreach ((x1,y1,z1) in lowestLevelBoxes | here) {
+                val box1 = lowestLevelBoxes(x1,y1,z1) as FmmLeafBox!;
+                if (box1 != null) {
+                    val uList = box1.getUList();
 
-                // TODO use shared var - XTENLANG-404
-                var thisBoxEnergy : Double = 0.0;
-                val length = box1.atoms.length();
-                for ((atomIndex1) in 0..length-1) {
-                    val atom1 = box1.atoms(atomIndex1);
+                    // TODO use shared var - XTENLANG-404
+                    var thisBoxEnergy : Double = 0.0;
+                    val length = box1.atoms.length();
+                    for ((atomIndex1) in 0..length-1) {
+                        val atom1 = box1.atoms(atomIndex1);
 
-                    // direct calculation with all atoms in same box
-                    for ((sameBoxAtomIndex) in 0..atomIndex1-1) {
-                        val sameBoxAtom = box1.atoms(sameBoxAtomIndex);
-                        val pairEnergy : Double = atom1.pairEnergy(sameBoxAtom);
-                        thisBoxEnergy += pairEnergy;
+                        // direct calculation with all atoms in same box
+                        for ((sameBoxAtomIndex) in 0..atomIndex1-1) {
+                            val sameBoxAtom = box1.atoms(sameBoxAtomIndex);
+                            val pairEnergy : Double = atom1.pairEnergy(sameBoxAtom);
+                            thisBoxEnergy += pairEnergy;
+                        }
                     }
-                }
 
-                // direct calculation with all atoms in non-well-separated boxes
-                // interact with "left half" of uList i.e. only boxes with x1<=x1
-                for (box2Index in uList) {
-                    if (box2Index(0) < x1 || (box2Index(0) == x1 && box2Index(1) < y1) || (box2Index(0) == x1 && box2Index(1) == y1 && box2Index(2) < z1)) {
-                        if (!box1.wellSeparated(ws, box2Index)) {
-                            val packedAtoms = at(lowestLevelBoxes.dist(box2Index)) {getPackedAtomsForBox(box2Index(0), box2Index(1), box2Index(2))};
-                            if (packedAtoms != null) {
-                                for (var i : Int = 0; i < packedAtoms.length(); i+=4) {
-                                    val atom2Centre = new Point3d(packedAtoms(i+1), packedAtoms(i+2), packedAtoms(i+3));
-                                    val atom2Charge = packedAtoms(i);
-                                    for ((atomIndex1) in 0..length-1) {
-                                        val atom1 = box1.atoms(atomIndex1);
-                                        thisBoxEnergy += atom1.charge * atom2Charge / atom1.centre.distance(atom2Centre);
+                    // direct calculation with all atoms in non-well-separated boxes
+                    // interact with "left half" of uList i.e. only boxes with x1<=x1
+                    for (box2Index in uList) {
+                        if (box2Index(0) < x1 || (box2Index(0) == x1 && box2Index(1) < y1) || (box2Index(0) == x1 && box2Index(1) == y1 && box2Index(2) < z1)) {
+                            if (!box1.wellSeparated(ws, box2Index)) {
+                                // here we force on the packed atoms for which a future was previously issued
+                                val boxAtoms = packedAtoms(box2Index)();
+                                if (boxAtoms != null) {
+                                    for (var i : Int = 0; i < boxAtoms.length(); i+=4) {
+                                        val atom2Centre = new Point3d(boxAtoms(i+1), boxAtoms(i+2), boxAtoms(i+3));
+                                        val atom2Charge = boxAtoms(i);
+                                        for ((atomIndex1) in 0..length-1) {
+                                            val atom1 = box1.atoms(atomIndex1);
+                                            thisBoxEnergy += atom1.charge * atom2Charge / atom1.centre.distance(atom2Centre);
+                                        }
                                     }
                                 }
                             }
                         }
                     }
+                    val thisBoxEnergyFinal = 2 * thisBoxEnergy;
+                    async (this) {atomic {directEnergy += thisBoxEnergyFinal;}}
                 }
-                val thisBoxEnergyFinal = 2 * thisBoxEnergy;
-                async (this) {atomic {directEnergy += thisBoxEnergyFinal;}}
             }
         }
         timer.stop(TIMER_INDEX_DIRECT);
@@ -440,39 +448,61 @@ public class Fmm3d {
     def createLocallyEssentialTrees() : Array[LocallyEssentialTree](1) {
         val locallyEssentialTrees = Array.make[LocallyEssentialTree](Dist.makeUnique(), (Point)=> null);
         finish ateach ((p1) in locallyEssentialTrees) {
-            //Console.OUT.println("create locallyEssentialTrees at " + here);
-            val combinedVLists = Rail.make[ValRail[Point(3)]](numLevels-1);
+            val uMin = Rail.make[Int](3, (Int) => Int.MAX_VALUE);
+            val uMax = Rail.make[Int](3, (Int) => Int.MIN_VALUE);
+            val combinedUSet = new HashSet[Point(3)]();
+            for (boxIndex1 in lowestLevelBoxes | here) {
+                val box1 = lowestLevelBoxes(boxIndex1) as FmmLeafBox!;
+                if (box1 != null) {
+                    val uList = box1.getUList();
+                    for (boxIndex2 in uList) {
+                        if (combinedUSet.add(boxIndex2)) {
+                            for ((i) in 0..2) {
+                                uMin(i) = Math.min(uMin(i), boxIndex2(i));
+                                uMax(i) = Math.max(uMax(i), boxIndex2(i));        
+                            }
+                        }
+                    }
+                }
+            }
+            val uListMin = uMin as ValRail[Int](3);
+            val uListMax = uMax as ValRail[Int](3);
+            val combinedUList = combinedUSet.toValRail();
+
+            val combinedVList = Rail.make[ValRail[Point(3)]](numLevels-1);
             val vListMin = Rail.make[ValRail[Int](3)](numLevels-1);
             val vListMax = Rail.make[ValRail[Int](3)](numLevels-1);
             for ((thisLevel) in 2..numLevels) {
                 val vMin = Rail.make[Int](3, (Int) => Int.MAX_VALUE);
                 val vMax = Rail.make[Int](3, (Int) => Int.MIN_VALUE);
                 //Console.OUT.println("create combined V-list for level " + thisLevel + " at " + here);
-                val combinedVList = new HashSet[Point(3)]();
+                val combinedVSet = new HashSet[Point(3)]();
                 val thisLevelBoxes = boxes(thisLevel-2);
                 for (boxIndex1 in thisLevelBoxes | here) {
                     val box1 = thisLevelBoxes(boxIndex1) as FmmBox!;
                     if (box1 != null) {
                         val vList = box1.getVList();
-                        //Console.OUT.println("for " + box1);
                         for (boxIndex2 in vList) {
-                            if (combinedVList.add(boxIndex2)) {
+                            if (combinedVSet.add(boxIndex2)) {
                                 for ((i) in 0..2) {
-                                    // update min,max for each coordinate
                                     vMin(i) = Math.min(vMin(i), boxIndex2(i));
                                     vMax(i) = Math.max(vMax(i), boxIndex2(i));        
                                 }
-                                //Console.OUT.println("added " + boxIndex2);
                             }
                         }
                     }
                 }
-                //Console.OUT.println("done " + combinedVList.size());
+                //Console.OUT.println("done " + combinedVSet.size());
                 vListMin(thisLevel-2) = vMin as ValRail[Int](3);
                 vListMax(thisLevel-2) = vMax as ValRail[Int](3);
-                combinedVLists(thisLevel-2) = combinedVList.toValRail();
+                combinedVList(thisLevel-2) = combinedVSet.toValRail();
             }
-            locallyEssentialTrees(p1) = new LocallyEssentialTree(combinedVLists as ValRail[ValRail[Point(3)]], vListMin as ValRail[ValRail[Int](3)], vListMax as ValRail[ValRail[Int](3)]);
+            locallyEssentialTrees(p1) = new LocallyEssentialTree(combinedUList,
+                                                                 combinedVList as ValRail[ValRail[Point(3)]],
+                                                                 uListMin,
+                                                                 uListMax,
+                                                                 vListMin as ValRail[ValRail[Int]],
+                                                                 vListMax as ValRail[ValRail[Int]]);
         }
         return locallyEssentialTrees;
     }
@@ -490,6 +520,20 @@ public class Fmm3d {
                 for ((x,y,z) in combinedVList(level-2)) {
                     myLET.multipoleCopies(level-2)(x,y,z) = future {getMultipoleExpansionLocalCopy(thisLevelBoxes,x,y,z)};
                 }
+            }
+        }
+    }
+
+    /**
+     * "Pre-fetches" the packed atoms for the U-List of the locally
+     * essential tree at each place, using futures.
+     */
+    def prefetchPackedAtoms() {
+        finish ateach (p1 in locallyEssentialTrees) {
+            val myLET = locallyEssentialTrees(p1) as LocallyEssentialTree!;
+            val myCombinedUList = myLET.combinedUList;
+            for ((x,y,z) in myCombinedUList) {
+                myLET.packedAtoms(x,y,z) = future {at (lowestLevelBoxes.dist(x,y,z)) {getPackedAtomsForBox(x, y, z)}};
             }
         }
     }
