@@ -192,8 +192,8 @@ public class Fmm3d {
             //Console.OUT.println("combine level " + level + " => " + (level-1));
             val thisLevelBoxes = boxes(thisLevel-2);
             finish ateach (boxIndex in thisLevelBoxes) {
-                if (thisLevelBoxes(boxIndex) != null) {
-                    val child = thisLevelBoxes(boxIndex) as FmmBox!;
+                val child = thisLevelBoxes(boxIndex) as FmmBox!;
+                if (child != null) {
                     val childExp = child.multipoleExp;
                     val parent = child.parent;
                     at (parent) {
@@ -232,7 +232,7 @@ public class Fmm3d {
                         val box2MultipoleExp = highestLevelMultipoleCopies(x2,y2,z2)() as MultipoleExpansion!;
                         if (box2MultipoleExp != null) {
                             val translation = box1.getTranslationIndex(2,x2,y2,z2);
-                            val transform21 = multipoleTransforms(Point.make([here.id, translation(0), -translation(1), -translation(2), -translation(3)])) as LocalExpansion!;
+                            val transform21 = multipoleTransforms(Point.make([here.id, translation(0), translation(1), translation(2), translation(3)])) as LocalExpansion!;
                             box1.localExp.transformAndAddToLocal(transform21, box2MultipoleExp);
                         }
                     }
@@ -254,7 +254,7 @@ public class Fmm3d {
                             val box2MultipoleExp = thisLevelMultipoleCopies(x2,y2,z2)() as MultipoleExpansion!;
                             if (box2MultipoleExp != null) {
                                 val translation = box1.getTranslationIndex(thisLevel,x2,y2,z2);
-                                val translateP = Point.make([here.id, translation(0), -translation(1), -translation(2), -translation(3)]);
+                                val translateP = Point.make([here.id, translation(0), translation(1), translation(2), translation(3)]);
                                 val transform21 = multipoleTransforms(translateP) as LocalExpansion!;
                                 box1.localExp.transformAndAddToLocal(transform21, box2MultipoleExp);
                             }
@@ -296,8 +296,6 @@ public class Fmm3d {
             foreach ((x1,y1,z1) in lowestLevelBoxes | here) {
                 val box1 = lowestLevelBoxes(x1,y1,z1) as FmmLeafBox!;
                 if (box1 != null) {
-                    val uList = box1.getUList();
-
                     // TODO use shared var - XTENLANG-404
                     var thisBoxEnergy : Double = 0.0;
                     val length = box1.atoms.length();
@@ -313,20 +311,19 @@ public class Fmm3d {
                     }
 
                     // direct calculation with all atoms in non-well-separated boxes
-                    // interact with "left half" of uList i.e. only boxes with x1<=x1
+                    val uList = box1.getUList();
                     for (box2Index in uList) {
+                        // interact with "left half" of uList i.e. only boxes with x1<=x1
                         if (box2Index(0) < x1 || (box2Index(0) == x1 && box2Index(1) < y1) || (box2Index(0) == x1 && box2Index(1) == y1 && box2Index(2) < z1)) {
-                            if (!box1.wellSeparated(ws, box2Index)) {
-                                // here we force on the packed atoms for which a future was previously issued
-                                val boxAtoms = packedAtoms(box2Index)();
-                                if (boxAtoms != null) {
-                                    for (var i : Int = 0; i < boxAtoms.length(); i+=4) {
-                                        val atom2Centre = new Point3d(boxAtoms(i+1), boxAtoms(i+2), boxAtoms(i+3));
-                                        val atom2Charge = boxAtoms(i);
-                                        for ((atomIndex1) in 0..length-1) {
-                                            val atom1 = box1.atoms(atomIndex1);
-                                            thisBoxEnergy += atom1.charge * atom2Charge / atom1.centre.distance(atom2Centre);
-                                        }
+                            // here we force on the packed atoms for which a future was previously issued
+                            val boxAtoms = packedAtoms(box2Index)();
+                            if (boxAtoms != null) {
+                                for (var i : Int = 0; i < boxAtoms.length(); i+=4) {
+                                    val atom2Centre = new Point3d(boxAtoms(i+1), boxAtoms(i+2), boxAtoms(i+3));
+                                    val atom2Charge = boxAtoms(i);
+                                    for ((atomIndex1) in 0..length-1) {
+                                        val atom1 = box1.atoms(atomIndex1);
+                                        thisBoxEnergy += atom1.charge * atom2Charge / atom1.centre.distance(atom2Centre);
                                     }
                                 }
                             }

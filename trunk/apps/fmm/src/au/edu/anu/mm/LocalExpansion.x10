@@ -105,37 +105,6 @@ public class LocalExpansion extends Expansion {
         }
     }
 
-   /** 
-     * Transform a multipole expansion centred around the origin into a
-     * Taylor expansion centred about b, and adds to this expansion.
-     * This corresponds to "Operator B", Equations 13-15 in White & Head-Gordon.
-     * This operator is inexact due to truncation of the series at <em>p</em> poles.
-     * Note: this defines B^lm_jk(b) = M_j+l,k+m(b), therefore restrict l to [0..p-j]
-     * @param b the vector along which to translate the multipole
-     * @param source the source multipole expansion, centred at the origin
-     */
-    public def transformAndAddToLocalDist(transform : LocalExpansion!,
-                                         source : MultipoleExpansion) {
-        val p : Int = terms.region.max(0);
-        val localSource = MultipoleExpansion.getLocalCopy(p, source);
-        for ((j,k) in terms.region) {
-            val O_jk = localSource.terms(j,k);
-            for ((l) in 0..p-j) {
-                for ((m) in -l..l) {
-                    if (Math.abs(k+m) <= (j+l)) {
-                        // TODO calculating the indices "on the fly" in the body 
-                        // of the at statement results in a Seg Fault... why?
-                        val jPlusL : Int = (j+l);
-                        val kPlusM : Int = (k+m);
-                        val B_lmjk = transform.terms(jPlusL, kPlusM);
-                        //Console.OUT.println("source.terms.dist(" + j + "," + k + ") = " + source.terms.dist(j,k));
-                        this.terms(l,m) = this.terms(l,m) + B_lmjk * O_jk;
-                    }
-                }
-            }
-        }
-    }
-
     /**
      * Transforms this local expansion about the origin to the potential
      * acting on <code>q</code> at point <code>v</code>.
