@@ -305,7 +305,7 @@ public class Fmm3d {
                         // direct calculation with all atoms in same box
                         for ((sameBoxAtomIndex) in 0..atomIndex1-1) {
                             val sameBoxAtom = box1.atoms(sameBoxAtomIndex);
-                            val pairEnergy : Double = atom1.pairEnergy(sameBoxAtom);
+                            val pairEnergy = atom1.charge * sameBoxAtom.charge / atom1.centre.distance(sameBoxAtom.centre);
                             thisBoxEnergy += pairEnergy;
                         }
                     }
