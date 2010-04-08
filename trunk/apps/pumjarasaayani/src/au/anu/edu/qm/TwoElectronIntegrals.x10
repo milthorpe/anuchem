@@ -303,20 +303,24 @@ public class TwoElectronIntegrals {
 
                  // val q = gaussianProductCenter(cAlpha, cCen, dAlpha, dCen);
                  val q = new Point3d(
-                         (cAlpha * cCen.i + dAlpha * dCen.i) / gamma2,
-                         (cAlpha * cCen.j + dAlpha * dCen.j) / gamma2,
-                         (cAlpha * cCen.k + dAlpha * dCen.k) / gamma2
-                       );
+                           (cAlpha * cCen.i + dAlpha * dCen.i) / gamma2,
+                           (cAlpha * cCen.j + dAlpha * dCen.j) / gamma2,
+                           (cAlpha * cCen.k + dAlpha * dCen.k) / gamma2
+                         );
 
                  val Gcd = Math.exp(-cAlpha*dAlpha*radiusCDSquared/gamma2);
                  val Uq = cCoeff*dCoeff*Gcd*Math.pow((Math.PI/gamma2),1.5); 
                  // Console.OUT.println("Coeff: " + cCoeff + " " + dCoeff);
                  // Console.OUT.println("Zeta, Gcd, Uq: " + gamma2 + " " + Gcd + " " + Uq);
 
-                 val r = q.sub(p);
-                 val radiusPQSquared:Double = p.distanceSquared(q);  
+		 val xx = q.i-p.i;
+		 val yy = q.j-p.j;
+		 val zz = q.k-p.k;
+
+                 val r = new Point3d(xx,yy,zz);
+                 val radiusPQSquared:Double = xx*xx+yy*yy+zz*zz;  
                  val Upq = Up*Uq;
-                 val T = p.distanceSquared(q) * eta;
+                 val T = radiusPQSquared * eta;
 
                  // Console.OUT.println("Computing FmT");
                  // Console.OUT.println("T value: " + T);
@@ -354,7 +358,6 @@ public class TwoElectronIntegrals {
                             dAng, cAng, dCen, cCen, shellList);
                } // dPrim
               } // cPrim
-
 
               // form [ab|cd], 
               // Console.OUT.println("Computing [ab|cd] ");
@@ -457,32 +460,39 @@ public class TwoElectronIntegrals {
 
     private def mdHrr(xa:Int, ya:Int, za:Int, xb:Int, yb:Int, zb:Int, xp:Int, yp:Int, zp:Int,
                       pai:Double, paj:Double, pak:Double, pbi:Double, pbj:Double, pbk:Double, zeta2:Double) : Double {
-         var res:Double;
+         var res:Double = 0.0;
 
-         if (xa != 0 ) {
-           res =   mdHrr(xa-1, ya, za, xb, yb, zb, xp-1, yp, zp, pai, paj, pak, pbi, pbj, pbk, zeta2)*xp
-                    + mdHrr(xa-1, ya, za, xb, yb, zb, xp  , yp, zp, pai, paj, pak, pbi, pbj, pbk, zeta2)*(pai)
-                    + mdHrr(xa-1, ya, za, xb, yb, zb, xp+1, yp, zp, pai, paj, pak, pbi, pbj, pbk, zeta2)/(zeta2);
-         } else if (ya != 0) {
-           res =   mdHrr(xa, ya-1, za, xb, yb, zb, xp, yp-1, zp, pai, paj, pak, pbi, pbj, pbk, zeta2)*yp
-                    + mdHrr(xa, ya-1, za, xb, yb, zb, xp, yp  , zp, pai, paj, pak, pbi, pbj, pbk, zeta2)*(paj)
-                    + mdHrr(xa, ya-1, za, xb, yb, zb, xp, yp+1, zp, pai, paj, pak, pbi, pbj, pbk, zeta2)/(zeta2);
-         } else if (za != 0) {
-           res =   mdHrr(xa, ya, za-1, xb, yb, zb, xp, yp, zp-1, pai, paj, pak, pbi, pbj, pbk, zeta2)*zp
-                    + mdHrr(xa, ya, za-1, xb, yb, zb, xp, yp, zp  , pai, paj, pak, pbi, pbj, pbk, zeta2)*(pak)
-                    + mdHrr(xa, ya, za-1, xb, yb, zb, xp, yp, zp+1, pai, paj, pak, pbi, pbj, pbk, zeta2)/(zeta2);
-         } else if (xb != 0 ) {
-           res =   mdHrr(xa, ya, za, xb-1, yb, zb, xp-1, yp, zp, pai, paj, pak, pbi, pbj, pbk, zeta2)*xp
-                    + mdHrr(xa, ya, za, xb-1, yb, zb, xp  , yp, zp, pai, paj, pak, pbi, pbj, pbk, zeta2)*(pbi)
-                    + mdHrr(xa, ya, za, xb-1, yb, zb, xp+1, yp, zp, pai, paj, pak, pbi, pbj, pbk, zeta2)/(zeta2);
-         } else if (yb != 0) {
-           res =   mdHrr(xa, ya, za, xb, yb-1, zb, xp, yp-1, zp, pai, paj, pak, pbi, pbj, pbk, zeta2)*yp
-                    + mdHrr(xa, ya, za, xb, yb-1, zb, xp, yp  , zp, pai, paj, pak, pbi, pbj, pbk, zeta2)*(pbj)
-                    + mdHrr(xa, ya, za, xb, yb-1, zb, xp, yp+1, zp, pai, paj, pak, pbi, pbj, pbk, zeta2)/(zeta2);
-         } else if (zb != 0) {
-           res =   mdHrr(xa, ya, za, xb, yb, zb-1, xp, yp, zp-1, pai, paj, pak, pbi, pbj, pbk, zeta2)*zp
-                    + mdHrr(xa, ya, za, xb, yb, zb-1, xp, yp, zp  , pai, paj, pak, pbi, pbj, pbk, zeta2)*(pbk)
-                    + mdHrr(xa, ya, za, xb, yb, zb-1, xp, yp, zp+1, pai, paj, pak, pbi, pbj, pbk, zeta2)/(zeta2);
+	 val al = xa|ya|za;
+         val bl = xb|yb|zb;
+
+         if (al != 0) {
+           if (xa != 0 ) {
+              res =   mdHrr(xa-1, ya, za, xb, yb, zb, xp-1, yp, zp, pai, paj, pak, pbi, pbj, pbk, zeta2)*xp
+                        + mdHrr(xa-1, ya, za, xb, yb, zb, xp  , yp, zp, pai, paj, pak, pbi, pbj, pbk, zeta2)*(pai)
+                        + mdHrr(xa-1, ya, za, xb, yb, zb, xp+1, yp, zp, pai, paj, pak, pbi, pbj, pbk, zeta2)/(zeta2);
+           } else if (ya != 0) {
+              res =   mdHrr(xa, ya-1, za, xb, yb, zb, xp, yp-1, zp, pai, paj, pak, pbi, pbj, pbk, zeta2)*yp
+                        + mdHrr(xa, ya-1, za, xb, yb, zb, xp, yp  , zp, pai, paj, pak, pbi, pbj, pbk, zeta2)*(paj)
+                        + mdHrr(xa, ya-1, za, xb, yb, zb, xp, yp+1, zp, pai, paj, pak, pbi, pbj, pbk, zeta2)/(zeta2);
+           } else if (za != 0) {
+              res =   mdHrr(xa, ya, za-1, xb, yb, zb, xp, yp, zp-1, pai, paj, pak, pbi, pbj, pbk, zeta2)*zp
+                        + mdHrr(xa, ya, za-1, xb, yb, zb, xp, yp, zp  , pai, paj, pak, pbi, pbj, pbk, zeta2)*(pak)
+                        + mdHrr(xa, ya, za-1, xb, yb, zb, xp, yp, zp+1, pai, paj, pak, pbi, pbj, pbk, zeta2)/(zeta2);
+           } // end if
+         } else if (bl != 0) {
+           if (xb != 0 ) {
+             res =   mdHrr(xa, ya, za, xb-1, yb, zb, xp-1, yp, zp, pai, paj, pak, pbi, pbj, pbk, zeta2)*xp
+                     + mdHrr(xa, ya, za, xb-1, yb, zb, xp  , yp, zp, pai, paj, pak, pbi, pbj, pbk, zeta2)*(pbi)
+                     + mdHrr(xa, ya, za, xb-1, yb, zb, xp+1, yp, zp, pai, paj, pak, pbi, pbj, pbk, zeta2)/(zeta2);
+           } else if (yb != 0) {
+             res =   mdHrr(xa, ya, za, xb, yb-1, zb, xp, yp-1, zp, pai, paj, pak, pbi, pbj, pbk, zeta2)*yp
+                     + mdHrr(xa, ya, za, xb, yb-1, zb, xp, yp  , zp, pai, paj, pak, pbi, pbj, pbk, zeta2)*(pbj)
+                     + mdHrr(xa, ya, za, xb, yb-1, zb, xp, yp+1, zp, pai, paj, pak, pbi, pbj, pbk, zeta2)/(zeta2);
+           } else if (zb != 0) {
+             res =   mdHrr(xa, ya, za, xb, yb, zb-1, xp, yp, zp-1, pai, paj, pak, pbi, pbj, pbk, zeta2)*zp
+                     + mdHrr(xa, ya, za, xb, yb, zb-1, xp, yp, zp  , pai, paj, pak, pbi, pbj, pbk, zeta2)*(pbk)
+                     + mdHrr(xa, ya, za, xb, yb, zb-1, xp, yp, zp+1, pai, paj, pak, pbi, pbj, pbk, zeta2)/(zeta2);
+           } // end if
          } else if ( xp < 0 || yp < 0 || zp < 0) {
            res = 0.0; 
          } else {
