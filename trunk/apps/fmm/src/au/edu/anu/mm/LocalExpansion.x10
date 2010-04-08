@@ -92,11 +92,7 @@ public class LocalExpansion extends Expansion {
             for ((l) in 0..p-j) {
                 for ((m) in -l..l) {
                     if (Math.abs(k+m) <= (j+l)) {
-                        // TODO calculating the indices "on the fly" in the body 
-                        // of the at statement results in a Seg Fault... why?
-                        val jPlusL : Int = (j+l);
-                        val kPlusM : Int = (k+m);
-                        val B_lmjk = transform.terms(jPlusL, kPlusM);
+                        val B_lmjk = transform.terms(j+l, k+m);
                         //Console.OUT.println("source.terms.dist(" + j + "," + k + ") = " + source.terms.dist(j,k));
                         this.terms(l,m) = this.terms(l,m) + B_lmjk * O_jk;
                     }
