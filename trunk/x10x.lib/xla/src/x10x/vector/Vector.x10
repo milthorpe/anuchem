@@ -78,13 +78,13 @@ public class Vector {
      * the dot product
      */
     public def dot(b:Vector) : Double {
-        var res:Double = 0.0;
+        val res = Rail.make[Double](1, (Int)=>0.0);
 
         // TODO: this is introduced till a fix for XTENLANG-508 is there
         // finish foreach((i) in vec.region) res += vec(i) * b.vec(i);
-        for((i) in vec.region) res += vec(i) * b.vec(i);
+        finish foreach((i) in vec.region) res(0) += vec(i) * b.vec(i);
 
-        return res;
+        return res(0);
     }
 
     /**

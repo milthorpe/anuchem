@@ -68,6 +68,10 @@ public class GMatrix extends Matrix {
                Console.OUT.println("   GMatrix.computeDirectNewMultiPlaceStatic: " + gMatType);
                computeDirectNewMultiPlaceStatic(twoE, density);
                break;
+           case 10:
+               Console.OUT.println("   GMatrix.computeDirectMultiPlaceNewFuture: " + gMatType);
+               computeDirectMultiPlaceNewFuture(twoE, density);
+               break;
            default:
                Console.OUT.println("   GMatrix.computeDirectSerialOld: " + gMatType);
                computeDirectSerialOld(twoE, density); 
@@ -1040,8 +1044,17 @@ public class GMatrix extends Matrix {
         Console.OUT.println("\tTime for summing up GMatrix bits: " + (timer.total(2) as Double) / 1e9 + " seconds"); 
     }
 
+
+    // TODO: need to use shared variable instead
+    private global val G = Rail.make[Int](1, (Int)=>0);
+    private global val PIdx = Rail.make[Int](1, (Int)=>0);
+
     /** Code snippet 3, Bernholdt paper, TODO: incomplete  */
     private def computeDirectMultiPlaceNewFuture(twoE:TwoElectronIntegrals!, density:Density!) : void {
+        // init counters
+        G(0) = 0; PIdx(0) = 0;
+
+        // init other variables
         val N = density.getRowCount();
 
         makeZero();
@@ -1058,69 +1071,154 @@ public class GMatrix extends Matrix {
         val jMatrix = jMat.getMatrix();
         val kMatrix = kMat.getMatrix();
 
-        var i:Int, j:Int, k:Int, l:Int;
-
         val molecule = twoE.getMolecule();
-        val bfs = twoE.getBasisFunctions().getBasisFunctions();
+        val bfs = twoE.getBasisFunctions();
         val shellList = twoE.getBasisFunctions().getShellList();
-        val noOfBasisFunctions = bfs.size();
+        val noOfBasisFunctions = bfs.getBasisFunctions().size();
 
         val noOfAtoms = molecule.getNumberOfAtoms();
-        var a:Int, b:Int, c:Int, d:Int;
-        var naFunc:Int, nbFunc:Int, ncFunc:Int, ndFunc:Int, twoEIndx:Int;
-        var aFunc:ArrayList[ContractedGaussian{self.at(this)}]{self.at(this)},
-            bFunc:ArrayList[ContractedGaussian{self.at(this)}]{self.at(this)},
-            cFunc:ArrayList[ContractedGaussian{self.at(this)}]{self.at(this)},
-            dFunc:ArrayList[ContractedGaussian{self.at(this)}]{self.at(this)};
-        var iaFunc:ContractedGaussian{self.at(this)}, jbFunc:ContractedGaussian{self.at(this)},
-            kcFunc:ContractedGaussian{self.at(this)}, ldFunc:ContractedGaussian{self.at(this)};
+        val nPlaces = Place.places.length;
+        val computeInst = Rail.make[ComputePlaceNewFuture](nPlaces);
 
+        Console.OUT.println("\tNo. of places: " + nPlaces);
+        Console.OUT.println("\tNo. of threads per place: " + Runtime.INIT_THREADS);
+  
+        val timer = new Timer(2);
+
+        timer.start(0);
+    
         // center a
-        for(a=0; a<noOfAtoms; a++) {
-            aFunc = molecule.getAtom(a).getBasisFunctions();
-            naFunc = aFunc.size();
-            // basis functions on a
-            for(i=0; i<naFunc; i++) {
-                iaFunc = aFunc.get(i);
+        finish foreach(place in Place.places) {
+          at(place) {
+            var myG:Int = 0;
+            var L:Int = 0;
+
+            var i:Int, j:Int, k:Int, l:Int;
+            var a:Int, b:Int, c:Int, d:Int;
+            var naFunc:Int, nbFunc:Int, ncFunc:Int, ndFunc:Int, twoEIndx:Int;
+
+            // make local copies of data 
+            val mol_loc = new Molecule[QMAtom]() as Molecule[QMAtom]!;
+
+            for(i=0; i<noOfAtoms; i++) {
+                val i_loc = i;
+                val sym  = at(molecule) { molecule.getAtom(i_loc).symbol };
+                val x    = at(molecule) { molecule.getAtom(i_loc).centre.i };
+                val y    = at(molecule) { molecule.getAtom(i_loc).centre.j };
+                val z    = at(molecule) { molecule.getAtom(i_loc).centre.k };
+
+                mol_loc.addAtom(new QMAtom(sym, new Point3d(x, y, z)));
+            } // end for
+
+            val basisName = at(bfs) { bfs.getBasisName() };
+            val bas_loc = new BasisFunctions(mol_loc, basisName, "basis");
+
+            val den_loc = new Density(N);
+            val den_loc_mat = den_loc.getMatrix();
+            val den_rem = at(density) { density.getValRail() };
+            var ii:Int;
+
+            ii = 0 ;
+            for(i=0; i<N; i++)
+              for(j=0; j<N; j++)
+                  den_loc_mat(i, j) = den_rem(ii++);
+
+            val twoE_loc = new TwoElectronIntegrals(bas_loc, mol_loc, true);
+            val comp_loc = new ComputePlaceNewFuture(den_loc, twoE_loc);
+            at(computeInst) { computeInst(PIdx(0)++) = comp_loc; };
+
+            val F1 = future(G) { 
+                       var myG:Int; 
+                       atomic myG = G(0)++;
+                       return myG;
+            };
+
+            myG = F1.force();
+
+            for(a=0; a<noOfAtoms; a++) {
+              val aFunc = mol_loc.getAtom(a).getBasisFunctions();
+              naFunc = aFunc.size();
+              // basis functions on a
+              for(i=0; i<naFunc; i++) {
+                val iaFunc = aFunc.get(i);
 
                 // center b
                 for(b=0; b<=a; b++) {
-                    bFunc = molecule.getAtom(b).getBasisFunctions();
+                    val bFunc = mol_loc.getAtom(b).getBasisFunctions();
                     nbFunc = (b<a) ? bFunc.size() : i+1;
                     // basis functions on b
                     for(j=0; j<nbFunc; j++) {
-                        jbFunc = bFunc.get(j);
+                        val jbFunc = bFunc.get(j);
 
                         // center c
                         for(c=0; c<noOfAtoms; c++) {
-                            cFunc = molecule.getAtom(c).getBasisFunctions();
+                            val cFunc = mol_loc.getAtom(c).getBasisFunctions();
                             ncFunc = cFunc.size();
                             // basis functions on c
                             for(k=0; k<ncFunc; k++) {
-                                kcFunc = cFunc.get(k);
+                                val kcFunc = cFunc.get(k);
 
                                 // center d
                                 for(d=0; d<=c; d++) {
-                                    dFunc = molecule.getAtom(d).getBasisFunctions();
+                                    val dFunc = mol_loc.getAtom(d).getBasisFunctions();
                                     ndFunc = (d<c) ? dFunc.size() : k+1;
                                     // basis functions on d
                                     for(l=0; l<ndFunc; l++) {
-                                        ldFunc = dFunc.get(l);
+                                        val ldFunc = dFunc.get(l);
 
-            	                        twoE.compute2EAndRecord(iaFunc, jbFunc, kcFunc, ldFunc, 
-                                                                shellList, jMat, kMat, density);
+                                        if (L == myG) {
+                                          val F2 = future(G) {
+                                                 var myG:Int;
+                                                 atomic myG = G(0)++;
+                                                 return myG;
+                                          };
+
+            	                          comp_loc.compute2EAndRecord(iaFunc, jbFunc, kcFunc, ldFunc); 
+
+                                          myG = F2.force();
+                                        } // end if
+
+                                        L++;
 				    } // end l
 				} // center d
                             } // end k
                         } // center c
                     } // end j
                 } // center b
-            } // end i
-        } // center a
-     
+              } // end i
+            } // center a
+          } // at
+        } // foreach
+        timer.stop(0);
+        Console.OUT.println("\tTime for actual computation: " + (timer.total(0) as Double) / 1e9 + " seconds");
+    
+        timer.start(1);
+
         // form the G matrix
-        finish ateach(val(x,y) in gMatrix.dist)
-                  gMatrix(x,y) = jMatrix(x,y) - (0.25*kMatrix(x,y));     
+        // TODO following need to change once XTENLANG-787 is resolved
+        for(comp_loc in computeInst) {
+             val jVal = at(comp_loc) { comp_loc.getJMatVal() };
+             val kVal = at(comp_loc) { comp_loc.getKMatVal() };
+
+             var ii:Int=0;
+             for(var x:Int=0; x<N; x++) {
+               for(var y:Int=0; y<N; y++) {
+                  /**
+                  val x_loc = x; val y_loc = y;
+                  val jVal = at(comp_loc) { comp_loc.getJMat().getMatrix()(x_loc, y_loc) };
+                  val kVal = at(comp_loc) { comp_loc.getKMat().getMatrix()(x_loc, y_loc) };
+
+                  gMatrix(x,y) += jVal - (0.25*kVal);
+                  **/
+
+                  gMatrix(x,y) += jVal(ii) - (0.25*kVal(ii));
+                  ii++;
+               } // end for
+             } // end for
+        } // end for
+
+        timer.stop(1);
+        Console.OUT.println("\tTime for summing up GMatrix bits: " + (timer.total(1) as Double) / 1e9 + " seconds");
     }
 
 
@@ -1740,6 +1838,49 @@ public class GMatrix extends Matrix {
         public def getKMatVal() : ValRail[Double]! {
            return getKMat().getValRail();
         }
+    }
+
+    class ComputePlaceNewFuture {
+         val density:Density!;
+         val twoEI:TwoElectronIntegrals!;
+
+         val jM:Matrix!;
+         val kM:Matrix!;
+         val shellList:ShellList!; 
+
+         public def this(den:Density!, twoEI:TwoElectronIntegrals!) { 
+             this.density = den;
+             this.twoEI   = twoEI;
+
+             shellList = twoEI.getBasisFunctions().getShellList();
+
+             val N = den.getRowCount();
+
+             jM = new Matrix(N) as Matrix!;
+             kM = new Matrix(N) as Matrix!;
+         }
+
+         public def compute2EAndRecord(iaFunc:ContractedGaussian!, jbFunc:ContractedGaussian!, 
+                                       kcFunc:ContractedGaussian!, ldFunc:ContractedGaussian!) {
+             twoEI.compute2EAndRecord(iaFunc, jbFunc, kcFunc, ldFunc, shellList, jM, kM, density);
+         }
+
+         public def getJMat() : Matrix! {
+             return jM;
+         }
+         
+         public def getKMat() : Matrix! {
+             return kM;
+         }
+
+         // TODO following two methods should not be necessary once XTENLANG-787 is resolved
+         public def getJMatVal() : ValRail[Double]! {
+            return getJMat().getValRail();
+         }
+
+         public def getKMatVal() : ValRail[Double]! {
+            return getKMat().getValRail();
+         }
     }
 
     static struct BlockIndices(i:Int, j:Int, k:Int, l:Int) {
