@@ -1049,7 +1049,7 @@ public class GMatrix extends Matrix {
     private global val G = Rail.make[Int](1, (Int)=>0);
     private global val PIdx = Rail.make[Int](1, (Int)=>0);
 
-    /** Code snippet 3, Bernholdt paper, TODO: incomplete  */
+    /** Code snippet 3, Bernholdt paper  */
     private def computeDirectMultiPlaceNewFuture(twoE:TwoElectronIntegrals!, density:Density!) : void {
         // init counters
         G(0) = 0; PIdx(0) = 0;
@@ -1097,6 +1097,7 @@ public class GMatrix extends Matrix {
             var a:Int, b:Int, c:Int, d:Int;
             var naFunc:Int, nbFunc:Int, ncFunc:Int, ndFunc:Int, twoEIndx:Int;
 
+            // TODO: better way to pass global data instead?
             // make local copies of data 
             val mol_loc = new Molecule[QMAtom]() as Molecule[QMAtom]!;
 

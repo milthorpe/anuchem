@@ -66,21 +66,26 @@ where <n> is number of places
 7 : (5) using (static) task pool interface [*]
 8 : (5) using purely static load balancing [*]
 9 : (4) using purely static load balancing [*]
+10: (4) load balancing based on Bernholdt, Code 3, uses future and atomic [*] [**]
 
 [*] - most relevent for timings and scaling at this point
+[**] - currently segfaults for many test cases with multiple places
 
 Note: 8, 9 do not have multi thread implimentation at present, so wont scale on a single place
 
-3, 4 : should actually perform faster, for higher angular momentums, but the 
-recursive routine and array operations seems to take a lot of time:
+3, 4 (and others based on it): should actually perform faster, for higher angular momentums, but the 
+recursive routine to take a lot of time:
 
   %   cumulative   self              self     total
- time   seconds   seconds    calls  ms/call  ms/call  name
- 13.95      0.06     0.06 10643732     0.00     0.00  x10::array::FastArray<double>::apply(int, int)
- 13.95      0.12     0.06   658350     0.00     0.00  au::anu::edu::qm::TwoElectronIntegrals::mdr1(int, int, int, int, int, int, int, int, int, x10aux::ref<x10x::vector::Point3d>, x10aux::ref<x10x::vector::Point3d>, x10aux::ref<x10x::vector::Point3d>, double)
- 11.63      0.17     0.05  8429022     0.00     0.00  x10::array::FastArray<double>::set(double, int, int, int)
-  9.30      0.21     0.04  9253161     0.00     0.00  x10::array::FastArray<double>::set(double, int, int)
-  9.30      0.25     0.04   127575     0.00     0.00  au::anu::edu::qm::TwoElectronIntegrals::computeFmt(int, double, x10aux::ref<x10::lang::Rail<double> >)
+ time   seconds   seconds    calls   s/call   s/call  name
+ 30.69     86.42    86.42 10600317     0.00     0.00  au::anu::edu::qm::TwoElectronIntegrals::compute2EAndRecord(x10aux::ref<au::anu::edu::qm::ContractedGaussian>, x10aux::ref<au::anu::edu::qm::ContractedGaussian>, x10aux::ref<au::anu::edu::qm::ContractedGaussian>, x10aux::ref<au::anu::edu::qm::ContractedGaussian>, x10aux::ref<au::anu::edu::qm::ShellList>, x10aux::ref<x10x::matrix::Matrix>, x10aux::ref<x10x::matrix::Matrix>, x10aux::ref<au::anu::edu::qm::Density>)
+ 20.86    145.16    58.74 642676619     0.00     0.00  au::anu::edu::qm::TwoElectronIntegrals::mdHrr(int, int, int, int, int, int, int, int, int, double, double, double, double, double, double, double)
+ 16.82    192.52    47.36 92259648     0.00     0.00  au::anu::edu::qm::TwoElectronIntegrals::computePcd(int, double, x10aux::ref<x10x::vector::Point3d>, int, int, int, int, x10aux::ref<x10x::vector::Point3d>, x10aux::ref<x10x::vector::Point3d>, x10aux::ref<au::anu::edu::qm::ShellList>)
+  7.56    213.80    21.28 92259648     0.00     0.00  au::anu::edu::qm::TwoElectronIntegrals::computeFmt(int, double, x10aux::ref<x10::lang::Rail<double> >)
+  5.67    229.78    15.98 31272696     0.00     0.00  au::anu::edu::qm::TwoElectronIntegrals::computeAbcd(int, int, int, int, int, int, int, int, x10aux::ref<au::anu::edu::qm::ShellList>, int, int, x10aux::ref<x10x::vector::Point3d>, x10aux::ref<x10x::vector::Point3d>, x10aux::ref<x10x::vector::Point3d>, double, x10aux::ref<x10::lang::Rail<double> >)
+  4.63    242.81    13.03 92259648     0.00     0.00  au::anu::edu::qm::TwoElectronIntegrals::computePq(int, int, x10aux::ref<au::anu::edu::qm::ShellList>)
+  4.46    255.38    12.57 10600317     0.00     0.00  au::anu::edu::qm::TwoElectronIntegrals::fillJKMatrices(int, int, int, int, int, int, int, int, x10aux::ref<au::anu::edu::qm::ShellList>, int, int, x10aux::ref<x10::lang::Rail<double> >, x10aux::ref<x10::array::LocalRectArray<double> >, x10aux::ref<x10::array::LocalRectArray<double> >, x10aux::ref<x10::array::LocalRectArray<double> >)
+
 
 The computeFmt() is actual computation and will take time, however the recursive mdr1() seems to take more time than expected.
 
@@ -107,7 +112,7 @@ In the code, the F matrix is inturn constructed using Hcore and G matrix.
 Of these the G matrix computation takes up most of the time and is implemented 
 using X10 parallel constructs in following ways.
 
-For a reference, see previous work:
+For a reference, see previous work by Bernholdt et al.:
 
 "Programmability of the HPCS Languages: A Case Study with a Quantum
 Chemistry Kernel", Bernholdt et al. HIPS'08.
