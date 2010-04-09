@@ -26,13 +26,9 @@ public class ExpansionRegion extends BaseRegion  {
         return false;
     }
 
-    public global def min(): ValRail[int] {
-        return [0,-p];
-    }
+    public global safe def min(): ValRail[int] = [0,-p];
 
-    public global def max(): ValRail[int] {
-        return [p,p];
-    }   
+    public global safe def max(): ValRail[int] = [p,p];
 
     /**
      * Returns the number of points in this region.
@@ -116,12 +112,12 @@ public class ExpansionRegion extends BaseRegion  {
             this.m = 0;
         }
 
-        final public def hasNext(): boolean {
+        final public safe def hasNext(): boolean {
             if (l <= p && m <= l) return true;
             else return false;
         }
 
-        final public def next(): Point(2) {
+        final public safe def next(): Point(2) {
             nextPoint : Point(2) = Point.make(l,m);
             if (m < l) m++;
             else {
