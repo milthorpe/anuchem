@@ -44,7 +44,8 @@ public class Fmm3d {
     public const TIMER_INDEX_FARFIELD : Int = 5;
     public const TIMER_INDEX_TREE : Int = 6;
     /** A multi-timer for the several segments of a single getEnergy invocation, indexed by the constants above. */
-    public val timer = new Timer(7);
+    // TODO: compensate for XTENLANG-1237
+    public val timer:Timer! = new Timer(7);
 
     /** All boxes in the octree division of space. 
      * ValRail has numLevels-1 elements, for levels [2..numLevels]
