@@ -373,14 +373,14 @@ public class Fmm3d {
      * Precomputes multipole translations and multipole-to-local transformations,
      * for use in translating multipole expansions from child to parent boxes.
      * This is distributed to all places by replicating the first index in a 
-     * cyclic dist across Place.PLACES)
+     * block dist across Place.PLACES)
      * TODO workaround due to lack of global immutable arrays - XTENLANG-787
      */
     private def precomputeTranslations() : Array[MultipoleExpansion](5) {
         if (numLevels < 3) {
             return null;
         } else {
-            val multipoleTranslations = Array.make[MultipoleExpansion](Dist.makeCyclic([0..Place.MAX_PLACES-1,3..numLevels, 0..1, 0..1, 0..1],0));
+            val multipoleTranslations = Array.make[MultipoleExpansion](Dist.makeBlock([0..Place.MAX_PLACES-1,3..numLevels, 0..1, 0..1, 0..1],0));
             finish ateach ((p) : Point in Dist.makeUnique(Place.places)) {
                 for (val(placeId,level,i,j,k) in multipoleTranslations.dist | here) {
                     dim : Int = Math.pow2(level);
@@ -399,14 +399,14 @@ public class Fmm3d {
      * Precomputes a multipole transform array for use in transforming
      * multipole expansions of well-separated boxes to local expansions
      * at the current box.  This is distributed to all places by replicating 
-     * the first index in a cyclic dist across Place.PLACES)
+     * the first index in a block dist across Place.PLACES)
      * TODO workaround due to lack of global immutable arrays - XTENLANG-787
      */
     private def precomputeTransforms() : Array[LocalExpansion](5) {
         var wellSpacedLimit : Region(5) = [0..Place.MAX_PLACES-1,2..numLevels,-(ws+3)..ws+3,-(ws+3)..ws+3,-(ws+3)..ws+3];
         val multipoleTransformRegion : Region(5) = wellSpacedLimit - ([0..Place.MAX_PLACES-1,2..numLevels,-ws..ws,-ws..ws,-ws..ws] as Region);
         //Console.OUT.println("multipoleTransformRegion = " + multipoleTransformRegion);
-        val multipoleTransforms = Array.make[LocalExpansion](Dist.makeCyclic(multipoleTransformRegion,0));
+        val multipoleTransforms = Array.make[LocalExpansion](Dist.makeBlock(multipoleTransformRegion,0));
         finish ateach ((p) : Point in Dist.makeUnique(Place.places)) {
             for (val(placeId,level,i,j,k) in multipoleTransforms.dist | here) {
                 dim : Int = Math.pow2(level);
