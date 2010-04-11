@@ -67,8 +67,8 @@ public class TestFmm3d {
      * Generate an array of ValRails of MMAtoms, one ValRail for each
      * place.  FMM assumes that the atoms have already been distributed. 
      */
-    public static def generateAtoms(numAtoms : Int) : Array[ValRail[MMAtom]](1) {
-        val tempAtoms = Array.make[GrowableRail[MMAtom]](Dist.makeUnique(Place.places), (Point) => new GrowableRail[MMAtom]());
+    public static def generateAtoms(numAtoms : Int) : DistArray[ValRail[MMAtom]](1) {
+        val tempAtoms = DistArray.make[GrowableRail[MMAtom]](Dist.makeUnique(Place.places), (Point) => new GrowableRail[MMAtom]());
         /* Assign Atoms to random locations within a -1..1 3D box, with unit charge (1/3 are negative). */
         finish for (var i : Int = 0; i < numAtoms; i++) {
             val x = randomUnit();
@@ -82,7 +82,7 @@ public class TestFmm3d {
                 atomic { (tempAtoms(p) as GrowableRail[MMAtom]!).add(remoteAtom); }
             }
         }
-        val atoms = Array.make[ValRail[MMAtom]](Dist.makeUnique(Place.places), ((p) : Point) => (tempAtoms(p) as GrowableRail[MMAtom]!).toValRail());
+        val atoms = DistArray.make[ValRail[MMAtom]](Dist.makeUnique(Place.places), ((p) : Point) => (tempAtoms(p) as GrowableRail[MMAtom]!).toValRail());
         return atoms;
     }
 

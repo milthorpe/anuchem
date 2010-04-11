@@ -47,6 +47,11 @@ public class ExpansionRegion extends BaseRegion  {
         throw U.unsupported(this, "contains(" + p + ")");
     }
 
+    public global def contains(r:Region(rank)): boolean {
+        // TODO
+        throw U.unsupported(this, "contains(Region)");
+    }
+
     public global def complement(): Region(rank) {
         // TODO
         throw U.unsupported(this, "complement()");

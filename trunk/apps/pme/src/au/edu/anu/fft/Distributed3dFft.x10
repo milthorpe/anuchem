@@ -20,40 +20,40 @@ public class Distributed3dFft {
      * amongst all places to re-orient the array for each dimension.
      * Makes use of a temp array, which may be the same as either source
      * or target arrays.
-     * TODO the third shuffle can be avoided IF BdotC is calculated 
-     * in the shuffled format.  This is not currently the case.
+     * TODO the third transpose can be avoided IF BdotC is calculated 
+     * in the transposed format.  This is not currently the case.
      * This operation would have to be renamed "doFFT3dTranspose"
      * to indicate that the target array has its dimensions transposed.
      */
-    public global def doFFT3d(source : Array[Complex](3), 
-                        target : Array[Complex](3){self.dist==source.dist},
-                        temp : Array[Complex](3){self.dist==source.dist},
+    public global def doFFT3d(source : DistArray[Complex](3), 
+                        target : DistArray[Complex](3){self.dist==source.dist},
+                        temp : DistArray[Complex](3){self.dist==source.dist},
                         forward : Boolean) {
         doFFTForOneDimension(source, temp, forward);
         if (forward) {
-            shuffleArray(temp, target);
+            transposeArray(temp, target);
         } else {
-            shuffleArrayReverse(temp, target);
+            transposeArrayReverse(temp, target);
         }
         doFFTForOneDimension(target, temp, forward);
         if (forward) {
-            shuffleArray(temp, target);
+            transposeArray(temp, target);
         } else {
-            shuffleArrayReverse(temp, target);
+            transposeArrayReverse(temp, target);
         }
         doFFTForOneDimension(target, temp, forward);
         if (forward) {
-            shuffleArray(temp, target);
+            transposeArray(temp, target);
         } else {
-            shuffleArrayReverse(temp, target);
+            transposeArrayReverse(temp, target);
         }
     }
 
     /**
      * Performs a 1D FFT for each 1D slice along the first dimension.
      */
-    private global def doFFTForOneDimension(source : Array[Complex](3), 
-                                     target : Array[Complex](3){self.dist==source.dist},
+    private global def doFFTForOneDimension(source : DistArray[Complex](3), 
+                                     target : DistArray[Complex](3){self.dist==source.dist},
                                      forward : Boolean) {
         finish ateach ((p1) in Dist.makeUnique(source.dist.places())) {
             val oneDSource = Rail.make[Complex](dataSize);
@@ -76,13 +76,13 @@ public class Distributed3dFft {
     }
 
     /**
-     * "Shuffles" array around all places by transposing the zeroth dimension
+     * Shuffles array around all places by transposing the zeroth dimension
      * to the second, the second to the first and the first to the zeroth.
      * Assumes NxNxN arrays, and that source and target arrays are block 
      * distributed along the zeroth dimension.
      */
-    private global def shuffleArray(source : Array[Complex](3), 
-                             target : Array[Complex](3){self.dist==source.dist}) {
+    private global def transposeArray(source : DistArray[Complex](3), 
+                             target : DistArray[Complex](3){self.dist==source.dist}) {
         finish ateach ((p1) in Dist.makeUnique(source.dist.places())) {
             val sourceDist = source.dist | here;
             val sourceStart = sourceDist.region.min(0);
@@ -91,20 +91,20 @@ public class Distributed3dFft {
                 val targetDist = source.dist | p2;
                 val targetStart = targetDist.region.min(0);
                 val targetEnd = targetDist.region.max(0);
-                val myVal = ValRail.make[Complex]((targetEnd - targetStart + 1) * (sourceEnd - sourceStart + 1) * dataSize, (n : Int) => source(mapPoint(n,sourceStart,sourceEnd,targetStart)));
-                at (p2) {this.shuffleChunk(myVal, target, sourceStart, sourceEnd, targetStart, targetEnd);}
+                val toTransfer = ValRail.make[Complex]((targetEnd - targetStart + 1) * (sourceEnd - sourceStart + 1) * dataSize, (n : Int) => source(mapPoint(n,sourceStart,sourceEnd,targetStart)));
+                at (p2) {transpose(toTransfer, target, sourceStart, sourceEnd, targetStart, targetEnd);}
             }
         }
     }
 
     /**
-     * "Shuffles" array around all places "in reverse" by transposing the zeroth dimension
+     * Shuffles array around all places "in reverse" by transposing the zeroth dimension
      * to the first, the first to the second and the second to the zeroth.
      * Assumes NxNxN arrays, and that source and target arrays are block 
      * distributed along the zeroth dimension.
      */
-    private global def shuffleArrayReverse(source : Array[Complex](3), 
-                             target : Array[Complex](3){self.dist==source.dist}) {
+    private global def transposeArrayReverse(source : DistArray[Complex](3), 
+                             target : DistArray[Complex](3){self.dist==source.dist}) {
         finish ateach ((p1) in Dist.makeUnique(source.dist.places())) {
             val sourceDist = source.dist | here;
             val sourceStart = sourceDist.region.min(0);
@@ -113,8 +113,8 @@ public class Distributed3dFft {
                 val targetDist = source.dist | p2;
                 val targetStart = targetDist.region.min(0);
                 val targetEnd = targetDist.region.max(0);
-                val myVal = ValRail.make[Complex](dataSize * (targetEnd - targetStart + 1) * (sourceEnd - sourceStart + 1), (n : Int) => source(mapPointReverse(n,sourceStart,sourceEnd,targetStart)));
-                at (p2) {this.shuffleChunkReverse(myVal, target, sourceStart, sourceEnd, targetStart, targetEnd);}
+                val toTransfer = ValRail.make[Complex](dataSize * (targetEnd - targetStart + 1) * (sourceEnd - sourceStart + 1), (n : Int) => source(mapPointReverse(n,sourceStart,sourceEnd,targetStart)));
+                at (p2) {transposeReverse(toTransfer, target, sourceStart, sourceEnd, targetStart, targetEnd);}
             }
         }
     }
@@ -141,8 +141,8 @@ public class Distributed3dFft {
      * Copies a chunk of a source array into the target array.
      * The elements are shoehorned into a ValRail of length K * (endI - startI) .
      */
-    private global safe def shuffleChunk(source : ValRail[Complex],
-                             target : Array[Complex](3),
+    private global safe def transpose(source : ValRail[Complex],
+                             target : DistArray[Complex](3),
                              sourceStart : Int,
                              sourceEnd : Int,
                              targetStart : Int,
@@ -163,8 +163,8 @@ public class Distributed3dFft {
      * Copies a chunk of a source array into the target array.
      * The elements are shoehorned into a ValRail of length K * (endI - startI) .
      */
-    private global safe def shuffleChunkReverse(source : ValRail[Complex],
-                             target : Array[Complex](3),
+    private global safe def transposeReverse(source : ValRail[Complex],
+                             target : DistArray[Complex](3),
                              sourceStart : Int,
                              sourceEnd : Int,
                              targetStart : Int,

@@ -34,7 +34,7 @@ public class DFT {
 
         val s = sign * 2.0 * Math.PI * Complex.I;
 
-        val output = Array.make[Complex](input.region);
+        val output = new Array[Complex](input.region);
         for (var m1:int=0; m1<n1; m1++) {
             for (var m2:int=0; m2<n2; m2++) {
                 for (var m3:int=0; m3<n3; m3++) {

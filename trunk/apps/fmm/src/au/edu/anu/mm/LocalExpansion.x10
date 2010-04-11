@@ -25,8 +25,9 @@ public class LocalExpansion extends Expansion {
      */
     public static safe def getMlm(v : Tuple3d, p : int) : LocalExpansion! {
         val exp = new LocalExpansion(p);
+        val terms = exp.terms as Array[Complex](2)!;
         val v_pole : Polar3d = Polar3d.getPolar3d(v);
-        val pplm : Array[Double](2) = AssociatedLegendrePolynomial.getPlm(Math.cos(v_pole.theta), p); 
+        val pplm = AssociatedLegendrePolynomial.getPlm(Math.cos(v_pole.theta), p); 
 
         val rfac0 : Double = 1.0 / v_pole.r;
         val phifac0 = Complex(Math.cos(v_pole.phi), Math.sin(v_pole.phi));
@@ -36,14 +37,14 @@ public class LocalExpansion extends Expansion {
             il = il * Math.max(l,1);
             var ilm : Double = il;
             var phifac : Complex = Complex.ONE;
-            exp.terms(l,0) = phifac * (rfac * pplm(l,0) * ilm);
+            terms(l,0) = phifac * (rfac * pplm(l,0) * ilm);
             for ((m) in 1..l) {
                 ilm = ilm / (l+1-m);
                 phifac = phifac * phifac0;
-                exp.terms(l,m) = phifac * (rfac * pplm(l,m) * ilm);
+                terms(l,m) = phifac * (rfac * pplm(l,m) * ilm);
             }
             for ((m) in -l..-1) {
-                exp.terms(l,m) = exp.terms(l,-m).conjugate() * ((2*((-m+1)%2)-1 as Double));
+                terms(l,m) = terms(l,-m).conjugate() * ((2*((-m+1)%2)-1 as Double));
             }
             rfac = rfac * rfac0;
         }
@@ -64,7 +65,21 @@ public class LocalExpansion extends Expansion {
     public safe def translateAndAddLocal(shift : MultipoleExpansion!,
                                          source : LocalExpansion!) {
         val p = terms.region.max(0);
-        for ((l,m) in terms.dist) {
+
+        // BEGIN HAND-INLINED ITERATOR
+        // should be just:  for ((l,m) in terms) {
+        val it_p = (terms.region as ExpansionRegion).p;
+        var it_l:int = 0;
+        var it_m:int = 0;
+	while ((it_l <= it_p && it_m <= it_l)) {
+            val l = it_l;
+	    val m = it_m;
+	    if (it_m<it_l) it_m++;
+	    else {
+                it_l++;
+                it_m = -it_l;
+            }
+        // END HAND-INLINED ITERATOR
             for ((j) in l..p) {
                 for ((k) in (l-j+m)..(-l+j+m)) {
                     val C_lmjk = shift.terms(j-l, k-m);
@@ -87,7 +102,21 @@ public class LocalExpansion extends Expansion {
     public safe def transformAndAddToLocal(transform : LocalExpansion!,
                                          source : MultipoleExpansion!) {
         val p : Int = terms.region.max(0);
-        for ((j,k) in terms.region) {
+
+        // BEGIN HAND-INLINED ITERATOR
+        // should be just:  for ((j,k) in terms) {
+        val it_p = (terms.region as ExpansionRegion).p;
+        var it_l:int = 0;
+        var it_m:int = 0;
+	while ((it_l <= it_p && it_m <= it_l)) {
+            val j = it_l;
+	    val k = it_m;
+	    if (it_m<it_l) it_m++;
+	    else {
+                it_l++;
+                it_m = -it_l;
+            }
+        // END HAND-INLINED ITERATOR
             val O_jk = source.terms(j,k);
             for ((l) in 0..p-j) {
                 for ((m) in -l..l) {
@@ -113,7 +142,20 @@ public class LocalExpansion extends Expansion {
         val transform = MultipoleExpansion.getOlm(q, v, numTerms);
         var potential : Double = 0.0;
         // TODO use lift/reduction?
-        for ((i,j) in terms.region) {
+        // BEGIN HAND-INLINED ITERATOR
+        // should be just:  for ((i,j) in terms.region) {
+        val it_p = (terms.region as ExpansionRegion).p;
+        var it_l:int = 0;
+        var it_m:int = 0;
+	while ((it_l <= it_p && it_m <= it_l)) {
+            val i = it_l;
+	    val j = it_m;
+	    if (it_m<it_l) it_m++;
+	    else {
+                it_l++;
+                it_m = -it_l;
+            }
+        // END HAND-INLINED ITERATOR
             potential += (terms(i,j) * transform.terms(i,j)).re;
         }
         return potential;

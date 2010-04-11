@@ -11,14 +11,14 @@ public class AssociatedLegendrePolynomial {
 	/**
 	 * Calculate associated Legendre polynomials P_{lm}(x) up to l=p (m.ge.0)
 	 */
-	public static safe def getPlm(x: double, p : int) : Array[Double](2) {
+	public static safe def getPlm(x: double, p : int) : Array[Double](2)! {
         if (Math.abs(x) > 1.0) {
             throw new IllegalArgumentException("abs(x) > 1: Associated Legendre functions are only defined on [-1, 1].");
         }
 
         val triRegion = new TriangularRegion(0,0,p+1,true);
-        val Plm = Array.make[Double](triRegion->here);
-		//val Plm = Array.make[double](Region.makeLowerTriangular(p+1));
+        val Plm = new Array[Double](triRegion);
+		//val Plm = DistArray.make[double](Region.makeLowerTriangular(p+1));
 		Plm(0,0) = 1.0;
 		val somx2 : Double = Math.sqrt((1.0 - x) * (1.0 + x));
 		var fact : Double = 1.0;
