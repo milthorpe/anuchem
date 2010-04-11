@@ -65,7 +65,21 @@ public class LocalExpansion extends Expansion {
     public safe def translateAndAddLocal(shift : MultipoleExpansion!,
                                          source : LocalExpansion!) {
         val p = terms.region.max(0);
-        for ((l,m) in terms) {
+
+        // BEGIN HAND-INLINED ITERATOR
+        // should be just:  for ((l,m) in terms) {
+        val it_p = (terms.region as ExpansionRegion).p;
+        var it_l:int = 0;
+        var it_m:int = 0;
+	while ((it_l <= it_p && it_m <= it_l)) {
+            val l = it_l;
+	    val m = it_m;
+	    if (it_m<it_l) it_m++;
+	    else {
+                it_l++;
+                it_m = -it_l;
+            }
+        // END HAND-INLINED ITERATOR
             for ((j) in l..p) {
                 for ((k) in (l-j+m)..(-l+j+m)) {
                     val C_lmjk = shift.terms(j-l, k-m);
@@ -88,7 +102,21 @@ public class LocalExpansion extends Expansion {
     public safe def transformAndAddToLocal(transform : LocalExpansion!,
                                          source : MultipoleExpansion!) {
         val p : Int = terms.region.max(0);
-        for ((j,k) in terms.region) {
+
+        // BEGIN HAND-INLINED ITERATOR
+        // should be just:  for ((j,k) in terms) {
+        val it_p = (terms.region as ExpansionRegion).p;
+        var it_l:int = 0;
+        var it_m:int = 0;
+	while ((it_l <= it_p && it_m <= it_l)) {
+            val j = it_l;
+	    val k = it_m;
+	    if (it_m<it_l) it_m++;
+	    else {
+                it_l++;
+                it_m = -it_l;
+            }
+        // END HAND-INLINED ITERATOR
             val O_jk = source.terms(j,k);
             for ((l) in 0..p-j) {
                 for ((m) in -l..l) {
@@ -114,7 +142,20 @@ public class LocalExpansion extends Expansion {
         val transform = MultipoleExpansion.getOlm(q, v, numTerms);
         var potential : Double = 0.0;
         // TODO use lift/reduction?
-        for ((i,j) in terms.region) {
+        // BEGIN HAND-INLINED ITERATOR
+        // should be just:  for ((i,j) in terms.region) {
+        val it_p = (terms.region as ExpansionRegion).p;
+        var it_l:int = 0;
+        var it_m:int = 0;
+	while ((it_l <= it_p && it_m <= it_l)) {
+            val i = it_l;
+	    val j = it_m;
+	    if (it_m<it_l) it_m++;
+	    else {
+                it_l++;
+                it_m = -it_l;
+            }
+        // END HAND-INLINED ITERATOR
             potential += (terms(i,j) * transform.terms(i,j)).re;
         }
         return potential;
