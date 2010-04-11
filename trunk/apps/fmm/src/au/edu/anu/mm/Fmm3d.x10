@@ -54,12 +54,12 @@ public class Fmm3d {
      * 1: y coordinate
      * 2: z coordinate
      */
-    private global val boxes : ValRail[Array[FmmBox](3)];
+    private global val boxes : ValRail[DistArray[FmmBox](3)];
 
-    private global val lowestLevelBoxes : Array[FmmBox](3);
+    private global val lowestLevelBoxes : DistArray[FmmBox](3);
 
     /** The atoms in the simulation, divided up into an array of ValRails, one for each place. */
-    private global val atoms : Array[ValRail[MMAtom]](1);
+    private global val atoms : DistArray[ValRail[MMAtom]](1);
 
     /** 
      * A cache of transformations from multipole to local at the same level.
@@ -71,18 +71,18 @@ public class Fmm3d {
      * 3: y translation
      * 4: z translation
      */
-    private global val multipoleTransforms : Array[LocalExpansion](5);
+    private global val multipoleTransforms : DistArray[LocalExpansion](5);
 
     /** 
      * A cache of multipole translations between parent box centres and child box centres. 
      * Dimensions as per multipoleTransforms
      */
-    private global val multipoleTranslations : Array[MultipoleExpansion](5);
+    private global val multipoleTranslations : DistArray[MultipoleExpansion](5);
 
     /**
      * An array of locally essential trees (LETs), one for each place.
      */
-    private global val locallyEssentialTrees : Array[LocallyEssentialTree](1);
+    private global val locallyEssentialTrees : DistArray[LocallyEssentialTree](1);
 
     // TODO use shared local variable within getEnergy() - XTENLANG-404
     private var directEnergy : Double = 0.0;
@@ -102,7 +102,7 @@ public class Fmm3d {
                     ws : Int,
                     size : Double,  
                     numAtoms : Int,
-                    atoms: Array[ValRail[MMAtom]](1)) {
+                    atoms: DistArray[ValRail[MMAtom]](1)) {
         val numLevels = Math.max(2, (Math.log(numAtoms / density) / Math.log(8.0) + 1.0 as Int));
         this.numLevels = numLevels;
 
@@ -222,7 +222,7 @@ public class Fmm3d {
 
         val highestLevelBoxes = boxes(0);
         finish ateach (p1 in Dist.makeUnique(highestLevelBoxes.dist.places())) {
-            val highestLevelMultipoleCopies = locallyEssentialTrees(here.id).multipoleCopies(0);
+            val highestLevelMultipoleCopies = (locallyEssentialTrees(here.id) as LocallyEssentialTree!).multipoleCopies(0);
             foreach ((x1,y1,z1) in highestLevelBoxes | here) {
                 val box1 = highestLevelBoxes(x1,y1,z1) as FmmBox!;
                 if (box1 != null) {
@@ -244,7 +244,7 @@ public class Fmm3d {
             //Console.OUT.println("transform level " + thisLevel);
             val thisLevelBoxes = boxes(thisLevel-2);
             finish ateach (p1 in Dist.makeUnique(thisLevelBoxes.dist.places())) {
-                val thisLevelMultipoleCopies = locallyEssentialTrees(here.id).multipoleCopies(thisLevel-2);
+                val thisLevelMultipoleCopies = (locallyEssentialTrees(here.id) as LocallyEssentialTree!).multipoleCopies(thisLevel-2);
                 foreach ((x1,y1,z1) in thisLevelBoxes | here) {
                     val box1 = thisLevelBoxes(x1,y1,z1) as FmmBox!;
                     if (box1 != null) {
@@ -376,11 +376,11 @@ public class Fmm3d {
      * cyclic dist across Place.PLACES)
      * TODO workaround due to lack of global immutable arrays - XTENLANG-787
      */
-    private def precomputeTranslations() : Array[MultipoleExpansion](5) {
+    private def precomputeTranslations() : DistArray[MultipoleExpansion](5) {
         if (numLevels < 3) {
             return null;
         } else {
-            val multipoleTranslations = Array.make[MultipoleExpansion](Dist.makeCyclic([0..Place.MAX_PLACES-1,3..numLevels, 0..1, 0..1, 0..1],0));
+            val multipoleTranslations = DistArray.make[MultipoleExpansion](Dist.makeBlock([0..Place.MAX_PLACES-1,3..numLevels, 0..1, 0..1, 0..1],0));
             finish ateach ((p) : Point in Dist.makeUnique(Place.places)) {
                 for (val(placeId,level,i,j,k) in multipoleTranslations.dist | here) {
                     dim : Int = Math.pow2(level);
@@ -402,11 +402,11 @@ public class Fmm3d {
      * the first index in a cyclic dist across Place.PLACES)
      * TODO workaround due to lack of global immutable arrays - XTENLANG-787
      */
-    private def precomputeTransforms() : Array[LocalExpansion](5) {
+    private def precomputeTransforms() : DistArray[LocalExpansion](5) {
         var wellSpacedLimit : Region(5) = [0..Place.MAX_PLACES-1,2..numLevels,-(ws+3)..ws+3,-(ws+3)..ws+3,-(ws+3)..ws+3];
         val multipoleTransformRegion : Region(5) = wellSpacedLimit - ([0..Place.MAX_PLACES-1,2..numLevels,-ws..ws,-ws..ws,-ws..ws] as Region);
         //Console.OUT.println("multipoleTransformRegion = " + multipoleTransformRegion);
-        val multipoleTransforms = Array.make[LocalExpansion](Dist.makeCyclic(multipoleTransformRegion,0));
+        val multipoleTransforms = DistArray.make[LocalExpansion](Dist.makeBlock(multipoleTransformRegion,0));
         finish ateach ((p) : Point in Dist.makeUnique(Place.places)) {
             for (val(placeId,level,i,j,k) in multipoleTransforms.dist | here) {
                 dim : Int = Math.pow2(level);
@@ -420,16 +420,16 @@ public class Fmm3d {
         return multipoleTransforms;
     }
 
-    private def constructTree() : ValRail[Array[FmmBox](3)] {
-        val boxesTemp = Rail.make[Array[FmmBox](3)](numLevels-1); // there's no level 1
+    private def constructTree() : ValRail[DistArray[FmmBox](3)] {
+        val boxesTemp = Rail.make[DistArray[FmmBox](3)](numLevels-1); // there's no level 1
         for ((thisLevel) in 2..numLevels) {
             val levelDim = Math.pow2(thisLevel) as Int;
             val thisLevelRegion : Region(3) = [0..levelDim-1, 0..levelDim-1, 0..levelDim-1];
             val thisLevelDist = Dist.makeBlock(thisLevelRegion, 0);
-            boxesTemp(thisLevel-2) = Array.make[FmmBox](thisLevelDist);
+            boxesTemp(thisLevel-2) = DistArray.make[FmmBox](thisLevelDist);
             Console.OUT.println("level " + thisLevel + " dist: " + thisLevelDist);
         }
-        val boxesValRail = boxesTemp as ValRail[Array[FmmBox](3)];
+        val boxesValRail = boxesTemp as ValRail[DistArray[FmmBox](3)];
 
         for ((thisLevel) in 2..numLevels-1) {
             val levelDim = Math.pow2(thisLevel) as Int;
@@ -457,8 +457,8 @@ public class Fmm3d {
      * later used to overlap remote retrieval of multipole expansion and
      * particle data with other computation.
      */
-    private def createLocallyEssentialTrees() : Array[LocallyEssentialTree](1) {
-        val locallyEssentialTrees = Array.make[LocallyEssentialTree](Dist.makeUnique(), (Point)=> null);
+    private def createLocallyEssentialTrees() : DistArray[LocallyEssentialTree](1) {
+        val locallyEssentialTrees = DistArray.make[LocallyEssentialTree](Dist.makeUnique(), (Point)=> null);
         finish ateach ((p1) in locallyEssentialTrees) {
             val uMin = Rail.make[Int](3, (Int) => Int.MAX_VALUE);
             val uMax = Rail.make[Int](3, (Int) => Int.MIN_VALUE);
@@ -554,7 +554,7 @@ public class Fmm3d {
         return  Point.make(atom.centre.i / size * lowestLevelDim + lowestLevelDim / 2 as Int, atom.centre.j / size * lowestLevelDim + lowestLevelDim / 2 as Int, atom.centre.k / size * lowestLevelDim + lowestLevelDim / 2 as Int);
     }
 
-    private global def getParentForChild(boxes : ValRail[Array[FmmBox](3)], level : Int, x : Int, y : Int, z : Int) : FmmBox {
+    private global def getParentForChild(boxes : ValRail[DistArray[FmmBox](3)], level : Int, x : Int, y : Int, z : Int) : FmmBox {
         if (level == 2)
             // level 2 is highest level
             return null;
@@ -580,7 +580,7 @@ public class Fmm3d {
      * TODO this is a workaround due to lack of Array copy facility - XTENLANG-787
      * @return a local copy at the current place of this box's multipole expansion
      */
-    private global def getMultipoleExpansionLocalCopy(thisLevelBoxes : Array[FmmBox](3), x : Int, y : Int, z : Int) : MultipoleExpansion! {
+    private global def getMultipoleExpansionLocalCopy(thisLevelBoxes : DistArray[FmmBox](3), x : Int, y : Int, z : Int) : MultipoleExpansion! {
         val data = at (thisLevelBoxes.dist(x,y,z)) {thisLevelBoxes(x,y,z) != null? Expansion.getData(numTerms, (thisLevelBoxes(x,y,z) as FmmBox!).multipoleExp) : null};
         if (data != null) {
             return new MultipoleExpansion(numTerms, data);

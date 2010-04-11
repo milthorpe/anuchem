@@ -26,7 +26,7 @@ public class LocalExpansion extends Expansion {
     public static safe def getMlm(v : Tuple3d, p : int) : LocalExpansion! {
         val exp = new LocalExpansion(p);
         val v_pole : Polar3d = Polar3d.getPolar3d(v);
-        val pplm : Array[Double](2) = AssociatedLegendrePolynomial.getPlm(Math.cos(v_pole.theta), p); 
+        val pplm : DistArray[Double](2) = AssociatedLegendrePolynomial.getPlm(Math.cos(v_pole.theta), p); 
 
         val rfac0 : Double = 1.0 / v_pole.r;
         val phifac0 = Complex(Math.cos(v_pole.phi), Math.sin(v_pole.phi));
@@ -64,7 +64,7 @@ public class LocalExpansion extends Expansion {
     public safe def translateAndAddLocal(shift : MultipoleExpansion!,
                                          source : LocalExpansion!) {
         val p = terms.region.max(0);
-        for ((l,m) in terms.dist) {
+        for ((l,m) in terms) {
             for ((j) in l..p) {
                 for ((k) in (l-j+m)..(-l+j+m)) {
                     val C_lmjk = shift.terms(j-l, k-m);

@@ -57,9 +57,9 @@ public class PME {
 
     private global val fft : Distributed3dFft;
 
-    private global val B : Array[Double]{self.dist==gridDist};
-    private global val C : Array[Double]{self.dist==gridDist};
-    private global val BdotC : Array[Double]{self.dist==gridDist};
+    private global val B : DistArray[Double]{self.dist==gridDist};
+    private global val C : DistArray[Double]{self.dist==gridDist};
+    private global val BdotC : DistArray[Double]{self.dist==gridDist};
 
     // TODO should be shared local to calculateEnergy() - XTENLANG-404
     private var directSum : Double = 0.0;
@@ -97,7 +97,7 @@ public class PME {
         this.beta = beta;
         this.cutoff = cutoff;
         val imageTranslationRegion = [-1..1,-1..1,-1..1] as Region(3){rect};
-        this.imageTranslations = Array.make[Vector3d](imageTranslationRegion, (p(i,j,k) : Point(3)) => (edges(0).mul(i)).add(edges(1).mul(j)).add(edges(2).mul(k)));
+        this.imageTranslations = new Array[Vector3d](imageTranslationRegion, (p(i,j,k) : Point(3)) => (edges(0).mul(i)).add(edges(1).mul(j)).add(edges(2).mul(k)));
 
         Console.OUT.println("PME for " + atoms.length + " particles.");
         Console.OUT.println("Box edges: " + edges + " volume: " + getVolume());
@@ -107,7 +107,7 @@ public class PME {
 
         B = getBArray();
         C = getCArray();
-        BdotC = Array.make[Double](gridDist);
+        BdotC = DistArray.make[Double](gridDist);
         // TODO Array.lift not implemented XTENLANG-376
         // BdotC = B.lift((b:Double,c:Double)=>b*c, C);
 	    finish ateach(p in gridDist) {
@@ -152,16 +152,16 @@ public class PME {
         val Q = getGriddedCharges();
 
         timer.start(TIMER_INDEX_INVFFT);
-        val temp = Array.make[Complex](gridDist); 
-        val Qinv = Array.make[Complex](gridDist);
+        val temp = DistArray.make[Complex](gridDist); 
+        val Qinv = DistArray.make[Complex](gridDist);
         fft.doFFT3d(Q, Qinv, temp, false);
         timer.stop(TIMER_INDEX_INVFFT);
 
         //Console.OUT.println("Qinv");
 
         timer.start(TIMER_INDEX_THETARECCONVQ);
-        val thetaRecConvQInv = Array.make[Complex](gridDist, (p : Point(gridDist.region.rank)) => BdotC(p) * Qinv(p));
-        val thetaRecConvQ = Array.make[Complex](gridDist);
+        val thetaRecConvQInv = DistArray.make[Complex](gridDist, (p : Point(gridDist.region.rank)) => BdotC(p) * Qinv(p));
+        val thetaRecConvQ = DistArray.make[Complex](gridDist);
         fft.doFFT3d(thetaRecConvQInv, thetaRecConvQ, temp, true);
         timer.stop(TIMER_INDEX_THETARECCONVQ);
 
@@ -184,9 +184,9 @@ public class PME {
      * Calculates the gridded charge array Q as defined in Eq. 4.6,
      * using Cardinal B-spline interpolation.
      */
-    public def getGriddedCharges() : Array[Complex](3){self.dist==gridDist} {
+    public def getGriddedCharges() : DistArray[Complex](3){self.dist==gridDist} {
         timer.start(TIMER_INDEX_GRIDCHARGES);
-        val Q = Array.make[Double](gridDist);
+        val Q = DistArray.make[Double](gridDist);
         finish foreach ((i) in 0..atoms.length-1) {
             val atom = atoms(i);
             val q = atom.charge;
@@ -213,7 +213,7 @@ public class PME {
                 }
             }
         }
-        val Qcomplex = Array.make[Complex](gridDist, (m : Point(gridDist.region.rank)) => Complex(Q(m), 0.0));
+        val Qcomplex = DistArray.make[Complex](gridDist, (m : Point(gridDist.region.rank)) => Complex(Q(m), 0.0));
         timer.stop(TIMER_INDEX_GRIDCHARGES);
         return Qcomplex;
     }
@@ -223,7 +223,7 @@ public class PME {
      * @param thetaRecConvQ the reciprocal pair potential as defined in eq. 4.7
      * @return the approximation to the reciprocal energy ~E_rec as defined in Eq. 4.7
      */
-    private def getReciprocalEnergy(Q : Array[Complex]{self.dist==gridDist}, thetaRecConvQ : Array[Complex]{self.dist==gridDist}) {
+    private def getReciprocalEnergy(Q : DistArray[Complex]{self.dist==gridDist}, thetaRecConvQ : DistArray[Complex]{self.dist==gridDist}) {
         timer.start(TIMER_INDEX_RECIPROCAL);
         finish ateach ((p1) in Dist.makeUnique(gridDist.places())) {
             var myReciprocalEnergy : Double = 0.0;
@@ -244,7 +244,7 @@ public class PME {
      * @return the array B as defined by Eq 4.8 and 4.4
      */
     public def getBArray() {
-        val B = Array.make[Double](gridDist);
+        val B = DistArray.make[Double](gridDist);
         // TODO ateach (m(m1,m2,m3) in gridDist) {
         finish foreach ((m1) in 0..gridSize(0)-1) {
             val m1D = m1 as Double;
@@ -284,7 +284,7 @@ public class PME {
      * @return the array C as defined by Eq 3.9
      */
     public def getCArray() {
-        val C = Array.make[Double](gridDist);
+        val C = DistArray.make[Double](gridDist);
         val V = getVolume();
         //Console.OUT.println("V = " + V);
         finish ateach (m(m1,m2,m3) in gridDist) {

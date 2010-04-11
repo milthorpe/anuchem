@@ -1,7 +1,6 @@
 package au.edu.anu.mm;
 
 import x10.util.StringBuilder;
-import x10.array.LocalRectArray;
 
 /**
  * This is the superclass for multipole and local expansions, as used in
@@ -15,22 +14,22 @@ import x10.array.LocalRectArray;
  */
 public class Expansion {
     /** The terms X_{lm} (with m >= 0) in this expansion */
-    public val terms : LocalRectArray[Complex]{self.rank==2&&self.home==this.home};
+    public val terms : Array[Complex](2)!;
 
     public def this(p : Int) {
         //var expRegion : Region(2) = [0..p,-p..p];
         //expRegion = expRegion - Region.makeHalfspace([1,1],1);
         //expRegion = expRegion - Region.makeHalfspace([1,-1],1);
         val expRegion = new ExpansionRegion(p);
-        this.terms = new LocalRectArray[Complex](expRegion, (Point) => Complex.ZERO) as LocalRectArray[Complex]{self.rank==2, self.home==this.home}; // FIXME DG: shouldn't need cast
+        this.terms = new Array[Complex](expRegion, (Point) => Complex.ZERO);
     }
 
     public def this(p : Int, data : ValRail[Complex]) {
         val expRegion = new ExpansionRegion(p);
-	// FIXME: DG.  Change this constructor to take a LocalRectArray# to copyFrom to avoid useless zeroing in new LocalRextArray.
-	val tmp = new LocalRectArray[Complex](expRegion);
-        this.terms = tmp  as LocalRectArray[Complex]{self.rank==2, self.home==this.home, self.home==here}; // FIXME DG: shouldn't need cast
+	// FIXME: DG.  Change this constructor to take an Array to copyFrom to avoid useless zeroing in new LocalRectArray.
+	val tmp = new Array[Complex](expRegion);
         data.copyTo(0, tmp.raw(), 0, data.length());
+        this.terms = tmp;
     }
 
     public atomic def add(e : Expansion!) {

@@ -2,7 +2,6 @@ package edu.mit.fftw;
 
 import x10.compiler.Native;
 import x10.compiler.NativeRep;
-import x10.array.BaseArray;
 
 @NativeRep("c++", "::edu::mit::fftw::FFTWWrapper", "::edu::mit::fftw::FFTWWrapper", null)
 public class FFTW {
@@ -12,7 +11,7 @@ public class FFTW {
 
     @Native("c++", "::edu::mit::fftw::FFTWWrapper::fftwPlanDft3d(#1, #2, #3, reinterpret_cast<fftw_complex*>(#4._val->raw()._val->_data), reinterpret_cast<fftw_complex*>(#5._val->raw()._val->_data), #6)")
     @Native("java", "null")
-    public native static def fftwPlan3d(n1 : Int, n2 : Int, n3 : Int, input : BaseArray[Complex], output : BaseArray[Complex], forward : Boolean) : FFTWPlan;
+    public native static def fftwPlan3d(n1 : Int, n2 : Int, n3 : Int, input : Array[Complex], output : Array[Complex], forward : Boolean) : FFTWPlan;
     
     @Native("c++", "::edu::mit::fftw::FFTWWrapper::fftwExecute(#1)")
     @Native("java", "")

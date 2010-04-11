@@ -25,9 +25,9 @@ public class Distributed3dFft {
      * This operation would have to be renamed "doFFT3dTranspose"
      * to indicate that the target array has its dimensions transposed.
      */
-    public global def doFFT3d(source : Array[Complex](3), 
-                        target : Array[Complex](3){self.dist==source.dist},
-                        temp : Array[Complex](3){self.dist==source.dist},
+    public global def doFFT3d(source : DistArray[Complex](3), 
+                        target : DistArray[Complex](3){self.dist==source.dist},
+                        temp : DistArray[Complex](3){self.dist==source.dist},
                         forward : Boolean) {
         doFFTForOneDimension(source, temp, forward);
         if (forward) {
@@ -52,8 +52,8 @@ public class Distributed3dFft {
     /**
      * Performs a 1D FFT for each 1D slice along the first dimension.
      */
-    private global def doFFTForOneDimension(source : Array[Complex](3), 
-                                     target : Array[Complex](3){self.dist==source.dist},
+    private global def doFFTForOneDimension(source : DistArray[Complex](3), 
+                                     target : DistArray[Complex](3){self.dist==source.dist},
                                      forward : Boolean) {
         finish ateach ((p1) in Dist.makeUnique(source.dist.places())) {
             val oneDSource = Rail.make[Complex](dataSize);
@@ -81,8 +81,8 @@ public class Distributed3dFft {
      * Assumes NxNxN arrays, and that source and target arrays are block 
      * distributed along the zeroth dimension.
      */
-    private global def shuffleArray(source : Array[Complex](3), 
-                             target : Array[Complex](3){self.dist==source.dist}) {
+    private global def shuffleArray(source : DistArray[Complex](3), 
+                             target : DistArray[Complex](3){self.dist==source.dist}) {
         finish ateach ((p1) in Dist.makeUnique(source.dist.places())) {
             val sourceDist = source.dist | here;
             val sourceStart = sourceDist.region.min(0);
@@ -103,8 +103,8 @@ public class Distributed3dFft {
      * Assumes NxNxN arrays, and that source and target arrays are block 
      * distributed along the zeroth dimension.
      */
-    private global def shuffleArrayReverse(source : Array[Complex](3), 
-                             target : Array[Complex](3){self.dist==source.dist}) {
+    private global def shuffleArrayReverse(source : DistArray[Complex](3), 
+                             target : DistArray[Complex](3){self.dist==source.dist}) {
         finish ateach ((p1) in Dist.makeUnique(source.dist.places())) {
             val sourceDist = source.dist | here;
             val sourceStart = sourceDist.region.min(0);
@@ -142,7 +142,7 @@ public class Distributed3dFft {
      * The elements are shoehorned into a ValRail of length K * (endI - startI) .
      */
     private global safe def shuffleChunk(source : ValRail[Complex],
-                             target : Array[Complex](3),
+                             target : DistArray[Complex](3),
                              sourceStart : Int,
                              sourceEnd : Int,
                              targetStart : Int,
@@ -164,7 +164,7 @@ public class Distributed3dFft {
      * The elements are shoehorned into a ValRail of length K * (endI - startI) .
      */
     private global safe def shuffleChunkReverse(source : ValRail[Complex],
-                             target : Array[Complex](3),
+                             target : DistArray[Complex](3),
                              sourceStart : Int,
                              sourceEnd : Int,
                              targetStart : Int,
