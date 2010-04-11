@@ -373,7 +373,7 @@ public class Fmm3d {
      * Precomputes multipole translations and multipole-to-local transformations,
      * for use in translating multipole expansions from child to parent boxes.
      * This is distributed to all places by replicating the first index in a 
-     * cyclic dist across Place.PLACES)
+     * block dist across Place.PLACES)
      * TODO workaround due to lack of global immutable arrays - XTENLANG-787
      */
     private def precomputeTranslations() : DistArray[MultipoleExpansion](5) {
@@ -399,7 +399,7 @@ public class Fmm3d {
      * Precomputes a multipole transform array for use in transforming
      * multipole expansions of well-separated boxes to local expansions
      * at the current box.  This is distributed to all places by replicating 
-     * the first index in a cyclic dist across Place.PLACES)
+     * the first index in a block dist across Place.PLACES)
      * TODO workaround due to lack of global immutable arrays - XTENLANG-787
      */
     private def precomputeTransforms() : DistArray[LocalExpansion](5) {

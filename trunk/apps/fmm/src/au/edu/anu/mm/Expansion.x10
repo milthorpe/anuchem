@@ -61,7 +61,4 @@ public class Expansion {
     public static safe def getData(p : Int, source : Expansion!) : ValRail[Complex] {
         return source.terms.raw();
     }
-
-    /** The nearest integer square root below <code>n</code> */
-    protected static safe def squareRootFloor(n : Int) = (Math.sqrt(n as Double) as Int);
 }
