@@ -1089,7 +1089,7 @@ public class GMatrix extends Matrix {
     
         // center a
         finish foreach(place in Place.places) {
-          at(place) {
+          async at(place) {
             var myG:Int = 0;
             var L:Int = 0;
 
@@ -1097,6 +1097,7 @@ public class GMatrix extends Matrix {
             var a:Int, b:Int, c:Int, d:Int;
             var naFunc:Int, nbFunc:Int, ncFunc:Int, ndFunc:Int, twoEIndx:Int;
 
+            Console.OUT.println("Copying data..." + here);
             // TODO: better way to pass global data instead?
             // make local copies of data 
             val mol_loc = new Molecule[QMAtom]() as Molecule[QMAtom]!;
@@ -1127,6 +1128,8 @@ public class GMatrix extends Matrix {
             val twoE_loc = new TwoElectronIntegrals(bas_loc, mol_loc, true);
             val comp_loc = new ComputePlaceNewFuture(den_loc, twoE_loc);
             at(computeInst) { computeInst(PIdx(0)++) = comp_loc; };
+            
+            Console.OUT.println("Starting computation..." + here);
 
             val F1 = future(G) { 
                        var myG:Int; 
