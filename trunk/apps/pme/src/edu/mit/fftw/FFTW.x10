@@ -2,7 +2,9 @@ package edu.mit.fftw;
 
 import x10.compiler.Native;
 import x10.compiler.NativeRep;
+import x10.compiler.NativeCPPCompilationUnit;
 
+@NativeCPPCompilationUnit("FFTW.cc")
 @NativeRep("c++", "::edu::mit::fftw::FFTWWrapper", "::edu::mit::fftw::FFTWWrapper", null)
 public class FFTW {
     @Native("c++", "::edu::mit::fftw::FFTWWrapper::fftwPlanDft1d(#1, reinterpret_cast<fftw_complex*>(#2._val->_data), reinterpret_cast<fftw_complex*>(#3._val->_data), #4)")
