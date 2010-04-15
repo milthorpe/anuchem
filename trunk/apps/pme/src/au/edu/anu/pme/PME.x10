@@ -169,11 +169,10 @@ public class PME {
 
         reciprocalEnergy = getReciprocalEnergy(Q, thetaRecConvQ);
 
-        //Console.OUT.println("directEnergy = " + directEnergy);
-        //Console.OUT.println("directSum = " + directSum);
-        //Console.OUT.println("selfEnergy = " + selfEnergy);
+        Console.OUT.println("directSum = " + directSum);
+        Console.OUT.println("selfEnergy = " + selfEnergy);
         //Console.OUT.println("correctionEnergy = " + correctionEnergy);
-        //Console.OUT.println("reciprocalEnergy = " + reciprocalEnergy);
+        Console.OUT.println("reciprocalEnergy = " + reciprocalEnergy);
         val totalEnergy = directSum + reciprocalEnergy + (correctionEnergy + selfEnergy);
 
         timer.stop(TIMER_INDEX_TOTAL);
