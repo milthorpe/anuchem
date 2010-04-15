@@ -3,7 +3,7 @@ package x10x.matrix;
 import x10x.xla.*;
 import x10x.vector.Vector;
 
-import x10.array.LocalRectArray;
+import x10.array.Array;
 
 /**
  * This class represents an (NxM)  Matrix.
@@ -12,7 +12,7 @@ import x10.array.LocalRectArray;
  * @author V.Ganesh
  */
 public class Matrix { 
-    global val mat:LocalRectArray[Double]{rank==2, self.at(this)};
+    global val mat:Array[Double]{rank==2, self.at(this)};
 
     global val region:Region{rank==2, self.at(this)};
     global val distribution:Dist{rank==2, self.at(this)};
@@ -26,7 +26,7 @@ public class Matrix {
         region       = [0..(siz-1), 0..(siz-1)];
         // distribution = Dist.makeBlock(region, 1) as Dist{rank==2, self.at(this)};
         distribution = Dist.makeConstant(region) as Dist{rank==2, self.at(this)};
-        mat          = new LocalRectArray[Double](region) as LocalRectArray[Double]{rank==2, self.at(this)};
+        mat          = new Array[Double](region) as Array[Double]{rank==2, self.at(this)};
     }
 
     /**
@@ -38,7 +38,7 @@ public class Matrix {
         region       = [0..(row-1), 0..(col-1)];
         // distribution = Dist.makeBlock(region, 1) as Dist{rank==2, self.at(this)};
         distribution = Dist.makeConstant(region) as Dist{rank==2, self.at(this)};
-        mat          = new LocalRectArray[Double](region) as LocalRectArray[Double]{rank==2, self.at(this)};
+        mat          = new Array[Double](region) as Array[Double]{rank==2, self.at(this)};
     }
 
     /**
@@ -47,7 +47,7 @@ public class Matrix {
     public def this(dist:Dist{rank==2}) {
         distribution = dist as Dist{rank==2, self.at(this)};
         region       = distribution.region as Region{rank==2, self.at(this)};
-        mat          = new LocalRectArray[Double](region) as LocalRectArray[Double]{rank==2, self.at(this)};
+        mat          = new Array[Double](region) as Array[Double]{rank==2, self.at(this)};
     }
 
     /**
@@ -82,18 +82,9 @@ public class Matrix {
 
         val sqrtEVal = Rail.make[Double](rowCount);
 
-        finish foreach(plc in eigenValues.dist.places()) {
-             for(val(i) in eigenValues.dist.get(plc)) {
-                 sqrtEVal(i) = at(plc) { return Math.sqrt(eigenValues(i)); };
-             }
-        }
-
-        finish foreach(plc in sHalf.mat.dist.places()) {
-             for(val(i, j) in sHalf.mat.dist.get(plc)) {
-                 if (i == j) { 
-                    val sqVal = sqrtEVal(i);
-                    at(plc) { sHalf.mat(i, i) /= sqVal; };
-                 }
+        finish foreach(val(i,j) in sHalf.mat.region) {
+             if (i==j) {
+                sHalf.mat(i,i) /= Math.sqrt(eigenValues(i));
              }
         }
 
@@ -104,7 +95,7 @@ public class Matrix {
      * Make the current Matrix as Identity
      */
     public def makeIdentity() : void {
-        finish ateach(val(i,j) in mat.dist)
+        finish foreach(val(i,j) in mat.region)
            if (i == j) mat(i, j) = 1.0;
            else        mat(i, j) = 0.0;
     }
@@ -113,7 +104,7 @@ public class Matrix {
      * Fill the current Matrix with zero
      */
     public def makeZero() : void {
-        finish ateach(val(i,j) in mat.dist)
+        finish foreach(val(i,j) in mat.region)
            mat(i, j) = 0.0;
     }
 
@@ -200,26 +191,13 @@ public class Matrix {
     public def transpose() : Matrix! {
          val N   = getRowCount();
          val M   = getColCount();
-         val res = new Matrix(Dist.make([0..(M-1), 0..(N-1)])) as Matrix!;
+         val res = new Matrix(M, N) as Matrix!;
 
-         var i:Int, j:Int;
-
-         finish foreach(plc in mat.dist.places()) {
-             for(val(i, j) in mat.dist.get(plc)) {
-                 res.mat(j, i) = at(plc) { return mat(i, j); }; 
-             }
-         }
-
-         val distRes = new Matrix(M, N) as Matrix!;
-
-         finish foreach(plc in distRes.mat.dist.places()) {
-             for(val(i, j) in distRes.mat.dist.get(plc)) {
-                val r = res.mat(i, j);
-                at(plc) { distRes.mat(i, j) = r; }
-             }
+         finish foreach(val(i,j) in res.region) {
+             res.mat(i, j) = mat(j, i);
          }
  
-         return distRes;
+         return res;
     }
 
     /**
@@ -230,14 +208,10 @@ public class Matrix {
          val tr = Rail.make[Double](1);
          
          tr(0) = 0.0;
-         finish foreach(plc in mat.dist.places()) {
-             for(val(i, j) in mat.dist.get(plc)) {
+         finish foreach(val(i,j) in mat.region) {
                  if (i==j) {
-                     val trLoc = at(plc) { return mat(i, i); };
-
-                     atomic tr(0) += trLoc;
+                     atomic tr(0) += mat(i, i);
                  }
-             }
          }
         
          return tr(0);
@@ -252,14 +226,10 @@ public class Matrix {
        val N = getRowCount();
 
        sum(0) = 0.0;
-       finish foreach(plc in mat.dist.places()) {
-             for(val(i, j) in mat.dist.get(plc)) {
-                 if (i!=j && j>i) {
-                     val sumLoc = at(plc) { return Math.abs(mat(i, j)); };
-                     
-                     atomic sum(0) += sumLoc;
-                 }
-             }
+       finish foreach(val(i,j) in mat.region) {
+                if (i!=j && j>i) {
+                    atomic sum(0) += Math.abs(mat(i, j));
+                }
        }
 
        return sum(0); 

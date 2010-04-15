@@ -43,22 +43,21 @@ public class OneElectronIntegrals {
        val ovr = overlap.getMatrix();
        val h   = hCore.getMatrix();
 
-       finish foreach(plc in h.dist.places()) {
-             for(val(i, j) in h.dist.get(plc)) {
-                 val bfi = bfs.get(i);
-                 val bfj = bfs.get(j);
+       finish for(val(i, j) in h.region) {
+              val bfi = bfs.get(i);
+              val bfj = bfs.get(j);
 
-                 val oVal = bfi.overlap(bfj);
-                 val hVal = bfi.kinetic(bfj);
+              val oVal = bfi.overlap(bfj);
+              val hVal = bfi.kinetic(bfj);
 
-                 at(plc) { ovr(i,j) = oVal; h(i, j) = hVal; }
+              ovr(i,j) = oVal; 
+                h(i,j) = hVal; 
 
-                 for(var k:Int=0; k<nat; k++) {
-                    val aVal = atno(k) * bfi.nuclear(bfj, atms.get(k).centre);
+              for(var k:Int=0; k<nat; k++) {
+                  val aVal = atno(k) * bfi.nuclear(bfj, atms.get(k).centre);
 
-                    at(plc) { h(i,j) += aVal; }
-                 }
-             }
+                  h(i,j) += aVal; 
+              }
        }
     }
 }

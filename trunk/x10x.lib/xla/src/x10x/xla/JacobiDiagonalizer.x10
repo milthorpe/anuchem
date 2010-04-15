@@ -34,10 +34,8 @@ public class JacobiDiagonalizer {
        val aMat = new Matrix(Dist.make([0..n1,0..n1])) as Matrix!;
        val a = aMat.getMatrix();
 
-       finish foreach(plc in matrix.dist.places()) { 
-             for(val(i, j) in matrix.dist.get(plc)) { 
-                 a(i, j) = at(plc) { return matrix(i, j); };
-             }
+       finish foreach(val(i,j) in matrix.region) { 
+                 a(i, j) = matrix(i, j); 
        }
 
        eigenValuesVec = new Vector(Dist.make([0..n1])) as Vector!; 
@@ -136,22 +134,6 @@ public class JacobiDiagonalizer {
 
        sortEigenValues(); 
        eigenVectorsMat = eigenVectorsMat.transpose();
-
-       // convert to dist  
-       val distEValVec = new Vector(n) as Vector!;
-
-       val distEVal = distEValVec.getVector();
-
-       val eVal = eigenValuesVec.getVector();
-
-       finish foreach(plc in distEVal.dist.places()) {
-             for(val(i) in distEVal.dist.get(plc)) {
-                 val iVal = eVal(i); 
-                 at(plc) { distEVal(i) = iVal; };
-             }
-       }
-
-       eigenValuesVec  = distEValVec;
     }
 
     private static def doRotate(a:Array[Double]{rank==2}, i:Int, j:Int, k:Int, l:Int,

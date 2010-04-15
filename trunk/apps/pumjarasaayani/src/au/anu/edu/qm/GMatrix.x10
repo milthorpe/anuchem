@@ -184,7 +184,7 @@ public class GMatrix extends Matrix {
         } // end i loop
 
         // form the G matrix
-        finish ateach(val(x,y) in gMatrix.dist)
+        finish foreach(val(x,y) in gMatrix.region)
                   gMatrix(x,y) = jMatrix(x,y) - (0.25*kMatrix(x,y));
 
     }
@@ -275,7 +275,7 @@ public class GMatrix extends Matrix {
         } // finish
 
         // form the G matrix
-        finish ateach(val(x,y) in gMatrix.dist)
+        finish foreach(val(x,y) in gMatrix.region)
                   gMatrix(x,y) = jMatrix(x,y) - (0.25*kMatrix(x,y));
     }
 
@@ -343,7 +343,7 @@ public class GMatrix extends Matrix {
              val jMatrix = computeInst(ix).getJMat().getMatrix();
              val kMatrix = computeInst(ix).getKMat().getMatrix();
 
-             finish ateach(val(x,y) in gMatrix.dist) {
+             finish foreach(val(x,y) in gMatrix.region) {
                    gMatrix(x,y) += jMatrix(x,y) - (0.25*kMatrix(x,y));
              } // finish
         } // end for
@@ -715,7 +715,7 @@ public class GMatrix extends Matrix {
         } // center a
      
         // form the G matrix
-        finish ateach(val(x,y) in gMatrix.dist)
+        finish foreach(val(x,y) in gMatrix.region)
                   gMatrix(x,y) = jMatrix(x,y) - (0.25*kMatrix(x,y));     
     }
 
@@ -813,7 +813,7 @@ public class GMatrix extends Matrix {
              val jMatrix = computeInst(idx).getJMat().getMatrix();
              val kMatrix = computeInst(idx).getKMat().getMatrix();
              
-             finish ateach(val(x,y) in gMatrix.dist) {
+             finish foreach(val(x,y) in gMatrix.region) {
                    gMatrix(x,y) += jMatrix(x,y) - (0.25*kMatrix(x,y));     
              } // finish
         } // end for

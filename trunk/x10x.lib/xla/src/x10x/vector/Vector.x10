@@ -20,7 +20,7 @@ public class Vector {
         region       = [0..(siz-1)];
         // distribution = Dist.makeBlock(region, 0) as Dist{rank==1, self.at(this)};
         distribution = Dist.makeConstant(region) as Dist{rank==1, self.at(this)};
-        vec          = Array.make[Double](distribution) as Array[Double]{rank==1, self.at(this)};
+        vec          = new Array[Double](region) as Array[Double]{rank==1, self.at(this)};
     }
 
     /**
@@ -44,7 +44,7 @@ public class Vector {
     public def this(dist:Dist{rank==1}) {
         distribution = dist as Dist{rank==1, self.at(this)};
         region       = distribution.region as Region{rank==1, self.at(this)};
-        vec          = Array.make[Double](distribution) as Array[Double]{rank==1, self.at(this)};
+        vec          = new Array[Double](region) as Array[Double]{rank==1, self.at(this)};
     }
  
     /**

@@ -10,7 +10,7 @@ package au.anu.edu.qm;
 
 import x10.util.ArrayList;
 
-import x10.array.LocalRectArray;
+import x10.array.Array;
 
 import x10x.matrix.Matrix;
 import x10x.vector.Point3d;
@@ -33,11 +33,11 @@ public class TwoElectronIntegrals {
 
     global val fmt:Rail[Double]!, zeroM:Rail[Double]!;
 
-    // TODO: use of LocalRectArray should eventually be replaced with Array
-    global val rM:LocalRectArray[Double]{rank==2,self.at(this)};
-    global val pqInts:LocalRectArray[Double]{rank==2,self.at(this)};
-    global val npint:LocalRectArray[Double]{rank==2,self.at(this)};
-    global val pcdint:LocalRectArray[Double]{rank==3,self.at(this)};
+    // TODO: use of Array should eventually be replaced with Array
+    global val rM:Array[Double]{rank==2,self.at(this)};
+    global val pqInts:Array[Double]{rank==2,self.at(this)};
+    global val npint:Array[Double]{rank==2,self.at(this)};
+    global val pcdint:Array[Double]{rank==3,self.at(this)};
 
     private val maxam:Int, maxam2:Int, maxam4:Int, maxamN:Int, maxam2M:Int, maxam2N:Int, pqdim:Int;
 
@@ -53,12 +53,12 @@ public class TwoElectronIntegrals {
 
         if (!direct) {
            // allocate required memory
-           twoEInts = Array.make[Double]([0..noOfIntegrals]) as Array[Double]{self.at(this), rank==1};
+           twoEInts = new Array[Double]([0..noOfIntegrals]) as Array[Double]{self.at(this), rank==1};
            this.contractedList = null;
            compute2EShellPair(molecule);
         } else {
            this.contractedList = basisFunctions.getBasisFunctions();
-           twoEInts = Array.make[Double]([0..1]) as Array[Double]{self.at(this), rank==1};
+           twoEInts = new Array[Double]([0..1]) as Array[Double]{self.at(this), rank==1};
         } // end if
 
     
@@ -88,10 +88,10 @@ public class TwoElectronIntegrals {
         **/
 
 
-        rM     = new LocalRectArray[Double]([0..maxam4+1, 0..((maxam4+1)*(maxam4+2)/2)]) as LocalRectArray[Double]{rank==2,self.at(this)};
-        pqInts = new LocalRectArray[Double]([0..maxam2N, 0..maxam2N]) as LocalRectArray[Double]{rank==2,self.at(this)};
-        npint  = new LocalRectArray[Double]([0..maxam2+1, 0..maxam2M+1]) as LocalRectArray[Double]{rank==2,self.at(this)};
-        pcdint = new LocalRectArray[Double]([0..maxamN+1, 0..maxamN+1, 0..maxam2N]) as LocalRectArray[Double]{rank==3,self.at(this)};
+        rM     = new Array[Double]([0..maxam4+1, 0..((maxam4+1)*(maxam4+2)/2)]) as Array[Double]{rank==2,self.at(this)};
+        pqInts = new Array[Double]([0..maxam2N, 0..maxam2N]) as Array[Double]{rank==2,self.at(this)};
+        npint  = new Array[Double]([0..maxam2+1, 0..maxam2M+1]) as Array[Double]{rank==2,self.at(this)};
+        pcdint = new Array[Double]([0..maxamN+1, 0..maxamN+1, 0..maxam2N]) as Array[Double]{rank==3,self.at(this)};
 
 
         // Console.OUT.println("alloc2: " + pcdint.region.size());
@@ -682,9 +682,9 @@ public class TwoElectronIntegrals {
                                dStrt:Int, cStrt:Int, bStrt:Int, aStrt:Int,
                                shellList:ShellList!, bAng:Int, aAng:Int,
                                twoEInts:Rail[Double]!,
-                               jMatrix:LocalRectArray[Double]{rank==2}, 
-                               kMatrix:LocalRectArray[Double]{rank==2},
-                               dMatrix:LocalRectArray[Double]{rank==2}) {
+                               jMatrix:Array[Double]{rank==2}, 
+                               kMatrix:Array[Double]{rank==2},
+                               dMatrix:Array[Double]{rank==2}) {
          var dd:Int, cc:Int, bb:Int, aa:Int, k:Int, l:Int;
          
          var intIndx:Int = 0;
