@@ -9,9 +9,9 @@ import x10x.matrix.Matrix;
  * @author V.Ganesh
  */
 public class Vector { 
-    global val vec:Array[Double]{rank==1, self.at(this)}; 
-    global val region:Region{rank==1, self.at(this)};
-    global val distribution:Dist{rank==1, self.at(this)};
+    global val vec:Array[Double](1)!;
+    global val region:Region(1)!;
+    global val distribution:Dist(1)!;
 
     /**
      * Construct a Vector of dimention N, with default block distribution
@@ -77,7 +77,7 @@ public class Vector {
     /**
      * the dot product
      */
-    public def dot(b:Vector) : Double {
+    public def dot(b:Vector!) : Double {
         val res = Rail.make[Double](1, (Int)=>0.0);
 
         // TODO: this is introduced till a fix for XTENLANG-508 is there
@@ -90,7 +90,7 @@ public class Vector {
     /**
      * add two vectors: this + b 
      */
-    public def add(b:Vector) : Vector {
+    public def add(b:Vector!) : Vector {
         val N   = getSize();
         val res = new Vector(N);
 
@@ -102,7 +102,7 @@ public class Vector {
     /**
      * subtract two vectors: this - b
      */
-    public def sub(b:Vector) : Vector {
+    public def sub(b:Vector!) : Vector {
         val N   = getSize();
         val res = new Vector(N);
 

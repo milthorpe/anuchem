@@ -36,7 +36,11 @@
         <istrue value="${optimize}" />
     </condition>
 
+<<<<<<< /home/ganesh/projects/x10apps-hg/x10-apps/trunk/apps/pumjarasaayani/build.xml
     <condition property="x10c.nochecks" value="-NO_CHECKS=true" else="-BAD_PLACE_RUNTIME_CHECK=true">
+=======
+    <condition property="x10c.nochecks" value="-NO_CHECKS=true  -VERBOSE_CALLS -debugpositions" else="">
+>>>>>>> /tmp/build.xml~other.KF93s6
         <istrue value="${nochecks}" />
     </condition>
 
