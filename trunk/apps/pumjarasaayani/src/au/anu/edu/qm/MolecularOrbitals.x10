@@ -12,7 +12,7 @@ import x10x.matrix.Matrix;
 import x10x.xla.JacobiDiagonalizer;
 
 public class MolecularOrbitals extends Matrix {
-    var orbitalEnergies:Array[Double]{rank==1};
+    var orbitalEnergies:Array[Double](1)!;
 
     public def this(n:Int) {
         super(n);

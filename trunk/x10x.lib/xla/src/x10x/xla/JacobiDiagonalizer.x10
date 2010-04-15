@@ -12,8 +12,8 @@ import x10x.matrix.Matrix;
 public class JacobiDiagonalizer {
     var eigenValuesVec:Vector!; 
     var eigenVectorsMat:Matrix!;
-    var eigenValues:Array[Double]{rank==1};
-    var eigenVectors:Array[Double]{rank==2};
+    var eigenValues:Array[Double](1)!;
+    var eigenVectors:Array[Double](2)!;
     var cos:Double, sin:Double, tau:Double;
 
     global val maxIterations : Int = 100;
@@ -136,7 +136,7 @@ public class JacobiDiagonalizer {
        eigenVectorsMat = eigenVectorsMat.transpose();
     }
 
-    private static def doRotate(a:Array[Double]{rank==2}, i:Int, j:Int, k:Int, l:Int,
+    private static def doRotate(a:Array[Double](2)!, i:Int, j:Int, k:Int, l:Int,
                                 sin:Double, tau:Double) : void {
        var g:Double = a(i,j);
        var h:Double = a(k,l);

@@ -33,7 +33,7 @@
         <istrue value="${optimize}"/>
     </condition>
 
-    <condition property="x10c.nochecks" value="-NO_CHECKS" else="">
+    <condition property="x10c.nochecks" value="-NO_CHECKS -VERBOSE_CALLS" else="">
         <istrue value="${nochecks}"/>
     </condition>
 

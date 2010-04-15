@@ -26,18 +26,17 @@ import au.edu.anu.chem.Molecule;
 public class TwoElectronIntegrals { 
     global val basisFunctions:BasisFunctions!;
     global val molecule:Molecule[QMAtom]!;
-    global val twoEInts:Array[Double]{self.at(this), rank==1};
+    global val twoEInts:Array[Double](1)!;
     global val contractedList:ArrayList[ContractedGaussian{self.at(this)}]{self.at(this)};
     val direct:Boolean;
     val noOfIntegrals:Int;
 
     global val fmt:Rail[Double]!, zeroM:Rail[Double]!;
 
-    // TODO: use of Array should eventually be replaced with Array
-    global val rM:Array[Double]{rank==2,self.at(this)};
-    global val pqInts:Array[Double]{rank==2,self.at(this)};
-    global val npint:Array[Double]{rank==2,self.at(this)};
-    global val pcdint:Array[Double]{rank==3,self.at(this)};
+    global val rM:Array[Double](2)!;
+    global val pqInts:Array[Double](2)!;
+    global val npint:Array[Double](2)!;
+    global val pcdint:Array[Double](3)!;
 
     private val maxam:Int, maxam2:Int, maxam4:Int, maxamN:Int, maxam2M:Int, maxam2N:Int, pqdim:Int;
 
@@ -399,8 +398,8 @@ public class TwoElectronIntegrals {
     }
 
     /** Set the J and K value for a given combination */
-    private def setJKMatrixElements(jMatrix:Array[Double]{rank==2}, kMatrix:Array[Double]{rank==2},
-                                    dMatrix:Array[Double]{rank==2},
+    private def setJKMatrixElements(jMatrix:Array[Double](2)!, kMatrix:Array[Double](2)!,
+                                    dMatrix:Array[Double](2)!,
                                     i:Int, j:Int, k:Int, l:Int, twoEIntVal:Double) : void {
         val v1 = dMatrix(k,l) * twoEIntVal;
         val v2 = dMatrix(i,j) * twoEIntVal;
@@ -682,9 +681,9 @@ public class TwoElectronIntegrals {
                                dStrt:Int, cStrt:Int, bStrt:Int, aStrt:Int,
                                shellList:ShellList!, bAng:Int, aAng:Int,
                                twoEInts:Rail[Double]!,
-                               jMatrix:Array[Double]{rank==2}, 
-                               kMatrix:Array[Double]{rank==2},
-                               dMatrix:Array[Double]{rank==2}) {
+                               jMatrix:Array[Double](2)!, 
+                               kMatrix:Array[Double](2)!,
+                               dMatrix:Array[Double](2)!) {
          var dd:Int, cc:Int, bb:Int, aa:Int, k:Int, l:Int;
          
          var intIndx:Int = 0;

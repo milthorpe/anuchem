@@ -1244,8 +1244,8 @@ public class GMatrix extends Matrix {
     }
 
     /** Set the J and K value for a given combination */
-    private def setJKMatrixElements(jMatrix:Array[Double]{rank==2}, kMatrix:Array[Double]{rank==2},
-                                    dMatrix:Array[Double]{rank==2},
+    private def setJKMatrixElements(jMatrix:Array[Double](2)!, kMatrix:Array[Double](2)!,
+                                    dMatrix:Array[Double](2)!,
                                     i:Int, j:Int, k:Int, l:Int, twoEIntVal:Double) : void {
         val v1 = dMatrix(k,l) * twoEIntVal;
         val v2 = dMatrix(i,j) * twoEIntVal;
@@ -1279,9 +1279,9 @@ public class GMatrix extends Matrix {
         val ldx_loc:Rail[Int]!;
         val validIdx:Rail[Boolean]!;
 
-        val jMatrix:Array[Double]{rank==2};
-        val kMatrix:Array[Double]{rank==2};
-        val dMatrix:Array[Double]{rank==2};
+        val jMatrix:Array[Double](2)!;
+        val kMatrix:Array[Double](2)!;
+        val dMatrix:Array[Double](2)!;
     
         public def this(te:TwoElectronIntegrals, den:Density) {
             twoEI = te as TwoElectronIntegrals!;
