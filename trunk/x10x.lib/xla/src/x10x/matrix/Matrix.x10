@@ -12,7 +12,7 @@ import x10.array.Array;
  * @author V.Ganesh
  */
 public class Matrix { 
-    global val mat:Array[Double]{rank==2, self.at(this)};
+    global val mat:Array[Double](2)!;
 
     global val region:Region{rank==2, self.at(this)};
     global val distribution:Dist{rank==2, self.at(this)};
@@ -26,7 +26,7 @@ public class Matrix {
         region       = [0..(siz-1), 0..(siz-1)];
         // distribution = Dist.makeBlock(region, 1) as Dist{rank==2, self.at(this)};
         distribution = Dist.makeConstant(region) as Dist{rank==2, self.at(this)};
-        mat          = new Array[Double](region) as Array[Double]{rank==2, self.at(this)};
+        mat          = new Array[Double](region) as Array[Double](2)!;
     }
 
     /**
@@ -38,7 +38,7 @@ public class Matrix {
         region       = [0..(row-1), 0..(col-1)];
         // distribution = Dist.makeBlock(region, 1) as Dist{rank==2, self.at(this)};
         distribution = Dist.makeConstant(region) as Dist{rank==2, self.at(this)};
-        mat          = new Array[Double](region) as Array[Double]{rank==2, self.at(this)};
+        mat          = new Array[Double](region) as Array[Double](2)!;
     }
 
     /**
@@ -47,7 +47,7 @@ public class Matrix {
     public def this(dist:Dist{rank==2}) {
         distribution = dist as Dist{rank==2, self.at(this)};
         region       = distribution.region as Region{rank==2, self.at(this)};
-        mat          = new Array[Double](region) as Array[Double]{rank==2, self.at(this)};
+        mat          = new Array[Double](region) as Array[Double](2)!;
     }
 
     /**

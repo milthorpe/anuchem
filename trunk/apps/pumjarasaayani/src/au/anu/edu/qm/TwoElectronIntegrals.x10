@@ -33,17 +33,10 @@ public class TwoElectronIntegrals {
 
     global val fmt:Rail[Double]!, zeroM:Rail[Double]!;
 
-<<<<<<< /home/ganesh/projects/x10apps-hg/x10-apps/trunk/apps/pumjarasaayani/src/au/anu/edu/qm/TwoElectronIntegrals.x10
-    global val rM:Array[Double]{rank==2,self.at(this)};
-    global val pqInts:Array[Double]{rank==2,self.at(this)};
-    global val npint:Array[Double]{rank==2,self.at(this)};
-    global val pcdint:Array[Double]{rank==3,self.at(this)};
-=======
     global val rM:Array[Double](2)!;
     global val pqInts:Array[Double](2)!;
     global val npint:Array[Double](2)!;
     global val pcdint:Array[Double](3)!;
->>>>>>> /tmp/TwoElectronIntegrals.x10~other.z71ns4
 
     private val maxam:Int, maxam2:Int, maxam4:Int, maxamN:Int, maxam2M:Int, maxam2N:Int, pqdim:Int;
 
