@@ -33,7 +33,6 @@ public class TwoElectronIntegrals {
 
     global val fmt:Rail[Double]!, zeroM:Rail[Double]!;
 
-    // TODO: use of Array should eventually be replaced with Array
     global val rM:Array[Double]{rank==2,self.at(this)};
     global val pqInts:Array[Double]{rank==2,self.at(this)};
     global val npint:Array[Double]{rank==2,self.at(this)};
@@ -76,23 +75,13 @@ public class TwoElectronIntegrals {
 
         // Console.OUT.println("alloc: " + maxam + " " + maxam2N);
 
-
         fmt    = Rail.make[Double](maxam4+1) as Rail[Double]!;
         zeroM  = Rail.make[Double](maxam4+1) as Rail[Double]!;
-
-        /**
-        rM     = Array.make[Double]([0..maxam4+1, 0..((maxam4+1)*(maxam4+2)/2)]) as Array[Double]{rank==2,self.at(this)};
-        pqInts = Array.make[Double]([0..maxam2N, 0..maxam2N]) as Array[Double]{rank==2,self.at(this)};
-        npint  = Array.make[Double]([0..maxam2+1, 0..maxam2M+1]) as Array[Double]{rank==2,self.at(this)};
-        pcdint = Array.make[Double]([0..maxamN+1, 0..maxamN+1, 0..maxam2N]) as Array[Double]{rank==3,self.at(this)};
-        **/
-
 
         rM     = new Array[Double]([0..maxam4+1, 0..((maxam4+1)*(maxam4+2)/2)]) as Array[Double]{rank==2,self.at(this)};
         pqInts = new Array[Double]([0..maxam2N, 0..maxam2N]) as Array[Double]{rank==2,self.at(this)};
         npint  = new Array[Double]([0..maxam2+1, 0..maxam2M+1]) as Array[Double]{rank==2,self.at(this)};
         pcdint = new Array[Double]([0..maxamN+1, 0..maxamN+1, 0..maxam2N]) as Array[Double]{rank==3,self.at(this)};
-
 
         // Console.OUT.println("alloc2: " + pcdint.region.size());
     }

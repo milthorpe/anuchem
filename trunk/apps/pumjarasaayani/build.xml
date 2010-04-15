@@ -8,7 +8,7 @@
     <property name="anuchem.lib" location="${anuchem}/lib/anu-chem.jar"/>
     <property name="bash.exe" value="bash"/>    
     <property name="optimize" value="true" />
-    <property name="nochecks" value="true" />
+    <property name="nochecks" value="false" />
     <property name="profile"  value="false" />
     <property name="inlineopt" value="false" />
     <property name="heapprofile" value="false" />
@@ -36,7 +36,7 @@
         <istrue value="${optimize}" />
     </condition>
 
-    <condition property="x10c.nochecks" value="-NO_CHECKS=true -debugpositions" else="">
+    <condition property="x10c.nochecks" value="-NO_CHECKS=true" else="-BAD_PLACE_RUNTIME_CHECK=true">
         <istrue value="${nochecks}" />
     </condition>
 
