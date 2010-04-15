@@ -77,9 +77,8 @@ public class TestFmm3d {
             val charge = i%3==4?1:-1;
             val p = getPlaceId(x, y, z);
             async (Place.places(p)) {
-                val atom = new MMAtom(new Point3d(x, y, z), charge);
-                val remoteAtom = new MMAtom(atom);
-                atomic { (tempAtoms(p) as GrowableRail[MMAtom]!).add(remoteAtom); }
+                val atom = new MMAtom(new Point3d(x, y, z), 0.0, charge);
+                atomic { (tempAtoms(p) as GrowableRail[MMAtom]!).add(atom); }
             }
         }
         val atoms = DistArray.make[ValRail[MMAtom]](Dist.makeUnique(Place.places), ((p) : Point) => (tempAtoms(p) as GrowableRail[MMAtom]!).toValRail());
