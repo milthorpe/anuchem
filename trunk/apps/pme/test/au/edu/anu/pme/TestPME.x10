@@ -4,7 +4,7 @@ import x10.util.Random;
 import x10x.vector.Point3d;
 import x10x.vector.Vector3d;
 import au.edu.anu.chem.mm.MMAtom;
-//import au.edu.anu.chem.mm.ElectrostaticDirectMethod;
+import au.edu.anu.chem.mm.ElectrostaticDirectMethod;
 import au.edu.anu.util.Timer;
 
 /**
@@ -63,12 +63,12 @@ public class TestPME {
         logTime("Reciprocal energy", PME.TIMER_INDEX_RECIPROCAL,    pme.timer);
         logTime("Total",             PME.TIMER_INDEX_TOTAL,         pme.timer);
 
-        //val direct = new ElectrostaticDirectMethod(atoms);
-        //val directEnergy = direct.getEnergy();
-        //logTime("cf. Direct calculation", ElectrostaticDirectMethod.TIMER_INDEX_TOTAL, direct.timer);
+        val direct = new ElectrostaticDirectMethod(atoms);
+        val directEnergy = direct.getEnergy();
+        logTime("cf. Direct calculation", ElectrostaticDirectMethod.TIMER_INDEX_TOTAL, direct.timer);
         // direct error comparison is only useful if there is a huge empty border around the particles
-        //val error = directEnergy - energy;
-        //Console.OUT.println("error = " + error + " relative error = " + Math.abs(error) / Math.abs(energy));
+        val error = directEnergy - energy;
+        Console.OUT.println("direct = " + directEnergy + " error = " + error + " relative error = " + Math.abs(error) / Math.abs(energy));
 
     }
 
