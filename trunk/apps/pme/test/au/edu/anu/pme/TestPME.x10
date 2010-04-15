@@ -48,7 +48,7 @@ public class TestPME {
         }
 
         /* Assign particles to random locations within a small cubic area around the center of the simulation space, with unit charge (1/2 are negative). */
-        val atoms = ValRail.make[MMAtom!](numParticles, (i : Int) => new MMAtom(new Point3d(randomUnit(R) + size/2.0, randomUnit(R) + size/2.0, randomUnit(R) + size/2.0), i%2==0?1:-1));
+        val atoms = ValRail.make[MMAtom!](numParticles, (i : Int) => new MMAtom(new Point3d(randomUnit(R) + size/2.0, randomUnit(R) + size/2.0, randomUnit(R) + size/2.0), 0.0, i%2==0?1:-1));
         val edges = [new Vector3d(size, 0.0, 0.0), new Vector3d(0.0, size, 0.0), new Vector3d(0.0, 0.0, size)];
         val g = gridSize;
         val gridSizes = ValRail.make[Int](3, (Int) => g);

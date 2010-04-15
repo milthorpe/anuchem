@@ -40,7 +40,7 @@ public class MMAtom extends Atom {
     }
 
     public def this(centre : Point3d) { 
-        this(centre, 0.0);
+        this(centre, 0.0, 0.0);
     }
 
     public def pairEnergy(atom2 : MMAtom) : Double {
