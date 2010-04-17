@@ -63,7 +63,7 @@ public class Anum {
                 val atom = myAtoms(i);
                 val invMass = 1.0 / atom.mass;
                 atom.velocity = atom.velocity + 0.5 * t * invMass * atom.force;
-                Console.OUT.print(atom + " ");
+                //Console.OUT.print(atom + " ");
             }
         }
     }

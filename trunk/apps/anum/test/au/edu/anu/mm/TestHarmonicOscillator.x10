@@ -2,6 +2,7 @@ package au.edu.anu.mm;
 
 import x10.util.Pair;
 import x10x.vector.Point3d;
+import x10x.vector.Vector3d;
 import au.edu.anu.chem.mm.MMAtom;
 import au.edu.anu.util.Timer;
 
@@ -26,9 +27,9 @@ public class TestHarmonicOscillator {
         val distAtoms = DistArray.make[ValRail[MMAtom]](Dist.makeBlock(0..0, 0));
         distAtoms(0) = atoms as ValRail[MMAtom];
 
-        val diatomicPotentials : ValRail[DiatomicHarmonicPotential] = ValRail.make[DiatomicHarmonicPotential](1, 
+        val diatomicPotentials : ValRail[DiatomicPotential] = ValRail.make[DiatomicPotential](1, 
            (Int) => new DiatomicHarmonicPotential(hydrogen, fluorine, 0.09169, 582000));
-        val anum = new Anum(distAtoms, new HarmonicForceField(diatomicPotentials));
+        val anum = new Anum(distAtoms, new DiatomicForceField(diatomicPotentials));
         anum.mdRun(0.2, 200);
     }
 }

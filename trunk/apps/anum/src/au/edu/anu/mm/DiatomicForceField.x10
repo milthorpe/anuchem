@@ -4,10 +4,10 @@ import x10.util.Pair;
 import x10x.vector.Vector3d;
 import au.edu.anu.chem.mm.MMAtom;
 
-public class HarmonicForceField implements ForceField {
-    val diatomicPotentials : ValRail[DiatomicHarmonicPotential];
+public class DiatomicForceField implements ForceField {
+    val diatomicPotentials : ValRail[DiatomicPotential];
 
-    public def this(diatomicPotentials : ValRail[DiatomicHarmonicPotential]) {
+    public def this(diatomicPotentials : ValRail[DiatomicPotential]) {
         this.diatomicPotentials = diatomicPotentials;
     }
     
