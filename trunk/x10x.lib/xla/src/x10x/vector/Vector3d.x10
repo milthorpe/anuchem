@@ -20,6 +20,13 @@ public class Vector3d extends Tuple3d {
     }
 
     public global safe def toString() = ("(" + i + "i + " + j + "j + " + k + "k)");
+
+    /**
+     * @return the sum of this vector and the given vector
+     */
+    public safe operator this + (that:Vector3d):Vector3d {
+        return this.add(that);
+    }
     
     public global safe def add(b: Tuple3d) : Tuple3d {
         return new Vector3d(i + b.i(), j + b.j(), k + b.k());
@@ -29,8 +36,22 @@ public class Vector3d extends Tuple3d {
         return new Vector3d(i + b.i(), j + b.j(), k + b.k());
     }
 
+    /**
+     * @return the difference of vector x and vector y
+     */
+    public static safe operator (x:Vector3d) - (y:Vector3d):Vector3d {
+        return x.sub(y);
+    }
+
     public global safe def sub(b: Tuple3d) : Tuple3d {
         return new Vector3d(i - b.i(), j - b.j(), k - b.k());
+    }
+
+    /**
+     * @return the dot product of this vector and the given vector
+     */
+    public safe operator this * (that:Vector3d):Double {
+        return this.dot(that);
     }
 
     public global safe def dot(vec : Vector3d) : Double {
@@ -42,6 +63,18 @@ public class Vector3d extends Tuple3d {
                             k * vec.i - i * vec.k,
                             i * vec.j - j * vec.i);
     }
+
+    /**
+     * @return the product of this vector and the given scalar
+     */
+    public safe operator this * (that:Double):Vector3d {
+        return this.mul(that);
+    }
+
+    /**
+     * @return the product of the given double and the given vector
+     */
+    public static safe operator (x:Double) * (y:Vector3d): Vector3d = y * x;
 
     public global safe def mul(c : Double) : Vector3d {
         return new Vector3d(this.i * c, this.j * c, this.k * c);
@@ -88,6 +121,8 @@ public class Vector3d extends Tuple3d {
         val l2 = lengthSquared();
         return new Vector3d(i / l2, j / l2, k / l2);
     }
+
+    public static safe operator - (x:Vector3d) = x.negate();
 
     public global safe def negate() : Vector3d {
         return new Vector3d(-i, -j, -k);

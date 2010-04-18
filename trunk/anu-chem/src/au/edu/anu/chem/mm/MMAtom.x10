@@ -14,14 +14,30 @@ import au.edu.anu.chem.Atom;
 public class MMAtom extends Atom { 
     /** The current force acting upon this atom. */
     public var force : Vector3d;
+    
+    /** The current velocity of this atom. */
+    public var velocity : Vector3d;
 
     /** The effective charge in atomic units. */
     public global val charge : Double;
 
-    public def this(centre : Point3d, charge : Double) {
-        super(centre);
+    /** The mass of this atom in atomic units. */
+    public global val mass : Double;
+
+    public def this(symbol : String, centre : Point3d, mass : Double, charge : Double) {
+        super(symbol, centre);
+        this.mass = mass;
         this.charge = charge;
         this.force = Vector3d.NULL;
+        this.velocity = Vector3d.NULL;
+    }
+
+    public def this(centre : Point3d, mass : Double, charge : Double) {
+        super(centre);
+        this.mass = mass;
+        this.charge = charge;
+        this.force = Vector3d.NULL;
+        this.velocity = Vector3d.NULL;
     } 
     
     /**
@@ -30,12 +46,14 @@ public class MMAtom extends Atom {
      */
     public def this(atom : MMAtom) {
         super(at (atom) {atom.centre});
+        this.mass = at(atom) {atom.mass};
         this.charge = at (atom) {atom.charge};
         this.force = at (atom) {atom.force};
+        this.velocity = at (atom) {atom.velocity};
     }
 
     public def this(centre : Point3d) { 
-        this(centre, 0.0);
+        this(centre, 0.0, 0.0);
     }
 
     public def pairEnergy(atom2 : MMAtom) : Double {

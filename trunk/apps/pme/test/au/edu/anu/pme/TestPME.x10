@@ -4,7 +4,7 @@ import x10.util.Random;
 import x10x.vector.Point3d;
 import x10x.vector.Vector3d;
 import au.edu.anu.chem.mm.MMAtom;
-//import au.edu.anu.chem.mm.ElectrostaticDirectMethod;
+import au.edu.anu.chem.mm.ElectrostaticDirectMethod;
 import au.edu.anu.util.Timer;
 
 /**
@@ -48,7 +48,7 @@ public class TestPME {
         }
 
         /* Assign particles to random locations within a small cubic area around the center of the simulation space, with unit charge (1/2 are negative). */
-        val atoms = ValRail.make[MMAtom!](numParticles, (i : Int) => new MMAtom(new Point3d(randomUnit(R) + size/2.0, randomUnit(R) + size/2.0, randomUnit(R) + size/2.0), i%2==0?1:-1));
+        val atoms = ValRail.make[MMAtom!](numParticles, (i : Int) => new MMAtom(new Point3d(randomUnit(R) + size/2.0, randomUnit(R) + size/2.0, randomUnit(R) + size/2.0), 0.0, i%2==0?1:-1));
         val edges = [new Vector3d(size, 0.0, 0.0), new Vector3d(0.0, size, 0.0), new Vector3d(0.0, 0.0, size)];
         val g = gridSize;
         val gridSizes = ValRail.make[Int](3, (Int) => g);
@@ -63,12 +63,12 @@ public class TestPME {
         logTime("Reciprocal energy", PME.TIMER_INDEX_RECIPROCAL,    pme.timer);
         logTime("Total",             PME.TIMER_INDEX_TOTAL,         pme.timer);
 
-        //val direct = new ElectrostaticDirectMethod(atoms);
-        //val directEnergy = direct.getEnergy();
-        //logTime("cf. Direct calculation", ElectrostaticDirectMethod.TIMER_INDEX_TOTAL, direct.timer);
+        val direct = new ElectrostaticDirectMethod(atoms);
+        val directEnergy = direct.getEnergy();
+        logTime("cf. Direct calculation", ElectrostaticDirectMethod.TIMER_INDEX_TOTAL, direct.timer);
         // direct error comparison is only useful if there is a huge empty border around the particles
-        //val error = directEnergy - energy;
-        //Console.OUT.println("error = " + error + " relative error = " + Math.abs(error) / Math.abs(energy));
+        val error = directEnergy - energy;
+        Console.OUT.println("direct = " + directEnergy + " error = " + error + " relative error = " + Math.abs(error) / Math.abs(energy));
 
     }
 
