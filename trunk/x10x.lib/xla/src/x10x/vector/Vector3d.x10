@@ -43,7 +43,7 @@ public class Vector3d extends Tuple3d {
         return x.sub(y);
     }
 
-    public global safe def sub(b: Tuple3d) : Tuple3d {
+    public global safe def sub(b: Tuple3d) : Vector3d {
         return new Vector3d(i - b.i(), j - b.j(), k - b.k());
     }
 
