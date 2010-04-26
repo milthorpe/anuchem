@@ -315,27 +315,30 @@ public class PME {
     public def getGriddedCharges() : DistArray[Complex](3){self.dist==gridDist} {
         timer.start(TIMER_INDEX_GRIDCHARGES);
         val Q = DistArray.make[Double](gridDist);
-        finish foreach ((i) in 0..atoms.length-1) {
-            val atom = atoms(i);
-            val q = atom.charge;
-            val u = getScaledFractionalCoordinates(Vector3d(atom.centre));
-            val u1c = Math.ceil(u.i) as Int;
-            val u2c = Math.ceil(u.j) as Int;
-            val u3c = Math.ceil(u.k) as Int;
-            for (var k1 : Int = u1c - splineOrder; k1 < u1c; k1++) {
-                for (var k2 : Int = u2c - splineOrder; k2 < u2c; k2++) {
-                    for (var k3 : Int = u3c - splineOrder; k3 < u3c; k3++) {
-                        val gridPointContribution = q
-                                     * bSpline4(u.i - k1)
-                                     * bSpline4(u.j - k2)
-                                     * bSpline4(u.k - k3);
+        finish ateach (p in subCells.dist) {
+            val thisCell = subCells(p);
+            for ((i) in 0..thisCell.length()-1) {
+                val atom = thisCell(i);
+                val q = atom.charge;
+                val u = getScaledFractionalCoordinates(Vector3d(atom.centre));
+                val u1c = Math.ceil(u.i) as Int;
+                val u2c = Math.ceil(u.j) as Int;
+                val u3c = Math.ceil(u.k) as Int;
+                for (var k1 : Int = u1c - splineOrder; k1 < u1c; k1++) {
+                    for (var k2 : Int = u2c - splineOrder; k2 < u2c; k2++) {
+                        for (var k3 : Int = u3c - splineOrder; k3 < u3c; k3++) {
+                            val gridPointContribution = q
+                                         * bSpline4(u.i - k1)
+                                         * bSpline4(u.j - k2)
+                                         * bSpline4(u.k - k3);
 
-                        val p = Point.make((k1 + gridSize(0)) % gridSize(0),
-                                           (k2 + gridSize(1)) % gridSize(1),
-                                           (k3 + gridSize(2)) % gridSize(2));
-                        async(Q.dist(p)) {
-                            // TODO this is slow because of lack of optimized atomic - XTENLANG-321
-                            atomic { Q(p) += gridPointContribution; }
+                            val p = Point.make((k1 + gridSize(0)) % gridSize(0),
+                                               (k2 + gridSize(1)) % gridSize(1),
+                                               (k3 + gridSize(2)) % gridSize(2));
+                            async(Q.dist(p)) {
+                                // TODO this is slow because of lack of optimized atomic - XTENLANG-321
+                                atomic { Q(p) += gridPointContribution; }
+                            }
                         }
                     }
                 }
