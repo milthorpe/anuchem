@@ -26,8 +26,8 @@
 	<property name="target-src" location="${target}/classes"/>
 	<property name="target-test" location="${target}/test-classes"/>
     <property name="bin" location="${basedir}/bin"/>
-	<property name="exe" value="harmonic"/>
-    <property name="testclass" value="test/au/edu/anu/mm/TestHarmonicOscillator.x10"/>
+	<property name="exe" value="morse"/>
+    <property name="testclass" value="test/au/edu/anu/mm/TestMorseOscillator.x10"/>
 
     <condition property="x10c.optimize" value="-O" else="">
         <istrue value="${optimize}"/>

@@ -16,6 +16,17 @@ public struct Point3d(i : Double, j : Double, k : Double) implements Tuple3d {
     public global safe def toString() = ("(" + i + "i + " + j + "j + " + k + "k)");
 
     /**
+     * @return a new point displaced from this point by the vector <code>b</code>
+     */
+    public global safe def add(b: Vector3d) : Point3d {
+        return Point3d(i + b.i(), j + b.j(), k + b.k());
+    }
+
+    public safe operator this + (that:Vector3d):Point3d {
+        return this.add(that);
+    }
+
+    /**
      * @return the vector from that point to this point
      */
     public global safe def vector(b: Point3d) : Vector3d {
