@@ -189,7 +189,7 @@ public class PME {
     private def divideAtomsIntoSubCells() {
         timer.start(TIMER_INDEX_DIVIDE);
         val subCellsTemp = DistArray.make[GrowableRail[MMAtom]](subCells.dist, (Point) => new GrowableRail[MMAtom]());
-        finish for ((i) in 0..atoms.length-1) {
+        finish foreach ((i) in 0..atoms.length-1) {
             val atom = atoms(i);
             val index = getSubCellIndex(atom);
             at (subCellsTemp.dist(index)) {
