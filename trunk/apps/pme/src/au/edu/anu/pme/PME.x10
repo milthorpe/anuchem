@@ -2,10 +2,10 @@ package au.edu.anu.pme;
 
 import x10x.vector.Point3d;
 import x10x.vector.Vector3d;
-import x10x.vector.Tuple3d;
 import au.edu.anu.chem.mm.MMAtom;
 import au.edu.anu.fft.Distributed3dFft;
 import au.edu.anu.util.Timer;
+import x10.util.GrowableRail;
 
 /**
  * This class implements a Smooth Particle Mesh Ewald method to calculate
@@ -16,13 +16,15 @@ import au.edu.anu.util.Timer;
 public class PME {
     // TODO enum - XTENLANG-1118
     public const TIMER_INDEX_TOTAL : Int = 0;
-    public const TIMER_INDEX_DIRECT : Int = 1;
-    public const TIMER_INDEX_GRIDCHARGES : Int = 2;
-    public const TIMER_INDEX_INVFFT : Int = 3;
-    public const TIMER_INDEX_THETARECCONVQ : Int = 4;
-    public const TIMER_INDEX_RECIPROCAL : Int = 5;
+    public const TIMER_INDEX_DIVIDE : Int = 1;
+    public const TIMER_INDEX_DIRECT : Int = 2;
+    public const TIMER_INDEX_SELF : Int = 3;
+    public const TIMER_INDEX_GRIDCHARGES : Int = 4;
+    public const TIMER_INDEX_INVFFT : Int = 5;
+    public const TIMER_INDEX_THETARECCONVQ : Int = 6;
+    public const TIMER_INDEX_RECIPROCAL : Int = 7;
     /** A multi-timer for the several segments of a single getEnergy invocation, indexed by the constants above. */
-    public val timer = new Timer(6);
+    public val timer = new Timer(8);
 
     /** The number of grid lines in each dimension of the simulation unit cell. */
     private global val gridSize : ValRail[Int](3);
@@ -34,6 +36,7 @@ public class PME {
 
     /** The edges of the unit cell. */
     private global val edges : ValRail[Vector3d](3);
+    private global val edgeLengths : ValRail[Double](3);
 
     /** The conjugate reciprocal vectors for each dimension. */
     private global val edgeReciprocals : ValRail[Vector3d](3);
@@ -50,8 +53,17 @@ public class PME {
     /** The direct sum cutoff distance in Angstroms */
     private global val cutoff : Double;
 
-    /** Translation vectors for neighbouring unit cells (the 26 cells surrounding the origin cell) */
-    private global val imageTranslations : Array[Vector3d](3){rect};
+    /** 
+     * Translation vectors for neighbouring unit cells 
+     * (the 26 cells surrounding the origin cell)
+     * Dimensions are:
+     * 0: a "virtual" dimension used to replicate the data across all places
+     *   // TODO should be done as a global array XTENLANG-787
+     * 1: x translation (difference between x-coordinate of sub-cells
+     * 2: y translation
+     * 3: z translation
+     */
+    private global val imageTranslations : DistArray[Vector3d](4){rect};
 
 	private val atoms : ValRail[MMAtom!];
 
@@ -61,8 +73,23 @@ public class PME {
     private global val C : DistArray[Double]{self.dist==gridDist};
     private global val BdotC : DistArray[Double]{self.dist==gridDist};
 
+    /** 
+     * An array of box divisions within the unit cell, with a side length
+     * equal to the direct sum cutoff distance.  (N.B. if the unit cell side
+     * length is not an exact multiple of the cutoff distance, the last box
+     * in each dimension will be smaller than the cutoff distance, resulting
+     * in anisotropy in the direct potential.)
+     * Direct sums are only calculated between particles in the same box and
+     * the 26 neighbouring boxes.
+     * Dimensions of the array region are (x,y,z)
+     * TODO assumes cubic unit cell
+     */
+    private global val subCells : DistArray[ValRail[MMAtom]](3);
+    /** The number of sub-cells per side of the unit cell. */
+    private global val numSubCells : Int;
+
     // TODO should be shared local to calculateEnergy() - XTENLANG-404
-    private var directSum : Double = 0.0;
+    private var directEnergy : Double = 0.0;
     private var selfEnergy: Double = 0.0;
     private var correctionEnergy : Double = 0.0; // TODO masklist
     private var reciprocalEnergy : Double = 0.0;
@@ -88,6 +115,7 @@ public class PME {
         K2 = gridSize(1) as Double;
         K3 = gridSize(2) as Double;
         this.edges = edges;
+        this.edgeLengths = ValRail.make[Double](3, (i : Int) => edges(i).length());
         this.edgeReciprocals = ValRail.make[Vector3d](3, (i : Int) => edges(i).inverse());
         this.atoms = atoms;
         val r = Region.makeRectangular(0, gridSize(0)-1);
@@ -96,8 +124,17 @@ public class PME {
         this.splineOrder = splineOrder;
         this.beta = beta;
         this.cutoff = cutoff;
-        val imageTranslationRegion = [-1..1,-1..1,-1..1] as Region(3){rect};
-        this.imageTranslations = new Array[Vector3d](imageTranslationRegion, (p(i,j,k) : Point(3)) => (edges(0).mul(i)).add(edges(1).mul(j)).add(edges(2).mul(k)));
+        val imageTranslationRegion = [0..Place.MAX_PLACES-1,-1..1,-1..1,-1..1] as Region(4){rect};
+        this.imageTranslations = DistArray.make[Vector3d](Dist.makeBlock(imageTranslationRegion, 0), (p(place,i,j,k) : Point(4)) => (edges(0).mul(i)).add(edges(1).mul(j)).add(edges(2).mul(k)));
+
+        if (edgeLengths(0) % cutoff != 0.0) {
+            Console.OUT.println(edgeLengths(0) % cutoff);
+            Console.ERR.println("warning: edge length is not an exact multiple of cutoff");
+        }
+        val numSubCells = (edgeLengths(0) / cutoff) as Int;
+        val subCellRegion = [0..numSubCells-1,0..numSubCells-1,0..numSubCells-1] as Region(3){rect};
+        subCells = DistArray.make[ValRail[MMAtom]](Dist.makeBlock(subCellRegion,0));
+        this.numSubCells = numSubCells;
 
         Console.OUT.println("PME for " + atoms.length + " particles.");
         Console.OUT.println("Box edges: " + edges + " volume: " + getVolume());
@@ -118,36 +155,10 @@ public class PME {
     public def getEnergy() : Double {
         timer.start(TIMER_INDEX_TOTAL);
 
-        timer.start(TIMER_INDEX_DIRECT);
-        finish foreach ((i) in 0..atoms.length-1) {
-            // TODO assume cutoff < edgeLength, so we don't need i==j
-            var myDirectSum : Double = 0.0;
-            for (var j : Int = 0; j < i; j++) {
-                val rjri = new Vector3d(atoms(j).centre.sub(atoms(i).centre as Tuple3d));
-                // TODO rough (non-Euclidean, 1D) distance cutoff to avoid unnecessary distance calculations
-                for ((n1,n2,n3) in imageTranslations) {
-                    if (! (i==j && (n1 | n2 | n3) == 0)) {
-                        val imageDistance = rjri.add(imageTranslations(n1,n2,n3)).length();
-                        if (imageDistance < cutoff) {
-                            val chargeProduct = atoms(i).charge * atoms(j).charge;
-                            val imageDirectComponent = chargeProduct * Math.erfc(beta * imageDistance) / imageDistance;
-                            myDirectSum += imageDirectComponent;                                    
-                        }
-                    }
-                }
-            }
-            
-            // TODO this is slow because of lack of optimized atomic - XTENLANG-321
-            atomic {
-                directSum += myDirectSum * 2;
-                selfEnergy += atoms(i).charge * atoms(i).charge;
-            }
-        }
-        selfEnergy = -beta / Math.sqrt(Math.PI) * selfEnergy;
-        directSum = directSum / 2.0;
-        timer.stop(TIMER_INDEX_DIRECT);
+        divideAtomsIntoSubCells();
 
-        //Console.OUT.println("directSum");
+        directEnergy = getDirectEnergy();
+        selfEnergy = getSelfEnergy();
         
         val Q = getGriddedCharges();
 
@@ -157,26 +168,144 @@ public class PME {
         fft.doFFT3d(Q, Qinv, temp, false);
         timer.stop(TIMER_INDEX_INVFFT);
 
-        //Console.OUT.println("Qinv");
-
         timer.start(TIMER_INDEX_THETARECCONVQ);
         val thetaRecConvQInv = DistArray.make[Complex](gridDist, (p : Point(gridDist.region.rank)) => BdotC(p) * Qinv(p));
         val thetaRecConvQ = DistArray.make[Complex](gridDist);
         fft.doFFT3d(thetaRecConvQInv, thetaRecConvQ, temp, true);
         timer.stop(TIMER_INDEX_THETARECCONVQ);
 
-        //Console.OUT.println("thetaRecConvQ");
-
         reciprocalEnergy = getReciprocalEnergy(Q, thetaRecConvQ);
 
-        Console.OUT.println("directSum = " + directSum);
-        Console.OUT.println("selfEnergy = " + selfEnergy);
+        //Console.OUT.println("directEnergy = " + directEnergy);
+        //Console.OUT.println("selfEnergy = " + selfEnergy);
         //Console.OUT.println("correctionEnergy = " + correctionEnergy);
-        Console.OUT.println("reciprocalEnergy = " + reciprocalEnergy);
-        val totalEnergy = directSum + reciprocalEnergy + (correctionEnergy + selfEnergy);
+        //Console.OUT.println("reciprocalEnergy = " + reciprocalEnergy);
+        val totalEnergy = directEnergy + reciprocalEnergy + (correctionEnergy + selfEnergy);
 
         timer.stop(TIMER_INDEX_TOTAL);
         return totalEnergy;
+    }
+
+    private def divideAtomsIntoSubCells() {
+        timer.start(TIMER_INDEX_DIVIDE);
+        val subCellsTemp = DistArray.make[GrowableRail[MMAtom]](subCells.dist, (Point) => new GrowableRail[MMAtom]());
+        finish for ((i) in 0..atoms.length-1) {
+            val atom = atoms(i);
+            val index = getSubCellIndex(atom);
+            at (subCellsTemp.dist(index)) {
+                val remoteAtom = new MMAtom(atom);
+                subCellsTemp(index).add(remoteAtom);
+            }
+        }
+        finish ateach (p in subCells.dist) {
+            subCells(p) = subCellsTemp(p).toValRail();
+        }
+        timer.stop(TIMER_INDEX_DIVIDE);
+    }
+
+    /**
+     * Gets the index of the sub-cell for this atom within
+     * the grid of sub-cells for direct sum calculation.
+     */
+    private def getSubCellIndex(atom : MMAtom) : Point(3) {
+        // TODO assumes cubic unit cell
+        val r = Vector3d(atom.centre);
+        val i = (r.i / cutoff) as Int;
+        val j = (r.j / cutoff) as Int;
+        val k = (r.k / cutoff) as Int;
+        return Point.make(i, j, k);
+    }
+
+    public def getDirectEnergy() : Double {
+        timer.start(TIMER_INDEX_DIRECT);
+        finish ateach (p in subCells.dist) {
+            var myDirectEnergy : Double = 0.0;
+            val thisCell = subCells(p);
+            for (var i : Int = p(0)-1; i<=p(0)+1; i++) {
+                var ii : Int = i;
+                var n1 : Int = 0;
+                if (i < 0) {
+                    n1 = -1;
+                    ii = i + numSubCells;
+                } else if (i > numSubCells-1) {
+                    n1 = 1;
+                    ii = i - numSubCells;
+                }
+                for (var j : Int = p(1)-1; j<=p(1)+1; j++) {
+                    var jj : Int = j;
+                    var n2 : Int = 0;
+                    if (j < 0) {
+                        n2 = -1;
+                        jj = j + numSubCells;
+                    } else if (j > numSubCells-1) {
+                        n2 = 1;
+                        jj = j - numSubCells;
+                    }
+                    for (var k : Int = p(2)-1; k<=p(2)+1; k++) {
+                        var kk : Int = k;
+                        var n3 : Int = 0;
+                        if (k < 0) {
+                            n3 = -1;
+                            kk = k + numSubCells;
+                        } else if (k > numSubCells-1) {
+                            n3 = 1;
+                            kk = k - numSubCells;
+                        }
+                        val p2 = Point.make(ii,jj,kk);
+                        val otherCell = at (subCells.dist(p2)) {subCells(p2)};
+                        for ((thisAtom) in 0..thisCell.length()-1) {
+                            for ((otherAtom) in 0..otherCell.length()-1) {
+                                if (p != p2 || thisAtom != otherAtom) {
+                                    // don't interact atom with self
+                                    //Console.OUT.println(p + " atom " + thisAtom + " and " + p2 + " atom " + otherAtom);
+                                    //Console.OUT.println(n1 + " " + n2 + " " + n3);
+                                    val rjri = otherCell(otherAtom).centre - thisCell(thisAtom).centre;
+                                    val r = rjri.add(imageTranslations(here.id,n1,n2,n3)).length();
+                                    if (r < cutoff) {
+                                        val chargeProduct = thisCell(thisAtom).charge * otherCell(otherAtom).charge;
+                                        val imageDirectComponent = chargeProduct * Math.erfc(beta * r) / r;
+                                        myDirectEnergy += imageDirectComponent;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // TODO this is slow because of lack of optimized atomic - XTENLANG-321
+            val myDirectEnergyFinal = myDirectEnergy;
+            at(this) {
+               atomic directEnergy += myDirectEnergyFinal;
+            }
+        }
+        
+        directEnergy = directEnergy / 2.0;
+        timer.stop(TIMER_INDEX_DIRECT);
+        return directEnergy;
+    }
+
+    /**
+     * Returns the self energy as defined in Eq. 2.5, which is the
+     * contribution of the interaction in reciprocal space of each
+     * atom with itself.  This is subtracted from the final energy.
+     */
+    public def getSelfEnergy() : Double {
+        timer.start(TIMER_INDEX_SELF);
+        finish ateach (p in subCells.dist) {
+            val thisCell = subCells(p);
+            var mySelfEnergy : Double = 0.0;
+            for ((thisAtom) in 0..thisCell.length()-1) {
+                mySelfEnergy += thisCell(thisAtom).charge * thisCell(thisAtom).charge;
+            }
+            val mySelfEnergyFinal = mySelfEnergy;
+            at(this) {
+                atomic selfEnergy += mySelfEnergyFinal;
+            }
+        }
+        selfEnergy = -beta / Math.sqrt(Math.PI) * selfEnergy;
+        timer.stop(TIMER_INDEX_SELF);
+        return selfEnergy;
     }
 
     /** 
@@ -189,7 +318,7 @@ public class PME {
         finish foreach ((i) in 0..atoms.length-1) {
             val atom = atoms(i);
             val q = atom.charge;
-            val u = getScaledFractionalCoordinates(new Vector3d(atom.centre as Tuple3d));
+            val u = getScaledFractionalCoordinates(Vector3d(atom.centre));
             val u1c = Math.ceil(u.i) as Int;
             val u2c = Math.ceil(u.j) as Int;
             val u3c = Math.ceil(u.k) as Int;
@@ -348,7 +477,7 @@ public class PME {
     
     /** Gets scaled fractional coordinate u as per Eq. 3.1 */
     public global safe def getScaledFractionalCoordinates(r : Vector3d) : Vector3d {
-        return new Vector3d(edgeReciprocals(0).mul(gridSize(0)).dot(r), edgeReciprocals(1).mul(gridSize(1)).dot(r), edgeReciprocals(2).mul(gridSize(2)).dot(r));
+        return Vector3d(edgeReciprocals(0).mul(gridSize(0)).dot(r), edgeReciprocals(1).mul(gridSize(1)).dot(r), edgeReciprocals(2).mul(gridSize(2)).dot(r));
     }
 
     /**

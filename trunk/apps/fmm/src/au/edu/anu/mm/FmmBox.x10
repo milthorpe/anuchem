@@ -45,9 +45,9 @@ public class FmmBox {
         dim : Int = Math.pow2(level);
         sideLength : Double = size / dim;
         offset : Double = 0.5 * size;
-        return new Point3d( (x + 0.5) * sideLength - offset,
-                            (y + 0.5) * sideLength - offset,
-                            (z + 0.5) * sideLength - offset);
+        return Point3d( (x + 0.5) * sideLength - offset,
+                        (y + 0.5) * sideLength - offset,
+                        (z + 0.5) * sideLength - offset);
     }
 
     /**

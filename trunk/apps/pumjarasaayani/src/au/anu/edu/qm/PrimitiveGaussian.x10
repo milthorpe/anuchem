@@ -62,7 +62,7 @@ public class PrimitiveGaussian {
 
     public def mul(pg:PrimitiveGaussian{self.at(this)}) : PrimitiveGaussian{self.at(this)} {
         val gamma = exponent + pg.exponent;
-        val newOrigin = new Point3d(
+        val newOrigin = Point3d(
                          (exponent * origin.i + pg.exponent * pg.origin.i) / gamma,
                          (exponent * origin.j + pg.exponent * pg.origin.j) / gamma,
                          (exponent * origin.k + pg.exponent * pg.origin.k) / gamma

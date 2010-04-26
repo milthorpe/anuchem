@@ -37,7 +37,7 @@ public class JobInput {
          // for(var j:Int=0; j<words.size(); j++) x10.io.Console.OUT.println(words.get(j));
 
          molecule.addAtom(new QMAtom(wrd(0), 
-                                     new Point3d(Double.parseDouble(wrd(1)),
+                                       Point3d(Double.parseDouble(wrd(1)),
                                                Double.parseDouble(wrd(2)),
                                                Double.parseDouble(wrd(3))
                                     )

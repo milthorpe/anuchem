@@ -21,10 +21,10 @@ public struct Polar3d {
     /* Returns a cartesian representation of this point. */
     public def toPoint3d() {
         sineTheta : Double = Math.sin(theta);
-        return new Point3d(r * sineTheta * Math.cos(phi), 
-                            r * sineTheta * Math.sin(phi),
-                            r * Math.cos(theta)
-                           );
+        return Point3d(r * sineTheta * Math.cos(phi), 
+                       r * sineTheta * Math.sin(phi),
+                       r * Math.cos(theta)
+                      );
     }
 
     /** Returns a polar representation of the given cartesian tuple. */

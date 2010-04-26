@@ -3,7 +3,6 @@ package au.edu.anu.mm;
 import x10.util.*;
 import x10x.vector.Point3d;
 import x10x.vector.Vector3d;
-import x10x.vector.Tuple3d;
 import au.edu.anu.chem.mm.MMAtom;
 import au.edu.anu.util.Timer;
 
@@ -161,8 +160,8 @@ public class Fmm3d {
                 async(lowestLevelBoxes.dist(boxIndex)) {
                     val remoteAtom = new MMAtom(atom);
                     val leafBox = lowestLevelBoxes(boxIndex) as FmmLeafBox!;
-                    val boxCentre = leafBox.getCentre(size).sub(remoteAtom.centre);
-                    val atomExpansion = MultipoleExpansion.getOlm(remoteAtom.charge, boxCentre, numTerms);
+                    val boxLocation = leafBox.getCentre(size).vector(remoteAtom.centre);
+                    val atomExpansion = MultipoleExpansion.getOlm(remoteAtom.charge, boxLocation, numTerms);
                     atomic {
                         leafBox.atoms.add(remoteAtom);
                         leafBox.multipoleExp.add(atomExpansion);
@@ -320,7 +319,7 @@ public class Fmm3d {
                             val boxAtoms = packedAtoms(box2Index)();
                             if (boxAtoms != null) {
                                 for (var i : Int = 0; i < boxAtoms.length(); i+=4) {
-                                    val atom2Centre = new Point3d(boxAtoms(i+1), boxAtoms(i+2), boxAtoms(i+3));
+                                    val atom2Centre = Point3d(boxAtoms(i+1), boxAtoms(i+2), boxAtoms(i+3));
                                     val atom2Charge = boxAtoms(i);
                                     for ((atomIndex1) in 0..length-1) {
                                         val atom1 = box1.atoms(atomIndex1);
@@ -357,7 +356,7 @@ public class Fmm3d {
                 val length = box1.atoms.length();
                 for ((atomIndex1) in 0..length-1) {
                     val atom1 = box1.atoms(atomIndex1);
-                    val box1Centre = atom1.centre.sub(box1.getCentre(size));
+                    val box1Centre = atom1.centre.vector(box1.getCentre(size));
                     val farFieldEnergy = box1.localExp.getPotential(atom1.charge, box1Centre);
                     thisBoxEnergy += farFieldEnergy;
                 }
@@ -386,10 +385,10 @@ public class Fmm3d {
                 for (val(placeId,level,i,j,k) in multipoleTranslations.dist | here) {
                     dim : Int = Math.pow2(level);
                     sideLength : Double = size / dim;
-                    val translationVector = new Vector3d((i*2-1) * 0.5 * sideLength,
-                                                         (j*2-1) * 0.5 * sideLength,
-                                                         (k*2-1) * 0.5 * sideLength);
-                    multipoleTranslations(Point.make([placeId, level, i, j, k])) = MultipoleExpansion.getOlm(translationVector as Tuple3d, numTerms);
+                    val translationVector = Vector3d((i*2-1) * 0.5 * sideLength,
+                                                     (j*2-1) * 0.5 * sideLength,
+                                                     (k*2-1) * 0.5 * sideLength);
+                    multipoleTranslations(Point.make([placeId, level, i, j, k])) = MultipoleExpansion.getOlm(translationVector, numTerms);
                 }
             }
             return multipoleTranslations;
@@ -411,7 +410,7 @@ public class Fmm3d {
             for (val(placeId,level,i,j,k) in multipoleTransforms.dist | here) {
                 dim : Int = Math.pow2(level);
                 sideLength : Double = size / dim;
-                val translationVector = new Vector3d(i * sideLength,
+                val translationVector = Vector3d(i * sideLength,
                                                  j * sideLength,
                                                  k * sideLength);
                 multipoleTransforms(Point.make([placeId, level, i, j, k])) = LocalExpansion.getMlm(translationVector, numTerms);

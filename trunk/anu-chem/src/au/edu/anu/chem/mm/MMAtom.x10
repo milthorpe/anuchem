@@ -46,8 +46,8 @@ public class MMAtom extends Atom {
      */
     public def this(atom : MMAtom) {
         super(at (atom) {atom.centre});
-        this.mass = at(atom) {atom.mass};
-        this.charge = at (atom) {atom.charge};
+        this.mass = atom.mass;
+        this.charge = atom.charge;
         this.force = at (atom) {atom.force};
         this.velocity = at (atom) {atom.velocity};
     }
@@ -57,7 +57,7 @@ public class MMAtom extends Atom {
     }
 
     public def pairEnergy(atom2 : MMAtom) : Double {
-        return charge * (at(atom2){atom2.charge}) / centre.distance(at(atom2){atom2.centre});
+        return charge * atom2.charge / centre.distance(at(atom2){atom2.centre});
     }
 }
 

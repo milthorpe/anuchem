@@ -267,7 +267,7 @@ public class TwoElectronIntegrals {
 
              // val p = gaussianProductCenter(aAlpha, aCen, bAlpha, bCen);
 
-             val p = new Point3d(
+             val p = Point3d(
                          (aAlpha * aCen.i + bAlpha * bCen.i) / gamma1,
                          (aAlpha * aCen.j + bAlpha * bCen.j) / gamma1,
                          (aAlpha * aCen.k + bAlpha * bCen.k) / gamma1
@@ -291,7 +291,7 @@ public class TwoElectronIntegrals {
                  val eta    = (gamma1*gamma2)/(gamma1+gamma2);
 
                  // val q = gaussianProductCenter(cAlpha, cCen, dAlpha, dCen);
-                 val q = new Point3d(
+                 val q = Point3d(
                            (cAlpha * cCen.i + dAlpha * dCen.i) / gamma2,
                            (cAlpha * cCen.j + dAlpha * dCen.j) / gamma2,
                            (cAlpha * cCen.k + dAlpha * dCen.k) / gamma2
@@ -306,7 +306,7 @@ public class TwoElectronIntegrals {
 		 val yy = q.j-p.j;
 		 val zz = q.k-p.k;
 
-                 val r = new Point3d(xx,yy,zz);
+                 val r = Point3d(xx,yy,zz);
                  val radiusPQSquared:Double = xx*xx+yy*yy+zz*zz;  
                  val Upq = Up*Uq;
                  val T = radiusPQSquared * eta;
@@ -1528,7 +1528,7 @@ public class TwoElectronIntegrals {
     public def gaussianProductCenter(alpha1:Double, a:Point3d,  
                                     alpha2:Double, b:Point3d) : Point3d {
         val gamma:Double = alpha1 + alpha2;
-        val center:Point3d =  new Point3d(
+        val center:Point3d =  Point3d(
                          (alpha1 * a.i + alpha2 * b.i) / gamma,
                          (alpha1 * a.j + alpha2 * b.j) / gamma,
                          (alpha1 * a.k + alpha2 * b.k) / gamma

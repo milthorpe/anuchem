@@ -20,7 +20,7 @@ public class TestPME {
     public static def main(args : Rail[String]!) {
         var numParticles : Int;
         var ewaldCoefficient : Double = 0.35;
-        var cutoff : Double = 9.0;
+        var cutoff : Double = 10.0;
         var gridSize : Int = 64;
         var splineOrder : Int = 6;
         if (args.length > 0) {
@@ -48,15 +48,17 @@ public class TestPME {
         }
 
         /* Assign particles to random locations within a small cubic area around the center of the simulation space, with unit charge (1/2 are negative). */
-        val atoms = ValRail.make[MMAtom!](numParticles, (i : Int) => new MMAtom(new Point3d(randomUnit(R) + size/2.0, randomUnit(R) + size/2.0, randomUnit(R) + size/2.0), 0.0, i%2==0?1:-1));
-        val edges = [new Vector3d(size, 0.0, 0.0), new Vector3d(0.0, size, 0.0), new Vector3d(0.0, 0.0, size)];
+        val atoms = ValRail.make[MMAtom!](numParticles, (i : Int) => new MMAtom(Point3d(randomUnit(R) + size/2.0, randomUnit(R) + size/2.0, randomUnit(R) + size/2.0), 0.0, i%2==0?1:-1));
+        val edges = [Vector3d(size, 0.0, 0.0), Vector3d(0.0, size, 0.0), Vector3d(0.0, 0.0, size)];
         val g = gridSize;
         val gridSizes = ValRail.make[Int](3, (Int) => g);
         val pme = new PME(edges, gridSizes, atoms, splineOrder, ewaldCoefficient, cutoff);
         val energy = pme.getEnergy();
         Console.OUT.println("energy = " + energy);
 
-        logTime("Direct / Self",     PME.TIMER_INDEX_DIRECT,        pme.timer);
+        logTime("Divide",            PME.TIMER_INDEX_DIVIDE,        pme.timer);
+        logTime("Direct",            PME.TIMER_INDEX_DIRECT,        pme.timer);
+        logTime("Self energy",       PME.TIMER_INDEX_SELF,          pme.timer);
         logTime("Grid charges",      PME.TIMER_INDEX_GRIDCHARGES,   pme.timer);
         logTime("Inverse FFT",       PME.TIMER_INDEX_INVFFT,        pme.timer);
         logTime("ThetaRecConvQ",     PME.TIMER_INDEX_THETARECCONVQ, pme.timer);
@@ -79,8 +81,8 @@ public class TestPME {
     static def randomUnit(R : Random) : Double {
         val dub = at(R){R.nextDouble()};
         // uncomment to put a huge empty border around the particles
-        // return (dub) * 2.0 - 1.0;
-        return ((dub)-0.5) * size;
+        return (dub) * 2.0 - 1.0;
+        //return ((dub)-0.5) * size;
     }
 }
 

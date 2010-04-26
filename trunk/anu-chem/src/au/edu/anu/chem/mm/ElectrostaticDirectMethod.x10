@@ -38,8 +38,7 @@ public class ElectrostaticDirectMethod {
         finish foreach ((i) in 0..atoms.length-1) {
             var myDirectEnergy : Double = 0.0;
             for (var j : Int = 0; j < i; j++) {
-                val distance = new Vector3d(atoms(j).centre.sub(atoms(i).centre as Tuple3d)).length();
-                myDirectEnergy += atoms(i).charge * atoms(j).charge / distance;
+                myDirectEnergy += atoms(i).charge * atoms(j).charge / atoms(j).centre.distance(atoms(i).centre);
             }
             // TODO this is slow because of lack of optimized atomic - XTENLANG-321
             atomic { directEnergy += myDirectEnergy; }

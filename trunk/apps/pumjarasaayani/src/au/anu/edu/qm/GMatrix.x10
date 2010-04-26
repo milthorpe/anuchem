@@ -1109,7 +1109,7 @@ public class GMatrix extends Matrix {
                 val y    = at(molecule) { molecule.getAtom(i_loc).centre.j };
                 val z    = at(molecule) { molecule.getAtom(i_loc).centre.k };
 
-                mol_loc.addAtom(new QMAtom(sym, new Point3d(x, y, z)));
+                mol_loc.addAtom(new QMAtom(sym, Point3d(x, y, z)));
             } // end for
 
             val basisName = at(bfs) { bfs.getBasisName() };
@@ -1470,7 +1470,7 @@ public class GMatrix extends Matrix {
                 val y    = at(mol) { mol.getAtom(i_loc).centre.j };
                 val z    = at(mol) { mol.getAtom(i_loc).centre.k };
    
-                mol_loc.addAtom(new QMAtom(sym, new Point3d(x, y, z)));
+                mol_loc.addAtom(new QMAtom(sym, Point3d(x, y, z)));
             } // end for
 
             // Console.OUT.println("\tStart making local Molecule and BasisFunctions @ " + here);
@@ -1754,7 +1754,7 @@ public class GMatrix extends Matrix {
                 val y    = at(mol) { mol.getAtom(i_loc).centre.j };
                 val z    = at(mol) { mol.getAtom(i_loc).centre.k };
    
-                mol_loc.addAtom(new QMAtom(sym, new Point3d(x, y, z)));
+                mol_loc.addAtom(new QMAtom(sym, Point3d(x, y, z)));
             } // end for
 
             this.mol_loc = mol_loc;
