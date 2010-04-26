@@ -81,8 +81,8 @@ public class TestPME {
     static def randomUnit(R : Random) : Double {
         val dub = at(R){R.nextDouble()};
         // uncomment to put a huge empty border around the particles
-        return (dub) * 2.0 - 1.0;
-        //return ((dub)-0.5) * size;
+        //return (dub) * 2.0 - 1.0;
+        return ((dub)-0.5) * size;
     }
 }
 
