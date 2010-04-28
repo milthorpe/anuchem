@@ -31,12 +31,13 @@ public class Anum {
      * @param numSteps number of timesteps to simulate
      */
     public def mdRun(timestep : Double, numSteps : Long) {
+        Console.OUT.println("0.0 ");
         forceField.getPotentialAndForces(atoms); // get initial forces
         var steps : Long = 0;
-        while(steps < numSteps) {
+        while(steps <= numSteps) {
+            steps++;
             Console.OUT.print("\n" + timestep * steps + " ");
             mdStep(timestep);
-            steps++;
         }
     }
 

@@ -17,8 +17,8 @@ public class TestMorseOscillator {
 
         Console.OUT.println("Testing simple HF morse oscillator.");
 
-        // equilibrium bond length is 0.09169nm; start with displacement of 0.1nm
-        val hydrogen = new MMAtom("H", Point3d(0.1, 0.0, 0.0), 1.0079, 0.0);
+        // equilibrium bond length is 0.09169nm; start with displacement of 0.01nm
+        val hydrogen = new MMAtom("H", Point3d(0.10169, 0.0, 0.0), 1.0079, 0.0);
         val fluorine = new MMAtom("F", Point3d(0.0, 0.0, 0.0), 18.9984, 0.0);
         val atoms = Rail.make[MMAtom](2);
         atoms(0) = hydrogen;

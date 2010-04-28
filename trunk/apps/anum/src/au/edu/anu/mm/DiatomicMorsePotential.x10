@@ -31,13 +31,13 @@ public class DiatomicMorsePotential extends DiatomicPotential {
         val displacement = r.length() - bondLength;
         Console.OUT.println(r.length());
         val a = 2.0 / bondLength;
-        val expTerm = 1.0 - Math.exp(-a * displacement);
-        // dV/dr = 2D(a^2(r-b)*e^(-a(r-b)))
-        val expForce = 2.0 * dissociationEnergy * a * a * displacement * Math.exp(-a * displacement);
+        val expTerm = Math.exp(-a * displacement);
+        // dV/dr = 2D(a*e^(-a(r-b)) (1 - e^(-a(r-b)))
+        val expForce = 2.0 * dissociationEnergy * a * expTerm * (1 - expTerm);
         atom1.force = expForce * r.normalize();
         atom2.force = -atom1.force;
         // V(r) = D(1 - e^(-a(r-b)))^2
-        return dissociationEnergy * expTerm * expTerm;
+        return dissociationEnergy * (1.0 - expTerm) * (1.0 - expTerm);
     }
 }
 
