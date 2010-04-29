@@ -45,8 +45,8 @@ public class TestMorseOscillator {
 
         val diatomicPotentials : ValRail[DiatomicPotential] = ValRail.make[DiatomicPotential](1, 
            (Int) => new DiatomicMorsePotential(hydrogen, fluorine, 0.09169, 569.87));
-        val anum = new Anum(distAtoms, new DiatomicForceField(diatomicPotentials));
-        anum.mdRun(0.2, 200);
+        val anumm = new Anumm(distAtoms, new DiatomicForceField(diatomicPotentials));
+        anumm.mdRun(0.2, 200);
     }
 }
 

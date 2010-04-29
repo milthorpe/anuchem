@@ -13,6 +13,12 @@ public class Molecule[T]{T <: Atom} {
     global val atomList = new ArrayList[T{self.at(this)}](); 
     global val name:String;
 
+    /** 
+     * Measures the maximum absolute value of any coordinate x,y,z
+     * of all atoms. This is used to estimate a rough cubic box size.
+     */
+    private var maxExtent : Double = 0.0;
+
     public def this() { 
         name = "unknown";
     }
@@ -22,7 +28,14 @@ public class Molecule[T]{T <: Atom} {
     }
 
     public def getName() = this.name;
-    public def addAtom(atm:T{self.at(this)}) : void { atomList.add(atm); }
+
+    public def addAtom(atm:T{self.at(this)}) : void {
+        atomList.add(atm); 
+        maxExtent = Math.max(maxExtent, Math.abs(atm.centre.i));
+        maxExtent = Math.max(maxExtent, Math.abs(atm.centre.j));
+        maxExtent = Math.max(maxExtent, Math.abs(atm.centre.k));
+    }
+
     public def getAtom(index:Int) : T{self.at(this)} = atomList.get(index) as T{self.at(this)};
     public def getAtoms() = atomList;
     public def getNumberOfAtoms() : Int = atomList.size();
@@ -36,6 +49,8 @@ public class Molecule[T]{T <: Atom} {
 
        return ne;
     }
+
+    public def getMaxExtent() = maxExtent;
 
     public global safe def toString() : String {
        var str:String = "";
