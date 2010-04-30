@@ -24,7 +24,6 @@ import x10x.vector.Vector3d;
 import x10x.vector.Tuple3d;
 import au.edu.anu.chem.Molecule;
 import au.edu.anu.chem.mm.MMAtom;
-import au.edu.anu.chem.mm.XYZStructureFileReader;
 import au.edu.anu.util.Timer;
 
 /**
@@ -44,6 +43,8 @@ public class Anumm {
         this.forceField = forceField;
     }
 
+    public def getAtoms() = atoms;
+
     /**
      * Perform a molecular mechanics run on the system of atoms
      * for the given number and length of timesteps.
@@ -51,6 +52,7 @@ public class Anumm {
      * @param numSteps number of timesteps to simulate
      */
     public def mdRun(timestep : Double, numSteps : Long) {
+        Console.OUT.println("# Timestep = " + timestep + "fs, number of steps = " + numSteps);
         Console.OUT.println("0.0 ");
         forceField.getPotentialAndForces(atoms); // get initial forces
         var steps : Long = 0;
@@ -89,7 +91,7 @@ public class Anumm {
         }
     }
 
-    public static def main(args:Rail[String]!) {
+    public static def main(args : Rail[String]!) {
         var structureFileName : String = null;
         var timestep : Double = 0.2;
         var numSteps : Int = 200;
@@ -103,7 +105,7 @@ public class Anumm {
             }
         } else {
             Console.ERR.println("usage: anumm structureFile [timestep(fs)] [numSteps]");
-            return 1;
+            return;
         }
         var moleculeTemp : Molecule[MMAtom] = null;
         if (structureFileName.length() > 4) {
@@ -117,16 +119,16 @@ public class Anumm {
         }
         if (moleculeTemp == null) {
             Console.ERR.println("error: could not read structure file: " + structureFileName);
-            return 1;
+            return;
         }
         val molecule = moleculeTemp;
-        Console.OUT.println("MD for " + molecule.getName() + ": " + molecule.getAtoms().size() + " atoms");
+        Console.OUT.println("# MD for " + molecule.getName() + ": " + molecule.getAtoms().size() + " atoms");
         val diatomicPotentials : ValRail[DiatomicPotential] = ValRail.make[DiatomicPotential](1, 
            (Int) => new DiatomicMorsePotential(molecule.getAtoms()(0), molecule.getAtoms()(1), 0.09169, 569.87));
         val anumm = new Anumm(assignAtoms(molecule), new DiatomicForceField(diatomicPotentials));
         anumm.mdRun(timestep, numSteps);
 
-        return 0;
+        return;
     }
 
     /**
@@ -141,6 +143,7 @@ public class Anumm {
         finish for (var i : Int = 0; i < atomList.size(); i++) {
             val atom = atomList(i);
             val p = getPlaceId(atom.centre.i, atom.centre.j, atom.centre.k, maxExtent);
+            Console.OUT.println(atom + " to " + p);
             async (Place.places(p)) {
                 val remoteAtom = new MMAtom(atom);
                 atomic { (tempAtoms(p) as GrowableRail[MMAtom]!).add(remoteAtom); }

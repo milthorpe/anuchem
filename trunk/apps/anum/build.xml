@@ -26,8 +26,8 @@
 	<property name="target-src" location="${target}/classes"/>
 	<property name="target-test" location="${target}/test-classes"/>
     <property name="bin" location="${basedir}/bin"/>
-	<property name="exe" value="harmonic"/>
-    <property name="testclass" value="test/au/edu/anu/mm/TestHarmonicOscillator.x10"/>
+	<property name="exe" value="anumm"/>
+    <property name="testclass" value="src/au/edu/anu/mm/Anumm.x10"/>
 
     <condition property="x10c.optimize" value="-O" else="">
         <istrue value="${optimize}"/>
@@ -97,11 +97,11 @@
         <pathconvert property="src.list" refid="changed.src.files" dirsep="/" pathsep=" ">
             <map from="${basedir}${file.separator}src${file.separator}" to=""/>
         </pathconvert>
-        <echo message="x10c++ -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} -post 'mpicxx ${x10c.optimize} ${post.profile} -Wall # # ${link.mpiPprofile} ${post.cpuprofile}' -sourcepath .:${xre.src}:${xla.src}:${anuchem.src} ${src.list} ${basedir}/${testclass}"/>
+        <echo message="x10c++ -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} -post 'mpicxx ${x10c.optimize} ${post.profile} -Wall # # ${link.mpiPprofile} ${post.cpuprofile}' -sourcepath .:${xre.src}:${xla.src}:${anuchem.src} ${basedir}/${testclass}"/>
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/src">
             <arg value="-c"/>
-            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} -report postcompile=1 -post 'g++ ${x10c.optimize} ${post.profile} -Wall # # ${link.mpiPprofile} ${post.cpuprofile}' -sourcepath .:${xre.src}:${xla.src}:${anuchem.src} -d ${target-src} ${src.list} ${basedir}/${testclass}"/>
+            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} -report postcompile=1 -post 'mpicxx ${x10c.optimize} ${post.profile} -Wall # # ${link.mpiPprofile} ${post.cpuprofile}' -sourcepath .:${xre.src}:${xla.src}:${anuchem.src} -d ${target-src} ${basedir}/${testclass}"/>
         </exec>
     </target>
 
