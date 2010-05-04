@@ -259,8 +259,8 @@ public class PME {
                                     // don't interact atom with self
                                     //Console.OUT.println(p + " atom " + thisAtom + " and " + p2 + " atom " + otherAtom);
                                     //Console.OUT.println(n1 + " " + n2 + " " + n3);
-                                    val rjri = otherCell(otherAtom).centre - thisCell(thisAtom).centre;
-                                    val r = rjri.add(imageTranslations(here.id,n1,n2,n3)).length();
+                                    val imageLoc = (otherCell(otherAtom).centre + imageTranslations(here.id,n1,n2,n3));
+                                    val r = thisCell(thisAtom).centre.distance(imageLoc);
                                     if (r < cutoff) {
                                         val chargeProduct = thisCell(thisAtom).charge * otherCell(otherAtom).charge;
                                         val imageDirectComponent = chargeProduct * Math.erfc(beta * r) / r;
