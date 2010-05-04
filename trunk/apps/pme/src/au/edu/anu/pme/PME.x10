@@ -223,16 +223,13 @@ public class PME {
         finish ateach (p in subCells.dist) {
             var myDirectEnergy : Double = 0.0;
             val thisCell = subCells(p);
-            for (var i : Int = p(0)-1; i<=p(0)+1; i++) {
+            for (var i : Int = p(0)-1; i<=p(0); i++) {
                 var ii : Int = i;
                 var n1 : Int = 0;
                 if (i < 0) {
                     n1 = -1;
                     ii = i + numSubCells;
-                } else if (i > numSubCells-1) {
-                    n1 = 1;
-                    ii = i - numSubCells;
-                }
+                } // can't have (i > numSubCells+1)
                 for (var j : Int = p(1)-1; j<=p(1)+1; j++) {
                     var jj : Int = j;
                     var n2 : Int = 0;
@@ -254,7 +251,8 @@ public class PME {
                             kk = k - numSubCells;
                         }
                         val p2 = Point.make(ii,jj,kk);
-                        if (p != p2) {
+                        // interact with "left half" of other boxes i.e. only boxes with i<=p(0)
+                        if (i < p(0) || (i == p(0) && j < p(1)) || (i == p(0) && j == p(1) && k < p(2))) {
                             val otherCell = at (subCells.dist(p2)) {subCells(p2)};
                             for ((thisAtom) in 0..thisCell.length()-1) {
                                 for ((otherAtom) in 0..otherCell.length()-1) {
@@ -282,13 +280,13 @@ public class PME {
                     val r = rjri.length();
                     if (r < cutoff) {
                         val directComponent = thisCell(i).charge * thisCell(j).charge * Math.erfc(beta * r) / r;
-                        myDirectEnergy += 2.0 * directComponent;
+                        myDirectEnergy += directComponent;
                     }
                 }
             }
 
             // TODO this is slow because of lack of optimized atomic - XTENLANG-321
-            val myDirectEnergyFinal = myDirectEnergy;
+            val myDirectEnergyFinal = 2.0 * myDirectEnergy;
             at(this) {
                atomic directEnergy += myDirectEnergyFinal;
             }
