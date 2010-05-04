@@ -99,7 +99,7 @@ public class PME {
      * @param edges the edge vectors of the unit cell
      * @param gridSize the number of grid lines in each dimension of the unit cell
      * @param atoms the atoms in the unit cell
-     * @param splineOrder the order n of B-spline interpolation
+     * @param splineOrder the order n of B-spline interpolationb
      * @param beta the Ewald coefficient beta
      * @param cutoff the distance in Angstroms beyond which direct interactions are ignored
      */
@@ -337,19 +337,20 @@ public class PME {
                 val u2c = Math.ceil(u.j) as Int;
                 val u3c = Math.ceil(u.k) as Int;
                 for (var k1 : Int = u1c - splineOrder; k1 < u1c; k1++) {
+                    val kk1 = (k1 + gridSize(0)) % gridSize(0);
                     for (var k2 : Int = u2c - splineOrder; k2 < u2c; k2++) {
+                        val kk2 = (k2 + gridSize(1)) % gridSize(1);
                         for (var k3 : Int = u3c - splineOrder; k3 < u3c; k3++) {
+                            val kk3 = (k3 + gridSize(2)) % gridSize(2);
                             val gridPointContribution = q
                                          * bSpline4(u.i - k1)
                                          * bSpline4(u.j - k2)
                                          * bSpline4(u.k - k3);
-
-                            val p = Point.make((k1 + gridSize(0)) % gridSize(0),
-                                               (k2 + gridSize(1)) % gridSize(1),
-                                               (k3 + gridSize(2)) % gridSize(2));
-                            async(Q.dist(p)) {
+                            // TODO is it possible to use X10 reduction to generate Q 
+                            // from large number of partial Q matrices?
+                            async(Q.dist(kk1,kk2,kk3)) {
                                 // TODO this is slow because of lack of optimized atomic - XTENLANG-321
-                                atomic { Q(p) += gridPointContribution; }
+                                atomic { Q(kk1,kk2,kk3) += gridPointContribution; }
                             }
                         }
                     }

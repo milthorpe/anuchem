@@ -22,7 +22,7 @@ public class TestPME {
         var ewaldCoefficient : Double = 0.35;
         var cutoff : Double = 10.0;
         var gridSize : Int = 64;
-        var splineOrder : Int = 6;
+        var splineOrder : Int = 4;
         if (args.length > 0) {
             numParticles = Int.parseInt(args(0));
             if (args.length > 1) {
