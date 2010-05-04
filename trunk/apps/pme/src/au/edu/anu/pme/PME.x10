@@ -133,7 +133,9 @@ public class PME {
         }
         val numSubCells = (edgeLengths(0) / cutoff) as Int;
         val subCellRegion = [0..numSubCells-1,0..numSubCells-1,0..numSubCells-1] as Region(3){rect};
-        subCells = DistArray.make[ValRail[MMAtom]](Dist.makeBlock(subCellRegion,0));
+        val subCells = DistArray.make[ValRail[MMAtom]](Dist.makeBlock(subCellRegion,0));
+        Console.OUT.println("subCells dist = " + subCells.dist);
+        this.subCells = subCells;
         this.numSubCells = numSubCells;
 
         Console.OUT.println("PME for " + atoms.length + " particles.");
@@ -194,7 +196,7 @@ public class PME {
             val index = getSubCellIndex(atom);
             at (subCellsTemp.dist(index)) {
                 val remoteAtom = new MMAtom(atom);
-                subCellsTemp(index).add(remoteAtom);
+                atomic{subCellsTemp(index).add(remoteAtom);}
             }
         }
         finish ateach (p in subCells.dist) {
@@ -207,7 +209,7 @@ public class PME {
      * Gets the index of the sub-cell for this atom within
      * the grid of sub-cells for direct sum calculation.
      */
-    private def getSubCellIndex(atom : MMAtom) : Point(3) {
+    private safe def getSubCellIndex(atom : MMAtom) : Point(3) {
         // TODO assumes cubic unit cell
         val r = Vector3d(atom.centre);
         val i = (r.i / cutoff) as Int;
@@ -252,10 +254,10 @@ public class PME {
                             kk = k - numSubCells;
                         }
                         val p2 = Point.make(ii,jj,kk);
-                        val otherCell = at (subCells.dist(p2)) {subCells(p2)};
-                        for ((thisAtom) in 0..thisCell.length()-1) {
-                            for ((otherAtom) in 0..otherCell.length()-1) {
-                                if (p != p2 || thisAtom != otherAtom) {
+                        if (p != p2) {
+                            val otherCell = at (subCells.dist(p2)) {subCells(p2)};
+                            for ((thisAtom) in 0..thisCell.length()-1) {
+                                for ((otherAtom) in 0..otherCell.length()-1) {
                                     // don't interact atom with self
                                     //Console.OUT.println(p + " atom " + thisAtom + " and " + p2 + " atom " + otherAtom);
                                     //Console.OUT.println(n1 + " " + n2 + " " + n3);
@@ -269,6 +271,18 @@ public class PME {
                                 }
                             }
                         }
+                    }
+                }
+            }
+
+            // atoms in same cell
+            for ((i) in 0..thisCell.length()-1) {
+                for ((j) in 0..i-1) {
+                    val rjri = thisCell(j).centre - thisCell(i).centre;
+                    val r = rjri.length();
+                    if (r < cutoff) {
+                        val directComponent = thisCell(i).charge * thisCell(j).charge * Math.erfc(beta * r) / r;
+                        myDirectEnergy += 2.0 * directComponent;
                     }
                 }
             }
