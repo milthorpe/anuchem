@@ -253,13 +253,14 @@ public class PME {
                         val p2 = Point.make(ii,jj,kk);
                         // interact with "left half" of other boxes i.e. only boxes with i<=p(0)
                         if (i < p(0) || (i == p(0) && j < p(1)) || (i == p(0) && j == p(1) && k < p(2))) {
+                            val translation = imageTranslations(here.id,n1,n2,n3);
                             val otherCell = at (subCells.dist(p2)) {subCells(p2)};
                             for ((thisAtom) in 0..thisCell.length()-1) {
                                 for ((otherAtom) in 0..otherCell.length()-1) {
                                     // don't interact atom with self
                                     //Console.OUT.println(p + " atom " + thisAtom + " and " + p2 + " atom " + otherAtom);
                                     //Console.OUT.println(n1 + " " + n2 + " " + n3);
-                                    val imageLoc = (otherCell(otherAtom).centre + imageTranslations(here.id,n1,n2,n3));
+                                    val imageLoc = (otherCell(otherAtom).centre + translation);
                                     val r = thisCell(thisAtom).centre.distance(imageLoc);
                                     if (r < cutoff) {
                                         val chargeProduct = thisCell(thisAtom).charge * otherCell(otherAtom).charge;
