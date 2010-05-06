@@ -97,11 +97,11 @@
         <pathconvert property="src.list" refid="changed.src.files" dirsep="/" pathsep=" ">
             <map from="${basedir}${file.separator}src${file.separator}" to=""/>
         </pathconvert>
-        <echo message="x10c++ -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} -post 'mpicxx ${x10c.optimize} ${post.profile} -Wall # # ${link.mpiPprofile} ${post.cpuprofile}' -sourcepath .:${xre.src}:${xla.src}:${anuchem.src} ${src.list} ${basedir}/${testclass}"/>
+        <echo message="x10c++ -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} -post 'mpicxx ${x10c.optimize} ${post.profile} -Wall # # ${link.mpiPprofile} ${post.cpuprofile}' -sourcepath .:${xre.src}:${xla.src}:${anuchem.src} ${basedir}/${testclass}"/>
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/src">
             <arg value="-c"/>
-            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} -report postcompile=1 -post 'g++ ${x10c.optimize} ${post.profile} -Wall # # ${link.mpiPprofile} ${post.cpuprofile}' -sourcepath .:${xre.src}:${xla.src}:${anuchem.src} -d ${target-src} ${src.list} ${basedir}/${testclass}"/>
+            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} -report postcompile=1 -post 'g++ ${x10c.optimize} ${post.profile} -Wall # # ${link.mpiPprofile} ${post.cpuprofile}' -sourcepath .:${xre.src}:${xla.src}:${anuchem.src} -d ${target-src} ${basedir}/${testclass}"/>
         </exec>
     </target>
 
