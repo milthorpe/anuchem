@@ -171,9 +171,10 @@ public class PME {
         timer.stop(TIMER_INDEX_INVFFT);
 
         timer.start(TIMER_INDEX_THETARECCONVQ);
-        val thetaRecConvQInv = DistArray.make[Complex](gridDist, (p : Point(gridDist.region.rank)) => BdotC(p) * Qinv(p));
-        val thetaRecConvQ = DistArray.make[Complex](gridDist);
-        fft.doFFT3d(thetaRecConvQInv, thetaRecConvQ, temp, true);
+        // create F^-1(thetaRecConvQ)
+        val thetaRecConvQ = DistArray.make[Complex](gridDist, (p : Point(gridDist.region.rank)) => BdotC(p) * Qinv(p));
+        // and do inverse FFT
+        fft.doFFT3d(thetaRecConvQ, thetaRecConvQ, temp, true);
         timer.stop(TIMER_INDEX_THETARECCONVQ);
 
         reciprocalEnergy = getReciprocalEnergy(Q, thetaRecConvQ);
