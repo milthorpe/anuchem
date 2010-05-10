@@ -9,8 +9,9 @@
 package au.anu.edu.qm;
 
 import x10x.matrix.Matrix;
+import x10x.matrix.GlobalImmutableMatrix;
 
-public class Density extends Matrix {
+public class Density extends GlobalImmutableMatrix {
     public def this(n:Int) {
         super(n);
     }

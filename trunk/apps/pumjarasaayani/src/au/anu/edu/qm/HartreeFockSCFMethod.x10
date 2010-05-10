@@ -50,7 +50,7 @@ public class HartreeFockSCFMethod extends SCFMethod {
         val N = hCore.getRowCount();
         val gMatrix  = new GMatrix(N) as GMatrix!;
         val mos      = new MolecularOrbitals(N) as MolecularOrbitals!;
-        val density  = new Density(N) as Density!;
+        val density  = new Density(N) as Density!; density.make();
 
         var fock:Fock!  = new Fock(N) as Fock!;
 
