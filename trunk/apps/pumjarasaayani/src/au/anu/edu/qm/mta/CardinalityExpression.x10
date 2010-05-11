@@ -11,7 +11,7 @@
  * @author: V.Ganesh
  */
 
-package au.anu.edu.qm;
+package au.anu.edu.qm.mta;
 
 public class CardinalityExpression {
    def this() {
