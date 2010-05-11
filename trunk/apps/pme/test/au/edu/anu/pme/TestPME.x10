@@ -1,6 +1,7 @@
 package au.edu.anu.pme;
 
 import x10.util.Random;
+import x10.util.GrowableRail;
 import x10x.vector.Point3d;
 import x10x.vector.Vector3d;
 import au.edu.anu.chem.mm.MMAtom;
@@ -47,11 +48,16 @@ public class TestPME {
             return;
         }
 
-        /* Assign particles to random locations within a small cubic area around the center of the simulation space, with unit charge (1/2 are negative). */
-        val atoms = ValRail.make[MMAtom!](numParticles, (i : Int) => new MMAtom(Point3d(randomUnit(R) + size/2.0, randomUnit(R) + size/2.0, randomUnit(R) + size/2.0), 0.0, i%2==0?1:-1));
         val edges = [Vector3d(size, 0.0, 0.0), Vector3d(0.0, size, 0.0), Vector3d(0.0, 0.0, size)];
         val g = gridSize;
         val gridSizes = ValRail.make[Int](3, (Int) => g);
+
+        Console.OUT.println("Testing PME for " + numParticles + " particles."
+            + "\nBox edges: " + edges
+            + "\nGrid size: " + gridSize
+            + "\nspline order: " + splineOrder + " Beta: " + ewaldCoefficient + " Cutoff: " + cutoff);
+
+        val atoms = generateAtoms(numParticles);
         val pme = new PME(edges, gridSizes, atoms, splineOrder, ewaldCoefficient, cutoff);
         val energy = pme.getEnergy();
         Console.OUT.println("energy = " + energy);
@@ -78,11 +84,42 @@ public class TestPME {
         Console.OUT.printf(desc + " (one cycle): %g seconds\n", (timer.total(timerIndex) as Double) / 1e9);
     }
 
-    static def randomUnit(R : Random) : Double {
+    /**
+     * Generate an array of ValRails of MMAtoms, one ValRail for each
+     * place.  PME assumes that the atoms have already been distributed. 
+     */
+    public static def generateAtoms(numAtoms : Int) : DistArray[ValRail[MMAtom]](1) {
+        val tempAtoms = DistArray.make[GrowableRail[MMAtom]](Dist.makeUnique(Place.places), (Point) => new GrowableRail[MMAtom]());
+        /* Assign particles to random locations within a small cubic area around the center of the simulation space, with unit charge (1/2 are negative). */
+        finish for (var i : Int = 0; i < numAtoms; i++) {
+            val x = randomUnit();
+            val y = randomUnit();
+            val z = randomUnit();
+            val charge = i%2==0?1:-1;
+            val p = getPlaceId(x, y, z);
+            Console.OUT.println(x + "," + y + "," + z + " => " + p);
+            async (Place.places(p)) {
+                val atom = new MMAtom(Point3d(x, y, z), 0.0, charge);
+                atomic { (tempAtoms(p) as GrowableRail[MMAtom]!).add(atom); }
+            }
+        }
+        val atoms = DistArray.make[ValRail[MMAtom]](Dist.makeUnique(Place.places), ((p) : Point) => (tempAtoms(p) as GrowableRail[MMAtom]!).toValRail());
+        return atoms;
+    }
+
+    /** 
+     * Gets the place ID to which to assign the given atom coordinates.
+     * Currently just splits them up into slices by X coordinate.
+     */
+    public static safe def getPlaceId(x : Double, y : Double, z : Double) : Int {
+        return ((x / size) * Place.MAX_PLACES) as Int;
+    }
+
+    static def randomUnit() : Double {
         val dub = at(R){R.nextDouble()};
         // uncomment to put a huge empty border around the particles
-        //return (dub) * 2.0 - 1.0;
-        return ((dub)-0.5) * size;
+        //return dub * 2.0 - 1.0 + size / 2.0;
+        return dub * size;
     }
 }
 
