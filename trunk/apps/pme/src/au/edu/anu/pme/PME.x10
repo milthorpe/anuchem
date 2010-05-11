@@ -65,7 +65,8 @@ public class PME {
      */
     private global val imageTranslations : DistArray[Vector3d](4){rect};
 
-	private val atoms : ValRail[MMAtom!];
+    /** The atoms in the simulation, divided up into an array of ValRails, one for each place. */
+    private global val atoms : DistArray[ValRail[MMAtom]](1);
 
     private global val fft : Distributed3dFft;
 
@@ -105,7 +106,7 @@ public class PME {
      */
     public def this(edges : ValRail[Vector3d](3),
             gridSize : ValRail[Int](3),
-            atoms : ValRail[MMAtom!],
+            atoms: DistArray[ValRail[MMAtom]](1),
             splineOrder : Int,
             beta : Double,
             cutoff : Double) {
@@ -138,10 +139,6 @@ public class PME {
         this.subCells = subCells;
         this.numSubCells = numSubCells;
 
-        Console.OUT.println("PME for " + atoms.length + " particles.");
-        Console.OUT.println("Box edges: " + edges + " volume: " + getVolume());
-        Console.OUT.println("Grid size: " + gridSize);
-        Console.OUT.println("spline order: " + splineOrder + " Beta: " + beta + " Cutoff: " + cutoff);
         Console.OUT.println("gridDist = " + gridDist);
 
         B = getBArray();
@@ -192,12 +189,15 @@ public class PME {
     private def divideAtomsIntoSubCells() {
         timer.start(TIMER_INDEX_DIVIDE);
         val subCellsTemp = DistArray.make[GrowableRail[MMAtom]](subCells.dist, (Point) => new GrowableRail[MMAtom]());
-        finish foreach ((i) in 0..atoms.length-1) {
-            val atom = atoms(i);
-            val index = getSubCellIndex(atom);
-            at (subCellsTemp.dist(index)) {
-                val remoteAtom = new MMAtom(atom);
-                atomic{subCellsTemp(index).add(remoteAtom);}
+        finish ateach (p1 in atoms) {
+            val localAtoms = atoms(p1);
+            foreach ((i) in 0..localAtoms.length-1) {
+                val atom = localAtoms(i);
+                val index = getSubCellIndex(atom);
+                at (subCellsTemp.dist(index)) {
+                    val remoteAtom = new MMAtom(atom);
+                    atomic{subCellsTemp(index).add(remoteAtom);}
+                }
             }
         }
         finish ateach (p in subCells.dist) {
