@@ -15,7 +15,7 @@
  *
  * (C) Copyright Josh Milthorpe 2010.
  */
-package au.edu.anu.chem.mm;
+package au.edu.anu.chem;
 
 /**
  * This "enum" struct type is used to differentiate among different classes of chemical bond.

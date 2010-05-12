@@ -21,7 +21,7 @@ import au.anu.edu.qm.QMAtom;
 import au.edu.anu.chem.Molecule;
 
 public class Fragmentor {
-   def this(rGoodness:Double, maxFragSize:Int, mol:Molecule[QMAtom]) {
+   public def this(rGoodness:Double, maxFragSize:Int, mol:Molecule[QMAtom]) {
    }
 }
 

@@ -14,7 +14,7 @@
 package au.anu.edu.qm.mta;
 
 public class CardinalityExpression {
-   def this() {
+   public def this() {
    }
 }
 

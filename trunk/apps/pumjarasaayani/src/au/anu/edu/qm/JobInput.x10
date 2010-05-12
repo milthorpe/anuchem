@@ -5,7 +5,8 @@ import au.edu.anu.chem.Molecule;
 import x10x.vector.Point3d;
 
 /**
- * This class expects the input file to be in follwing format
+ * This class expects the input file to be in following format.
+ * Coordinates are expected to be in a.u.
  *
  *  <number of atoms>
  *  <title> <basis>
@@ -23,6 +24,8 @@ public class JobInput {
     } 
 
     private def readInp(inpFile:String) throws IOException { 
+       Console.OUT.println("NOTE: the input file is expected to be in ** a.u. ** units");
+
        val fil = new FileReader(new File(inpFile));
 
        val noOfAtoms = Int.parseInt(fil.readLine());
@@ -33,8 +36,6 @@ public class JobInput {
 
        for(var i:Int=0; i<noOfAtoms; i++) { 
          val wrd = fil.readLine().split(" ");         
-
-         // for(var j:Int=0; j<words.size(); j++) x10.io.Console.OUT.println(words.get(j));
 
          molecule.addAtom(new QMAtom(wrd(0), 
                                        Point3d(Double.parseDouble(wrd(1)),
