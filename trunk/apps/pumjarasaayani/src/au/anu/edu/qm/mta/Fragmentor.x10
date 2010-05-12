@@ -15,13 +15,17 @@
 
 package au.anu.edu.qm.mta;
 
-import au.anu.edu.qm;
 import au.anu.edu.qm.QMAtom;
 
 import au.edu.anu.chem.Molecule;
+import au.edu.anu.chem.ConnectivityBuilder;
 
 public class Fragmentor {
    public def this(rGoodness:Double, maxFragSize:Int, mol:Molecule[QMAtom]) {
+       // first build the connectivity for this molecule
+       val conn = new ConnectivityBuilder[QMAtom]();
+     
+       conn.buildConnectivity(mol); 
    }
 }
 
