@@ -22,10 +22,14 @@ import au.edu.anu.chem.ConnectivityBuilder;
 
 public class Fragmentor {
    public def this(rGoodness:Double, maxFragSize:Int, mol:Molecule[QMAtom]) {
-       // first build the connectivity for this molecule
+       // reorder the atom indices
+ 
+       // next build the connectivity for this molecule
        val conn = new ConnectivityBuilder[QMAtom]();
      
        conn.buildConnectivity(mol); 
+
+       // generate the fragments
    }
 }
 
