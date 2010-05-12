@@ -24,7 +24,7 @@ public class JobInput {
     } 
 
     private def readInp(inpFile:String) throws IOException { 
-       Console.OUT.println("NOTE: the input file is expected to be in ** a.u. ** units");
+       x10.io.Console.OUT.println("NOTE: the input file is expected to be in ** a.u. ** units");
 
        val fil = new FileReader(new File(inpFile));
 

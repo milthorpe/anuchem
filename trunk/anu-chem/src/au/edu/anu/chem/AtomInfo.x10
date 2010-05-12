@@ -16,10 +16,10 @@ public class AtomInfo {
     var atomicNumbers:HashMap[String, Int]{self.at(this)};
    
     /** covalent radii, in a.u. */
-    var covalentRadii:HashMap[String, Double]{Self.at(this)};
+    var covalentRadii:HashMap[String, Double]{self.at(this)};
 
     /** vDW radii, in a.u. */
-    var vDWRadii:HashMap[String, Double]{Self.at(this)};
+    var vDWRadii:HashMap[String, Double]{self.at(this)};
 
     var madeIt:Boolean;
 
@@ -81,7 +81,5 @@ public class AtomInfo {
     public def getAtomicNumber(atm:Atom{self.at(this)}) = atomicNumbers.getOrElse(atm.symbol, -1);
     public def getCovalentRadii(atm:Atom{self.at(this)}) = covalentRadii.getOrElse(atm.symbol, -1);
     public def getVdwRadii(atm:Atom{self.at(this)}) = vDWRadii.getOrElse(atm.symbol, -1);
-}
-
 }
 
