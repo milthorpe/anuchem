@@ -16,18 +16,21 @@ public class ConnectivityBuilder[T]{T <: Atom} {
    /**
     * Build connectivity for the given molecule object
     */
-   public def buildConnectivity(mol:Molecule[T]) {
+   public def buildConnectivity(mol:Molecule[T]!) {
        val noOfAtoms = mol.getNumberOfAtoms();
-       val ai = new AtomInfo();
+       val ai = AtomInfo.getInstance();
 
        finish foreach(atom in mol.getAtoms()) {
-           val conn = new ConnectivitySupport(ai);
+           val conn = new ConnectivitySupport();
 
            for(var i:Int=0; i<noOfAtoms; i++) {
               // check for bond between atom and mol.getAtom(i)
               val atomI = mol.getAtom(i);
               
               if (conn.canFormBond(atom, atomI)) {
+                 conn.covalentRadiusSum = ai.getCovalentRadius(atom) + ai.getCovalentRadius(atomI);
+                 conn.vdWRadiusSum      = ai.getVdwRadius(atom) + ai.getVdwRadius(atomI);
+
                  // classify  
                  if (conn.isSingleBondPresent()) {
                     if (conn.isDoubleBondPresent()) {
@@ -69,15 +72,13 @@ class ConnectivitySupport {
     var covalentRadiusSum:Double;
     var vdWRadiusSum:Double;
 
-    val ai:AtomInfo;
-
-    def this(ai:AtomInfo) { this.ai = ai; }
+    public def this() { }
 
     /** Check if the given two atoms can at all form 
         a bond. If yes, selectively store info that will
         be required to later determine the type of bond
       */
-    def canFormBond(a:Atom, b:Atom) : Boolean {
+    public def canFormBond(a:Atom, b:Atom) : Boolean {
         x = Math.abs(a.centre.i - b.centre.i);
         if (x > BOND_RADIUS) return false;
 
@@ -89,16 +90,13 @@ class ConnectivitySupport {
 
         distance = Math.sqrt(x*x+y*y+z*z);
 
-        covalentRadiusSum = ai.getCovalentRadius(a) + ai.getCovalentRadius(b);
-        vdWRadiusSum = ai.getVdwRadius(a) + ai.getVdwRadius(b);
-
         return true;
     } 
 
     /**
      * check for presence of single bonds  
      */
-    def isSingleBondPresent() : Boolean {
+    public def isSingleBondPresent() : Boolean {
         return (((covalentRadiusSum - COVALENT_BOND_TOLERANCE) < distance) 
                 && (distance < (covalentRadiusSum + COVALENT_BOND_TOLERANCE)));
     } 
@@ -106,7 +104,7 @@ class ConnectivitySupport {
     /**
      * check for presence of double bonds  
      */
-    def isDoubleBondPresent() : Boolean {
+    public def isDoubleBondPresent() : Boolean {
         return (distance < (DOUBLE_BOND_OVERLAP_PERCENTAGE * covalentRadiusSum));                
     } // end of method isWeekBondPresent()
 }

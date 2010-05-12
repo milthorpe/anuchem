@@ -21,7 +21,7 @@ import au.edu.anu.chem.Molecule;
 import au.edu.anu.chem.ConnectivityBuilder;
 
 public class Fragmentor {
-   public def this(rGoodness:Double, maxFragSize:Int, mol:Molecule[QMAtom]) {
+   public def this(rGoodness:Double, maxFragSize:Int, mol:Molecule[QMAtom]!) {
        // reorder the atom indices
  
        // next build the connectivity for this molecule

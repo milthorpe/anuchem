@@ -23,7 +23,7 @@ public class Atom {
     public global val symbol : String;
 
     /** A list of atoms to which this atom is bonded. */
-    private var bonds : ArrayList[Pair[BondType, Atom]];
+    private var bonds : ArrayList[Pair[BondType, Atom]]{self.at(this)};
 
     public def this(symbol : String, centre : Point3d) { 
         this.symbol = symbol;
@@ -45,7 +45,7 @@ public class Atom {
      */
     public def addBond(bondType : BondType, atom : Atom) {
         addBondInternal(bondType, atom);
-        at (atom) {atom.addBondInternal(bondType, this);}
+        at (atom) { atom.addBondInternal(bondType, this); }
     }
 
     /**
@@ -54,7 +54,9 @@ public class Atom {
      * @param atom an atom to which this atom is bonded
      */
     protected def addBondInternal(bondType : BondType, atom : Atom) {
-        if (bonds == null) { bonds = new ArrayList[Pair[BondType, Atom]](); }
+        if (bonds == null) { 
+           bonds = new ArrayList[Pair[BondType, Atom]]() as ArrayList[Pair[BondType, Atom]]{self.at(this)}; 
+        }
         bonds.add(Pair[BondType, Atom](bondType, atom));
     }
 
