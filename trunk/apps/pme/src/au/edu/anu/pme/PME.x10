@@ -328,10 +328,10 @@ public class PME {
      */
     public def getGriddedCharges() : DistArray[Complex](3){self.dist==gridDist} {
         timer.start(TIMER_INDEX_GRIDCHARGES);
-        val Q = DistArray.make[Double](gridDist);
+        val Q = DistArray.make[Complex](gridDist, (Point) => Complex.ZERO);
         finish ateach (p in subCells.dist) {
             val thisCell = subCells(p);
-            for ((i) in 0..thisCell.length()-1) {
+            foreach ((i) in 0..thisCell.length()-1) {
                 val atom = thisCell(i);
                 val q = atom.charge;
                 val u = getScaledFractionalCoordinates(Vector3d(atom.centre));
@@ -352,16 +352,16 @@ public class PME {
                             // from large number of partial Q matrices?
                             async(Q.dist(kk1,kk2,kk3)) {
                                 // TODO this is slow because of lack of optimized atomic - XTENLANG-321
-                                atomic { Q(kk1,kk2,kk3) += gridPointContribution; }
+                                // TODO should be able to do += - raise JIRA
+                                atomic { Q(kk1,kk2,kk3) = Q(kk1,kk2,kk3) + gridPointContribution; }
                             }
                         }
                     }
                 }
             }
         }
-        val Qcomplex = DistArray.make[Complex](gridDist, (m : Point(gridDist.region.rank)) => Complex(Q(m), 0.0));
         timer.stop(TIMER_INDEX_GRIDCHARGES);
-        return Qcomplex;
+        return Q;
     }
 
     /**
