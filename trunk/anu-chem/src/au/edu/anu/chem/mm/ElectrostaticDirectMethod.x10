@@ -28,25 +28,33 @@ public class ElectrostaticDirectMethod {
      */
     public def this(atoms : DistArray[ValRail[MMAtom]](1)) {
         this.atoms = atoms;
+        // distribute all atoms to all places
     }
 	
     public def getEnergy() : Double {
         timer.start(TIMER_INDEX_TOTAL);
 
         finish ateach (p1 in atoms) {
-            val localAtoms = atoms(p1);
-            foreach ((i) in 0..localAtoms.length-1) {
-                var myDirectEnergy : Double = 0.0;
-                for (var j : Int = 0; j < i; j++) {
-                    myDirectEnergy += localAtoms(i).charge * localAtoms(j).charge / localAtoms(j).centre.distance(localAtoms(i).centre);
+            val myAtoms = atoms(p1);
+            for (p2 in atoms) {
+                val otherAtoms = at(atoms.dist(p2)) {atoms(p2)};
+                finish foreach ((j) in 0..otherAtoms.length-1) {
+                    var myDirectEnergy : Double = 0.0;
+                    val otherAtomCentre = at(atoms.dist(p2)) {otherAtoms(j).centre};
+                    for ((i) in 0..myAtoms.length-1) {
+                        val myAtom = myAtoms(i);
+                        if (p1 != p2 || i != j) {
+                            myDirectEnergy += myAtom.charge * otherAtoms(j).charge / otherAtomCentre.distance(myAtom.centre);
+                        }
+                    }
+                    val myDirectEnergyFinal = myDirectEnergy;
+                    // TODO this is slow because of lack of optimized atomic - XTENLANG-321
+                    at(this) {atomic { directEnergy += myDirectEnergyFinal; }}
                 }
-                val myDirectEnergyFinal = myDirectEnergy;
-                // TODO this is slow because of lack of optimized atomic - XTENLANG-321
-                at(this) {atomic { directEnergy += myDirectEnergyFinal; }}
             }
         }
        
         timer.stop(TIMER_INDEX_TOTAL);
-        return directEnergy;
+        return directEnergy / 2.0;
     }
 }
