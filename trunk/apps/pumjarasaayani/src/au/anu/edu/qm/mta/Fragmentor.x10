@@ -118,6 +118,7 @@ public class Fragmentor {
    def traverseAndMergeFragments(v:Int, sortedAtomIndices:Rail[Int]!, mol:Molecule[QMAtom]!) {
        for(var i:Int=0; i<mol.getAtom(v).getBonds().size(); i++) {
            // TODO: need index info here for comparing atom indices
+           // TODO: Fragment.union()
        } //  end for
    }
 }

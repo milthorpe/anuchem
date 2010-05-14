@@ -40,6 +40,22 @@ public class Fragment extends Molecule[QMAtom] {
      public def union(frag:Fragment!) : Fragment! {
           val newFrag = new Fragment() as Fragment!;
 
+          var foundAtom:Boolean;
+
+          for(atom1 in frag.getAtoms()) { 
+             // TODO: contains pattern, move out
+             idx = atom.getIndex();
+
+             foundAtom = false;
+             for(atom2 in getAtoms()) {
+                 if (atom2.getIndex() == idx) {
+                    foundAtom = true; break;
+                 } // end if
+             } // end for
+
+             if (!foundAtom) addAtom(atom1);
+          } // end for
+
           return newFrag;
      } 
 
