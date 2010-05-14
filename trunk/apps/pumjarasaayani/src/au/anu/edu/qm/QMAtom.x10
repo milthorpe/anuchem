@@ -12,13 +12,15 @@ import x10.util.ArrayList;
 import x10x.vector.Point3d;
 import au.edu.anu.chem.Atom;
 
-public class QMAtom extends Atom {
+public class QMAtom extends Atom {     
     public def this(symbol : String, centre : Point3d) {
         super(symbol, centre);
+        index = 0;
     }
 
     public def this(centre : Point3d) {
         super(centre);
+        index = 0;
     }
 
     var basisFunctions:ArrayList[ContractedGaussian{self.at(this)}]{self.at(this)};
@@ -28,5 +30,9 @@ public class QMAtom extends Atom {
     }
 
     public def getBasisFunctions() : ArrayList[ContractedGaussian{self.at(this)}]{self.at(this)} = basisFunctions;
+
+    var index:Int;
+    public def setIndex(i:Int) { index = i; }
+    public def getIndex() = index;
 }
 

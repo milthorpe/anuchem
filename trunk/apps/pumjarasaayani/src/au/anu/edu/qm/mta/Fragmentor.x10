@@ -40,7 +40,11 @@ public class Fragmentor {
    public def fragment(mol:Molecule[QMAtom]!) : ArrayList[Fragment]! {
        val fragList = new ArrayList[Fragment]() as ArrayList[Fragment]!;
 
+       val noOfAtoms = mol.getNumberOfAtoms();
+
        // TODO: reorder the atom indices
+       val sortedAtomIndices = Rail.make[Int](noOfAtoms) as Rail[Int]!;
+       for(var i:Int=0; i<noOfAtoms; i++) sortedAtomIndices(i) = i;
 
        // next build the connectivity for this molecule
        val conn = new ConnectivityBuilder[QMAtom]();
@@ -55,11 +59,12 @@ public class Fragmentor {
        generateAtomCenteredFragments(mol, fragList); 
       
        // step2: merge along connectivity path
-       mergeAlongConnectivity(mol, fragList);
+       mergeAlongConnectivity(mol, sortedAtomIndices, fragList);
 
        // step3: general merge
 
        // step4: purge or expand depending on any rules being broken when a bond is cut
+       //        remove dangling atoms, expand double bonds or planar rings 
 
        // step5: add dummy hydrogens, for bonds that are cut
 
@@ -68,6 +73,7 @@ public class Fragmentor {
        return fragList;
    }
 
+   /** generate atom centered fragments with minimum r-goodness as requeated */
    def generateAtomCenteredFragments(mol:Molecule[QMAtom]!, fragList:ArrayList[Fragment]!) {
        val noOfAtoms = mol.getNumberOfAtoms();
 
@@ -90,14 +96,29 @@ public class Fragmentor {
        } // finish foreach
    }
 
-   def mergeAlongConnectivity(mol:Molecule[QMAtom]!, fragList:ArrayList[Fragment]!) {
-       val noOfAtoms = mol.getNumberOfAtoms();
-
-       for(atom1 in mol.getAtoms()) {
+   /** merge fragments along the connectivity path */
+   def mergeAlongConnectivity(mol:Molecule[QMAtom]!, sortedAtomIndices:Rail[Int]!, fragList:ArrayList[Fragment]!) {
+       val noOfAtoms = mol.getNumberOfAtoms(); 
+       val visited = Rail.make[Boolean](noOfAtoms, (Int)=>false);        
+        
+       for(var i:Int=0; i<noOfAtoms; i++) {
+           val idx = sortedAtomIndices(i);
+           val atom1 = mol.getAtom(idx);
            val bonds = atom1.getBonds();
-       
-           // use breadth first traversal
+
+           if (!visited(idx)) {
+              visited(idx) = true;
+   
+              traverseAndMergeFragments(idx, sortedAtomIndices, mol); 
+           } // end if
        } // finish foreach
+   }
+
+   /** simple traversal and merge */
+   def traverseAndMergeFragments(v:Int, sortedAtomIndices:Rail[Int]!, mol:Molecule[QMAtom]!) {
+       for(var i:Int=0; i<mol.getAtom(v).getBonds().size(); i++) {
+           // TODO: need index info here for comparing atom indices
+       } //  end for
    }
 }
 
