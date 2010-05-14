@@ -20,6 +20,8 @@ package au.anu.edu.qm.mta;
 
 import x10.util.ArrayList;
 
+import x10x.vector.Point3d;
+
 import au.anu.edu.qm.QMAtom;
 
 import au.edu.anu.chem.Molecule;
@@ -50,15 +52,18 @@ public class Fragmentor {
        // next start fragmentation, to generate the main fragments
 
        // step1: atom centered fragments
-       
+       generateAtomCenteredFragments(mol, fragList); 
       
        // step2: merge along connectivity path
+       mergeAlongConnectivity(mol, fragList);
 
        // step3: general merge
 
-       // step4: add dummy hydrogens, for bonds that are cut
+       // step4: purge or expand depending on any rules being broken when a bond is cut
 
-       // step5: print out general statics
+       // step5: add dummy hydrogens, for bonds that are cut
+
+       // step6: print out general statics
 
        return fragList;
    }
@@ -73,10 +78,25 @@ public class Fragmentor {
            for(var i:Int=0; i<noOfAtoms; i++) {
                val atom2 = mol.getAtom(i);
              
-               val dist = atom2.center.distance(atom1);               
+               val dist = atom2.centre.distance(atom1.centre);               
+
+               if (dist <= rGoodness) {
+                  // include this atom in this fragment
+                  aFragment.addAtom(atom2);
+               } // end if
            } // end for
 
            async atomic fragList.add(aFragment); 
+       } // finish foreach
+   }
+
+   def mergeAlongConnectivity(mol:Molecule[QMAtom]!, fragList:ArrayList[Fragment]!) {
+       val noOfAtoms = mol.getNumberOfAtoms();
+
+       for(atom1 in mol.getAtoms()) {
+           val bonds = atom1.getBonds();
+       
+           // use breadth first traversal
        } // finish foreach
    }
 }
