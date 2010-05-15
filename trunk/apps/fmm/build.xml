@@ -21,7 +21,7 @@
     <property name="mpiPprofile"  value="false"/>
     <property name="mpiPHome" location="/scratch/mpiP"/>
     <property name="binutilsHome" location="/scratch/binutils"/>
-    <property name="x10rt" value="standalone"/>
+    <property name="x10rt" value="mpi"/>
 	<property name="target" location="${basedir}/target"/>
 	<property name="target-src" location="${target}/classes"/>
 	<property name="target-test" location="${target}/test-classes"/>
