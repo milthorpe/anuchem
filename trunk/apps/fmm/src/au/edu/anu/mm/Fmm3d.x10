@@ -312,18 +312,17 @@ public class Fmm3d {
 
                     // direct calculation with all atoms in non-well-separated boxes
                     val uList = box1.getUList();
-                    for (box2Index in uList) {
+                    for ((x2,y2,z2) in uList) {
                         // interact with "left half" of uList i.e. only boxes with x1<=x1
-                        if (box2Index(0) < x1 || (box2Index(0) == x1 && box2Index(1) < y1) || (box2Index(0) == x1 && box2Index(1) == y1 && box2Index(2) < z1)) {
+                        if (x2 < x1 || (x2 == x1 && y2 < y1) || (x2 == x1 && y2 == y1 && z2 < z1)) {
                             // here we force on the packed atoms for which a future was previously issued
-                            val boxAtoms = packedAtoms(box2Index)();
+                            val boxAtoms = packedAtoms(x2,y2,z2)();
                             if (boxAtoms != null) {
-                                for (var i : Int = 0; i < boxAtoms.length(); i+=4) {
-                                    val atom2Centre = Point3d(boxAtoms(i+1), boxAtoms(i+2), boxAtoms(i+3));
-                                    val atom2Charge = boxAtoms(i);
+                                for (var i : Int = 0; i < boxAtoms.length(); i++) {
+                                    val atom2Packed = boxAtoms(i);
                                     for ((atomIndex1) in 0..length-1) {
                                         val atom1 = box1.atoms(atomIndex1);
-                                        thisBoxEnergy += atom1.charge * atom2Charge / atom1.centre.distance(atom2Centre);
+                                        thisBoxEnergy += atom1.charge * atom2Packed.charge / atom1.centre.distance(atom2Packed.centre);
                                     }
                                 }
                             }
@@ -462,8 +461,8 @@ public class Fmm3d {
             val uMin = Rail.make[Int](3, (Int) => Int.MAX_VALUE);
             val uMax = Rail.make[Int](3, (Int) => Int.MIN_VALUE);
             val combinedUSet = new HashSet[Point(3)]();
-            for (boxIndex1 in lowestLevelBoxes | here) {
-                val box1 = lowestLevelBoxes(boxIndex1) as FmmLeafBox!;
+            for ((x,y,z) in lowestLevelBoxes | here) {
+                val box1 = lowestLevelBoxes(x,y,z) as FmmLeafBox!;
                 if (box1 != null) {
                     val uList = box1.getUList();
                     for (boxIndex2 in uList) {
@@ -489,8 +488,8 @@ public class Fmm3d {
                 //Console.OUT.println("create combined V-list for level " + thisLevel + " at " + here);
                 val combinedVSet = new HashSet[Point(3)]();
                 val thisLevelBoxes = boxes(thisLevel-2);
-                for (boxIndex1 in thisLevelBoxes | here) {
-                    val box1 = thisLevelBoxes(boxIndex1) as FmmBox!;
+                for ((x,y,z) in thisLevelBoxes | here) {
+                    val box1 = thisLevelBoxes(x,y,z) as FmmBox!;
                     if (box1 != null) {
                         val vList = box1.getVList();
                         for (boxIndex2 in vList) {

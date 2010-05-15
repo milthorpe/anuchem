@@ -251,23 +251,26 @@ public class PME {
                             n3 = 1;
                             kk = k - numSubCells;
                         }
-                        val p2 = Point.make(ii,jj,kk);
                         // interact with "left half" of other boxes i.e. only boxes with i<=p(0)
-                        if (i < p(0) || (i == p(0) && j < p(1)) || (i == p(0) && j == p(1) && k < p(2))) {
+                        if (ii < p(0) || (ii == p(0) && jj < p(1)) || (ii == p(0) && jj == p(1) && kk < p(2))) {
                             val translation = imageTranslations(here.id,n1,n2,n3);
-                            val otherCell = at (subCells.dist(p2)) {subCells(p2)};
-                            for ((otherAtom) in 0..otherCell.length()-1) {
-                                val otherAtomCentre = at(otherCell) {otherCell(otherAtom).centre};
+                            val iiFinal = ii;
+                            val jjFinal = jj;
+                            val kkFinal = kk;
+                            val otherCellPacked = at (subCells.dist(iiFinal,jjFinal,kkFinal)) {getPackedAtomsForSubCell(iiFinal,jjFinal,kkFinal)};
+                            if (otherCellPacked != null) {
                                 for ((thisAtom) in 0..thisCell.length()-1) {
-                                    // don't interact atom with self
-                                    //Console.OUT.println(p + " atom " + thisAtom + " and " + p2 + " atom " + otherAtom);
-                                    //Console.OUT.println(n1 + " " + n2 + " " + n3);
-                                    val imageLoc = (otherAtomCentre + translation);
-                                    val r = thisCell(thisAtom).centre.distance(imageLoc);
-                                    if (r < cutoff) {
-                                        val chargeProduct = thisCell(thisAtom).charge * otherCell(otherAtom).charge;
-                                        val imageDirectComponent = chargeProduct * Math.erfc(beta * r) / r;
-                                        myDirectEnergy += imageDirectComponent;
+                                    for ((otherAtom) in 0..otherCellPacked.length()-1) {
+                                        // don't interact atom with self
+                                        //Console.OUT.println(p + " atom " + thisAtom + " and " + p2 + " atom " + otherAtom);
+                                        //Console.OUT.println(n1 + " " + n2 + " " + n3);
+                                        val imageLoc = otherCellPacked(otherAtom).centre + translation;
+                                        val r = thisCell(thisAtom).centre.distance(imageLoc);
+                                        if (r < cutoff) {
+                                            val chargeProduct = thisCell(thisAtom).charge * otherCellPacked(otherAtom).charge;
+                                            val imageDirectComponent = chargeProduct * Math.erfc(beta * r) / r;
+                                            myDirectEnergy += imageDirectComponent;
+                                        }
                                     }
                                 }
                             }
@@ -298,6 +301,18 @@ public class PME {
         directEnergy = directEnergy / 2.0;
         timer.stop(TIMER_INDEX_DIRECT);
         return directEnergy;
+    }
+
+    /*
+     * Returns atom charges and coordinates for a sub-cell, in packed representation
+     */
+    private safe def getPackedAtomsForSubCell(x : Int, y : Int, z : Int) : ValRail[MMAtom.PackedRepresentation] {
+        val subCell = subCells(x,y,z);
+        if (subCell.length() > 0) {
+            return ValRail.make[MMAtom.PackedRepresentation](subCell.length(), (i : Int) => subCell(i).getPackedRepresentation());
+        } else {
+            return null;
+        }
     }
 
     /**

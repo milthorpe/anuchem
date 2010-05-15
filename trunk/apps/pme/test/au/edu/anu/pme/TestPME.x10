@@ -97,6 +97,7 @@ public class TestPME {
             val z = randomUnit();
             val charge = i%2==0?1:-1;
             val p = getPlaceId(x, y, z);
+            //Console.OUT.println(x + "," + y + "," + z + " => " + p);
             async (Place.places(p)) {
                 val atom = new MMAtom(Point3d(x, y, z), 0.0, charge);
                 atomic { (tempAtoms(p) as GrowableRail[MMAtom]!).add(atom); }

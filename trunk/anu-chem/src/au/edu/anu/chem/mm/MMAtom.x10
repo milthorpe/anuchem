@@ -3,6 +3,7 @@ package au.edu.anu.chem.mm;
 import x10x.vector.Point3d;
 import x10x.vector.Vector3d;
 import au.edu.anu.chem.Atom;
+import x10.util.Pair;
 
 /**
  * This class represents an Atom for the purpose of molecular 
@@ -57,6 +58,22 @@ public class MMAtom extends Atom {
 
     public def pairEnergy(atom2 : MMAtom) : Double {
         return charge * atom2.charge / centre.distance(at(atom2){atom2.centre});
+    }
+
+    /**
+     * A packed representation of an MMAtom, for use in
+     * transferring bulk Atom data between places.
+     * Does not include force, velocity or mass, as these
+     * are not commonly required at remote places.
+     */
+    public static struct PackedRepresentation(symbol : String, charge : Double, centre : Point3d) { 
+        public def this(symbol : String, charge : Double, centre : Point3d) {
+            property(symbol, charge, centre);
+        }
+    }
+
+    public safe def getPackedRepresentation() {
+        return PackedRepresentation(symbol, charge, centre);
     }
 }
 

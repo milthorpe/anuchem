@@ -7,11 +7,13 @@
  */
 package au.edu.anu.chem;
 
+import x10.util.Pair;
 import x10.util.ArrayList;
+import x10.util.ValRailBuilder;
 
 public class Molecule[T]{T <: Atom} {
     global val atomList = new ArrayList[T{self.at(this)}](); 
-    global val name:String;
+    global val name : String;
 
     /** 
      * Measures the maximum absolute value of any coordinate x,y,z
@@ -27,7 +29,7 @@ public class Molecule[T]{T <: Atom} {
         this.name = name;
     }
 
-    public def getName() = this.name;
+    public global safe def getName() = this.name;
 
     public def addAtom(atm:T{self.at(this)}) : void {
         atomList.add(atm); 
@@ -36,11 +38,11 @@ public class Molecule[T]{T <: Atom} {
         maxExtent = Math.max(maxExtent, Math.abs(atm.centre.k));
     }
 
-    public def getAtom(index:Int) : T{self.at(this)} = atomList.get(index) as T{self.at(this)};
-    public def getAtoms() = atomList;
-    public def getNumberOfAtoms() : Int = atomList.size();
+    public safe def getAtom(index:Int) : T{self.at(this)} = atomList.get(index) as T{self.at(this)};
+    public global safe def getAtoms() = atomList;
+    public global safe def getNumberOfAtoms() : Int = atomList.size();
 
-    public def getNumberOfElectrons() : int {
+    public safe def getNumberOfElectrons() : int {
        val ai = AtomInfo.getInstance();
        var ne:Int = 0;
 
@@ -50,7 +52,15 @@ public class Molecule[T]{T <: Atom} {
        return ne;
     }
 
-    public def getMaxExtent() = maxExtent;
+    public safe def getMaxExtent() = maxExtent;
+
+    public safe def getCoords() : ValRail[Pair[String,Point3d]] {
+        val coords = new ValRailBuilder[Pair[String,Point3d]](atomList.size());
+        for(atom in atomList) {
+            coords.add(Pair[String,Point3d](atom.symbol, atom.centre));
+        }
+        return coords;
+    }
 
     public global safe def toString() : String {
        var str:String = "";

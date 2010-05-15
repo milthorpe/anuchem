@@ -32,35 +32,13 @@ public class FmmLeafBox extends FmmBox {
     }
     
     /*
-     * Returns atom charges and coordinates packed into a ValRail of length 4*N
-     * TODO XTENLANG-787 should return a 4*N Array
+     * Returns atom charges and coordinates in packed representation
      */
-    public def getPackedAtoms() : ValRail[Double] {
+    public def getPackedAtoms() : ValRail[MMAtom.PackedRepresentation] {
         if (atoms.length() > 0) {
-            return ValRail.make[Double](4*atoms.length(), (i : Int) => getPackedAtomField(i));
+            return ValRail.make[MMAtom.PackedRepresentation](atoms.length(), (i : Int) => atoms(i).getPackedRepresentation());
         } else {
             return null;
-        }
-    }
-
-    /**
-     * Atoms are packed as [charge, centre.i, centre,j, centre.k]
-     * for given i, atom index is i / 4
-     */
-    private def getPackedAtomField(i : Int) : Double {
-        val atomIndex = i / 4;
-        val atom = atoms(atomIndex);
-        switch (i%4) {
-            case 0:
-                return atom.charge;
-            case 1:
-                return atom.centre.i;
-            case 2:
-                return atom.centre.j;
-            case 3:
-                return atom.centre.k;
-            default:
-                return Double.NaN;
         }
     }
 }
