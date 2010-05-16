@@ -32,17 +32,22 @@ public class Fragmentor {
    val rGoodness:Double;  // note that this is in a.u. as opposed to the original code!
    val maxFragSize:Int;
 
+   /** creates a new instance of Fragmentor.
+       See [MTA06] for explanation on rGoodness and maxFragSize */
    public def this(rGoodness:Double, maxFragSize:Int) {
        this.rGoodness = rGoodness;
        this.maxFragSize = maxFragSize;
    }
 
+   /** fragment the molecule into overlapping fragments */
    public def fragment(mol:Molecule[QMAtom]!) : ArrayList[Fragment]! {
        val fragList = new ArrayList[Fragment]() as ArrayList[Fragment]!;
 
        val noOfAtoms = mol.getNumberOfAtoms();
 
-       // TODO: reorder the atom indices
+       // TODO: reorder the atom indices, depending on nearness to the 
+       // center of mass of the molecule so as to ensure a more 
+       // consistant ordering that is indipendent of the input order
        val sortedAtomIndices = Rail.make[Int](noOfAtoms) as Rail[Int]!;
        for(var i:Int=0; i<noOfAtoms; i++) sortedAtomIndices(i) = i;
 
@@ -117,7 +122,7 @@ public class Fragmentor {
    /** simple traversal and merge */
    def traverseAndMergeFragments(v:Int, sortedAtomIndices:Rail[Int]!, mol:Molecule[QMAtom]!) {
        for(var i:Int=0; i<mol.getAtom(v).getBonds().size(); i++) {
-           // TODO: need index info here for comparing atom indices
+           // TODO: need index info here for comparing atom indices           
            // TODO: Fragment.union()
        } //  end for
    }

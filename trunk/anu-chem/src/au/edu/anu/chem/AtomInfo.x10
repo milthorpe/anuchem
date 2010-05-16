@@ -21,6 +21,9 @@ public class AtomInfo {
     /** vdW radii, in a.u. */
     var vdWRadii:HashMap[String, Double]{self.at(this)};
 
+    /** atomic mass in a.u. */
+    var atomicMass:HasMap[String, Double] {self.at(this)};
+
     var madeIt:Boolean;
 
     private def this() {
@@ -67,6 +70,18 @@ public class AtomInfo {
         vdWRadii.put("F",  2.7779);
         vdWRadii.put("Ne", 2.7779);
 
+        atomicMass = new HasMap[String, Double]();
+        atomicMass.put("H",  1.0079);
+        atomicMass.put("He", 4.0026);
+        atomicMass.put("Li", 6.941);
+        atomicMass.put("Be", 9.0122);
+        atomicMass.put("B",  10.81);
+        atomicMass.put("C",  12.011);
+        atomicMass.put("N",  14.007);
+        atomicMass.put("O",  15.999);
+        atomicMass.put("F",  18.998);
+        atomicMass.put("Ne", 20.1797);
+
         madeIt = true;
     }
 
@@ -81,5 +96,6 @@ public class AtomInfo {
     public def getAtomicNumber(atm:Atom{self.at(this)}) = atomicNumbers.getOrElse(atm.symbol, -1);
     public def getCovalentRadius(atm:Atom{self.at(this)}) = covalentRadii.getOrElse(atm.symbol, -1);
     public def getVdwRadius(atm:Atom{self.at(this)}) = vdWRadii.getOrElse(atm.symbol, -1);
+    public def getAtomicMass(atm:Atom{self.at(this)}) = atomicMass.getOrElse(atm.symbol, -1);
 }
 
