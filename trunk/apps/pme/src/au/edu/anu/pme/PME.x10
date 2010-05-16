@@ -6,6 +6,7 @@ import au.edu.anu.chem.mm.MMAtom;
 import au.edu.anu.fft.Distributed3dFft;
 import au.edu.anu.util.Timer;
 import x10.util.GrowableRail;
+import x10.util.HashMap;
 
 /**
  * This class implements a Smooth Particle Mesh Ewald method to calculate
@@ -88,6 +89,13 @@ public class PME {
     private global val subCells : DistArray[ValRail[MMAtom]](3);
     /** The number of sub-cells per side of the unit cell. */
     private global val numSubCells : Int;
+
+    /** 
+     * A cache of "packed" representations of atoms from subcells
+     * stored at other places.  This is used to prefetch atom data
+     * for direct energy calculation.
+     */
+    //private global val packedAtomsCache : DistArray[HashMap[Point(3), ValRail[MMAtom.PackedRepresentation]]];
 
     // TODO should be shared local to calculateEnergy() - XTENLANG-404
     private var directEnergy : Double = 0.0;
@@ -254,22 +262,41 @@ public class PME {
                         // interact with "left half" of other boxes i.e. only boxes with i<=p(0)
                         if (ii < p(0) || (ii == p(0) && jj < p(1)) || (ii == p(0) && jj == p(1) && kk < p(2))) {
                             val translation = imageTranslations(here.id,n1,n2,n3);
-                            val iiFinal = ii;
-                            val jjFinal = jj;
-                            val kkFinal = kk;
-                            val otherCellPacked = at (subCells.dist(iiFinal,jjFinal,kkFinal)) {getPackedAtomsForSubCell(iiFinal,jjFinal,kkFinal)};
-                            if (otherCellPacked != null) {
+                            if (subCells.dist(ii,jj,kk) == here) {
+                                val otherCell = subCells(ii,jj,kk);
                                 for ((thisAtom) in 0..thisCell.length()-1) {
-                                    for ((otherAtom) in 0..otherCellPacked.length()-1) {
+                                    for ((otherAtom) in 0..otherCell.length()-1) {
                                         // don't interact atom with self
                                         //Console.OUT.println(p + " atom " + thisAtom + " and " + p2 + " atom " + otherAtom);
                                         //Console.OUT.println(n1 + " " + n2 + " " + n3);
-                                        val imageLoc = otherCellPacked(otherAtom).centre + translation;
+                                        val imageLoc = otherCell(otherAtom).centre + translation;
                                         val r = thisCell(thisAtom).centre.distance(imageLoc);
                                         if (r < cutoff) {
-                                            val chargeProduct = thisCell(thisAtom).charge * otherCellPacked(otherAtom).charge;
+                                            val chargeProduct = thisCell(thisAtom).charge * otherCell(otherAtom).charge;
                                             val imageDirectComponent = chargeProduct * Math.erfc(beta * r) / r;
                                             myDirectEnergy += imageDirectComponent;
+                                        }
+                                    }
+                                }
+                            } else {
+                                // other subcell is remote; need to transfer packed atoms
+                                val iiFinal = ii;
+                                val jjFinal = jj;
+                                val kkFinal = kk;
+                                val otherCellPacked = at (subCells.dist(iiFinal,jjFinal,kkFinal)) {getPackedAtomsForSubCell(iiFinal,jjFinal,kkFinal)};
+                                if (otherCellPacked != null) {
+                                    for ((thisAtom) in 0..thisCell.length()-1) {
+                                        for ((otherAtom) in 0..otherCellPacked.length()-1) {
+                                            // don't interact atom with self
+                                            //Console.OUT.println(p + " atom " + thisAtom + " and " + p2 + " atom " + otherAtom);
+                                            //Console.OUT.println(n1 + " " + n2 + " " + n3);
+                                            val imageLoc = otherCellPacked(otherAtom).centre + translation;
+                                            val r = thisCell(thisAtom).centre.distance(imageLoc);
+                                            if (r < cutoff) {
+                                                val chargeProduct = thisCell(thisAtom).charge * otherCellPacked(otherAtom).charge;
+                                                val imageDirectComponent = chargeProduct * Math.erfc(beta * r) / r;
+                                                myDirectEnergy += imageDirectComponent;
+                                            }
                                         }
                                     }
                                 }
