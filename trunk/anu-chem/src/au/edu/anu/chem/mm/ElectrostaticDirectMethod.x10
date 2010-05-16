@@ -34,27 +34,48 @@ public class ElectrostaticDirectMethod {
     public def getEnergy() : Double {
         timer.start(TIMER_INDEX_TOTAL);
 
-        finish ateach (p1 in atoms) {
+        finish ateach ((p1) in atoms) {
             val myAtoms = atoms(p1);
-            for (p2 in atoms) {
-                val otherAtoms = at(atoms.dist(p2)) {atoms(p2)};
-                finish foreach ((j) in 0..otherAtoms.length-1) {
-                    var myDirectEnergy : Double = 0.0;
-                    val otherAtomCentre = at(atoms.dist(p2)) {otherAtoms(j).centre};
-                    for ((i) in 0..myAtoms.length-1) {
-                        val myAtom = myAtoms(i);
-                        if (p1 != p2 || i != j) {
-                            myDirectEnergy += myAtom.charge * otherAtoms(j).charge / otherAtomCentre.distance(myAtom.centre);
+            finish {
+                // energy for all interactions with other boxes
+                foreach ((p2) in atoms) {
+                    if (p2 != p1) { // TODO region difference
+                        var energyWithOther : Double = 0.0;
+                        val otherAtomsPacked = at(atoms.dist(p2)) {getPackedAtomsForPlace(p2)};
+                        for ((j) in 0..otherAtomsPacked.length-1) {
+                            for ((i) in 0..myAtoms.length-1) {
+                                val myAtom = myAtoms(i);
+                                energyWithOther += myAtom.charge * otherAtomsPacked(j).charge / otherAtomsPacked(j).centre.distance(myAtom.centre);
+                            }
                         }
+                        val energyWithOtherFinal = energyWithOther;
+                        // TODO this is slow because of lack of optimized atomic - XTENLANG-321
+                        at(this) {atomic { directEnergy += energyWithOtherFinal; }}
                     }
-                    val myDirectEnergyFinal = myDirectEnergy;
+                }
+
+                // energy for all interactions within this box
+                foreach ((i) in 0..myAtoms.length-1) {
+                    var energyThisPlace : Double = 0.0;
+                    for ((j) in 0..i-1) {
+                        energyThisPlace += 2.0 * myAtoms(i).charge * myAtoms(j).charge / myAtoms(j).centre.distance(myAtoms(i).centre);
+                    }
+                    val energyThisPlaceFinal = energyThisPlace;
                     // TODO this is slow because of lack of optimized atomic - XTENLANG-321
-                    at(this) {atomic { directEnergy += myDirectEnergyFinal; }}
+                    at(this) {atomic { directEnergy += energyThisPlaceFinal; }}
                 }
             }
         }
        
         timer.stop(TIMER_INDEX_TOTAL);
         return directEnergy / 2.0;
+    }
+
+    /*
+     * Returns all atom charges and coordinates for a place, in packed representation
+     */
+    private safe def getPackedAtomsForPlace(placeId : Int) : ValRail[MMAtom.PackedRepresentation] {
+        val myAtoms = atoms(placeId);
+        return ValRail.make[MMAtom.PackedRepresentation](myAtoms.length(), (i : Int) => myAtoms(i).getPackedRepresentation());
     }
 }
