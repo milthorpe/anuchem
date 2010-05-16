@@ -95,7 +95,7 @@ public class PME {
      * stored at other places.  This is used to prefetch atom data
      * for direct energy calculation.
      */
-    //private global val packedAtomsCache : DistArray[HashMap[Point(3), ValRail[MMAtom.PackedRepresentation]]];
+    private global val packedAtomsCache : DistArray[HashMap[Point(3), ValRail[MMAtom.PackedRepresentation]]];
 
     // TODO should be shared local to calculateEnergy() - XTENLANG-404
     private var directEnergy : Double = 0.0;
@@ -146,6 +146,8 @@ public class PME {
         Console.OUT.println("subCells dist = " + subCells.dist);
         this.subCells = subCells;
         this.numSubCells = numSubCells;
+
+        packedAtomsCache = DistArray.make[HashMap[Point(3), ValRail[MMAtom.PackedRepresentation]]](Dist.makeUnique(), (Point)=> new HashMap[Point(3), ValRail[MMAtom.PackedRepresentation]]());
 
         Console.OUT.println("gridDist = " + gridDist);
 
@@ -280,23 +282,25 @@ public class PME {
                                 }
                             } else {
                                 // other subcell is remote; need to transfer packed atoms
-                                val iiFinal = ii;
-                                val jjFinal = jj;
-                                val kkFinal = kk;
-                                val otherCellPacked = at (subCells.dist(iiFinal,jjFinal,kkFinal)) {getPackedAtomsForSubCell(iiFinal,jjFinal,kkFinal)};
-                                if (otherCellPacked != null) {
-                                    for ((thisAtom) in 0..thisCell.length()-1) {
-                                        for ((otherAtom) in 0..otherCellPacked.length()-1) {
-                                            // don't interact atom with self
-                                            //Console.OUT.println(p + " atom " + thisAtom + " and " + p2 + " atom " + otherAtom);
-                                            //Console.OUT.println(n1 + " " + n2 + " " + n3);
-                                            val imageLoc = otherCellPacked(otherAtom).centre + translation;
-                                            val r = thisCell(thisAtom).centre.distance(imageLoc);
-                                            if (r < cutoff) {
-                                                val chargeProduct = thisCell(thisAtom).charge * otherCellPacked(otherAtom).charge;
-                                                val imageDirectComponent = chargeProduct * Math.erfc(beta * r) / r;
-                                                myDirectEnergy += imageDirectComponent;
-                                            }
+                                var otherCellPacked : ValRail[MMAtom.PackedRepresentation] = null;
+                                    // cache remote atoms
+                                val otherCellIndex = Point.make(ii,jj,kk);
+                                atomic {otherCellPacked = packedAtomsCache(here.id).getOrElse(otherCellIndex, null);}
+                                if (otherCellPacked == null) {
+                                    otherCellPacked = at (subCells.dist(otherCellIndex)) {getPackedAtomsForSubCell(otherCellIndex)};
+                                    atomic {packedAtomsCache(here.id).put(otherCellIndex, otherCellPacked);}
+                                }
+                                for ((thisAtom) in 0..thisCell.length()-1) {
+                                    for ((otherAtom) in 0..otherCellPacked.length()-1) {
+                                        // don't interact atom with self
+                                        //Console.OUT.println(p + " atom " + thisAtom + " and " + p2 + " atom " + otherAtom);
+                                        //Console.OUT.println(n1 + " " + n2 + " " + n3);
+                                        val imageLoc = otherCellPacked(otherAtom).centre + translation;
+                                        val r = thisCell(thisAtom).centre.distance(imageLoc);
+                                        if (r < cutoff) {
+                                            val chargeProduct = thisCell(thisAtom).charge * otherCellPacked(otherAtom).charge;
+                                            val imageDirectComponent = chargeProduct * Math.erfc(beta * r) / r;
+                                            myDirectEnergy += imageDirectComponent;
                                         }
                                     }
                                 }
@@ -333,13 +337,9 @@ public class PME {
     /*
      * Returns atom charges and coordinates for a sub-cell, in packed representation
      */
-    private safe def getPackedAtomsForSubCell(x : Int, y : Int, z : Int) : ValRail[MMAtom.PackedRepresentation] {
-        val subCell = subCells(x,y,z);
-        if (subCell.length() > 0) {
-            return ValRail.make[MMAtom.PackedRepresentation](subCell.length(), (i : Int) => subCell(i).getPackedRepresentation());
-        } else {
-            return null;
-        }
+    private safe def getPackedAtomsForSubCell(subCellIndex : Point(3)) : ValRail[MMAtom.PackedRepresentation] {
+        val subCell = subCells(subCellIndex);
+        return ValRail.make[MMAtom.PackedRepresentation](subCell.length(), (i : Int) => subCell(i).getPackedRepresentation());
     }
 
     /**
