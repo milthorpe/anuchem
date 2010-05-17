@@ -84,6 +84,7 @@ public class Fragmentor {
 
        finish foreach(atom1 in mol.getAtoms()) {
            val aFragment = new Fragment() as Fragment!;
+           aFragment.centeredOn(atom1.getIndex());
            aFragment.addAtom(atom1);
 
            for(var i:Int=0; i<noOfAtoms; i++) {
@@ -104,7 +105,7 @@ public class Fragmentor {
    /** merge fragments along the connectivity path */
    def mergeAlongConnectivity(mol:Molecule[QMAtom]!, sortedAtomIndices:Rail[Int]!, fragList:ArrayList[Fragment]!) {
        val noOfAtoms = mol.getNumberOfAtoms(); 
-       val visited = Rail.make[Boolean](noOfAtoms, (Int)=>false);        
+       val visited = Rail.make[Boolean](noOfAtoms, (Int)=>false) as Rail[Boolean]!;        
         
        for(var i:Int=0; i<noOfAtoms; i++) {
            val idx = sortedAtomIndices(i);
@@ -114,17 +115,48 @@ public class Fragmentor {
            if (!visited(idx)) {
               visited(idx) = true;
    
-              traverseAndMergeFragments(idx, sortedAtomIndices, mol); 
+              traverseAndMergeFragments(idx, sortedAtomIndices, mol, visited, fragList); 
            } // end if
        } // finish foreach
    }
 
    /** simple traversal and merge */
-   def traverseAndMergeFragments(v:Int, sortedAtomIndices:Rail[Int]!, mol:Molecule[QMAtom]!) {
-       for(var i:Int=0; i<mol.getAtom(v).getBonds().size(); i++) {
-           // TODO: need index info here for comparing atom indices           
-           // TODO: Fragment.union()
+   def traverseAndMergeFragments(v:Int, sortedAtomIndices:Rail[Int]!, mol:Molecule[QMAtom]!, visited:Rail[Boolean]!, fragList:ArrayList[Fragment]!) {
+       val bonds = mol.getAtom(v).getBonds();
+ 
+       for(var i:Int=0; i<bonds.size(); i++) {
+          val bondedAtom = sortedAtomIndices((bonds.get(i).second as QMAtom).getIndex());
+
+          mergeFragmentsCenteredOn(v, bondedAtom, fragList);
+          visited(bondedAtom) = true;
        } //  end for
    }
+
+   /** merge fragments centerd on the given atom indices */
+   def mergeFragmentsCenteredOn(a:Int, b:Int, fragList:ArrayList[Fragment]!) {
+       val f1 = findFragmentCenteredOn(a, fragList);
+       val f2 = findFragmentCenteredOn(b, fragList);
+
+       val f1f2 = f1.union(f2);
+       // check if size constraint is violated, if so exit
+       if (f1f2.getNumberOfAtoms() > maxFragSize) return;
+
+       // else remove f1 and f2 from fragList and add f1f2 instead
+       fragList.remove(f1);
+       fragList.remove(f2);
+
+       f1f2.centeredOn(f1.centeredOn());
+       fragList.add(f1f2);
+   } 
+
+   /** return the atom centered fragment */
+   def findFragmentCenteredOn(idx:Int, fragList:ArrayList[Fragment]!) : Fragment! {
+       for(frag in fragList) {
+           if (frag.centeredOn() == idx) return (frag as Fragment!);
+       } // end for
+
+       return null;  // should never come here!
+   }
+
 }
 

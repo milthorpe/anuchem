@@ -22,9 +22,13 @@ import au.edu.anu.chem.Molecule;
 public class Fragment extends Molecule[QMAtom] {
 
      global val dummyAtoms:ArrayList[QMAtom];
+
+     private var centeredOn:Int;
      
      public def this() {
           dummyAtoms = new ArrayList[QMAtom]();
+
+          centeredOn = -1;
      }
 
      public def addDummyAtom(dummyAtom:QMAtom!) {
@@ -36,6 +40,9 @@ public class Fragment extends Molecule[QMAtom] {
 
           return newFrag;
      }
+
+     public def centeredOn() = centeredOn;
+     public def centeredOn(atmIdx:Int) { centeredOn = atmIdx; }
 
      public def union(frag:Fragment!) : Fragment! {
           val newFrag = new Fragment() as Fragment!;
