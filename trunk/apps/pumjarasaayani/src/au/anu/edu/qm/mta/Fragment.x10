@@ -21,7 +21,7 @@ import au.edu.anu.chem.Molecule;
 
 public class Fragment extends Molecule[QMAtom] {
 
-     val dummyAtoms:ArrayList[QMAtom];
+     global val dummyAtoms:ArrayList[QMAtom];
      
      public def this() {
           dummyAtoms = new ArrayList[QMAtom]();
@@ -44,7 +44,7 @@ public class Fragment extends Molecule[QMAtom] {
 
           for(atom1 in frag.getAtoms()) { 
              // TODO: contains pattern, move out
-             idx = atom.getIndex();
+             val idx = atom1.getIndex();
 
              foundAtom = false;
              for(atom2 in getAtoms()) {
@@ -59,15 +59,14 @@ public class Fragment extends Molecule[QMAtom] {
           return newFrag;
      } 
 
-     public def getCoords() : ValRail[Pair[String,Point3d]] {
+     public safe def getCoords() : ValRail[Pair[String,Point3d]] {
           val noOfAtoms = getNumberOfAtoms() + dummyAtoms.size();
           val coords = new ValRailBuilder[Pair[String,Point3d]](noOfAtoms);
-          
-          var i:Int = 0;
+
           for(atom in getAtoms()) {
               coords.add(Pair[String,Point3d](atom.symbol, atom.centre));
           } // end for
-
+          
           for(atom in dummyAtoms) {
               coords.add(Pair[String,Point3d](atom.symbol, atom.centre));
           } // end for

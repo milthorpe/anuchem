@@ -6,7 +6,7 @@
  *
  * @modified ganesh - toString() to simply print coordinate values insted of 
  *                    default (i, j , k) print.
- * @modified ganesh - moved bonding info from MMAtom here
+ * @modified ganesh - moved bonding info from MMAtom to here
  */
 package au.edu.anu.chem;
 

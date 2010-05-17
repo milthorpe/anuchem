@@ -22,7 +22,7 @@ public class AtomInfo {
     var vdWRadii:HashMap[String, Double]{self.at(this)};
 
     /** atomic mass in a.u. */
-    var atomicMass:HasMap[String, Double] {self.at(this)};
+    var atomicMass:HashMap[String, Double] {self.at(this)};
 
     var madeIt:Boolean;
 
@@ -70,7 +70,7 @@ public class AtomInfo {
         vdWRadii.put("F",  2.7779);
         vdWRadii.put("Ne", 2.7779);
 
-        atomicMass = new HasMap[String, Double]();
+        atomicMass = new HashMap[String, Double]();
         atomicMass.put("H",  1.0079);
         atomicMass.put("He", 4.0026);
         atomicMass.put("Li", 6.941);
