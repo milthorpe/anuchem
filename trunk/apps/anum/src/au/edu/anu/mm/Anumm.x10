@@ -109,9 +109,16 @@ public class Anumm {
         }
         var moleculeTemp : Molecule[MMAtom] = null;
         if (structureFileName.length() > 4) {
-            if (structureFileName.substring(structureFileName.length()-4, structureFileName.length()).equals(".xyz")) {
+            val fileExtension = structureFileName.substring(structureFileName.length()-4, structureFileName.length());
+            if (fileExtension.equals(".xyz")) {
                 try {
                     moleculeTemp = new XYZStructureFileReader(structureFileName).readMolecule();
+                } catch (e:IOException) {
+                    Console.ERR.println(e);
+                }
+            } else if (fileExtension.equals(".mol") || fileExtension.equals(".sdf")) {
+                try {
+                    moleculeTemp = new MOLStructureFileReader(structureFileName).readMolecule();
                 } catch (e:IOException) {
                     Console.ERR.println(e);
                 }
