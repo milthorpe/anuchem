@@ -8,7 +8,7 @@ import x10x.vector.Point3d;
  * @author milthorpe
  */
 public class TestDistributedFmm3d {
-    private const RANDOM_SEED = 10101110L;
+    private static val RANDOM_SEED = 10101110L;
     private static val R = new Random(RANDOM_SEED);
 
     public static def main(args: Rail[String]) {

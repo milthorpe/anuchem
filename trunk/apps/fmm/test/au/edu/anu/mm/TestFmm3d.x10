@@ -11,10 +11,10 @@ import au.edu.anu.util.Timer;
  * @author milthorpe
  */
 public class TestFmm3d {
-    private const RANDOM_SEED = 10101110L;
-    private const size = 2.0;
+    private static val RANDOM_SEED = 10101110L;
+    private static val size = 2.0;
     private static val R = new Random(RANDOM_SEED);
-    private const X_SLICE = size / Place.MAX_PLACES;
+    private static val X_SLICE = size / Place.MAX_PLACES;
 
     public static def main(args : Rail[String]!) {
         var numAtoms : Int;
