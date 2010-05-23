@@ -67,13 +67,14 @@ public class Fragmentor {
        mergeAlongConnectivity(mol, sortedAtomIndices, fragList);
 
        // step3: general merge
+       mergeCommonFragments(mol);
 
        // step4: purge or expand depending on any rules being broken when a bond is cut
        //        remove dangling atoms, expand double bonds or planar rings 
 
        // step5: add dummy hydrogens, for bonds that are cut
 
-       // step6: print out general statics
+       // step6: print out general statistics 
 
        return fragList;
    }
@@ -156,6 +157,25 @@ public class Fragmentor {
        } // end for
 
        return null;  // should never come here!
+   }
+
+   /** general merge procedure, keep merging until the maxFragmentSize criteria can not be met */
+   def mergeCommonFragments(fragList:ArrayList[Fragment]!) {
+       var doneMerging:Boolean = false;
+
+       while(!doneMerging) {
+           val noOfFragments = fragList.size();
+
+           for(var i:Int=0; i<noOfFragments; i++) {
+              for(var j:Int=0; j<noOfFragments; j++) {
+                  doneMerging = (i == noOfFragments) && (j == noOfFragments);
+
+                  if (i == j) continue;
+
+                  // TODO:
+              } // end for
+           } // end for            
+       } // end while       
    }
 
 }
