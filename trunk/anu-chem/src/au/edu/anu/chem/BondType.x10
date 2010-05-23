@@ -41,5 +41,7 @@ public struct BondType(description : String, bondOrder : Double) {
     public def isStrongBond() : Boolean {
         return (this != BondType.NO_BOND && this != BondType.WEAK_BOND);
     }
+
+    public global safe def toString() = description;
 }
 

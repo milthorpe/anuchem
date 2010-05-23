@@ -13,10 +13,10 @@ import au.edu.anu.util.Timer;
  * @author milthorpe
  */
 public class TestPME {
-    private const RANDOM_SEED = 10101110L;
+    private static val RANDOM_SEED = 10101110L;
     private static val R = new Random(RANDOM_SEED);
     /* side length of cubic unit cell in Angstroms */
-    private const size = 80.0;
+    private static val size = 80.0;
 
     public static def main(args : Rail[String]!) {
         var numParticles : Int;
