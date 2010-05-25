@@ -38,6 +38,8 @@ public class Fragment extends Molecule[QMAtom] {
      public def intersection(frag:Fragment!) : Fragment! {
           val newFrag = new Fragment() as Fragment!;
 
+          // TODO:
+
           return newFrag;
      }
 
@@ -65,6 +67,16 @@ public class Fragment extends Molecule[QMAtom] {
 
           return newFrag;
      } 
+
+     public def contains(atm:QMAtom) : Boolean {
+          val idx = atm.getIndex();
+
+          for(atom in getAtoms()) {
+             if ((atom as QMAtom).getIndex() == idx) return true;
+          } // end for
+
+          return false;
+     }
 
      public safe def getCoords() : ValRail[Pair[String,Point3d]] {
           val noOfAtoms = getNumberOfAtoms() + dummyAtoms.size();

@@ -24,6 +24,7 @@ import x10x.vector.Point3d;
 
 import au.anu.edu.qm.QMAtom;
 
+import au.edu.anu.chem.AtomInfo;
 import au.edu.anu.chem.Molecule;
 import au.edu.anu.chem.ConnectivityBuilder;
 
@@ -67,10 +68,13 @@ public class Fragmentor {
        mergeAlongConnectivity(mol, sortedAtomIndices, fragList);
 
        // step3: general merge
-       mergeCommonFragments(mol);
+       mergeCommonFragments(fragList);
 
        // step4: purge or expand depending on any rules being broken when a bond is cut
        //        remove dangling atoms, expand double bonds or planar rings 
+       finish foreach(fragment in fragList) {
+          removeDanglingAtoms(fragment as Fragment!);
+       }
 
        // step5: add dummy hydrogens, for bonds that are cut
 
@@ -164,18 +168,49 @@ public class Fragmentor {
        var doneMerging:Boolean = false;
 
        while(!doneMerging) {
-           val noOfFragments = fragList.size();
-
-           for(var i:Int=0; i<noOfFragments; i++) {
-              for(var j:Int=0; j<noOfFragments; j++) {
-                  doneMerging = (i == noOfFragments) && (j == noOfFragments);
+           outer_loop: for(var i:Int=0; i<fragList.size(); i++) {
+              val fi = fragList.get(i) as Fragment!;
+              for(var j:Int=0; j<fragList.size(); j++) {
+                  val fj = fragList.get(j) as Fragment!;
+                  doneMerging = (i == fragList.size()) && (j == fragList.size());
 
                   if (i == j) continue;
 
-                  // TODO:
+                  val fifj = fi.union(fj);
+                  
+                  // check if size constraint is violated, if skip
+                  if (fifj.getNumberOfAtoms() > maxFragSize) continue;
+
+                  fragList.remove(fi);
+                  fragList.remove(fj);
+                  fragList.add(fifj);
               } // end for
            } // end for            
        } // end while       
+   }
+
+   /** remove any dangling atoms from a fragment */
+   def removeDanglingAtoms(fragment:Fragment!) {
+       val ai = AtomInfo.getInstance();
+       val atoms = fragment.getAtoms();
+
+       for(atom in atoms) { 
+           if (ai.getAtomicNumber(atom) > 2) continue;
+
+           // find connected atoms that are present in the fragment
+           val bonds = atom.getBonds(); 
+           var nBonds:Int = 0;
+           for(bond in bonds) { 
+              val bondedAtom = bond.second as QMAtom;
+
+              if (fragment.contains(bondedAtom)) nBonds++;
+           } // end for
+
+           if (nBonds == 0) {
+               // this is dangling atom
+               atoms.remove(atom);
+           } // end if 
+       } // end for
    }
 
 }
