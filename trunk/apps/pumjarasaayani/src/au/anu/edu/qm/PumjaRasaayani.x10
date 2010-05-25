@@ -14,10 +14,13 @@ import au.edu.anu.chem.Molecule;
 import au.edu.anu.util.Timer;
 import x10x.vector.Point3d;
 
+import au.anu.edu.qm.mta.Fragmentor; 
+
 public class PumjaRasaayani { 
     var mol:Molecule[QMAtom]{self.at(this)};
     var basisName:String;
     var gMatType:Int;
+    var isMTA:Boolean;
 
     public def this() {
         initDefault();
@@ -44,6 +47,14 @@ public class PumjaRasaayani {
         this.gMatType = gMatType;
     } 
 
+    public def this(inpFile:String, gMatType:Int, mtaOpt:String) {
+        this(inpFile);
+        this.gMatType = gMatType;
+
+        if (mtaOpt.equals("-mta")) this.isMTA = true;
+        else                       this.isMTA = false;
+    }
+
     private def initDefault() { 
         mol = new Molecule[QMAtom]("h2");
 
@@ -61,7 +72,9 @@ public class PumjaRasaayani {
     public def getEnergy() = energy;
     public def getTime() = time;
 
-    public def runIt() {       
+    public def runIt() {      
+        if (isMTA) runMTA();  // is it an MTA run?
+ 
         val timer = new Timer(3);
         timer.start(0);
 
@@ -102,8 +115,24 @@ public class PumjaRasaayani {
         time   = (timer.total(0) as Double) / 1e9;
     }
 
+    public def runMTA() {
+        val fragmentor = new Fragmentor(5.67, 30);  // TODO, parameters to be taken from user
+        
+        // first generate the main fragments 
+        val mainFragments = fragmentor.fragment(mol);
+
+        // then generate the cardinality expression
+
+        // run all the fragments
+
+        // collect and patch the results using cardinality expression
+    }
+
     public static def main(args:Rail[String]!) {
-        val qmApp = args.length == 0 ? new PumjaRasaayani() : args.length == 1 ? new PumjaRasaayani(args(0)) : new PumjaRasaayani(args(0), Int.parseInt(args(1)));
+        val qmApp = args.length == 0 ? new PumjaRasaayani() : 
+                    args.length == 1 ? new PumjaRasaayani(args(0)) : 
+                    args.length == 2 ? new PumjaRasaayani(args(0), Int.parseInt(args(1))) : 
+                                       new PumjaRasaayani(args(0), Int.parseInt(args(1)), args(2));
         qmApp.runIt();
     }
 }

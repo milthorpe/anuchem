@@ -130,10 +130,12 @@ public class Fragmentor {
        val bonds = mol.getAtom(v).getBonds();
  
        for(var i:Int=0; i<bonds.size(); i++) {
+          Console.OUT.println("Processing " + i);
           val bondedAtom = sortedAtomIndices((bonds.get(i).second as QMAtom).getIndex());
 
           mergeFragmentsCenteredOn(v, bondedAtom, fragList);
           visited(bondedAtom) = true;
+          Console.OUT.println("Done processing " + i);
        } //  end for
    }
 

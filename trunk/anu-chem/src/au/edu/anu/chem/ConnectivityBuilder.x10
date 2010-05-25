@@ -34,10 +34,12 @@ public class ConnectivityBuilder[T]{T <: Atom} {
                  // classify  
                  if (conn.isSingleBondPresent()) {
                     if (conn.isDoubleBondPresent()) {
+                       atom.addBond(BondType.DOUBLE_BOND, atomI);
+                       atomI.addBond(BondType.DOUBLE_BOND, atom);
+                    } else {
+                       atom.addBond(BondType.SINGLE_BOND, atomI);
+                       atomI.addBond(BondType.SINGLE_BOND, atom);
                     } // end if
-            
-                    atom.addBond(BondType.SINGLE_BOND, atomI);
-                    atomI.addBond(BondType.SINGLE_BOND, atom);
                  } // end if
               } // end if 
            }           
