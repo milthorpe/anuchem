@@ -86,7 +86,7 @@ public class PME {
      * Dimensions of the array region are (x,y,z)
      * TODO assumes cubic unit cell
      */
-    private global val subCells : DistArray[ValRail[MMAtom]](3);
+    private global val subCells : PeriodicDistArray[ValRail[MMAtom]](3);
     /** The number of sub-cells per side of the unit cell. */
     private global val numSubCells : Int;
 
@@ -142,7 +142,7 @@ public class PME {
         }
         val numSubCells = (edgeLengths(0) / cutoff) as Int;
         val subCellRegion = [0..numSubCells-1,0..numSubCells-1,0..numSubCells-1] as Region(3){rect};
-        val subCells = DistArray.make[ValRail[MMAtom]](Dist.makeBlock(subCellRegion,0));
+        val subCells = PeriodicDistArray.make[ValRail[MMAtom]](Dist.makeBlock(subCellRegion,0));
         Console.OUT.println("subCells dist = " + subCells.dist);
         this.subCells = subCells;
         this.numSubCells = numSubCells;
@@ -220,7 +220,7 @@ public class PME {
      * Gets the index of the sub-cell for this atom within
      * the grid of sub-cells for direct sum calculation.
      */
-    private safe def getSubCellIndex(atom : MMAtom) : Point(3) {
+    private global safe def getSubCellIndex(atom : MMAtom) : Point(3) {
         // TODO assumes cubic unit cell
         val r = Vector3d(atom.centre);
         val i = (r.i / cutoff) as Int;
@@ -235,42 +235,32 @@ public class PME {
             var myDirectEnergy : Double = 0.0;
             val thisCell = subCells(p);
             for (var i : Int = p(0)-1; i<=p(0); i++) {
-                var ii : Int = i;
                 var n1 : Int = 0;
                 if (i < 0) {
                     n1 = -1;
-                    ii = i + numSubCells;
                 } // can't have (i > numSubCells+1)
                 for (var j : Int = p(1)-1; j<=p(1)+1; j++) {
-                    var jj : Int = j;
                     var n2 : Int = 0;
                     if (j < 0) {
                         n2 = -1;
-                        jj = j + numSubCells;
                     } else if (j > numSubCells-1) {
                         n2 = 1;
-                        jj = j - numSubCells;
                     }
                     for (var k : Int = p(2)-1; k<=p(2)+1; k++) {
-                        var kk : Int = k;
                         var n3 : Int = 0;
                         if (k < 0) {
                             n3 = -1;
-                            kk = k + numSubCells;
                         } else if (k > numSubCells-1) {
                             n3 = 1;
-                            kk = k - numSubCells;
                         }
                         // interact with "left half" of other boxes i.e. only boxes with i<=p(0)
-                        if (ii < p(0) || (ii == p(0) && jj < p(1)) || (ii == p(0) && jj == p(1) && kk < p(2))) {
+                        if (i < p(0) || (i == p(0) && j < p(1)) || (i == p(0) && j == p(1) && k < p(2))) {
                             val translation = imageTranslations(here.id,n1,n2,n3);
-                            if (subCells.dist(ii,jj,kk) == here) {
-                                val otherCell = subCells(ii,jj,kk);
+                            val otherSubCellLocation = subCells.periodicDist(i,j,k);
+                            if (otherSubCellLocation == here) {
+                                val otherCell = subCells(i,j,k);
                                 for ((thisAtom) in 0..thisCell.length()-1) {
                                     for ((otherAtom) in 0..otherCell.length()-1) {
-                                        // don't interact atom with self
-                                        //Console.OUT.println(p + " atom " + thisAtom + " and " + p2 + " atom " + otherAtom);
-                                        //Console.OUT.println(n1 + " " + n2 + " " + n3);
                                         val imageLoc = otherCell(otherAtom).centre + translation;
                                         val r = thisCell(thisAtom).centre.distance(imageLoc);
                                         if (r < cutoff) {
@@ -283,18 +273,15 @@ public class PME {
                             } else {
                                 // other subcell is remote; need to transfer packed atoms
                                 var otherCellPacked : ValRail[MMAtom.PackedRepresentation] = null;
-                                    // cache remote atoms
-                                val otherCellIndex = Point.make(ii,jj,kk);
+                                // cache remote atoms
+                                val otherCellIndex = Point.make(i,j,k);
                                 atomic {otherCellPacked = packedAtomsCache(here.id).getOrElse(otherCellIndex, null);}
                                 if (otherCellPacked == null) {
-                                    otherCellPacked = at (subCells.dist(otherCellIndex)) {getPackedAtomsForSubCell(otherCellIndex)};
+                                    otherCellPacked = at (subCells.periodicDist(otherCellIndex)) {getPackedAtomsForSubCell(otherCellIndex)};
                                     atomic {packedAtomsCache(here.id).put(otherCellIndex, otherCellPacked);}
                                 }
                                 for ((thisAtom) in 0..thisCell.length()-1) {
                                     for ((otherAtom) in 0..otherCellPacked.length()-1) {
-                                        // don't interact atom with self
-                                        //Console.OUT.println(p + " atom " + thisAtom + " and " + p2 + " atom " + otherAtom);
-                                        //Console.OUT.println(n1 + " " + n2 + " " + n3);
                                         val imageLoc = otherCellPacked(otherAtom).centre + translation;
                                         val r = thisCell(thisAtom).centre.distance(imageLoc);
                                         if (r < cutoff) {
@@ -337,7 +324,7 @@ public class PME {
     /*
      * Returns atom charges and coordinates for a sub-cell, in packed representation
      */
-    private safe def getPackedAtomsForSubCell(subCellIndex : Point(3)) : ValRail[MMAtom.PackedRepresentation] {
+    private global safe def getPackedAtomsForSubCell(subCellIndex : Point(3)) : ValRail[MMAtom.PackedRepresentation] {
         val subCell = subCells(subCellIndex);
         return ValRail.make[MMAtom.PackedRepresentation](subCell.length(), (i : Int) => subCell(i).getPackedRepresentation());
     }
@@ -371,40 +358,40 @@ public class PME {
      */
     public def getGriddedCharges() : DistArray[Complex](3){self.dist==gridDist} {
         timer.start(TIMER_INDEX_GRIDCHARGES);
-        val Q = DistArray.make[Complex](gridDist, (Point) => Complex.ZERO);
+        val Q = PeriodicDistArray.make[Double](gridDist);
         finish ateach (p in subCells.dist) {
             val thisCell = subCells(p);
-            foreach ((i) in 0..thisCell.length()-1) {
-                val atom = thisCell(i);
+            foreach (atom in thisCell) {
                 val q = atom.charge;
                 val u = getScaledFractionalCoordinates(Vector3d(atom.centre));
                 val u1c = Math.ceil(u.i) as Int;
                 val u2c = Math.ceil(u.j) as Int;
                 val u3c = Math.ceil(u.k) as Int;
-                for (var k1 : Int = u1c - splineOrder; k1 < u1c; k1++) {
-                    val kk1 = (k1 + gridSize(0)) % gridSize(0);
-                    for (var k2 : Int = u2c - splineOrder; k2 < u2c; k2++) {
-                        val kk2 = (k2 + gridSize(1)) % gridSize(1);
-                        for (var k3 : Int = u3c - splineOrder; k3 < u3c; k3++) {
-                            val kk3 = (k3 + gridSize(2)) % gridSize(2);
+                for ((i) in 1..splineOrder) {
+                    val k1 = (u1c - i);
+                    for ((j) in 1..splineOrder) {
+                        val k2 = (u2c - j);
+                        for ((k) in 1..splineOrder) {
+                            val k3 = (u3c - k);
                             val gridPointContribution = q
                                          * bSpline4(u.i - k1)
                                          * bSpline4(u.j - k2)
                                          * bSpline4(u.k - k3);
                             // TODO is it possible to use X10 reduction to generate Q 
                             // from large number of partial Q matrices?
-                            async(Q.dist(kk1,kk2,kk3)) {
+                            async(Q.periodicDist(k1,k2,k3)) {
                                 // TODO this is slow because of lack of optimized atomic - XTENLANG-321
                                 // TODO should be able to do += - raise JIRA
-                                atomic { Q(kk1,kk2,kk3) = Q(kk1,kk2,kk3) + gridPointContribution; }
+                                atomic { Q(k1,k2,k3) = Q(k1,k2,k3) + gridPointContribution; }
                             }
                         }
                     }
                 }
             }
         }
+        val Qcomplex = DistArray.make[Complex](gridDist, ((i,j,k) : Point) => Complex(Q(i,j,k),0.0));
         timer.stop(TIMER_INDEX_GRIDCHARGES);
-        return Q;
+        return Qcomplex;
     }
 
     /**
