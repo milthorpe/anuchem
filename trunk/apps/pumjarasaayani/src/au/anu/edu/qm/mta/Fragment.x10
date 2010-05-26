@@ -62,7 +62,7 @@ public class Fragment extends Molecule[QMAtom] {
                  } // end if
              } // end for
 
-             if (!foundAtom) addAtom(atom1);
+             if (!foundAtom) newFrag.addAtom(atom1);
           } // end for
 
           return newFrag;

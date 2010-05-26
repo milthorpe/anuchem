@@ -50,7 +50,10 @@ public class Fragmentor {
        // center of mass of the molecule so as to ensure a more 
        // consistant ordering that is indipendent of the input order
        val sortedAtomIndices = Rail.make[Int](noOfAtoms) as Rail[Int]!;
-       for(var i:Int=0; i<noOfAtoms; i++) sortedAtomIndices(i) = i;
+       for(var i:Int=0; i<noOfAtoms; i++) { 
+          mol.getAtom(i).setIndex(i);
+          sortedAtomIndices(i) = i;
+       }
 
        // next build the connectivity for this molecule
        val conn = new ConnectivityBuilder[QMAtom]();
@@ -79,6 +82,7 @@ public class Fragmentor {
        // step5: add dummy hydrogens, for bonds that are cut
 
        // step6: print out general statistics 
+       Console.OUT.println("Number of final fragments: " + fragList.size());
 
        return fragList;
    }
@@ -129,6 +133,8 @@ public class Fragmentor {
    def traverseAndMergeFragments(v:Int, sortedAtomIndices:Rail[Int]!, mol:Molecule[QMAtom]!, visited:Rail[Boolean]!, fragList:ArrayList[Fragment]!) {
        val bonds = mol.getAtom(v).getBonds();
  
+       Console.OUT.println("Number of bonds for atom " + v + " is " + bonds.size());
+
        for(var i:Int=0; i<bonds.size(); i++) {
           Console.OUT.println("Processing " + i);
           val bondedAtom = sortedAtomIndices((bonds.get(i).second as QMAtom).getIndex());
@@ -141,8 +147,11 @@ public class Fragmentor {
 
    /** merge fragments centerd on the given atom indices */
    def mergeFragmentsCenteredOn(a:Int, b:Int, fragList:ArrayList[Fragment]!) {
+       Console.OUT.println("Merging " + a + " and " + b + " ...");
        val f1 = findFragmentCenteredOn(a, fragList);
        val f2 = findFragmentCenteredOn(b, fragList);
+
+       if (f1 == null || f2 == null) return;
 
        val f1f2 = f1.union(f2);
        // check if size constraint is violated, if so exit
@@ -174,7 +183,7 @@ public class Fragmentor {
               val fi = fragList.get(i) as Fragment!;
               for(var j:Int=0; j<fragList.size(); j++) {
                   val fj = fragList.get(j) as Fragment!;
-                  doneMerging = (i == fragList.size()) && (j == fragList.size());
+                  doneMerging = (i == fragList.size()-1) && (j == fragList.size()-1);
 
                   if (i == j) continue;
 
@@ -186,6 +195,7 @@ public class Fragmentor {
                   fragList.remove(fi);
                   fragList.remove(fj);
                   fragList.add(fifj);
+                  break outer_loop;
               } // end for
            } // end for            
        } // end while       

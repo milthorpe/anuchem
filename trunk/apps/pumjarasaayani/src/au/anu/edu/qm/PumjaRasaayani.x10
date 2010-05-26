@@ -73,7 +73,7 @@ public class PumjaRasaayani {
     public def getTime() = time;
 
     public def runIt() {      
-        if (isMTA) runMTA();  // is it an MTA run?
+        if (isMTA) { runMTA(); return; } // is it an MTA run?
  
         val timer = new Timer(3);
         timer.start(0);

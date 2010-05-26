@@ -22,10 +22,11 @@ public class ConnectivityBuilder[T]{T <: Atom} {
 
        finish foreach(atom in mol.getAtoms()) {
            val conn = new ConnectivitySupport();
+           val idx  = atom.getIndex();
 
-           for(var i:Int=0; i<noOfAtoms; i++) {
+           for(var i:Int=0; i<idx; i++) {
               // check for bond between atom and mol.getAtom(i)
-              val atomI = mol.getAtom(i);
+              val atomI = mol.getAtom(i);              
               
               if (conn.canFormBond(atom, atomI)) {
                  conn.covalentRadiusSum = ai.getCovalentRadius(atom) + ai.getCovalentRadius(atomI);
@@ -35,10 +36,8 @@ public class ConnectivityBuilder[T]{T <: Atom} {
                  if (conn.isSingleBondPresent()) {
                     if (conn.isDoubleBondPresent()) {
                        atom.addBond(BondType.DOUBLE_BOND, atomI);
-                       atomI.addBond(BondType.DOUBLE_BOND, atom);
                     } else {
                        atom.addBond(BondType.SINGLE_BOND, atomI);
-                       atomI.addBond(BondType.SINGLE_BOND, atom);
                     } // end if
                  } // end if
               } // end if 
