@@ -19,8 +19,10 @@
 package au.anu.edu.qm.mta;
 
 import x10.util.ArrayList;
+import x10.util.ValRailBuilder;
 
 import x10x.vector.Point3d;
+import x10x.vector.Vector3d;
 
 import au.anu.edu.qm.QMAtom;
 
@@ -80,9 +82,17 @@ public class Fragmentor {
        }
 
        // step5: add dummy hydrogens, for bonds that are cut
+       finish foreach(fragment in fragList) {
+          addDummyAtoms(fragment as Fragment!);
+       }
 
        // step6: print out general statistics 
        Console.OUT.println("Number of final fragments: " + fragList.size());
+       var idx:Int = 0;
+       for(frag in fragList) {
+           Console.OUT.println("Fragment # " + idx + " : " + frag.getNumberOfAtoms());
+           idx++;
+       } // end for
 
        return fragList;
    }
@@ -222,6 +232,36 @@ public class Fragmentor {
                // this is dangling atom
                atoms.remove(atom);
            } // end if 
+       } // end for
+   }
+
+   /** add dummy atoms to a fragment */
+   def addDummyAtoms(fragment:Fragment!) {
+       Console.OUT.println("Adding dummy atoms ...");
+
+       val boundaryAtoms = new ValRailBuilder[QMAtom]();
+
+       // find out boundary atoms in this fragment
+       for(atom in fragment.getAtoms()) {
+           val nBonds  = atom.getBonds().size();
+           val nfBonds = fragment.getBondOrder(atom);
+
+           if (nBonds != nfBonds) boundaryAtoms.add(atom);
+       } // end for
+        
+       // then add dummy atoms at appropriate positions
+       for(atom in boundaryAtoms.result()) {
+           val bonds = atom.getBonds();
+
+           for(bond in bonds) {
+              val bondedAtom = bond.second as QMAtom;
+
+              if (!fragment.contains(bondedAtom)) {
+                 // TODO: for symplicity, place the H at the cut position, 
+                 //       rather than the correct bond distance
+                 fragment.addAtom(new QMAtom("H", bondedAtom.centre));
+              } // end if
+           } // end for
        } // end for
    }
 

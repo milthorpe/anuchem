@@ -46,17 +46,21 @@ public class Fragment extends Molecule[QMAtom] {
      public def centeredOn() = centeredOn;
      public def centeredOn(atmIdx:Int) { centeredOn = atmIdx; }
 
+     public def getNumberOfAtom() = super.getNumberOfAtoms() + dummyAtoms.size();
+
      public def union(frag:Fragment!) : Fragment! {
           val newFrag = new Fragment() as Fragment!;
 
           var foundAtom:Boolean;
 
           for(atom1 in frag.getAtoms()) { 
-             // TODO: contains pattern, move out
-             val idx = atom1.getIndex();
+             newFrag.addAtom(atom1);
+          } // end for
 
+          for(atom1 in getAtoms()) {
+             val idx = atom1.getIndex();
              foundAtom = false;
-             for(atom2 in getAtoms()) {
+             for(atom2 in newFrag.getAtoms()) {
                  if (atom2.getIndex() == idx) {
                     foundAtom = true; break;
                  } // end if
@@ -76,6 +80,18 @@ public class Fragment extends Molecule[QMAtom] {
           } // end for
 
           return false;
+     }
+
+     public def getBondOrder(atm:QMAtom) : Int {
+          if (!contains(atm)) return 0;
+
+          val bonds = atm.getBonds();
+          var nBonds:Int = 0;
+          for(bond in bonds) {
+             if (contains(bond.second as QMAtom)) nBonds++;
+          } // end for
+
+          return nBonds;
      }
 
      public safe def getCoords() : ValRail[Pair[String,Point3d]] {
