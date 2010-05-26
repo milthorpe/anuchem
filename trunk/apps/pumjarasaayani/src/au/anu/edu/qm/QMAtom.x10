@@ -30,9 +30,5 @@ public class QMAtom extends Atom {
     }
 
     public def getBasisFunctions() : ArrayList[ContractedGaussian{self.at(this)}]{self.at(this)} = basisFunctions;
-
-    var index:Int;
-    public def setIndex(i:Int) { index = i; }
-    public def getIndex() = index;
 }
 

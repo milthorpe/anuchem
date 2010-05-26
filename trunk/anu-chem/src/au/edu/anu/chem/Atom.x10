@@ -60,6 +60,11 @@ public class Atom {
         bonds.add(Pair[BondType, Atom](bondType, atom));
     }
 
+    /** index of this atom in a molecule */
+    public var index:Int;
+    public def setIndex(i:Int) { index = i; }
+    public def getIndex() = index;
+
     public global safe def toString() : String {
         return at(this){symbol + " " + centre.i + " " + centre.j + " " + centre.k};
     }

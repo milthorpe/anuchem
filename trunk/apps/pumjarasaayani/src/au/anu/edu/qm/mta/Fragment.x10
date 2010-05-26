@@ -22,9 +22,13 @@ import au.edu.anu.chem.Molecule;
 public class Fragment extends Molecule[QMAtom] {
 
      global val dummyAtoms:ArrayList[QMAtom];
+
+     private var centeredOn:Int;
      
      public def this() {
           dummyAtoms = new ArrayList[QMAtom]();
+
+          centeredOn = -1;
      }
 
      public def addDummyAtom(dummyAtom:QMAtom!) {
@@ -34,8 +38,15 @@ public class Fragment extends Molecule[QMAtom] {
      public def intersection(frag:Fragment!) : Fragment! {
           val newFrag = new Fragment() as Fragment!;
 
+          // TODO:
+
           return newFrag;
      }
+
+     public def centeredOn() = centeredOn;
+     public def centeredOn(atmIdx:Int) { centeredOn = atmIdx; }
+
+     public def getNumberOfAtom() = super.getNumberOfAtoms() + dummyAtoms.size();
 
      public def union(frag:Fragment!) : Fragment! {
           val newFrag = new Fragment() as Fragment!;
@@ -43,21 +54,45 @@ public class Fragment extends Molecule[QMAtom] {
           var foundAtom:Boolean;
 
           for(atom1 in frag.getAtoms()) { 
-             // TODO: contains pattern, move out
-             val idx = atom1.getIndex();
+             newFrag.addAtom(atom1);
+          } // end for
 
+          for(atom1 in getAtoms()) {
+             val idx = atom1.getIndex();
              foundAtom = false;
-             for(atom2 in getAtoms()) {
+             for(atom2 in newFrag.getAtoms()) {
                  if (atom2.getIndex() == idx) {
                     foundAtom = true; break;
                  } // end if
              } // end for
 
-             if (!foundAtom) addAtom(atom1);
+             if (!foundAtom) newFrag.addAtom(atom1);
           } // end for
 
           return newFrag;
      } 
+
+     public def contains(atm:QMAtom) : Boolean {
+          val idx = atm.getIndex();
+
+          for(atom in getAtoms()) {
+             if ((atom as QMAtom).getIndex() == idx) return true;
+          } // end for
+
+          return false;
+     }
+
+     public def getBondOrder(atm:QMAtom) : Int {
+          if (!contains(atm)) return 0;
+
+          val bonds = atm.getBonds();
+          var nBonds:Int = 0;
+          for(bond in bonds) {
+             if (contains(bond.second as QMAtom)) nBonds++;
+          } // end for
+
+          return nBonds;
+     }
 
      public safe def getCoords() : ValRail[Pair[String,Point3d]] {
           val noOfAtoms = getNumberOfAtoms() + dummyAtoms.size();
