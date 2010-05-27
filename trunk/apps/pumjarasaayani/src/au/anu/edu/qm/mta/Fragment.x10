@@ -24,17 +24,12 @@ public class Fragment extends Molecule[QMAtom] {
      private var centeredOn:Int;
 
      private var energy:Double;
+
+     private var cardinalitySign:Int;
      
      public def this() {
           centeredOn = -1;
-     }
-
-     public def intersection(frag:Fragment!) : Fragment! {
-          val newFrag = new Fragment() as Fragment!;
-
-          // TODO:
-
-          return newFrag;
+          cardinalitySign = 1;
      }
 
      public def centeredOn() = centeredOn;
@@ -42,6 +37,29 @@ public class Fragment extends Molecule[QMAtom] {
 
      public def energy(ene:Double) { energy = ene; }
      public def energy() = energy;
+
+     public def cardinalitySign(sign:Int) { cardinalitySign = sign; }
+     public def cardinalitySign() = cardinalitySign;
+
+     public def intersection(frag:Fragment!) : Fragment! {
+          val newFrag = new Fragment() as Fragment!;
+
+          var foundAtom:Boolean;
+
+          for(atom1 in getAtoms()) {
+             val idx = atom1.getIndex();
+             foundAtom = false;
+             for(atom2 in frag.getAtoms()) {
+                 if (atom2.getIndex() == idx) {
+                    foundAtom = true; break;
+                 } // end if
+             } // end for
+
+             if (foundAtom) newFrag.addAtom(atom1);
+          } // end for
+
+          return newFrag;
+     }
 
      public def union(frag:Fragment!) : Fragment! {
           val newFrag = new Fragment() as Fragment!;

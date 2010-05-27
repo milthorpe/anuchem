@@ -87,7 +87,7 @@ public class Fragmentor {
        Console.OUT.println("Adding dummy atoms ...");
        finish foreach(fragment in fragList) {
           addDummyAtoms(fragment as Fragment!);
-       }
+       } // finish
 
        // step6: print out general statistics 
        Console.OUT.println("Number of final fragments: " + fragList.size());
@@ -217,9 +217,36 @@ public class Fragmentor {
    /** include any missed atoms, that violate conditions like double bond breaking
        or breaking rings at inappropriate positions */
    def includeMissedAtoms(fragList:ArrayList[Fragment]!) : Boolean {
+       val includedMissedAtoms = Rail.make[Boolean](1, (Int)=>false);
+
        // TODO: 
 
-       return false; 
+       // first see if we are missing any pendant atoms 
+       finish foreach(fragment in fragList) {
+           val missedAtoms = new ArrayList[QMAtom{self.at(fragment)}]();
+           for(atom in fragment.getAtoms()) {
+              for(bond in atom.getBonds()) {
+                  val bondedAtom = bond.second as QMAtom!;
+                  val nBonds = bondedAtom.getBonds().size();
+
+                  if (nBonds == 1) { 
+                      if (!fragment.contains(bondedAtom)) {
+                          missedAtoms.add(bondedAtom as QMAtom{self.at(fragment)});
+                      } // end if
+                  } // end if    
+              } // end for
+           } // end for
+
+           if (missedAtoms.size() > 0) {
+               includedMissedAtoms(0) = true;
+
+               for(matm in missedAtoms) {
+                  fragment.addAtom(matm as QMAtom{self.at(fragment)});
+               } // end for
+           } // end if
+       } // end finish
+
+       return includedMissedAtoms(0); 
    }
 
    /** remove any dangling atoms from a fragment */
