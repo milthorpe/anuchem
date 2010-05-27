@@ -55,7 +55,7 @@ public class Fragmentor {
        for(var i:Int=0; i<noOfAtoms; i++) { 
           mol.getAtom(i).setIndex(i);
           sortedAtomIndices(i) = i;
-       }
+       } // end for
 
        // next build the connectivity for this molecule
        val conn = new ConnectivityBuilder[QMAtom]();
@@ -79,9 +79,12 @@ public class Fragmentor {
        //        remove dangling atoms, expand double bonds or planar rings 
        finish foreach(fragment in fragList) {
           removeDanglingAtoms(fragment as Fragment!);
-       }
+       } // finish 
+
+       while(includeMissedAtoms(fragList));
 
        // step5: add dummy hydrogens, for bonds that are cut
+       Console.OUT.println("Adding dummy atoms ...");
        finish foreach(fragment in fragList) {
           addDummyAtoms(fragment as Fragment!);
        }
@@ -211,6 +214,14 @@ public class Fragmentor {
        } // end while       
    }
 
+   /** include any missed atoms, that violate conditions like double bond breaking
+       or breaking rings at inappropriate positions */
+   def includeMissedAtoms(fragList:ArrayList[Fragment]!) : Boolean {
+       // TODO: 
+
+       return false; 
+   }
+
    /** remove any dangling atoms from a fragment */
    def removeDanglingAtoms(fragment:Fragment!) {
        val ai = AtomInfo.getInstance();
@@ -237,8 +248,6 @@ public class Fragmentor {
 
    /** add dummy atoms to a fragment */
    def addDummyAtoms(fragment:Fragment!) {
-       Console.OUT.println("Adding dummy atoms ...");
-
        val boundaryAtoms = new ValRailBuilder[QMAtom]();
 
        // find out boundary atoms in this fragment
@@ -259,7 +268,7 @@ public class Fragmentor {
               if (!fragment.contains(bondedAtom)) {
                  // TODO: for symplicity, place the H at the cut position, 
                  //       rather than the correct bond distance
-                 fragment.addAtom(new QMAtom("H", bondedAtom.centre));
+                 fragment.addAtom(new QMAtom("H", bondedAtom.centre, true));
               } // end if
            } // end for
        } // end for

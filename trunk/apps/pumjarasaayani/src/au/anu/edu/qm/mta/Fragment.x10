@@ -21,18 +21,12 @@ import au.edu.anu.chem.Molecule;
 
 public class Fragment extends Molecule[QMAtom] {
 
-     global val dummyAtoms:ArrayList[QMAtom];
-
      private var centeredOn:Int;
+
+     private var energy:Double;
      
      public def this() {
-          dummyAtoms = new ArrayList[QMAtom]();
-
           centeredOn = -1;
-     }
-
-     public def addDummyAtom(dummyAtom:QMAtom!) {
-          dummyAtoms.add(dummyAtom);
      }
 
      public def intersection(frag:Fragment!) : Fragment! {
@@ -46,7 +40,8 @@ public class Fragment extends Molecule[QMAtom] {
      public def centeredOn() = centeredOn;
      public def centeredOn(atmIdx:Int) { centeredOn = atmIdx; }
 
-     public def getNumberOfAtom() = super.getNumberOfAtoms() + dummyAtoms.size();
+     public def energy(ene:Double) { energy = ene; }
+     public def energy() = energy;
 
      public def union(frag:Fragment!) : Fragment! {
           val newFrag = new Fragment() as Fragment!;
@@ -92,21 +87,6 @@ public class Fragment extends Molecule[QMAtom] {
           } // end for
 
           return nBonds;
-     }
-
-     public safe def getCoords() : ValRail[Pair[String,Point3d]] {
-          val noOfAtoms = getNumberOfAtoms() + dummyAtoms.size();
-          val coords = new ValRailBuilder[Pair[String,Point3d]](noOfAtoms);
-
-          for(atom in getAtoms()) {
-              coords.add(Pair[String,Point3d](atom.symbol, atom.centre));
-          } // end for
-          
-          for(atom in dummyAtoms) {
-              coords.add(Pair[String,Point3d](atom.symbol, atom.centre));
-          } // end for
-
-          return coords.result();
      }
 }
 

@@ -13,8 +13,15 @@
 
 package au.anu.edu.qm.mta;
 
+import x10.util.ArrayList;
+import x10.util.ValRailBuilder;
+
 public class CardinalityExpression {
    public def this() {
+   }
+
+   /** add cardinality fragments */
+   public def addCardinalityFragments(fragList:ArrayList[Fragment]!) {
    }
 }
 
