@@ -275,7 +275,10 @@ public class Fragmentor {
 
    /** add dummy atoms to a fragment */
    def addDummyAtoms(fragment:Fragment!) {
-       val boundaryAtoms = new ValRailBuilder[QMAtom]();
+       val boundaryAtoms = new ValRailBuilder[QMAtom!]();
+ 
+       val ai = AtomInfo.getInstance(); 
+       val hRadius = ai.getCovalentRadius(new QMAtom("H", Point3d(0,0,0), true));
 
        // find out boundary atoms in this fragment
        for(atom in fragment.getAtoms()) {
@@ -288,14 +291,18 @@ public class Fragmentor {
        // then add dummy atoms at appropriate positions
        for(atom in boundaryAtoms.result()) {
            val bonds = atom.getBonds();
+           val bondDistance = hRadius + ai.getCovalentRadius(atom as QMAtom!);
 
            for(bond in bonds) {
               val bondedAtom = bond.second as QMAtom;
 
               if (!fragment.contains(bondedAtom)) {
-                 // TODO: for symplicity, place the H at the cut position, 
-                 //       rather than the correct bond distance
-                 fragment.addAtom(new QMAtom("H", bondedAtom.centre, true));
+                 val vec = atom.centre - bondedAtom.centre;
+                 val newCenter = Point3d(vec.i*bondDistance + atom.centre.i,
+                                         vec.j*bondDistance + atom.centre.j, 
+                                         vec.k*bondDistance + atom.centre.k);
+
+                 fragment.addAtom(new QMAtom("H", newCenter, true));
               } // end if
            } // end for
        } // end for
