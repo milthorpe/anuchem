@@ -297,7 +297,7 @@ public class Fragmentor {
               val bondedAtom = bond.second as QMAtom;
 
               if (!fragment.contains(bondedAtom)) {
-                 val vec = atom.centre - bondedAtom.centre;
+                 val vec = (bondedAtom.centre - atom.centre).normalize();
                  val newCenter = Point3d(vec.i*bondDistance + atom.centre.i,
                                          vec.j*bondDistance + atom.centre.j, 
                                          vec.k*bondDistance + atom.centre.k);
