@@ -16,7 +16,6 @@ import x10x.vector.Point3d;
 
 import au.anu.edu.qm.mta.Fragment; 
 import au.anu.edu.qm.mta.Fragmentor; 
-import au.anu.edu.qm.mta.CardinalityExpression; 
 
 public class PumjaRasaayani { 
     var mol:Molecule[QMAtom]{self.at(this)};
@@ -159,11 +158,8 @@ public class PumjaRasaayani {
     public def runMTA() {
         val fragmentor = new Fragmentor(5.67, 30);  // TODO, parameters to be taken from user
         
-        // first generate the main fragments 
+        // first generate the fragments, along with cardinality expression
         val fragments = fragmentor.fragment(mol);
-
-        // then generate the cardinality expression
-        (new CardinalityExpression()).addCardinalityFragments(fragments);
 
         // run hf for all all the fragments
         for(fragment in fragments) {
