@@ -61,12 +61,14 @@ public class CardinalityExpression {
                  pos=noOfFragments-l; m=pos;
                     
                  if (combs(pos) == noOfFragments-1) l++;
-                 else                   l=1;
+                 else                               l=1;
                     
                  if (pos==1) break;
              } // end while
           } // end for
        } // end for
+
+       Console.OUT.println("No. of cardinality fragments: " + cfList.size());
 
        for(cf in cfList) fragList.add(cf);
    }
@@ -100,8 +102,14 @@ public class CardinalityExpression {
           if (nCommonAtoms == frag.getNumberOfTrueAtoms()) {
              mergedIntoPreviousTerm = true;
              frag.cardinalitySign(frag.cardinalitySign() + sign);
+             break;
           } // end if
        } // end for
+
+       if (!mergedIntoPreviousTerm) { 
+           fragment.cardinalitySign(sign);
+           cfList.add(fragment);
+       } // end if
    }
 }
 
