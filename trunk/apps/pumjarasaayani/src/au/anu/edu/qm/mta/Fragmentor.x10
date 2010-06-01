@@ -114,6 +114,8 @@ public class Fragmentor {
 
            for(var i:Int=0; i<noOfAtoms; i++) {
                val atom2 = mol.getAtom(i);
+
+               if (atom2.getIndex() == atom1.getIndex()) continue;
              
                val dist = atom2.centre.distance(atom1.centre);               
 
