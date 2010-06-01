@@ -28,6 +28,7 @@ public class CardinalityExpression {
        val noOfFragments = fragList.size();
        val combs = Rail.make[Int](noOfFragments, (Int)=>0);
        val cfList = new ArrayList[Fragment]();
+       var l:Int, pos:Int, m:Int;
 
        for(var i:Int=0; i<noOfFragments; i++) {
           for(var j:Int=i+1; j<noOfFragments; j++) {
@@ -37,7 +38,33 @@ public class CardinalityExpression {
 
              if (!computeIntersections(fragList, cfList, combs, 2, sign)) continue;
 
-             // TODO:              
+             if (noOfFragments <= 2 || combs(1) == noOfFragments-1) continue;
+
+             l=1; pos=1; m=pos+1;
+
+             while(true) {
+                 for(var k:Int=combs(pos)+1; k<noOfFragments; k++) {
+                     combs(m) = k;
+                        
+                     if (m > 0) {
+                         if (combs(m) <= combs(m-1)) break;
+                     } // end if
+
+                     if (!computeIntersections(fragList, cfList, combs, m, sign)) {
+                         if (combs(m) == noOfFragments-1) break;
+                         m--;
+                     } // end  if
+                        
+                     m++;
+                 } // end for
+
+                 pos=noOfFragments-l; m=pos;
+                    
+                 if (combs(pos) == noOfFragments-1) l++;
+                 else                   l=1;
+                    
+                 if (pos==1) break;
+             } // end while
           } // end for
        } // end for
 
