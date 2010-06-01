@@ -83,17 +83,20 @@ public class Fragmentor {
 
        while(includeMissedAtoms(fragList));
 
-       // step5: add dummy hydrogens, for bonds that are cut
+       // step5: generate cardinality fragments 
+       new CardinalityExpression().addCardinalityFragments(fragList);
+
+       // step6: add dummy hydrogens, for bonds that are cut
        Console.OUT.println("Adding dummy atoms ...");
        finish foreach(fragment in fragList) {
           addDummyAtoms(fragment as Fragment!);
        } // finish
 
-       // step6: print out general statistics 
+       // step7: print out general statistics 
        Console.OUT.println("Number of final fragments: " + fragList.size());
        var idx:Int = 0;
        for(frag in fragList) {
-           Console.OUT.println("Fragment # " + idx + " : " + frag.getNumberOfAtoms());
+           Console.OUT.println("Fragment # " + idx + " : " + frag.getNumberOfAtoms() + " [" + frag.cardinalitySign() + "]");
            idx++;
        } // end for
 

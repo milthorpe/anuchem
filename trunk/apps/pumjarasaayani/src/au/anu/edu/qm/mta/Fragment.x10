@@ -41,6 +41,15 @@ public class Fragment extends Molecule[QMAtom] {
      public def cardinalitySign(sign:Int) { cardinalitySign = sign; }
      public def cardinalitySign() = cardinalitySign;
 
+     public def getNumberOfTrueAtoms() : Int {
+          var nAtoms:Int = 0;
+ 
+          for(atom in getAtoms()) 
+             if (!(atom as QMAtom).isDummy()) nAtoms++;
+
+          return nAtoms;
+     }
+
      public def intersection(frag:Fragment!) : Fragment! {
           val newFrag = new Fragment() as Fragment!;
 

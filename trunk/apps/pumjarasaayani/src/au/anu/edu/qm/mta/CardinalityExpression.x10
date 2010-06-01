@@ -17,6 +17,9 @@ import x10.util.ArrayList;
 import x10.util.ValRailBuilder;
 
 public class CardinalityExpression {
+
+   private var mergedIntoPreviousTerm:Boolean;
+
    public def this() {
    }
 
@@ -24,6 +27,7 @@ public class CardinalityExpression {
    public def addCardinalityFragments(fragList:ArrayList[Fragment]!) {
        val noOfFragments = fragList.size();
        val combs = Rail.make[Int](noOfFragments, (Int)=>0);
+       val cfList = new ArrayList[Fragment]();
 
        for(var i:Int=0; i<noOfFragments; i++) {
           for(var j:Int=i+1; j<noOfFragments; j++) {
@@ -31,9 +35,13 @@ public class CardinalityExpression {
 
              val sign = getSignOfTerm(2); 
 
-              
+             if (!computeIntersections(fragList, cfList, combs, 2, sign)) continue;
+
+             // TODO:              
           } // end for
        } // end for
+
+       for(cf in cfList) fragList.add(cf);
    }
 
    private def getSignOfTerm(n:Int) : Int {
@@ -41,16 +49,32 @@ public class CardinalityExpression {
        else          return 1;
    }
 
-   private def computeIntersections(combs:Rail[Int], nTerms:Int, sign:Int) : Boolean {
+   private def computeIntersections(fragList:ArrayList[Fragment]!, cfList:ArrayList[Fragment]!, combs:Rail[Int], nTerms:Int, sign:Int) : Boolean {
        if (nTerms == 0) return false;
  
-       var fInter:Fragment = combs(0);       
+       var fInter:Fragment = fragList.get(combs(0));       
 
-       for(i:Int=1; i<nTerms; i++) {
-           fInter = fInter.intersection(combs(i));
+       for(var i:Int=1; i<nTerms; i++) {
+           fInter = fInter.intersection(fragList.get(combs(i)) as Fragment!);
        } // end for
 
+       if (fInter.getNumberOfAtoms() == 0) return false;
+ 
+       addFragmentToList(cfList, fInter as Fragment!, sign);
        return true;
+   }
+
+   private def addFragmentToList(cfList:ArrayList[Fragment]!, fragment:Fragment!, sign:Int) {
+       mergedIntoPreviousTerm = false;
+
+       for(frag in cfList) {
+          val nCommonAtoms = frag.intersection(fragment).getNumberOfAtoms();
+
+          if (nCommonAtoms == frag.getNumberOfTrueAtoms()) {
+             mergedIntoPreviousTerm = true;
+             frag.cardinalitySign(frag.cardinalitySign() + sign);
+          } // end if
+       } // end for
    }
 }
 
