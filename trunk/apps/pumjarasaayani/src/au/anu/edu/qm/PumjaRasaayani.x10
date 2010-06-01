@@ -79,7 +79,7 @@ public class PumjaRasaayani {
         val timer = new Timer(3);
         timer.start(0);
 
-        Console.OUT.println("PumjaRasaayani shunya.dau, Quantum Chemisty program in x10, v0.2");
+        Console.OUT.println("PumjaRasaayani shunya.tri, Quantum Chemisty program in x10, v0.3");
 
         Console.OUT.println("\nInput deck:");
         Console.OUT.println(mol);
@@ -156,12 +156,19 @@ public class PumjaRasaayani {
     }
 
     public def runMTA() {
+        Console.OUT.println("PumjaRasaayani shunya.tri, Quantum Chemisty program in x10, v0.3");
+
+        Console.OUT.println("\nInput deck:");
+        Console.OUT.println(mol);
+        Console.OUT.println("Number of atoms: " + mol.getNumberOfAtoms());
+
         val fragmentor = new Fragmentor(5.67, 30);  // TODO, parameters to be taken from user
         
         // first generate the fragments, along with cardinality expression
         val fragments = fragmentor.fragment(mol);
 
-        // run hf for all all the fragments
+        // run hf for all all the fragments, 
+        // TODO: how to parallelize?
         for(fragment in fragments) {
             runHF(fragment as Fragment!); 
         } // end for

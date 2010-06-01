@@ -96,7 +96,8 @@ public class Fragmentor {
        Console.OUT.println("Number of final fragments: " + fragList.size());
        var idx:Int = 0;
        for(frag in fragList) {
-           Console.OUT.println("Fragment # " + idx + " : " + frag.getNumberOfAtoms() + " [" + frag.cardinalitySign() + "]");
+           Console.OUT.println("Fragment # " + idx + " : " + frag.getNumberOfTrueAtoms() + ", " 
+                               + frag.getNumberOfAtoms() + " [" + frag.cardinalitySign() + "]");
            idx++;
        } // end for
 

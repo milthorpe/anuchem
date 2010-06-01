@@ -34,9 +34,7 @@ public class CardinalityExpression {
           for(var j:Int=i+1; j<noOfFragments; j++) {
              combs(0) = i; combs(1) = j;
 
-             val sign = getSignOfTerm(2); 
-
-             if (!computeIntersections(fragList, cfList, combs, 2, sign)) continue;
+             if (!computeIntersections(fragList, cfList, combs, 2, getSignOfTerm(2))) continue;
 
              if (noOfFragments <= 2 || combs(1) == noOfFragments-1) continue;
 
@@ -50,7 +48,7 @@ public class CardinalityExpression {
                          if (combs(m) <= combs(m-1)) break;
                      } // end if
 
-                     if (!computeIntersections(fragList, cfList, combs, m, sign)) {
+                     if (!computeIntersections(fragList, cfList, combs, m, getSignOfTerm(m))) {
                          if (combs(m) == noOfFragments-1) break;
                          m--;
                      } // end  if

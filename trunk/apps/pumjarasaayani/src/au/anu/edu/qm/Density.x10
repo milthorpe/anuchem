@@ -17,6 +17,8 @@ public class Density extends GlobalImmutableMatrix {
     }
 
     public def compute(noOfOccupancies:Int, mos:MolecularOrbitals!) : void {
+        unmute();
+
         // construct it from the MOs .. C*C'
         val N = mos.getRowCount();
         val dVector:Matrix! = new Matrix(noOfOccupancies, N) as Matrix!;
@@ -32,6 +34,8 @@ public class Density extends GlobalImmutableMatrix {
         val thisMat = getMatrix();
         for(val(i, j) in thisMat.region)
            thisMat(i, j) = res(i, j);
+
+        mute();
     }
 }
 
