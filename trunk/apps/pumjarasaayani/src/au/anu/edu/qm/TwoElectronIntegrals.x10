@@ -514,7 +514,8 @@ public class TwoElectronIntegrals {
 
          for(i=0; i<=angMomABCD; i++) {
              val shell = shellList.getPowers(i);
-             for(j=0; j<((i+1)*(i+2)/2); j++) {
+             val iLim  = ((i+1)*(i+2)/2);
+             for(j=0; j<iLim; j++) {
                  val powers = shell(j);
                  val lp = powers.l;
                  val mp = powers.m;
@@ -530,15 +531,19 @@ public class TwoElectronIntegrals {
          
          for(i=0; i<=angMomAB; i++) {
              val shellAB = shellList.getPowers(i);
-             for (pp = 0; pp<((i+1)*(i+2)/2); pp++) {
+             val pLim = ((i+1)*(i+2)/2);
+             for (pp = 0; pp<pLim; pp++) {
                  val powersAB = shellAB(pp);
                  val lp = powersAB.l;
                  val mp = powersAB.m;
                  val np = powersAB.n;
 
+                 val ipp = i*pqdim+pp;
+
                  for(j=0; j<=angMomCD; j++) {
                      val shellCD = shellList.getPowers(j);
-                     for (qq = 0; qq<((j+1)*(j+2)/2); qq++) {
+                     val qLim = ((j+1)*(j+2)/2);
+                     for (qq = 0; qq<qLim; qq++) {
                          val powersCD = shellCD(qq);
                          val lq = powersCD.l;
                          val mq = powersCD.m;
@@ -551,10 +556,12 @@ public class TwoElectronIntegrals {
 
                          val rr = lr*(2*(lr+mr+nr)-lr+3)/2+mr;
 
+                         val jqq = j*pqdim+qq;
+
                          if ((lq+mq+nq)%2 == 0)
-                            pqInts(i*pqdim+pp, j*pqdim+qq) =  rM(rtyp, rr);
+                            pqInts(ipp, jqq) =  rM(rtyp, rr);
                          else
-                            pqInts(i*pqdim+pp, j*pqdim+qq) = -rM(rtyp, rr);
+                            pqInts(ipp, jqq) = -rM(rtyp, rr);
 
                          // Console.OUT.println(pqInts(i*pqdim+pp, j*pqdim+qq));
                      }
@@ -579,12 +586,15 @@ public class TwoElectronIntegrals {
          val twoGamma = 2.0*gamma2;
 
          for(i=0; i<=angMomAB; i++) {
-             for(pp=0; pp < ((i+1)*(i+2)/2); pp++) {
+             val pLim = ((i+1)*(i+2)/2);
+             for(pp=0; pp < pLim; pp++) {
+
+                 val ipp = i*pqdim+pp;
 
                  for (k=0; k<=maxam2; k++) {
-                     for (l=0; l<=maxam2M; l++) {
-                         npint(k,l) = pqInts(i*pqdim+pp, k*pqdim+l);
-                     }
+                     val kpq = k*pqdim;
+                     for (l=0; l<=maxam2M; l++) 
+                         npint(k,l) = pqInts(ipp, kpq+l);
                  }
 
                  for(dd = 0; dd<dLim; dd++) {
@@ -601,7 +611,7 @@ public class TwoElectronIntegrals {
 
                          // Console.OUT.println("md: [" + maxam + "] " + dd + " " + cc + " " + (i*pqdim+pp));
 
-                         pcdint(dd,cc,i*pqdim+pp) += mdHrr(lp, mp, np, lq, mq, nq, 0, 0, 0,
+                         pcdint(dd,cc,ipp) += mdHrr(lp, mp, np, lq, mq, nq, 0, 0, 0,
                                                            qdi, qdj, qdk, qci, qcj, qck, twoGamma);   // can use hrr() instead
 
                          // Console.OUT.println("md-done: " + dd + " " + cc + " " + i*pqdim+pp);
@@ -636,9 +646,11 @@ public class TwoElectronIntegrals {
              for(cc=0; cc<cLim; cc++) {
                  val kk = cStrt + cc;
 
-                 for (k=0; k<=maxam2; k++)
+                 for (k=0; k<=maxam2; k++) {
+                    val kpq = k*pqdim;
                     for (l=0; l<=maxam2M; l++)
-                        npint(k,l) = pcdint(dd, cc, k*pqdim+l);
+                        npint(k,l) = pcdint(dd, cc, kpq+l);
+                 }
 
                  for(bb = 0; bb<bLim; bb++) {
                      val jj = bStrt + bb;
