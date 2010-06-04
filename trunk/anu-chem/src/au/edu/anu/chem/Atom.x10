@@ -35,6 +35,21 @@ public class Atom {
         this.centre = centre;
     }
 
+    /**
+     * Create a new atom with all the same values as <code>atom</code>,
+     * but transferring all fields to the current place.
+     */
+    public def this(atom : Atom) {
+        this.symbol = atom.symbol;
+        this.centre = atom.centre;
+        val bondsValRail = at(atom) {atom.bonds.toValRail()};
+        val bonds = new ArrayList[Pair[BondType, Atom]](bondsValRail.length);
+        for ((i) in 0..bondsValRail.length-1) {
+            bonds.add(bondsValRail(i));
+        }
+        this.bonds = bonds;
+    }
+
     public def getBonds() = bonds;
 
     /**

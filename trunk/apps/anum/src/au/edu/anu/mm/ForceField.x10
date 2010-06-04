@@ -19,6 +19,20 @@ package au.edu.anu.mm;
 
 import au.edu.anu.chem.mm.MMAtom;
 
+/**
+ * This interface represents an all-atom force field such as
+ * AMBER or the Universal Force Field.
+ */
 public interface ForceField {
+    /**
+     * Performs a full calculation of potential and updates forces
+     * on each atom in the system.
+     * @return the energy of the system // TODO units?
+     */
     public global def getPotentialAndForces(atoms: DistArray[ValRail[MMAtom]](1)) : Double;
+
+    /**
+     * @return the mass of the given atom type e.g. 1.00794 for H
+     */
+    public global def getAtomMass(symbol : String) : Double;
 }

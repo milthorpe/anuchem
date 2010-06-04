@@ -54,7 +54,7 @@ public class MOLStructureFileReader {
             val y = Double.parseDouble(line.substring(10,20));
             val z = Double.parseDouble(line.substring(20,30));
             val symbol = line.substring(31,34).trim();
-            molecule.addAtom(new MMAtom(symbol, Point3d(x, y, z), 0.0, 0.0));
+            molecule.addAtom(new MMAtom(symbol, Point3d(x, y, z), 0.0));
         }
         // following lines until "M  END" contain bonds
         var line : String = file.readLine();

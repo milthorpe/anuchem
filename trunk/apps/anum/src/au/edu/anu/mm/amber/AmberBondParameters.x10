@@ -24,7 +24,7 @@ package au.edu.anu.mm.amber;
  * @property bondRadius the equilibrium bond radius in Angstroms
  */
 public struct AmberBondParameters(description : String, forceConstant : Double, bondRadius : Double) {
-    public this(description : String, forceConstant : Double, bondRadius : Double) {
+    public def this(description : String, forceConstant : Double, bondRadius : Double) {
         property(description, forceConstant, bondRadius);
     }
 }
