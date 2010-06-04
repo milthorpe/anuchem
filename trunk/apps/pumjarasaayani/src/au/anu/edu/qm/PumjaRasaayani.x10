@@ -14,6 +14,7 @@ import au.edu.anu.chem.Molecule;
 import au.edu.anu.util.Timer;
 import x10x.vector.Point3d;
 
+import au.anu.edu.qm.mta.Fragment; 
 import au.anu.edu.qm.mta.Fragmentor; 
 
 public class PumjaRasaayani { 
@@ -78,7 +79,7 @@ public class PumjaRasaayani {
         val timer = new Timer(3);
         timer.start(0);
 
-        Console.OUT.println("PumjaRasaayani shunya.dau, Quantum Chemisty program in x10, v0.2");
+        Console.OUT.println("PumjaRasaayani shunya.tri, Quantum Chemisty program in x10, v0.3");
 
         Console.OUT.println("\nInput deck:");
         Console.OUT.println(mol);
@@ -115,17 +116,70 @@ public class PumjaRasaayani {
         time   = (timer.total(0) as Double) / 1e9;
     }
 
+    private def runHF(fragment:Fragment!) {
+        val timer = new Timer(3);
+        timer.start(0);
+
+        Console.OUT.println("\nFragment Input deck:");
+        Console.OUT.println(fragment);
+
+        Console.OUT.println("\nSetting up basis set: " + basisName);
+
+        timer.start(1);
+        val bsf = new BasisFunctions(fragment, basisName, "basis");
+        Console.OUT.println("\nUsing " + bsf.getBasisFunctions().size() + " basis functions.");
+        timer.stop(1);
+        Console.OUT.println ("\tTime for setting up basis functions: " + (timer.total(1) as Double) / 1e9 + " seconds\n");
+
+        timer.start(2);
+        val oneE = new OneElectronIntegrals(bsf, fragment);
+        Console.OUT.println("\nComputed one-electron integrals.");
+        timer.stop(2);
+        Console.OUT.println ("\tTime for computing 1E integrals: " + (timer.total(2) as Double) / 1e9 + " seconds\n");
+        // Console.OUT.println("HCore");
+        // Console.OUT.println(oneE.getHCore());
+        // Console.OUT.println("Overlap");
+        // Console.OUT.println(oneE.getOverlap());
+
+        val twoE = new TwoElectronIntegrals(bsf, fragment, true);
+        Console.OUT.println("\nNumber of 2E integrals: " + twoE.getNumberOfIntegrals());
+        Console.OUT.println("\nComputed two-electron integrals. If direct, this is skipped for now.");
+        Console.OUT.println("Is Direct: " + twoE.isDirect());
+
+        val hfscf = new HartreeFockSCFMethod(fragment, oneE, twoE, gMatType);
+        hfscf.scf();
+        timer.stop(0);
+        Console.OUT.println ("\n-End of SCF-\n\nTotal time since start: " + (timer.total(0) as Double) / 1e9 + " seconds\n");
+
+        fragment.energy(hfscf.getEnergy());
+        time   = (timer.total(0) as Double) / 1e9;
+    }
+
     public def runMTA() {
+        Console.OUT.println("PumjaRasaayani shunya.tri, Quantum Chemisty program in x10, v0.3");
+
+        Console.OUT.println("\nInput deck:");
+        Console.OUT.println(mol);
+        Console.OUT.println("Number of atoms: " + mol.getNumberOfAtoms());
+
         val fragmentor = new Fragmentor(5.67, 30);  // TODO, parameters to be taken from user
         
-        // first generate the main fragments 
-        val mainFragments = fragmentor.fragment(mol);
+        // first generate the fragments, along with cardinality expression
+        val fragments = fragmentor.fragment(mol);
 
-        // then generate the cardinality expression
-
-        // run all the fragments
+        // run hf for all all the fragments, 
+        // TODO: how to parallelize?
+        for(fragment in fragments) {
+            runHF(fragment as Fragment!); 
+        } // end for
 
         // collect and patch the results using cardinality expression
+        var ene:Double = 0.0;
+        for(fragment in fragments) {
+            ene += fragment.energy() * fragment.cardinalitySign();
+        } // end for 
+
+        Console.OUT.println("Final MTA energy : " + ene);
     }
 
     public static def main(args:Rail[String]!) {

@@ -8,10 +8,12 @@
     <property name="anuchem.lib" location="${anuchem}/lib/anu-chem.jar"/>
     <property name="bash.exe" value="bash"/>    
     <property name="optimize" value="true" />
-    <property name="nochecks" value="false" />
-    <property name="profile"  value="false" />
+    <property name="nochecks" value="true" />
+    <property name="profile"  value="true" />
     <property name="inlineopt" value="false" />
     <property name="heapprofile" value="false" />
+
+    <property name="mainClass" value="src/au/anu/edu/qm/PumjaRasaayani.x10" />
 
     <property name="gsl.include" location="/scratch/ganesh/gsl/include" />
     <property name="gsl.lib" location="/scratch/ganesh/gsl/lib" />
@@ -120,11 +122,11 @@
         <pathconvert property="src.list" refid="changed.src.files" dirsep="/" pathsep=" ">
             <map from="${basedir}${file.separator}src${file.separator}" to=""/>
         </pathconvert>
-        <echo message="x10c++ -x10rt ${x10rt} -sourcepath .:${x10x.xlalib}:${anuchem.src} ${src.list}"/>
+        <echo message="x10c++ -x10rt ${x10rt} -sourcepath .:${x10x.xlalib}:${anuchem.src} ${basedir}/${mainClass}"/>
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/src">
             <arg value="-c"/> 
-            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.nochecks} ${x10c.optimize} ${x10c.inlineopt} -report postcompile=1 -post '${x10c.postcompiler} -g ${post.profile} ${post.heapprofile} ${post.usenativegsl}' -sourcepath .:${x10x.xlalib}:${anuchem.src} -d ${target-src} ${src.list}"/>
+            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.nochecks} ${x10c.optimize} ${x10c.inlineopt} -report postcompile=1 -post '${x10c.postcompiler} -g ${post.profile} ${post.heapprofile} ${post.usenativegsl}' -sourcepath .:${x10x.xlalib}:${anuchem.src} -d ${target-src} ${basedir}/${mainClass}"/>
         </exec>
     </target>
 

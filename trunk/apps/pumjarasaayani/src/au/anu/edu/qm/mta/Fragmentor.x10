@@ -55,7 +55,7 @@ public class Fragmentor {
        for(var i:Int=0; i<noOfAtoms; i++) { 
           mol.getAtom(i).setIndex(i);
           sortedAtomIndices(i) = i;
-       }
+       } // end for
 
        // next build the connectivity for this molecule
        val conn = new ConnectivityBuilder[QMAtom]();
@@ -79,18 +79,25 @@ public class Fragmentor {
        //        remove dangling atoms, expand double bonds or planar rings 
        finish foreach(fragment in fragList) {
           removeDanglingAtoms(fragment as Fragment!);
-       }
+       } // finish 
 
-       // step5: add dummy hydrogens, for bonds that are cut
+       while(includeMissedAtoms(fragList));
+
+       // step5: generate cardinality fragments 
+       new CardinalityExpression().addCardinalityFragments(fragList);
+
+       // step6: add dummy hydrogens, for bonds that are cut
+       Console.OUT.println("Adding dummy atoms ...");
        finish foreach(fragment in fragList) {
           addDummyAtoms(fragment as Fragment!);
-       }
+       } // finish
 
-       // step6: print out general statistics 
+       // step7: print out general statistics 
        Console.OUT.println("Number of final fragments: " + fragList.size());
        var idx:Int = 0;
        for(frag in fragList) {
-           Console.OUT.println("Fragment # " + idx + " : " + frag.getNumberOfAtoms());
+           Console.OUT.println("Fragment # " + idx + " : " + frag.getNumberOfTrueAtoms() + ", " 
+                               + frag.getNumberOfAtoms() + " [" + frag.cardinalitySign() + "]");
            idx++;
        } // end for
 
@@ -108,6 +115,8 @@ public class Fragmentor {
 
            for(var i:Int=0; i<noOfAtoms; i++) {
                val atom2 = mol.getAtom(i);
+
+               if (atom2.getIndex() == atom1.getIndex()) continue;
              
                val dist = atom2.centre.distance(atom1.centre);               
 
@@ -211,6 +220,41 @@ public class Fragmentor {
        } // end while       
    }
 
+   /** include any missed atoms, that violate conditions like double bond breaking
+       or breaking rings at inappropriate positions */
+   def includeMissedAtoms(fragList:ArrayList[Fragment]!) : Boolean {
+       val includedMissedAtoms = Rail.make[Boolean](1, (Int)=>false);
+
+       // TODO: 
+
+       // first see if we are missing any pendant atoms 
+       finish foreach(fragment in fragList) {
+           val missedAtoms = new ArrayList[QMAtom{self.at(fragment)}]();
+           for(atom in fragment.getAtoms()) {
+              for(bond in atom.getBonds()) {
+                  val bondedAtom = bond.second as QMAtom!;
+                  val nBonds = bondedAtom.getBonds().size();
+
+                  if (nBonds == 1) { 
+                      if (!fragment.contains(bondedAtom)) {
+                          missedAtoms.add(bondedAtom as QMAtom{self.at(fragment)});
+                      } // end if
+                  } // end if    
+              } // end for
+           } // end for
+
+           if (missedAtoms.size() > 0) {
+               includedMissedAtoms(0) = true;
+
+               for(matm in missedAtoms) {
+                  fragment.addAtom(matm as QMAtom{self.at(fragment)});
+               } // end for
+           } // end if
+       } // end finish
+
+       return includedMissedAtoms(0); 
+   }
+
    /** remove any dangling atoms from a fragment */
    def removeDanglingAtoms(fragment:Fragment!) {
        val ai = AtomInfo.getInstance();
@@ -237,9 +281,10 @@ public class Fragmentor {
 
    /** add dummy atoms to a fragment */
    def addDummyAtoms(fragment:Fragment!) {
-       Console.OUT.println("Adding dummy atoms ...");
-
-       val boundaryAtoms = new ValRailBuilder[QMAtom]();
+       val boundaryAtoms = new ValRailBuilder[QMAtom!]();
+ 
+       val ai = AtomInfo.getInstance(); 
+       val hRadius = ai.getCovalentRadius(new QMAtom("H", Point3d(0,0,0), true));
 
        // find out boundary atoms in this fragment
        for(atom in fragment.getAtoms()) {
@@ -252,14 +297,18 @@ public class Fragmentor {
        // then add dummy atoms at appropriate positions
        for(atom in boundaryAtoms.result()) {
            val bonds = atom.getBonds();
+           val bondDistance = hRadius + ai.getCovalentRadius(atom as QMAtom!);
 
            for(bond in bonds) {
               val bondedAtom = bond.second as QMAtom;
 
               if (!fragment.contains(bondedAtom)) {
-                 // TODO: for symplicity, place the H at the cut position, 
-                 //       rather than the correct bond distance
-                 fragment.addAtom(new QMAtom("H", bondedAtom.centre));
+                 val vec = (bondedAtom.centre - atom.centre).normalize();
+                 val newCenter = Point3d(vec.i*bondDistance + atom.centre.i,
+                                         vec.j*bondDistance + atom.centre.j, 
+                                         vec.k*bondDistance + atom.centre.k);
+
+                 fragment.addAtom(new QMAtom("H", newCenter, true));
               } // end if
            } // end for
        } // end for
