@@ -74,7 +74,7 @@ public class ElectrostaticDirectMethod {
     /*
      * Returns all atom charges and coordinates for a place, in packed representation
      */
-    private safe def getPackedAtomsForPlace(placeId : Int) : ValRail[MMAtom.PackedRepresentation] {
+    private global safe def getPackedAtomsForPlace(placeId : Int) : ValRail[MMAtom.PackedRepresentation] {
         val myAtoms = atoms(placeId);
         return ValRail.make[MMAtom.PackedRepresentation](myAtoms.length(), (i : Int) => myAtoms(i).getPackedRepresentation());
     }

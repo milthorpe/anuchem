@@ -220,7 +220,7 @@ public class PME {
      * Gets the index of the sub-cell for this atom within
      * the grid of sub-cells for direct sum calculation.
      */
-    private safe def getSubCellIndex(atom : MMAtom) : Point(3) {
+    private global safe def getSubCellIndex(atom : MMAtom) : Point(3) {
         // TODO assumes cubic unit cell
         val r = Vector3d(atom.centre);
         val i = (r.i / cutoff) as Int;
@@ -256,13 +256,11 @@ public class PME {
                         // interact with "left half" of other boxes i.e. only boxes with i<=p(0)
                         if (i < p(0) || (i == p(0) && j < p(1)) || (i == p(0) && j == p(1) && k < p(2))) {
                             val translation = imageTranslations(here.id,n1,n2,n3);
-                            if (subCells.periodicDist(i,j,k) == here) {
+                            val otherSubCellLocation = subCells.periodicDist(i,j,k);
+                            if (otherSubCellLocation == here) {
                                 val otherCell = subCells(i,j,k);
                                 for ((thisAtom) in 0..thisCell.length()-1) {
                                     for ((otherAtom) in 0..otherCell.length()-1) {
-                                        // don't interact atom with self
-                                        //Console.OUT.println(p + " atom " + thisAtom + " and " + p2 + " atom " + otherAtom);
-                                        //Console.OUT.println(n1 + " " + n2 + " " + n3);
                                         val imageLoc = otherCell(otherAtom).centre + translation;
                                         val r = thisCell(thisAtom).centre.distance(imageLoc);
                                         if (r < cutoff) {
@@ -275,7 +273,7 @@ public class PME {
                             } else {
                                 // other subcell is remote; need to transfer packed atoms
                                 var otherCellPacked : ValRail[MMAtom.PackedRepresentation] = null;
-                                    // cache remote atoms
+                                // cache remote atoms
                                 val otherCellIndex = Point.make(i,j,k);
                                 atomic {otherCellPacked = packedAtomsCache(here.id).getOrElse(otherCellIndex, null);}
                                 if (otherCellPacked == null) {
@@ -284,9 +282,6 @@ public class PME {
                                 }
                                 for ((thisAtom) in 0..thisCell.length()-1) {
                                     for ((otherAtom) in 0..otherCellPacked.length()-1) {
-                                        // don't interact atom with self
-                                        //Console.OUT.println(p + " atom " + thisAtom + " and " + p2 + " atom " + otherAtom);
-                                        //Console.OUT.println(n1 + " " + n2 + " " + n3);
                                         val imageLoc = otherCellPacked(otherAtom).centre + translation;
                                         val r = thisCell(thisAtom).centre.distance(imageLoc);
                                         if (r < cutoff) {
@@ -329,7 +324,7 @@ public class PME {
     /*
      * Returns atom charges and coordinates for a sub-cell, in packed representation
      */
-    private safe def getPackedAtomsForSubCell(subCellIndex : Point(3)) : ValRail[MMAtom.PackedRepresentation] {
+    private global safe def getPackedAtomsForSubCell(subCellIndex : Point(3)) : ValRail[MMAtom.PackedRepresentation] {
         val subCell = subCells(subCellIndex);
         return ValRail.make[MMAtom.PackedRepresentation](subCell.length(), (i : Int) => subCell(i).getPackedRepresentation());
     }
@@ -366,8 +361,6 @@ public class PME {
         val Q = PeriodicDistArray.make[Double](gridDist);
         finish ateach (p in subCells.dist) {
             val thisCell = subCells(p);
-            val K1 = gridSize(0);
-            val K2 = gridSize(1);
             val K3 = gridSize(2);
             foreach (atom in thisCell) {
                 val q = atom.charge;
@@ -375,12 +368,8 @@ public class PME {
                 val u1c = Math.ceil(u.i) as Int;
                 val u2c = Math.ceil(u.j) as Int;
                 val u3c = Math.ceil(u.k) as Int;
-                //for (var k1 : Int = u1c - splineOrder; k1 < u1c; k1++) {
                 for ((i) in 1..splineOrder) {
                     val k1 = (u1c - i);
-                    //val kk1 = (k1 + K1) % K1;
-                    //for (var k2 : Int = u2c - splineOrder; k2 < u2c; k2++) {
-                    //    val kk2 = (k2 + gridSize(1)) % gridSize(1);
                     for ((j) in 1..splineOrder) {
                         val k2 = (u2c - j);
                         //for (var k3 : Int = u3c - splineOrder; k3 < u3c; k3++) {
