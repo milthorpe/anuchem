@@ -25,6 +25,15 @@ public class Fmm3d {
     /** The number of lowest level boxes along one side of the cube. */
     public global val lowestLevelDim : Int;
 
+    /** 
+     * To ensure balanced rounding errors within the multipole and local 
+     * calculations, all force/energy calculations are performed within 
+     * an offset cube with top-left-front corner (-size/2, -size/2, -size/2).
+     * This is the offset vector from the "real" (input) cube top-left-front
+     * corner to the FMM top-left-front corner. 
+     */
+    public global val offset : Vector3d;
+
     /** The side length of the cube. */
     public global val size : Double; 
 
@@ -100,6 +109,7 @@ public class Fmm3d {
     public def this(density : Double, 
                     numTerms : Int,
                     ws : Int,
+                    topLeftFront : Point3d,
                     size : Double,  
                     numAtoms : Int,
                     atoms: DistArray[ValRail[MMAtom]](1)) {
@@ -116,7 +126,9 @@ public class Fmm3d {
 
         this.numTerms = numTerms;
         this.ws = ws;
-        
+
+        val offset = Point3d(-size/2.0, -size/2.0, -size/2.0) - topLeftFront;
+        this.offset = offset;
         this.size = size;
 
         this.atoms = atoms;
@@ -156,9 +168,11 @@ public class Fmm3d {
             val localAtoms = atoms(p1);
             foreach ((i) in 0..localAtoms.length-1) {
                 val atom = localAtoms(i) as MMAtom!;
-                val boxIndex = getLowestLevelBoxIndex(atom);
+                val charge = atom.charge;
+                val offsetCentre = atom.centre + offset;
+                val boxIndex = getLowestLevelBoxIndex(offsetCentre);
                 async(lowestLevelBoxes.dist(boxIndex)) {
-                    val remoteAtom = new MMAtom(atom);
+                    val remoteAtom = new MMAtom(offsetCentre, charge);
                     val leafBox = lowestLevelBoxes(boxIndex) as FmmLeafBox!;
                     val boxLocation = leafBox.getCentre(size).vector(remoteAtom.centre);
                     val atomExpansion = MultipoleExpansion.getOlm(remoteAtom.charge, boxLocation, numTerms);
@@ -548,8 +562,8 @@ public class Fmm3d {
         }
     }
 
-    private global def getLowestLevelBoxIndex(atom : MMAtom!) : Point(3) {
-        return  Point.make(atom.centre.i / size * lowestLevelDim + lowestLevelDim / 2 as Int, atom.centre.j / size * lowestLevelDim + lowestLevelDim / 2 as Int, atom.centre.k / size * lowestLevelDim + lowestLevelDim / 2 as Int);
+    private global def getLowestLevelBoxIndex(offsetCentre : Point3d) : Point(3) {
+        return  Point.make(offsetCentre.i / size * lowestLevelDim + lowestLevelDim / 2 as Int, offsetCentre.j / size * lowestLevelDim + lowestLevelDim / 2 as Int, offsetCentre.k / size * lowestLevelDim + lowestLevelDim / 2 as Int);
     }
 
     private global def getParentForChild(boxes : ValRail[DistArray[FmmBox](3)], level : Int, x : Int, y : Int, z : Int) : FmmBox {
