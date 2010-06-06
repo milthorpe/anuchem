@@ -14,7 +14,7 @@ public class TestFmm3d {
     private static val RANDOM_SEED = 10101110L;
     private static val R = new Random(RANDOM_SEED);
     /* side length of cubic unit cell in Angstroms */
-    private static val size = 2.0;
+    private static val size = 80.0;
     private static val X_SLICE = size / Place.MAX_PLACES;
 
     public static def main(args : Rail[String]!) {
@@ -75,7 +75,7 @@ public class TestFmm3d {
             val x = randomUnit();
             val y = randomUnit();
             val z = randomUnit();
-            val charge = i%2==3?1:-1;
+            val charge = i%2==0?1:-1;
             val p = getPlaceId(x, y, z);
             async (Place.places(p)) {
                 val atom = new MMAtom(Point3d(x, y, z), charge);
