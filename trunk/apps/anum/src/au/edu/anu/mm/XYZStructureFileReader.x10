@@ -47,7 +47,6 @@ public class XYZStructureFileReader {
                                                  Double.parseDouble(words(2)),
                                                  Double.parseDouble(words(3))
                                          ),
-                                        0.0,
                                         0.0
                         ));
         }

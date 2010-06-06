@@ -25,6 +25,7 @@ import x10x.vector.Tuple3d;
 import au.edu.anu.chem.Molecule;
 import au.edu.anu.chem.mm.MMAtom;
 import au.edu.anu.util.Timer;
+import au.edu.anu.mm.uff.UniversalForceField;
 
 /**
  * ANU-Mechanics, a molecular mechanics simulator.
@@ -56,7 +57,7 @@ public class Anumm {
         Console.OUT.println("0.0 ");
         forceField.getPotentialAndForces(atoms); // get initial forces
         var steps : Long = 0;
-        while(steps <= numSteps) {
+        while(steps < numSteps) {
             steps++;
             Console.OUT.print("\n" + timestep * steps + " ");
             mdStep(timestep);
@@ -74,7 +75,7 @@ public class Anumm {
             val myAtoms = atoms(p);
             for((i) in 0..myAtoms.length-1) {
                 val atom = myAtoms(i);
-                val invMass = 1.0 / atom.mass;
+                val invMass = 1.0 / forceField.getAtomMass(atom.symbol);
                 atom.velocity = atom.velocity + 0.5 * t * invMass * atom.force;
                 atom.centre = atom.centre + atom.velocity * t;
             }
@@ -84,9 +85,9 @@ public class Anumm {
             val myAtoms = atoms(p);
             for((i) in 0..myAtoms.length-1) {
                 val atom = myAtoms(i);
-                val invMass = 1.0 / atom.mass;
+                val invMass = 1.0 / forceField.getAtomMass(atom.symbol);
                 atom.velocity = atom.velocity + 0.5 * t * invMass * atom.force;
-                //Console.OUT.print(atom + " ");
+                Console.OUT.print(atom + " ");
             }
         }
     }
@@ -130,9 +131,7 @@ public class Anumm {
         }
         val molecule = moleculeTemp;
         Console.OUT.println("# MD for " + molecule.getName() + ": " + molecule.getAtoms().size() + " atoms");
-        val diatomicPotentials : ValRail[DiatomicPotential] = ValRail.make[DiatomicPotential](1, 
-           (Int) => new DiatomicMorsePotential(molecule.getAtoms()(0), molecule.getAtoms()(1), 0.09169, 569.87));
-        val anumm = new Anumm(assignAtoms(molecule), new DiatomicForceField(diatomicPotentials));
+        val anumm = new Anumm(assignAtoms(molecule), new UniversalForceField());
         anumm.mdRun(timestep, numSteps);
 
         return;
@@ -165,7 +164,7 @@ public class Anumm {
      * Currently just splits them up into slices by X coordinate.
      */
     private static safe def getPlaceId(x : Double, y : Double, z : Double, size : Double) : Int {
-        return (x / (size * 2) * Place.MAX_PLACES) as Int;
+        return ((x / (size * 2) + 0.5) * Place.MAX_PLACES) as Int;
     }
 
 }

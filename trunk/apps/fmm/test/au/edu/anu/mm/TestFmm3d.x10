@@ -12,8 +12,9 @@ import au.edu.anu.util.Timer;
  */
 public class TestFmm3d {
     private static val RANDOM_SEED = 10101110L;
-    private static val size = 2.0;
     private static val R = new Random(RANDOM_SEED);
+    /* side length of cubic unit cell in Angstroms */
+    private static val size = 80.0;
     private static val X_SLICE = size / Place.MAX_PLACES;
 
     public static def main(args : Rail[String]!) {
@@ -44,7 +45,7 @@ public class TestFmm3d {
         
 
 
-        val fmm3d = new Fmm3d(density, numTerms, wellSpaced, 2.0, numAtoms, generateAtoms(numAtoms));
+        val fmm3d = new Fmm3d(density, numTerms, wellSpaced, Point3d(0.0, 0.0, 0.0), size, numAtoms, generateAtoms(numAtoms));
         val energy = fmm3d.calculateEnergy();
         
         Console.OUT.println("energy = " + energy);
@@ -74,10 +75,10 @@ public class TestFmm3d {
             val x = randomUnit();
             val y = randomUnit();
             val z = randomUnit();
-            val charge = i%3==4?1:-1;
+            val charge = i%2==0?1:-1;
             val p = getPlaceId(x, y, z);
             async (Place.places(p)) {
-                val atom = new MMAtom(Point3d(x, y, z), 0.0, charge);
+                val atom = new MMAtom(Point3d(x, y, z), charge);
                 atomic { (tempAtoms(p) as GrowableRail[MMAtom]!).add(atom); }
             }
         }
@@ -90,12 +91,12 @@ public class TestFmm3d {
      * Currently just splits them up into slices by X coordinate.
      */
     public static safe def getPlaceId(x : Double, y : Double, z : Double) : Int {
-        return ((x + 0.5 * size) / size * Place.MAX_PLACES) as Int;
+        return ((x / size) * Place.MAX_PLACES) as Int;
     }
 
     static def randomUnit() : Double {
         val dub = at(R){R.nextDouble()};
-        return dub * (size) - 0.5 * size;
+        return dub * size;
     }
 }
 

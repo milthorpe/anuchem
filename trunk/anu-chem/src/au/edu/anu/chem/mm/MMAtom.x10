@@ -21,20 +21,15 @@ public class MMAtom extends Atom {
     /** The effective charge in atomic units. */
     public global val charge : Double;
 
-    /** The mass of this atom in atomic units. */
-    public global val mass : Double;
-
-    public def this(symbol : String, centre : Point3d, mass : Double, charge : Double) {
+    public def this(symbol : String, centre : Point3d, charge : Double) {
         super(symbol, centre);
-        this.mass = mass;
         this.charge = charge;
         this.force = Vector3d.NULL;
         this.velocity = Vector3d.NULL;
     }
 
-    public def this(centre : Point3d, mass : Double, charge : Double) {
+    public def this(centre : Point3d, charge : Double) {
         super(centre);
-        this.mass = mass;
         this.charge = charge;
         this.force = Vector3d.NULL;
         this.velocity = Vector3d.NULL;
@@ -45,15 +40,14 @@ public class MMAtom extends Atom {
      * but transferring all fields to the current place.
      */
     public def this(atom : MMAtom) {
-        super(at (atom) {atom.centre});
-        this.mass = atom.mass;
+        super(atom);
         this.charge = atom.charge;
         this.force = at (atom) {atom.force};
         this.velocity = at (atom) {atom.velocity};
     }
 
     public def this(centre : Point3d) { 
-        this(centre, 0.0, 0.0);
+        this(centre, 0.0);
     }
 
     public def pairEnergy(atom2 : MMAtom) : Double {
@@ -63,7 +57,7 @@ public class MMAtom extends Atom {
     /**
      * A packed representation of an MMAtom, for use in
      * transferring bulk Atom data between places.
-     * Does not include force, velocity or mass, as these
+     * Does not include force or velocity, as these
      * are not commonly required at remote places.
      */
     public static struct PackedRepresentation(symbol : String, charge : Double, centre : Point3d) { 
