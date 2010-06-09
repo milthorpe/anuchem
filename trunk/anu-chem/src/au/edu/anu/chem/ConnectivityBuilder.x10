@@ -4,6 +4,8 @@
  */
 package au.edu.anu.chem;
 
+import x10x.vector.Point3d;
+
 /**
  * Simple connectivity builder for Molecule object
  * 
@@ -67,12 +69,49 @@ public class ConnectivityBuilder[T]{T <: Atom} {
        val color  = Rail.make[Int](noOfAtoms, (Int)=>WHITE) as Rail[Int]!;
        val parent = Rail.make[Int](noOfAtoms, (Int)=>-1) as Rail[Int]!;
 
+       // detect rings
        for(var i:Int=0; i<noOfAtoms; i++) {
           if (color(i) == WHITE) {
              traverseAndRecordRing(mol, i, color, parent);   
           } // end if 
        } // end for
        
+       // TODO: remove subsets
+
+       // set planarity
+       for(ring in mol.getRings()) {
+          val n = ring.getSize();
+
+          if (n < 4) {
+             ring.setPlanar(true);
+             continue;
+          } // end if
+
+          val points = Rail.make[Point3d](n);
+          
+          for(var i:Int=0; i<n; i++) {
+             points(i) = ring.getAtom(i).centre; 
+          } // end for
+
+          for(var i:Int=0; i<n-1; i++) {
+             val a12 = points(i+1) - points(i);
+             val i2 = ((i+2 >= n) ? 0 : (i + 2));
+           
+             val a23 = points(i2) - points(i+1);            
+             val i3 = ((i+3 >= n) ? 0 : (i + 3));
+            
+             val a34 = points(i3) - points(i2);
+            
+             val n1 = a12.cross(a23);
+             val n2 = a23.cross(a34);
+
+             if (n1.angleWith(n2) > TORSSIAN_ANGLE_TOLERANCE) {
+                ring.setPlanar(false); // not planar
+                break;
+             } // end if 
+            
+          } // end for
+       } // end for
    }
 
    private def traverseAndRecordRing(mol:Molecule[T]!, v:Int, color:Rail[Int]!, parent:Rail[Int]!) {

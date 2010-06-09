@@ -66,6 +66,7 @@ public class Fragmentor {
 
        Console.OUT.println("Detected rings: ");
        for(ring in mol.getRings()) {
+          Console.OUT.println(ring.isPlanar());
           Console.OUT.println(ring);
        } // end for
 

@@ -17,7 +17,7 @@ public class Ring[T]{T <: Atom} {
     var planar:Boolean;
 
     public def this() { 
-        planar = false;   
+        planar = true;   
     }
 
     public def addAtom(atm:T{self.at(this)}) : void {
@@ -26,7 +26,7 @@ public class Ring[T]{T <: Atom} {
 
     public safe def getAtom(index:Int) : T{self.at(this)} = atomList.get(index) as T{self.at(this)};
     public global safe def getAtoms() = atomList;
-    public global safe def getRingSize() = atomList.size();
+    public global safe def getSize() = atomList.size();
 
     public def isPlanar() = planar;
     public def setPlanar(p:Boolean) { planar = p; }
