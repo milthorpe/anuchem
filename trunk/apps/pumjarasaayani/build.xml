@@ -9,7 +9,7 @@
     <property name="bash.exe" value="bash"/>    
     <property name="optimize" value="true" />
     <property name="nochecks" value="true" />
-    <property name="profile"  value="true" />
+    <property name="profile"  value="false" />
     <property name="inlineopt" value="false" />
     <property name="heapprofile" value="false" />
 

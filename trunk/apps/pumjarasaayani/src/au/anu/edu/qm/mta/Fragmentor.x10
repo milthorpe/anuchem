@@ -64,6 +64,11 @@ public class Fragmentor {
        conn.detectWeakBonds(mol);
        conn.identifyRings(mol);
 
+       Console.OUT.println("Detected rings: ");
+       for(ring in mol.getRings()) {
+          Console.OUT.println(ring);
+       } // end for
+
        // next start fragmentation, to generate the main fragments
 
        // step1: atom centered fragments

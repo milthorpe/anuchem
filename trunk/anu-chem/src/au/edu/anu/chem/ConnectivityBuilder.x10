@@ -48,17 +48,79 @@ public class ConnectivityBuilder[T]{T <: Atom} {
    /**
     * detect weak bonds in the molecule object 
     */
-   public def detectWeakBonds(mol:Molecule[T]) {
+   public def detectWeakBonds(mol:Molecule[T]!) {
        // TODO:
    }
+
+   private val WHITE = 0; 
+   private val GRAY = 1; 
+   private val BLACK = 2;    
+   private val TORSSIAN_ANGLE_TOLERANCE = 0.08726646259971647; // radians
 
    /**
     * detect rings (with classification of planar / non-planar) 
     * in the molecule objects
     */
-   public def identifyRings(mol:Molecule[T]) {
-       // TODO:
+   public def identifyRings(mol:Molecule[T]!) {
+       val noOfAtoms = mol.getNumberOfAtoms();
+       
+       val color  = Rail.make[Int](noOfAtoms, (Int)=>WHITE) as Rail[Int]!;
+       val parent = Rail.make[Int](noOfAtoms, (Int)=>-1) as Rail[Int]!;
+
+       for(var i:Int=0; i<noOfAtoms; i++) {
+          if (color(i) == WHITE) {
+             traverseAndRecordRing(mol, i, color, parent);   
+          } // end if 
+       } // end for
+       
    }
+
+   private def traverseAndRecordRing(mol:Molecule[T]!, v:Int, color:Rail[Int]!, parent:Rail[Int]!) {
+        color(v) = GRAY;  // this vertex is to be processed now
+        
+        val bonds = mol.getAtom(v).getBonds();
+        var atomIndex:Int;
+        
+        // traverse the strongly connected ones only
+        for(bond in bonds) {
+            atomIndex = bond.second.getIndex();
+            
+            if (bond.first != BondType.WEAK_BOND || bond.first != BondType.NO_BOND) {
+                if (color(atomIndex) == WHITE) {   // not yet traversed?
+                    parent(atomIndex) = v;
+                    traverseAndRecordRing(mol, atomIndex, color, parent); // recursive call
+                } else if (color(atomIndex) == BLACK) { // found a ring!
+                    val theRing = new Ring[T]() as Ring[T]{self.at(this)};
+                    
+                    theRing.addAtom(mol.getAtom(atomIndex));
+                    
+                    var vertex:Int = atomIndex;
+                    
+                    // record the cycle
+                    while(true) {
+                        vertex = parent(vertex);
+                        
+                        if (vertex == -1) { 
+                            break;
+                        } else if (vertex == v) {
+                            theRing.addAtom(mol.getAtom(vertex));
+                            break;
+                        } else {
+                            theRing.addAtom(mol.getAtom(vertex));
+                        } // end if
+                    } // end while  
+                    
+                    // record the ring
+                    mol.addRing(theRing);
+                } // end if
+            } // end if
+        } // end while
+        
+        // this node has been completely traversed, if we hit this node again
+        // we have a cycle!
+        color(v) = BLACK;
+   }
+
 }
 
 /** The support class */
