@@ -12,10 +12,10 @@ import au.edu.anu.util.Timer;
  * <p>
  * The 3D simulation space is divided in an octree of <code>numLevels</code> levels.
  * </p> 
- * For more info see
- * White & Head-Gordon "Derivation and efficient implementation of the fast multipole method", J Chem Phys 101 (8), 1994 
- * and
- * Lashuk et al. "A massively parallel adaptive fast-multipole method on heterogeneous architectures", SC 2009
+ * @see White & Head-Gordon (1994). "Derivation and efficient implementation 
+ *  of the fast multipole method". J Chem Phys 101 (8)
+ * @see Lashuk et al. (2009). "A massively parallel adaptive fast-multipole 
+ *  method on heterogeneous architectures". Proceedings of SC 2009
  * @author milthorpe
  */
 public class Fmm3d {
@@ -52,8 +52,7 @@ public class Fmm3d {
     public const TIMER_INDEX_FARFIELD : Int = 5;
     public const TIMER_INDEX_TREE : Int = 6;
     /** A multi-timer for the several segments of a single getEnergy invocation, indexed by the constants above. */
-    // TODO: compensate for XTENLANG-1237
-    public val timer:Timer! = new Timer(7);
+    public val timer = new Timer(7);
 
     /** All boxes in the octree division of space. 
      * ValRail has numLevels-1 elements, for levels [2..numLevels]
@@ -342,7 +341,7 @@ public class Fmm3d {
                             }
                         }
                     }
-                    val thisBoxEnergyFinal = 2 * thisBoxEnergy;
+                    val thisBoxEnergyFinal = thisBoxEnergy;
                     async (this) {atomic {directEnergy += thisBoxEnergyFinal;}}
                 }
             }
@@ -379,7 +378,7 @@ public class Fmm3d {
         }
         timer.stop(TIMER_INDEX_FARFIELD);
 
-        return farFieldEnergy;
+        return farFieldEnergy / 2.0;
     }
 
     /**
