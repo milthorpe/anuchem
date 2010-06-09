@@ -10,8 +10,9 @@ import x10.util.HashMap;
 
 /**
  * This class implements a Smooth Particle Mesh Ewald method to calculate
- * the potential of a system of charged particles, as described in
- * Essmann et al. "A Smooth Particle Mesh Ewald method", J. Comp. Phys. 101,
+ * the potential of a system of charged particles.
+ * TODO dipole correction for forces as described in Lambert, Darden & Board and Deem et al.
+ * @see Essmann et al. "A Smooth Particle Mesh Ewald method", J. Comp. Phys. 101,
  * pp.8577-8593 (1995) DOI: 10.1063/1.470117
  */
 public class PME {

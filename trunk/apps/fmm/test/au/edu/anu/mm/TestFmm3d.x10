@@ -4,6 +4,7 @@ import x10.util.Random;
 import x10.util.GrowableRail;
 import x10x.vector.Point3d;
 import au.edu.anu.chem.mm.MMAtom;
+import au.edu.anu.chem.mm.ElectrostaticDirectMethod;
 import au.edu.anu.util.Timer;
 
 /**
@@ -14,8 +15,10 @@ public class TestFmm3d {
     private static val RANDOM_SEED = 10101110L;
     private static val R = new Random(RANDOM_SEED);
     /* side length of cubic unit cell in Angstroms */
-    private static val size = 80.0;
-    private static val X_SLICE = size / Place.MAX_PLACES;
+    private static val SIZE = 80.0;
+    /* The maximum "noise" (random displacement) to add to particle positions from the grid. */
+    private static val NOISE = 0.25;
+    private static val X_SLICE = SIZE / Place.MAX_PLACES;
 
     public static def main(args : Rail[String]!) {
         var numAtoms : Int;
@@ -44,8 +47,8 @@ public class TestFmm3d {
                           + " wellSpaced param = " + wellSpaced);
         
 
-
-        val fmm3d = new Fmm3d(density, numTerms, wellSpaced, Point3d(0.0, 0.0, 0.0), size, numAtoms, generateAtoms(numAtoms));
+        val atoms = generateAtoms(numAtoms);
+        val fmm3d = new Fmm3d(density, numTerms, wellSpaced, Point3d(0.0, 0.0, 0.0), SIZE, numAtoms, atoms);
         val energy = fmm3d.calculateEnergy();
         
         Console.OUT.println("energy = " + energy);
@@ -58,6 +61,12 @@ public class TestFmm3d {
         logTime("Far field", Fmm3d.TIMER_INDEX_FARFIELD,  fmm3d.timer);
         logTime("Total",     Fmm3d.TIMER_INDEX_TOTAL,     fmm3d.timer);
         Console.OUT.printf("Tree construction: %g seconds\n", (fmm3d.timer.total(Fmm3d.TIMER_INDEX_TREE) as Double) / 1e9);
+
+        val direct = new ElectrostaticDirectMethod(atoms);
+        val directEnergy = direct.getEnergy();
+        logTime("cf. Direct calculation", ElectrostaticDirectMethod.TIMER_INDEX_TOTAL, direct.timer);
+        val error = directEnergy - energy;
+        Console.OUT.println("direct = " + directEnergy + " error = " + error + " relative error = " + Math.abs(error) / Math.abs(energy));
     }
 
     private static def logTime(desc : String, timerIndex : Int, timer : Timer!) {
@@ -66,21 +75,29 @@ public class TestFmm3d {
 
     /**
      * Generate an array of ValRails of MMAtoms, one ValRail for each
-     * place.  FMM assumes that the atoms have already been distributed. 
+     * place.  FMM assumes that the atoms have already been distributed.
+     * Locate all particles within a small displacement from points on 
+     * a cbrt(N)-SIZE grid.
      */
     public static def generateAtoms(numAtoms : Int) : DistArray[ValRail[MMAtom]](1) {
         val tempAtoms = DistArray.make[GrowableRail[MMAtom]](Dist.makeUnique(Place.places), (Point) => new GrowableRail[MMAtom]());
         /* Assign Atoms to random locations within a -1..1 3D box, with unit charge (1/3 are negative). */
+        val gridSize = (Math.ceil(Math.cbrt(numAtoms)) as Int);     
+        var gridPoint : Int = 0; // running total of assigned grid points
         finish for (var i : Int = 0; i < numAtoms; i++) {
-            val x = randomUnit();
-            val y = randomUnit();
-            val z = randomUnit();
+            val gridX = gridPoint / (gridSize * gridSize);
+            val gridY = (gridPoint - (gridX * gridSize * gridSize)) / gridSize;
+            val gridZ = gridPoint - (gridX * gridSize * gridSize) - (gridY * gridSize);
+            val x = (gridX + randomNoise()) * (SIZE / gridSize);
+            val y = (gridY + randomNoise()) * (SIZE / gridSize);
+            val z = (gridZ + randomNoise()) * (SIZE / gridSize);
             val charge = i%2==0?1:-1;
             val p = getPlaceId(x, y, z);
             async (Place.places(p)) {
                 val atom = new MMAtom(Point3d(x, y, z), charge);
                 atomic { (tempAtoms(p) as GrowableRail[MMAtom]!).add(atom); }
             }
+            gridPoint++;
         }
         val atoms = DistArray.make[ValRail[MMAtom]](Dist.makeUnique(Place.places), ((p) : Point) => (tempAtoms(p) as GrowableRail[MMAtom]!).toValRail());
         return atoms;
@@ -91,12 +108,15 @@ public class TestFmm3d {
      * Currently just splits them up into slices by X coordinate.
      */
     public static safe def getPlaceId(x : Double, y : Double, z : Double) : Int {
-        return ((x / size) * Place.MAX_PLACES) as Int;
+        return ((x / SIZE) * Place.MAX_PLACES) as Int;
     }
 
-    static def randomUnit() : Double {
-        val dub = at(R){R.nextDouble()};
-        return dub * size;
+    /** 
+     * Returns random "noise" by which to displace a particle coordinate from its
+     * assigned grid point.
+     */
+    private static def randomNoise() : Double {
+        return (at(R){R.nextDouble()}) * NOISE;
     }
 }
 
