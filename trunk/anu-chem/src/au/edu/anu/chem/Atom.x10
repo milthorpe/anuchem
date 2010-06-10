@@ -42,12 +42,14 @@ public class Atom {
     public def this(atom : Atom) {
         this.symbol = atom.symbol;
         this.centre = atom.centre;
-        val bondsValRail = at(atom) {atom.bonds.toValRail()};
-        val bonds = new ArrayList[Pair[BondType, Atom]](bondsValRail.length);
-        for ((i) in 0..bondsValRail.length-1) {
-            bonds.add(bondsValRail(i));
+        val bondsValRail = at(atom) {atom.bonds == null ? null : atom.bonds.toValRail()};
+        if (bondsValRail != null) {
+            val bonds = new ArrayList[Pair[BondType, Atom]](bondsValRail.length);
+            for ((i) in 0..bondsValRail.length-1) {
+                bonds.add(bondsValRail(i));
+            }
+            this.bonds = bonds;
         }
-        this.bonds = bonds;
     }
 
     public def getBonds() = bonds;
