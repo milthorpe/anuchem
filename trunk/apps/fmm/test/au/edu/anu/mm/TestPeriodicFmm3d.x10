@@ -15,7 +15,6 @@ public class TestPeriodicFmm3d extends TestElectrostatic {
         var numAtoms : Int;
         var density : Double = 60.0;
         var numTerms : Int = 10;
-        var wellSpaced : Int = 2;
         var numShells : Int = 5;
         if (args.length > 0) {
             numAtoms = Int.parseInt(args(0));
@@ -24,27 +23,23 @@ public class TestPeriodicFmm3d extends TestElectrostatic {
                 if (args.length > 2) {
                     numTerms = Int.parseInt(args(2));
                     if (args.length > 3) {
-                        wellSpaced = Int.parseInt(args(3));
-                        if (args.length > 4) {
-                            numShells = Int.parseInt(args(4));
-                        }
+                        numShells = Int.parseInt(args(3));
                     }
                 }
             }
         } else {
-            Console.ERR.println("usage: TestPeriodicFmm3d numAtoms [density] [numTerms] [wellSpaced] [numShells]");
+            Console.ERR.println("usage: TestPeriodicFmm3d numAtoms [density] [numTerms] [numShells]");
             return;
         }
 
         Console.OUT.println("Testing Periodic FMM for " + numAtoms 
                           + " atoms, target density = " + density
                           + " numTerms = " + numTerms
-                          + " wellSpaced param = " + wellSpaced
                           + " numShells = " + numShells);
         
 
         val atoms = generateAtoms(numAtoms);
-        val fmm3d = new PeriodicFmm3d(density, numTerms, wellSpaced, Point3d(0.0, 0.0, 0.0), SIZE, numAtoms, atoms, numShells);
+        val fmm3d = new PeriodicFmm3d(density, numTerms, Point3d(0.0, 0.0, 0.0), SIZE, numAtoms, atoms, numShells);
         val energy = fmm3d.calculateEnergy();
         
         Console.OUT.println("energy = " + energy);
