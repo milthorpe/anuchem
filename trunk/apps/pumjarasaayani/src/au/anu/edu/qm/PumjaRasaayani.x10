@@ -162,6 +162,9 @@ public class PumjaRasaayani {
         Console.OUT.println(mol);
         Console.OUT.println("Number of atoms: " + mol.getNumberOfAtoms());
 
+        val timer = new Timer(1);
+        timer.start(0);
+
         val fragmentor = new Fragmentor(5.67, 30);  // TODO, parameters to be taken from user
         
         // first generate the fragments, along with cardinality expression
@@ -178,8 +181,10 @@ public class PumjaRasaayani {
         for(fragment in fragments) {
             ene += fragment.energy() * fragment.cardinalitySign();
         } // end for 
+        timer.stop(0);
 
         Console.OUT.println("Final MTA energy : " + ene);
+        Console.OUT.println ("\n-End of MTA run-\n\nTotal time since start: " + (timer.total(0) as Double) / 1e9 + " seconds\n");
     }
 
     public static def main(args:Rail[String]!) {
