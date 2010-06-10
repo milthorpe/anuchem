@@ -56,6 +56,7 @@ public class ConnectivityBuilder[T]{T <: Atom} {
        val noOfAtoms = mol.getNumberOfAtoms();
        val ai = AtomInfo.getInstance();
        val WEAK_BOND_AXIS_REJECTION_FACTOR = 0.1;
+       val WEAK_BOND_ANGLE_TOLERANCE = 1.222;
 
        finish foreach(atom in mol.getAtoms()) {
            val conn = new ConnectivitySupport();
@@ -70,7 +71,7 @@ public class ConnectivityBuilder[T]{T <: Atom} {
                  conn.vdwRadiusSum      = ai.getVdwRadius(atom) + ai.getVdwRadius(atomI);
 
                  if (conn.isWeekBondPresent() && (!conn.isSingleBondPresent())) {
-                    // TODO: probable weak bond, confirm it
+                    // TODO: make it specific to type of atoms
                     val bonds1 = atom.getBonds();
                     val bonds2 = atomI.getBonds();
 
@@ -83,6 +84,22 @@ public class ConnectivityBuilder[T]{T <: Atom} {
                     val axis2 = computeAxis(atomI); 
 
                     if ((axis1==Vector3d.NULL) || (axis2==Vector3d.NULL)) continue;
+       
+                    if (axis1.magnitude() < WEAK_BOND_AXIS_REJECTION_FACTOR
+                        || axis2.magnitude() < WEAK_BOND_AXIS_REJECTION_FACTOR) {
+                        continue;
+                    } // end if
+
+                    val v12 = atomI.centre - atom.centre;
+                    val v21 = atom.centre  - atomI.centre;
+                    
+                    val angle1 = axis1.angleWith(v12);
+                    val angle2 = axis2.angleWith(v21);
+
+                    if ((angle1 < WEAK_BOND_ANGLE_TOLERANCE) 
+                        && (angle2 < WEAK_BOND_ANGLE_TOLERANCE)) {
+                       atom.addBond(BondType.WEAK_BOND, atomI);
+                    } // end if
                  } // end if
               } // end if
            } // end for
