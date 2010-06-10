@@ -208,7 +208,7 @@ public class Fmm3d {
         timer.start(TIMER_INDEX_COMBINE);
         for (var level: Int = numLevels; level > getTopLevel(); level--) {
             val thisLevel = level;
-            Console.OUT.println("combine level " + level + " => " + (level-1));
+            //Console.OUT.println("combine level " + level + " => " + (level-1));
             val thisLevelBoxes = boxes(thisLevel);
             finish ateach (boxIndex in thisLevelBoxes) {
                 val child = thisLevelBoxes(boxIndex) as FmmBox!;
@@ -299,17 +299,7 @@ public class Fmm3d {
 
         // start the prefetch of all atoms required for direct calculations at each place
         prefetchPackedAtoms();
-        // TODO n^2 calculation - to check - remove this
-        /*
-        var pairwiseEnergy : Double = 0.0;
-        for ((i) in 0..(atoms.length - 1)) {
-            for ((j) in 0..(i - 1)) {
-                val pairEnergy : Double = atoms(j).pairEnergy(atoms(i));
-                pairwiseEnergy += 2 * pairEnergy;
-            }
-        }
-        Console.OUT.println("pairwiseEnergy = " + pairwiseEnergy);
-        */
+
         finish ateach (p1 in Dist.makeUnique(lowestLevelBoxes.dist.places())) {
             val packedAtoms = locallyEssentialTrees(here.id).packedAtoms;
             foreach ((x1,y1,z1) in lowestLevelBoxes | here) {
