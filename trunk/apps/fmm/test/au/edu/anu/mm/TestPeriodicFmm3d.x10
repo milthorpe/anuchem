@@ -24,6 +24,7 @@ public class TestPeriodicFmm3d extends TestElectrostatic {
                     numTerms = Int.parseInt(args(2));
                     if (args.length > 3) {
                         numShells = Int.parseInt(args(3));
+                        if (numShells < 1) numShells = 1; // doesn't make sense to do 0 shells
                     }
                 }
             }

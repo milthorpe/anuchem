@@ -67,7 +67,7 @@ public class Fmm3d {
     global val lowestLevelBoxes : DistArray[FmmBox](3);
 
     /** The atoms in the simulation, divided up into an array of ValRails, one for each place. */
-    private global val atoms : DistArray[ValRail[MMAtom]](1);
+    protected global val atoms : DistArray[ValRail[MMAtom]](1);
 
     /** 
      * A cache of transformations from multipole to local at the same level.
@@ -90,7 +90,7 @@ public class Fmm3d {
     /**
      * An array of locally essential trees (LETs), one for each place.
      */
-    private global val locallyEssentialTrees : DistArray[LocallyEssentialTree](1);
+    protected global val locallyEssentialTrees : DistArray[LocallyEssentialTree](1);
 
     // TODO use shared local variable within getEnergy() - XTENLANG-404
     protected var directEnergy : Double = 0.0;
@@ -241,7 +241,7 @@ public class Fmm3d {
 
         val highestLevelBoxes = boxes(getTopLevel());
         finish ateach (p1 in Dist.makeUnique(highestLevelBoxes.dist.places())) {
-            val highestLevelMultipoleCopies = (locallyEssentialTrees(here.id) as LocallyEssentialTree!).multipoleCopies(0);
+            val highestLevelMultipoleCopies = (locallyEssentialTrees(here.id) as LocallyEssentialTree!).multipoleCopies(getTopLevel());
             foreach ((x1,y1,z1) in highestLevelBoxes | here) {
                 val box1 = highestLevelBoxes(x1,y1,z1) as FmmBox!;
                 if (box1 != null) {
@@ -390,7 +390,7 @@ public class Fmm3d {
             return null;
         } else {
             val multipoleTranslations = DistArray.make[MultipoleExpansion](Dist.makeBlock([0..Place.MAX_PLACES-1,topChildLevel..numLevels, 0..1, 0..1, 0..1],0));
-            Console.OUT.println("multipole dist = " + multipoleTranslations.dist);
+            //Console.OUT.println("multipole dist = " + multipoleTranslations.dist);
             finish ateach ((p) : Point in Dist.makeUnique(Place.places)) {
                 for (val(placeId,level,i,j,k) in multipoleTranslations.dist | here) {
                     val dim = Math.pow2(level);
@@ -436,7 +436,7 @@ public class Fmm3d {
             val thisLevelRegion : Region(3) = [0..levelDim-1, 0..levelDim-1, 0..levelDim-1];
             val thisLevelDist = Dist.makeBlock(thisLevelRegion, 0);
             boxesTemp(thisLevel) = DistArray.make[FmmBox](thisLevelDist);
-            Console.OUT.println("level " + thisLevel + " dist: " + thisLevelDist);
+            //Console.OUT.println("level " + thisLevel + " dist: " + thisLevelDist);
         }
         val boxesValRail = boxesTemp as ValRail[DistArray[FmmBox](3)];
 
@@ -532,14 +532,15 @@ public class Fmm3d {
      * "Pre-fetches" the multipole copies for the V-List of the locally
      * essential tree at each place, using futures.
      */
-    private def prefetchMultipoles() {
+    protected def prefetchMultipoles() {
         finish ateach (p1 in locallyEssentialTrees) {
             val myLET = locallyEssentialTrees(p1) as LocallyEssentialTree!;
             val combinedVList = myLET.combinedVList;
             for ((level) in getTopLevel()..numLevels) {
+                val thisLevelCopies = myLET.multipoleCopies(level);
                 val thisLevelBoxes = boxes(level);
                 for ((x,y,z) in combinedVList(level)) {
-                    myLET.multipoleCopies(level)(x,y,z) = future {getMultipoleExpansionLocalCopy(thisLevelBoxes,x,y,z)};
+                    thisLevelCopies(x,y,z) = future {getMultipoleExpansionLocalCopy(thisLevelBoxes,x,y,z)};
                 }
             }
         }
@@ -559,19 +560,14 @@ public class Fmm3d {
         }
     }
 
-    private global def getLowestLevelBoxIndex(offsetCentre : Point3d) : Point(3) {
+    protected global def getLowestLevelBoxIndex(offsetCentre : Point3d) : Point(3) {
         return  Point.make(offsetCentre.i / size * lowestLevelDim + lowestLevelDim / 2 as Int, offsetCentre.j / size * lowestLevelDim + lowestLevelDim / 2 as Int, offsetCentre.k / size * lowestLevelDim + lowestLevelDim / 2 as Int);
     }
 
     private global def getParentForChild(boxes : ValRail[DistArray[FmmBox](3)], level : Int, x : Int, y : Int, z : Int) : FmmBox {
         if (level == getTopLevel())
             return null;
-        val parentIndex = getParentIndex(x, y, z);
-        return (at (boxes(level-1).dist(parentIndex)) {boxes(level-1)(parentIndex)});
-    }
-
-    private global def getParentIndex(x : Int, y : Int, z : Int) : Point(3) {
-        return Point.make(x / 2 , y / 2, z / 2);
+        return (at (boxes(level-1).dist(x/2, y/2, z/2)) {boxes(level-1)(x/2, y/2, z/2)});
     }
 
     private global def getPackedAtomsForBox(x : Int, y : Int, z : Int) {
