@@ -5,6 +5,7 @@
 package au.edu.anu.chem;
 
 import x10x.vector.Point3d;
+import x10x.vector.Vector3d;
 
 /**
  * Simple connectivity builder for Molecule object
@@ -32,7 +33,7 @@ public class ConnectivityBuilder[T]{T <: Atom} {
               
               if (conn.canFormBond(atom, atomI)) {
                  conn.covalentRadiusSum = ai.getCovalentRadius(atom) + ai.getCovalentRadius(atomI);
-                 conn.vdWRadiusSum      = ai.getVdwRadius(atom) + ai.getVdwRadius(atomI);
+                 conn.vdwRadiusSum      = ai.getVdwRadius(atom) + ai.getVdwRadius(atomI);
 
                  // classify  
                  if (conn.isSingleBondPresent()) {
@@ -43,8 +44,8 @@ public class ConnectivityBuilder[T]{T <: Atom} {
                     } // end if
                  } // end if
               } // end if 
-           }           
-       }
+           } // end for           
+       } // finish
    }
 
    /**
@@ -52,6 +53,53 @@ public class ConnectivityBuilder[T]{T <: Atom} {
     */
    public def detectWeakBonds(mol:Molecule[T]!) {
        // TODO:
+       val noOfAtoms = mol.getNumberOfAtoms();
+       val ai = AtomInfo.getInstance();
+       val WEAK_BOND_AXIS_REJECTION_FACTOR = 0.1;
+
+       finish foreach(atom in mol.getAtoms()) {
+           val conn = new ConnectivitySupport();
+           val idx  = atom.getIndex();
+
+           for(var i:Int=0; i<idx; i++) {
+              // check for bond between atom and mol.getAtom(i)
+              val atomI = mol.getAtom(i);
+
+              if (conn.canFormBond(atom, atomI)) {
+                 conn.covalentRadiusSum = ai.getCovalentRadius(atom) + ai.getCovalentRadius(atomI);
+                 conn.vdwRadiusSum      = ai.getVdwRadius(atom) + ai.getVdwRadius(atomI);
+
+                 if (conn.isWeekBondPresent() && (!conn.isSingleBondPresent())) {
+                    // TODO: probable weak bond, confirm it
+                    val bonds1 = atom.getBonds();
+                    val bonds2 = atomI.getBonds();
+
+                    if ((bonds1.size()==0) || (bonds2.size()==0)) {
+                       atom.addBond(BondType.WEAK_BOND, atomI);
+                       continue;
+                    } // end if
+
+                    val axis1 = computeAxis(atom); 
+                    val axis2 = computeAxis(atomI); 
+
+                    if ((axis1==Vector3d.NULL) || (axis2==Vector3d.NULL)) continue;
+                 } // end if
+              } // end if
+           } // end for
+       } // finish
+   }
+
+   private def computeAxis(atom:Atom) : Vector3d {
+       val bonds = atom.getBonds();
+       var axis:Vector3d  = Vector3d.NULL;
+
+       for(bond in bonds) {
+          if ((bond.first == BondType.SINGLE_BOND) || (bond.first == BondType.DOUBLE_BOND)) {
+             axis = axis + (atom.centre - bond.second.centre);
+          } // end if
+       } // end for
+
+       return axis;
    }
 
    private val WHITE = 0; 
@@ -166,13 +214,15 @@ public class ConnectivityBuilder[T]{T <: Atom} {
 class ConnectivitySupport {
     global val BOND_RADIUS = 7.56; // a.u. ~= 4 angstroms
     global val COVALENT_BOND_TOLERANCE = 0.7558903950887472; // a.u. ~= 0.4 angstroms
+    global val WEAK_BOND_TOLERANCE_LOWER = 0.1889725987721868; // a.u. ~= 0.1 angstroms
+    global val WEAK_BOND_TOLERANCE_UPPER = 1.9842122871079613; // a.u. ~= 1.05 angstroms
     global val DOUBLE_BOND_OVERLAP_PERCENTAGE = 0.92;  // 92%
     global val TRIPLE_BOND_OVERLAP_PERCENTAGE = 0.72;  // 72%
    
     var x:Double, y:Double, z:Double;
     var distance:Double;
     var covalentRadiusSum:Double;
-    var vdWRadiusSum:Double;
+    var vdwRadiusSum:Double;
 
     public def this() { }
 
@@ -209,5 +259,13 @@ class ConnectivitySupport {
     public def isDoubleBondPresent() : Boolean {
         return (distance < (DOUBLE_BOND_OVERLAP_PERCENTAGE * covalentRadiusSum));                
     } // end of method isWeekBondPresent()
+
+    /**
+     * method to check the presence of weak bond, using distance criterion
+     */
+    public def isWeekBondPresent() : Boolean {
+        return ((distance < (vdwRadiusSum - WEAK_BOND_TOLERANCE_LOWER)
+             && (vdwRadiusSum - WEAK_BOND_TOLERANCE_UPPER) < distance));
+    } 
 }
 
