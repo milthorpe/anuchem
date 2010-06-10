@@ -1,24 +1,17 @@
 package au.edu.anu.pme;
 
-import x10.util.Random;
-import x10.util.GrowableRail;
 import x10x.vector.Point3d;
 import x10x.vector.Vector3d;
 import au.edu.anu.chem.mm.MMAtom;
 import au.edu.anu.chem.mm.ElectrostaticDirectMethod;
+import au.edu.anu.chem.mm.TestElectrostatic;
 import au.edu.anu.util.Timer;
 
 /**
- * Tests the Distributed Particle Mesh Ewald implementation.
+ * Tests the distributed Particle Mesh Ewald implementation.
  * @author milthorpe
  */
-public class TestPME {
-    private static val RANDOM_SEED = 10101110L;
-    private static val R = new Random(RANDOM_SEED);
-    private static val SIZE = 80.0;
-    /* The maximum "noise" (random displacement) to add to particle positions from the grid. */
-    private static val NOISE = 0.25;
-
+public class TestPME extends TestElectrostatic {
     public static def main(args : Rail[String]!) {
         var numAtoms : Int;
         var ewaldCoefficient : Double = 0.35;
@@ -78,56 +71,6 @@ public class TestPME {
         // direct error comparison is only useful if there is a huge empty border around the particles
         val error = directEnergy - energy;
         Console.OUT.println("direct = " + directEnergy + " error = " + error + " relative error = " + Math.abs(error) / Math.abs(energy));
-
-    }
-
-    private static def logTime(desc : String, timerIndex : Int, timer : Timer!) {
-        Console.OUT.printf(desc + " (one cycle): %g seconds\n", (timer.total(timerIndex) as Double) / 1e9);
-    }
-
-    /**
-     * Generate an array of ValRails of MMAtoms, one ValRail for each
-     * place.  PME assumes that the atoms have already been distributed. 
-     */
-    public static def generateAtoms(numAtoms : Int) : DistArray[ValRail[MMAtom]](1) {
-        val tempAtoms = DistArray.make[GrowableRail[MMAtom]](Dist.makeUnique(Place.places), (Point) => new GrowableRail[MMAtom]());
-        /* Assign particles to random locations within a small cubic area around the center of the simulation space, with unit charge (1/2 are negative). */
-        val gridSize = (Math.ceil(Math.cbrt(numAtoms)) as Int);     
-        var gridPoint : Int = 0; // running total of assigned grid points
-        finish for (var i : Int = 0; i < numAtoms; i++) {
-            val gridX = gridPoint / (gridSize * gridSize);
-            val gridY = (gridPoint - (gridX * gridSize * gridSize)) / gridSize;
-            val gridZ = gridPoint - (gridX * gridSize * gridSize) - (gridY * gridSize);
-            val x = (gridX + randomNoise()) * (SIZE / gridSize);
-            val y = (gridY + randomNoise()) * (SIZE / gridSize);
-            val z = (gridZ + randomNoise()) * (SIZE / gridSize);
-            val charge = i%2==0?1:-1;
-            val p = getPlaceId(x, y, z);
-            //Console.OUT.println(x + "," + y + "," + z + " => " + p);
-            async (Place.places(p)) {
-                val atom = new MMAtom(Point3d(x, y, z), charge);
-                atomic { (tempAtoms(p) as GrowableRail[MMAtom]!).add(atom); }
-            }
-            gridPoint++;
-        }
-        val atoms = DistArray.make[ValRail[MMAtom]](Dist.makeUnique(Place.places), ((p) : Point) => (tempAtoms(p) as GrowableRail[MMAtom]!).toValRail());
-        return atoms;
-    }
-
-    /** 
-     * Gets the place ID to which to assign the given atom coordinates.
-     * Currently just splits them up into slices by X coordinate.
-     */
-    public static safe def getPlaceId(x : Double, y : Double, z : Double) : Int {
-        return ((x / SIZE) * Place.MAX_PLACES) as Int;
-    }
-
-    /** 
-     * Returns random "noise" by which to displace a particle coordinate from its
-     * assigned grid point.
-     */
-    private static def randomNoise() : Double {
-        return (at(R){R.nextDouble()}) * NOISE;
     }
 }
 
