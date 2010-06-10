@@ -7,17 +7,16 @@ import au.edu.anu.chem.mm.TestElectrostatic;
 import au.edu.anu.util.Timer;
 
 /**
- * Tests the distributed FMM 3D implementation.
+ * Tests the distributed periodic FMM 3D implementation.
  * @author milthorpe
  */
-public class TestFmm3d extends TestElectrostatic {
-    static val X_SLICE = SIZE / Place.MAX_PLACES;
-
+public class TestPeriodicFmm3d extends TestElectrostatic {
     public static def main(args : Rail[String]!) {
         var numAtoms : Int;
         var density : Double = 60.0;
         var numTerms : Int = 10;
         var wellSpaced : Int = 2;
+        var numShells : Int = 5;
         if (args.length > 0) {
             numAtoms = Int.parseInt(args(0));
             if (args.length > 1) {
@@ -26,22 +25,26 @@ public class TestFmm3d extends TestElectrostatic {
                     numTerms = Int.parseInt(args(2));
                     if (args.length > 3) {
                         wellSpaced = Int.parseInt(args(3));
+                        if (args.length > 4) {
+                            numShells = Int.parseInt(args(4));
+                        }
                     }
                 }
             }
         } else {
-            Console.ERR.println("usage: TestFmm3d numAtoms [density] [numTerms] [wellSpaced]");
+            Console.ERR.println("usage: TestPeriodicFmm3d numAtoms [density] [numTerms] [wellSpaced] [numShells]");
             return;
         }
 
-        Console.OUT.println("Testing FMM for " + numAtoms 
+        Console.OUT.println("Testing Periodic FMM for " + numAtoms 
                           + " atoms, target density = " + density
                           + " numTerms = " + numTerms
-                          + " wellSpaced param = " + wellSpaced);
+                          + " wellSpaced param = " + wellSpaced
+                          + " numShells = " + numShells);
         
 
         val atoms = generateAtoms(numAtoms);
-        val fmm3d = new Fmm3d(density, numTerms, wellSpaced, Point3d(0.0, 0.0, 0.0), SIZE, numAtoms, atoms);
+        val fmm3d = new PeriodicFmm3d(density, numTerms, wellSpaced, Point3d(0.0, 0.0, 0.0), SIZE, numAtoms, atoms, numShells);
         val energy = fmm3d.calculateEnergy();
         
         Console.OUT.println("energy = " + energy);
@@ -50,6 +53,7 @@ public class TestFmm3d extends TestElectrostatic {
         logTime("Multipole", Fmm3d.TIMER_INDEX_MULTIPOLE, fmm3d.timer);
         logTime("Direct",    Fmm3d.TIMER_INDEX_DIRECT,    fmm3d.timer);
         logTime("Combine",   Fmm3d.TIMER_INDEX_COMBINE,   fmm3d.timer);
+        logTime("Macroscopic", PeriodicFmm3d.TIMER_INDEX_MACROSCOPIC, fmm3d.timer);
         logTime("Transform", Fmm3d.TIMER_INDEX_TRANSFORM, fmm3d.timer);
         logTime("Far field", Fmm3d.TIMER_INDEX_FARFIELD,  fmm3d.timer);
         logTime("Total",     Fmm3d.TIMER_INDEX_TOTAL,     fmm3d.timer);

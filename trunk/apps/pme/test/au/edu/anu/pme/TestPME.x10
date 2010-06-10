@@ -15,17 +15,18 @@ import au.edu.anu.util.Timer;
 public class TestPME {
     private static val RANDOM_SEED = 10101110L;
     private static val R = new Random(RANDOM_SEED);
-    /* side length of cubic unit cell in Angstroms */
-    private static val size = 80.0;
+    private static val SIZE = 80.0;
+    /* The maximum "noise" (random displacement) to add to particle positions from the grid. */
+    private static val NOISE = 0.25;
 
     public static def main(args : Rail[String]!) {
-        var numParticles : Int;
+        var numAtoms : Int;
         var ewaldCoefficient : Double = 0.35;
         var cutoff : Double = 10.0;
         var gridSize : Int = 64;
         var splineOrder : Int = 4;
         if (args.length > 0) {
-            numParticles = Int.parseInt(args(0));
+            numAtoms = Int.parseInt(args(0));
             if (args.length > 1) {
                 ewaldCoefficient = Double.parseDouble(args(1));
                 if (args.length > 2) {
@@ -39,7 +40,7 @@ public class TestPME {
                 }
             }
         } else {
-            Console.ERR.println("usage: TestPME numParticles [ewaldCoefficient] [cutoff] [gridSize] [splineOrder]");
+            Console.ERR.println("usage: TestPME numAtoms [ewaldCoefficient] [cutoff] [gridSize] [splineOrder]");
             return;
         }
 
@@ -48,16 +49,16 @@ public class TestPME {
             return;
         }
 
-        val edges = [Vector3d(size, 0.0, 0.0), Vector3d(0.0, size, 0.0), Vector3d(0.0, 0.0, size)];
+        val edges = [Vector3d(SIZE, 0.0, 0.0), Vector3d(0.0, SIZE, 0.0), Vector3d(0.0, 0.0, SIZE)];
         val g = gridSize;
         val gridSizes = ValRail.make[Int](3, (Int) => g);
 
-        Console.OUT.println("Testing PME for " + numParticles + " particles."
+        Console.OUT.println("Testing PME for " + numAtoms + " particles."
             + "\nBox edges: " + edges
             + "\nGrid size: " + gridSize
             + "\nspline order: " + splineOrder + " Beta: " + ewaldCoefficient + " Cutoff: " + cutoff);
 
-        val atoms = generateAtoms(numParticles);
+        val atoms = generateAtoms(numAtoms);
         val pme = new PME(edges, gridSizes, atoms, splineOrder, ewaldCoefficient, cutoff);
         val energy = pme.getEnergy();
         Console.OUT.println("energy = " + energy);
@@ -91,17 +92,23 @@ public class TestPME {
     public static def generateAtoms(numAtoms : Int) : DistArray[ValRail[MMAtom]](1) {
         val tempAtoms = DistArray.make[GrowableRail[MMAtom]](Dist.makeUnique(Place.places), (Point) => new GrowableRail[MMAtom]());
         /* Assign particles to random locations within a small cubic area around the center of the simulation space, with unit charge (1/2 are negative). */
+        val gridSize = (Math.ceil(Math.cbrt(numAtoms)) as Int);     
+        var gridPoint : Int = 0; // running total of assigned grid points
         finish for (var i : Int = 0; i < numAtoms; i++) {
-            val x = randomUnit();
-            val y = randomUnit();
-            val z = randomUnit();
+            val gridX = gridPoint / (gridSize * gridSize);
+            val gridY = (gridPoint - (gridX * gridSize * gridSize)) / gridSize;
+            val gridZ = gridPoint - (gridX * gridSize * gridSize) - (gridY * gridSize);
+            val x = (gridX + randomNoise()) * (SIZE / gridSize);
+            val y = (gridY + randomNoise()) * (SIZE / gridSize);
+            val z = (gridZ + randomNoise()) * (SIZE / gridSize);
             val charge = i%2==0?1:-1;
             val p = getPlaceId(x, y, z);
             //Console.OUT.println(x + "," + y + "," + z + " => " + p);
             async (Place.places(p)) {
-                val atom = new MMAtom(Point3d(x, y, z), 0.0, charge);
+                val atom = new MMAtom(Point3d(x, y, z), charge);
                 atomic { (tempAtoms(p) as GrowableRail[MMAtom]!).add(atom); }
             }
+            gridPoint++;
         }
         val atoms = DistArray.make[ValRail[MMAtom]](Dist.makeUnique(Place.places), ((p) : Point) => (tempAtoms(p) as GrowableRail[MMAtom]!).toValRail());
         return atoms;
@@ -112,14 +119,15 @@ public class TestPME {
      * Currently just splits them up into slices by X coordinate.
      */
     public static safe def getPlaceId(x : Double, y : Double, z : Double) : Int {
-        return ((x / size) * Place.MAX_PLACES) as Int;
+        return ((x / SIZE) * Place.MAX_PLACES) as Int;
     }
 
-    static def randomUnit() : Double {
-        val dub = at(R){R.nextDouble()};
-        // uncomment to put a huge empty border around the particles
-        //return dub * 2.0 - 1.0 + size / 2.0;
-        return dub * size;
+    /** 
+     * Returns random "noise" by which to displace a particle coordinate from its
+     * assigned grid point.
+     */
+    private static def randomNoise() : Double {
+        return (at(R){R.nextDouble()}) * NOISE;
     }
 }
 
