@@ -463,31 +463,37 @@ public class TwoElectronIntegrals {
 
          if (al != 0) {
            if (xa != 0 ) {
-              res =   mdHrr(xa-1, ya, za, xb, yb, zb, xp-1, yp, zp, pai, paj, pak, pbi, pbj, pbk, zeta2)*xp
-                        + mdHrr(xa-1, ya, za, xb, yb, zb, xp  , yp, zp, pai, paj, pak, pbi, pbj, pbk, zeta2)*(pai)
-                        + mdHrr(xa-1, ya, za, xb, yb, zb, xp+1, yp, zp, pai, paj, pak, pbi, pbj, pbk, zeta2)/(zeta2);
+              val xa1 = xa-1;
+              res =   mdHrr(xa1, ya, za, xb, yb, zb, xp-1, yp, zp, pai, paj, pak, pbi, pbj, pbk, zeta2)*xp
+                        + mdHrr(xa1, ya, za, xb, yb, zb, xp  , yp, zp, pai, paj, pak, pbi, pbj, pbk, zeta2)*(pai)
+                        + mdHrr(xa1, ya, za, xb, yb, zb, xp+1, yp, zp, pai, paj, pak, pbi, pbj, pbk, zeta2)/(zeta2);
            } else if (ya != 0) {
-              res =   mdHrr(xa, ya-1, za, xb, yb, zb, xp, yp-1, zp, pai, paj, pak, pbi, pbj, pbk, zeta2)*yp
-                        + mdHrr(xa, ya-1, za, xb, yb, zb, xp, yp  , zp, pai, paj, pak, pbi, pbj, pbk, zeta2)*(paj)
-                        + mdHrr(xa, ya-1, za, xb, yb, zb, xp, yp+1, zp, pai, paj, pak, pbi, pbj, pbk, zeta2)/(zeta2);
+              val ya1 = ya-1;
+              res =   mdHrr(xa, ya1, za, xb, yb, zb, xp, yp-1, zp, pai, paj, pak, pbi, pbj, pbk, zeta2)*yp
+                        + mdHrr(xa, ya1, za, xb, yb, zb, xp, yp  , zp, pai, paj, pak, pbi, pbj, pbk, zeta2)*(paj)
+                        + mdHrr(xa, ya1, za, xb, yb, zb, xp, yp+1, zp, pai, paj, pak, pbi, pbj, pbk, zeta2)/(zeta2);
            } else if (za != 0) {
-              res =   mdHrr(xa, ya, za-1, xb, yb, zb, xp, yp, zp-1, pai, paj, pak, pbi, pbj, pbk, zeta2)*zp
-                        + mdHrr(xa, ya, za-1, xb, yb, zb, xp, yp, zp  , pai, paj, pak, pbi, pbj, pbk, zeta2)*(pak)
-                        + mdHrr(xa, ya, za-1, xb, yb, zb, xp, yp, zp+1, pai, paj, pak, pbi, pbj, pbk, zeta2)/(zeta2);
+              val za1 = za-1;
+              res =   mdHrr(xa, ya, za1, xb, yb, zb, xp, yp, zp-1, pai, paj, pak, pbi, pbj, pbk, zeta2)*zp
+                        + mdHrr(xa, ya, za1, xb, yb, zb, xp, yp, zp  , pai, paj, pak, pbi, pbj, pbk, zeta2)*(pak)
+                        + mdHrr(xa, ya, za1, xb, yb, zb, xp, yp, zp+1, pai, paj, pak, pbi, pbj, pbk, zeta2)/(zeta2);
            } // end if
          } else if (bl != 0) {
            if (xb != 0 ) {
-             res =   mdHrr(xa, ya, za, xb-1, yb, zb, xp-1, yp, zp, pai, paj, pak, pbi, pbj, pbk, zeta2)*xp
-                     + mdHrr(xa, ya, za, xb-1, yb, zb, xp  , yp, zp, pai, paj, pak, pbi, pbj, pbk, zeta2)*(pbi)
-                     + mdHrr(xa, ya, za, xb-1, yb, zb, xp+1, yp, zp, pai, paj, pak, pbi, pbj, pbk, zeta2)/(zeta2);
+             val xb1 = xb-1;
+             res =   mdHrr(xa, ya, za, xb1, yb, zb, xp-1, yp, zp, pai, paj, pak, pbi, pbj, pbk, zeta2)*xp
+                     + mdHrr(xa, ya, za, xb1, yb, zb, xp  , yp, zp, pai, paj, pak, pbi, pbj, pbk, zeta2)*(pbi)
+                     + mdHrr(xa, ya, za, xb1, yb, zb, xp+1, yp, zp, pai, paj, pak, pbi, pbj, pbk, zeta2)/(zeta2);
            } else if (yb != 0) {
-             res =   mdHrr(xa, ya, za, xb, yb-1, zb, xp, yp-1, zp, pai, paj, pak, pbi, pbj, pbk, zeta2)*yp
-                     + mdHrr(xa, ya, za, xb, yb-1, zb, xp, yp  , zp, pai, paj, pak, pbi, pbj, pbk, zeta2)*(pbj)
-                     + mdHrr(xa, ya, za, xb, yb-1, zb, xp, yp+1, zp, pai, paj, pak, pbi, pbj, pbk, zeta2)/(zeta2);
+             val yb1 = yb-1;
+             res =   mdHrr(xa, ya, za, xb, yb1, zb, xp, yp-1, zp, pai, paj, pak, pbi, pbj, pbk, zeta2)*yp
+                     + mdHrr(xa, ya, za, xb, yb1, zb, xp, yp  , zp, pai, paj, pak, pbi, pbj, pbk, zeta2)*(pbj)
+                     + mdHrr(xa, ya, za, xb, yb1, zb, xp, yp+1, zp, pai, paj, pak, pbi, pbj, pbk, zeta2)/(zeta2);
            } else if (zb != 0) {
-             res =   mdHrr(xa, ya, za, xb, yb, zb-1, xp, yp, zp-1, pai, paj, pak, pbi, pbj, pbk, zeta2)*zp
-                     + mdHrr(xa, ya, za, xb, yb, zb-1, xp, yp, zp  , pai, paj, pak, pbi, pbj, pbk, zeta2)*(pbk)
-                     + mdHrr(xa, ya, za, xb, yb, zb-1, xp, yp, zp+1, pai, paj, pak, pbi, pbj, pbk, zeta2)/(zeta2);
+             val zb1 = zb-1;
+             res =   mdHrr(xa, ya, za, xb, yb, zb1, xp, yp, zp-1, pai, paj, pak, pbi, pbj, pbk, zeta2)*zp
+                     + mdHrr(xa, ya, za, xb, yb, zb1, xp, yp, zp  , pai, paj, pak, pbi, pbj, pbk, zeta2)*(pbk)
+                     + mdHrr(xa, ya, za, xb, yb, zb1, xp, yp, zp+1, pai, paj, pak, pbi, pbj, pbk, zeta2)/(zeta2);
            } // end if
          } else if ( xp < 0 || yp < 0 || zp < 0) {
            res = 0.0; 
@@ -618,7 +624,7 @@ public class TwoElectronIntegrals {
                          // Console.OUT.println("md: [" + maxam + "] " + dd + " " + cc + " " + (i*pqdim+pp));
 
                          pcdint(dd,cc,ipp) += mdHrr(lp, mp, np, lq, mq, nq, 0, 0, 0,
-                                                           qdi, qdj, qdk, qci, qcj, qck, twoGamma);   // can use hrr() instead
+                                                    qdi, qdj, qdk, qci, qcj, qck, twoGamma);   // can use hrr() instead
 
                          // Console.OUT.println("md-done: " + dd + " " + cc + " " + i*pqdim+pp);
                      }

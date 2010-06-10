@@ -72,6 +72,11 @@ public struct Vector3d(i : Double, j : Double, k : Double) implements Tuple3d {
      */
     public static safe operator (x:Double) * (y:Vector3d): Vector3d = y * x;
 
+    /**
+     * check equality of two vectors    
+     */
+    public static safe operator (x:Vector3d) == (y:Vector3d) = ((x.i==y.i) && (x.j==y.j) && (x.k==y.k));
+
     public global safe def mul(c : Double) : Vector3d {
         return Vector3d(this.i * c, this.j * c, this.k * c);
     }

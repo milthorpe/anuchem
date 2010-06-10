@@ -27,6 +27,7 @@ import x10x.vector.Vector3d;
 import au.anu.edu.qm.QMAtom;
 
 import au.edu.anu.chem.AtomInfo;
+import au.edu.anu.chem.BondType;
 import au.edu.anu.chem.Molecule;
 import au.edu.anu.chem.ConnectivityBuilder;
 
@@ -61,8 +62,14 @@ public class Fragmentor {
        val conn = new ConnectivityBuilder[QMAtom]();
 
        conn.buildConnectivity(mol);
-       conn.detectWeakBonds(mol);
+       // conn.detectWeakBonds(mol);
        conn.identifyRings(mol);
+
+       Console.OUT.println("Detected rings: ");
+       for(ring in mol.getRings()) {
+          Console.OUT.println(ring.isPlanar());
+          Console.OUT.println(ring);
+       } // end for
 
        // next start fragmentation, to generate the main fragments
 
@@ -235,7 +242,7 @@ public class Fragmentor {
                   val bondedAtom = bond.second as QMAtom!;
                   val nBonds = bondedAtom.getBonds().size();
 
-                  if (nBonds == 1) { 
+                  if ((nBonds == 1) && (bond.first != BondType.WEAK_BOND)) { 
                       if (!fragment.contains(bondedAtom)) {
                           missedAtoms.add(bondedAtom as QMAtom{self.at(fragment)});
                       } // end if

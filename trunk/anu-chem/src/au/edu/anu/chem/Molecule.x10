@@ -17,6 +17,8 @@ public class Molecule[T]{T <: Atom} {
     global val atomList = new ArrayList[T{self.at(this)}](); 
     global val name : String;
 
+    global val ringList = new ArrayList[Ring[T]{self.at(this)}]();
+
     /** 
      * Measures the maximum absolute value of any coordinate x,y,z
      * of all atoms. This is used to estimate a rough cubic box size.
@@ -43,6 +45,9 @@ public class Molecule[T]{T <: Atom} {
     public safe def getAtom(index:Int) : T{self.at(this)} = atomList.get(index) as T{self.at(this)};
     public global safe def getAtoms() = atomList;
     public global safe def getNumberOfAtoms() : Int = atomList.size();
+
+    public global safe def addRing(r:Ring[T]{self.at(this)}) { ringList.add(r); }
+    public global safe def getRings() = ringList;
 
     public safe def getNumberOfElectrons() : int {
        val ai = AtomInfo.getInstance();
