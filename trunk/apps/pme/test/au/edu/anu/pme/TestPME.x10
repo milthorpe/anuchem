@@ -12,6 +12,12 @@ import au.edu.anu.util.Timer;
  * @author milthorpe
  */
 public class TestPME extends TestElectrostatic {
+    public global def sizeOfCentralCluster() : Double = 2.0;
+
+    public def this(numAtoms : Int) {
+        super(numAtoms);
+    }
+
     public static def main(args : Rail[String]!) {
         var numAtoms : Int;
         var ewaldCoefficient : Double = 0.35;
@@ -41,6 +47,10 @@ public class TestPME extends TestElectrostatic {
             Console.ERR.println("TestPME: splineOrder must not be greater than gridSize");
             return;
         }
+        new TestPME(numAtoms).test(ewaldCoefficient, cutoff, gridSize, splineOrder);
+    }
+
+    public def test(ewaldCoefficient : Double, cutoff : Double, gridSize : Int, splineOrder : Int) {
 
         val edges = [Vector3d(SIZE, 0.0, 0.0), Vector3d(0.0, SIZE, 0.0), Vector3d(0.0, 0.0, SIZE)];
         val g = gridSize;
@@ -51,7 +61,7 @@ public class TestPME extends TestElectrostatic {
             + "\nGrid size: " + gridSize
             + "\nspline order: " + splineOrder + " Beta: " + ewaldCoefficient + " Cutoff: " + cutoff);
 
-        val atoms = generateAtoms(numAtoms);
+        val atoms = generateAtoms();
         val pme = new PME(edges, gridSizes, atoms, splineOrder, ewaldCoefficient, cutoff);
         val energy = pme.getEnergy();
         Console.OUT.println("energy = " + energy);
