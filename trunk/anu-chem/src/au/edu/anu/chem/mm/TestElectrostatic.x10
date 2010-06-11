@@ -59,7 +59,7 @@ public class TestElectrostatic {
             val p = getPlaceId(x, y, z);
             async (Place.places(p)) {
                 val atom = new MMAtom(Point3d(x, y, z), charge);
-                Console.OUT.println(atom);
+                //Console.OUT.println(atom);
                 atomic { (tempAtoms(p) as GrowableRail[MMAtom]!).add(atom); }
             }
             gridPoint++;

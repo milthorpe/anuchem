@@ -11,8 +11,6 @@ import au.edu.anu.util.Timer;
  * @author milthorpe
  */
 public class TestFmm3d extends TestElectrostatic {
-    static val X_SLICE = SIZE / Place.MAX_PLACES;
-
     public global def sizeOfCentralCluster() : Double = 2.0;
 
     public def this(numAtoms : Int) {
