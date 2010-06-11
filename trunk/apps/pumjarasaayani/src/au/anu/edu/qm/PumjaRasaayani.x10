@@ -165,7 +165,7 @@ public class PumjaRasaayani {
         val timer = new Timer(1);
         timer.start(0);
 
-        val fragmentor = new Fragmentor(5.67, 30);  // TODO, parameters to be taken from user
+        val fragmentor = new Fragmentor(5.67, 25);  // TODO, parameters to be taken from user
         
         // first generate the fragments, along with cardinality expression
         val fragments = fragmentor.fragment(mol);

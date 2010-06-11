@@ -105,6 +105,7 @@ public class Fragmentor {
        for(frag in fragList) {
            Console.OUT.println("Fragment # " + idx + " : " + frag.getNumberOfTrueAtoms() + ", " 
                                + frag.getNumberOfAtoms() + " [" + frag.cardinalitySign() + "]");
+           Console.OUT.println(frag);
            idx++;
        } // end for
 

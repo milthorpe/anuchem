@@ -56,9 +56,13 @@ public class Fragment extends Molecule[QMAtom] {
           var foundAtom:Boolean;
 
           for(atom1 in getAtoms()) {
+             if ((atom1 as QMAtom).isDummy()) continue;
+
              val idx = atom1.getIndex();
              foundAtom = false;
              for(atom2 in frag.getAtoms()) {
+                 if ((atom2 as QMAtom).isDummy()) continue;
+
                  if (atom2.getIndex() == idx) {
                     foundAtom = true; break;
                  } // end if
@@ -76,13 +80,16 @@ public class Fragment extends Molecule[QMAtom] {
           var foundAtom:Boolean;
 
           for(atom1 in frag.getAtoms()) { 
+             if ((atom1 as QMAtom).isDummy()) continue;
              newFrag.addAtom(atom1);
           } // end for
 
           for(atom1 in getAtoms()) {
+             if ((atom1 as QMAtom).isDummy()) continue;
              val idx = atom1.getIndex();
              foundAtom = false;
              for(atom2 in newFrag.getAtoms()) {
+                 if ((atom2 as QMAtom).isDummy()) continue;
                  if (atom2.getIndex() == idx) {
                     foundAtom = true; break;
                  } // end if
@@ -93,6 +100,19 @@ public class Fragment extends Molecule[QMAtom] {
 
           return newFrag;
      } 
+
+     public def equals(frag:Fragment!) : Boolean {          
+
+          if (getNumberOfTrueAtoms() != frag.getNumberOfTrueAtoms()) return false;
+
+          for(atom1 in frag.getAtoms()) {
+              val atm = atom1 as QMAtom;
+              if (atm.isDummy()) continue;
+              if (!contains(atm)) return false;
+          } // end for
+
+          return true;
+     }
 
      public def contains(atm:QMAtom) : Boolean {
           val idx = atm.getIndex();
