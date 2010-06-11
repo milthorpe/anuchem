@@ -26,7 +26,7 @@ public class CardinalityExpression {
    /** add cardinality fragments */
    public def addCardinalityFragments(fragList:ArrayList[Fragment]!) {
        val noOfFragments = fragList.size();
-       val combs = Rail.make[Int](noOfFragments, (Int)=>0);
+       val combs = Rail.make[Int](noOfFragments, (Int)=>-1);
        val cfList = new ArrayList[Fragment]();
        var l:Int, pos:Int, m:Int;
 
