@@ -56,8 +56,6 @@ public class FmmBox {
      * boxes separating them.
      */
     public global safe def wellSeparated(ws : Int, x2 : Int, y2 : Int, z2 : Int) : Boolean {
-        if (level < 2)
-            return false;
         return Math.abs(x - x2) > ws 
             || Math.abs(y - y2) > ws 
             || Math.abs(z - z2) > ws;
@@ -69,8 +67,6 @@ public class FmmBox {
      * boxes separating them.
      */
     public global safe def wellSeparated(ws : Int, box2 : FmmBox) : Boolean {
-        if (level < 2)
-            return false;
         return Math.abs(x - box2.x) > ws 
             || Math.abs(y - box2.y) > ws 
             || Math.abs(z - box2.z) > ws;

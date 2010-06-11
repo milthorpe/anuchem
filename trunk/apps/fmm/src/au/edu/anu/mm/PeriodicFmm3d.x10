@@ -32,6 +32,11 @@ public class PeriodicFmm3d extends Fmm3d {
 
     global val lowestLevelBoxes : PeriodicDistArray[FmmBox](3);
 
+    /**
+     * An array of locally essential trees (LETs), one for each place.
+     */
+    protected global val locallyEssentialTrees : DistArray[LocallyEssentialTree](1);
+
     public const TIMER_INDEX_MACROSCOPIC : Int = 7;
     /** 
      * A multi-timer for the several segments of a single getEnergy 
@@ -64,10 +69,13 @@ public class PeriodicFmm3d extends Fmm3d {
         // Periodic FMM always uses ws = 1
         // TODO is it possible to formulate for well-spaced > 1?
         super(density, numTerms, 1, topLeftFront, size, numAtoms, atoms);
+        timer.start(TIMER_INDEX_TREE);
         val boxes = constructTree();
         this.boxes = boxes;
         this.lowestLevelBoxes = boxes(numLevels);
         this.numShells = numShells;
+        this.locallyEssentialTrees = createLocallyEssentialTrees();
+        timer.stop(TIMER_INDEX_TREE);
     }
 
     public global def getTopLevel() : Int = 0;
@@ -100,7 +108,7 @@ public class PeriodicFmm3d extends Fmm3d {
             // "shell 0" is the unit cell itself
             macroMultipoles(p, 0) = topLevelBox.multipoleExp;
             for (var shell: Int = 1; shell < numShells; shell++) {
-                val sideLength = size * Math.pow(3.0, shell);
+                val sideLength = size * Math.pow(3.0, shell-1);
                 //Console.OUT.println("shell = " + shell + ", sidelength = " + sideLength);
                 macroMultipoles(p, shell) = new MultipoleExpansion(numTerms);
                 for ((i,j,k) in threeCube) {
@@ -231,7 +239,6 @@ public class PeriodicFmm3d extends Fmm3d {
      * well-separated from the parent of <code>box</code>.
      */
     private global def createVList(box : FmmBox!) {
-        val levelDim = Math.pow2(box.level);
         val xOffset = box.x%2 == 1 ? -1 : 0;
         val yOffset = box.y%2 == 1 ? -1 : 0;
         val zOffset = box.z%2 == 1 ? -1 : 0;
@@ -249,6 +256,26 @@ public class PeriodicFmm3d extends Fmm3d {
     }
 
     /**
+     * "Pre-fetches" the multipole copies for the V-List of the locally
+     * essential tree at each place, using futures.
+     */
+    protected def prefetchMultipoles() {
+        finish ateach (p1 in locallyEssentialTrees) {
+            val myLET = locallyEssentialTrees(p1) as LocallyEssentialTree!;
+            val combinedVList = myLET.combinedVList;
+            for ((level) in getTopLevel()..numLevels) {
+                val thisLevelCopies = myLET.multipoleCopies(level);
+                val thisLevelBoxes = boxes(level);
+                for ((x,y,z) in combinedVList(level)) {
+                    if (thisLevelCopies(x,y,z) == null) {
+                        thisLevelCopies(x,y,z) = future {getMultipoleExpansionLocalCopy(thisLevelBoxes,x,y,z)};
+                    }
+                }
+            }
+        }
+    }
+
+    /**
      * "Pre-fetches" the packed atoms for the U-List of the locally
      * essential tree at each place, using futures.
      */
@@ -262,7 +289,10 @@ public class PeriodicFmm3d extends Fmm3d {
         }
     }
 
-    // TODO shouldn't be necessary if DistArray, PeriodicDistArray can inherit from same class
+    //
+    // TODO all after this point shouldn't be necessary if DistArray, PeriodicDistArray can inherit from same class
+    //
+
     private global def getParentForChild(boxes : ValRail[PeriodicDistArray[FmmBox](3)], level : Int, x : Int, y : Int, z : Int) : FmmBox {
         if (level == getTopLevel())
             return null;
@@ -270,11 +300,78 @@ public class PeriodicFmm3d extends Fmm3d {
     }
 
     /**
+     * Creates the locally essential tree at each place.  This is
+     * later used to overlap remote retrieval of multipole expansion and
+     * particle data with other computation.
+     */
+    private def createLocallyEssentialTrees() : DistArray[LocallyEssentialTree](1) {
+        val locallyEssentialTrees = DistArray.make[LocallyEssentialTree](Dist.makeUnique(), (Point)=> null);
+        finish ateach ((p1) in locallyEssentialTrees) {
+            val uMin = Rail.make[Int](3, (Int) => Int.MAX_VALUE);
+            val uMax = Rail.make[Int](3, (Int) => Int.MIN_VALUE);
+            val combinedUSet = new HashSet[Point(3)]();
+            for ((x,y,z) in lowestLevelBoxes | here) {
+                val box1 = lowestLevelBoxes(x,y,z) as FmmLeafBox!;
+                if (box1 != null) {
+                    val uList = box1.getUList();
+                    for (boxIndex2 in uList) {
+                        if (combinedUSet.add(boxIndex2)) {
+                            for ((i) in 0..2) {
+                                uMin(i) = Math.min(uMin(i), boxIndex2(i));
+                                uMax(i) = Math.max(uMax(i), boxIndex2(i));        
+                            }
+                        }
+                    }
+                }
+            }
+            val uListMin = uMin as ValRail[Int](3);
+            val uListMax = uMax as ValRail[Int](3);
+            val combinedUList = combinedUSet.toValRail();
+
+            val combinedVList = Rail.make[ValRail[Point(3)]](numLevels+1);
+            val vListMin = Rail.make[ValRail[Int](3)](numLevels+1);
+            val vListMax = Rail.make[ValRail[Int](3)](numLevels+1);
+            for ((thisLevel) in getTopLevel()..numLevels) {
+                val vMin = Rail.make[Int](3, (Int) => Int.MAX_VALUE);
+                val vMax = Rail.make[Int](3, (Int) => Int.MIN_VALUE);
+                //Console.OUT.println("create combined V-list for level " + thisLevel + " at " + here);
+                val combinedVSet = new HashSet[Point(3)]();
+                val thisLevelBoxes = boxes(thisLevel);
+                for ((x,y,z) in thisLevelBoxes | here) {
+                    val box1 = thisLevelBoxes(x,y,z) as FmmBox!;
+                    if (box1 != null) {
+                        val vList = box1.getVList();
+                        for (boxIndex2 in vList) {
+                            if (combinedVSet.add(boxIndex2)) {
+                                for ((i) in 0..2) {
+                                    vMin(i) = Math.min(vMin(i), boxIndex2(i));
+                                    vMax(i) = Math.max(vMax(i), boxIndex2(i));        
+                                }
+                            }
+                        }
+                    }
+                }
+                //Console.OUT.println("done " + combinedVSet.size());
+                vListMin(thisLevel) = vMin as ValRail[Int](3);
+                vListMax(thisLevel) = vMax as ValRail[Int](3);
+                combinedVList(thisLevel) = combinedVSet.toValRail();
+            }
+            locallyEssentialTrees(p1) = new LocallyEssentialTree(combinedUList,
+                                                                 combinedVList as ValRail[ValRail[Point(3)]],
+                                                                 uListMin,
+                                                                 uListMax,
+                                                                 vListMin as ValRail[ValRail[Int]],
+                                                                 vListMax as ValRail[ValRail[Int]]);
+        }
+        return locallyEssentialTrees;
+    }
+
+    /**
      * TODO this is a workaround due to lack of Array copy facility - XTENLANG-787
      * @return a local copy at the current place of this box's multipole expansion
      */
     private global def getMultipoleExpansionLocalCopy(thisLevelBoxes : PeriodicDistArray[FmmBox](3), x : Int, y : Int, z : Int) : MultipoleExpansion! {
-        val data = at (thisLevelBoxes.dist(x,y,z)) {thisLevelBoxes(x,y,z) != null? Expansion.getData(numTerms, (thisLevelBoxes(x,y,z) as FmmBox!).multipoleExp) : null};
+        val data = at (thisLevelBoxes.periodicDist(x,y,z)) {thisLevelBoxes(x,y,z) != null? Expansion.getData(numTerms, (thisLevelBoxes(x,y,z) as FmmBox!).multipoleExp) : null};
         if (data != null) {
             return new MultipoleExpansion(numTerms, data);
         } else {
