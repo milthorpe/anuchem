@@ -187,10 +187,10 @@ public class PME {
 
         reciprocalEnergy = getReciprocalEnergy(Q, thetaRecConvQ);
 
-        //Console.OUT.println("directEnergy = " + directEnergy);
-        //Console.OUT.println("selfEnergy = " + selfEnergy);
+        Console.OUT.println("directEnergy = " + directEnergy);
+        Console.OUT.println("selfEnergy = " + selfEnergy);
         //Console.OUT.println("correctionEnergy = " + correctionEnergy);
-        //Console.OUT.println("reciprocalEnergy = " + reciprocalEnergy);
+        Console.OUT.println("reciprocalEnergy = " + reciprocalEnergy);
         val totalEnergy = directEnergy + reciprocalEnergy + (correctionEnergy + selfEnergy);
 
         timer.stop(TIMER_INDEX_TOTAL);
@@ -260,6 +260,7 @@ public class PME {
                             val otherSubCellLocation = subCells.periodicDist(i,j,k);
                             if (otherSubCellLocation == here) {
                                 val otherCell = subCells(i,j,k);
+                                // TODO reorder these loops?
                                 for ((thisAtom) in 0..thisCell.length()-1) {
                                     for ((otherAtom) in 0..otherCell.length()-1) {
                                         val imageLoc = otherCell(otherAtom).centre + translation;
@@ -311,13 +312,13 @@ public class PME {
             }
 
             // TODO this is slow because of lack of optimized atomic - XTENLANG-321
-            val myDirectEnergyFinal = 2.0 * myDirectEnergy;
+            val myDirectEnergyFinal = myDirectEnergy;
             at(this) {
                atomic directEnergy += myDirectEnergyFinal;
             }
         }
         
-        directEnergy = directEnergy / 2.0;
+        directEnergy = directEnergy;
         timer.stop(TIMER_INDEX_DIRECT);
         return directEnergy;
     }
@@ -364,7 +365,7 @@ public class PME {
             val thisCell = subCells(p);
             foreach (atom in thisCell) {
                 val q = atom.charge;
-                val u = getScaledFractionalCoordinates(Vector3d(atom.centre));
+                val u = getScaledFractionalCoordinates(atom.centre); // TODO general non-cubic
                 val u1c = Math.ceil(u.i) as Int;
                 val u2c = Math.ceil(u.j) as Int;
                 val u3c = Math.ceil(u.k) as Int;
@@ -429,7 +430,7 @@ public class PME {
             for ((k) in 0..(splineOrder-2)) {
                 sumK1 = sumK1 + bSpline(splineOrder, k+1) * Math.exp(2.0 * Math.PI * m1D * k / K1 * Complex.I);
             }
-            val b1 = (Math.exp(2.0 * Math.PI * (splineOrder - 1.0) * m1D / K1 * Complex.I) / sumK1).abs();
+            val b1 = (Math.exp(2.0 * Math.PI * (splineOrder-1) * m1D / K1 * Complex.I) / sumK1).abs();
 
             for (var m2 : Int = 0; m2 < gridSize(1); m2++) {
                 val m2D = m2 as Double;
@@ -437,7 +438,7 @@ public class PME {
                 for ((k) in 0..(splineOrder-2)) {
                     sumK2 = sumK2 + bSpline(splineOrder, k+1) * Math.exp(2.0 * Math.PI * m2D * k / K2 * Complex.I);
                 }
-                val b2 = (Math.exp(2.0 * Math.PI * (splineOrder - 1.0) * m2D / K2 * Complex.I) / sumK2).abs();
+                val b2 = (Math.exp(2.0 * Math.PI * (splineOrder-1) * m2D / K2 * Complex.I) / sumK2).abs();
                 
                 for (var m3 : Int = 0; m3 < gridSize(2); m3++) {
                     val m3D = m3 as Double;
@@ -447,7 +448,7 @@ public class PME {
                         for ((k) in 0..(splineOrder-2)) {
                             sumK3 = sumK3 + bSpline(splineOrder, k+1) * Math.exp(2.0 * Math.PI * m3D * k / K3 * Complex.I);
                         }
-                        val b3 = (Math.exp(2.0 * Math.PI * (splineOrder - 1.0) * m3D / K3 * Complex.I) / sumK3).abs();
+                        val b3 = (Math.exp(2.0 * Math.PI * (splineOrder-1) * m3D / K3 * Complex.I) / sumK3).abs();
                         B(m) = b1 * b1 * b2 * b2 * b3 * b3;
                     }
                     //Console.OUT.println("B(" + m1 + "," + m2 + "," + m3 + ") = " + B(m1,m2,m3));
@@ -525,9 +526,15 @@ public class PME {
             return 1.0 - Math.abs(u - 1.0);
         }
     }
+
+    /** Gets scaled fractional coordinate u as per Eq. 3.1 - cubic only */
+    public global safe def getScaledFractionalCoordinates(r : Point3d) : Vector3d {
+        return Vector3d(edgeReciprocals(0).i * gridSize(0) * r.i, edgeReciprocals(1).j * gridSize(1) * r.j, edgeReciprocals(2).k * gridSize(2) * r.k);
+    }
     
-    /** Gets scaled fractional coordinate u as per Eq. 3.1 */
+    /** Gets scaled fractional coordinate u as per Eq. 3.1 - general rectangular */
     public global safe def getScaledFractionalCoordinates(r : Vector3d) : Vector3d {
+        // this method allows general non-rectangular cells
         return Vector3d(edgeReciprocals(0).mul(gridSize(0)).dot(r), edgeReciprocals(1).mul(gridSize(1)).dot(r), edgeReciprocals(2).mul(gridSize(2)).dot(r));
     }
 
