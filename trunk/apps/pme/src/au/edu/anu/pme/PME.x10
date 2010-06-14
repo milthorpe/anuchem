@@ -260,10 +260,9 @@ public class PME {
                             val otherSubCellLocation = subCells.periodicDist(i,j,k);
                             if (otherSubCellLocation == here) {
                                 val otherCell = subCells(i,j,k);
-                                // TODO reorder these loops?
-                                for ((thisAtom) in 0..thisCell.length()-1) {
-                                    for ((otherAtom) in 0..otherCell.length()-1) {
-                                        val imageLoc = otherCell(otherAtom).centre + translation;
+                                for ((otherAtom) in 0..otherCell.length()-1) {
+                                    val imageLoc = otherCell(otherAtom).centre + translation;
+                                    for ((thisAtom) in 0..thisCell.length()-1) {
                                         val r = thisCell(thisAtom).centre.distance(imageLoc);
                                         if (r < cutoff) {
                                             val chargeProduct = thisCell(thisAtom).charge * otherCell(otherAtom).charge;
@@ -282,9 +281,9 @@ public class PME {
                                     otherCellPacked = at (subCells.periodicDist(otherCellIndex)) {getPackedAtomsForSubCell(otherCellIndex)};
                                     atomic {packedAtomsCache(here.id).put(otherCellIndex, otherCellPacked);}
                                 }
-                                for ((thisAtom) in 0..thisCell.length()-1) {
-                                    for ((otherAtom) in 0..otherCellPacked.length()-1) {
-                                        val imageLoc = otherCellPacked(otherAtom).centre + translation;
+                                for ((otherAtom) in 0..otherCellPacked.length()-1) {
+                                    val imageLoc = otherCellPacked(otherAtom).centre + translation;
+                                    for ((thisAtom) in 0..thisCell.length()-1) {
                                         val r = thisCell(thisAtom).centre.distance(imageLoc);
                                         if (r < cutoff) {
                                             val chargeProduct = thisCell(thisAtom).charge * otherCellPacked(otherAtom).charge;
