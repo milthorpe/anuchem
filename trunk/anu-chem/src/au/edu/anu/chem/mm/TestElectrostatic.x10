@@ -52,14 +52,14 @@ public class TestElectrostatic {
             val gridX = gridPoint / (gridSize * gridSize);
             val gridY = (gridPoint - (gridX * gridSize * gridSize)) / gridSize;
             val gridZ = gridPoint - (gridX * gridSize * gridSize) - (gridY * gridSize);
-            val x = clusterStart + (gridX + randomNoise()) * (sizeOfCentralCluster() / gridSize);
-            val y = clusterStart + (gridY + randomNoise()) * (sizeOfCentralCluster() / gridSize);
-            val z = clusterStart + (gridZ + randomNoise()) * (sizeOfCentralCluster() / gridSize);
+            val x = clusterStart + (gridX + 0.5 + randomNoise()) * (sizeOfCentralCluster() / gridSize);
+            val y = clusterStart + (gridY + 0.5 + randomNoise()) * (sizeOfCentralCluster() / gridSize);
+            val z = clusterStart + (gridZ + 0.5 + randomNoise()) * (sizeOfCentralCluster() / gridSize);
             val charge = i%2==0?1:-1;
             val p = getPlaceId(x, y, z);
             async (Place.places(p)) {
                 val atom = new MMAtom(Point3d(x, y, z), charge);
-                //Console.OUT.println(atom);
+                Console.OUT.println(atom);
                 atomic { (tempAtoms(p) as GrowableRail[MMAtom]!).add(atom); }
             }
             gridPoint++;
@@ -81,7 +81,7 @@ public class TestElectrostatic {
      * assigned grid point.
      */
     static def randomNoise() : Double {
-        return (at(R){R.nextDouble()}) * NOISE;
+        return ((at(R){R.nextDouble()}) - 0.5) * NOISE;
     }
 }
 

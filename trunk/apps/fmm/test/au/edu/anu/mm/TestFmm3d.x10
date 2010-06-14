@@ -11,7 +11,7 @@ import au.edu.anu.util.Timer;
  * @author milthorpe
  */
 public class TestFmm3d extends TestElectrostatic {
-    public global def sizeOfCentralCluster() : Double = 2.0;
+    public global def sizeOfCentralCluster() : Double = 80.0;
 
     public def this(numAtoms : Int) {
         super(numAtoms);
