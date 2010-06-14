@@ -11,9 +11,14 @@ import au.edu.anu.util.Timer;
  * conditions.  In addition to the interactions within the unit cell, 
  * the  unit cell interacts with 3^k * 3^k * 3^k copies of itself in 
  * concentric shells of increasingly coarse-grained aggregate cells.
+ *
  * @see Lambert, Darden & Board (1996). "A Multipole-Based Algorithm 
  *  for Efficient Calculation of Forces and Potentials in Macroscopic 
  *  Periodic Assemblies of Particles". J Comp Phys 126 274-285
+ *
+ * @see Kudin & Scuseria (1998). "A fast multipole method for Periodic 
+ * systems with arbitrary unit cell geometries". 
+ * Chem. Phys. Letters 283 61-68
  * @author milthorpe
  */
 public class PeriodicFmm3d extends Fmm3d {
@@ -49,6 +54,9 @@ public class PeriodicFmm3d extends Fmm3d {
 
     /** A region representing a cube of 9x9x9 boxes, used for interacting with macroscopic multipoles. */
     global val nineCube : Region(3) = [-4..4,-4..4,-4..4] as Region(3);
+
+    /** The net dipole moment of the unit cell. */
+    var dipole : Vector3d = Vector3d.NULL;
 
     /**
      * Initialises a periodic fast multipole method electrostatics 
@@ -138,6 +146,92 @@ public class PeriodicFmm3d extends Fmm3d {
             //Console.OUT.println("final for topLevel = " + topLevelBox.localExp);
         }
         timer.stop(TIMER_INDEX_MACROSCOPIC);
+    }
+
+    /** 
+     * For each atom, creates the multipole expansion and adds it to the
+     * lowest level box that contains the atom.
+     */
+    def multipoleLowestLevel() {
+        //Console.OUT.println("multipole lowest level");
+        timer.start(TIMER_INDEX_MULTIPOLE);
+        //finish ateach (p1 in atoms) {
+        finish ateach (p1 in atoms) {
+            var myDipole : Vector3d = Vector3d.NULL;
+            val localAtoms = atoms(p1);
+            for ((i) in 0..localAtoms.length-1) {
+                val atom = localAtoms(i) as MMAtom!;
+                val charge = atom.charge;
+                val offsetCentre = atom.centre + offset;
+                myDipole = myDipole + Vector3d(offsetCentre) * charge;
+                val boxIndex = getLowestLevelBoxIndex(offsetCentre);
+                async(lowestLevelBoxes.dist(boxIndex)) {
+                    val remoteAtom = new MMAtom(offsetCentre, charge);
+                    val leafBox = lowestLevelBoxes(boxIndex) as FmmLeafBox!;
+                    val boxLocation = leafBox.getCentre(size).vector(remoteAtom.centre);
+                    val atomExpansion = MultipoleExpansion.getOlm(remoteAtom.charge, boxLocation, numTerms);
+                    atomic {
+                        leafBox.atoms.add(remoteAtom);
+                        leafBox.multipoleExp.add(atomExpansion);
+                    }
+                }
+            }
+            val myDipoleFinal = myDipole;
+            at (this) { atomic { dipole = dipole + myDipoleFinal; } }
+        }
+
+        Console.OUT.println("dipole = " + dipole);
+
+        val newDipole = cancelDipole(dipole);
+    
+        Console.OUT.println("after cancelling, dipole = " + newDipole);               
+
+        // post-prune leaf boxes
+        // TODO prune intermediate empty boxes as well
+        finish ateach (boxIndex in lowestLevelBoxes) {
+            val box = lowestLevelBoxes(boxIndex) as FmmLeafBox!;
+            if (box.atoms.length() == 0) {
+                lowestLevelBoxes(boxIndex) = null;
+            }
+        }
+
+
+        timer.stop(TIMER_INDEX_MULTIPOLE);
+    }
+
+    /** 
+     * Add fictious charges to the corners of the unit cell 
+     * to cancel the dipole moment.
+     */
+    def cancelDipole(dipole : Vector3d) : Vector3d {
+        var newDipole : Vector3d = dipole;
+        val fictiousCharges = Rail.make[Pair[Point3d,Double]](4);
+        val q1 = dipole.i * -size;
+        val q2 = dipole.j * -size;
+        val q3 = dipole.k * -size;
+        val q0 = -(q1 + q2 + q3);
+        // "corner" dimension: to avoid going over the boundary of the unit cell
+        val cnr = size - /*Double.MIN_NORMAL * 2*/ 0.0000001 * size; // TODO use Double.previous() ??
+        fictiousCharges(0) = Pair[Point3d,Double](Point3d(0.0, 0.0, 0.0) + offset, q0);
+        fictiousCharges(1) = Pair[Point3d,Double](Point3d(cnr, 0.0, 0.0) + offset, q1);
+        fictiousCharges(2) = Pair[Point3d,Double](Point3d(0.0, cnr, 0.0) + offset, q2);
+        fictiousCharges(3) = Pair[Point3d,Double](Point3d(0.0, 0.0, cnr) + offset, q3);
+        for (charge in fictiousCharges) {
+            val boxIndex = getLowestLevelBoxIndex(charge.first);
+            Console.OUT.println("charge " + charge.first + " => " + boxIndex);
+            at(lowestLevelBoxes.dist(boxIndex)) {
+                val remoteAtom = new MMAtom(charge.first, charge.second);
+                val leafBox = lowestLevelBoxes(boxIndex) as FmmLeafBox!;
+                val boxLocation = leafBox.getCentre(size).vector(remoteAtom.centre);
+                val atomExpansion = MultipoleExpansion.getOlm(remoteAtom.charge, boxLocation, numTerms);
+                atomic {
+                    leafBox.atoms.add(remoteAtom);
+                    leafBox.multipoleExp.add(atomExpansion);
+                }
+            }
+            newDipole = newDipole + Vector3d(charge.first) * charge.second;
+        }
+        return newDipole; 
     }
 
     /**
@@ -386,45 +480,6 @@ public class PeriodicFmm3d extends Fmm3d {
         } else {
             return null;
         }
-    }
-
-    /** 
-     * For each atom, creates the multipole expansion and adds it to the
-     * lowest level box that contains the atom.
-     */
-    def multipoleLowestLevel() {
-        //Console.OUT.println("multipole lowest level");
-        timer.start(TIMER_INDEX_MULTIPOLE);
-        //finish ateach (p1 in atoms) {
-        finish ateach (p1 in atoms) {
-            val localAtoms = atoms(p1);
-            foreach ((i) in 0..localAtoms.length-1) {
-                val atom = localAtoms(i) as MMAtom!;
-                val charge = atom.charge;
-                val offsetCentre = atom.centre + offset;
-                val boxIndex = getLowestLevelBoxIndex(offsetCentre);
-                async(lowestLevelBoxes.dist(boxIndex)) {
-                    val remoteAtom = new MMAtom(offsetCentre, charge);
-                    val leafBox = lowestLevelBoxes(boxIndex) as FmmLeafBox!;
-                    val boxLocation = leafBox.getCentre(size).vector(remoteAtom.centre);
-                    val atomExpansion = MultipoleExpansion.getOlm(remoteAtom.charge, boxLocation, numTerms);
-                    atomic {
-                        leafBox.atoms.add(remoteAtom);
-                        leafBox.multipoleExp.add(atomExpansion);
-                    }
-                }
-            }
-        }
-        // post-prune leaf boxes
-        // TODO prune intermediate empty boxes as well
-        finish ateach (boxIndex in lowestLevelBoxes) {
-            val box = lowestLevelBoxes(boxIndex) as FmmLeafBox!;
-            if (box.atoms.length() == 0) {
-                lowestLevelBoxes(boxIndex) = null;
-            }
-        }
-
-        timer.stop(TIMER_INDEX_MULTIPOLE);
     }
 
     /** 
