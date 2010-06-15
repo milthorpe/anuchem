@@ -114,6 +114,23 @@ public class MultipoleExpansion extends Expansion {
     }
 
     /**
+     * For a periodic FMM, gets the macroscopic parent multipole
+     * for the 3x3x3 box that is the parent of the box for which
+     * this is the multipole expansion.
+     * Uses the self similarity relation
+     * M^(j+1)_(lm) = M^j_(lm) * 3^l
+     * @see Kudin & Scuseria (1998) eq. 2.5
+     */ 
+    public def getMacroscopicParent() : MultipoleExpansion! {
+        val p : Int = terms.region.max(0);
+        val parentExpansion = new MultipoleExpansion(p);
+        for ((l,m) in terms.region) {
+            parentExpansion.terms(l,m) = terms(l,m) * Math.pow(3, l);
+        }
+        return parentExpansion;
+    }
+
+    /**
      * TODO this should not be necessary once XTENLANG-787 is resolved
      * @return a local copy of a multipole expansion from another place
      */

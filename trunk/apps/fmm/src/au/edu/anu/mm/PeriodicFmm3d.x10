@@ -109,28 +109,37 @@ public class PeriodicFmm3d extends Fmm3d {
     def combineMacroscopicExpansions() {
         timer.start(TIMER_INDEX_MACROSCOPIC);
         // TODO distributed impl.
-         val macroMultipoles = DistArray.make[MultipoleExpansion](Dist.makeBlock([0..Place.MAX_PLACES-1,0..numShells-1],0));
+        val macroMultipoles = DistArray.make[MultipoleExpansion](Dist.makeBlock([0..Place.MAX_PLACES-1,0..numShells],0));
         finish ateach ((p) : Point in Dist.makeUnique(Place.places)) {
             //Console.OUT.println("shells at " + p + " top level = " + getTopLevel());
             val topLevelBox = boxes(0)(0,0,0) as FmmBox!;
             // "shell 0" is the unit cell itself
             macroMultipoles(p, 0) = topLevelBox.multipoleExp;
-            for (var shell: Int = 1; shell < numShells; shell++) {
-                val sideLength = size * Math.pow(3.0, shell-1);
-                //Console.OUT.println("shell = " + shell + ", sidelength = " + sideLength);
+
+            var macroTranslation : MultipoleExpansion! = new MultipoleExpansion(numTerms);
+
+            // multipoles for shell 1
+            for ((i,j,k) in threeCube) {
+                val translationVector = Vector3d(i * size,
+                                                 j * size,
+                                                 k * size);
+                val translation = MultipoleExpansion.getOlm(translationVector, numTerms);
+                macroTranslation.add(translation);
+            }
+            macroMultipoles(p, 1) = new MultipoleExpansion(numTerms);
+            macroMultipoles(p, 1).translateAndAddMultipole(macroTranslation, macroMultipoles(p, 0));
+            //Console.OUT.println("final for 1 = " + macroMultipoles(p, 1));
+
+            // remaining shells
+            for (var shell: Int = 2; shell <= numShells; shell++) {
+                macroTranslation = macroTranslation.getMacroscopicParent();
                 macroMultipoles(p, shell) = new MultipoleExpansion(numTerms);
-                for ((i,j,k) in threeCube) {
-                    val translationVector = Vector3d(i * sideLength,
-                                                     j * sideLength,
-                                                     k * sideLength);
-                    val translation = MultipoleExpansion.getOlm(translationVector, numTerms);
-                    macroMultipoles(p, shell).translateAndAddMultipole(translation, macroMultipoles(p, shell-1));
-                }
+                macroMultipoles(p, shell).translateAndAddMultipole(macroTranslation, macroMultipoles(p, shell-1));
                 //Console.OUT.println("final for " + shell + " = " + macroMultipoles(p, shell));
             }
 
             // now transform and add macroscopic multipoles to local expansion for top level box
-            for (var shell: Int = 0; shell < numShells; shell++) {
+            for (var shell: Int = 0; shell <= numShells; shell++) {
                 val sideLength = size * Math.pow(3.0, shell);
                 for ((i,j,k) in nineCube) {
                     if (Math.abs(i) > 1 || Math.abs(j) > 1 || Math.abs(k) > 1) {
