@@ -1,0 +1,1628 @@
+NOTE: the input file is expected to be in ** a.u. ** units
+PumjaRasaayani shunya.tri, Quantum Chemisty program in x10, v0.3
+
+Input deck:
+H -3.541272095108712 4.997656298524207 -8.191187652956176
+H -3.091614428151677 2.134595378244799 -9.817225249878167
+C -4.141016608418394 3.037528439494558 -8.308295746490057
+H -4.450610884316104 -0.251029095054223 -5.97896874675549
+H -4.728502349815042 2.589387348885339 -4.294849764354167
+C -3.688973738957259 1.64800926901617 -5.794374503446104
+H -0.147096519761183 3.483789392963662 -4.926331393581285
+H 0.201564447362748 0.686016663455152 -6.630137930606248
+C -0.852206614414503 1.552257212077268 -5.091253108045277
+C -0.263882994782091 0.146039500963033 -2.580916029669636
+H 3.717291675568331 -0.390261466071338 -3.420172863628078
+H 3.067271237815167 2.455671048342139 -1.876114185985597
+C 2.589030433692422 0.452812853621613 -1.924849248078759
+H 2.583603857050807 -2.681815438094097 0.663629650375859
+H 2.200243678979369 0.240166485204204 2.124406408466254
+C 3.243962611517051 -0.746973051596038 0.658274194705627
+H 7.207423243492879 -1.58006965095505 -0.144159760854348
+H 6.719445243359911 1.222216659217464 1.549081293228879
+C 6.083883001817918 -0.730683485080508 1.371447558530341
+H 5.490693602517734 -1.238338523511994 5.363778211509417
+C 6.605273147173292 -2.162415577849267 3.891490997123428
+H 3.720667017389177 -5.063676486561723 3.359692087770905
+H 6.013104933687077 -5.888977493033994 5.550325341307184
+H 6.729044329691184 -5.988348797215195 2.311873814599974
+C 5.718241965515078 -4.950587036692236 3.763946959474542
+H 10.603080681677721 -2.787338818927642 3.169456190357365
+H 9.955645126025903 0.067309316020587 4.70327932497947
+C 9.434562620313454 -1.927372400768935 4.635007345691081
+H 9.375401815224116 -5.073265661469161 7.245987462626087
+H 8.977294412453944 -2.138112174559593 8.682997442915541
+C 10.024741026600829 -3.127704919244083 7.223305318567101
+H 13.995908148993347 -3.928582248926466 6.434122674755828
+H 13.479101931619542 -1.132836147927666 8.122359508412337
+C 12.853197688427517 -3.088060576011018 7.933875432531813
+H 12.324253443371635 -3.577362399874136 11.941560979379947
+C 13.395797353874919 -4.5013592396896 10.445399465374795
+H 17.390599184898548 -5.211111043153205 9.694326888330306
+H 16.586437072277185 -5.215530455747678 12.926291242724401
+H 16.788952520652774 -2.337287745035031 11.254969209945772
+C 16.224814272969706 -4.304968102222414 11.120820816185548
+H 13.412874855436028 -8.295522063740641 8.791966839432147
+H 10.511774817396155 -7.447450995975475 10.177330688223599
+H 13.078751497423314 -8.25724706112273 12.099437258112612
+C 12.546019390544425 -7.303907715138869 10.364668208198951
+H -1.354303955865962 1.03351822000185 -1.070283699863166
+H -3.029081179136294 -2.886476250242659 -3.144351679687113
+H -0.761473103348112 -3.555089253557042 -0.844899803122912
+H 0.066489042283151 -3.701819686529198 -4.056149910228895
+C -1.03702740846879 -2.669486867073009 -2.683068425067654
+H -6.139873578023818 2.99541695920699 -8.795425305196932
+
+Number of atoms: 50
+Detected rings: 
+Number of bonds for atom 0 is 1
+Processing 0
+Merging 0 and 2 ...
+Done processing 0
+Number of bonds for atom 1 is 1
+Processing 0
+Merging 1 and 2 ...
+Done processing 0
+Number of bonds for atom 3 is 1
+Processing 0
+Merging 3 and 5 ...
+Done processing 0
+Number of bonds for atom 4 is 1
+Processing 0
+Merging 4 and 5 ...
+Done processing 0
+Number of bonds for atom 6 is 1
+Processing 0
+Merging 6 and 8 ...
+Done processing 0
+Number of bonds for atom 7 is 1
+Processing 0
+Merging 7 and 8 ...
+Done processing 0
+Number of bonds for atom 9 is 4
+Processing 0
+Merging 9 and 48 ...
+Done processing 0
+Processing 1
+Merging 9 and 44 ...
+Done processing 1
+Processing 2
+Merging 9 and 12 ...
+Done processing 2
+Processing 3
+Merging 9 and 8 ...
+Done processing 3
+Number of bonds for atom 10 is 1
+Processing 0
+Merging 10 and 12 ...
+Done processing 0
+Number of bonds for atom 11 is 1
+Processing 0
+Merging 11 and 12 ...
+Done processing 0
+Number of bonds for atom 13 is 1
+Processing 0
+Merging 13 and 15 ...
+Done processing 0
+Number of bonds for atom 14 is 1
+Processing 0
+Merging 14 and 15 ...
+Done processing 0
+Number of bonds for atom 16 is 1
+Processing 0
+Merging 16 and 18 ...
+Done processing 0
+Number of bonds for atom 17 is 1
+Processing 0
+Merging 17 and 18 ...
+Done processing 0
+Number of bonds for atom 19 is 1
+Processing 0
+Merging 19 and 20 ...
+Done processing 0
+Number of bonds for atom 21 is 1
+Processing 0
+Merging 21 and 24 ...
+Done processing 0
+Number of bonds for atom 22 is 1
+Processing 0
+Merging 22 and 24 ...
+Done processing 0
+Number of bonds for atom 23 is 1
+Processing 0
+Merging 23 and 24 ...
+Done processing 0
+Number of bonds for atom 25 is 1
+Processing 0
+Merging 25 and 27 ...
+Done processing 0
+Number of bonds for atom 26 is 1
+Processing 0
+Merging 26 and 27 ...
+Done processing 0
+Number of bonds for atom 28 is 1
+Processing 0
+Merging 28 and 30 ...
+Done processing 0
+Number of bonds for atom 29 is 1
+Processing 0
+Merging 29 and 30 ...
+Done processing 0
+Number of bonds for atom 31 is 1
+Processing 0
+Merging 31 and 33 ...
+Done processing 0
+Number of bonds for atom 32 is 1
+Processing 0
+Merging 32 and 33 ...
+Done processing 0
+Number of bonds for atom 34 is 1
+Processing 0
+Merging 34 and 35 ...
+Done processing 0
+Number of bonds for atom 36 is 1
+Processing 0
+Merging 36 and 39 ...
+Done processing 0
+Number of bonds for atom 37 is 1
+Processing 0
+Merging 37 and 39 ...
+Done processing 0
+Number of bonds for atom 38 is 1
+Processing 0
+Merging 38 and 39 ...
+Done processing 0
+Number of bonds for atom 40 is 1
+Processing 0
+Merging 40 and 43 ...
+Done processing 0
+Number of bonds for atom 41 is 1
+Processing 0
+Merging 41 and 43 ...
+Done processing 0
+Number of bonds for atom 42 is 1
+Processing 0
+Merging 42 and 43 ...
+Done processing 0
+Number of bonds for atom 45 is 1
+Processing 0
+Merging 45 and 48 ...
+Done processing 0
+Number of bonds for atom 46 is 1
+Processing 0
+Merging 46 and 48 ...
+Done processing 0
+Number of bonds for atom 47 is 1
+Processing 0
+Merging 47 and 48 ...
+Done processing 0
+Number of bonds for atom 49 is 1
+Processing 0
+Merging 49 and 2 ...
+Done processing 0
+No. of cardinality fragments: 3
+Adding dummy atoms ...
+Number of final fragments: 5
+Fragment # 0 : 30, 32 [1]
+C 5.718241965515078 -4.950587036692236 3.763946959474542
+H 2.583603857050807 -2.681815438094097 0.663629650375859
+H 7.207423243492879 -1.58006965095505 -0.144159760854348
+C 6.083883001817918 -0.730683485080508 1.371447558530341
+H 5.490693602517734 -1.238338523511994 5.363778211509417
+C 6.605273147173292 -2.162415577849267 3.891490997123428
+H 3.720667017389177 -5.063676486561723 3.359692087770905
+H 6.013104933687077 -5.888977493033994 5.550325341307184
+H 6.729044329691184 -5.988348797215195 2.311873814599974
+H 10.603080681677721 -2.787338818927642 3.169456190357365
+C 9.434562620313454 -1.927372400768935 4.635007345691081
+H 9.375401815224116 -5.073265661469161 7.245987462626087
+H 2.200243678979369 0.240166485204204 2.124406408466254
+C 3.243962611517051 -0.746973051596038 0.658274194705627
+H 6.719445243359911 1.222216659217464 1.549081293228879
+H 9.955645126025903 0.067309316020587 4.70327932497947
+H 8.977294412453944 -2.138112174559593 8.682997442915541
+C 10.024741026600829 -3.127704919244083 7.223305318567101
+H 3.717291675568331 -0.390261466071338 -3.420172863628078
+H 3.067271237815167 2.455671048342139 -1.876114185985597
+C 2.589030433692422 0.452812853621613 -1.924849248078759
+C -0.263882994782091 0.146039500963033 -2.580916029669636
+H -1.354303955865962 1.03351822000185 -1.070283699863166
+H -0.761473103348112 -3.555089253557042 -0.844899803122912
+H 0.066489042283151 -3.701819686529198 -4.056149910228895
+C -1.03702740846879 -2.669486867073009 -2.683068425067654
+H -0.147096519761183 3.483789392963662 -4.926331393581285
+C -0.852206614414503 1.552257212077268 -5.091253108045277
+H -3.029081179136294 -2.886476250242659 -3.144351679687113
+H 0.201564447362748 0.686016663455152 -6.630137930606248
+H 11.857321877195105 -3.102019015965515 7.683689669308874
+H -2.685421093965301 1.614135416921263 -5.545633840174821
+
+Fragment # 1 : 25, 26 [1]
+H -3.091614428151677 2.134595378244799 -9.817225249878167
+H -3.541272095108712 4.997656298524207 -8.191187652956176
+C -4.141016608418394 3.037528439494558 -8.308295746490057
+H -4.450610884316104 -0.251029095054223 -5.97896874675549
+C -3.688973738957259 1.64800926901617 -5.794374503446104
+H 0.201564447362748 0.686016663455152 -6.630137930606248
+C -0.852206614414503 1.552257212077268 -5.091253108045277
+H -6.139873578023818 2.99541695920699 -8.795425305196932
+H -4.728502349815042 2.589387348885339 -4.294849764354167
+H -0.147096519761183 3.483789392963662 -4.926331393581285
+C -0.263882994782091 0.146039500963033 -2.580916029669636
+H -1.354303955865962 1.03351822000185 -1.070283699863166
+H 3.717291675568331 -0.390261466071338 -3.420172863628078
+C 2.589030433692422 0.452812853621613 -1.924849248078759
+H 0.066489042283151 -3.701819686529198 -4.056149910228895
+C -1.03702740846879 -2.669486867073009 -2.683068425067654
+H 3.067271237815167 2.455671048342139 -1.876114185985597
+H 2.583603857050807 -2.681815438094097 0.663629650375859
+C 3.243962611517051 -0.746973051596038 0.658274194705627
+H 7.207423243492879 -1.58006965095505 -0.144159760854348
+C 6.083883001817918 -0.730683485080508 1.371447558530341
+H -3.029081179136294 -2.886476250242659 -3.144351679687113
+H -0.761473103348112 -3.555089253557042 -0.844899803122912
+H 2.200243678979369 0.240166485204204 2.124406408466254
+H 6.719445243359911 1.222216659217464 1.549081293228879
+H 6.41845373577665 -1.649411353984557 2.988533708640267
+
+Fragment # 2 : 28, 29 [1]
+C 13.395797353874919 -4.5013592396896 10.445399465374795
+H 9.375401815224116 -5.073265661469161 7.245987462626087
+H 8.977294412453944 -2.138112174559593 8.682997442915541
+C 10.024741026600829 -3.127704919244083 7.223305318567101
+H 13.995908148993347 -3.928582248926466 6.434122674755828
+H 13.479101931619542 -1.132836147927666 8.122359508412337
+C 12.853197688427517 -3.088060576011018 7.933875432531813
+H 12.324253443371635 -3.577362399874136 11.941560979379947
+H 17.390599184898548 -5.211111043153205 9.694326888330306
+H 16.586437072277185 -5.215530455747678 12.926291242724401
+H 16.788952520652774 -2.337287745035031 11.254969209945772
+C 16.224814272969706 -4.304968102222414 11.120820816185548
+H 13.412874855436028 -8.295522063740641 8.791966839432147
+H 10.511774817396155 -7.447450995975475 10.177330688223599
+H 13.078751497423314 -8.25724706112273 12.099437258112612
+C 12.546019390544425 -7.303907715138869 10.364668208198951
+H 10.603080681677721 -2.787338818927642 3.169456190357365
+H 9.955645126025903 0.067309316020587 4.70327932497947
+C 9.434562620313454 -1.927372400768935 4.635007345691081
+H 5.490693602517734 -1.238338523511994 5.363778211509417
+C 6.605273147173292 -2.162415577849267 3.891490997123428
+H 6.013104933687077 -5.888977493033994 5.550325341307184
+C 5.718241965515078 -4.950587036692236 3.763946959474542
+H 7.207423243492879 -1.58006965095505 -0.144159760854348
+H 6.719445243359911 1.222216659217464 1.549081293228879
+C 6.083883001817918 -0.730683485080508 1.371447558530341
+H 6.729044329691184 -5.988348797215195 2.311873814599974
+H 3.720667017389177 -5.063676486561723 3.359692087770905
+H 4.251119007534326 -0.741196079410305 0.911195761555999
+
+Fragment # 3 : 18, 20 [-1]
+H 2.583603857050807 -2.681815438094097 0.663629650375859
+H 7.207423243492879 -1.58006965095505 -0.144159760854348
+C 6.083883001817918 -0.730683485080508 1.371447558530341
+H 2.200243678979369 0.240166485204204 2.124406408466254
+C 3.243962611517051 -0.746973051596038 0.658274194705627
+H 6.719445243359911 1.222216659217464 1.549081293228879
+H 3.717291675568331 -0.390261466071338 -3.420172863628078
+H 3.067271237815167 2.455671048342139 -1.876114185985597
+C 2.589030433692422 0.452812853621613 -1.924849248078759
+C -0.263882994782091 0.146039500963033 -2.580916029669636
+H -1.354303955865962 1.03351822000185 -1.070283699863166
+H -0.761473103348112 -3.555089253557042 -0.844899803122912
+H 0.066489042283151 -3.701819686529198 -4.056149910228895
+C -1.03702740846879 -2.669486867073009 -2.683068425067654
+H -0.147096519761183 3.483789392963662 -4.926331393581285
+C -0.852206614414503 1.552257212077268 -5.091253108045277
+H -3.029081179136294 -2.886476250242659 -3.144351679687113
+H 0.201564447362748 0.686016663455152 -6.630137930606248
+H 6.41845373577665 -1.649411353984557 2.988533708640267
+H -2.685421093965301 1.614135416921263 -5.545633840174821
+
+Fragment # 4 : 15, 17 [-1]
+C 5.718241965515078 -4.950587036692236 3.763946959474542
+H 7.207423243492879 -1.58006965095505 -0.144159760854348
+C 6.083883001817918 -0.730683485080508 1.371447558530341
+H 5.490693602517734 -1.238338523511994 5.363778211509417
+C 6.605273147173292 -2.162415577849267 3.891490997123428
+H 3.720667017389177 -5.063676486561723 3.359692087770905
+H 6.013104933687077 -5.888977493033994 5.550325341307184
+H 6.729044329691184 -5.988348797215195 2.311873814599974
+H 10.603080681677721 -2.787338818927642 3.169456190357365
+C 9.434562620313454 -1.927372400768935 4.635007345691081
+H 9.375401815224116 -5.073265661469161 7.245987462626087
+H 6.719445243359911 1.222216659217464 1.549081293228879
+H 9.955645126025903 0.067309316020587 4.70327932497947
+H 8.977294412453944 -2.138112174559593 8.682997442915541
+C 10.024741026600829 -3.127704919244083 7.223305318567101
+H 4.251119007534326 -0.741196079410305 0.911195761555999
+H 11.857321877195105 -3.102019015965515 7.683689669308874
+
+
+Fragment Input deck:
+C 5.718241965515078 -4.950587036692236 3.763946959474542
+H 2.583603857050807 -2.681815438094097 0.663629650375859
+H 7.207423243492879 -1.58006965095505 -0.144159760854348
+C 6.083883001817918 -0.730683485080508 1.371447558530341
+H 5.490693602517734 -1.238338523511994 5.363778211509417
+C 6.605273147173292 -2.162415577849267 3.891490997123428
+H 3.720667017389177 -5.063676486561723 3.359692087770905
+H 6.013104933687077 -5.888977493033994 5.550325341307184
+H 6.729044329691184 -5.988348797215195 2.311873814599974
+H 10.603080681677721 -2.787338818927642 3.169456190357365
+C 9.434562620313454 -1.927372400768935 4.635007345691081
+H 9.375401815224116 -5.073265661469161 7.245987462626087
+H 2.200243678979369 0.240166485204204 2.124406408466254
+C 3.243962611517051 -0.746973051596038 0.658274194705627
+H 6.719445243359911 1.222216659217464 1.549081293228879
+H 9.955645126025903 0.067309316020587 4.70327932497947
+H 8.977294412453944 -2.138112174559593 8.682997442915541
+C 10.024741026600829 -3.127704919244083 7.223305318567101
+H 3.717291675568331 -0.390261466071338 -3.420172863628078
+H 3.067271237815167 2.455671048342139 -1.876114185985597
+C 2.589030433692422 0.452812853621613 -1.924849248078759
+C -0.263882994782091 0.146039500963033 -2.580916029669636
+H -1.354303955865962 1.03351822000185 -1.070283699863166
+H -0.761473103348112 -3.555089253557042 -0.844899803122912
+H 0.066489042283151 -3.701819686529198 -4.056149910228895
+C -1.03702740846879 -2.669486867073009 -2.683068425067654
+H -0.147096519761183 3.483789392963662 -4.926331393581285
+C -0.852206614414503 1.552257212077268 -5.091253108045277
+H -3.029081179136294 -2.886476250242659 -3.144351679687113
+H 0.201564447362748 0.686016663455152 -6.630137930606248
+H 11.857321877195105 -3.102019015965515 7.683689669308874
+H -2.685421093965301 1.614135416921263 -5.545633840174821
+
+
+Setting up basis set: sto3g
+
+Using 72 basis functions.
+	Time for setting up basis functions: 0.003813093 seconds
+
+
+Computed one-electron integrals.
+	Time for computing 1E integrals: 5.63863287 seconds
+
+
+Number of 2E integrals: 3454506
+
+Computed two-electron integrals. If direct, this is skipped for now.
+Is Direct: true
+Nuclear repulsion energy = 553.710293255029796 a.u.
+    Initializing matrices ...
+    Forming initial guess ...
+    Starting RHF-SCF ... 
+   GMatrix.computeDirectNewMultiPlaceStatic: 9
+	No. of places: 4
+	No. of threads per place: 1
+	Time for setting up place(s) with initial data: 0.776957553 seconds
+	Works units per place: 8, 8, 8, 8,  
+	Time for actual computation: 174.007960472999997 seconds
+	Time for summing up GMatrix bits: 1.312247427 seconds
+    Time to construct GMatrix: 176.177280023999998 seconds
+    Time to construct Fock: 0.271799399 seconds
+    Time to form MOS: 0.273261633 seconds
+    Nuclear electron attraction energy = -865.241855146331432 a.u.
+    Electron repulsion energy = -11.792015271168029 a.u.
+Cycle #0 Total energy = -323.323577162469633
+   GMatrix.computeDirectNewMultiPlaceStatic: 9
+	No. of places: 4
+	No. of threads per place: 1
+	Time for setting up place(s) with initial data: 0.753031357 seconds
+	Works units per place: 8, 8, 8, 8,  
+	Time for actual computation: 175.309237300000007 seconds
+	Time for summing up GMatrix bits: 1.327911141 seconds
+    Time to construct GMatrix: 177.471435124999999 seconds
+    Time to construct Fock: 0.50915329 seconds
+    Time to form MOS: 0.38510813 seconds
+    Nuclear electron attraction energy = -754.56490612385403 a.u.
+    Electron repulsion energy = -108.181825198504484 a.u.
+Cycle #1 Total energy = -309.036438067328731
+   GMatrix.computeDirectNewMultiPlaceStatic: 9
+	No. of places: 4
+	No. of threads per place: 1
+	Time for setting up place(s) with initial data: 0.751497758 seconds
+	Works units per place: 8, 8, 8, 8,  
+	Time for actual computation: 175.999944416000005 seconds
+	Time for summing up GMatrix bits: 1.304003736 seconds
+    Time to construct GMatrix: 178.134597369999994 seconds
+    Time to construct Fock: 0.505120121 seconds
+    Time to form MOS: 0.262724483 seconds
+    Nuclear electron attraction energy = -846.655264943488987 a.u.
+    Electron repulsion energy = -107.916890405863356 a.u.
+Cycle #2 Total energy = -400.861862094322532
+   GMatrix.computeDirectNewMultiPlaceStatic: 9
+	No. of places: 4
+	No. of threads per place: 1
+	Time for setting up place(s) with initial data: 0.739655854 seconds
+	Works units per place: 8, 8, 8, 8,  
+	Time for actual computation: 177.968643154000006 seconds
+	Time for summing up GMatrix bits: 1.30918988 seconds
+    Time to construct GMatrix: 180.096831586000008 seconds
+    Time to construct Fock: 0.519080559 seconds
+    Time to form MOS: 0.269247095 seconds
+    Nuclear electron attraction energy = -810.79495005079275 a.u.
+    Electron repulsion energy = -103.968063284415322 a.u.
+Cycle #3 Total energy = -361.052720080178233
+   GMatrix.computeDirectNewMultiPlaceStatic: 9
+	No. of places: 4
+	No. of threads per place: 1
+	Time for setting up place(s) with initial data: 0.740258172 seconds
+	Works units per place: 8, 8, 8, 8,  
+	Time for actual computation: 176.60721181400001 seconds
+	Time for summing up GMatrix bits: 1.306126504 seconds
+    Time to construct GMatrix: 178.741171599000012 seconds
+    Time to construct Fock: 0.638779288 seconds
+    Time to form MOS: 0.472707281 seconds
+    Nuclear electron attraction energy = -763.987334531454849 a.u.
+    Electron repulsion energy = -102.172091548605238 a.u.
+Cycle #4 Total energy = -312.449132825030233
+   GMatrix.computeDirectNewMultiPlaceStatic: 9
+	No. of places: 4
+	No. of threads per place: 1
+	Time for setting up place(s) with initial data: 0.799446497 seconds
+	Works units per place: 8, 8, 8, 8,  
+	Time for actual computation: 172.783087375999997 seconds
+	Time for summing up GMatrix bits: 1.293915693 seconds
+    Time to construct GMatrix: 174.967135167000009 seconds
+    Time to construct Fock: 0.510237327 seconds
+    Time to form MOS: 0.265759969 seconds
+    Nuclear electron attraction energy = -844.025098534136418 a.u.
+    Electron repulsion energy = -109.751063749521819 a.u.
+Cycle #5 Total energy = -400.065869028628413
+   GMatrix.computeDirectNewMultiPlaceStatic: 9
+	No. of places: 4
+	No. of threads per place: 1
+	Time for setting up place(s) with initial data: 0.734709841 seconds
+	Works units per place: 8, 8, 8, 8,  
+	Time for actual computation: 173.83577524399999 seconds
+	Time for summing up GMatrix bits: 1.396541521 seconds
+    Time to construct GMatrix: 176.047010126999993 seconds
+Starting DIIS...
+    Time to construct Fock: 0.435190178 seconds
+    Time to form MOS: 0.272507386 seconds
+    Nuclear electron attraction energy = -809.374723485678828 a.u.
+    Electron repulsion energy = -131.065752011391226 a.u.
+Cycle #6 Total energy = -386.730182242040314
+   GMatrix.computeDirectNewMultiPlaceStatic: 9
+	No. of places: 4
+	No. of threads per place: 1
+	Time for setting up place(s) with initial data: 0.762383614 seconds
+	Works units per place: 8, 8, 8, 8,  
+	Time for actual computation: 174.479044313999992 seconds
+	Time for summing up GMatrix bits: 1.298171716 seconds
+    Time to construct GMatrix: 176.627292756000003 seconds
+    Time to construct Fock: 0.6676865 seconds
+    Time to form MOS: 0.265943632 seconds
+    Nuclear electron attraction energy = -811.361055156038788 a.u.
+    Electron repulsion energy = -129.260501491146329 a.u.
+Cycle #7 Total energy = -386.91126339215532
+   GMatrix.computeDirectNewMultiPlaceStatic: 9
+	No. of places: 4
+	No. of threads per place: 1
+	Time for setting up place(s) with initial data: 0.744810843 seconds
+	Works units per place: 8, 8, 8, 8,  
+	Time for actual computation: 178.020183290000006 seconds
+	Time for summing up GMatrix bits: 1.293350781 seconds
+    Time to construct GMatrix: 180.141571696 seconds
+    Time to construct Fock: 1.066788873 seconds
+    Time to form MOS: 0.26429188 seconds
+    Nuclear electron attraction energy = -811.057087423180064 a.u.
+    Electron repulsion energy = -129.574009437572414 a.u.
+Cycle #8 Total energy = -386.920803605722654
+   GMatrix.computeDirectNewMultiPlaceStatic: 9
+	No. of places: 4
+	No. of threads per place: 1
+	Time for setting up place(s) with initial data: 0.753197064 seconds
+	Works units per place: 8, 8, 8, 8,  
+	Time for actual computation: 174.930317855999988 seconds
+	Time for summing up GMatrix bits: 1.302642376 seconds
+    Time to construct GMatrix: 177.065243301999999 seconds
+    Time to construct Fock: 1.629445367 seconds
+    Time to form MOS: 0.267302651 seconds
+    Nuclear electron attraction energy = -811.108352267672672 a.u.
+    Electron repulsion energy = -129.523322931304961 a.u.
+Cycle #9 Total energy = -386.921381943947836
+   GMatrix.computeDirectNewMultiPlaceStatic: 9
+	No. of places: 4
+	No. of threads per place: 1
+	Time for setting up place(s) with initial data: 0.737860486 seconds
+	Works units per place: 8, 8, 8, 8,  
+	Time for actual computation: 175.114622572999991 seconds
+	Time for summing up GMatrix bits: 1.334456823 seconds
+    Time to construct GMatrix: 177.267424620000014 seconds
+    Time to construct Fock: 2.383357976 seconds
+    Time to form MOS: 0.257914241 seconds
+    Nuclear electron attraction energy = -811.100663599223139 a.u.
+    Electron repulsion energy = -129.531051639327814 a.u.
+Cycle #10 Total energy = -386.9214219835211
+   GMatrix.computeDirectNewMultiPlaceStatic: 9
+	No. of places: 4
+	No. of threads per place: 1
+	Time for setting up place(s) with initial data: 0.728512495 seconds
+	Works units per place: 8, 8, 8, 8,  
+	Time for actual computation: 173.595332065999997 seconds
+	Time for summing up GMatrix bits: 1.283405931 seconds
+    Time to construct GMatrix: 175.686665933 seconds
+    Time to construct Fock: 3.248652169 seconds
+    Time to form MOS: 0.265803888 seconds
+    Nuclear electron attraction energy = -811.102235405083206 a.u.
+    Electron repulsion energy = -129.529483022963689 a.u.
+Cycle #11 Total energy = -386.921425173017155
+SCF converged. Final SCF energy = -386.921425173017155 a.u.
+
+-End of SCF-
+
+Total time since start: 2162.730742608000128 seconds
+
+
+Fragment Input deck:
+H -3.091614428151677 2.134595378244799 -9.817225249878167
+H -3.541272095108712 4.997656298524207 -8.191187652956176
+C -4.141016608418394 3.037528439494558 -8.308295746490057
+H -4.450610884316104 -0.251029095054223 -5.97896874675549
+C -3.688973738957259 1.64800926901617 -5.794374503446104
+H 0.201564447362748 0.686016663455152 -6.630137930606248
+C -0.852206614414503 1.552257212077268 -5.091253108045277
+H -6.139873578023818 2.99541695920699 -8.795425305196932
+H -4.728502349815042 2.589387348885339 -4.294849764354167
+H -0.147096519761183 3.483789392963662 -4.926331393581285
+C -0.263882994782091 0.146039500963033 -2.580916029669636
+H -1.354303955865962 1.03351822000185 -1.070283699863166
+H 3.717291675568331 -0.390261466071338 -3.420172863628078
+C 2.589030433692422 0.452812853621613 -1.924849248078759
+H 0.066489042283151 -3.701819686529198 -4.056149910228895
+C -1.03702740846879 -2.669486867073009 -2.683068425067654
+H 3.067271237815167 2.455671048342139 -1.876114185985597
+H 2.583603857050807 -2.681815438094097 0.663629650375859
+C 3.243962611517051 -0.746973051596038 0.658274194705627
+H 7.207423243492879 -1.58006965095505 -0.144159760854348
+C 6.083883001817918 -0.730683485080508 1.371447558530341
+H -3.029081179136294 -2.886476250242659 -3.144351679687113
+H -0.761473103348112 -3.555089253557042 -0.844899803122912
+H 2.200243678979369 0.240166485204204 2.124406408466254
+H 6.719445243359911 1.222216659217464 1.549081293228879
+H 6.41845373577665 -1.649411353984557 2.988533708640267
+
+
+Setting up basis set: sto3g
+
+Using 58 basis functions.
+	Time for setting up basis functions: 0.003007775 seconds
+
+
+Computed one-electron integrals.
+	Time for computing 1E integrals: 3.018387415 seconds
+
+
+Number of 2E integrals: 1464616
+
+Computed two-electron integrals. If direct, this is skipped for now.
+Is Direct: true
+Nuclear repulsion energy = 391.793243933219912 a.u.
+    Initializing matrices ...
+    Forming initial guess ...
+    Starting RHF-SCF ... 
+   GMatrix.computeDirectNewMultiPlaceStatic: 9
+	No. of places: 4
+	No. of threads per place: 1
+	Time for setting up place(s) with initial data: 0.483916641 seconds
+	Works units per place: 7, 7, 6, 6,  
+	Time for actual computation: 63.483619271000002 seconds
+	Time for summing up GMatrix bits: 0.84382571 seconds
+    Time to construct GMatrix: 64.863189837999997 seconds
+    Time to construct Fock: 0.171987764 seconds
+    Time to form MOS: 0.17569195 seconds
+    Nuclear electron attraction energy = -640.816505133613873 a.u.
+    Electron repulsion energy = -7.205308322628083 a.u.
+Cycle #0 Total energy = -256.228569523022031
+   GMatrix.computeDirectNewMultiPlaceStatic: 9
+	No. of places: 4
+	No. of threads per place: 1
+	Time for setting up place(s) with initial data: 0.53800255 seconds
+	Works units per place: 7, 7, 6, 6,  
+	Time for actual computation: 62.898243725999997 seconds
+	Time for summing up GMatrix bits: 0.864188053 seconds
+    Time to construct GMatrix: 64.352599163999997 seconds
+    Time to construct Fock: 0.333430778 seconds
+    Time to form MOS: 0.168751633 seconds
+    Nuclear electron attraction energy = -553.361995892305572 a.u.
+    Electron repulsion energy = -94.951107782386117 a.u.
+Cycle #1 Total energy = -256.519859741471748
+   GMatrix.computeDirectNewMultiPlaceStatic: 9
+	No. of places: 4
+	No. of threads per place: 1
+	Time for setting up place(s) with initial data: 0.494834939 seconds
+	Works units per place: 7, 7, 6, 6,  
+	Time for actual computation: 62.732003691999999 seconds
+	Time for summing up GMatrix bits: 0.856840433 seconds
+    Time to construct GMatrix: 64.143328729000004 seconds
+    Time to construct Fock: 0.428595466 seconds
+    Time to form MOS: 0.21357653 seconds
+    Nuclear electron attraction energy = -623.899634923196913 a.u.
+    Electron repulsion energy = -87.59087956996801 a.u.
+Cycle #2 Total energy = -319.697270559945025
+   GMatrix.computeDirectNewMultiPlaceStatic: 9
+	No. of places: 4
+	No. of threads per place: 1
+	Time for setting up place(s) with initial data: 0.491206131 seconds
+	Works units per place: 7, 7, 6, 6,  
+	Time for actual computation: 62.711419995999997 seconds
+	Time for summing up GMatrix bits: 0.849426623 seconds
+    Time to construct GMatrix: 64.103975793000004 seconds
+    Time to construct Fock: 0.336175657 seconds
+    Time to form MOS: 0.17887823 seconds
+    Nuclear electron attraction energy = -596.98192186609117 a.u.
+    Electron repulsion energy = -84.474211472373227 a.u.
+Cycle #3 Total energy = -289.662889405244471
+   GMatrix.computeDirectNewMultiPlaceStatic: 9
+	No. of places: 4
+	No. of threads per place: 1
+	Time for setting up place(s) with initial data: 0.493856092 seconds
+	Works units per place: 7, 7, 6, 6,  
+	Time for actual computation: 63.288922556999999 seconds
+	Time for summing up GMatrix bits: 0.84646481 seconds
+    Time to construct GMatrix: 64.698239739000002 seconds
+    Time to construct Fock: 0.32800972 seconds
+    Time to form MOS: 0.172423164 seconds
+    Nuclear electron attraction energy = -564.860468825041039 a.u.
+    Electron repulsion energy = -83.82797786290395 a.u.
+Cycle #4 Total energy = -256.895202754725062
+   GMatrix.computeDirectNewMultiPlaceStatic: 9
+	No. of places: 4
+	No. of threads per place: 1
+	Time for setting up place(s) with initial data: 0.596070578 seconds
+	Works units per place: 7, 7, 6, 6,  
+	Time for actual computation: 63.065815487999998 seconds
+	Time for summing up GMatrix bits: 0.830015365 seconds
+    Time to construct GMatrix: 64.543880913999999 seconds
+    Time to construct Fock: 0.32572844 seconds
+    Time to form MOS: 0.179498742 seconds
+    Nuclear electron attraction energy = -618.08799438281676 a.u.
+    Electron repulsion energy = -84.480061539934638 a.u.
+Cycle #5 Total energy = -310.774811989531543
+   GMatrix.computeDirectNewMultiPlaceStatic: 9
+	No. of places: 4
+	No. of threads per place: 1
+	Time for setting up place(s) with initial data: 0.497983515 seconds
+	Works units per place: 7, 7, 6, 6,  
+	Time for actual computation: 63.181555662999997 seconds
+	Time for summing up GMatrix bits: 0.842089116 seconds
+    Time to construct GMatrix: 64.573781710000006 seconds
+    Time to construct Fock: 0.325896899 seconds
+    Time to form MOS: 0.179776867 seconds
+    Nuclear electron attraction energy = -594.982463352607738 a.u.
+    Electron repulsion energy = -89.080007521503163 a.u.
+Cycle #6 Total energy = -292.269226940890974
+   GMatrix.computeDirectNewMultiPlaceStatic: 9
+	No. of places: 4
+	No. of threads per place: 1
+	Time for setting up place(s) with initial data: 0.49733298 seconds
+	Works units per place: 7, 7, 6, 6,  
+	Time for actual computation: 64.506458495000004 seconds
+	Time for summing up GMatrix bits: 0.873348122 seconds
+    Time to construct GMatrix: 65.929179169999998 seconds
+    Time to construct Fock: 0.337257516 seconds
+    Time to form MOS: 0.169864545 seconds
+    Nuclear electron attraction energy = -566.069661087441091 a.u.
+    Electron repulsion energy = -79.719657468556946 a.u.
+Cycle #7 Total energy = -253.996074622778167
+   GMatrix.computeDirectNewMultiPlaceStatic: 9
+	No. of places: 4
+	No. of threads per place: 1
+	Time for setting up place(s) with initial data: 0.490773494 seconds
+	Works units per place: 7, 7, 6, 6,  
+	Time for actual computation: 63.627548785999998 seconds
+	Time for summing up GMatrix bits: 0.83101825 seconds
+    Time to construct GMatrix: 65.005647530000005 seconds
+    Time to construct Fock: 0.338765697 seconds
+    Time to form MOS: 0.170049126 seconds
+    Nuclear electron attraction energy = -617.328551357693755 a.u.
+    Electron repulsion energy = -84.606988807494744 a.u.
+Cycle #8 Total energy = -310.142296231968601
+   GMatrix.computeDirectNewMultiPlaceStatic: 9
+	No. of places: 4
+	No. of threads per place: 1
+	Time for setting up place(s) with initial data: 0.53102633 seconds
+	Works units per place: 7, 7, 6, 6,  
+	Time for actual computation: 65.208369809999994 seconds
+	Time for summing up GMatrix bits: 0.857181414 seconds
+    Time to construct GMatrix: 66.648511732000003 seconds
+    Time to construct Fock: 0.325657414 seconds
+    Time to form MOS: 0.174440419 seconds
+    Nuclear electron attraction energy = -595.864114100122265 a.u.
+    Electron repulsion energy = -88.861317431586698 a.u.
+Cycle #9 Total energy = -292.932187598489065
+   GMatrix.computeDirectNewMultiPlaceStatic: 9
+	No. of places: 4
+	No. of threads per place: 1
+	Time for setting up place(s) with initial data: 0.487969741 seconds
+	Works units per place: 7, 7, 6, 6,  
+	Time for actual computation: 63.255412024999998 seconds
+	Time for summing up GMatrix bits: 0.838842078 seconds
+    Time to construct GMatrix: 64.634298002999998 seconds
+    Time to construct Fock: 0.343571016 seconds
+    Time to form MOS: 0.170059178 seconds
+    Nuclear electron attraction energy = -565.564247690521825 a.u.
+    Electron repulsion energy = -76.949074990875474 a.u.
+Cycle #10 Total energy = -250.7200787481774
+   GMatrix.computeDirectNewMultiPlaceStatic: 9
+	No. of places: 4
+	No. of threads per place: 1
+	Time for setting up place(s) with initial data: 0.71842141 seconds
+	Works units per place: 7, 7, 6, 6,  
+	Time for actual computation: 64.357209159000007 seconds
+	Time for summing up GMatrix bits: 0.840307036 seconds
+    Time to construct GMatrix: 65.969078987000003 seconds
+    Time to construct Fock: 0.326436801 seconds
+    Time to form MOS: 0.179926536 seconds
+    Nuclear electron attraction energy = -617.481734488645657 a.u.
+    Electron repulsion energy = -85.90258590802226 a.u.
+Cycle #11 Total energy = -311.591076463448019
+   GMatrix.computeDirectNewMultiPlaceStatic: 9
+	No. of places: 4
+	No. of threads per place: 1
+	Time for setting up place(s) with initial data: 0.494815345 seconds
+	Works units per place: 7, 7, 6, 6,  
+	Time for actual computation: 62.697095451999999 seconds
+	Time for summing up GMatrix bits: 0.979885464 seconds
+    Time to construct GMatrix: 64.223964434999999 seconds
+    Time to construct Fock: 0.409719362 seconds
+    Time to form MOS: 0.203334496 seconds
+    Nuclear electron attraction energy = -596.973063305756455 a.u.
+    Electron repulsion energy = -88.250472197070124 a.u.
+Cycle #12 Total energy = -293.430291569606709
+   GMatrix.computeDirectNewMultiPlaceStatic: 9
+	No. of places: 4
+	No. of threads per place: 1
+	Time for setting up place(s) with initial data: 0.559858041 seconds
+	Works units per place: 7, 7, 6, 6,  
+	Time for actual computation: 63.713060701000003 seconds
+	Time for summing up GMatrix bits: 0.991434701 seconds
+    Time to construct GMatrix: 65.317445219999996 seconds
+    Time to construct Fock: 0.336766783 seconds
+    Time to form MOS: 0.168678904 seconds
+    Nuclear electron attraction energy = -566.392166787842029 a.u.
+    Electron repulsion energy = -75.588256448566796 a.u.
+Cycle #13 Total energy = -250.187179303188884
+   GMatrix.computeDirectNewMultiPlaceStatic: 9
+	No. of places: 4
+	No. of threads per place: 1
+	Time for setting up place(s) with initial data: 0.521256159 seconds
+	Works units per place: 7, 7, 6, 6,  
+	Time for actual computation: 62.685920676999999 seconds
+	Time for summing up GMatrix bits: 0.841710679 seconds
+    Time to construct GMatrix: 64.101181010999994 seconds
+    Time to construct Fock: 0.337573225 seconds
+    Time to form MOS: 0.169872849 seconds
+    Nuclear electron attraction energy = -617.255724096778863 a.u.
+    Electron repulsion energy = -87.587205977899444 a.u.
+Cycle #14 Total energy = -313.04968614145838
+   GMatrix.computeDirectNewMultiPlaceStatic: 9
+	No. of places: 4
+	No. of threads per place: 1
+	Time for setting up place(s) with initial data: 0.500411743 seconds
+	Works units per place: 7, 7, 6, 6,  
+	Time for actual computation: 62.017905618999997 seconds
+	Time for summing up GMatrix bits: 0.882861921 seconds
+    Time to construct GMatrix: 63.466953080000003 seconds
+Starting DIIS...
+    Time to construct Fock: 0.286781814 seconds
+    Time to form MOS: 0.168060129 seconds
+    Nuclear electron attraction energy = -596.441188704752335 a.u.
+    Electron repulsion energy = -105.011411174599161 a.u.
+Cycle #15 Total energy = -309.659355946131598
+   GMatrix.computeDirectNewMultiPlaceStatic: 9
+	No. of places: 4
+	No. of threads per place: 1
+	Time for setting up place(s) with initial data: 0.485091538 seconds
+	Works units per place: 7, 7, 6, 6,  
+	Time for actual computation: 64.221119291999997 seconds
+	Time for summing up GMatrix bits: 0.835649199 seconds
+    Time to construct GMatrix: 65.593600887999997 seconds
+    Time to construct Fock: 0.566351548 seconds
+    Time to form MOS: 0.16858218 seconds
+    Nuclear electron attraction energy = -598.030375616570609 a.u.
+    Electron repulsion energy = -103.528801345315486 a.u.
+Cycle #16 Total energy = -309.765933028666211
+   GMatrix.computeDirectNewMultiPlaceStatic: 9
+	No. of places: 4
+	No. of threads per place: 1
+	Time for setting up place(s) with initial data: 0.497748846 seconds
+	Works units per place: 7, 7, 6, 6,  
+	Time for actual computation: 62.938725613000003 seconds
+	Time for summing up GMatrix bits: 0.834014799 seconds
+    Time to construct GMatrix: 64.322152021999997 seconds
+    Time to construct Fock: 0.696559958 seconds
+    Time to form MOS: 0.169154919 seconds
+    Nuclear electron attraction energy = -597.791997641732678 a.u.
+    Electron repulsion energy = -103.773994662608516 a.u.
+Cycle #17 Total energy = -309.772748371121281
+   GMatrix.computeDirectNewMultiPlaceStatic: 9
+	No. of places: 4
+	No. of threads per place: 1
+	Time for setting up place(s) with initial data: 0.503341572 seconds
+	Works units per place: 7, 7, 6, 6,  
+	Time for actual computation: 62.857991331999997 seconds
+	Time for summing up GMatrix bits: 0.849345221 seconds
+    Time to construct GMatrix: 64.262720525999995 seconds
+    Time to construct Fock: 1.076003697 seconds
+    Time to form MOS: 0.168413197 seconds
+    Nuclear electron attraction energy = -597.837290985344907 a.u.
+    Electron repulsion energy = -103.729256518550187 a.u.
+Cycle #18 Total energy = -309.773303570675182
+   GMatrix.computeDirectNewMultiPlaceStatic: 9
+	No. of places: 4
+	No. of threads per place: 1
+	Time for setting up place(s) with initial data: 0.515939767 seconds
+	Works units per place: 7, 7, 6, 6,  
+	Time for actual computation: 64.302354410999996 seconds
+	Time for summing up GMatrix bits: 0.830082729 seconds
+    Time to construct GMatrix: 65.703270532000005 seconds
+    Time to construct Fock: 1.556061518 seconds
+    Time to form MOS: 0.169818076 seconds
+    Nuclear electron attraction energy = -597.831202116275222 a.u.
+    Electron repulsion energy = -103.735400484344112 a.u.
+Cycle #19 Total energy = -309.773358667399464
+   GMatrix.computeDirectNewMultiPlaceStatic: 9
+	No. of places: 4
+	No. of threads per place: 1
+	Time for setting up place(s) with initial data: 0.506126767 seconds
+	Works units per place: 7, 7, 6, 6,  
+	Time for actual computation: 63.423299614000001 seconds
+	Time for summing up GMatrix bits: 0.830332217 seconds
+    Time to construct GMatrix: 64.812329925 seconds
+    Time to construct Fock: 2.121328091 seconds
+    Time to form MOS: 0.169349166 seconds
+    Nuclear electron attraction energy = -597.832959508100998 a.u.
+    Electron repulsion energy = -103.733649478519425 a.u.
+Cycle #20 Total energy = -309.773365053400482
+SCF converged. Final SCF energy = -309.773365053400482 a.u.
+
+-End of SCF-
+
+Total time since start: 1388.90533627700006 seconds
+
+
+Fragment Input deck:
+C 13.395797353874919 -4.5013592396896 10.445399465374795
+H 9.375401815224116 -5.073265661469161 7.245987462626087
+H 8.977294412453944 -2.138112174559593 8.682997442915541
+C 10.024741026600829 -3.127704919244083 7.223305318567101
+H 13.995908148993347 -3.928582248926466 6.434122674755828
+H 13.479101931619542 -1.132836147927666 8.122359508412337
+C 12.853197688427517 -3.088060576011018 7.933875432531813
+H 12.324253443371635 -3.577362399874136 11.941560979379947
+H 17.390599184898548 -5.211111043153205 9.694326888330306
+H 16.586437072277185 -5.215530455747678 12.926291242724401
+H 16.788952520652774 -2.337287745035031 11.254969209945772
+C 16.224814272969706 -4.304968102222414 11.120820816185548
+H 13.412874855436028 -8.295522063740641 8.791966839432147
+H 10.511774817396155 -7.447450995975475 10.177330688223599
+H 13.078751497423314 -8.25724706112273 12.099437258112612
+C 12.546019390544425 -7.303907715138869 10.364668208198951
+H 10.603080681677721 -2.787338818927642 3.169456190357365
+H 9.955645126025903 0.067309316020587 4.70327932497947
+C 9.434562620313454 -1.927372400768935 4.635007345691081
+H 5.490693602517734 -1.238338523511994 5.363778211509417
+C 6.605273147173292 -2.162415577849267 3.891490997123428
+H 6.013104933687077 -5.888977493033994 5.550325341307184
+C 5.718241965515078 -4.950587036692236 3.763946959474542
+H 7.207423243492879 -1.58006965095505 -0.144159760854348
+H 6.719445243359911 1.222216659217464 1.549081293228879
+C 6.083883001817918 -0.730683485080508 1.371447558530341
+H 6.729044329691184 -5.988348797215195 2.311873814599974
+H 3.720667017389177 -5.063676486561723 3.359692087770905
+H 4.251119007534326 -0.741196079410305 0.911195761555999
+
+
+Setting up basis set: sto3g
+
+Using 65 basis functions.
+	Time for setting up basis functions: 0.003162657 seconds
+
+
+Computed one-electron integrals.
+	Time for computing 1E integrals: 4.447500006 seconds
+
+
+Number of 2E integrals: 2301585
+
+Computed two-electron integrals. If direct, this is skipped for now.
+Is Direct: true
+Nuclear repulsion energy = 472.182164867834388 a.u.
+    Initializing matrices ...
+    Forming initial guess ...
+    Starting RHF-SCF ... 
+   GMatrix.computeDirectNewMultiPlaceStatic: 9
+	No. of places: 4
+	No. of threads per place: 1
+	Time for setting up place(s) with initial data: 0.634972826 seconds
+	Works units per place: 8, 7, 7, 7,  
+	Time for actual computation: 120.219305899000005 seconds
+	Time for summing up GMatrix bits: 1.068018481 seconds
+    Time to construct GMatrix: 121.988086057999993 seconds
+    Time to construct Fock: 0.217139329 seconds
+    Time to form MOS: 0.2325928 seconds
+    Nuclear electron attraction energy = -751.175154513531879 a.u.
+    Electron repulsion energy = -15.955406541140478 a.u.
+Cycle #0 Total energy = -294.948396186838011
+   GMatrix.computeDirectNewMultiPlaceStatic: 9
+	No. of places: 4
+	No. of threads per place: 1
+	Time for setting up place(s) with initial data: 0.689584135 seconds
+	Works units per place: 8, 7, 7, 7,  
+	Time for actual computation: 123.237284216000006 seconds
+	Time for summing up GMatrix bits: 1.066701862 seconds
+    Time to construct GMatrix: 125.059450077999998 seconds
+    Time to construct Fock: 0.445113448 seconds
+    Time to form MOS: 0.321203345 seconds
+    Nuclear electron attraction energy = -655.109690187049523 a.u.
+    Electron repulsion energy = -104.832509548458788 a.u.
+Cycle #1 Total energy = -287.760034867673937
+   GMatrix.computeDirectNewMultiPlaceStatic: 9
+	No. of places: 4
+	No. of threads per place: 1
+	Time for setting up place(s) with initial data: 0.697791595 seconds
+	Works units per place: 8, 7, 7, 7,  
+	Time for actual computation: 122.572903177000001 seconds
+	Time for summing up GMatrix bits: 1.20807667 seconds
+    Time to construct GMatrix: 124.544293971000002 seconds
+    Time to construct Fock: 0.468381143 seconds
+    Time to form MOS: 0.215393329 seconds
+    Nuclear electron attraction energy = -734.587678929366689 a.u.
+    Electron repulsion energy = -97.907584907634245 a.u.
+Cycle #2 Total energy = -360.31309896916656
+   GMatrix.computeDirectNewMultiPlaceStatic: 9
+	No. of places: 4
+	No. of threads per place: 1
+	Time for setting up place(s) with initial data: 0.594111977 seconds
+	Works units per place: 8, 7, 7, 7,  
+	Time for actual computation: 123.265579578000001 seconds
+	Time for summing up GMatrix bits: 1.116946282 seconds
+    Time to construct GMatrix: 125.063603667999999 seconds
+    Time to construct Fock: 0.632697598 seconds
+    Time to form MOS: 0.21425766 seconds
+    Nuclear electron attraction energy = -703.418163937591544 a.u.
+    Electron repulsion energy = -94.77847231085164 a.u.
+Cycle #3 Total energy = -326.014471380608768
+   GMatrix.computeDirectNewMultiPlaceStatic: 9
+	No. of places: 4
+	No. of threads per place: 1
+	Time for setting up place(s) with initial data: 0.621445876 seconds
+	Works units per place: 8, 7, 7, 7,  
+	Time for actual computation: 122.534567889000002 seconds
+	Time for summing up GMatrix bits: 1.125730021 seconds
+    Time to construct GMatrix: 124.350127416000007 seconds
+    Time to construct Fock: 0.439240269 seconds
+    Time to form MOS: 0.259929089 seconds
+    Nuclear electron attraction energy = -661.768240680284293 a.u.
+    Electron repulsion energy = -95.282221361625915 a.u.
+Cycle #4 Total energy = -284.868297174075849
+   GMatrix.computeDirectNewMultiPlaceStatic: 9
+	No. of places: 4
+	No. of threads per place: 1
+	Time for setting up place(s) with initial data: 0.642085014 seconds
+	Works units per place: 8, 7, 7, 7,  
+	Time for actual computation: 124.813372422 seconds
+	Time for summing up GMatrix bits: 1.101738232 seconds
+    Time to construct GMatrix: 126.622298557999997 seconds
+    Time to construct Fock: 0.430141708 seconds
+    Time to form MOS: 0.226553727 seconds
+    Nuclear electron attraction energy = -732.537899892068822 a.u.
+    Electron repulsion energy = -100.894074513331645 a.u.
+Cycle #5 Total energy = -361.249809537566136
+   GMatrix.computeDirectNewMultiPlaceStatic: 9
+	No. of places: 4
+	No. of threads per place: 1
+	Time for setting up place(s) with initial data: 0.677509919 seconds
+	Works units per place: 8, 7, 7, 7,  
+	Time for actual computation: 122.741513587 seconds
+	Time for summing up GMatrix bits: 1.070062688 seconds
+    Time to construct GMatrix: 124.554414699999995 seconds
+Starting DIIS...
+    Time to construct Fock: 0.375068073 seconds
+    Time to form MOS: 0.210484971 seconds
+    Nuclear electron attraction energy = -702.714047412502282 a.u.
+    Electron repulsion energy = -117.741793065420865 a.u.
+Cycle #6 Total energy = -348.273675610088787
+   GMatrix.computeDirectNewMultiPlaceStatic: 9
+	No. of places: 4
+	No. of threads per place: 1
+	Time for setting up place(s) with initial data: 0.597541772 seconds
+	Works units per place: 8, 7, 7, 7,  
+	Time for actual computation: 121.772519845000005 seconds
+	Time for summing up GMatrix bits: 1.092205871 seconds
+    Time to construct GMatrix: 123.526797974999994 seconds
+    Time to construct Fock: 0.578215998 seconds
+    Time to form MOS: 0.210599184 seconds
+    Nuclear electron attraction energy = -704.093321275322978 a.u.
+    Electron repulsion energy = -116.439020293597423 a.u.
+Cycle #7 Total energy = -348.350176701086014
+   GMatrix.computeDirectNewMultiPlaceStatic: 9
+	No. of places: 4
+	No. of threads per place: 1
+	Time for setting up place(s) with initial data: 0.646331059 seconds
+	Works units per place: 8, 7, 7, 7,  
+	Time for actual computation: 123.325838910000002 seconds
+	Time for summing up GMatrix bits: 1.088753541 seconds
+    Time to construct GMatrix: 125.126284057999996 seconds
+    Time to construct Fock: 0.891233331 seconds
+    Time to form MOS: 0.21270935 seconds
+    Nuclear electron attraction energy = -703.891207613633583 a.u.
+    Electron repulsion energy = -116.644494842091319 a.u.
+Cycle #8 Total energy = -348.353537587890571
+   GMatrix.computeDirectNewMultiPlaceStatic: 9
+	No. of places: 4
+	No. of threads per place: 1
+	Time for setting up place(s) with initial data: 0.640761238 seconds
+	Works units per place: 8, 7, 7, 7,  
+	Time for actual computation: 124.916849830999993 seconds
+	Time for summing up GMatrix bits: 1.064127933 seconds
+    Time to construct GMatrix: 126.687468538999994 seconds
+    Time to construct Fock: 1.336130339 seconds
+    Time to form MOS: 0.213852001 seconds
+    Nuclear electron attraction energy = -703.922876189470912 a.u.
+    Electron repulsion energy = -116.61301188468552 a.u.
+Cycle #9 Total energy = -348.353723206322059
+   GMatrix.computeDirectNewMultiPlaceStatic: 9
+	No. of places: 4
+	No. of threads per place: 1
+	Time for setting up place(s) with initial data: 0.59697534 seconds
+	Works units per place: 8, 7, 7, 7,  
+	Time for actual computation: 122.958359096999999 seconds
+	Time for summing up GMatrix bits: 1.039852351 seconds
+    Time to construct GMatrix: 124.661084127999999 seconds
+    Time to construct Fock: 1.943963771 seconds
+    Time to form MOS: 0.210160702 seconds
+    Nuclear electron attraction energy = -703.919698959117113 a.u.
+    Electron repulsion energy = -116.616202200659316 a.u.
+Cycle #10 Total energy = -348.353736291942084
+   GMatrix.computeDirectNewMultiPlaceStatic: 9
+	No. of places: 4
+	No. of threads per place: 1
+	Time for setting up place(s) with initial data: 0.649659501 seconds
+	Works units per place: 8, 7, 7, 7,  
+	Time for actual computation: 121.242262600999993 seconds
+	Time for summing up GMatrix bits: 1.091155897 seconds
+    Time to construct GMatrix: 123.048038495 seconds
+    Time to construct Fock: 2.66488866 seconds
+    Time to form MOS: 0.212954272 seconds
+    Nuclear electron attraction energy = -703.920496743461172 a.u.
+    Electron repulsion energy = -116.615405560303486 a.u.
+Cycle #11 Total energy = -348.353737435930327
+SCF converged. Final SCF energy = -348.353737435930327 a.u.
+
+-End of SCF-
+
+Total time since start: 1522.933378139000069 seconds
+
+
+Fragment Input deck:
+H 2.583603857050807 -2.681815438094097 0.663629650375859
+H 7.207423243492879 -1.58006965095505 -0.144159760854348
+C 6.083883001817918 -0.730683485080508 1.371447558530341
+H 2.200243678979369 0.240166485204204 2.124406408466254
+C 3.243962611517051 -0.746973051596038 0.658274194705627
+H 6.719445243359911 1.222216659217464 1.549081293228879
+H 3.717291675568331 -0.390261466071338 -3.420172863628078
+H 3.067271237815167 2.455671048342139 -1.876114185985597
+C 2.589030433692422 0.452812853621613 -1.924849248078759
+C -0.263882994782091 0.146039500963033 -2.580916029669636
+H -1.354303955865962 1.03351822000185 -1.070283699863166
+H -0.761473103348112 -3.555089253557042 -0.844899803122912
+H 0.066489042283151 -3.701819686529198 -4.056149910228895
+C -1.03702740846879 -2.669486867073009 -2.683068425067654
+H -0.147096519761183 3.483789392963662 -4.926331393581285
+C -0.852206614414503 1.552257212077268 -5.091253108045277
+H -3.029081179136294 -2.886476250242659 -3.144351679687113
+H 0.201564447362748 0.686016663455152 -6.630137930606248
+H 6.41845373577665 -1.649411353984557 2.988533708640267
+H -2.685421093965301 1.614135416921263 -5.545633840174821
+
+
+Setting up basis set: sto3g
+
+Using 44 basis functions.
+	Time for setting up basis functions: 0.002702282 seconds
+
+
+Computed one-electron integrals.
+	Time for computing 1E integrals: 1.440581664 seconds
+
+
+Number of 2E integrals: 490545
+
+Computed two-electron integrals. If direct, this is skipped for now.
+Is Direct: true
+Nuclear repulsion energy = 253.351386660339614 a.u.
+    Initializing matrices ...
+    Forming initial guess ...
+    Starting RHF-SCF ... 
+   GMatrix.computeDirectNewMultiPlaceStatic: 9
+	No. of places: 4
+	No. of threads per place: 1
+	Time for setting up place(s) with initial data: 0.297332295 seconds
+	Works units per place: 5, 5, 5, 5,  
+	Time for actual computation: 24.708805527999999 seconds
+	Time for summing up GMatrix bits: 0.481813359 seconds
+    Time to construct GMatrix: 25.518426943000001 seconds
+    Time to construct Fock: 0.118122192 seconds
+    Time to form MOS: 0.097882009 seconds
+    Nuclear electron attraction energy = -436.28019239299158 a.u.
+    Electron repulsion energy = -15.977620176865653 a.u.
+Cycle #0 Total energy = -198.906425909517594
+   GMatrix.computeDirectNewMultiPlaceStatic: 9
+	No. of places: 4
+	No. of threads per place: 1
+	Time for setting up place(s) with initial data: 0.305500135 seconds
+	Works units per place: 5, 5, 5, 5,  
+	Time for actual computation: 24.460100790999999 seconds
+	Time for summing up GMatrix bits: 0.503878713 seconds
+    Time to construct GMatrix: 25.299691257999999 seconds
+    Time to construct Fock: 0.20902074 seconds
+    Time to form MOS: 0.097486485 seconds
+    Nuclear electron attraction energy = -380.596681960814749 a.u.
+    Electron repulsion energy = -78.099308392417484 a.u.
+Cycle #1 Total energy = -205.344603692892605
+   GMatrix.computeDirectNewMultiPlaceStatic: 9
+	No. of places: 4
+	No. of threads per place: 1
+	Time for setting up place(s) with initial data: 0.297889055 seconds
+	Works units per place: 5, 5, 5, 5,  
+	Time for actual computation: 24.397952568000001 seconds
+	Time for summing up GMatrix bits: 0.483116649 seconds
+    Time to construct GMatrix: 25.209430813000001 seconds
+    Time to construct Fock: 0.212046171 seconds
+    Time to form MOS: 0.121502355 seconds
+    Nuclear electron attraction energy = -424.278888085741642 a.u.
+    Electron repulsion energy = -69.649614754660305 a.u.
+Cycle #2 Total energy = -240.577116180062347
+   GMatrix.computeDirectNewMultiPlaceStatic: 9
+	No. of places: 4
+	No. of threads per place: 1
+	Time for setting up place(s) with initial data: 0.305642776 seconds
+	Works units per place: 5, 5, 5, 5,  
+	Time for actual computation: 23.890231129 seconds
+	Time for summing up GMatrix bits: 0.548857278 seconds
+    Time to construct GMatrix: 24.775068033 seconds
+    Time to construct Fock: 0.189244452 seconds
+    Time to form MOS: 0.098339495 seconds
+    Nuclear electron attraction energy = -408.332854998041284 a.u.
+    Electron repulsion energy = -66.108410890194676 a.u.
+Cycle #3 Total energy = -221.089879227896375
+   GMatrix.computeDirectNewMultiPlaceStatic: 9
+	No. of places: 4
+	No. of threads per place: 1
+	Time for setting up place(s) with initial data: 0.297822868 seconds
+	Works units per place: 5, 5, 5, 5,  
+	Time for actual computation: 23.887064792 seconds
+	Time for summing up GMatrix bits: 0.482861237 seconds
+    Time to construct GMatrix: 24.698208042000001 seconds
+    Time to construct Fock: 0.188759141 seconds
+    Time to form MOS: 0.098156935 seconds
+    Nuclear electron attraction energy = -391.562579889345898 a.u.
+    Electron repulsion energy = -67.66979563925004 a.u.
+Cycle #4 Total energy = -205.88098886825631
+   GMatrix.computeDirectNewMultiPlaceStatic: 9
+	No. of places: 4
+	No. of threads per place: 1
+	Time for setting up place(s) with initial data: 0.296387676 seconds
+	Works units per place: 5, 5, 5, 5,  
+	Time for actual computation: 24.117440149 seconds
+	Time for summing up GMatrix bits: 0.51117153 seconds
+    Time to construct GMatrix: 24.955383452 seconds
+    Time to construct Fock: 0.19282915 seconds
+    Time to form MOS: 0.137558709 seconds
+    Nuclear electron attraction energy = -415.948141298072017 a.u.
+    Electron repulsion energy = -64.669589474120514 a.u.
+Cycle #5 Total energy = -227.266344111852931
+   GMatrix.computeDirectNewMultiPlaceStatic: 9
+	No. of places: 4
+	No. of threads per place: 1
+	Time for setting up place(s) with initial data: 0.323959606 seconds
+	Works units per place: 5, 5, 5, 5,  
+	Time for actual computation: 24.194820769 seconds
+	Time for summing up GMatrix bits: 0.480158919 seconds
+    Time to construct GMatrix: 25.029200498000002 seconds
+    Time to construct Fock: 0.189032902 seconds
+    Time to form MOS: 0.098189234 seconds
+    Nuclear electron attraction energy = -405.48624471684127 a.u.
+    Electron repulsion energy = -70.753500063052698 a.u.
+Cycle #6 Total energy = -222.88835811955434
+   GMatrix.computeDirectNewMultiPlaceStatic: 9
+	No. of places: 4
+	No. of threads per place: 1
+	Time for setting up place(s) with initial data: 0.297145004 seconds
+	Works units per place: 5, 5, 5, 5,  
+	Time for actual computation: 23.959869649000002 seconds
+	Time for summing up GMatrix bits: 0.503117206 seconds
+    Time to construct GMatrix: 24.790303423000001 seconds
+    Time to construct Fock: 0.18828604 seconds
+    Time to form MOS: 0.121286354 seconds
+    Nuclear electron attraction energy = -395.633664868767084 a.u.
+    Electron repulsion energy = -63.351902553552577 a.u.
+Cycle #7 Total energy = -205.634180761980048
+   GMatrix.computeDirectNewMultiPlaceStatic: 9
+	No. of places: 4
+	No. of threads per place: 1
+	Time for setting up place(s) with initial data: 0.297571432 seconds
+	Works units per place: 5, 5, 5, 5,  
+	Time for actual computation: 23.899229008999999 seconds
+	Time for summing up GMatrix bits: 0.482865598 seconds
+    Time to construct GMatrix: 24.709886335 seconds
+    Time to construct Fock: 0.188479806 seconds
+    Time to form MOS: 0.097712469 seconds
+    Nuclear electron attraction energy = -408.112826957749348 a.u.
+    Electron repulsion energy = -60.744181467128854 a.u.
+Cycle #8 Total energy = -215.505621764538574
+   GMatrix.computeDirectNewMultiPlaceStatic: 9
+	No. of places: 4
+	No. of threads per place: 1
+	Time for setting up place(s) with initial data: 0.324088469 seconds
+	Works units per place: 5, 5, 5, 5,  
+	Time for actual computation: 23.930205903000001 seconds
+	Time for summing up GMatrix bits: 0.483525422 seconds
+    Time to construct GMatrix: 24.768059563000001 seconds
+    Time to construct Fock: 0.188418689 seconds
+    Time to form MOS: 0.097623184 seconds
+    Nuclear electron attraction energy = -408.370658315741764 a.u.
+    Electron repulsion energy = -69.205925971672997 a.u.
+Cycle #9 Total energy = -224.225197627075175
+   GMatrix.computeDirectNewMultiPlaceStatic: 9
+	No. of places: 4
+	No. of threads per place: 1
+	Time for setting up place(s) with initial data: 0.297086139 seconds
+	Works units per place: 5, 5, 5, 5,  
+	Time for actual computation: 24.093333303000001 seconds
+	Time for summing up GMatrix bits: 0.511854093 seconds
+    Time to construct GMatrix: 24.932550377999998 seconds
+    Time to construct Fock: 0.188363567 seconds
+    Time to form MOS: 0.098042205 seconds
+    Nuclear electron attraction energy = -396.913655839017338 a.u.
+    Electron repulsion energy = -60.841583262962956 a.u.
+Cycle #10 Total energy = -204.40385244164068
+   GMatrix.computeDirectNewMultiPlaceStatic: 9
+	No. of places: 4
+	No. of threads per place: 1
+	Time for setting up place(s) with initial data: 0.324514893 seconds
+	Works units per place: 5, 5, 5, 5,  
+	Time for actual computation: 24.157780593999998 seconds
+	Time for summing up GMatrix bits: 0.480163834 seconds
+    Time to construct GMatrix: 24.992659829000001 seconds
+    Time to construct Fock: 0.194698944 seconds
+    Time to form MOS: 0.097874615 seconds
+    Nuclear electron attraction energy = -404.530069833989955 a.u.
+    Electron repulsion energy = -55.400968229728171 a.u.
+Cycle #11 Total energy = -206.579651403378506
+   GMatrix.computeDirectNewMultiPlaceStatic: 9
+	No. of places: 4
+	No. of threads per place: 1
+	Time for setting up place(s) with initial data: 0.29810008 seconds
+	Works units per place: 5, 5, 5, 5,  
+	Time for actual computation: 23.974399902999998 seconds
+	Time for summing up GMatrix bits: 0.483720027 seconds
+    Time to construct GMatrix: 24.789224970999999 seconds
+    Time to construct Fock: 0.191063416 seconds
+    Time to form MOS: 0.098480722 seconds
+    Nuclear electron attraction energy = -406.888420736702756 a.u.
+    Electron repulsion energy = -68.43268715584972 a.u.
+Cycle #12 Total energy = -221.969721232212891
+   GMatrix.computeDirectNewMultiPlaceStatic: 9
+	No. of places: 4
+	No. of threads per place: 1
+	Time for setting up place(s) with initial data: 0.299908626 seconds
+	Works units per place: 5, 5, 5, 5,  
+	Time for actual computation: 24.001145474000001 seconds
+	Time for summing up GMatrix bits: 0.48707908 seconds
+    Time to construct GMatrix: 24.818452915000002 seconds
+    Time to construct Fock: 0.188790588 seconds
+    Time to form MOS: 0.098062779 seconds
+    Nuclear electron attraction energy = -401.992389823755275 a.u.
+    Electron repulsion energy = -70.65428939936497 a.u.
+Cycle #13 Total energy = -219.295292562780645
+   GMatrix.computeDirectNewMultiPlaceStatic: 9
+	No. of places: 4
+	No. of threads per place: 1
+	Time for setting up place(s) with initial data: 0.29832516 seconds
+	Works units per place: 5, 5, 5, 5,  
+	Time for actual computation: 24.030672012 seconds
+	Time for summing up GMatrix bits: 0.513619045 seconds
+    Time to construct GMatrix: 24.873049505000001 seconds
+    Time to construct Fock: 0.188552301 seconds
+    Time to form MOS: 0.098312415 seconds
+    Nuclear electron attraction energy = -404.194542994338292 a.u.
+    Electron repulsion energy = -47.526299010146559 a.u.
+Cycle #14 Total energy = -198.369455344145223
+   GMatrix.computeDirectNewMultiPlaceStatic: 9
+	No. of places: 4
+	No. of threads per place: 1
+	Time for setting up place(s) with initial data: 0.329187015 seconds
+	Works units per place: 5, 5, 5, 5,  
+	Time for actual computation: 24.202148299000001 seconds
+	Time for summing up GMatrix bits: 0.486526287 seconds
+    Time to construct GMatrix: 25.048283350999998 seconds
+    Time to construct Fock: 0.194861324 seconds
+    Time to form MOS: 0.127372417 seconds
+    Nuclear electron attraction energy = -402.549388267070356 a.u.
+    Electron repulsion energy = -64.795533419446102 a.u.
+Cycle #15 Total energy = -213.993535026176829
+   GMatrix.computeDirectNewMultiPlaceStatic: 9
+	No. of places: 4
+	No. of threads per place: 1
+	Time for setting up place(s) with initial data: 0.296818016 seconds
+	Works units per place: 5, 5, 5, 5,  
+	Time for actual computation: 23.978519141 seconds
+	Time for summing up GMatrix bits: 0.510698413 seconds
+    Time to construct GMatrix: 24.81616842 seconds
+Starting DIIS...
+    Time to construct Fock: 0.189472178 seconds
+    Time to form MOS: 0.098288003 seconds
+    Nuclear electron attraction energy = -406.690575767262942 a.u.
+    Electron repulsion energy = -79.204893094820832 a.u.
+Cycle #16 Total energy = -232.544082201744146
+   GMatrix.computeDirectNewMultiPlaceStatic: 9
+	No. of places: 4
+	No. of threads per place: 1
+	Time for setting up place(s) with initial data: 0.297807791 seconds
+	Works units per place: 5, 5, 5, 5,  
+	Time for actual computation: 24.078044047999999 seconds
+	Time for summing up GMatrix bits: 0.481038454 seconds
+    Time to construct GMatrix: 24.887228712999999 seconds
+    Time to construct Fock: 0.248810532 seconds
+    Time to form MOS: 0.100196128 seconds
+    Nuclear electron attraction energy = -408.157129721732247 a.u.
+    Electron repulsion energy = -77.7986618681701 a.u.
+Cycle #17 Total energy = -232.604404929562719
+   GMatrix.computeDirectNewMultiPlaceStatic: 9
+	No. of places: 4
+	No. of threads per place: 1
+	Time for setting up place(s) with initial data: 0.299363742 seconds
+	Works units per place: 5, 5, 5, 5,  
+	Time for actual computation: 24.350799684999998 seconds
+	Time for summing up GMatrix bits: 0.480193473 seconds
+    Time to construct GMatrix: 25.160775434000001 seconds
+    Time to construct Fock: 0.434312813 seconds
+    Time to form MOS: 0.09803582 seconds
+    Nuclear electron attraction energy = -407.924377019367512 a.u.
+    Electron repulsion energy = -78.03383332454483 a.u.
+Cycle #18 Total energy = -232.606823683572742
+   GMatrix.computeDirectNewMultiPlaceStatic: 9
+	No. of places: 4
+	No. of threads per place: 1
+	Time for setting up place(s) with initial data: 0.29774195 seconds
+	Works units per place: 5, 5, 5, 5,  
+	Time for actual computation: 24.610966942000001 seconds
+	Time for summing up GMatrix bits: 0.481627865 seconds
+    Time to construct GMatrix: 25.420565162999999 seconds
+    Time to construct Fock: 0.642373437 seconds
+    Time to form MOS: 0.098205955 seconds
+    Nuclear electron attraction energy = -407.964199451686227 a.u.
+    Electron repulsion energy = -77.994139563069766 a.u.
+Cycle #19 Total energy = -232.606952354416393
+   GMatrix.computeDirectNewMultiPlaceStatic: 9
+	No. of places: 4
+	No. of threads per place: 1
+	Time for setting up place(s) with initial data: 0.329896946 seconds
+	Works units per place: 5, 5, 5, 5,  
+	Time for actual computation: 24.014415769999999 seconds
+	Time for summing up GMatrix bits: 0.497861041 seconds
+    Time to construct GMatrix: 24.872631223999999 seconds
+    Time to construct Fock: 0.908191828 seconds
+    Time to form MOS: 0.098454081 seconds
+    Nuclear electron attraction energy = -407.957447277936581 a.u.
+    Electron repulsion energy = -78.000900345890031 a.u.
+Cycle #20 Total energy = -232.606960963487012
+SCF converged. Final SCF energy = -232.606960963487012 a.u.
+
+-End of SCF-
+
+Total time since start: 538.875900221000052 seconds
+
+
+Fragment Input deck:
+C 5.718241965515078 -4.950587036692236 3.763946959474542
+H 7.207423243492879 -1.58006965095505 -0.144159760854348
+C 6.083883001817918 -0.730683485080508 1.371447558530341
+H 5.490693602517734 -1.238338523511994 5.363778211509417
+C 6.605273147173292 -2.162415577849267 3.891490997123428
+H 3.720667017389177 -5.063676486561723 3.359692087770905
+H 6.013104933687077 -5.888977493033994 5.550325341307184
+H 6.729044329691184 -5.988348797215195 2.311873814599974
+H 10.603080681677721 -2.787338818927642 3.169456190357365
+C 9.434562620313454 -1.927372400768935 4.635007345691081
+H 9.375401815224116 -5.073265661469161 7.245987462626087
+H 6.719445243359911 1.222216659217464 1.549081293228879
+H 9.955645126025903 0.067309316020587 4.70327932497947
+H 8.977294412453944 -2.138112174559593 8.682997442915541
+C 10.024741026600829 -3.127704919244083 7.223305318567101
+H 4.251119007534326 -0.741196079410305 0.911195761555999
+H 11.857321877195105 -3.102019015965515 7.683689669308874
+
+
+Setting up basis set: sto3g
+
+Using 37 basis functions.
+	Time for setting up basis functions: 0.002874354 seconds
+
+
+Computed one-electron integrals.
+	Time for computing 1E integrals: 0.939636849 seconds
+
+
+Number of 2E integrals: 247456
+
+Computed two-electron integrals. If direct, this is skipped for now.
+Is Direct: true
+Nuclear repulsion energy = 192.32704900570377 a.u.
+    Initializing matrices ...
+    Forming initial guess ...
+    Starting RHF-SCF ... 
+   GMatrix.computeDirectNewMultiPlaceStatic: 9
+	No. of places: 4
+	No. of threads per place: 1
+	Time for setting up place(s) with initial data: 0.221990386 seconds
+	Works units per place: 5, 4, 4, 4,  
+	Time for actual computation: 12.806975210999999 seconds
+	Time for summing up GMatrix bits: 0.343325614 seconds
+    Time to construct GMatrix: 13.393909472000001 seconds
+    Time to construct Fock: 0.069918014 seconds
+    Time to form MOS: 0.06976661 seconds
+    Nuclear electron attraction energy = -342.967830260033395 a.u.
+    Electron repulsion energy = -18.162930285459467 a.u.
+Cycle #0 Total energy = -168.803711539789106
+   GMatrix.computeDirectNewMultiPlaceStatic: 9
+	No. of places: 4
+	No. of threads per place: 1
+	Time for setting up place(s) with initial data: 0.227129991 seconds
+	Works units per place: 5, 4, 4, 4,  
+	Time for actual computation: 12.813574545 seconds
+	Time for summing up GMatrix bits: 0.34401259 seconds
+    Time to construct GMatrix: 13.406540728 seconds
+    Time to construct Fock: 0.134190064 seconds
+    Time to form MOS: 0.069707721 seconds
+    Nuclear electron attraction energy = -301.80210075747209 a.u.
+    Electron repulsion energy = -63.395166566544262 a.u.
+Cycle #1 Total energy = -172.870218318312595
+   GMatrix.computeDirectNewMultiPlaceStatic: 9
+	No. of places: 4
+	No. of threads per place: 1
+	Time for setting up place(s) with initial data: 0.227047947 seconds
+	Works units per place: 5, 4, 4, 4,  
+	Time for actual computation: 12.784317815 seconds
+	Time for summing up GMatrix bits: 0.343914012 seconds
+    Time to construct GMatrix: 13.377042158 seconds
+    Time to construct Fock: 0.134498816 seconds
+    Time to form MOS: 0.069917933 seconds
+    Nuclear electron attraction energy = -332.687666609162932 a.u.
+    Electron repulsion energy = -58.576175238517436 a.u.
+Cycle #2 Total energy = -198.936792841976626
+   GMatrix.computeDirectNewMultiPlaceStatic: 9
+	No. of places: 4
+	No. of threads per place: 1
+	Time for setting up place(s) with initial data: 0.221749815 seconds
+	Works units per place: 5, 4, 4, 4,  
+	Time for actual computation: 12.802479051000001 seconds
+	Time for summing up GMatrix bits: 0.346959492 seconds
+    Time to construct GMatrix: 13.392848317 seconds
+    Time to construct Fock: 0.13454959 seconds
+    Time to form MOS: 0.069934053 seconds
+    Nuclear electron attraction energy = -321.457029544507861 a.u.
+    Electron repulsion energy = -56.664558041867622 a.u.
+Cycle #3 Total energy = -185.794538580671713
+   GMatrix.computeDirectNewMultiPlaceStatic: 9
+	No. of places: 4
+	No. of threads per place: 1
+	Time for setting up place(s) with initial data: 0.228063301 seconds
+	Works units per place: 5, 4, 4, 4,  
+	Time for actual computation: 12.819981697999999 seconds
+	Time for summing up GMatrix bits: 0.382320605 seconds
+    Time to construct GMatrix: 13.452058384000001 seconds
+    Time to construct Fock: 0.134802485 seconds
+    Time to form MOS: 0.069910128 seconds
+    Nuclear electron attraction energy = -308.777322089562574 a.u.
+    Electron repulsion energy = -59.127914013819222 a.u.
+Cycle #4 Total energy = -175.57818709767804
+   GMatrix.computeDirectNewMultiPlaceStatic: 9
+	No. of places: 4
+	No. of threads per place: 1
+	Time for setting up place(s) with initial data: 0.224108491 seconds
+	Works units per place: 5, 4, 4, 4,  
+	Time for actual computation: 12.721529852 seconds
+	Time for summing up GMatrix bits: 0.41766507 seconds
+    Time to construct GMatrix: 13.385017829000001 seconds
+    Time to construct Fock: 0.1341597 seconds
+    Time to form MOS: 0.069706389 seconds
+    Nuclear electron attraction energy = -329.306420008876444 a.u.
+    Electron repulsion energy = -60.259250327912127 a.u.
+Cycle #5 Total energy = -197.238621331084801
+   GMatrix.computeDirectNewMultiPlaceStatic: 9
+	No. of places: 4
+	No. of threads per place: 1
+	Time for setting up place(s) with initial data: 0.230502262 seconds
+	Works units per place: 5, 4, 4, 4,  
+	Time for actual computation: 12.775572417999999 seconds
+	Time for summing up GMatrix bits: 0.382414944 seconds
+    Time to construct GMatrix: 13.409957626000001 seconds
+Starting DIIS...
+    Time to construct Fock: 0.115997768 seconds
+    Time to form MOS: 0.071439286 seconds
+    Nuclear electron attraction energy = -320.96374380149291 a.u.
+    Electron repulsion energy = -65.356331838579791 a.u.
+Cycle #6 Total energy = -193.993026634368903
+   GMatrix.computeDirectNewMultiPlaceStatic: 9
+	No. of places: 4
+	No. of threads per place: 1
+	Time for setting up place(s) with initial data: 0.233578724 seconds
+	Works units per place: 5, 4, 4, 4,  
+	Time for actual computation: 13.228818157999999 seconds
+	Time for summing up GMatrix bits: 0.387966315 seconds
+    Time to construct GMatrix: 13.872404727999999 seconds
+    Time to construct Fock: 0.180077177 seconds
+    Time to form MOS: 0.070940954 seconds
+    Nuclear electron attraction energy = -321.270446479588145 a.u.
+    Electron repulsion energy = -65.082672170044205 a.u.
+Cycle #7 Total energy = -194.026069643928565
+   GMatrix.computeDirectNewMultiPlaceStatic: 9
+	No. of places: 4
+	No. of threads per place: 1
+	Time for setting up place(s) with initial data: 0.255898073 seconds
+	Works units per place: 5, 4, 4, 4,  
+	Time for actual computation: 13.315515592000001 seconds
+	Time for summing up GMatrix bits: 0.355220509 seconds
+    Time to construct GMatrix: 13.948558138999999 seconds
+    Time to construct Fock: 0.282640202 seconds
+    Time to form MOS: 0.070140495 seconds
+    Nuclear electron attraction energy = -321.226871706932457 a.u.
+    Electron repulsion energy = -65.128306407456094 a.u.
+Cycle #8 Total energy = -194.028129108684766
+   GMatrix.computeDirectNewMultiPlaceStatic: 9
+	No. of places: 4
+	No. of threads per place: 1
+	Time for setting up place(s) with initial data: 0.221564752 seconds
+	Works units per place: 5, 4, 4, 4,  
+	Time for actual computation: 13.013575331 seconds
+	Time for summing up GMatrix bits: 0.392207284 seconds
+    Time to construct GMatrix: 13.648950622999999 seconds
+    Time to construct Fock: 0.42996208 seconds
+    Time to form MOS: 0.070185012 seconds
+    Nuclear electron attraction energy = -321.236941188667231 a.u.
+    Electron repulsion energy = -65.118386441155025 a.u.
+Cycle #9 Total energy = -194.028278624118457
+   GMatrix.computeDirectNewMultiPlaceStatic: 9
+	No. of places: 4
+	No. of threads per place: 1
+	Time for setting up place(s) with initial data: 0.229585037 seconds
+	Works units per place: 5, 4, 4, 4,  
+	Time for actual computation: 12.819381222000001 seconds
+	Time for summing up GMatrix bits: 0.384208513 seconds
+    Time to construct GMatrix: 13.455031744999999 seconds
+    Time to construct Fock: 0.622008092 seconds
+    Time to form MOS: 0.070159225 seconds
+    Nuclear electron attraction energy = -321.235549288671507 a.u.
+    Electron repulsion energy = -65.119790621850072 a.u.
+Cycle #10 Total energy = -194.028290904817823
+   GMatrix.computeDirectNewMultiPlaceStatic: 9
+	No. of places: 4
+	No. of threads per place: 1
+	Time for setting up place(s) with initial data: 0.2336089 seconds
+	Works units per place: 5, 4, 4, 4,  
+	Time for actual computation: 12.886282347 seconds
+	Time for summing up GMatrix bits: 0.384213749 seconds
+    Time to construct GMatrix: 13.525741537 seconds
+    Time to construct Fock: 0.850805963 seconds
+    Time to form MOS: 0.069975507 seconds
+    Nuclear electron attraction energy = -321.236045585496015 a.u.
+    Electron repulsion energy = -65.119295469301875 a.u.
+Cycle #11 Total energy = -194.028292049094148
+SCF converged. Final SCF energy = -194.028292049094148 a.u.
+
+-End of SCF-
+
+Total time since start: 170.694282826000006 seconds
+
+Final MTA energy : -618.413274649766663
+
+-End of MTA run-
+
+Total time since start: 5784.171360702999664 seconds
+
