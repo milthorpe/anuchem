@@ -135,7 +135,7 @@ public class PME {
         this.beta = beta;
         this.cutoff = cutoff;
         val imageTranslationRegion = [0..Place.MAX_PLACES-1,-1..1,-1..1,-1..1] as Region(4){rect};
-        this.imageTranslations = DistArray.make[Vector3d](Dist.makeBlock(imageTranslationRegion, 0), (p(place,i,j,k) : Point(4)) => (edges(0).mul(i)).add(edges(1).mul(j)).add(edges(2).mul(k)));
+        this.imageTranslations = DistArray.make[Vector3d](Dist.makeBlock(imageTranslationRegion, 0), ((place,i,j,k) : Point(4)) => (edges(0).mul(i)).add(edges(1).mul(j)).add(edges(2).mul(k)));
 
         if (edgeLengths(0) % cutoff != 0.0) {
             Console.OUT.println(edgeLengths(0) % cutoff);
@@ -187,10 +187,10 @@ public class PME {
 
         reciprocalEnergy = getReciprocalEnergy(Q, thetaRecConvQ);
 
-        //Console.OUT.println("directEnergy = " + directEnergy);
-        //Console.OUT.println("selfEnergy = " + selfEnergy);
+        Console.OUT.println("directEnergy = " + directEnergy);
+        Console.OUT.println("selfEnergy = " + selfEnergy);
         //Console.OUT.println("correctionEnergy = " + correctionEnergy);
-        //Console.OUT.println("reciprocalEnergy = " + reciprocalEnergy);
+        Console.OUT.println("reciprocalEnergy = " + reciprocalEnergy);
         val totalEnergy = directEnergy + reciprocalEnergy + (correctionEnergy + selfEnergy);
 
         timer.stop(TIMER_INDEX_TOTAL);
@@ -260,9 +260,9 @@ public class PME {
                             val otherSubCellLocation = subCells.periodicDist(i,j,k);
                             if (otherSubCellLocation == here) {
                                 val otherCell = subCells(i,j,k);
-                                for ((thisAtom) in 0..thisCell.length()-1) {
-                                    for ((otherAtom) in 0..otherCell.length()-1) {
-                                        val imageLoc = otherCell(otherAtom).centre + translation;
+                                for ((otherAtom) in 0..otherCell.length()-1) {
+                                    val imageLoc = otherCell(otherAtom).centre + translation;
+                                    for ((thisAtom) in 0..thisCell.length()-1) {
                                         val r = thisCell(thisAtom).centre.distance(imageLoc);
                                         if (r < cutoff) {
                                             val chargeProduct = thisCell(thisAtom).charge * otherCell(otherAtom).charge;
@@ -281,9 +281,9 @@ public class PME {
                                     otherCellPacked = at (subCells.periodicDist(otherCellIndex)) {getPackedAtomsForSubCell(otherCellIndex)};
                                     atomic {packedAtomsCache(here.id).put(otherCellIndex, otherCellPacked);}
                                 }
-                                for ((thisAtom) in 0..thisCell.length()-1) {
-                                    for ((otherAtom) in 0..otherCellPacked.length()-1) {
-                                        val imageLoc = otherCellPacked(otherAtom).centre + translation;
+                                for ((otherAtom) in 0..otherCellPacked.length()-1) {
+                                    val imageLoc = otherCellPacked(otherAtom).centre + translation;
+                                    for ((thisAtom) in 0..thisCell.length()-1) {
                                         val r = thisCell(thisAtom).centre.distance(imageLoc);
                                         if (r < cutoff) {
                                             val chargeProduct = thisCell(thisAtom).charge * otherCellPacked(otherAtom).charge;
@@ -311,13 +311,13 @@ public class PME {
             }
 
             // TODO this is slow because of lack of optimized atomic - XTENLANG-321
-            val myDirectEnergyFinal = 2.0 * myDirectEnergy;
+            val myDirectEnergyFinal = myDirectEnergy;
             at(this) {
                atomic directEnergy += myDirectEnergyFinal;
             }
         }
         
-        directEnergy = directEnergy / 2.0;
+        directEnergy = directEnergy;
         timer.stop(TIMER_INDEX_DIRECT);
         return directEnergy;
     }
@@ -362,10 +362,9 @@ public class PME {
         val Q = PeriodicDistArray.make[Double](gridDist);
         finish ateach (p in subCells.dist) {
             val thisCell = subCells(p);
-            val K3 = gridSize(2);
             foreach (atom in thisCell) {
                 val q = atom.charge;
-                val u = getScaledFractionalCoordinates(Vector3d(atom.centre));
+                val u = getScaledFractionalCoordinates(atom.centre); // TODO general non-cubic
                 val u1c = Math.ceil(u.i) as Int;
                 val u2c = Math.ceil(u.j) as Int;
                 val u3c = Math.ceil(u.k) as Int;
@@ -373,14 +372,12 @@ public class PME {
                     val k1 = (u1c - i);
                     for ((j) in 1..splineOrder) {
                         val k2 = (u2c - j);
-                        //for (var k3 : Int = u3c - splineOrder; k3 < u3c; k3++) {
-                        //    val kk3 = (k3 + gridSize(2)) % gridSize(2);
                         for ((k) in 1..splineOrder) {
                             val k3 = (u3c - k);
                             val gridPointContribution = q
-                                         * bSpline4(u.i - k1)
-                                         * bSpline4(u.j - k2)
-                                         * bSpline4(u.k - k3);
+                                         * bSpline(splineOrder, u.i - k1)
+                                         * bSpline(splineOrder, u.j - k2)
+                                         * bSpline(splineOrder, u.k - k3);
                             // TODO is it possible to use X10 reduction to generate Q 
                             // from large number of partial Q matrices?
                             async(Q.periodicDist(k1,k2,k3)) {
@@ -430,17 +427,17 @@ public class PME {
             val m1D = m1 as Double;
             var sumK1 : Complex = Complex.ZERO;
             for ((k) in 0..(splineOrder-2)) {
-                sumK1 = sumK1 + bSpline4(k+1) * Math.exp(2.0 * Math.PI * m1D * k / K1 * Complex.I);
+                sumK1 = sumK1 + bSpline(splineOrder, k+1) * Math.exp(2.0 * Math.PI * m1D * k / K1 * Complex.I);
             }
-            val b1 = (Math.exp(2.0 * Math.PI * (splineOrder - 1.0) * m1D / K1* Complex.I) / sumK1).abs();
+            val b1 = (Math.exp(2.0 * Math.PI * (splineOrder-1) * m1D / K1 * Complex.I) / sumK1).abs();
 
             for (var m2 : Int = 0; m2 < gridSize(1); m2++) {
                 val m2D = m2 as Double;
                 var sumK2 : Complex = Complex.ZERO;
                 for ((k) in 0..(splineOrder-2)) {
-                    sumK2 = sumK2 + bSpline4(k+1) * Math.exp(2.0 * Math.PI * m2D * k / K2 * Complex.I);
+                    sumK2 = sumK2 + bSpline(splineOrder, k+1) * Math.exp(2.0 * Math.PI * m2D * k / K2 * Complex.I);
                 }
-                val b2 = (Math.exp(2.0 * Math.PI * (splineOrder - 1.0) * m2D / K2 * Complex.I) / sumK2).abs();
+                val b2 = (Math.exp(2.0 * Math.PI * (splineOrder-1) * m2D / K2 * Complex.I) / sumK2).abs();
                 
                 for (var m3 : Int = 0; m3 < gridSize(2); m3++) {
                     val m3D = m3 as Double;
@@ -448,9 +445,9 @@ public class PME {
                     async(B.dist(m)) {
                         var sumK3 : Complex = Complex.ZERO;
                         for ((k) in 0..(splineOrder-2)) {
-                            sumK3 = sumK3 + bSpline4(k+1) * Math.exp(2.0 * Math.PI * m3D * k / K3 * Complex.I);
+                            sumK3 = sumK3 + bSpline(splineOrder, k+1) * Math.exp(2.0 * Math.PI * m3D * k / K3 * Complex.I);
                         }
-                        val b3 = (Math.exp(2.0 * Math.PI * (splineOrder - 1.0) * m3D / K3 * Complex.I) / sumK3).abs();
+                        val b3 = (Math.exp(2.0 * Math.PI * (splineOrder-1) * m3D / K3 * Complex.I) / sumK3).abs();
                         B(m) = b1 * b1 * b2 * b2 * b3 * b3;
                     }
                     //Console.OUT.println("B(" + m1 + "," + m2 + "," + m3 + ") = " + B(m1,m2,m3));
@@ -467,13 +464,13 @@ public class PME {
         val C = DistArray.make[Double](gridDist);
         val V = getVolume();
         //Console.OUT.println("V = " + V);
-        finish ateach (m(m1,m2,m3) in gridDist) {
+        finish ateach ((m1,m2,m3) in gridDist) {
             val m1prime = m1 <= K1/2 ? m1 : m1 - K1;
             val m2prime = m2 <= K2/2 ? m2 : m2 - K2;
             val m3prime = m3 <= K3/2 ? m3 : m3 - K3;
             val mVec = edgeReciprocals(0).mul(m1prime).add(edgeReciprocals(1).mul(m2prime)).add(edgeReciprocals(2).mul(m3prime));
             val mSquared = mVec.dot(mVec);
-            C(m) = Math.exp(-(Math.PI*Math.PI) * mSquared / (beta * beta)) / (mSquared * Math.PI * V);
+            C(m1,m2,m3) = Math.exp(-(Math.PI*Math.PI) * mSquared / (beta * beta)) / (mSquared * Math.PI * V);
         }
         at (C.dist(0,0,0)) {
             C(0,0,0) = 0.0;
@@ -484,9 +481,11 @@ public class PME {
     /* 
      * Gets the nth order B-spline M_n(u) as per Eq. 4.1
      */
-    public static safe def bSpline(n : Int, u : Double) : Double {
+    public final static safe def bSpline(n : Int, u : Double) : Double {
         if (u < 0.0 || u > n) {
             return 0.0;
+        } else if (n == 4) {
+            return bSpline4(u);
         } else if (n == 2) {
             return 1.0 - Math.abs(u - 1.0);
         } else {
@@ -497,7 +496,7 @@ public class PME {
     /* 
      * Gets the 4th order B-spline M_4(u) as per Eq. 4.1
      */
-    private static safe def bSpline4(u : Double) : Double {
+    private final static safe def bSpline4(u : Double) : Double {
         if (u <= 0.0 || u >= 4) {
             return 0.0;
         } else {
@@ -508,7 +507,7 @@ public class PME {
     /* 
      * Gets the 3rd order B-spline M_3(u) as per Eq. 4.1
      */
-    private static safe def bSpline3(u : Double) : Double {
+    private final static safe def bSpline3(u : Double) : Double {
         if (u <= 0.0 || u >= 3) {
             return 0.0;
         } else {
@@ -519,16 +518,22 @@ public class PME {
     /* 
      * Gets the 2nd order B-spline M_2(u) as per Eq. 4.1
      */
-    private static safe def bSpline2(u : Double) : Double {
+    private final static safe def bSpline2(u : Double) : Double {
         if (u <= 0.0 || u >= 2) {
             return 0.0;
         } else {
             return 1.0 - Math.abs(u - 1.0);
         }
     }
+
+    /** Gets scaled fractional coordinate u as per Eq. 3.1 - cubic only */
+    public global safe def getScaledFractionalCoordinates(r : Point3d) : Vector3d {
+        return Vector3d(edgeReciprocals(0).i * gridSize(0) * r.i, edgeReciprocals(1).j * gridSize(1) * r.j, edgeReciprocals(2).k * gridSize(2) * r.k);
+    }
     
-    /** Gets scaled fractional coordinate u as per Eq. 3.1 */
+    /** Gets scaled fractional coordinate u as per Eq. 3.1 - general rectangular */
     public global safe def getScaledFractionalCoordinates(r : Vector3d) : Vector3d {
+        // this method allows general non-rectangular cells
         return Vector3d(edgeReciprocals(0).mul(gridSize(0)).dot(r), edgeReciprocals(1).mul(gridSize(1)).dot(r), edgeReciprocals(2).mul(gridSize(2)).dot(r));
     }
 

@@ -11,7 +11,11 @@ import au.edu.anu.util.Timer;
  * @author milthorpe
  */
 public class TestFmm3d extends TestElectrostatic {
-    static val X_SLICE = SIZE / Place.MAX_PLACES;
+    public global def sizeOfCentralCluster() : Double = 80.0;
+
+    public def this(numAtoms : Int) {
+        super(numAtoms);
+    }
 
     public static def main(args : Rail[String]!) {
         var numAtoms : Int;
@@ -34,13 +38,17 @@ public class TestFmm3d extends TestElectrostatic {
             return;
         }
 
+        new TestFmm3d(numAtoms).test(density, numTerms, wellSpaced);
+    }
+
+    public def test(density : Double, numTerms : Int, wellSpaced : Int) {
         Console.OUT.println("Testing FMM for " + numAtoms 
-                          + " atoms, target density = " + density
-                          + " numTerms = " + numTerms
-                          + " wellSpaced param = " + wellSpaced);
+                  + " atoms, target density = " + density
+                  + " numTerms = " + numTerms
+                  + " wellSpaced param = " + wellSpaced);
         
 
-        val atoms = generateAtoms(numAtoms);
+        val atoms = generateAtoms();
         val fmm3d = new Fmm3d(density, numTerms, wellSpaced, Point3d(0.0, 0.0, 0.0), SIZE, numAtoms, atoms);
         val energy = fmm3d.calculateEnergy();
         

@@ -11,6 +11,12 @@ import au.edu.anu.util.Timer;
  * @author milthorpe
  */
 public class TestPeriodicFmm3d extends TestElectrostatic {
+    public global def sizeOfCentralCluster() : Double = 80.0;
+
+    public def this(numAtoms : Int) {
+        super(numAtoms);
+    }
+
     public static def main(args : Rail[String]!) {
         var numAtoms : Int;
         var density : Double = 60.0;
@@ -32,14 +38,18 @@ public class TestPeriodicFmm3d extends TestElectrostatic {
             Console.ERR.println("usage: TestPeriodicFmm3d numAtoms [density] [numTerms] [numShells]");
             return;
         }
+        new TestPeriodicFmm3d(numAtoms).test(density, numTerms, numShells);
+    }
 
+
+    public def test(density : Double, numTerms : Int, numShells : Int) {
         Console.OUT.println("Testing Periodic FMM for " + numAtoms 
                           + " atoms, target density = " + density
                           + " numTerms = " + numTerms
                           + " numShells = " + numShells);
         
 
-        val atoms = generateAtoms(numAtoms);
+        val atoms = generateAtoms();
         val fmm3d = new PeriodicFmm3d(density, numTerms, Point3d(0.0, 0.0, 0.0), SIZE, numAtoms, atoms, numShells);
         val energy = fmm3d.calculateEnergy();
         
