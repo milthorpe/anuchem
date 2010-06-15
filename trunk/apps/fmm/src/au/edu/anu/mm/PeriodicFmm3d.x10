@@ -110,6 +110,7 @@ public class PeriodicFmm3d extends Fmm3d {
         timer.start(TIMER_INDEX_MACROSCOPIC);
         // TODO distributed impl.
         val macroMultipoles = DistArray.make[MultipoleExpansion](Dist.makeBlock([0..Place.MAX_PLACES-1,0..numShells],0));
+        val macroLocalTranslations = DistArray.make[LocalExpansion](Dist.makeBlock([0..Place.MAX_PLACES-1,0..numShells],0));
         finish ateach ((p) : Point in Dist.makeUnique(Place.places)) {
             //Console.OUT.println("shells at " + p + " top level = " + getTopLevel());
             val topLevelBox = boxes(0)(0,0,0) as FmmBox!;
@@ -130,27 +131,33 @@ public class PeriodicFmm3d extends Fmm3d {
             macroMultipoles(p, 1).translateAndAddMultipole(macroTranslation, macroMultipoles(p, 0));
             //Console.OUT.println("final for 1 = " + macroMultipoles(p, 1));
 
+            // locals for shell 1
+            macroLocalTranslations(p,0) = new LocalExpansion(numTerms);
+            for ((i,j,k) in nineCube) {
+                if (Math.abs(i) > 1 || Math.abs(j) > 1 || Math.abs(k) > 1) {
+                    // inner 27 boxes done at a lower level
+                    val translationVector = Vector3d(i * size,
+                                                     j * size,
+                                                     k * size);
+                    val transform = LocalExpansion.getMlm(translationVector, numTerms) as LocalExpansion!;
+                    macroLocalTranslations(p,0).add(transform);
+                }
+            }
+            macroLocalTranslations(p,1) = macroLocalTranslations(p,0).getMacroscopicParent();
+
             // remaining shells
             for (var shell: Int = 2; shell <= numShells; shell++) {
                 macroTranslation = macroTranslation.getMacroscopicParent();
                 macroMultipoles(p, shell) = new MultipoleExpansion(numTerms);
                 macroMultipoles(p, shell).translateAndAddMultipole(macroTranslation, macroMultipoles(p, shell-1));
                 //Console.OUT.println("final for " + shell + " = " + macroMultipoles(p, shell));
+                macroLocalTranslations(p,shell) = macroLocalTranslations(p,shell-1).getMacroscopicParent();
             }
 
             // now transform and add macroscopic multipoles to local expansion for top level box
             for (var shell: Int = 0; shell <= numShells; shell++) {
-                val sideLength = size * Math.pow(3.0, shell);
-                for ((i,j,k) in nineCube) {
-                    if (Math.abs(i) > 1 || Math.abs(j) > 1 || Math.abs(k) > 1) {
-                        // inner 27 boxes done at a lower level
-                        val translationVector = Vector3d(i * sideLength,
-                                                         j * sideLength,
-                                                         k * sideLength);
-                        val transform = LocalExpansion.getMlm(translationVector, numTerms) as LocalExpansion!;
-                        topLevelBox.localExp.transformAndAddToLocal(transform, macroMultipoles(p, shell) as MultipoleExpansion!);
-                    }
-                }
+                val localExpansion = macroLocalTranslations(p,shell) as LocalExpansion!;
+                topLevelBox.localExp.transformAndAddToLocal(localExpansion, macroMultipoles(p, shell) as MultipoleExpansion!);
             }
             //Console.OUT.println("final for topLevel = " + topLevelBox.localExp);
         }
