@@ -12,6 +12,13 @@ public class Distributed3dFft {
 
     public def this(dataSize : Int) {
         this.dataSize = dataSize;
+        //FFTW.fftwInitThreads();
+        //FFTW.fftwPlanWithNThreads(Runtime.INIT_THREADS);
+    }
+
+    // TODO a neater way to cleanup the FFTW environment
+    public def cleanup() {
+        //FFTW.fftwCleanupThreads();
     }
 
     /**
@@ -29,23 +36,31 @@ public class Distributed3dFft {
                         target : DistArray[Complex](3){self.dist==source.dist},
                         temp : DistArray[Complex](3){self.dist==source.dist},
                         forward : Boolean) {
-        doFFTForOneDimension(source, temp, forward);
-        if (forward) {
-            transposeArray(temp, target);
+        if (source.dist.onePlace == here) {
+        // all source data is here.  use local 3D FFT rather than distributed
+            Console.OUT.println("do local 3D FFT instead");
+            val plan : FFTW.FFTWPlan = FFTW.fftwPlan3d(dataSize, dataSize, dataSize, source, target, forward);
+            FFTW.fftwExecute(plan);
+            FFTW.fftwDestroyPlan(plan); 
         } else {
-            transposeArrayReverse(temp, target);
-        }
-        doFFTForOneDimension(target, temp, forward);
-        if (forward) {
-            transposeArray(temp, target);
-        } else {
-            transposeArrayReverse(temp, target);
-        }
-        doFFTForOneDimension(target, temp, forward);
-        if (forward) {
-            transposeArray(temp, target);
-        } else {
-            transposeArrayReverse(temp, target);
+            doFFTForOneDimension(source, temp, forward);
+            if (forward) {
+                transposeArray(temp, target);
+            } else {
+                transposeArrayReverse(temp, target);
+            }
+            doFFTForOneDimension(target, temp, forward);
+            if (forward) {
+                transposeArray(temp, target);
+            } else {
+                transposeArrayReverse(temp, target);
+            }
+            doFFTForOneDimension(target, temp, forward);
+            if (forward) {
+                transposeArray(temp, target);
+            } else {
+                transposeArrayReverse(temp, target);
+            }
         }
     }
 
