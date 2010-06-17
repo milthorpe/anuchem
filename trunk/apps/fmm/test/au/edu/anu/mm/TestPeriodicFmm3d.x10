@@ -21,7 +21,7 @@ public class TestPeriodicFmm3d extends TestElectrostatic {
         var numAtoms : Int;
         var density : Double = 60.0;
         var numTerms : Int = 10;
-        var numShells : Int = 5;
+        var numShells : Int = 10;
         if (args.length > 0) {
             numAtoms = Int.parseInt(args(0));
             if (args.length > 1) {
