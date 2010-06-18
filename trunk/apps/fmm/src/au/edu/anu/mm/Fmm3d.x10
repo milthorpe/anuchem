@@ -322,17 +322,14 @@ public class Fmm3d {
                     // direct calculation with all atoms in non-well-separated boxes
                     val uList = box1.getUList();
                     for ((x2,y2,z2) in uList) {
-                        // interact with "left half" of uList i.e. only boxes with x1<=x1
-                        if (x2 < x1 || (x2 == x1 && y2 < y1) || (x2 == x1 && y2 == y1 && z2 < z1)) {
-                            // here we force on the packed atoms for which a future was previously issued
-                            val boxAtoms = packedAtoms(x2,y2,z2)();
-                            if (boxAtoms != null) {
-                                for (var i : Int = 0; i < boxAtoms.length(); i++) {
-                                    val atom2Packed = boxAtoms(i);
-                                    for ((atomIndex1) in 0..length-1) {
-                                        val atom1 = box1.atoms(atomIndex1);
-                                        thisBoxEnergy += atom1.charge * atom2Packed.charge / atom1.centre.distance(atom2Packed.centre);
-                                    }
+                        // here we force on the packed atoms for which a future was previously issued
+                        val boxAtoms = packedAtoms(x2,y2,z2)();
+                        if (boxAtoms != null) {
+                            for (var i : Int = 0; i < boxAtoms.length(); i++) {
+                                val atom2Packed = boxAtoms(i);
+                                for ((atomIndex1) in 0..length-1) {
+                                    val atom1 = box1.atoms(atomIndex1);
+                                    thisBoxEnergy += atom1.charge * atom2Packed.charge / atom1.centre.distance(atom2Packed.centre);
                                 }
                             }
                         }
@@ -597,11 +594,14 @@ public class Fmm3d {
      * The U-list consists of all leaf boxes not well-separated from <code>box</code>.
      */
     private global def createUList(box : FmmLeafBox!) {
+        // interact with "left half" of uList i.e. only boxes with x<=box.x
         val uList = new GrowableRail[Point(3)]();
-        for ((x) in Math.max(0,box.x-ws)..Math.min(lowestLevelDim-1,box.x+ws)) {
+        for ((x) in Math.max(0,box.x-ws)..box.x) {
             for ((y) in Math.max(0,box.y-ws)..Math.min(lowestLevelDim-1,box.y+ws)) {
                 for ((z) in Math.max(0,box.z-ws)..Math.min(lowestLevelDim-1,box.z+ws)) {
-                    uList.add(Point.make(x,y,z));
+                    if (x < box.x || (x == box.x && y < box.y) || (x == box.x && y == box.y && z < box.z)) {
+                        uList.add(Point.make(x,y,z));
+                    }
                 }
             }
         }

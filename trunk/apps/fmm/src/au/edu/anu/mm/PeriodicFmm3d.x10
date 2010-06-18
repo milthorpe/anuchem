@@ -339,11 +339,14 @@ public class PeriodicFmm3d extends Fmm3d {
      * The U-list consists of all leaf boxes not well-separated from <code>box</code>.
      */
     private global def createUList(box : FmmLeafBox!) {
+        // interact with "left half" of uList i.e. only boxes with x<=box.x
         val uList = new GrowableRail[Point(3)]();
-        for ((x) in box.x-ws..box.x+ws) {
+        for ((x) in box.x-ws..box.x) {
             for ((y) in box.y-ws..box.y+ws) {
                 for ((z) in box.z-ws..box.z+ws) {
-                    uList.add(Point.make(x,y,z));
+                    if (x < box.x || (x == box.x && y < box.y) || (x == box.x && y == box.y && z < box.z)) {
+                        uList.add(Point.make(x,y,z));
+                    }
                 }
             }
         }
@@ -440,22 +443,19 @@ public class PeriodicFmm3d extends Fmm3d {
                     // direct calculation with all atoms in non-well-separated boxes
                     val uList = box1.getUList();
                     for ((x2,y2,z2) in uList) {
-                        // interact with "left half" of uList i.e. only boxes with x1<=x1
-                        if (x2 < x1 || (x2 == x1 && y2 < y1) || (x2 == x1 && y2 == y1 && z2 < z1)) {
-                            // here we force on the packed atoms for which a future was previously issued
-                            val boxAtoms = packedAtoms(x2,y2,z2)();
-                            if (boxAtoms != null) {
-                                // is box from a neighbouring image?
-                                val translation = getTranslation(x2, y2, z2);
-                                for (var i : Int = 0; i < boxAtoms.length(); i++) {
-                                    val atom2Packed = boxAtoms(i);
-                                    val imageCentre = atom2Packed.centre + translation;
-                                    for ((atomIndex1) in 0..length-1) {
-                                        val atom1 = box1.atoms(atomIndex1);
-                                        if (atom1.centre != imageCentre) {
-                                        // necessary to check to avoid interactions between fictious charges
-                                            thisBoxEnergy += atom1.charge * atom2Packed.charge / atom1.centre.distance(imageCentre);
-                                        }
+                        // here we force on the packed atoms for which a future was previously issued
+                        val boxAtoms = packedAtoms(x2,y2,z2)();
+                        if (boxAtoms != null) {
+                            // is box from a neighbouring image?
+                            val translation = getTranslation(x2, y2, z2);
+                            for (var i : Int = 0; i < boxAtoms.length(); i++) {
+                                val atom2Packed = boxAtoms(i);
+                                val imageCentre = atom2Packed.centre + translation;
+                                for ((atomIndex1) in 0..length-1) {
+                                    val atom1 = box1.atoms(atomIndex1);
+                                    if (atom1.centre != imageCentre) {
+                                    // necessary to check to avoid interactions between fictious charges
+                                        thisBoxEnergy += atom1.charge * atom2Packed.charge / atom1.centre.distance(imageCentre);
                                     }
                                 }
                             }
