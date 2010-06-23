@@ -27,8 +27,11 @@ public class Expansion {
     public def this(p : Int, data : ValRail[Complex]) {
         val expRegion = new ExpansionRegion(p);
 	// FIXME: DG.  Change this constructor to take an Array to copyFrom to avoid useless zeroing in new LocalRectArray.
-	val tmp = new Array[Complex](expRegion);
-        data.copyTo(0, tmp.raw(), 0, data.length());
+	    val tmp = new Array[Complex](expRegion);
+        //data.copyTo(0, tmp.raw(), 0, data.length());
+        for ((i,j) in tmp) {
+            tmp(i,j) = data(i*i + i+j);
+        }
         this.terms = tmp;
     }
 
@@ -59,6 +62,12 @@ public class Expansion {
      * @return the expansion terms, shoehorned into a ValRail
      */
     public static safe def getData(p : Int, source : Expansion!) : ValRail[Complex] {
-        return source.terms.raw();
+        val size = (p+1)*(p+1);
+        val data = Rail.make[Complex](size);
+        for ((i,j) in source.terms) {
+            data(i*i + i+j) = source.terms(i,j);
+        }
+        return data;
+        //return source.terms.raw();
     }
 }
