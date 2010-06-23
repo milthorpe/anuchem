@@ -13,16 +13,16 @@ import x10.util.*;
 
 public class AtomInfo {
     /** atomic numbers */
-    var atomicNumbers:HashMap[String, Int]{self.at(this)};
+    val atomicNumbers = new HashMap[String, Int]();
    
     /** covalent radii, in a.u. */
-    var covalentRadii:HashMap[String, Double]{self.at(this)};
+    val covalentRadii = new HashMap[String, Double]();
 
     /** vdW radii, in a.u. */
-    var vdWRadii:HashMap[String, Double]{self.at(this)};
+    val vdWRadii = new HashMap[String, Double]();
 
     /** atomic mass in a.u. */
-    var atomicMass:HashMap[String, Double] {self.at(this)};
+    val atomicMass = new HashMap[String, Double]();
 
     var madeIt:Boolean;
 
@@ -32,8 +32,6 @@ public class AtomInfo {
 
     private def make() {
         if (madeIt) return;
-
-        atomicNumbers = new HashMap[String, Int]();
 
         atomicNumbers.put("H",  1);
         atomicNumbers.put("He", 2);
@@ -46,7 +44,6 @@ public class AtomInfo {
         atomicNumbers.put("F",  9);
         atomicNumbers.put("Ne", 10);
 
-        covalentRadii = new HashMap[String, Double]();
         covalentRadii.put("H",  0.4346);
         covalentRadii.put("He", 0.6047);
         covalentRadii.put("Li", 0.6047);
@@ -58,7 +55,6 @@ public class AtomInfo {
         covalentRadii.put("F",  1.3417);
         covalentRadii.put("Ne", 1.3417);
 
-        vdWRadii = new HashMap[String, Double]();
         vdWRadii.put("H",  2.2677);
         vdWRadii.put("He", 2.6456);
         vdWRadii.put("Li", 2.6456);
@@ -70,7 +66,6 @@ public class AtomInfo {
         vdWRadii.put("F",  2.7779);
         vdWRadii.put("Ne", 2.7779);
 
-        atomicMass = new HashMap[String, Double]();
         atomicMass.put("H",  1.0079);
         atomicMass.put("He", 4.0026);
         atomicMass.put("Li", 6.941);
@@ -93,9 +88,9 @@ public class AtomInfo {
         return _theInstance;
     }
 
-    public def getAtomicNumber(atm:Atom{self.at(this)}) = atomicNumbers.getOrElse(atm.symbol, -1);
-    public def getCovalentRadius(atm:Atom{self.at(this)}) = covalentRadii.getOrElse(atm.symbol, -1);
-    public def getVdwRadius(atm:Atom{self.at(this)}) = vdWRadii.getOrElse(atm.symbol, -1);
-    public def getAtomicMass(atm:Atom{self.at(this)}) = atomicMass.getOrElse(atm.symbol, -1);
+    public global def getAtomicNumber(atm:Atom{self.at(this)}) = atomicNumbers.getOrElse(atm.symbol, -1);
+    public global def getCovalentRadius(atm:Atom{self.at(this)}) = covalentRadii.getOrElse(atm.symbol, -1);
+    public global def getVdwRadius(atm:Atom{self.at(this)}) = vdWRadii.getOrElse(atm.symbol, -1);
+    public global def getAtomicMass(atm:Atom{self.at(this)}) = atomicMass.getOrElse(atm.symbol, -1);
 }
 
