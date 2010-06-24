@@ -116,7 +116,11 @@ public class GlobalImmutableMatrix extends Matrix {
         if (muted(0)) return false;
 
         // TODO: raw() to change!
-        ar.raw().copyTo(0, mat.raw(), 0, size*size);
+        // ar.raw().copyTo(0, mat.raw(), 0, size*size);
+        val arr = ar.raw();
+        val mr  = mat.raw();
+        for(var i:Int=0; i<size*size; i++) arr(i) = mr(i);
+        
         return true;
     }
 
@@ -154,8 +158,10 @@ public class GlobalImmutableMatrix extends Matrix {
        //    broadcast, but each place "reading" from Place 0
        finish ateach(idx in replicatedArray.dist) {
           val repArr = replicatedArray(idx);          
-          val mr = at(mat) { return mat.raw() as ValRail[Double]; };             
-          mr.copyTo(0, repArr.raw(), 0, size*size);
+          val mr = at(mat) { return mat.raw(); };             
+          // mr.copyTo(0, repArr.raw(), 0, size*size);
+          val ra = repArr.raw();
+          for(var i:Int=0; i<size*size; i++) ra(i) = mr(i);
        }       
     }
 

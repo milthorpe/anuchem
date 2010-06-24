@@ -37,6 +37,7 @@ public class TwoElectronIntegrals {
     global val pqInts:Array[Double](2)!;
     global val npint:Array[Double](2)!;
     global val pcdint:Array[Double](3)!;
+    global val pdsz:Int;
 
     private val maxam:Int, maxam2:Int, maxam4:Int, maxamN:Int, maxam2M:Int, maxam2N:Int, pqdim:Int;
 
@@ -72,6 +73,7 @@ public class TwoElectronIntegrals {
         maxam2M  = ((maxam2+1)*(maxam2+2)/2);
         maxam2N  = ((maxam2+1)*(maxam2M+1));
         pqdim = maxam2M+1;
+        pdsz  = (maxamN+1)*(maxamN+1)*maxam2N;
 
         // Console.OUT.println("alloc: " + maxam + " " + maxam2N);
 
@@ -264,7 +266,7 @@ public class TwoElectronIntegrals {
               */
 
              // pcdint.lift(pcdint, (a:Double)=>0.0);
-             val raw = pcdint.raw(); for(i=0; i<raw.length; i++) raw(i) = 0.0;
+             val raw = pcdint.raw(); for(i=0; i<pdsz; i++) raw(i) = 0.0;
              // pcdint.set(0.0);
 
              val bAlpha = bPrim.getExponent();
