@@ -36,8 +36,8 @@ public class Distributed3dFft {
                         target : DistArray[Complex](3){self.dist==source.dist},
                         temp : DistArray[Complex](3){self.dist==source.dist},
                         forward : Boolean) {
-        if (source.dist.onePlace == here) {
-            // all source data is here.  use local 3D FFT rather than distributed
+        if (source.dist.constant) {
+            // all source data at one place.  use local 3D FFT rather than distributed
             val plan : FFTW.FFTWPlan = FFTW.fftwPlan3d(dataSize, dataSize, dataSize, source, target, forward);
             FFTW.fftwExecute(plan);
             FFTW.fftwDestroyPlan(plan); 
