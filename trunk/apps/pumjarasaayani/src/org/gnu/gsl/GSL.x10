@@ -12,10 +12,10 @@ import x10x.vector.Vector;
 @NativeCPPCompilationUnit("GSL.cc")
 @NativeRep("c++", "::org::gnu::gsl::GSLWrapper", "::org::gnu::gsl::GSLWrapper", null)
 public class GSL {
-     @Native("c++", "::org::gnu::gsl::GSLWrapper::eigenSymmv((reinterpret_cast<x10::array::Array<double>*>(#1._val->getMatrix()._val))->raw()._val->_data, (reinterpret_cast<x10::array::Array<double>*>(#2._val->getMatrix()._val))->raw()._val->_data, (reinterpret_cast<x10::array::Array<double>*>(#3._val->getVector()._val))->raw()._val->_data, #3._val->getSize())")
+     @Native("c++", "::org::gnu::gsl::GSLWrapper::eigenSymmv((#1)._val->getMatrix()._val->raw()->FMGL(chunk)->data, (#2)._val->getMatrix()._val->raw()->FMGL(chunk)->data, (#3)._val->getVector()._val->raw()->FMGL(chunk)->data, (#3)._val->getSize())")
      public native static def eigenSymmv(A:Matrix, evec:Matrix, eval:Vector) : Int; 
 
-     @Native("c++", "::org::gnu::gsl::GSLWrapper::solve((reinterpret_cast<x10::array::Array<double>*>(#1._val->getMatrix()._val))->raw()._val->_data, (reinterpret_cast<x10::array::Array<double>*>(#2._val->getVector()._val))->raw()._val->_data, (reinterpret_cast<x10::array::Array<double>*>(#3._val->getVector()._val))->raw()._val->_data, #3._val->getSize())")     
+     @Native("c++", "::org::gnu::gsl::GSLWrapper::solve((#1)._val->getMatrix()._val->raw()->FMGL(chunk)->data, (#2)._val->getVector()._val->raw()->FMGL(chunk)->data, (#3)._val->getVector()._val->raw()->FMGL(chunk)->data, (#3)._val->getSize())")     
      public native static def solve(A:Matrix, b:Vector, x:Vector) : Int;
 }
 
