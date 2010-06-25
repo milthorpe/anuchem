@@ -9,15 +9,15 @@
 package au.anu.edu.qm;
 
 import x10x.matrix.Matrix;
-import x10x.matrix.GlobalImmutableMatrix;
+import x10x.matrix.Matrix;
 
-public class Density extends GlobalImmutableMatrix {
+public class Density extends Matrix {
     public def this(n:Int) {
         super(n);
     }
 
     public def compute(noOfOccupancies:Int, mos:MolecularOrbitals!) : void {
-        unmute();
+        // unmute();
 
         // construct it from the MOs .. C*C'
         val N = mos.getRowCount();
@@ -35,7 +35,7 @@ public class Density extends GlobalImmutableMatrix {
         for(val(i, j) in thisMat.region)
            thisMat(i, j) = res(i, j);
 
-        mute();
+        // mute();
     }
 }
 
