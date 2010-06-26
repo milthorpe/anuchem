@@ -168,7 +168,6 @@ public class Fmm3d {
     def multipoleLowestLevel() {
         //Console.OUT.println("multipole lowest level");
         timer.start(TIMER_INDEX_MULTIPOLE);
-        //finish ateach (p1 in atoms) {
         finish ateach (p1 in atoms) {
             val localAtoms = atoms(p1);
             foreach ((i) in 0..localAtoms.length-1) {
@@ -233,12 +232,12 @@ public class Fmm3d {
      * non-empty child boxes.
      */
     def transformToLocal() {
-        //Console.OUT.println("transform level " + getTopLevel());
         timer.start(TIMER_INDEX_TRANSFORM);
 
         // start the prefetch of all multipoles required at each place
         prefetchMultipoles();
 
+        //Console.OUT.println("transform level " + getTopLevel());
         val highestLevelBoxes = boxes(getTopLevel());
         finish ateach (p1 in Dist.makeUnique(highestLevelBoxes.dist.places())) {
             val highestLevelMultipoleCopies = (locallyEssentialTrees(here.id) as LocallyEssentialTree!).multipoleCopies(getTopLevel());
@@ -433,7 +432,7 @@ public class Fmm3d {
             val thisLevelRegion : Region(3) = [0..levelDim-1, 0..levelDim-1, 0..levelDim-1];
             val thisLevelDist = Dist.makeBlock(thisLevelRegion, 0);
             boxesTemp(thisLevel) = DistArray.make[FmmBox](thisLevelDist);
-            //Console.OUT.println("level " + thisLevel + " dist: " + thisLevelDist);
+            Console.OUT.println("level " + thisLevel + " dist: " + thisLevelDist);
         }
         val boxesValRail = boxesTemp as ValRail[DistArray[FmmBox](3)];
 
