@@ -35,7 +35,7 @@ public class MortonDist extends BaseDist{self.rank==3} {
         public global def boundingBox(): Region(rank) {throw U.unsupported(this, "boundingBox()");}
         global protected  def computeBoundingBox(): Region(rank) {throw U.unsupported(this, "computeBoundingBox()");}
         public global def min(): ValRail[int] = ValRail.make(rank, (Int) => 0);
-        public global def max(): ValRail[int] = ValRail.make(rank, (Int) => Int.MAX_VALUE);
+        public global def max(): ValRail[int] = ValRail.make(rank, (Int) => (Math.cbrt(totalLength) as Int));
 
         public global def contains(that: Region(rank)): boolean {
             if (that instanceof MortonSubregion) {
@@ -67,7 +67,7 @@ public class MortonDist extends BaseDist{self.rank==3} {
         public global def contains(p: Point): boolean {
             if (p.rank != 3) return false;
             val index = MortonDist.getMortonIndex(p, this.totalLength);
-            //Console.OUT.println("index = " + index + " start = " + start + " end = "  + end);
+            //Console.OUT.println("contains " + p + " index = " + index + " start = " + start + " end = "  + end);
             return (index >= start && index <= end);
         }
 
@@ -95,7 +95,7 @@ public class MortonDist extends BaseDist{self.rank==3} {
         }
 
         public global safe def toString(): String {
-            return "Morton indices [" + start + ".." + end + "]";
+            return "Z[" + start + ".." + end + "]";
         }
     }
 
@@ -105,7 +105,7 @@ public class MortonDist extends BaseDist{self.rank==3} {
 
     public static def make(r: Region(3), ps: ValRail[Place]) : MortonDist{self.region==r} {
         val totalLength = r.size();
-        Console.OUT.println("r = " + r + " totalLength = " + totalLength);
+        //Console.OUT.println("r = " + r + " totalLength = " + totalLength);
         val init = (p:Int) => new MortonSubregion(getPlaceStart(p,ps.length(),totalLength), 
                                                   getPlaceEnd(p,ps.length(),totalLength), totalLength) as Region(3);
         val subregions = ValRail.make[Region(3)](ps.length(), init);
@@ -115,10 +115,12 @@ public class MortonDist extends BaseDist{self.rank==3} {
     public def this(r: Region, ps: ValRail[Place], rs: ValRail[Region(r.rank)]): MortonDist{self.region==r} {
         super(r, ps, rs);
         totalLength = r.size();
+/*
         Console.OUT.println("places:");
         for (var i:int=0; i<ps.length; i++) {
             Console.OUT.println(get(ps(i)));
         }
+*/
     }
 
     /**
@@ -177,10 +179,10 @@ public class MortonDist extends BaseDist{self.rank==3} {
 
     public static safe def getPlaceStart(placeId : Int, numPlaces : Int, totalLength : Int) {
         var start : Int;
-        Console.OUT.println("getPlaceStart, placeId = " + placeId + ", numPlaces = " + numPlaces + ", totalLength = " + totalLength);
+        //Console.OUT.println("getPlaceStart, placeId = " + placeId + ", numPlaces = " + numPlaces + ", totalLength = " + totalLength);
         val blockSize = totalLength / numPlaces;
         val numLargerBlocks = totalLength % numPlaces;
-        Console.OUT.println("blockSize = " + blockSize + ", numLargerBlocks = " + numLargerBlocks);
+        //Console.OUT.println("blockSize = " + blockSize + ", numLargerBlocks = " + numLargerBlocks);
         if (placeId < numLargerBlocks) {
             start = placeId * (blockSize + 1);
         } else {
@@ -192,10 +194,10 @@ public class MortonDist extends BaseDist{self.rank==3} {
 
     public static safe def getPlaceEnd(placeId : Int, numPlaces : Int, totalLength : Int) {
         var end : Int;
-        Console.OUT.println("getPlaceEnd, placeId = " + placeId + ", numPlaces = " + numPlaces + ", totalLength = " + totalLength);
+        //Console.OUT.println("getPlaceEnd, placeId = " + placeId + ", numPlaces = " + numPlaces + ", totalLength = " + totalLength);
         val blockSize = totalLength / numPlaces;
         val numLargerBlocks = totalLength % numPlaces;
-        Console.OUT.println("blockSize = " + blockSize + ", numLargerBlocks = " + numLargerBlocks);
+        //Console.OUT.println("blockSize = " + blockSize + ", numLargerBlocks = " + numLargerBlocks);
         if (placeId < numLargerBlocks) {
             end = (placeId + 1) * (blockSize + 1) - 1;
         } else {
@@ -208,14 +210,14 @@ public class MortonDist extends BaseDist{self.rank==3} {
     public global safe def apply(pt: Point/*(rank)*/): Place {
         if (pt.rank != 3) throw U.unsupported("getMortonIndex(p{self.rank!=3})");
         val index = getMortonIndex(pt, totalLength);
-        Console.OUT.println("apply" + pt + " index = " + index + " totalLength = " + totalLength);
+        //Console.OUT.println("apply" + pt + " index = " + index + " totalLength = " + totalLength);
         if (index > totalLength) {
             throw new ArrayIndexOutOfBoundsException("point " + pt + " not contained in distribution");
         }
         for (p:Place in places) {
             val mr = get(p) as MortonSubregion;
             if (mr.contains(pt)) {
-                Console.OUT.println(p);
+                //Console.OUT.println("apply => " + p);
                 return p;
             }
         }
@@ -223,10 +225,10 @@ public class MortonDist extends BaseDist{self.rank==3} {
     }
 
     public global safe def toString(): String {
-        var s: String = "Dist(";
+        var s: String = "MortonDist(";
         var first: boolean = true;
         for (p:Place in places) {
-            if (!first) s += "\n";
+            if (!first) s += ", ";
             s += p.id + "->" + get(p);
             first = false;
         }

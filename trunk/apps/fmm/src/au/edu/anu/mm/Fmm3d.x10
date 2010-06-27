@@ -430,7 +430,7 @@ public class Fmm3d {
         for ((thisLevel) in getTopLevel()..numLevels) {
             val levelDim = Math.pow2(thisLevel) as Int;
             val thisLevelRegion : Region(3) = [0..levelDim-1, 0..levelDim-1, 0..levelDim-1];
-            val thisLevelDist = Dist.makeBlock(thisLevelRegion, 0);
+            val thisLevelDist = MortonDist.make(thisLevelRegion);
             boxesTemp(thisLevel) = DistArray.make[FmmBox](thisLevelDist);
             Console.OUT.println("level " + thisLevel + " dist: " + thisLevelDist);
         }
