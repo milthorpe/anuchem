@@ -9,10 +9,6 @@ import x10.array.U;
  * Each place is assigned a contiguous segment of the Morton curve.
  * NOTE: assumes that the region is cubic (each dimension is the same length)
  * and zero-based.
- * Dimensions:
- * 0: x coordinate at that level (range 0..2^level)
- * 1: y coordinate
- * 2: z coordinate
  */
 public class MortonDist extends BaseDist{self.rank==3} {
     global val totalLength : Int;
@@ -67,7 +63,6 @@ public class MortonDist extends BaseDist{self.rank==3} {
         public global def contains(p: Point): boolean {
             if (p.rank != 3) return false;
             val index = MortonDist.getMortonIndex(p, this.totalLength);
-            //Console.OUT.println("contains " + p + " index = " + index + " start = " + start + " end = "  + end);
             return (index >= start && index <= end);
         }
 
@@ -105,9 +100,9 @@ public class MortonDist extends BaseDist{self.rank==3} {
 
     public static def make(r: Region(3), ps: ValRail[Place]) : MortonDist{self.region==r} {
         val totalLength = r.size();
-        //Console.OUT.println("r = " + r + " totalLength = " + totalLength);
         val init = (p:Int) => new MortonSubregion(getPlaceStart(p,ps.length(),totalLength), 
-                                                  getPlaceEnd(p,ps.length(),totalLength), totalLength) as Region(3);
+                                                  getPlaceEnd(p,ps.length(),totalLength), 
+                                                  totalLength) as Region(3);
         val subregions = ValRail.make[Region(3)](ps.length(), init);
         return new MortonDist(r, ps, subregions);
     }
@@ -115,35 +110,21 @@ public class MortonDist extends BaseDist{self.rank==3} {
     public def this(r: Region, ps: ValRail[Place], rs: ValRail[Region(r.rank)]): MortonDist{self.region==r} {
         super(r, ps, rs);
         totalLength = r.size();
-/*
-        Console.OUT.println("places:");
-        for (var i:int=0; i<ps.length; i++) {
-            Console.OUT.println(get(ps(i)));
-        }
-*/
     }
 
     /**
      * Gets the Morton- or Z-index of a 3-dimensional point.
-     * The first dimension is treated as a level, which 
-     * determines the radix of the leading 1.
-     * E.g. 
-     * level 1 = 1000  (only one box)
-     * level 2 = 1000000 through 1111111
-     * level 3 = 1000000000 through 1111111111
      * The Morton index is calculated by interleaving binary digits
-     * of the other ranks.  E.g. 
-     * (2, 0, 2, 1) = (2, 00, 10, 01)    =    1010001
-     * (3, 0, 2, 1) = (3, 000, 010, 001) = 1000010001
-     * (3, 1, 1, 3) = (3, 001, 001, 011) = 1000001111
-     * (1, 1, 2)    = (   01, 01, 10)    = 001110
-     * (1, 1, 0)    = (   01, 01, 00)    = 000110
+     * of each dimension.  E.g. 
+     * (0, 2, 1) = (00, 10, 01)    = 010001
+     * (1, 1, 2) = (01, 01, 10)    = 001110
+     * (1, 1, 0) = (01, 01, 00)    = 000110
      */
     public static safe def getMortonIndex(p : Point/*(rank)*/, totalLength : Int) : Int {
         if (p.rank != 3) throw U.unsupported("getMortonIndex(p{self.rank!=3})");
         val digitsPerSide = Math.cbrt(totalLength) as Int;
         //Console.OUT.println("getMortonIndex for " + p + " digitsPerSide = " + digitsPerSide);
-        var index : Int = 0;//1 << Math.cbrt(totalLength)*3;
+        var index : Int = 0;
         var digitMask : Int = Math.pow2(digitsPerSide-1);
         for (var digit : Int = digitsPerSide; digit > 0; digit--) {
             for (var dim : Int = 0; dim < 3; dim++) {
@@ -178,46 +159,33 @@ public class MortonDist extends BaseDist{self.rank==3} {
     }
 
     public static safe def getPlaceStart(placeId : Int, numPlaces : Int, totalLength : Int) {
-        var start : Int;
-        //Console.OUT.println("getPlaceStart, placeId = " + placeId + ", numPlaces = " + numPlaces + ", totalLength = " + totalLength);
         val blockSize = totalLength / numPlaces;
         val numLargerBlocks = totalLength % numPlaces;
-        //Console.OUT.println("blockSize = " + blockSize + ", numLargerBlocks = " + numLargerBlocks);
         if (placeId < numLargerBlocks) {
-            start = placeId * (blockSize + 1);
+            return placeId * (blockSize + 1);
         } else {
             val firstPortion = numLargerBlocks * (blockSize + 1);
-            start = firstPortion + (placeId - numLargerBlocks) * blockSize;
+            return firstPortion + (placeId - numLargerBlocks) * blockSize;
         }
-        return start;
     }
 
     public static safe def getPlaceEnd(placeId : Int, numPlaces : Int, totalLength : Int) {
-        var end : Int;
-        //Console.OUT.println("getPlaceEnd, placeId = " + placeId + ", numPlaces = " + numPlaces + ", totalLength = " + totalLength);
         val blockSize = totalLength / numPlaces;
         val numLargerBlocks = totalLength % numPlaces;
-        //Console.OUT.println("blockSize = " + blockSize + ", numLargerBlocks = " + numLargerBlocks);
         if (placeId < numLargerBlocks) {
-            end = (placeId + 1) * (blockSize + 1) - 1;
+            return (placeId + 1) * (blockSize + 1) - 1;
         } else {
             val firstPortion = numLargerBlocks * (blockSize + 1);
-            end = firstPortion + (placeId - numLargerBlocks + 1) * blockSize - 1;
+            return firstPortion + (placeId - numLargerBlocks + 1) * blockSize - 1;
         }
-        return end;
     }
 
     public global safe def apply(pt: Point/*(rank)*/): Place {
         if (pt.rank != 3) throw U.unsupported("getMortonIndex(p{self.rank!=3})");
         val index = getMortonIndex(pt, totalLength);
-        //Console.OUT.println("apply" + pt + " index = " + index + " totalLength = " + totalLength);
-        if (index > totalLength) {
-            throw new ArrayIndexOutOfBoundsException("point " + pt + " not contained in distribution");
-        }
         for (p:Place in places) {
             val mr = get(p) as MortonSubregion;
             if (mr.contains(pt)) {
-                //Console.OUT.println("apply => " + p);
                 return p;
             }
         }
