@@ -24,15 +24,7 @@ public class AtomInfo {
     /** atomic mass in a.u. */
     val atomicMass = new HashMap[String, Double]();
 
-    var madeIt:Boolean;
-
     private def this() {
-        madeIt = false;
-    }
-
-    private def make() {
-        if (madeIt) return;
-
         atomicNumbers.put("H",  1);
         atomicNumbers.put("He", 2);
         atomicNumbers.put("Li", 3);
@@ -76,21 +68,17 @@ public class AtomInfo {
         atomicMass.put("O",  15.999);
         atomicMass.put("F",  18.998);
         atomicMass.put("Ne", 20.1797);
-
-        madeIt = true;
     }
 
     private static _theInstance = new AtomInfo();
 
     public static def getInstance() {
-        _theInstance.make();
-
         return _theInstance;
     }
 
-    public global def getAtomicNumber(atm:Atom{self.at(this)}) = atomicNumbers.getOrElse(atm.symbol, -1);
-    public global def getCovalentRadius(atm:Atom{self.at(this)}) = covalentRadii.getOrElse(atm.symbol, -1);
-    public global def getVdwRadius(atm:Atom{self.at(this)}) = vdWRadii.getOrElse(atm.symbol, -1);
-    public global def getAtomicMass(atm:Atom{self.at(this)}) = atomicMass.getOrElse(atm.symbol, -1);
+    public global def getAtomicNumber(atm:Atom) = atomicNumbers.getOrElse(atm.symbol, -1);
+    public global def getCovalentRadius(atm:Atom) = covalentRadii.getOrElse(atm.symbol, -1);
+    public global def getVdwRadius(atm:Atom) = vdWRadii.getOrElse(atm.symbol, -1);
+    public global def getAtomicMass(atm:Atom) = atomicMass.getOrElse(atm.symbol, -1);
 }
 
