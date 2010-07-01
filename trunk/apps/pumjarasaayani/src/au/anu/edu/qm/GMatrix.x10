@@ -1673,6 +1673,14 @@ public class GMatrix extends Matrix {
             } // end for
         }
 
+        public def computeSingle(i:ContractedGaussian, j:ContractedGaussian,
+                           k:ContractedGaussian, l:ContractedGaussian) {
+             val ix = 0;
+             computeInst(ix).setValue(i as ContractedGaussian!, j as ContractedGaussian!,
+                                      k as ContractedGaussian!, l as ContractedGaussian!);
+             computeInst(ix).compute();
+        }
+
         public def compute(start:Int, end:Int) {
             var i:Int, j:Int, k:Int, l:Int;
             var a:Int, b:Int, c:Int, d:Int;
@@ -1718,7 +1726,7 @@ public class GMatrix extends Matrix {
                                        ldFunc = dFunc.get(l);
 
                                        // TODO: 
-                                       compute(iaFunc, jbFunc, kcFunc, ldFunc);
+                                       computeSingle(iaFunc, jbFunc, kcFunc, ldFunc);
                                    } // end l
                                } // center d
                            } // end k
