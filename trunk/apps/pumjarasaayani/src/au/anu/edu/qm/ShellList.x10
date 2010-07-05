@@ -47,6 +47,26 @@ public class ShellList {
 
     public def getMaximumAngularMomentum() = maxam;
     public def getNumberOfShells() = shellList.size();
+
+    public def getNumberOfShellPrimitives() : Int { 
+         var n:Int = 0;
+         for(shell in shellList.keySet()) 
+             n += shellList.getOrElse(shell, null).getNumberOfShellPrimitives();
+         return n;
+    }
+
+    public def getShellPrimitives() : GrowableRail[ContractedGaussian] {
+         val shellPrimitives = new GrowableRail[ContractedGaussian]();
+ 
+         for(shell in shellList.keySet()) { 
+            val sp = shellList.getOrElse(shell, null).getShellPrimitives();
+            
+            for(var i:Int=0; i<sp.length(); i++) shellPrimitives.add(sp(i));
+         } // end for
+
+         return shellPrimitives;
+    } 
+
     public def getShell(am:Int) = shellList.getOrElse(am, null);
     public def getPowers(am:Int) = powerList(am);
 }

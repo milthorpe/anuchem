@@ -132,7 +132,15 @@ public class BasisFunctions {
     }
 
     private def initShellList() {
-        for(cg in basisFunctions) shellList.addShellPrimitive(cg);
+        for(var atmno:Int=0; atmno<molecule.getNumberOfAtoms(); atmno++) {
+            val atom = molecule.getAtom(atmno);
+            val bfs  = atom.getBasisFunctions();
+            val nbf  = bfs.size();
+
+            for(var i:Int=0; i<nbf; i++) {
+                shellList.addShellPrimitive(bfs.get(i));
+            } // end for
+        } // end for
         shellList.initPowerList();
     }
 

@@ -72,6 +72,10 @@ public class GMatrix extends Matrix {
                Console.OUT.println("   GMatrix.computeDirectMultiPlaceNewFuture: " + gMatType);
                computeDirectMultiPlaceNewFuture(twoE, density);
                break;
+           case 11:
+               Console.OUT.println("   GMatrix.computeDirectMultiPlaceShellLoop: " + gMatType);
+               computeDirectMultiPlaceShellLoop(twoE, density);
+               break;
            default:
                Console.OUT.println("   GMatrix.computeDirectSerialOld: " + gMatType);
                computeDirectSerialOld(twoE, density); 
@@ -1225,6 +1229,83 @@ public class GMatrix extends Matrix {
         Console.OUT.println("\tTime for summing up GMatrix bits: " + (timer.total(1) as Double) / 1e9 + " seconds");
     }
 
+    private def computeDirectMultiPlaceShellLoop(twoE:TwoElectronIntegrals!, density:Density!) : void {
+        val N = density.getRowCount();
+
+        makeZero();
+
+        val gMatrix = getMatrix();
+        val dMatrix = density.getMatrix();
+
+        val jMat = new Matrix(N) as Matrix!;
+        val kMat = new Matrix(N) as Matrix!;
+
+        jMat.makeZero();
+        kMat.makeZero();
+
+        val jMatrix = jMat.getMatrix();
+        val kMatrix = kMat.getMatrix();
+
+        val molecule = twoE.getMolecule();
+        val shellList = twoE.getBasisFunctions().getShellList();
+        val bfs = shellList.getShellPrimitives();
+        val noOfBasisFunctions = bfs.length();
+
+        val noOfAtoms = molecule.getNumberOfAtoms(); 
+        val nPlaces = Place.places.length;
+        val computeInst = Rail.make[ComputePlaceNewFuture](nPlaces);
+
+        Console.OUT.println("\tNo. of places: " + nPlaces);
+        Console.OUT.println("\tNo. of threads per place: " + Runtime.INIT_THREADS);
+
+        val timer = new Timer(2);
+
+        timer.start(0);
+
+        // TODO:
+        val shellPairs = new GrowableRail[Pair[Int,Int]]();
+        val noOfShells = shellList.getNumberOfShellPrimitives();
+        Console.OUT.println("No of shells : " + noOfShells);
+        for(var a:Int=0; a<noOfShells; a++) {
+            for(var b:Int=0; b<noOfShells; b++) {
+                shellPairs.add(Pair[Int,Int](a,b));
+            } // end for
+        } // end for
+
+        val nPairs = shellPairs.length();
+        for(var i:Int=0; i<nPairs; i++) {
+           val a = shellPairs(i).first as Int;
+           val b = shellPairs(i).second as Int;
+
+           // if (a > b) continue;
+           
+           val aFunc = bfs(a); 
+           val bFunc = bfs(b);
+           
+           for(var j:Int=0; j<nPairs; j++) {
+              val c = shellPairs(j).first as Int;
+              val d = shellPairs(j).second as Int;
+
+              // if (c > d) continue;
+
+              Console.OUT.println(a + ", " + b + ", " + c + ", " + d);
+
+              val cFunc = bfs(c); 
+              val dFunc = bfs(d);
+
+              twoE.compute2EAndRecord(aFunc as ContractedGaussian!, bFunc as ContractedGaussian!, 
+                                      cFunc as ContractedGaussian!, dFunc as ContractedGaussian!, 
+                                      shellList, jMat, kMat, density);                              
+           } // end for
+        } // end for
+
+        // form the G matrix
+        finish foreach(val(x,y) in gMatrix.region)
+                  gMatrix(x,y) = jMatrix(x,y) - (0.25*kMatrix(x,y));
+
+        timer.stop(0);
+        Console.OUT.println("\tTime for actual computation: " + (timer.total(0) as Double) / 1e9 + " seconds");
+    }
 
     /** find unique elements and mark the onces that are not */
     /** 8 => is the level of integral symmetry, given (i,j|k.l)
