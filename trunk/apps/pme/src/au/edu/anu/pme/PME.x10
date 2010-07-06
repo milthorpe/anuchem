@@ -359,35 +359,36 @@ public class PME {
      */
     public def getGriddedCharges() : DistArray[Complex](3){self.dist==gridDist} {
         timer.start(TIMER_INDEX_GRIDCHARGES);
-        val Q = PeriodicDistArray.make[Double](gridDist);
-        finish ateach (p in subCells.dist) {
-            val thisCell = subCells(p);
-            for (atom in thisCell) {
-                val q = atom.charge;
-                val u = getScaledFractionalCoordinates(atom.centre); // TODO general non-cubic
-                val u1c = Math.ceil(u.i) as Int;
-                val u2c = Math.ceil(u.j) as Int;
-                val u3c = Math.ceil(u.k) as Int;
-                for ((i) in 1..splineOrder) {
-                    val k1 = (u1c - i);
-                    for ((j) in 1..splineOrder) {
-                        val k2 = (u2c - j);
-                        for ((k) in 1..splineOrder) {
-                            val k3 = (u3c - k);
-                            val gridPointContribution = q
-                                         * bSpline(splineOrder, u.i - k1)
-                                         * bSpline(splineOrder, u.j - k2)
-                                         * bSpline(splineOrder, u.k - k3);
-                            // TODO is it possible to use X10 reduction to generate Q 
-                            // from large number of partial Q matrices?
-                            async(Q.periodicDist(k1,k2,k3)) {
-                                // TODO this is slow because of lack of optimized atomic - XTENLANG-321
-                                // TODO should be able to do += - raise JIRA
-                                atomic { Q(k1,k2,k3) = Q(k1,k2,k3) + gridPointContribution; }
+        val Q = DistArray.make[Double](gridDist);
+        finish ateach ((p1) in Dist.makeUnique(gridDist.places())) {
+            val myQ = new PeriodicArray[Double](gridRegion);
+            finish foreach (p in subCells.dist | here) {
+                val thisCell = subCells(p);
+                for (atom in thisCell) {
+                    val q = atom.charge;
+                    val u = getScaledFractionalCoordinates(atom.centre); // TODO general non-cubic
+                    val u1c = Math.ceil(u.i) as Int;
+                    val u2c = Math.ceil(u.j) as Int;
+                    val u3c = Math.ceil(u.k) as Int;
+                    for ((i) in 1..splineOrder) {
+                        val k1 = (u1c - i);
+                        for ((j) in 1..splineOrder) {
+                            val k2 = (u2c - j);
+                            for ((k) in 1..splineOrder) {
+                                val k3 = (u3c - k);
+                                val gridPointContribution = q
+                                             * bSpline(splineOrder, u.i - k1)
+                                             * bSpline(splineOrder, u.j - k2)
+                                             * bSpline(splineOrder, u.k - k3);
+                                atomic {myQ(k1,k2,k3) = myQ(k1,k2,k3) + gridPointContribution;}
                             }
                         }
                     }
                 }
+            }
+            for (p in myQ) {
+                val myContribution = myQ(p);
+                async (Q.dist(p)) {atomic{Q(p) += myContribution;}}
             }
         }
         val Qcomplex = DistArray.make[Complex](gridDist, ((i,j,k) : Point) => Complex(Q(i,j,k),0.0));
