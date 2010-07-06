@@ -156,6 +156,9 @@ public class GMatrix extends Matrix {
                     for(l=0; l<(k+1); l++) {
                         kl = k * (k+1) / 2+l;
                         if (ij >= kl) { 
+
+                           // Console.OUT.println(i + ", " + j + ", " + k + ", " + l);
+
                            val twoEIntVal = twoE.compute2E(i,j,k,l);
 
                            setJKMatrixElements(jMatrix, kMatrix, dMatrix, i, j, k, l, twoEIntVal);
@@ -706,6 +709,8 @@ public class GMatrix extends Matrix {
                                     // basis functions on d
                                     for(l=0; l<ndFunc; l++) {
                                         ldFunc = dFunc.get(l);
+
+                                        // Console.OUT.println(a + ", " + b + ", " + c + ", " + d);
 
             	                        twoE.compute2EAndRecord(iaFunc, jbFunc, kcFunc, ldFunc, 
                                                                 shellList, jMat, kMat, density);
@@ -1277,25 +1282,34 @@ public class GMatrix extends Matrix {
            val a = shellPairs(i).first as Int;
            val b = shellPairs(i).second as Int;
 
-           // if (a > b) continue;
-           
-           val aFunc = bfs(a); 
-           val bFunc = bfs(b);
-           
+           val aFunc = bfs(a) as ContractedGaussian!; 
+           val bFunc = bfs(b) as ContractedGaussian!;
+
+           val aStrt = aFunc.getIntIndex();
+           val bStrt = bFunc.getIntIndex();
+           val ab = aStrt * (aStrt+1) / 2+bStrt;
+
            for(var j:Int=0; j<nPairs; j++) {
               val c = shellPairs(j).first as Int;
               val d = shellPairs(j).second as Int;
 
-              // if (c > d) continue;
+              val cFunc = bfs(c) as ContractedGaussian!; 
+              val dFunc = bfs(d) as ContractedGaussian!;
 
-              Console.OUT.println(a + ", " + b + ", " + c + ", " + d);
+              val cStrt = cFunc.getIntIndex();
+              val dStrt = dFunc.getIntIndex();
 
-              val cFunc = bfs(c); 
-              val dFunc = bfs(d);
+              val cd = cStrt * (cStrt+1) / 2+dStrt;
 
-              twoE.compute2EAndRecord(aFunc as ContractedGaussian!, bFunc as ContractedGaussian!, 
-                                      cFunc as ContractedGaussian!, dFunc as ContractedGaussian!, 
-                                      shellList, jMat, kMat, density);                              
+              if (aStrt >= bStrt && cStrt >= dStrt) {
+               if (ab >= cd) {
+                 // Console.OUT.println(a + ", " + b + ", " + c + ", " + d);
+                 // Console.OUT.println(": > " + aStrt + ", " + bStrt + ", " + cStrt + ", " + dStrt);
+
+                 twoE.compute2EAndRecord(aFunc, bFunc, cFunc, dFunc, 
+                                         shellList, jMat, kMat, density);                              
+               } // end if
+              } // end if
            } // end for
         } // end for
 
@@ -1807,6 +1821,7 @@ public class GMatrix extends Matrix {
                                        ldFunc = dFunc.get(l);
 
                                        // TODO: 
+                                       // Console.OUT.println(a + ", " + b + ", " + c + ", " + d + " | " + i + ", " + j + ", " + k + ", " + l);
                                        computeSingle(iaFunc, jbFunc, kcFunc, ldFunc);
                                    } // end l
                                } // center d
