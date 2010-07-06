@@ -7,6 +7,7 @@ import au.edu.anu.fft.Distributed3dFft;
 import au.edu.anu.util.Timer;
 import x10.util.GrowableRail;
 import x10.util.HashMap;
+import x10.util.Pair;
 
 /**
  * This class implements a Smooth Particle Mesh Ewald method to calculate
@@ -362,7 +363,7 @@ public class PME {
         val Q = DistArray.make[Double](gridDist);
         finish ateach ((p1) in Dist.makeUnique(gridDist.places())) {
             val myQ = new PeriodicArray[Double](gridRegion);
-            finish foreach (p in subCells.dist | here) {
+            for (p in subCells.dist | here) {
                 val thisCell = subCells(p);
                 for (atom in thisCell) {
                     val q = atom.charge;
@@ -380,15 +381,15 @@ public class PME {
                                              * bSpline(splineOrder, u.i - k1)
                                              * bSpline(splineOrder, u.j - k2)
                                              * bSpline(splineOrder, u.k - k3);
-                                atomic {myQ(k1,k2,k3) = myQ(k1,k2,k3) + gridPointContribution;}
+                                myQ(k1,k2,k3) = myQ(k1,k2,k3) + gridPointContribution;
                             }
                         }
                     }
                 }
             }
-            for (p in myQ) {
+            finish for (p in myQ) {
                 val myContribution = myQ(p);
-                async (Q.dist(p)) {atomic{Q(p) += myContribution;}}
+                async (Q.dist(p)) { atomic {Q(p) = myContribution; } };
             }
         }
         val Qcomplex = DistArray.make[Complex](gridDist, ((i,j,k) : Point) => Complex(Q(i,j,k),0.0));
