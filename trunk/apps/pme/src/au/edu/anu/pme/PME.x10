@@ -362,7 +362,7 @@ public class PME {
         val Q = PeriodicDistArray.make[Double](gridDist);
         finish ateach (p in subCells.dist) {
             val thisCell = subCells(p);
-            foreach (atom in thisCell) {
+            for (atom in thisCell) {
                 val q = atom.charge;
                 val u = getScaledFractionalCoordinates(atom.centre); // TODO general non-cubic
                 val u1c = Math.ceil(u.i) as Int;
