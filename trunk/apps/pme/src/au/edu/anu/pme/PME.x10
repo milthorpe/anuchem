@@ -97,7 +97,7 @@ public class PME {
      * stored at other places.  This is used to prefetch atom data
      * for direct energy calculation.
      */
-    private global val packedAtomsCache : DistArray[HashMap[Point(3), ValRail[MMAtom.PackedRepresentation]]];
+    private global val packedAtomsCache : DistArray[HashMap[Point(3), ValRail[MMAtom.PackedRepresentation]]](1);
 
     // TODO should be shared local to calculateEnergy() - XTENLANG-404
     private var directEnergy : Double = 0.0;
