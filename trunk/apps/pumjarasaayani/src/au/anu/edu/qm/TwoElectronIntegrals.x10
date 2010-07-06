@@ -660,6 +660,8 @@ public class TwoElectronIntegrals {
              for(cc=0; cc<cLim; cc++) {
                  val kk = cStrt + cc;
 
+                 if (kk < ll) continue;
+
                  for (k=0; k<=maxam2; k++) {
                     val kpq = k*pqdim;
                     for (l=0; l<=maxam2M; l++)
@@ -676,7 +678,7 @@ public class TwoElectronIntegrals {
                      for(aa = 0; aa<aLim; aa++) {
                          val ii = aStrt + aa;
 
-                         if (ii >= jj && kk >= ll) {
+                         if (ii >= jj) {
                              val iijj_st = ii*(ii+1)/2 + jj;
                              val kkll_st = kk*(kk+1)/2 + ll;
 
@@ -718,6 +720,8 @@ public class TwoElectronIntegrals {
                  kkdx(0) = kk; kkdx(1) = kk; lldx(2) = kk; lldx(3) = kk;
                  jjdx(4) = kk; jjdx(5) = kk; iidx(6) = kk; iidx(7) = kk;
 
+                 if (kk < ll) continue;
+
                  for(bb = 0; bb<bLim; bb++) {
                      val jj = bStrt + bb;
 
@@ -727,7 +731,7 @@ public class TwoElectronIntegrals {
                      for(aa = 0; aa<aLim; aa++) {
                          val ii = aStrt + aa;
                   
-                         if (ii >= jj && kk >=ll) {
+                         if (ii >= jj) {
                              val iijj = ii*(ii+1)/2 + jj;
                              val kkll = kk*(kk+1)/2 + ll;
 
