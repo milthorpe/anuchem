@@ -182,7 +182,10 @@ public class PME {
 
         timer.start(TIMER_INDEX_THETARECCONVQ);
         // create F^-1(thetaRecConvQ)
-        val thetaRecConvQ = DistArray.make[Complex](gridDist, (p : Point(gridDist.region.rank)) => BdotC(p) * Qinv(p));
+        val thetaRecConvQ = DistArray.make[Complex](gridDist);
+	    finish ateach(p in gridDist) {
+		    thetaRecConvQ(p) = BdotC(p) * Qinv(p);
+	    }
         // and do inverse FFT
         fft.doFFT3d(thetaRecConvQ, thetaRecConvQ, temp, true);
         timer.stop(TIMER_INDEX_THETARECCONVQ);
@@ -361,7 +364,7 @@ public class PME {
      */
     public def getGriddedCharges() : DistArray[Complex](3){self.dist==gridDist} {
         timer.start(TIMER_INDEX_GRIDCHARGES);
-        val Q = DistArray.make[Double](gridDist);
+        val Q = DistArray.make[Complex](gridDist);
         finish ateach ((p1) in Dist.makeUnique(gridDist.places())) {
             val myQ = new PeriodicArray[Double](gridRegion);
             for (p in subCells | here) {
@@ -390,12 +393,11 @@ public class PME {
             }
             finish for (p in myQ) {
                 val myContribution = myQ(p);
-                async (Q.dist(p)) { atomic {Q(p) = myContribution; } };
+                async (Q.dist(p)) { atomic {Q(p) = Q(p) + myContribution; } };
             }
         }
-        val Qcomplex = DistArray.make[Complex](gridDist, ((i,j,k) : Point) => Complex(Q(i,j,k),0.0));
         timer.stop(TIMER_INDEX_GRIDCHARGES);
-        return Qcomplex;
+        return Q;
     }
 
     /**
