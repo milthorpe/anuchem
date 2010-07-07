@@ -7,6 +7,7 @@ import au.edu.anu.fft.Distributed3dFft;
 import au.edu.anu.util.Timer;
 import x10.util.GrowableRail;
 import x10.util.HashMap;
+import x10.util.Pair;
 
 /**
  * This class implements a Smooth Particle Mesh Ewald method to calculate
@@ -96,7 +97,7 @@ public class PME {
      * stored at other places.  This is used to prefetch atom data
      * for direct energy calculation.
      */
-    private global val packedAtomsCache : DistArray[HashMap[Point(3), ValRail[MMAtom.PackedRepresentation]]];
+    private global val packedAtomsCache : DistArray[HashMap[Point(3), ValRail[MMAtom.PackedRepresentation]]](1);
 
     // TODO should be shared local to calculateEnergy() - XTENLANG-404
     private var directEnergy : Double = 0.0;
@@ -127,6 +128,7 @@ public class PME {
         this.edges = edges;
         this.edgeLengths = ValRail.make[Double](3, (i : Int) => edges(i).length());
         this.edgeReciprocals = ValRail.make[Vector3d](3, (i : Int) => edges(i).inverse());
+
         this.atoms = atoms;
         val r = Region.makeRectangular(0, gridSize(0)-1);
         gridRegion = (r * [0..(gridSize(1)-1)] * [0..(gridSize(2)-1)]) as Region(3);
@@ -359,35 +361,36 @@ public class PME {
      */
     public def getGriddedCharges() : DistArray[Complex](3){self.dist==gridDist} {
         timer.start(TIMER_INDEX_GRIDCHARGES);
-        val Q = PeriodicDistArray.make[Double](gridDist);
-        finish ateach (p in subCells.dist) {
-            val thisCell = subCells(p);
-            foreach (atom in thisCell) {
-                val q = atom.charge;
-                val u = getScaledFractionalCoordinates(atom.centre); // TODO general non-cubic
-                val u1c = Math.ceil(u.i) as Int;
-                val u2c = Math.ceil(u.j) as Int;
-                val u3c = Math.ceil(u.k) as Int;
-                for ((i) in 1..splineOrder) {
-                    val k1 = (u1c - i);
-                    for ((j) in 1..splineOrder) {
-                        val k2 = (u2c - j);
-                        for ((k) in 1..splineOrder) {
-                            val k3 = (u3c - k);
-                            val gridPointContribution = q
-                                         * bSpline(splineOrder, u.i - k1)
-                                         * bSpline(splineOrder, u.j - k2)
-                                         * bSpline(splineOrder, u.k - k3);
-                            // TODO is it possible to use X10 reduction to generate Q 
-                            // from large number of partial Q matrices?
-                            async(Q.periodicDist(k1,k2,k3)) {
-                                // TODO this is slow because of lack of optimized atomic - XTENLANG-321
-                                // TODO should be able to do += - raise JIRA
-                                atomic { Q(k1,k2,k3) = Q(k1,k2,k3) + gridPointContribution; }
+        val Q = DistArray.make[Double](gridDist);
+        finish ateach ((p1) in Dist.makeUnique(gridDist.places())) {
+            val myQ = new PeriodicArray[Double](gridRegion);
+            for (p in subCells | here) {
+                val thisCell = subCells(p);
+                for (atom in thisCell) {
+                    val q = atom.charge;
+                    val u = getScaledFractionalCoordinates(atom.centre); // TODO general non-cubic
+                    val u1c = Math.ceil(u.i) as Int;
+                    val u2c = Math.ceil(u.j) as Int;
+                    val u3c = Math.ceil(u.k) as Int;
+                    for ((i) in 1..splineOrder) {
+                        val k1 = (u1c - i);
+                        for ((j) in 1..splineOrder) {
+                            val k2 = (u2c - j);
+                            for ((k) in 1..splineOrder) {
+                                val k3 = (u3c - k);
+                                val gridPointContribution = q
+                                             * bSpline(splineOrder, u.i - k1)
+                                             * bSpline(splineOrder, u.j - k2)
+                                             * bSpline(splineOrder, u.k - k3);
+                                myQ(k1,k2,k3) = myQ(k1,k2,k3) + gridPointContribution;
                             }
                         }
                     }
                 }
+            }
+            finish for (p in myQ) {
+                val myContribution = myQ(p);
+                async (Q.dist(p)) { atomic {Q(p) = myContribution; } };
             }
         }
         val Qcomplex = DistArray.make[Complex](gridDist, ((i,j,k) : Point) => Complex(Q(i,j,k),0.0));
@@ -528,13 +531,13 @@ public class PME {
 
     /** Gets scaled fractional coordinate u as per Eq. 3.1 - cubic only */
     public global safe def getScaledFractionalCoordinates(r : Point3d) : Vector3d {
-        return Vector3d(edgeReciprocals(0).i * gridSize(0) * r.i, edgeReciprocals(1).j * gridSize(1) * r.j, edgeReciprocals(2).k * gridSize(2) * r.k);
+        return Vector3d(edgeReciprocals(0).i * K1 * r.i, edgeReciprocals(1).j * K2 * r.j, edgeReciprocals(2).k * K3 * r.k);
     }
     
     /** Gets scaled fractional coordinate u as per Eq. 3.1 - general rectangular */
     public global safe def getScaledFractionalCoordinates(r : Vector3d) : Vector3d {
         // this method allows general non-rectangular cells
-        return Vector3d(edgeReciprocals(0).mul(gridSize(0)).dot(r), edgeReciprocals(1).mul(gridSize(1)).dot(r), edgeReciprocals(2).mul(gridSize(2)).dot(r));
+        return Vector3d(edgeReciprocals(0).mul(K1).dot(r), edgeReciprocals(1).mul(K2).dot(r), edgeReciprocals(2).mul(K3).dot(r));
     }
 
     /**

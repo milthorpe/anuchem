@@ -41,7 +41,7 @@ public class Atom {
      */
     public def this(atom : Atom) {
         this.symbol = atom.symbol;
-        this.centre = atom.centre;
+        this.centre = at (atom) {atom.centre};
         val bondsValRail = at(atom) {atom.bonds == null ? null : atom.bonds.toValRail()};
         if (bondsValRail != null) {
             val bonds = new ArrayList[Pair[BondType, Atom]](bondsValRail.length);
