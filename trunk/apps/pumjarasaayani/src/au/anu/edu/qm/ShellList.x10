@@ -12,6 +12,7 @@ import x10.util.*;
 
 public class ShellList { 
     global val shellList:HashMap[Int, Shell{self.at(this)}]{self.at(this)};
+    global val shellPairs = new GrowableRail[Pair[Int,Int]]();
     
     var powerList:Rail[ValRail[Power]]{self.at(this)};
 
@@ -66,6 +67,23 @@ public class ShellList {
 
          return shellPrimitives;
     } 
+
+    var shellPairsGenerated:Boolean = false;
+
+    public def getShellPairs() : GrowableRail[Pair[Int, Int]] {
+         if (!shellPairsGenerated) {
+           val noOfShells = getNumberOfShellPrimitives();
+           Console.OUT.println("No of shells : " + noOfShells);
+           for(var a:Int=0; a<noOfShells; a++) {
+              for(var b:Int=0; b<noOfShells; b++) {
+                 shellPairs.add(Pair[Int,Int](a,b));
+              } // end for
+           } // end for
+           shellPairsGenerated = true;
+         } // end if
+
+         return shellPairs;
+    }
 
     public def getShell(am:Int) = shellList.getOrElse(am, null);
     public def getPowers(am:Int) = powerList(am);

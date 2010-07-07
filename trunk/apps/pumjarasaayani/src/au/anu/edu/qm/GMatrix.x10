@@ -1265,18 +1265,10 @@ public class GMatrix extends Matrix {
 
         val timer = new Timer(2);
 
-        timer.start(0);
-
         // TODO:
-        val shellPairs = new GrowableRail[Pair[Int,Int]]();
-        val noOfShells = shellList.getNumberOfShellPrimitives();
-        Console.OUT.println("No of shells : " + noOfShells);
-        for(var a:Int=0; a<noOfShells; a++) {
-            for(var b:Int=0; b<noOfShells; b++) {
-                shellPairs.add(Pair[Int,Int](a,b));
-            } // end for
-        } // end for
+        val shellPairs = shellList.getShellPairs();
 
+        timer.start(0);
         val nPairs = shellPairs.length();
         for(var i:Int=0; i<nPairs; i++) {
            val a = shellPairs(i).first as Int;
@@ -1287,7 +1279,20 @@ public class GMatrix extends Matrix {
 
            val aStrt = aFunc.getIntIndex();
            val bStrt = bFunc.getIntIndex();
-           val ab = aStrt * (aStrt+1) / 2+bStrt;
+           val aAng  = aFunc.getMaximumAngularMomentum();
+           val bAng  = bFunc.getMaximumAngularMomentum();
+
+           val aa = aStrt + aAng;
+           val bb = bStrt + bAng;
+
+           if (aa < bb) continue;
+
+           //val angMomAB = aAng + bAng;
+           //val aLim = ((aAng+1)*(aAng+2)/2);
+           //val bLim = ((bAng+1)*(bAng+2)/2);
+           //val abLim = aLim * bLim;
+
+           //val radiusABSquared = aFunc.distanceSquaredFrom(bFunc);
 
            for(var j:Int=0; j<nPairs; j++) {
               val c = shellPairs(j).first as Int;
@@ -1298,27 +1303,31 @@ public class GMatrix extends Matrix {
 
               val cStrt = cFunc.getIntIndex();
               val dStrt = dFunc.getIntIndex();
+              val cAng  = cFunc.getMaximumAngularMomentum();
+              val dAng  = dFunc.getMaximumAngularMomentum();
 
-              val cd = cStrt * (cStrt+1) / 2+dStrt;
+              val cc = cStrt + cAng;
+              val dd = dStrt + dAng;
 
-              if (aStrt >= bStrt && cStrt >= dStrt) {
-               if (ab >= cd) {
-                 // Console.OUT.println(a + ", " + b + ", " + c + ", " + d);
-                 // Console.OUT.println(": > " + aStrt + ", " + bStrt + ", " + cStrt + ", " + dStrt);
+              if (cc < dd) continue;
 
-                 twoE.compute2EAndRecord(aFunc, bFunc, cFunc, dFunc, 
-                                         shellList, jMat, kMat, density);                              
-               } // end if
-              } // end if
+              // Console.OUT.println(a + ", " + b + ", " + c + ", " + d);
+              twoE.compute2EAndRecord(aFunc, bFunc, cFunc, dFunc, shellList, jMat, kMat, density);
+              // twoE.compute2EAndRecord2(aFunc, bFunc, cFunc, dFunc, shellList, jMat, kMat, density,
+              //                         radiusABSquared, aAng, bAng, cAng, dAng, angMomAB,
+              //                         aStrt, bStrt, cStrt, dStrt, aLim, bLim, abLim);                              
            } // end for
         } // end for
+        timer.stop(0);
+        Console.OUT.println("\tTime for actual computation: " + (timer.total(0) as Double) / 1e9 + " seconds");
 
+        timer.start(1);
         // form the G matrix
         finish foreach(val(x,y) in gMatrix.region)
                   gMatrix(x,y) = jMatrix(x,y) - (0.25*kMatrix(x,y));
+        timer.stop(1);
+        Console.OUT.println("\tTime for summing up GMatrix bits: " + (timer.total(1) as Double) / 1e9 + " seconds");
 
-        timer.stop(0);
-        Console.OUT.println("\tTime for actual computation: " + (timer.total(0) as Double) / 1e9 + " seconds");
     }
 
     /** find unique elements and mark the onces that are not */
