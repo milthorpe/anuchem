@@ -1287,12 +1287,12 @@ public class GMatrix extends Matrix {
 
            if (aa < bb) continue;
 
-           //val angMomAB = aAng + bAng;
-           //val aLim = ((aAng+1)*(aAng+2)/2);
-           //val bLim = ((bAng+1)*(bAng+2)/2);
-           //val abLim = aLim * bLim;
+           val angMomAB = aAng + bAng;
+           val aLim = ((aAng+1)*(aAng+2)/2);
+           val bLim = ((bAng+1)*(bAng+2)/2);
+           val abLim = aLim * bLim;
 
-           //val radiusABSquared = aFunc.distanceSquaredFrom(bFunc);
+           val radiusABSquared = aFunc.distanceSquaredFrom(bFunc);
 
            for(var j:Int=0; j<nPairs; j++) {
               val c = shellPairs(j).first as Int;
@@ -1312,10 +1312,10 @@ public class GMatrix extends Matrix {
               if (cc < dd) continue;
 
               // Console.OUT.println(a + ", " + b + ", " + c + ", " + d);
-              twoE.compute2EAndRecord(aFunc, bFunc, cFunc, dFunc, shellList, jMat, kMat, density);
-              // twoE.compute2EAndRecord2(aFunc, bFunc, cFunc, dFunc, shellList, jMat, kMat, density,
-              //                         radiusABSquared, aAng, bAng, cAng, dAng, angMomAB,
-              //                         aStrt, bStrt, cStrt, dStrt, aLim, bLim, abLim);                              
+              // twoE.compute2EAndRecord(aFunc, bFunc, cFunc, dFunc, shellList, jMat, kMat, density);
+              twoE.compute2EAndRecord2(aFunc, bFunc, cFunc, dFunc, shellList, jMat, kMat, density,
+                                       radiusABSquared, aAng, bAng, cAng, dAng, angMomAB,
+                                       aStrt, bStrt, cStrt, dStrt, aLim, bLim, abLim);                              
            } // end for
         } // end for
         timer.stop(0);
