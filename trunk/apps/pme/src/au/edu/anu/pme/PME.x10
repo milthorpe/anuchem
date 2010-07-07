@@ -128,6 +128,7 @@ public class PME {
         this.edges = edges;
         this.edgeLengths = ValRail.make[Double](3, (i : Int) => edges(i).length());
         this.edgeReciprocals = ValRail.make[Vector3d](3, (i : Int) => edges(i).inverse());
+
         this.atoms = atoms;
         val r = Region.makeRectangular(0, gridSize(0)-1);
         gridRegion = (r * [0..(gridSize(1)-1)] * [0..(gridSize(2)-1)]) as Region(3);
@@ -363,7 +364,7 @@ public class PME {
         val Q = DistArray.make[Double](gridDist);
         finish ateach ((p1) in Dist.makeUnique(gridDist.places())) {
             val myQ = new PeriodicArray[Double](gridRegion);
-            for (p in subCells.dist | here) {
+            for (p in subCells | here) {
                 val thisCell = subCells(p);
                 for (atom in thisCell) {
                     val q = atom.charge;
@@ -530,13 +531,13 @@ public class PME {
 
     /** Gets scaled fractional coordinate u as per Eq. 3.1 - cubic only */
     public global safe def getScaledFractionalCoordinates(r : Point3d) : Vector3d {
-        return Vector3d(edgeReciprocals(0).i * gridSize(0) * r.i, edgeReciprocals(1).j * gridSize(1) * r.j, edgeReciprocals(2).k * gridSize(2) * r.k);
+        return Vector3d(edgeReciprocals(0).i * K1 * r.i, edgeReciprocals(1).j * K2 * r.j, edgeReciprocals(2).k * K3 * r.k);
     }
     
     /** Gets scaled fractional coordinate u as per Eq. 3.1 - general rectangular */
     public global safe def getScaledFractionalCoordinates(r : Vector3d) : Vector3d {
         // this method allows general non-rectangular cells
-        return Vector3d(edgeReciprocals(0).mul(gridSize(0)).dot(r), edgeReciprocals(1).mul(gridSize(1)).dot(r), edgeReciprocals(2).mul(gridSize(2)).dot(r));
+        return Vector3d(edgeReciprocals(0).mul(K1).dot(r), edgeReciprocals(1).mul(K2).dot(r), edgeReciprocals(2).mul(K3).dot(r));
     }
 
     /**
