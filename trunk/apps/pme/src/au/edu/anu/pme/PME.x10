@@ -140,10 +140,9 @@ public class PME {
         this.imageTranslations = DistArray.make[Vector3d](Dist.makeBlock(imageTranslationRegion, 0), ((place,i,j,k) : Point(4)) => (edges(0).mul(i)).add(edges(1).mul(j)).add(edges(2).mul(k)));
 
         if (edgeLengths(0) % cutoff != 0.0) {
-            Console.OUT.println(edgeLengths(0) % cutoff);
-            Console.ERR.println("warning: edge length is not an exact multiple of cutoff");
+            Console.ERR.println("warning: edge length " + edgeLengths(0) + " is not an exact multiple of cutoff " + cutoff);
         }
-        val numSubCells = (edgeLengths(0) / cutoff) as Int;
+        val numSubCells = Math.ceil(edgeLengths(0) / cutoff) as Int;
         val subCellRegion = [0..numSubCells-1,0..numSubCells-1,0..numSubCells-1] as Region(3){rect};
         val subCells = PeriodicDistArray.make[ValRail[MMAtom]](Dist.makeBlock(subCellRegion,0));
         Console.OUT.println("subCells dist = " + subCells.dist);
