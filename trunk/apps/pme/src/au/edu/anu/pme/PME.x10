@@ -144,7 +144,7 @@ public class PME {
         }
         val numSubCells = Math.ceil(edgeLengths(0) / cutoff) as Int;
         val subCellRegion = [0..numSubCells-1,0..numSubCells-1,0..numSubCells-1] as Region(3){rect};
-        val subCells = PeriodicDistArray.make[ValRail[MMAtom]](Dist.makeBlock(subCellRegion,0));
+        val subCells = PeriodicDistArray.make[ValRail[MMAtom]](Dist.makeBlockBlock(subCellRegion, 0, 1));
         Console.OUT.println("subCells dist = " + subCells.dist);
         this.subCells = subCells;
         this.numSubCells = numSubCells;
@@ -176,7 +176,10 @@ public class PME {
 
         timer.start(TIMER_INDEX_THETARECCONVQ);
         // create F^-1(thetaRecConvQ)
-        val thetaRecConvQ = DistArray.make[Complex](gridDist, (p : Point) => BdotC(p) * Qinv(p));
+        val thetaRecConvQ = DistArray.make[Complex](gridDist);
+        finish ateach(p in gridDist) {
+            thetaRecConvQ(p) = BdotC(p) * Qinv(p);
+	    }
 
         // and do inverse FFT
         fft.doFFT3d(thetaRecConvQ, thetaRecConvQ, temp, true);
@@ -201,9 +204,11 @@ public class PME {
             val localAtoms = atoms(p1);
             foreach ((i) in 0..localAtoms.length-1) {
                 val atom = localAtoms(i);
+                val charge = atom.charge;
+                val centre = atom.centre;
                 val index = getSubCellIndex(atom);
                 at (subCellsTemp.dist(index)) {
-                    val remoteAtom = new MMAtom(atom);
+                    val remoteAtom = new MMAtom(centre, charge);
                     atomic{subCellsTemp(index).add(remoteAtom);}
                 }
             }
