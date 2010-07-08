@@ -38,13 +38,10 @@ public class TestSingleThreadPairwise extends TestElectrostatic {
 
         var directEnergy : Double = 0.0;
         for ((i) in 0..myAtoms.length-1) {
-            var atomEnergy : Double = 0.0;
             for ((j) in 0..i-1) {
-                atomEnergy += 2.0 * myAtoms(i).charge * myAtoms(j).charge / myAtoms(j).centre.distance(myAtoms(i).centre);
+                directEnergy += myAtoms(i).charge * myAtoms(j).charge / myAtoms(j).centre.distance(myAtoms(i).centre);
             }
-            directEnergy += atomEnergy;
         }
-        directEnergy = directEnergy / 2.0;
         timer.stop(0);
 
         Console.OUT.println("directEnergy = " + directEnergy);
