@@ -12,18 +12,18 @@ import x10.util.*;
 
 public class Shell { 
     val angularMomentum:Int;
-    global val shellPrimitives:ArrayList[ContractedGaussian]{self.at(this)};
+    global val shellPrimitives:GrowableRail[ContractedGaussian]{self.at(this)};
 
     public def this(am:Int) { 
        angularMomentum = am;
-       shellPrimitives = new ArrayList[ContractedGaussian]();
+       shellPrimitives = new GrowableRail[ContractedGaussian]();
     } 
 
     public def getAngularMomentum() = angularMomentum;
     public def getShellPrimitives() = shellPrimitives;
-    public def getNumberOfShellPrimitives() = shellPrimitives.size();
+    public def getNumberOfShellPrimitives() = shellPrimitives.length();
 
-    public def getShellPrimitive(i:Int) = shellPrimitives.get(i);
+    public def getShellPrimitive(i:Int) = shellPrimitives(i);
 
     public def addShellPrimitive(cg:ContractedGaussian) : void {
        shellPrimitives.add(cg);

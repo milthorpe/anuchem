@@ -72,6 +72,10 @@ public class GMatrix extends Matrix {
                Console.OUT.println("   GMatrix.computeDirectMultiPlaceNewFuture: " + gMatType);
                computeDirectMultiPlaceNewFuture(twoE, density);
                break;
+           case 11:
+               Console.OUT.println("   GMatrix.computeDirectMultiPlaceShellLoop: " + gMatType);
+               computeDirectMultiPlaceShellLoop(twoE, density);
+               break;
            default:
                Console.OUT.println("   GMatrix.computeDirectSerialOld: " + gMatType);
                computeDirectSerialOld(twoE, density); 
@@ -152,6 +156,9 @@ public class GMatrix extends Matrix {
                     for(l=0; l<(k+1); l++) {
                         kl = k * (k+1) / 2+l;
                         if (ij >= kl) { 
+
+                           // Console.OUT.println(i + ", " + j + ", " + k + ", " + l);
+
                            val twoEIntVal = twoE.compute2E(i,j,k,l);
 
                            setJKMatrixElements(jMatrix, kMatrix, dMatrix, i, j, k, l, twoEIntVal);
@@ -703,6 +710,8 @@ public class GMatrix extends Matrix {
                                     for(l=0; l<ndFunc; l++) {
                                         ldFunc = dFunc.get(l);
 
+                                        // Console.OUT.println(a + ", " + b + ", " + c + ", " + d);
+
             	                        twoE.compute2EAndRecord(iaFunc, jbFunc, kcFunc, ldFunc, 
                                                                 shellList, jMat, kMat, density);
 				    } // end l
@@ -1225,6 +1234,101 @@ public class GMatrix extends Matrix {
         Console.OUT.println("\tTime for summing up GMatrix bits: " + (timer.total(1) as Double) / 1e9 + " seconds");
     }
 
+    private def computeDirectMultiPlaceShellLoop(twoE:TwoElectronIntegrals!, density:Density!) : void {
+        val N = density.getRowCount();
+
+        makeZero();
+
+        val gMatrix = getMatrix();
+        val dMatrix = density.getMatrix();
+
+        val jMat = new Matrix(N) as Matrix!;
+        val kMat = new Matrix(N) as Matrix!;
+
+        jMat.makeZero();
+        kMat.makeZero();
+
+        val jMatrix = jMat.getMatrix();
+        val kMatrix = kMat.getMatrix();
+
+        val molecule = twoE.getMolecule();
+        val shellList = twoE.getBasisFunctions().getShellList();
+        val bfs = shellList.getShellPrimitives();
+        val noOfBasisFunctions = bfs.length();
+
+        val noOfAtoms = molecule.getNumberOfAtoms(); 
+        val nPlaces = Place.places.length;
+        val computeInst = Rail.make[ComputePlaceNewFuture](nPlaces);
+
+        Console.OUT.println("\tNo. of places: " + nPlaces);
+        Console.OUT.println("\tNo. of threads per place: " + Runtime.INIT_THREADS);
+
+        val timer = new Timer(2);
+
+        // TODO:
+        val shellPairs = shellList.getShellPairs();
+
+        timer.start(0);
+        val nPairs = shellPairs.length();
+        for(var i:Int=0; i<nPairs; i++) {
+           val a = shellPairs(i).first as Int;
+           val b = shellPairs(i).second as Int;
+
+           val aFunc = bfs(a) as ContractedGaussian!; 
+           val bFunc = bfs(b) as ContractedGaussian!;
+
+           val aStrt = aFunc.getIntIndex();
+           val bStrt = bFunc.getIntIndex();
+           val aAng  = aFunc.getMaximumAngularMomentum();
+           val bAng  = bFunc.getMaximumAngularMomentum();
+
+           val aa = aStrt + aAng;
+           val bb = bStrt + bAng;
+
+           if (aa < bb) continue;
+
+           val angMomAB = aAng + bAng;
+           val aLim = ((aAng+1)*(aAng+2)/2);
+           val bLim = ((bAng+1)*(bAng+2)/2);
+           val abLim = aLim * bLim;
+
+           val radiusABSquared = aFunc.distanceSquaredFrom(bFunc);
+
+           for(var j:Int=0; j<nPairs; j++) {
+              val c = shellPairs(j).first as Int;
+              val d = shellPairs(j).second as Int;
+
+              val cFunc = bfs(c) as ContractedGaussian!; 
+              val dFunc = bfs(d) as ContractedGaussian!;
+
+              val cStrt = cFunc.getIntIndex();
+              val dStrt = dFunc.getIntIndex();
+              val cAng  = cFunc.getMaximumAngularMomentum();
+              val dAng  = dFunc.getMaximumAngularMomentum();
+
+              val cc = cStrt + cAng;
+              val dd = dStrt + dAng;
+
+              if (cc < dd) continue;
+
+              // Console.OUT.println(a + ", " + b + ", " + c + ", " + d);
+              // twoE.compute2EAndRecord(aFunc, bFunc, cFunc, dFunc, shellList, jMat, kMat, density);
+              twoE.compute2EAndRecord2(aFunc, bFunc, cFunc, dFunc, shellList, jMat, kMat, density,
+                                       radiusABSquared, aAng, bAng, cAng, dAng, angMomAB,
+                                       aStrt, bStrt, cStrt, dStrt, aLim, bLim, abLim);                              
+           } // end for
+        } // end for
+        timer.stop(0);
+        Console.OUT.println("\tTime for actual computation: " + (timer.total(0) as Double) / 1e9 + " seconds");
+
+        timer.start(1);
+        // form the G matrix
+        finish foreach(val(x,y) in gMatrix.region)
+                  gMatrix(x,y) = jMatrix(x,y) - (0.25*kMatrix(x,y));
+        timer.stop(1);
+        Console.OUT.println("\tTime for summing up GMatrix bits: " + (timer.total(1) as Double) / 1e9 + " seconds");
+
+    }
 
     /** find unique elements and mark the onces that are not */
     /** 8 => is the level of integral symmetry, given (i,j|k.l)
@@ -1726,6 +1830,7 @@ public class GMatrix extends Matrix {
                                        ldFunc = dFunc.get(l);
 
                                        // TODO: 
+                                       // Console.OUT.println(a + ", " + b + ", " + c + ", " + d + " | " + i + ", " + j + ", " + k + ", " + l);
                                        computeSingle(iaFunc, jbFunc, kcFunc, ldFunc);
                                    } // end l
                                } // center d

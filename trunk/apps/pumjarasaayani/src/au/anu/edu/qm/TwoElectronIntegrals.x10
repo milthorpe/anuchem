@@ -234,8 +234,8 @@ public class TwoElectronIntegrals {
          val kMatrix = kMat.getMatrix();
          val dMatrix = dMat.getMatrix();
 
-         val angMomAB = a.getMaximumAngularMomentum() + b.getMaximumAngularMomentum();
-         val angMomCD = c.getMaximumAngularMomentum() + d.getMaximumAngularMomentum();
+         val angMomAB = aAng + bAng;
+         val angMomCD = cAng + dAng;
          val angMomABCD = angMomAB+angMomCD;
 
          var i:Int, j:Int, k:Int, l:Int;
@@ -378,6 +378,174 @@ public class TwoElectronIntegrals {
                        dMatrix);
     }
 
+    /** A modification of above function */
+    public def compute2EAndRecord2(a:ContractedGaussian{self.at(this)}, b:ContractedGaussian{self.at(this)}, 
+                                  c:ContractedGaussian{self.at(this)}, d:ContractedGaussian{self.at(this)}, 
+                                  shellList:ShellList{self.at(this)}, 
+                                  jMat:Matrix{self.at(this)}, kMat:Matrix{self.at(this)},
+                                  dMat:Density{self.at(this)},
+                                  radiusABSquared:Double, 
+                                  aAng:Int, bAng:Int, cAng:Int, dAng:Int, angMomAB:Int,
+                                  aStrt:Int, bStrt:Int, cStrt:Int, dStrt:Int,
+                                  aLim:Int, bLim:Int, abLim:Int) : void {
+         val aPrims = a.getPrimitives();
+         val bPrims = b.getPrimitives();
+         val cPrims = c.getPrimitives();
+         val dPrims = d.getPrimitives();
+
+         val aCen  = a.getCenter();
+         val bCen  = b.getCenter();
+         val cCen  = c.getCenter();
+         val dCen  = d.getCenter();
+         
+         val dLim = ((dAng+1)*(dAng+2)/2);
+         val cLim = ((cAng+1)*(cAng+2)/2);         
+         
+         val jMatrix = jMat.getMatrix();
+         val kMatrix = kMat.getMatrix();
+         val dMatrix = dMat.getMatrix();
+         
+         val angMomCD = cAng + dAng;
+         val angMomABCD = angMomAB+angMomCD;
+
+         var i:Int, j:Int, k:Int, l:Int;
+         var bb:Int, aa:Int;
+         var dd:Int, cc:Int;
+          
+         val radiusCDSquared = c.distanceSquaredFrom(d);
+
+         val shellA = shellList.getPowers(aAng);
+         val shellB = shellList.getPowers(bAng);
+
+         val nTot = abLim*cLim*dLim;
+         val twoEInts = Rail.make[Double](nTot, (Int)=>0.0) as Rail[Double]!;
+
+         // Console.OUT.println("New block - Allocated size: " + nInt);
+         for(aPrim in aPrims) {
+           val aAlpha = aPrim.getExponent();
+           val aCoeff = aPrim.getCoefficient();
+
+           for(bPrim in bPrims) {
+
+             /*
+             for(i=0; i<=maxamN+1; i++) 
+               for(j=0; j<=maxamN+1; j++) 
+                  for(k=0; k<=maxam2N; k++) 
+                     pcdint(i,j,k) = 0.0;
+              */
+
+             // pcdint.lift(pcdint, (a:Double)=>0.0);
+             val raw = pcdint.raw(); for(i=0; i<pdsz; i++) raw(i) = 0.0;
+             // pcdint.set(0.0);
+
+             val bAlpha = bPrim.getExponent();
+             val gamma1 = aAlpha + bAlpha;
+             val bCoeff = bPrim.getCoefficient();
+
+             // val p = gaussianProductCenter(aAlpha, aCen, bAlpha, bCen);
+
+             val p = Point3d(
+                         (aAlpha * aCen.i + bAlpha * bCen.i) / gamma1,
+                         (aAlpha * aCen.j + bAlpha * bCen.j) / gamma1,
+                         (aAlpha * aCen.k + bAlpha * bCen.k) / gamma1
+                       );
+
+             val Gab = Math.exp(-aAlpha*bAlpha*radiusABSquared/gamma1);
+             val pgx = Math.PI/gamma1;
+             val Up = aCoeff*bCoeff*Gab*Math.sqrt(pgx*pgx*pgx);
+             // Console.OUT.println("Coeff: " + aCoeff + " " + bCoeff);
+             // Console.OUT.println("Zeta, Gab, Up: " + gamma1 + " " + Gab + " " + Up);
+
+             for(cPrim in cPrims) {
+               val cAlpha = cPrim.getExponent();
+               val cCoeff = cPrim.getCoefficient();
+
+               for(dPrim in dPrims) {
+                 val dAlpha = dPrim.getExponent();
+                 val dCoeff = dPrim.getCoefficient();
+
+                 val gamma2 = cAlpha + dAlpha;
+                 val eta    = (gamma1*gamma2)/(gamma1+gamma2);
+
+                 // val q = gaussianProductCenter(cAlpha, cCen, dAlpha, dCen);
+                 val q = Point3d(
+                           (cAlpha * cCen.i + dAlpha * dCen.i) / gamma2,
+                           (cAlpha * cCen.j + dAlpha * dCen.j) / gamma2,
+                           (cAlpha * cCen.k + dAlpha * dCen.k) / gamma2
+                         );
+
+                 val Gcd = Math.exp(-cAlpha*dAlpha*radiusCDSquared/gamma2);
+                 val qgx = Math.PI/gamma2;
+                 val Uq  = cCoeff*dCoeff*Gcd*Math.sqrt(qgx*qgx*qgx); 
+                 // Console.OUT.println("Coeff: " + cCoeff + " " + dCoeff);
+                 // Console.OUT.println("Zeta, Gcd, Uq: " + gamma2 + " " + Gcd + " " + Uq);
+
+                 val xx = q.i-p.i;
+                 val yy = q.j-p.j;
+                 val zz = q.k-p.k;
+
+                 val r = Point3d(xx, yy, zz);
+                 val radiusPQSquared:Double = xx*xx+yy*yy+zz*zz;  
+                 val Upq = Up*Uq;
+                 val T = radiusPQSquared * eta;
+
+                 // Console.OUT.println("Computing FmT");
+                 // Console.OUT.println("T value: " + T);
+                 // Console.OUT.println("maxam: " + maxam);
+
+                 // compute FmT
+                 computeFmt(angMomABCD, T, fmt);
+                 // computeFmtFGamma(angMomABCD, T, fmt);
+        
+                 // convert to GmT
+                 computeGmt(angMomABCD);
+
+                 // Console.OUT.println("Computing [0]m");
+
+                 // Console.OUT.println("Up, Uq, Upq: " + Up + " " + Uq + " " + Upq);
+
+                 // compute [0]m
+                 computeZeroM(angMomABCD, Upq, eta);
+
+                 // Console.OUT.println("Computing [r]m");
+                 // Console.OUT.println("abcd_ang: " + angMomABCD);
+
+                 // form [r]m using MD (recursion)
+                 computeRm(angMomABCD, shellList, r);
+ 
+                 // Console.OUT.println("Computing [p|q] ");
+
+                 // form [p|q] 
+                 computePq(angMomAB, angMomCD, shellList);
+
+                 // Console.OUT.println("Computing [p|cd] ");
+
+                 // form [p|cd]
+                 computePcd(angMomAB, gamma2, q, dLim, cLim,
+                            dAng, cAng, dCen, cCen, shellList);
+               } // dPrim
+              } // cPrim
+
+              // form [ab|cd], 
+              // Console.OUT.println("Computing [ab|cd] ");
+
+              computeAbcd(dLim, cLim, bLim, aLim,
+                          dStrt, cStrt, bStrt, aStrt,
+                          shellList, bAng, aAng,
+                          aCen, bCen, p, 2.0*gamma1,
+                          twoEInts); 
+           }
+        }
+
+        // Console.OUT.println("Filling in JK matrix");
+
+        fillJKMatrices(dLim, cLim, bLim, aLim,
+                       dStrt, cStrt, bStrt, aStrt,
+                       shellList, bAng, aAng,
+                       twoEInts,
+                       jMatrix, kMatrix,
+                       dMatrix);
+    }
 
     // TODO: following three are duplicate methods from GMatrix, must be cleaned
 
@@ -660,6 +828,8 @@ public class TwoElectronIntegrals {
              for(cc=0; cc<cLim; cc++) {
                  val kk = cStrt + cc;
 
+                 if (kk < ll) continue;
+
                  for (k=0; k<=maxam2; k++) {
                     val kpq = k*pqdim;
                     for (l=0; l<=maxam2M; l++)
@@ -676,7 +846,7 @@ public class TwoElectronIntegrals {
                      for(aa = 0; aa<aLim; aa++) {
                          val ii = aStrt + aa;
 
-                         if (ii >= jj && kk >= ll) {
+                         if (ii >= jj) {
                              val iijj_st = ii*(ii+1)/2 + jj;
                              val kkll_st = kk*(kk+1)/2 + ll;
 
@@ -718,6 +888,8 @@ public class TwoElectronIntegrals {
                  kkdx(0) = kk; kkdx(1) = kk; lldx(2) = kk; lldx(3) = kk;
                  jjdx(4) = kk; jjdx(5) = kk; iidx(6) = kk; iidx(7) = kk;
 
+                 if (kk < ll) continue;
+
                  for(bb = 0; bb<bLim; bb++) {
                      val jj = bStrt + bb;
 
@@ -727,7 +899,7 @@ public class TwoElectronIntegrals {
                      for(aa = 0; aa<aLim; aa++) {
                          val ii = aStrt + aa;
                   
-                         if (ii >= jj && kk >=ll) {
+                         if (ii >= jj) {
                              val iijj = ii*(ii+1)/2 + jj;
                              val kkll = kk*(kk+1)/2 + ll;
 
