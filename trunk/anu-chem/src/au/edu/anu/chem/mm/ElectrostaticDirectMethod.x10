@@ -37,7 +37,7 @@ public class ElectrostaticDirectMethod {
         finish ateach ((p1) in atoms) {
             val myAtoms = atoms(p1);
             finish {
-                // energy for all interactions with other boxes
+                // energy for all interactions with other atoms at other places
                 foreach ((p2) in atoms) {
                     if (p2 != p1) { // TODO region difference
                         var energyWithOther : Double = 0.0;
@@ -54,7 +54,7 @@ public class ElectrostaticDirectMethod {
                     }
                 }
 
-                // energy for all interactions within this box
+                // energy for all interactions within this place
                 foreach ((i) in 0..myAtoms.length-1) {
                     var energyThisPlace : Double = 0.0;
                     for ((j) in 0..i-1) {

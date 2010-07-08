@@ -43,28 +43,16 @@ public class Distributed3dFft {
             FFTW.fftwDestroyPlan(plan); 
         } else {
             doFFTForOneDimension(source, temp, forward);
-            if (forward) {
-                transposeArray(temp, target);
-            } else {
-                transposeArrayReverse(temp, target);
-            }
+            transposeArray(temp, target);
             doFFTForOneDimension(target, temp, forward);
-            if (forward) {
-                transposeArray(temp, target);
-            } else {
-                transposeArrayReverse(temp, target);
-            }
+            transposeArray(temp, target);
             doFFTForOneDimension(target, temp, forward);
-            if (forward) {
-                transposeArray(temp, target);
-            } else {
-                transposeArrayReverse(temp, target);
-            }
+            transposeArray(temp, target);
         }
     }
 
     /**
-     * Performs a 1D FFT for each 1D slice along the first dimension.
+     * Performs a 1D FFT for each 1D slice along the Z dimension.
      */
     private global def doFFTForOneDimension(source : DistArray[Complex](3), 
                                      target : DistArray[Complex](3){self.dist==source.dist},
@@ -74,15 +62,15 @@ public class Distributed3dFft {
             val oneDTarget = Rail.make[Complex](dataSize);
             val plan : FFTW.FFTWPlan = FFTW.fftwPlan1d(dataSize, oneDSource, oneDTarget, forward);
             val mySource = source.dist | here;
-            val gridRegionWithoutFirst = (mySource.region().projection(0) * mySource.region().projection(2)) as Region(2);
-            for ((i,k) in gridRegionWithoutFirst) {
+            val gridRegionWithoutZ = (mySource.region().eliminate(2)) as Region(2);
+            for ((i,j) in gridRegionWithoutZ) {
                 // TODO need to copy into ValRail - can use raw()?
-                for(var j : Int = 0; j < dataSize; j++) {
-                    oneDSource(j) = source(i,j,k);
+                for(var k : Int = 0; k < dataSize; k++) {
+                    oneDSource(k) = source(i,j,k);
                 }
                 FFTW.fftwExecute(plan);
-                for(var j : Int = 0; j < dataSize; j++) {
-                    target(i,j,k) = oneDTarget(j);
+                for(var k : Int = 0; k < dataSize; k++) {
+                    target(i,j,k) = oneDTarget(k);
                 }
             }
             FFTW.fftwDestroyPlan(plan);
@@ -91,13 +79,13 @@ public class Distributed3dFft {
 
     /**
      * Shuffles array around all places by transposing the zeroth dimension
-     * to the second, the second to the first and the first to the zeroth.
-     * Assumes NxNxN arrays, and that source and target arrays are block 
-     * distributed along the zeroth dimension.
+     * to the first, the first to the second and the second to the zeroth.
+     * Assumes NxNxN arrays, and that source and target arrays contain complete
+     * slabs or lines in the second dimension.
      */
     private global def transposeArray(source : DistArray[Complex](3), 
                              target : DistArray[Complex](3){self.dist==source.dist}) {
-        finish ateach ((p1) in Dist.makeUnique(source.dist.places())) {
+        finish ateach (p1 in Dist.makeUnique(source.dist.places())) {
             val sourceDist = source.dist | here;
             val sourceStart = sourceDist.region.min(0);
             val sourceEnd = sourceDist.region.max(0);
@@ -105,50 +93,20 @@ public class Distributed3dFft {
                 val targetDist = source.dist | p2;
                 val targetStart = targetDist.region.min(0);
                 val targetEnd = targetDist.region.max(0);
-                val toTransfer = ValRail.make[Complex]((targetEnd - targetStart + 1) * (sourceEnd - sourceStart + 1) * dataSize, (n : Int) => source(mapPoint(n,sourceStart,sourceEnd,targetStart)));
+                
+                val toTransfer = ValRail.make[Complex]((targetEnd - targetStart + 1) * (sourceEnd - sourceStart + 1) * dataSize, (n : Int) => source(mapPoint(n,sourceStart,targetStart,targetEnd)));
                 at (p2) {transpose(toTransfer, target, sourceStart, sourceEnd, targetStart, targetEnd);}
-            }
+            }   
         }
     }
 
-    /**
-     * Shuffles array around all places "in reverse" by transposing the zeroth dimension
-     * to the first, the first to the second and the second to the zeroth.
-     * Assumes NxNxN arrays, and that source and target arrays are block 
-     * distributed along the zeroth dimension.
-     */
-    private global def transposeArrayReverse(source : DistArray[Complex](3), 
-                             target : DistArray[Complex](3){self.dist==source.dist}) {
-        finish ateach ((p1) in Dist.makeUnique(source.dist.places())) {
-            val sourceDist = source.dist | here;
-            val sourceStart = sourceDist.region.min(0);
-            val sourceEnd = sourceDist.region.max(0);
-            foreach (p2 in source.dist.places()) {
-                val targetDist = source.dist | p2;
-                val targetStart = targetDist.region.min(0);
-                val targetEnd = targetDist.region.max(0);
-                val toTransfer = ValRail.make[Complex](dataSize * (targetEnd - targetStart + 1) * (sourceEnd - sourceStart + 1), (n : Int) => source(mapPointReverse(n,sourceStart,sourceEnd,targetStart)));
-                at (p2) {transposeReverse(toTransfer, target, sourceStart, sourceEnd, targetStart, targetEnd);}
-            }
-        }
-    }
-
-    private global safe def mapPoint(n : Int, iStart : Int, iEnd : Int, jStart : int) : Point(3) {
-        val JOFFSET = (iEnd - iStart+1) * dataSize;
-        val IOFFSET = dataSize;
-        val j = n / JOFFSET;
-        val i = (n - j * JOFFSET) / IOFFSET;
-        val k = n - j * JOFFSET - i * IOFFSET;
-        return Point.make(i+iStart,j+jStart,k);
-    }
-
-    private global safe def mapPointReverse(n : Int, iStart : Int, iEnd : Int, kStart : int) : Point(3) {
-        val KOFFSET = (iEnd - iStart+1) * dataSize;
-        val IOFFSET = dataSize;
-        val k = n / KOFFSET;
-        val i = (n - k * KOFFSET) / IOFFSET;
-        val j = n - k * KOFFSET - i * IOFFSET;
-        return Point.make(i+iStart,j,k+kStart);
+    private global safe def mapPoint(n : Int, iStart : Int, jStart : Int, jEnd : Int) : Point(3) {
+        val JSIZE = jEnd - jStart + 1;
+        val ISIZE = dataSize * JSIZE;
+        val i = n / (ISIZE);
+        val j = (n - i * ISIZE) / JSIZE;
+        val k = n - i * ISIZE - j * JSIZE;
+        return Point.make(i+iStart,j,k+jStart);
     }
 
     /**
@@ -161,34 +119,15 @@ public class Distributed3dFft {
                              sourceEnd : Int,
                              targetStart : Int,
                              targetEnd : Int) : Void {
-        for ((i) in targetStart..targetEnd) {
-            val iOffset = (i-targetStart) * (sourceEnd-sourceStart+1) * dataSize;
-            for ((k) in sourceStart..sourceEnd) {
-                val kOffset = (k - sourceStart) * dataSize;
-                for (var j : Int = 0; j < dataSize; j++) {
-                    val offset = kOffset + iOffset + j;
-                    target(i,j,k) = source(offset);
-                }
-            }
-        }
-    }
-
-    /**
-     * Copies a chunk of a source array into the target array.
-     * The elements are shoehorned into a ValRail of length K * (endI - startI) .
-     */
-    private global safe def transposeReverse(source : ValRail[Complex],
-                             target : DistArray[Complex](3),
-                             sourceStart : Int,
-                             sourceEnd : Int,
-                             targetStart : Int,
-                             targetEnd : Int) : Void {
-        for ((i) in targetStart..targetEnd) {
-            val iOffset = (i-targetStart) * (sourceEnd-sourceStart+1) * dataSize;
-            for ((j) in sourceStart..sourceEnd) {
-                val jOffset = (j-sourceStart) * dataSize;
-                for (var k : Int = 0; k < dataSize; k++) {
-                    val offset = jOffset + iOffset + k;
+        val KSIZE = targetEnd - targetStart + 1;
+        val JSIZE = dataSize * KSIZE;
+        for ((j) in sourceStart..sourceEnd) {
+            val jOffset = (j-sourceStart) * JSIZE;
+            for ((k) in 0..dataSize-1) {
+                val kOffset = k * KSIZE;
+                for ((i) in targetStart..targetEnd) {
+                    val offset = kOffset + jOffset + (i-targetStart);
+                    //Console.OUT.println(Point.make(i,j,k) + " <= " + offset);
                     target(i,j,k) = source(offset);
                 }
             }
