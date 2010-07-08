@@ -155,12 +155,7 @@ public class PME {
 
         B = getBArray();
         C = getCArray();
-        BdotC = DistArray.make[Double](gridDist);
-        // TODO Array.lift not implemented XTENLANG-376
-        // BdotC = B.lift((b:Double,c:Double)=>b*c, C);
-	    finish ateach(p in gridDist) {
-		    BdotC(p) = B(p) * C(p);
-	    }
+        BdotC = DistArray.make[Double](gridDist, (p : Point) => B(p) * C(p));
     }
 	
     public def getEnergy() : Double {
@@ -181,10 +176,8 @@ public class PME {
 
         timer.start(TIMER_INDEX_THETARECCONVQ);
         // create F^-1(thetaRecConvQ)
-        val thetaRecConvQ = DistArray.make[Complex](gridDist);
-	    finish ateach(p in gridDist) {
-		    thetaRecConvQ(p) = BdotC(p) * Qinv(p);
-	    }
+        val thetaRecConvQ = DistArray.make[Complex](gridDist, (p : Point) => BdotC(p) * Qinv(p));
+
         // and do inverse FFT
         fft.doFFT3d(thetaRecConvQ, thetaRecConvQ, temp, true);
         timer.stop(TIMER_INDEX_THETARECCONVQ);
