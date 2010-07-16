@@ -73,7 +73,7 @@ public class ShellList {
     public def getShellPairs() : GrowableRail[Pair[Int, Int]] {
          if (!shellPairsGenerated) {
            val noOfShells = getNumberOfShellPrimitives();
-           Console.OUT.println("No of shells : " + noOfShells);
+           // Console.OUT.println("No of shells : " + noOfShells);
            for(var a:Int=0; a<noOfShells; a++) {
               for(var b:Int=0; b<noOfShells; b++) {
                  shellPairs.add(Pair[Int,Int](a,b));

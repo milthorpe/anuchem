@@ -1270,7 +1270,6 @@ public class GMatrix extends Matrix {
 
         timer.start(0);
         val nPairs = shellPairs.length();
-        timer.start(0);
         var i:Int = 0;
         var j:Int = 0;
         val basisFunctions = twoE.getBasisFunctions();
@@ -1312,59 +1311,6 @@ public class GMatrix extends Matrix {
           } // end for
         } // finish
 
-        /****
-
-        for(var i:Int=0; i<nPairs; i++) {
-           val a = shellPairs(i).first as Int;
-           val b = shellPairs(i).second as Int;
-
-           val aFunc = bfs(a) as ContractedGaussian!; 
-           val bFunc = bfs(b) as ContractedGaussian!;
-
-           val aStrt = aFunc.getIntIndex();
-           val bStrt = bFunc.getIntIndex();
-           val aAng  = aFunc.getMaximumAngularMomentum();
-           val bAng  = bFunc.getMaximumAngularMomentum();
-
-           val aa = aStrt + aAng;
-           val bb = bStrt + bAng;
-
-           if (aa < bb) continue;
-
-           val angMomAB = aAng + bAng;
-           val aLim = ((aAng+1)*(aAng+2)/2);
-           val bLim = ((bAng+1)*(bAng+2)/2);
-           val abLim = aLim * bLim;
-
-           val radiusABSquared = aFunc.distanceSquaredFrom(bFunc);
-
-           for(var j:Int=0; j<nPairs; j++) {
-              val c = shellPairs(j).first as Int;
-              val d = shellPairs(j).second as Int;
-
-              val cFunc = bfs(c) as ContractedGaussian!; 
-              val dFunc = bfs(d) as ContractedGaussian!;
-
-              val cStrt = cFunc.getIntIndex();
-              val dStrt = dFunc.getIntIndex();
-              val cAng  = cFunc.getMaximumAngularMomentum();
-              val dAng  = dFunc.getMaximumAngularMomentum();
-
-              val cc = cStrt + cAng;
-              val dd = dStrt + dAng;
-
-              if (cc < dd) continue;
-
-              // Console.OUT.println(a + ", " + b + ", " + c + ", " + d);
-              // twoE.compute2EAndRecord(aFunc, bFunc, cFunc, dFunc, shellList, jMat, kMat, density);
-              twoE.compute2EAndRecord2(aFunc, bFunc, cFunc, dFunc, shellList, jMat, kMat, density,
-                                       radiusABSquared, aAng, bAng, cAng, dAng, angMomAB,
-                                       aStrt, bStrt, cStrt, dStrt, aLim, bLim, abLim);                              
-           } // end for
-        } // end for
-
-        ***/
- 
         timer.stop(1);
         Console.OUT.println("\tTime for actual computation: " + (timer.total(1) as Double) / 1e9 + " seconds");
 
