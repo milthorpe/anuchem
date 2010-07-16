@@ -1258,18 +1258,62 @@ public class GMatrix extends Matrix {
 
         val noOfAtoms = molecule.getNumberOfAtoms(); 
         val nPlaces = Place.places.length;
-        val computeInst = Rail.make[ComputePlaceNewFuture](nPlaces);
+        val computeInst = Rail.make[ComputePlaceNewDirect](nPlaces);
 
         Console.OUT.println("\tNo. of places: " + nPlaces);
         Console.OUT.println("\tNo. of threads per place: " + Runtime.INIT_THREADS);
 
-        val timer = new Timer(2);
+        val timer = new Timer(3);
 
         // TODO:
         val shellPairs = shellList.getShellPairs();
 
         timer.start(0);
         val nPairs = shellPairs.length();
+        timer.start(0);
+        var i:Int = 0;
+        var j:Int = 0;
+        val basisFunctions = twoE.getBasisFunctions();
+        for(place in Place.places) {
+           computeInst(i) = at(place) { return new ComputePlaceNewDirect(molecule, basisFunctions, density, place); };
+           i++;
+        }
+
+        val workPerPlace = Rail.make[Int](nPlaces, (Int)=>0);
+
+        i = nPairs;
+        while(i > 0) {
+           for(j=0; j<nPlaces; j++) {
+              workPerPlace(j) += (i <= 0) ? 0 : 1;
+              i--;
+           } // end for
+        } // end while
+        timer.stop(0);
+        Console.OUT.println("\tTime for setting up place(s) with initial data: " + (timer.total(0) as Double) / 1e9 + " seconds");
+
+        Console.OUT.print("\tWorks units per place: ");
+        for(j=0; j<nPlaces; j++) Console.OUT.print(workPerPlace(j) + ", ");
+        Console.OUT.println(" ");
+
+        timer.start(1);
+
+        finish {
+
+          var curInd:Int = 0;
+          i = 0;
+          for (place in Place.places) {
+              val comp_loc = computeInst(i);
+              val st = curInd;
+              val ed = st + workPerPlace(i);
+
+              async at(comp_loc) { comp_loc.computeShell(st, ed, nPairs); };
+              curInd = ed;
+              i++;
+          } // end for
+        } // finish
+
+        /****
+
         for(var i:Int=0; i<nPairs; i++) {
            val a = shellPairs(i).first as Int;
            val b = shellPairs(i).second as Int;
@@ -1318,15 +1362,38 @@ public class GMatrix extends Matrix {
                                        aStrt, bStrt, cStrt, dStrt, aLim, bLim, abLim);                              
            } // end for
         } // end for
-        timer.stop(0);
-        Console.OUT.println("\tTime for actual computation: " + (timer.total(0) as Double) / 1e9 + " seconds");
 
-        timer.start(1);
-        // form the G matrix
-        finish foreach(val(x,y) in gMatrix.region)
-                  gMatrix(x,y) = jMatrix(x,y) - (0.25*kMatrix(x,y));
+        ***/
+ 
         timer.stop(1);
-        Console.OUT.println("\tTime for summing up GMatrix bits: " + (timer.total(1) as Double) / 1e9 + " seconds");
+        Console.OUT.println("\tTime for actual computation: " + (timer.total(1) as Double) / 1e9 + " seconds");
+
+        timer.start(2);
+        // form the G matrix
+        // form the G matrix
+        // TODO following need to change once XTENLANG-787 is resolved
+        for(comp_loc in computeInst) {
+             val jVal = at(comp_loc) { comp_loc.getJMatVal() };
+             val kVal = at(comp_loc) { comp_loc.getKMatVal() };
+
+             var ii:Int=0;
+             for(var x:Int=0; x<N; x++) {
+               for(var y:Int=0; y<N; y++) {
+                  /**
+                  val x_loc = x; val y_loc = y;
+                  val jVal = at(comp_loc) { comp_loc.getJMat().getMatrix()(x_loc, y_loc) };
+                  val kVal = at(comp_loc) { comp_loc.getKMat().getMatrix()(x_loc, y_loc) };
+
+                  gMatrix(x,y) += jVal - (0.25*kVal);
+                  **/
+
+                  gMatrix(x,y) += jVal(ii) - (0.25*kVal(ii));
+                  ii++;
+               } // end for
+             } // end for
+        } // end for
+        timer.stop(2);
+        Console.OUT.println("\tTime for summing up GMatrix bits: " + (timer.total(2) as Double) / 1e9 + " seconds");
 
     }
 
@@ -1528,6 +1595,28 @@ public class GMatrix extends Matrix {
                                      shellList as ShellList!, 
                                      jMat as Matrix!, kMat as Matrix!, density as Density!);
             atomic computing = false;
+        }
+
+        public def computeSingle(i:ContractedGaussian!, j:ContractedGaussian!,
+                                 k:ContractedGaussian!, l:ContractedGaussian!) {
+            twoEI.compute2EAndRecord(i, j, k, l, 
+                                     shellList as ShellList!,
+                                     jMat as Matrix!, kMat as Matrix!, density as Density!);
+        }
+
+        public def computeSingle2(i:ContractedGaussian!, j:ContractedGaussian!,
+                                  k:ContractedGaussian!, l:ContractedGaussian!, 
+                                  radiusABSquared:Double,
+                                  aAng:Int, bAng:Int, cAng:Int, dAng:Int, angMomAB:Int,
+                                  aStrt:Int, bStrt:Int, cStrt:Int, dStrt:Int,
+                                  aLim:Int, bLim:Int, abLim:Int) {
+            twoEI.compute2EAndRecord2(i, j, k, l,
+                                      shellList as ShellList!,
+                                      jMat as Matrix!, kMat as Matrix!, density as Density!,
+                                      radiusABSquared,
+                                      aAng, bAng, cAng, dAng, angMomAB,
+                                      aStrt, bStrt, cStrt, dStrt,
+                                      aLim, bLim, abLim);
         }
         
         public def setValue(i:ContractedGaussian!, j:ContractedGaussian!,
@@ -1778,11 +1867,26 @@ public class GMatrix extends Matrix {
         }
 
         public def computeSingle(i:ContractedGaussian, j:ContractedGaussian,
-                           k:ContractedGaussian, l:ContractedGaussian) {
+                                 k:ContractedGaussian, l:ContractedGaussian) {
              val ix = 0;
-             computeInst(ix).setValue(i as ContractedGaussian!, j as ContractedGaussian!,
-                                      k as ContractedGaussian!, l as ContractedGaussian!);
-             computeInst(ix).compute();
+             computeInst(ix).computeSingle(i as ContractedGaussian!, j as ContractedGaussian!,
+                                           k as ContractedGaussian!, l as ContractedGaussian!);
+        }
+
+        public def computeSingle2(i:ContractedGaussian, j:ContractedGaussian,
+                                  k:ContractedGaussian, l:ContractedGaussian,
+                                  radiusABSquared:Double,
+                                  aAng:Int, bAng:Int, cAng:Int, dAng:Int, angMomAB:Int,
+                                  aStrt:Int, bStrt:Int, cStrt:Int, dStrt:Int,
+                                  aLim:Int, bLim:Int, abLim:Int) {
+             val ix = 0;
+             computeInst(ix).computeSingle2(i as ContractedGaussian!, j as ContractedGaussian!,
+                                            k as ContractedGaussian!, l as ContractedGaussian!, 
+                                            radiusABSquared,
+                                            aAng, bAng, cAng, dAng, angMomAB,
+                                            aStrt, bStrt, cStrt, dStrt,
+                                            aLim, bLim, abLim);
+      
         }
 
         public def compute(start:Int, end:Int) {
@@ -1840,6 +1944,60 @@ public class GMatrix extends Matrix {
                } // center b
              } // end i
           } // center a
+        }
+
+        public def computeShell(startShell:Int, endShell:Int, nPairs:Int) {
+               val bfs = computeInst(0).shellList.getShellPrimitives();
+               val shellPairs = computeInst(0).shellList.getShellPairs();
+
+               for(var i:Int=startShell; i<endShell; i++) {
+                  val a = shellPairs(i).first as Int;
+                  val b = shellPairs(i).second as Int;
+
+                  val aFunc = bfs(a) as ContractedGaussian!;
+                  val bFunc = bfs(b) as ContractedGaussian!;
+
+                  val aStrt = aFunc.getIntIndex();
+                  val bStrt = bFunc.getIntIndex();
+                  val aAng  = aFunc.getMaximumAngularMomentum();
+                  val bAng  = bFunc.getMaximumAngularMomentum();
+
+                  val aa = aStrt + aAng;
+                  val bb = bStrt + bAng;
+
+                  if (aa < bb) continue;
+
+                  val angMomAB = aAng + bAng;
+                  val aLim = ((aAng+1)*(aAng+2)/2);
+                  val bLim = ((bAng+1)*(bAng+2)/2);
+                  val abLim = aLim * bLim;
+
+                  val radiusABSquared = aFunc.distanceSquaredFrom(bFunc);
+
+                  for(var j:Int=0; j<nPairs; j++) {
+                     val c = shellPairs(j).first as Int;
+                     val d = shellPairs(j).second as Int;
+
+                     val cFunc = bfs(c) as ContractedGaussian!;
+                     val dFunc = bfs(d) as ContractedGaussian!;
+
+                     val cStrt = cFunc.getIntIndex();
+                     val dStrt = dFunc.getIntIndex();
+                     val cAng  = cFunc.getMaximumAngularMomentum();
+                     val dAng  = dFunc.getMaximumAngularMomentum();
+
+                     val cc = cStrt + cAng;
+                     val dd = dStrt + dAng;
+
+                     if (cc < dd) continue;
+
+                     // Console.OUT.println(a + ", " + b + ", " + c + ", " + d);
+                     // twoE.compute2EAndRecord(aFunc, bFunc, cFunc, dFunc, shellList, jMat, kMat, density);
+                     computeSingle2(aFunc, bFunc, cFunc, dFunc,
+                                    radiusABSquared, aAng, bAng, cAng, dAng, angMomAB,
+                                    aStrt, bStrt, cStrt, dStrt, aLim, bLim, abLim);
+                  } // end for
+               } // end for
         }
     } 
 
