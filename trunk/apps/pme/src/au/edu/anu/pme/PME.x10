@@ -176,10 +176,7 @@ public class PME {
 
         timer.start(TIMER_INDEX_THETARECCONVQ);
         // create F^-1(thetaRecConvQ)
-        val thetaRecConvQ = DistArray.make[Complex](gridDist);
-        finish ateach(p in gridDist) {
-            thetaRecConvQ(p) = BdotC(p) * Qinv(p);
-	    }
+        val thetaRecConvQ = DistArray.make[Complex](gridDist, (p : Point) => BdotC(p) * Qinv(p));
 
         // and do inverse FFT
         fft.doFFT3d(thetaRecConvQ, thetaRecConvQ, temp, true);
