@@ -26,8 +26,9 @@ public class PME {
     public const TIMER_INDEX_INVFFT : Int = 5;
     public const TIMER_INDEX_THETARECCONVQ : Int = 6;
     public const TIMER_INDEX_RECIPROCAL : Int = 7;
+    public const TIMER_INDEX_SETUP : Int = 8;
     /** A multi-timer for the several segments of a single getEnergy invocation, indexed by the constants above. */
-    public val timer = new Timer(8);
+    public val timer = new Timer(9);
 
     /** The number of grid lines in each dimension of the simulation unit cell. */
     private global val gridSize : ValRail[Int](3);
@@ -76,6 +77,8 @@ public class PME {
     private global val B : DistArray[Double]{self.dist==gridDist};
     private global val C : DistArray[Double]{self.dist==gridDist};
     private global val BdotC : DistArray[Double]{self.dist==gridDist};
+
+    private global val Q : DistArray[Complex]{self.dist==gridDist};
 
     /** 
      * An array of box divisions within the unit cell, with a side length
@@ -153,9 +156,27 @@ public class PME {
 
         Console.OUT.println("gridDist = " + gridDist);
 
-        B = getBArray();
-        C = getCArray();
-        BdotC = DistArray.make[Double](gridDist, (p : Point) => B(p) * C(p));
+        Q = DistArray.make[Complex](gridDist);
+
+        B = DistArray.make[Double](gridDist);
+        C = DistArray.make[Double](gridDist);
+        BdotC = DistArray.make[Double](gridDist);
+    }
+
+    /**
+     * This method sets up the B, C and BdotC arrays, which only need be done once
+     * in the simulation (as it is dependent on the grid size).
+     * TODO this should be done in the constructor, but can't be done without big 
+     * memory leaks due to proto rules.
+     */
+    public def setup() {
+        timer.start(TIMER_INDEX_SETUP);
+        initBArray();
+        initCArray();
+        finish ateach (p in BdotC) {
+            BdotC(p) = B(p) * C(p);
+        }
+        timer.start(TIMER_INDEX_SETUP);
     }
 	
     public def getEnergy() : Double {
@@ -166,7 +187,7 @@ public class PME {
         directEnergy = getDirectEnergy();
         selfEnergy = getSelfEnergy();
         
-        val Q = getGriddedCharges();
+        gridCharges();
 
         timer.start(TIMER_INDEX_INVFFT);
         val temp = DistArray.make[Complex](gridDist); 
@@ -182,7 +203,7 @@ public class PME {
         fft.doFFT3d(thetaRecConvQ, thetaRecConvQ, temp, true);
         timer.stop(TIMER_INDEX_THETARECCONVQ);
 
-        reciprocalEnergy = getReciprocalEnergy(Q, thetaRecConvQ);
+        reciprocalEnergy = getReciprocalEnergy(thetaRecConvQ);
 
         Console.OUT.println("directEnergy = " + directEnergy);
         Console.OUT.println("selfEnergy = " + selfEnergy);
@@ -356,9 +377,8 @@ public class PME {
      * Calculates the gridded charge array Q as defined in Eq. 4.6,
      * using Cardinal B-spline interpolation.
      */
-    public def getGriddedCharges() : DistArray[Complex](3){self.dist==gridDist} {
+    public def gridCharges() {
         timer.start(TIMER_INDEX_GRIDCHARGES);
-        val Q = DistArray.make[Complex](gridDist);
         finish ateach ((p1) in Dist.makeUnique(gridDist.places())) {
             val myQ = new PeriodicArray[Double](gridRegion);
             for (p in subCells | here) {
@@ -391,7 +411,6 @@ public class PME {
             }
         }
         timer.stop(TIMER_INDEX_GRIDCHARGES);
-        return Q;
     }
 
     /**
@@ -399,7 +418,7 @@ public class PME {
      * @param thetaRecConvQ the reciprocal pair potential as defined in eq. 4.7
      * @return the approximation to the reciprocal energy ~E_rec as defined in Eq. 4.7
      */
-    private def getReciprocalEnergy(Q : DistArray[Complex]{self.dist==gridDist}, thetaRecConvQ : DistArray[Complex]{self.dist==gridDist}) {
+    private def getReciprocalEnergy(thetaRecConvQ : DistArray[Complex]{self.dist==gridDist}) {
         timer.start(TIMER_INDEX_RECIPROCAL);
         finish ateach ((p1) in Dist.makeUnique(gridDist.places())) {
             var myReciprocalEnergy : Double = 0.0;
@@ -417,12 +436,11 @@ public class PME {
     }
 
     /**
-     * @return the array B as defined by Eq 4.8 and 4.4
+     * Initialises the array B as defined by Eq 4.8 and 4.4
+     * TODO should be able to construct array as local and return, but can't due to GC limitations
      */
-    public def getBArray() {
-        val B = DistArray.make[Double](gridDist);
-        // TODO ateach (m(m1,m2,m3) in gridDist) {
-        finish foreach ((m1) in 0..gridSize(0)-1) {
+    public def initBArray() {
+        finish ateach ((m1,m2,m3) in B) {
             val m1D = m1 as Double;
             var sumK1 : Complex = Complex.ZERO;
             for ((k) in 0..(splineOrder-2)) {
@@ -430,40 +448,33 @@ public class PME {
             }
             val b1 = (Math.exp(2.0 * Math.PI * (splineOrder-1) * m1D / K1 * Complex.I) / sumK1).abs();
 
-            for (var m2 : Int = 0; m2 < gridSize(1); m2++) {
-                val m2D = m2 as Double;
-                var sumK2 : Complex = Complex.ZERO;
-                for ((k) in 0..(splineOrder-2)) {
-                    sumK2 = sumK2 + bSpline(splineOrder, k+1) * Math.exp(2.0 * Math.PI * m2D * k / K2 * Complex.I);
-                }
-                val b2 = (Math.exp(2.0 * Math.PI * (splineOrder-1) * m2D / K2 * Complex.I) / sumK2).abs();
-                
-                for (var m3 : Int = 0; m3 < gridSize(2); m3++) {
-                    val m3D = m3 as Double;
-                    val m = Point.make(m1,m2,m3);
-                    async(B.dist(m)) {
-                        var sumK3 : Complex = Complex.ZERO;
-                        for ((k) in 0..(splineOrder-2)) {
-                            sumK3 = sumK3 + bSpline(splineOrder, k+1) * Math.exp(2.0 * Math.PI * m3D * k / K3 * Complex.I);
-                        }
-                        val b3 = (Math.exp(2.0 * Math.PI * (splineOrder-1) * m3D / K3 * Complex.I) / sumK3).abs();
-                        B(m) = b1 * b1 * b2 * b2 * b3 * b3;
-                    }
-                    //Console.OUT.println("B(" + m1 + "," + m2 + "," + m3 + ") = " + B(m1,m2,m3));
-                }
+            val m2D = m2 as Double;
+            var sumK2 : Complex = Complex.ZERO;
+            for ((k) in 0..(splineOrder-2)) {
+                sumK2 = sumK2 + bSpline(splineOrder, k+1) * Math.exp(2.0 * Math.PI * m2D * k / K2 * Complex.I);
             }
+            val b2 = (Math.exp(2.0 * Math.PI * (splineOrder-1) * m2D / K2 * Complex.I) / sumK2).abs();
+                
+            val m3D = m3 as Double;
+            var sumK3 : Complex = Complex.ZERO;
+            for ((k) in 0..(splineOrder-2)) {
+                sumK3 = sumK3 + bSpline(splineOrder, k+1) * Math.exp(2.0 * Math.PI * m3D * k / K3 * Complex.I);
+            }
+            val b3 = (Math.exp(2.0 * Math.PI * (splineOrder-1) * m3D / K3 * Complex.I) / sumK3).abs();
+
+            B(m1,m2,m3) = b1 * b1 * b2 * b2 * b3 * b3;
+            //Console.OUT.println("B(" + m1 + "," + m2 + "," + m3 + ") = " + B(m1,m2,m3));
         }
-        return B;
     }
 
     /**
-     * @return the array C as defined by Eq 3.9
+     * Initialises the array C as defined by Eq 3.9
+     * TODO should be able to construct array as local and return, but can't due to GC limitations
      */
-    public def getCArray() {
-        val C = DistArray.make[Double](gridDist);
+    public def initCArray() {
         val V = getVolume();
         //Console.OUT.println("V = " + V);
-        finish ateach ((m1,m2,m3) in gridDist) {
+        finish ateach ((m1,m2,m3) in C) {
             val m1prime = m1 <= K1/2 ? m1 : m1 - K1;
             val m2prime = m2 <= K2/2 ? m2 : m2 - K2;
             val m3prime = m3 <= K3/2 ? m3 : m3 - K3;
@@ -474,7 +485,6 @@ public class PME {
         at (C.dist(0,0,0)) {
             C(0,0,0) = 0.0;
         }
-        return C;
     }
 
     /* 
