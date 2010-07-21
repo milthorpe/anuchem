@@ -135,12 +135,12 @@ public class PME {
         this.atoms = atoms;
         val r = Region.makeRectangular(0, gridSize(0)-1);
         gridRegion = (r * [0..(gridSize(1)-1)] * [0..(gridSize(2)-1)]) as Region(3);
-        gridDist = Dist.makeBlock(gridRegion, 0);
+        gridDist = Dist.makeBlockBlock(gridRegion, 0, 1);
         this.splineOrder = splineOrder;
         this.beta = beta;
         this.cutoff = cutoff;
         val imageTranslationRegion = [0..Place.MAX_PLACES-1,-1..1,-1..1,-1..1] as Region(4){rect};
-        this.imageTranslations = DistArray.make[Vector3d](Dist.makeBlockBlock(imageTranslationRegion, 0, 1), ((place,i,j,k) : Point(4)) => (edges(0).mul(i)).add(edges(1).mul(j)).add(edges(2).mul(k)));
+        this.imageTranslations = DistArray.make[Vector3d](Dist.makeBlock(imageTranslationRegion, 0), ((place,i,j,k) : Point(4)) => (edges(0).mul(i)).add(edges(1).mul(j)).add(edges(2).mul(k)));
 
         if (edgeLengths(0) % cutoff != 0.0) {
             Console.ERR.println("warning: edge length " + edgeLengths(0) + " is not an exact multiple of cutoff " + cutoff);
