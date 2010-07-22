@@ -11,15 +11,19 @@ public class Distributed3dFft {
     /** The length of one dimension of the 3D source and target arrays. */
     public global val dataSize : Int;
 
-    public def this(dataSize : Int) {
-        this.dataSize = dataSize;
-        //FFTW.fftwInitThreads();
-        //FFTW.fftwPlanWithNThreads(Runtime.INIT_THREADS);
-    }
+    // TODO these arrays should be parameters, but can't be because of GC problems
+    private global val source : DistArray[Complex](3); 
+    private global val target : DistArray[Complex](3){self.dist==source.dist};
+    private global val temp : DistArray[Complex](3){self.dist==source.dist};
 
-    // TODO a neater way to cleanup the FFTW environment
-    public def cleanup() {
-        //FFTW.fftwCleanupThreads();
+    public def this(dataSize : Int,
+                    source : DistArray[Complex](3), 
+                    target : DistArray[Complex](3){self.dist==source.dist},
+                    temp : DistArray[Complex](3){self.dist==source.dist}) {
+        this.dataSize = dataSize;
+        this.source = source;
+        this.target = target;
+        this.temp = temp;
     }
 
     /**
@@ -33,30 +37,27 @@ public class Distributed3dFft {
      * This operation would have to be renamed "doFFT3dTranspose"
      * to indicate that the target array has its dimensions transposed.
      */
-    public global def doFFT3d(source : DistArray[Complex](3), 
-                        target : DistArray[Complex](3){self.dist==source.dist},
-                        temp : DistArray[Complex](3){self.dist==source.dist},
-                        forward : Boolean) {
+    public global def doFFT3d(forward : Boolean) {
         if (source.dist.constant) {
             // all source data at one place.  use local 3D FFT rather than distributed
             val plan : FFTW.FFTWPlan = FFTW.fftwPlan3d(dataSize, dataSize, dataSize, source, target, forward);
             FFTW.fftwExecute(plan);
             FFTW.fftwDestroyPlan(plan); 
         } else {
-            doFFTForOneDimension(source, temp, forward);
-            transposeArray(temp, target);
-            doFFTForOneDimension(target, temp, forward);
-            transposeArray(temp, target);
-            doFFTForOneDimension(target, temp, forward);
-            transposeArray(temp, target);
+            do1DFftToTemp(source, forward);
+            transposeTempToTarget();
+            do1DFftToTemp(target, forward);
+            transposeTempToTarget();
+            do1DFftToTemp(target, forward);
+            transposeTempToTarget();
         }
     }
 
     /**
-     * Performs a 1D FFT for each 1D slice along the Z dimension.
+     * Performs a 1D FFT for each 1D slice along the Z dimension,
+     * and store the result in the temp array.
      */
-    private global def doFFTForOneDimension(source : DistArray[Complex](3), 
-                                     target : DistArray[Complex](3){self.dist==source.dist},
+    private global def do1DFftToTemp(source : DistArray[Complex](3),
                                      forward : Boolean) {
         finish ateach ((p1) in Dist.makeUnique(source.dist.places())) {
             val oneDSource = Rail.make[Complex](dataSize);
@@ -71,7 +72,7 @@ public class Distributed3dFft {
                 }
                 FFTW.fftwExecute(plan);
                 for(var k : Int = 0; k < dataSize; k++) {
-                    target(i,j,k) = oneDTarget(k);
+                    temp(i,j,k) = oneDTarget(k);
                 }
             }
             FFTW.fftwDestroyPlan(plan);
@@ -84,139 +85,37 @@ public class Distributed3dFft {
      * Assumes NxNxN arrays, and that source and target arrays contain complete
      * slabs or lines in the second dimension.
      */
-    private global def transposeArray(source : DistArray[Complex](3), 
-                             target : DistArray[Complex](3){self.dist==source.dist}) {
-        finish ateach (p1 in Dist.makeUnique(source.dist.places())) {
-            val sourceDist = source.dist | here;
+    private global def transposeTempToTarget() {
+        finish ateach (p1 in Dist.makeUnique(temp.dist.places())) {
+            val sourceDist = temp.dist | here;
             val sourceStartX = sourceDist.region.min(0);
             val sourceEndX = sourceDist.region.max(0);
             val sourceStartY = sourceDist.region.min(1);
             val sourceEndY = sourceDist.region.max(1);
-            for (p2 in source.dist.places()) {
-                val targetDist = source.dist | p2;
+            foreach (p2 in temp.dist.places()) {
+                val targetDist = temp.dist | p2;
                 val startX = Math.max(sourceStartX, targetDist.region.min(1));
                 val endX = Math.min(sourceEndX, targetDist.region.max(1));
                 val startY = Math.max(sourceStartY, targetDist.region.min(2));
                 val endY = Math.min(sourceEndY, targetDist.region.max(2));
                 val startZ = targetDist.region.min(0);
                 val endZ = targetDist.region.max(0);
-                val sourcePointGenerator = new PointGenerator(startX, endX,
-                                                              startY, endY,
-                                                              startZ, endZ);
-                val elementsToTransfer = new GrowableRail[Complex]();
-                while (sourcePointGenerator.hasNext()) {
-                    elementsToTransfer.add(source(sourcePointGenerator.next()));
+
+                val sourcePoints : Region(3) = [startX..endX, startY..endY, startZ..endZ];
+                val elementsToTransfer = Rail.make[Complex](sourcePoints.size());
+                var i : Int = 0;
+                for (p in sourcePoints) {
+                    elementsToTransfer(i++) = temp(p);
                 }
-                
-                val toTransfer = elementsToTransfer.toValRail();
+                val toTransfer = elementsToTransfer as ValRail[Complex];
                 at (p2) {
-                    val targetPointGenerator = new PointGenerator(startX, endX,
-                                                                  startY, endY,
-                                                                  startZ, endZ);
+                    val targetPoints : Region(3) = [startX..endX, startY..endY, startZ..endZ];
                     var i : Int = 0;
-                    while (targetPointGenerator.hasNext()) {
-                        val p(x,y,z) = targetPointGenerator.next();
+                    for ((x,y,z) in targetPoints) {
                         target(z,x,y) = toTransfer(i++);
                     }
                 }
             }
-        }
-    }
-
-    /**
-     * Shuffles array around all places by transposing the zeroth dimension
-     * to the first, the first to the second and the second to the zeroth.
-     * Assumes NxNxN arrays, and that source and target arrays contain complete
-     * slabs or lines in the second dimension.
-     */
-    private global def transposeArrayOld(source : DistArray[Complex](3), 
-                             target : DistArray[Complex](3){self.dist==source.dist}) {
-        finish ateach (p1 in Dist.makeUnique(source.dist.places())) {
-            val sourceDist = source.dist | here;
-            val sourceStart = sourceDist.region.min(0);
-            val sourceEnd = sourceDist.region.max(0);
-            foreach (p2 in source.dist.places()) {
-                val targetDist = source.dist | p2;
-                val targetStart = targetDist.region.min(0);
-                val targetEnd = targetDist.region.max(0);
-                
-                val toTransfer = ValRail.make[Complex]((targetEnd - targetStart + 1) * (sourceEnd - sourceStart + 1) * dataSize, (n : Int) => source(mapPoint(n,sourceStart,targetStart,targetEnd)));
-                at (p2) {transpose(toTransfer, target, sourceStart, sourceEnd, targetStart, targetEnd);}
-            }   
-        }
-    }
-
-    private global safe def mapPoint(n : Int, iStart : Int, jStart : Int, jEnd : Int) : Point(3) {
-        val JSIZE = jEnd - jStart + 1;
-        val ISIZE = dataSize * JSIZE;
-        val i = n / (ISIZE);
-        val j = (n - i * ISIZE) / JSIZE;
-        val k = n - i * ISIZE - j * JSIZE;
-        return Point.make(i+iStart,j,k+jStart);
-    }
-
-    /**
-     * Copies a chunk of a source array into the target array.
-     * The elements are shoehorned into a ValRail of length K * (endI - startI) .
-     */
-    private global safe def transpose(source : ValRail[Complex],
-                             target : DistArray[Complex](3),
-                             sourceStart : Int,
-                             sourceEnd : Int,
-                             targetStart : Int,
-                             targetEnd : Int) : Void {
-        val KSIZE = targetEnd - targetStart + 1;
-        val JSIZE = dataSize * KSIZE;
-        for ((j) in sourceStart..sourceEnd) {
-            val jOffset = (j-sourceStart) * JSIZE;
-            for ((k) in 0..dataSize-1) {
-                val kOffset = k * KSIZE;
-                for ((i) in targetStart..targetEnd) {
-                    val offset = kOffset + jOffset + (i-targetStart);
-                    //Console.OUT.println(Point.make(i,j,k) + " <= " + offset);
-                    target(i,j,k) = source(offset);
-                }
-            }
-        }
-    }
-
-    private static class PointGenerator implements Iterator[Point(3)] {
-        private startX : Int;
-        private endX : Int;
-        private startY : Int;
-        private endY : Int;
-        private startZ : Int;
-        private endZ : Int;
-        private var x : Int;
-        private var y : Int;
-        private var z : Int;
-
-        public def this(startX : Int, endX : Int, startY : Int, endY : Int, startZ : Int, endZ : Int) {
-            this.startX = startX;
-            this.endX = endX;
-            this.startY = startY;
-            this.endY = endY;
-            this.startZ = startZ;
-            this.endZ = endZ;
-            this.x = startX;
-            this.y = startY;
-            this.z = startZ;
-        }
-
-        public def hasNext() {
-            return x <= endX && y <= endY && z <= endZ;
-        }
-
-        public def next() : Point(3) {
-            val p = Point.make(x,y,z);
-            if (++z > endZ) {
-                z = startZ;
-                if (++y > endY) {
-                    y = startY;
-                    ++x;
-                }
-            }
-            return p;
         }
     }
 }

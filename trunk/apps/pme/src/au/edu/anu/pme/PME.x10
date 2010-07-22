@@ -72,8 +72,6 @@ public class PME {
     /** The atoms in the simulation, divided up into an array of ValRails, one for each place. */
     private global val atoms : DistArray[ValRail[MMAtom]](1);
 
-    private global val fft : Distributed3dFft;
-
     private global val B : DistArray[Double]{self.dist==gridDist};
     private global val C : DistArray[Double]{self.dist==gridDist};
     private global val BdotC : DistArray[Double]{self.dist==gridDist};
@@ -124,7 +122,6 @@ public class PME {
             beta : Double,
             cutoff : Double) {
         this.gridSize = gridSize;
-        fft = new Distributed3dFft(gridSize(0));
         K1 = gridSize(0) as Double;
         K2 = gridSize(1) as Double;
         K3 = gridSize(2) as Double;
@@ -192,7 +189,7 @@ public class PME {
         timer.start(TIMER_INDEX_INVFFT);
         val temp = DistArray.make[Complex](gridDist); 
         val Qinv = DistArray.make[Complex](gridDist);
-        fft.doFFT3d(Q, Qinv, temp, false);
+        new Distributed3dFft(gridSize(0), Q, Qinv, temp).doFFT3d(false);
         timer.stop(TIMER_INDEX_INVFFT);
 
         timer.start(TIMER_INDEX_THETARECCONVQ);
@@ -200,7 +197,7 @@ public class PME {
         val thetaRecConvQ = DistArray.make[Complex](gridDist, (p : Point) => BdotC(p) * Qinv(p));
 
         // and do inverse FFT
-        fft.doFFT3d(thetaRecConvQ, thetaRecConvQ, temp, true);
+        new Distributed3dFft(gridSize(0), thetaRecConvQ, thetaRecConvQ, temp).doFFT3d(true);
         timer.stop(TIMER_INDEX_THETARECCONVQ);
 
         reciprocalEnergy = getReciprocalEnergy(thetaRecConvQ);
