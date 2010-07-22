@@ -196,8 +196,8 @@ public class MortonDist extends BaseDist{self.rank==3} {
         var s: String = "MortonDist(";
         var first: boolean = true;
         for (p:Place in places) {
-            if (!first) s += ", ";
-            s += p.id + "->" + get(p);
+            if (!first) s += ",";
+            s +=  get(p) + "->" + p.id;
             first = false;
         }
         s += ")";
