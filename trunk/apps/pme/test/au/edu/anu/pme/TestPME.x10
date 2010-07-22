@@ -63,6 +63,7 @@ public class TestPME extends TestElectrostatic {
 
         val atoms = generateAtoms();
         val pme = new PME(edges, gridSizes, atoms, splineOrder, ewaldCoefficient, cutoff);
+        pme.setup();
         val energy = pme.getEnergy();
         Console.OUT.println("energy = " + energy);
 

@@ -1,5 +1,6 @@
 package au.edu.anu.fft;
 
+import x10.util.GrowableRail;
 import edu.mit.fftw.FFTW;
 
 /**
@@ -87,6 +88,51 @@ public class Distributed3dFft {
                              target : DistArray[Complex](3){self.dist==source.dist}) {
         finish ateach (p1 in Dist.makeUnique(source.dist.places())) {
             val sourceDist = source.dist | here;
+            val sourceStartX = sourceDist.region.min(0);
+            val sourceEndX = sourceDist.region.max(0);
+            val sourceStartY = sourceDist.region.min(1);
+            val sourceEndY = sourceDist.region.max(1);
+            for (p2 in source.dist.places()) {
+                val targetDist = source.dist | p2;
+                val startX = Math.max(sourceStartX, targetDist.region.min(1));
+                val endX = Math.min(sourceEndX, targetDist.region.max(1));
+                val startY = Math.max(sourceStartY, targetDist.region.min(2));
+                val endY = Math.min(sourceEndY, targetDist.region.max(2));
+                val startZ = targetDist.region.min(0);
+                val endZ = targetDist.region.max(0);
+                val sourcePointGenerator = new PointGenerator(startX, endX,
+                                                              startY, endY,
+                                                              startZ, endZ);
+                val elementsToTransfer = new GrowableRail[Complex]();
+                while (sourcePointGenerator.hasNext()) {
+                    elementsToTransfer.add(source(sourcePointGenerator.next()));
+                }
+                
+                val toTransfer = elementsToTransfer.toValRail();
+                at (p2) {
+                    val targetPointGenerator = new PointGenerator(startX, endX,
+                                                                  startY, endY,
+                                                                  startZ, endZ);
+                    var i : Int = 0;
+                    while (targetPointGenerator.hasNext()) {
+                        val p(x,y,z) = targetPointGenerator.next();
+                        target(z,x,y) = toTransfer(i++);
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Shuffles array around all places by transposing the zeroth dimension
+     * to the first, the first to the second and the second to the zeroth.
+     * Assumes NxNxN arrays, and that source and target arrays contain complete
+     * slabs or lines in the second dimension.
+     */
+    private global def transposeArrayOld(source : DistArray[Complex](3), 
+                             target : DistArray[Complex](3){self.dist==source.dist}) {
+        finish ateach (p1 in Dist.makeUnique(source.dist.places())) {
+            val sourceDist = source.dist | here;
             val sourceStart = sourceDist.region.min(0);
             val sourceEnd = sourceDist.region.max(0);
             foreach (p2 in source.dist.places()) {
@@ -131,6 +177,46 @@ public class Distributed3dFft {
                     target(i,j,k) = source(offset);
                 }
             }
+        }
+    }
+
+    private static class PointGenerator implements Iterator[Point(3)] {
+        private startX : Int;
+        private endX : Int;
+        private startY : Int;
+        private endY : Int;
+        private startZ : Int;
+        private endZ : Int;
+        private var x : Int;
+        private var y : Int;
+        private var z : Int;
+
+        public def this(startX : Int, endX : Int, startY : Int, endY : Int, startZ : Int, endZ : Int) {
+            this.startX = startX;
+            this.endX = endX;
+            this.startY = startY;
+            this.endY = endY;
+            this.startZ = startZ;
+            this.endZ = endZ;
+            this.x = startX;
+            this.y = startY;
+            this.z = startZ;
+        }
+
+        public def hasNext() {
+            return x <= endX && y <= endY && z <= endZ;
+        }
+
+        public def next() : Point(3) {
+            val p = Point.make(x,y,z);
+            if (++z > endZ) {
+                z = startZ;
+                if (++y > endY) {
+                    y = startY;
+                    ++x;
+                }
+            }
+            return p;
         }
     }
 }
