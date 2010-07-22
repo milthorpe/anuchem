@@ -15,7 +15,7 @@ namespace bgp {
              dgeev(1, Acpy, aSize, eval, evec, aSize, &dummy, aSize, aux,  aSize*2); 
 
              // TODO: check correctness
-             // sort it
+             // sort it, better sort!
              int *indx = (int *) malloc(sizeof(int)*aSize);
              dsortx(eval, 2, aSize, indx);
              for(int i=0; i<aSize; i++) {
