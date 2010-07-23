@@ -58,7 +58,7 @@ public class ShellList {
 
     public def getShellPrimitives() : GrowableRail[ContractedGaussian] {
          val shellPrimitives = new GrowableRail[ContractedGaussian]();
- 
+
          for(shell in shellList.keySet()) { 
             val sp = shellList.getOrElse(shell, null).getShellPrimitives();
             
