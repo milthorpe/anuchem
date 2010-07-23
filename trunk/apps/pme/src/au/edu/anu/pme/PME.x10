@@ -180,10 +180,8 @@ public class PME {
         timer.start(TIMER_INDEX_TOTAL);
 
         divideAtomsIntoSubCells();
-
         directEnergy = getDirectEnergy();
         selfEnergy = getSelfEnergy();
-        
         gridCharges();
 
         timer.start(TIMER_INDEX_INVFFT);
@@ -199,7 +197,6 @@ public class PME {
         // and do inverse FFT
         new Distributed3dFft(gridSize(0), thetaRecConvQ, thetaRecConvQ, temp).doFFT3d(true);
         timer.stop(TIMER_INDEX_THETARECCONVQ);
-
         reciprocalEnergy = getReciprocalEnergy(thetaRecConvQ);
 
         Console.OUT.println("directEnergy = " + directEnergy);
@@ -376,7 +373,7 @@ public class PME {
      */
     public def gridCharges() {
         timer.start(TIMER_INDEX_GRIDCHARGES);
-        finish ateach ((p1) in Dist.makeUnique(gridDist.places())) {
+        finish ateach ((place1) in Dist.makeUnique(gridDist.places())) {
             val myQ = new PeriodicArray[Double](gridRegion);
             for (p in subCells | here) {
                 val thisCell = subCells(p);
@@ -402,9 +399,23 @@ public class PME {
                     }
                 }
             }
-            finish for (p in myQ) {
-                val myContribution = myQ(p);
-                async (Q.dist(p)) { atomic {Q(p) = Q(p) + myContribution; } };
+            // scatter myQ and accumulate to distributed Q
+            finish foreach (place2 in gridDist.places()) {
+                val place1ContributionDist = Q.dist | place2;
+                val place1Contribution = Rail.make[Double](place1ContributionDist.region.size());
+                var i : Int = 0;
+                for (p in place1ContributionDist) {
+                    place1Contribution(i++) = myQ(p);
+                }
+                val place1ContributionToTransfer = place1Contribution as ValRail[Double];
+                at (place2) {
+                    atomic {
+                        var j : Int = 0;
+                        for (p in Q | here) {
+                            Q(p) = Q(p) + place1ContributionToTransfer(j++);
+                        }
+                    }
+                }
             }
         }
         timer.stop(TIMER_INDEX_GRIDCHARGES);
