@@ -1,7 +1,6 @@
 package au.edu.anu.mm;
 
 import x10.array.BaseDist;
-import x10.array.BaseRegion;
 import x10.array.U;
 
 /**
@@ -13,7 +12,7 @@ import x10.array.U;
 public class MortonDist extends BaseDist{self.rank==3} {
     global val totalLength : Int;
 
-    public static class MortonSubregion extends BaseRegion {
+    public static class MortonSubregion extends Region {
         global val start : Int;
         global val end : Int;
         global val totalLength : Int;
@@ -87,6 +86,10 @@ public class MortonDist extends BaseDist{self.rank==3} {
             final public safe def next(): Point(3) {
                 return MortonDist.getPoint(++index, this.totalLength);
             } 
+        }
+
+        public global def scanners():Iterator[Region.Scanner]! {
+            throw U.unsupported("TODO: scanners not defined for MortonSubregion");
         }
 
         public global safe def toString(): String {

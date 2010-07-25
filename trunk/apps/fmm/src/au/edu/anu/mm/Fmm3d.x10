@@ -112,7 +112,7 @@ public class Fmm3d {
                     size : Double,  
                     numAtoms : Int,
                     atoms: DistArray[ValRail[MMAtom]](1)) {
-        val numLevels = Math.max(2, (Math.log(numAtoms / density) / Math.log(8.0) + 1.0 as Int));
+        val numLevels = Math.max(2, (Math.log(numAtoms / density) / Math.log(8.0) + 1.0) as Int);
         this.numLevels = numLevels;
 
         var nBox : Int = 0;
@@ -557,7 +557,7 @@ public class Fmm3d {
     }
 
     protected global def getLowestLevelBoxIndex(offsetCentre : Point3d) : Point(3) {
-        return  Point.make(offsetCentre.i / size * lowestLevelDim + lowestLevelDim / 2 as Int, offsetCentre.j / size * lowestLevelDim + lowestLevelDim / 2 as Int, offsetCentre.k / size * lowestLevelDim + lowestLevelDim / 2 as Int);
+        return  Point.make((offsetCentre.i / size * lowestLevelDim + lowestLevelDim / 2) as Int, (offsetCentre.j / size * lowestLevelDim + lowestLevelDim / 2) as Int, (offsetCentre.k / size * lowestLevelDim + lowestLevelDim / 2) as Int);
     }
 
     private global def getParentForChild(boxes : ValRail[DistArray[FmmBox](3)], level : Int, x : Int, y : Int, z : Int) : FmmBox {

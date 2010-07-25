@@ -1,9 +1,6 @@
 package au.edu.anu.mm;
 
-import x10.array.BaseRegion;
-import x10.array.U;
-
-public class ExpansionRegion extends BaseRegion  {
+public class ExpansionRegion extends Region  {
     // XTENLANG-49
     static type ExpansionRegion(rank:Int) = ExpansionRegion{self.rank==rank};
     global val p : Int;
@@ -131,6 +128,10 @@ public class ExpansionRegion extends BaseRegion  {
             }
             return nextPoint;
         } 
+    }
+
+    public global def scanners():Iterator[Region.Scanner]! {
+        throw U.unsupported("TODO: scanners not defined for ExpansionRegion");
     }
 
     public global safe def toString(): String {
