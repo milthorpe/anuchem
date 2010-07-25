@@ -1,7 +1,23 @@
+/*
+ * This file is part of ANUChem.
+ * ANUChem is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+
+ * ANUChem is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * You should have received a copy of the GNU General Public License
+ * along with ANUChem.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * (C) Copyright Josh Milthorpe 2010.
+ */
 package au.edu.anu.mm;
 
 import x10.array.BaseDist;
-import x10.array.BaseRegion;
 import x10.array.U;
 
 /**
@@ -13,7 +29,7 @@ import x10.array.U;
 public class MortonDist extends BaseDist{self.rank==3} {
     global val totalLength : Int;
 
-    public static class MortonSubregion extends BaseRegion {
+    public static class MortonSubregion extends Region {
         global val start : Int;
         global val end : Int;
         global val totalLength : Int;
@@ -87,6 +103,10 @@ public class MortonDist extends BaseDist{self.rank==3} {
             final public safe def next(): Point(3) {
                 return MortonDist.getPoint(++index, this.totalLength);
             } 
+        }
+
+        public global def scanners():Iterator[Region.Scanner]! {
+            throw U.unsupported("TODO: scanners not defined for MortonSubregion");
         }
 
         public global safe def toString(): String {

@@ -1,3 +1,20 @@
+/*
+ * This file is part of ANUChem.
+ * ANUChem is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+
+ * ANUChem is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * You should have received a copy of the GNU General Public License
+ * along with ANUChem.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * (C) Copyright Josh Milthorpe 2010.
+ */
 package au.edu.anu.mm;
 
 import x10.util.*;
@@ -112,7 +129,7 @@ public class Fmm3d {
                     size : Double,  
                     numAtoms : Int,
                     atoms: DistArray[ValRail[MMAtom]](1)) {
-        val numLevels = Math.max(2, (Math.log(numAtoms / density) / Math.log(8.0) + 1.0 as Int));
+        val numLevels = Math.max(2, (Math.log(numAtoms / density) / Math.log(8.0) + 1.0) as Int);
         this.numLevels = numLevels;
 
         var nBox : Int = 0;
@@ -557,7 +574,7 @@ public class Fmm3d {
     }
 
     protected global def getLowestLevelBoxIndex(offsetCentre : Point3d) : Point(3) {
-        return  Point.make(offsetCentre.i / size * lowestLevelDim + lowestLevelDim / 2 as Int, offsetCentre.j / size * lowestLevelDim + lowestLevelDim / 2 as Int, offsetCentre.k / size * lowestLevelDim + lowestLevelDim / 2 as Int);
+        return  Point.make((offsetCentre.i / size * lowestLevelDim + lowestLevelDim / 2) as Int, (offsetCentre.j / size * lowestLevelDim + lowestLevelDim / 2) as Int, (offsetCentre.k / size * lowestLevelDim + lowestLevelDim / 2) as Int);
     }
 
     private global def getParentForChild(boxes : ValRail[DistArray[FmmBox](3)], level : Int, x : Int, y : Int, z : Int) : FmmBox {

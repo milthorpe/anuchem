@@ -1,6 +1,6 @@
 package x10.array;
 
-public class TriangularRegion extends BaseRegion {
+public class TriangularRegion extends Region {
     // XTENLANG-49
     static type TriangularRegion(rank:Int) = TriangularRegion{self.rank==rank};
 
@@ -153,6 +153,10 @@ public class TriangularRegion extends BaseRegion {
             }
             return nextPoint;
         } 
+    }
+
+    public global def scanners():Iterator[Region.Scanner]! {
+        throw U.unsupported("TODO: scanners not defined for TriangularRegion");
     }
 
     public global safe def toString(): String {
