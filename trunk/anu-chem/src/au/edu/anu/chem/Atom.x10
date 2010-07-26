@@ -1,12 +1,20 @@
-/**
- * This class represents an Atom for the purpose of quantum
- * chemical and other computational chemistry codes.
+/*
+ * This file is part of ANUChem.
+ * ANUChem is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+
+ * ANUChem is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * You should have received a copy of the GNU General Public License
+ * along with ANUChem.  If not, see <http://www.gnu.org/licenses/>.
  *
- * @author milthorpe
- *
- * @modified ganesh - toString() to simply print coordinate values insted of 
- *                    default (i, j , k) print.
- * @modified ganesh - moved bonding info from MMAtom to here
+ * (C) Copyright Australian National University 2010.
+ * (C) Copyright Josh Milthorpe 2010.
  */
 package au.edu.anu.chem;
 
@@ -14,6 +22,12 @@ import x10x.vector.Point3d;
 import x10.util.ArrayList;
 import x10.util.Pair;
 
+/**
+ * This class represents an Atom for the purpose of quantum
+ * chemical and other computational chemistry codes.
+ *
+ * @author milthorpe, V. Ganesh
+ */
 public class Atom { 
 
     /** The location of the atomic nucleus. */
