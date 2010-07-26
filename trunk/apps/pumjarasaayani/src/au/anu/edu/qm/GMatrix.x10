@@ -1937,7 +1937,9 @@ public class GMatrix extends Matrix {
 
                      if (cc < dd) continue;
 
-                     // Console.OUT.println(a + ", " + b + ", " + c + ", " + d);
+                     if (aa < cc) continue;
+
+                     // Console.OUT.println(aa + ", " + bb + ", " + cc + ", " + dd);
                      // twoE.compute2EAndRecord(aFunc, bFunc, cFunc, dFunc, shellList, jMat, kMat, density);
                      computeSingle2(aFunc, bFunc, cFunc, dFunc,
                                     radiusABSquared, aAng, bAng, cAng, dAng, angMomAB,
