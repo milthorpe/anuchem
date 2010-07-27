@@ -1939,6 +1939,8 @@ public class GMatrix extends Matrix {
 
                      if (aa < cc) continue;
 
+                     if (aa == dd && bb < cc) continue;
+
                      // Console.OUT.println(aa + ", " + bb + ", " + cc + ", " + dd);
                      // twoE.compute2EAndRecord(aFunc, bFunc, cFunc, dFunc, shellList, jMat, kMat, density);
                      computeSingle2(aFunc, bFunc, cFunc, dFunc,

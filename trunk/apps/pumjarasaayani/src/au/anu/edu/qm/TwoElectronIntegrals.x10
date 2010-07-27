@@ -864,7 +864,7 @@ public class TwoElectronIntegrals {
                      } // for aa
                  } // for bb
              } // for cc
-         } // for d
+         } // for dd
     }
 
     private def fillJKMatrices(dLim:Int, cLim:Int, bLim:Int, aLim:Int,
