@@ -981,7 +981,7 @@ public class TwoElectronIntegrals {
              } // for cc
          } // for dd
 
-         Console.OUT.println("\tNumber of actual integrals used in block: " + intIndx);
+         // Console.OUT.println("\tNumber of actual integrals used in block: " + intIndx);
     }
 
     /** Method to compute all 2E integrals and store in memory for conventional method,
