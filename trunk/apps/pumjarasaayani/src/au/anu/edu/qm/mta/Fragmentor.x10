@@ -1,19 +1,19 @@
-/**
- * Fragmentor.x10
+/*
+ * This file is part of ANUChem.
+ * ANUChem is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+
+ * ANUChem is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * You should have received a copy of the GNU General Public License
+ * along with ANUChem.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Basic implementation of MTA in X10, for large scale HF calculation. 
- * Lots of code derived from MeTA Studio and MTA-GAMESS written by me ;)
- * This is a straight implementation, so no plugins are provided as 
- * with MeTA Studio.
- *
- * TODO: Currently this is a very basic implementation, does not take 
- * care of all the conditions as implemented in MTA-GAMESS.
- *
- * Primary reference:
- *   [MTA06] V. Ganesh, R. K. Dongare, P. Balanarayan, and S. R. Gadre, 
- *           J. Chem. Phys. 125, 104109, 2006.
- *
- * @author: V.Ganesh
+ * (C) Copyright Australian National University 2010.
  */
 
 package au.anu.edu.qm.mta;
@@ -31,6 +31,23 @@ import au.edu.anu.chem.BondType;
 import au.edu.anu.chem.Molecule;
 import au.edu.anu.chem.ConnectivityBuilder;
 
+/**
+ * Fragmentor.x10
+ *
+ * Basic implementation of MTA in X10, for large scale HF calculation.
+ * Lots of code derived from MeTA Studio and MTA-GAMESS written by me ;)
+ * This is a straight implementation, so no plugins are provided as
+ * with MeTA Studio.
+ *
+ * TODO: Currently this is a very basic implementation, does not take
+ * care of all the conditions as implemented in MTA-GAMESS.
+ *
+ * Primary reference:
+ *   [MTA06] V. Ganesh, R. K. Dongare, P. Balanarayan, and S. R. Gadre,
+ *           J. Chem. Phys. 125, 104109, 2006.
+ *
+ * @author: V.Ganesh
+ */
 public class Fragmentor {
 
    val rGoodness:Double;  // note that this is in a.u. as opposed to the original code!

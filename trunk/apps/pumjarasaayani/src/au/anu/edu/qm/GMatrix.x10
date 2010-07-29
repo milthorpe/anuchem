@@ -1,11 +1,21 @@
-/**
- * GMatrix.x10
+/*
+ * This file is part of ANUChem.
+ * ANUChem is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+
+ * ANUChem is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * You should have received a copy of the GNU General Public License
+ * along with ANUChem.  If not, see <http://www.gnu.org/licenses/>.
  *
- * GMatrix in HF calculation
- *
- * @author: V.Ganesh
+ * (C) Copyright Australian National University 2010.
  */
- 
+
 package au.anu.edu.qm;
 
 import x10.util.*;
@@ -16,6 +26,13 @@ import x10x.vector.Point3d;
 import au.edu.anu.chem.Molecule;
 import au.edu.anu.util.Timer;
 
+/**
+ * GMatrix.x10
+ *
+ * GMatrix in HF calculation
+ *
+ * @author: V.Ganesh
+ */
 public class GMatrix extends Matrix {
     public def this(n:Int) {
         super(n);
@@ -1922,26 +1939,25 @@ public class GMatrix extends Matrix {
 
                   for(var j:Int=0; j<nPairs; j++) {
                      val c = shellPairs(j).first as Int;
-                     val d = shellPairs(j).second as Int;
-
                      val cFunc = bfs(c) as ContractedGaussian!;
-                     val dFunc = bfs(d) as ContractedGaussian!;
-
                      val cStrt = cFunc.getIntIndex();
-                     val dStrt = dFunc.getIntIndex();
                      val cAng  = cFunc.getMaximumAngularMomentum();
-                     val dAng  = dFunc.getMaximumAngularMomentum();
-
                      val cc = cStrt + cAng;
+
+                     if (aa < cc) continue;
+
+                     val d = shellPairs(j).second as Int;
+                     val dFunc = bfs(d) as ContractedGaussian!;
+                     val dStrt = dFunc.getIntIndex();
+                     val dAng  = dFunc.getMaximumAngularMomentum();
                      val dd = dStrt + dAng;
 
                      if (cc < dd) continue;
 
-                     if (aa < cc) continue;
+                     // if (bb < cc && bb < dd) continue;
+                     val skp = (bb < cc && bb < dd && aa == cc);
 
-                     if (aa == dd && bb < cc) continue;
-
-                     // Console.OUT.println(aa + ", " + bb + ", " + cc + ", " + dd);
+                     Console.OUT.println(aa + ", " + bb + ", " + cc + ", " + dd + " : (" + a + "," + b + "," + c + "," + d + ") " + skp);
                      // twoE.compute2EAndRecord(aFunc, bFunc, cFunc, dFunc, shellList, jMat, kMat, density);
                      computeSingle2(aFunc, bFunc, cFunc, dFunc,
                                     radiusABSquared, aAng, bAng, cAng, dAng, angMomAB,
