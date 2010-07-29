@@ -558,7 +558,7 @@ public class GMatrix extends Matrix {
         Console.OUT.println("\tTime for summing up GMatrix bits: " + (timer.total(2) as Double) / 1e9 + " seconds"); 
     }
 
-    /* multi place with tak pool interface */
+    /* multi place with task pool interface */
     private def computeDirectOldMultiPlaceTaskPool(twoE:TwoElectronIntegrals!, 
                                                    density:Density!) : void {
         val N = density.getRowCount();
