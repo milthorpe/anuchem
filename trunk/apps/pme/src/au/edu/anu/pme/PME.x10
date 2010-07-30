@@ -417,7 +417,7 @@ public class PME {
                 }
             }
             // scatter myQ and accumulate to distributed Q
-            finish foreach (place2 in gridDist.places()) {
+            for (place2 in gridDist.places()) {
                 val place1ContributionDist = Q.dist | place2;
                 val place1Contribution = Rail.make[Double](place1ContributionDist.region.size());
                 var i : Int = 0;
@@ -425,7 +425,7 @@ public class PME {
                     place1Contribution(i++) = myQ(p);
                 }
                 val place1ContributionToTransfer = place1Contribution as ValRail[Double];
-                at (place2) {
+                async (place2) {
                     atomic {
                         var j : Int = 0;
                         for (p in Q | here) {
