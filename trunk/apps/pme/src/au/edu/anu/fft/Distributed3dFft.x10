@@ -17,8 +17,10 @@
  */
 package au.edu.anu.fft;
 
+import x10.compiler.Native;
 import x10.util.GrowableRail;
 import edu.mit.fftw.FFTW;
+import au.edu.anu.util.AllPlaceBarrier;
 
 /**
  * This class implements a distributed three-dimensional FFT using
@@ -61,12 +63,23 @@ public class Distributed3dFft {
             FFTW.fftwExecute(plan);
             FFTW.fftwDestroyPlan(plan); 
         } else {
-            do1DFftToTemp(source, forward);
-            transposeTempToTarget();
-            do1DFftToTemp(target, forward);
-            transposeTempToTarget();
-            do1DFftToTemp(target, forward);
-            transposeTempToTarget();
+            finish ateach (p1 in Dist.makeUnique(source.dist.places())) {
+                // 'scratch' rails, for use in the 1D FFTs
+                val oneDSource = Rail.make[Complex](dataSize);
+                val oneDTarget = Rail.make[Complex](dataSize);
+
+                do1DFftToTemp(source, oneDSource, oneDTarget, forward);
+                AllPlaceBarrier.barrier();
+                transposeTempToTarget();
+                AllPlaceBarrier.barrier();
+                do1DFftToTemp(target, oneDSource, oneDTarget, forward);
+                AllPlaceBarrier.barrier();
+                transposeTempToTarget();
+                AllPlaceBarrier.barrier();
+                do1DFftToTemp(target, oneDSource, oneDTarget, forward);
+                AllPlaceBarrier.barrier();
+                transposeTempToTarget();
+            }
         }
     }
 
@@ -75,25 +88,23 @@ public class Distributed3dFft {
      * and store the result in the temp array.
      */
     private global def do1DFftToTemp(source : DistArray[Complex](3),
+                                     oneDSource : Rail[Complex],
+                                     oneDTarget : Rail[Complex],
                                      forward : Boolean) {
-        finish ateach ((p1) in Dist.makeUnique(source.dist.places())) {
-            val oneDSource = Rail.make[Complex](dataSize);
-            val oneDTarget = Rail.make[Complex](dataSize);
-            val plan : FFTW.FFTWPlan = FFTW.fftwPlan1d(dataSize, oneDSource, oneDTarget, forward);
-            val mySource = source.dist | here;
-            val gridRegionWithoutZ = (mySource.region().eliminate(2)) as Region(2);
-            for ((i,j) in gridRegionWithoutZ) {
-                // TODO need to copy into ValRail - can use raw()?
-                for(var k : Int = 0; k < dataSize; k++) {
-                    oneDSource(k) = source(i,j,k);
-                }
-                FFTW.fftwExecute(plan);
-                for(var k : Int = 0; k < dataSize; k++) {
-                    temp(i,j,k) = oneDTarget(k);
-                }
+        val plan : FFTW.FFTWPlan = FFTW.fftwPlan1d(dataSize, oneDSource, oneDTarget, forward);
+        val mySource = source.dist | here;
+        val gridRegionWithoutZ = (mySource.region().eliminate(2)) as Region(2);
+        for ((i,j) in gridRegionWithoutZ) {
+            // TODO need to copy into ValRail - can use raw()?
+            for ((k) in 0..dataSize-1) {
+                oneDSource(k) = source(i,j,k);
             }
-            FFTW.fftwDestroyPlan(plan);
+            FFTW.fftwExecute(plan);
+            for ((k) in 0..dataSize-1) {
+                temp(i,j,k) = oneDTarget(k);
+            }
         }
+        FFTW.fftwDestroyPlan(plan);
     }
 
     /**
@@ -103,32 +114,32 @@ public class Distributed3dFft {
      * slabs or lines in the second dimension.
      */
     private global def transposeTempToTarget() {
-        finish ateach (p1 in Dist.makeUnique(temp.dist.places())) {
-            val sourceDist = temp.dist | here;
-            val sourceStartX = sourceDist.region.min(0);
-            val sourceEndX = sourceDist.region.max(0);
-            val sourceStartY = sourceDist.region.min(1);
-            val sourceEndY = sourceDist.region.max(1);
-            foreach (p2 in temp.dist.places()) {
-                val targetDist = temp.dist | p2;
-                val startX = Math.max(sourceStartX, targetDist.region.min(1));
-                val endX = Math.min(sourceEndX, targetDist.region.max(1));
-                val startY = Math.max(sourceStartY, targetDist.region.min(2));
-                val endY = Math.min(sourceEndY, targetDist.region.max(2));
-                val startZ = targetDist.region.min(0);
-                val endZ = targetDist.region.max(0);
+        val sourceDist = temp.dist | here;
+        val sourceStartX = sourceDist.region.min(0);
+        val sourceEndX = sourceDist.region.max(0);
+        val sourceStartY = sourceDist.region.min(1);
+        val sourceEndY = sourceDist.region.max(1);
+        finish foreach (p2 in temp.dist.places()) {
+            val targetDist = temp.dist | p2;
+            val startX = Math.max(sourceStartX, targetDist.region.min(1));
+            val endX = Math.min(sourceEndX, targetDist.region.max(1));
+            val startY = Math.max(sourceStartY, targetDist.region.min(2));
+            val endY = Math.min(sourceEndY, targetDist.region.max(2));
+            val startZ = targetDist.region.min(0);
+            val endZ = targetDist.region.max(0);
 
-                val sourcePoints : Region(3) = [startX..endX, startY..endY, startZ..endZ];
-                val elementsToTransfer = Rail.make[Complex](sourcePoints.size());
+            val transferRegion : Region(3) = [startX..endX, startY..endY, startZ..endZ];
+            if (transferRegion.size() > 0) {
+                val elementsToTransfer = Rail.make[Complex](transferRegion.size());
                 var i : Int = 0;
-                for (p in sourcePoints) {
+                for (p in transferRegion) {
                     elementsToTransfer(i++) = temp(p);
                 }
                 val toTransfer = elementsToTransfer as ValRail[Complex];
                 at (p2) {
-                    val targetPoints : Region(3) = [startX..endX, startY..endY, startZ..endZ];
                     var i : Int = 0;
-                    for ((x,y,z) in targetPoints) {
+                    for ((x,y,z) in transferRegion) {
+                        // transpose dimensions
                         target(z,x,y) = toTransfer(i++);
                     }
                 }
