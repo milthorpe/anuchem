@@ -390,7 +390,7 @@ public class PME {
      */
     public def gridCharges() {
         timer.start(TIMER_INDEX_GRIDCHARGES);
-        finish ateach ((place1) in Dist.makeUnique(gridDist.places())) {
+        finish for (place1 in gridDist.places()) async(place1) {
             val myQ = new PeriodicArray[Double](gridRegion);
             for (p in subCells | here) {
                 val thisCell = subCells(p);
@@ -445,7 +445,7 @@ public class PME {
      */
     private def getReciprocalEnergy(thetaRecConvQ : DistArray[Complex]{self.dist==gridDist}) {
         timer.start(TIMER_INDEX_RECIPROCAL);
-        finish ateach ((p1) in Dist.makeUnique(gridDist.places())) {
+        finish for (place1 in gridDist.places()) async(place1) {
             var myReciprocalEnergy : Double = 0.0;
             // TODO single-place parallel - requires efficient atomic XTENLANG-321
             for ((i,j,k) in gridDist | here) {

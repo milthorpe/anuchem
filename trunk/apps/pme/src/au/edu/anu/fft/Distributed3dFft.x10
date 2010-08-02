@@ -63,7 +63,7 @@ public class Distributed3dFft {
             FFTW.fftwExecute(plan);
             FFTW.fftwDestroyPlan(plan); 
         } else {
-            finish ateach (p1 in Dist.makeUnique(source.dist.places())) {
+            finish for (p1 in source.dist.places()) async(p1) {
                 // 'scratch' rails, for use in the 1D FFTs
                 val oneDSource = Rail.make[Complex](dataSize);
                 val oneDTarget = Rail.make[Complex](dataSize);
@@ -119,7 +119,7 @@ public class Distributed3dFft {
         val sourceEndX = sourceDist.region.max(0);
         val sourceStartY = sourceDist.region.min(1);
         val sourceEndY = sourceDist.region.max(1);
-        finish foreach (p2 in temp.dist.places()) {
+        finish for (p2 in temp.dist.places()) {
             val targetDist = temp.dist | p2;
             val startX = Math.max(sourceStartX, targetDist.region.min(1));
             val endX = Math.min(sourceEndX, targetDist.region.max(1));
@@ -136,7 +136,7 @@ public class Distributed3dFft {
                     elementsToTransfer(i++) = temp(p);
                 }
                 val toTransfer = elementsToTransfer as ValRail[Complex];
-                at (p2) {
+                async (p2) {
                     var i : Int = 0;
                     for ((x,y,z) in transferRegion) {
                         // transpose dimensions
