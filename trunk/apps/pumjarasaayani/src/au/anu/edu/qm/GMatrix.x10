@@ -1955,9 +1955,9 @@ public class GMatrix extends Matrix {
                      if (cc < dd) continue;
 
                      // if (bb < cc && bb < dd) continue;
-                     // val skp = (bb < cc && bb < dd && aa == cc);
+                     val skp = (bb < cc && bb < dd && aa == cc);
 
-                     // Console.OUT.println(aa + ", " + bb + ", " + cc + ", " + dd + " : (" + a + "," + b + "," + c + "," + d + ") " + skp);
+                     Console.OUT.println(aa + ", " + bb + ", " + cc + ", " + dd + " : (" + a + "," + b + "," + c + "," + d + ") " + skp);
                      // twoE.compute2EAndRecord(aFunc, bFunc, cFunc, dFunc, shellList, jMat, kMat, density);
                      computeSingle2(aFunc, bFunc, cFunc, dFunc,
                                     radiusABSquared, aAng, bAng, cAng, dAng, angMomAB,
