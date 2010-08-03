@@ -8,6 +8,12 @@ system using a specified basis set.
 Current restrictions: Only closed shell systems with atoms H, C, N and O are supported.
 No integral screening employed, all O(N^4/8) combinations evaluated. 
 No geometrical symmetry is employed.
+Convergence acceleration of HF - SCF procedure is applied automatically, but cannot be 
+switched off. 
+
+A prilinamary framework for implementing divide and conqure algorithm (specifically 
+Molecular Tailoring Approach - MTA) is also available with in Pumjarasaayani. However,
+this is not fully implemented and will only work for simple chain style molecules.
 
 Pumjarasaayani is licensed under EPL
 
@@ -35,6 +41,7 @@ Code organization:
 * QM code in: au.anu.edu.qm  (Pumjarasaayani.x10 being main entry point)
 * XLA code in: x10x.xla, x10x.matrix and x10x.vector
 * GSL wrapper code in: org.gnu.gsl
+* ESSL wrapper in: bgp (this is incomplete and not tested)
 * anu-chem code in: au.edu.anu.chem, anu.edu.anu.util 
 
 To run:
@@ -47,13 +54,17 @@ To test, you need to be in a directory above basis/
 
 Single place:
 
-runx10 bin/pumjarasaayani.exe test/h2o.inp [<gmatype>]
+runx10 bin/pumjarasaayani.exe test/h2o.inp [<gmatype>] [-mta]
 
+The -mta switch is used to invoke the molecular tailoring algorithm. This basically
+splits the molecule into a series of overlapping fragments and then performs HF on 
+individual fragments. The results are finally patched back to give total energy 
+of the big molecule. 
 
 Multiple place:
 
-launcher -t <n> bin/pumjarasaayani.exe test/h2o.inp [<gmatype>]  { pgas compiled }
-mpirun -np <n> bin/pumjarasaayani.exe test/h2o.inp [<gmatype>]   { mpi compiled  }
+launcher -t <n> bin/pumjarasaayani.exe test/h2o.inp [<gmatype>] [-mta]  { pgas compiled }
+mpirun -np <n> bin/pumjarasaayani.exe test/h2o.inp [<gmatype>]  [-mta] { mpi compiled  }
 
 where <n> is number of places
 
@@ -74,23 +85,11 @@ where <n> is number of places
 [*] - most relevent for timings and scaling at this point
 [**] - currently segfaults for many test cases with multiple places
 
-Note: 8, 9 do not have multi thread implimentation at present, so wont scale on a single place
+Note: 8, 9, 11 do not have multithreaded implementation at present, so wont scale on a single place
+For most performance tests, Option 11 is the best suitable at the moment. 
 
-3, 4 (and others based on it): should actually perform faster, for higher angular momentums, but the 
-recursive routine to take a lot of time:
-
-  %   cumulative   self              self     total
- time   seconds   seconds    calls   s/call   s/call  name
- 30.69     86.42    86.42 10600317     0.00     0.00  au::anu::edu::qm::TwoElectronIntegrals::compute2EAndRecord(x10aux::ref<au::anu::edu::qm::ContractedGaussian>, x10aux::ref<au::anu::edu::qm::ContractedGaussian>, x10aux::ref<au::anu::edu::qm::ContractedGaussian>, x10aux::ref<au::anu::edu::qm::ContractedGaussian>, x10aux::ref<au::anu::edu::qm::ShellList>, x10aux::ref<x10x::matrix::Matrix>, x10aux::ref<x10x::matrix::Matrix>, x10aux::ref<au::anu::edu::qm::Density>)
- 20.86    145.16    58.74 642676619     0.00     0.00  au::anu::edu::qm::TwoElectronIntegrals::mdHrr(int, int, int, int, int, int, int, int, int, double, double, double, double, double, double, double)
- 16.82    192.52    47.36 92259648     0.00     0.00  au::anu::edu::qm::TwoElectronIntegrals::computePcd(int, double, x10aux::ref<x10x::vector::Point3d>, int, int, int, int, x10aux::ref<x10x::vector::Point3d>, x10aux::ref<x10x::vector::Point3d>, x10aux::ref<au::anu::edu::qm::ShellList>)
-  7.56    213.80    21.28 92259648     0.00     0.00  au::anu::edu::qm::TwoElectronIntegrals::computeFmt(int, double, x10aux::ref<x10::lang::Rail<double> >)
-  5.67    229.78    15.98 31272696     0.00     0.00  au::anu::edu::qm::TwoElectronIntegrals::computeAbcd(int, int, int, int, int, int, int, int, x10aux::ref<au::anu::edu::qm::ShellList>, int, int, x10aux::ref<x10x::vector::Point3d>, x10aux::ref<x10x::vector::Point3d>, x10aux::ref<x10x::vector::Point3d>, double, x10aux::ref<x10::lang::Rail<double> >)
-  4.63    242.81    13.03 92259648     0.00     0.00  au::anu::edu::qm::TwoElectronIntegrals::computePq(int, int, x10aux::ref<au::anu::edu::qm::ShellList>)
-  4.46    255.38    12.57 10600317     0.00     0.00  au::anu::edu::qm::TwoElectronIntegrals::fillJKMatrices(int, int, int, int, int, int, int, int, x10aux::ref<au::anu::edu::qm::ShellList>, int, int, x10aux::ref<x10::lang::Rail<double> >, x10aux::ref<x10::array::LocalRectArray<double> >, x10aux::ref<x10::array::LocalRectArray<double> >, x10aux::ref<x10::array::LocalRectArray<double> >)
-
-
-The computeFmt() is actual computation and will take time, however the recursive mdr1() seems to take more time than expected.
+When -mta switch is active each fragment is run sequentially over multiple places. This is not 
+optimal but works at the moment. 
 
 Tests for which all the above runs
 ..................................
