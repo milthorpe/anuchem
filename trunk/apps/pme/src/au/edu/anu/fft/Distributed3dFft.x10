@@ -13,7 +13,7 @@ package au.edu.anu.fft;
 import x10.compiler.Native;
 import x10.util.GrowableRail;
 import edu.mit.fftw.FFTW;
-import au.edu.anu.util.AllPlaceBarrier;
+import au.edu.anu.util.ScalableTreeBarrier;
 
 /**
  * This class implements a distributed three-dimensional FFT using
@@ -56,21 +56,21 @@ public class Distributed3dFft {
             FFTW.fftwExecute(plan);
             FFTW.fftwDestroyPlan(plan); 
         } else {
+            val treeBarrier = new ScalableTreeBarrier(source.dist.places());
             finish for (p1 in source.dist.places()) async(p1) {
                 // 'scratch' rails, for use in the 1D FFTs
                 val oneDSource = Rail.make[Complex](dataSize);
                 val oneDTarget = Rail.make[Complex](dataSize);
 
                 do1DFftToTemp(source, oneDSource, oneDTarget, forward);
-                AllPlaceBarrier.barrier();
                 transposeTempToTarget();
-                AllPlaceBarrier.barrier();
+                treeBarrier.barrier();
                 do1DFftToTemp(target, oneDSource, oneDTarget, forward);
-                AllPlaceBarrier.barrier();
+                treeBarrier.barrier();
                 transposeTempToTarget();
-                AllPlaceBarrier.barrier();
+                treeBarrier.barrier();
                 do1DFftToTemp(target, oneDSource, oneDTarget, forward);
-                AllPlaceBarrier.barrier();
+                treeBarrier.barrier();
                 transposeTempToTarget();
             }
         }
