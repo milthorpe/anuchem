@@ -56,22 +56,25 @@ public class Distributed3dFft {
             FFTW.fftwExecute(plan);
             FFTW.fftwDestroyPlan(plan); 
         } else {
-            val treeBarrier = new ScalableTreeBarrier(source.dist.places());
-            finish for (p1 in source.dist.places()) async(p1) {
-                // 'scratch' rails, for use in the 1D FFTs
-                val oneDSource = Rail.make[Complex](dataSize);
-                val oneDTarget = Rail.make[Complex](dataSize);
+            val c = Clock.make();
+            finish {
+                for (p1 in source.dist.places()) async(p1) clocked (c) {
+                    // 'scratch' rails, for use in the 1D FFTs
+                    val oneDSource = Rail.make[Complex](dataSize);
+                    val oneDTarget = Rail.make[Complex](dataSize);
 
-                do1DFftToTemp(source, oneDSource, oneDTarget, forward);
-                transposeTempToTarget();
-                treeBarrier.barrier();
-                do1DFftToTemp(target, oneDSource, oneDTarget, forward);
-                treeBarrier.barrier();
-                transposeTempToTarget();
-                treeBarrier.barrier();
-                do1DFftToTemp(target, oneDSource, oneDTarget, forward);
-                treeBarrier.barrier();
-                transposeTempToTarget();
+                    do1DFftToTemp(source, oneDSource, oneDTarget, forward);
+                    transposeTempToTarget();
+                    next;
+                    do1DFftToTemp(target, oneDSource, oneDTarget, forward);
+                    //next;
+                    transposeTempToTarget();
+                    //next;
+                    do1DFftToTemp(target, oneDSource, oneDTarget, forward);
+                    //next;
+                    transposeTempToTarget();
+                }
+                next;//next;next;next;
             }
         }
     }
