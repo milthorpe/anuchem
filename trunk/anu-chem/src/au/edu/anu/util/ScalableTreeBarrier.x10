@@ -77,40 +77,34 @@ final public class ScalableTreeBarrier {
         val i = here.id;
         if (i != 0) {
             // let parent know I'm ready
-            //Console.OUT.println("I am ready : " + i);
+            Console.OUT.println("I am ready : " + i);
             val parent = thisNode.parent;
             at (parent) {
-                //Console.OUT.println("At : " + here.id + " setting " + ((i-1)%4));
+                Console.OUT.println("At : " + here.id + " setting " + ((i-1)%4));
                 parent.childNotReady((i-1)%4) = false;
-                //Console.OUT.println("At : " + here.id + " have set " + ((i-1)%4));
+                Console.OUT.println("At : " + here.id + " have set " + ((i-1)%4));
             }
-            //Console.OUT.println("Now sleep : " + i);
+            Console.OUT.println("Now sleep : " + i);
 
             // wait until my parent signals wakeup
             await (thisNode.parentSense == thisNode.sense);
 
-            //Console.OUT.println("Woke up : " + i);
+            Console.OUT.println("Woke up : " + i);
         }
         // signal children in wakeup tree
         val thisNodeSense = thisNode.sense;
-        val child0 = thisNode.children(0);
-        if (child0 != null) {
-            //Console.OUT.println("About to signal : " + child0.home);
-            at (child0) { 
-                child0.parentSense = thisNodeSense;
-                //Console.OUT.println("Signalled : " + here.id);
-            }
-        }
-        val child1 = thisNode.children(1);
-        if (child1 != null) {
-            //Console.OUT.println("About to signal : " + child1.home);
-            at (child1) {
-                child1.parentSense = thisNodeSense;
-                //Console.OUT.println("Signalled : " + here.id);
+        for (p in thisNode.children) {
+            val child = thisNode.children(p);
+            if (child != null) {
+                Console.OUT.println("About to signal : " + child.home);
+                at (child) { 
+                    child.parentSense = thisNodeSense;
+                    Console.OUT.println("Signalled : " + here.id);
+                }
             }
         }
         thisNode.sense = !thisNode.sense;
-        //Console.OUT.println("treeBarrier completed at " + here.id);
+        Console.OUT.println("treeBarrier completed at " + here.id);
     }
 }
 
