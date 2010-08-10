@@ -160,6 +160,9 @@ for(i=0; i<nfuncs; i++)
 (c)
 SUM all partial G matrices 
 
+Currently, for option 11, (b) scales OK, but parts (a) and (c) scale negatively and needs
+to be re-written. 
+
 2. Multi place implementation
 .............................
 
@@ -183,8 +186,15 @@ The current implementation seem to have a bottleneck with the task scheduler
 kind of approach (Pseudo code 2 above). As time is spent in spinning to so 
 see which place is free to take up a task.
 
+With Option 11; the shell based loops; the scaling on larger number of processors
+is reasonable. However the job set up cost and the time for GMatrix summation 
+scales negatively with current implementation.
+
 
 Few benchmarks
 --------------
+
+See doc/pr-perform-bgp.ods
+
 
 
