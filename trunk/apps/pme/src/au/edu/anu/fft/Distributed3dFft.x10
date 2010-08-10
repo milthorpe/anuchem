@@ -56,22 +56,25 @@ public class Distributed3dFft {
             FFTW.fftwExecute(plan);
             FFTW.fftwDestroyPlan(plan); 
         } else {
-            val treeBarrier = new ScalableTreeBarrier(source.dist.places());
-            finish for (p1 in source.dist.places()) async(p1) {
-                // 'scratch' rails, for use in the 1D FFTs
-                val oneDSource = Rail.make[Complex](dataSize);
-                val oneDTarget = Rail.make[Complex](dataSize);
+            val c = Clock.make();
+            finish {
+                for (p1 in source.dist.places()) async(p1) clocked (c) {
+                    // 'scratch' rails, for use in the 1D FFTs
+                    val oneDSource = Rail.make[Complex](dataSize);
+                    val oneDTarget = Rail.make[Complex](dataSize);
 
-                do1DFftToTemp(source, oneDSource, oneDTarget, forward);
-                transposeTempToTarget();
-                treeBarrier.barrier();
-                do1DFftToTemp(target, oneDSource, oneDTarget, forward);
-                treeBarrier.barrier();
-                transposeTempToTarget();
-                treeBarrier.barrier();
-                do1DFftToTemp(target, oneDSource, oneDTarget, forward);
-                treeBarrier.barrier();
-                transposeTempToTarget();
+                    do1DFftToTemp(source, oneDSource, oneDTarget, forward);
+                    transposeTempToTarget();
+                    next;
+                    do1DFftToTemp(target, oneDSource, oneDTarget, forward);
+                    next;
+                    transposeTempToTarget();
+                    next;
+                    do1DFftToTemp(target, oneDSource, oneDTarget, forward);
+                    next;
+                    transposeTempToTarget();
+                }
+                c.drop();
             }
         }
     }
@@ -112,28 +115,30 @@ public class Distributed3dFft {
         val sourceEndX = sourceDist.region.max(0);
         val sourceStartY = sourceDist.region.min(1);
         val sourceEndY = sourceDist.region.max(1);
-        finish for (p2 in temp.dist.places()) {
-            val targetDist = temp.dist | p2;
-            val startX = Math.max(sourceStartX, targetDist.region.min(1));
-            val endX = Math.min(sourceEndX, targetDist.region.max(1));
-            val startY = Math.max(sourceStartY, targetDist.region.min(2));
-            val endY = Math.min(sourceEndY, targetDist.region.max(2));
-            val startZ = targetDist.region.min(0);
-            val endZ = targetDist.region.max(0);
+        finish {
+            for (p2 in temp.dist.places()) {
+                val targetDist = temp.dist | p2;
+                val startX = Math.max(sourceStartX, targetDist.region.min(1));
+                val endX = Math.min(sourceEndX, targetDist.region.max(1));
+                val startY = Math.max(sourceStartY, targetDist.region.min(2));
+                val endY = Math.min(sourceEndY, targetDist.region.max(2));
+                val startZ = targetDist.region.min(0);
+                val endZ = targetDist.region.max(0);
 
-            val transferRegion : Region(3) = [startX..endX, startY..endY, startZ..endZ];
-            if (transferRegion.size() > 0) {
-                val elementsToTransfer = Rail.make[Complex](transferRegion.size());
-                var i : Int = 0;
-                for (p in transferRegion) {
-                    elementsToTransfer(i++) = temp(p);
-                }
-                val toTransfer = elementsToTransfer as ValRail[Complex];
-                async (p2) {
+                val transferRegion : Region(3) = [startX..endX, startY..endY, startZ..endZ];
+                if (transferRegion.size() > 0) {
+                    val elementsToTransfer = Rail.make[Complex](transferRegion.size());
                     var i : Int = 0;
-                    for ((x,y,z) in transferRegion) {
-                        // transpose dimensions
-                        target(z,x,y) = toTransfer(i++);
+                    for (p in transferRegion) {
+                        elementsToTransfer(i++) = temp(p);
+                    }
+                    val toTransfer = elementsToTransfer as ValRail[Complex];
+                    async (p2) {
+                        var i : Int = 0;
+                        for ((x,y,z) in transferRegion) {
+                            // transpose dimensions
+                            target(z,x,y) = toTransfer(i++);
+                        }
                     }
                 }
             }
