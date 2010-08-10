@@ -224,7 +224,7 @@ public class PME {
         val subCellsTemp = DistArray.make[GrowableRail[MMAtom]](subCells.dist, (Point) => new GrowableRail[MMAtom]());
         finish ateach (p1 in atoms) {
             val localAtoms = atoms(p1);
-            foreach ((i) in 0..localAtoms.length-1) {
+            finish foreach ((i) in 0..localAtoms.length-1) {
                 val atom = localAtoms(i);
                 val charge = atom.charge;
                 val centre = atom.centre;
@@ -410,7 +410,7 @@ public class PME {
                 }
             }
             // scatter myQ and accumulate to distributed Q
-            for (place2 in gridDist.places()) {
+            finish for (place2 in gridDist.places()) {
                 val place1ContributionDist = Q.dist | place2;
                 val place1Contribution = Rail.make[Double](place1ContributionDist.region.size());
                 var i : Int = 0;
