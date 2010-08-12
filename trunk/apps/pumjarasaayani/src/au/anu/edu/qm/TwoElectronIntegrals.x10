@@ -274,7 +274,7 @@ public class TwoElectronIntegrals {
               */
 
              // pcdint.lift(pcdint, (a:Double)=>0.0);
-             val raw = pcdint.raw(); for(i=0; i<pdsz; i++) raw(i) = 0.0;
+             for(p in pcdint) pcdint(p) = 0.0;
              // pcdint.set(0.0);
 
              val bAlpha = bPrim.getExponent();
@@ -443,7 +443,7 @@ public class TwoElectronIntegrals {
               */
 
              // pcdint.lift(pcdint, (a:Double)=>0.0);
-             val raw = pcdint.raw(); for(i=0; i<pdsz; i++) raw(i) = 0.0;
+             for (p in pcdint) pcdint(p) = 0.0;
              // pcdint.set(0.0);
 
              val bAlpha = bPrim.getExponent();

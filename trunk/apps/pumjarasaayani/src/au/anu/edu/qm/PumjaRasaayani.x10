@@ -160,7 +160,7 @@ public class PumjaRasaayani {
         timer.stop(0);
         Console.OUT.println ("\n-End of SCF-\n\nTotal time since start: " + (timer.total(0) as Double) / 1e9 + " seconds\n");
 
-        fragment.energy(hfscf.getEnergy());
+        fragment.energy = hfscf.getEnergy();
         time   = (timer.total(0) as Double) / 1e9;
     }
 
@@ -188,7 +188,7 @@ public class PumjaRasaayani {
         // collect and patch the results using cardinality expression
         var ene:Double = 0.0;
         for(fragment in fragments) {
-            ene += fragment.energy() * fragment.cardinalitySign();
+            ene += fragment.energy * fragment.cardinalitySign;
         } // end for 
         timer.stop(0);
 

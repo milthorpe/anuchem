@@ -29,25 +29,16 @@ import au.edu.anu.chem.Molecule;
  */
 public class Fragment extends Molecule[QMAtom] {
 
-     private var centeredOn:Int;
+     public var centeredOn:Int;
 
-     private var energy:Double;
+     public var energy:Double;
 
-     private var cardinalitySign:Int;
+     public var cardinalitySign:Int;
      
      public def this() {
           centeredOn = -1;
           cardinalitySign = 1;
      }
-
-     public def centeredOn() = centeredOn;
-     public def centeredOn(atmIdx:Int) { centeredOn = atmIdx; }
-
-     public def energy(ene:Double) { energy = ene; }
-     public def energy() = energy;
-
-     public def cardinalitySign(sign:Int) { cardinalitySign = sign; }
-     public def cardinalitySign() = cardinalitySign;
 
      public def getNumberOfTrueAtoms() : Int {
           var nAtoms:Int = 0;

@@ -56,7 +56,7 @@ public class ShellList {
     }
 
     public def getMaximumAngularMomentum() = maxam;
-    public def getNumberOfShells() = shellList.size();
+    //public def getNumberOfShells() = shellList.size();
 
     public def getNumberOfShellPrimitives() : Int { 
          var n:Int = 0;

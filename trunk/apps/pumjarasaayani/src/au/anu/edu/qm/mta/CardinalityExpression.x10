@@ -79,7 +79,7 @@ public class CardinalityExpression {
        Console.OUT.println("No. of cardinality fragments: " + cfList.size());
 
        for(cf in cfList) {        
-          if (cf.cardinalitySign() != 0) fragList.add(cf);
+          if (cf.cardinalitySign != 0) fragList.add(cf);
        } // end for
    }
 
@@ -109,13 +109,13 @@ public class CardinalityExpression {
        for(frag in cfList) {
           if (frag.equals(fragment)) {
              mergedIntoPreviousTerm = true;
-             frag.cardinalitySign(frag.cardinalitySign() + sign);
+             frag.cardinalitySign = frag.cardinalitySign + sign;
              break;
           } // end if
        } // end for
 
        if (!mergedIntoPreviousTerm) { 
-           fragment.cardinalitySign(sign);
+           fragment.cardinalitySign = sign;
            cfList.add(fragment);
        } // end if
    }

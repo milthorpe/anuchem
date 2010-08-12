@@ -113,7 +113,7 @@ public class Fragmentor {
        var idx:Int = 0;
        for(frag in fragList) {
            Console.OUT.println("Fragment # " + idx + " : " + frag.getNumberOfTrueAtoms() + ", " 
-                               + frag.getNumberOfAtoms() + " [" + frag.cardinalitySign() + "]");
+                               + frag.getNumberOfAtoms() + " [" + frag.cardinalitySign + "]");
            Console.OUT.println(frag);
            idx++;
        } // end for
@@ -127,7 +127,7 @@ public class Fragmentor {
 
        finish foreach(atom1 in mol.getAtoms()) {
            val aFragment = new Fragment() as Fragment!;
-           aFragment.centeredOn(atom1.getIndex());
+           aFragment.centeredOn = atom1.getIndex();
            aFragment.addAtom(atom1);
 
            for(var i:Int=0; i<noOfAtoms; i++) {
@@ -197,14 +197,14 @@ public class Fragmentor {
        fragList.remove(f1);
        fragList.remove(f2);
 
-       f1f2.centeredOn(f1.centeredOn());
+       f1f2.centeredOn = f1.centeredOn;
        fragList.add(f1f2);
    } 
 
    /** return the atom centered fragment */
    def findFragmentCenteredOn(idx:Int, fragList:ArrayList[Fragment]!) : Fragment! {
        for(frag in fragList) {
-           if (frag.centeredOn() == idx) return (frag as Fragment!);
+           if (frag.centeredOn == idx) return (frag as Fragment!);
        } // end for
 
        return null;  // should never come here!
