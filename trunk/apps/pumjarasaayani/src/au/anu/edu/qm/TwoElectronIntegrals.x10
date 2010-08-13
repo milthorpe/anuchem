@@ -1678,51 +1678,33 @@ public class TwoElectronIntegrals {
         val iMax = l1+l2+l3+l4+1;  // hold all the values (max angular momentum)
         val bArr = Rail.make[Double](iMax);
 
-        var i1:Int, i2:Int, r1:Int, r2:Int, u:Int, index:Int;
-
         // TODO: x10 parallel
-        for(i1=0; i1<(l1+l2+1); i1++) {
-            for(i2=0; i2<(l3+l4+1); i2++) {
-                for(r1=0; r1<(i1/2+1); r1++) {
-                    for(r2=0; r2<(i2/2+1); r2++) {
-                        for(u=0; u<((i1+i2)/2-r1-r2+1); u++) {
-                            index = i1 + i2 - 2*(r1+r2) - u;
-
-                            bArr(index) += constructBTerm(i1, i2, r1, r2, u,
-                                              l1, l2, l3, l4, p, a, b, q, c, d,
-                                              g1, g2, delta);
+        for(var i1:Int=0; i1<(l1+l2+1); i1++) {
+            for(var r1:Int=0; r1<(i1/2+1); r1++) {
+                for(var i2:Int=0; i2<(l3+l4+1); i2++) {
+                    for(var r2:Int=0; r2<(i2/2+1); r2++) {
+                        for(var u:Int=0; u<((i1+i2)/2-r1-r2+1); u++) {
+                            val index = i1 + i2 - 2*(r1+r2) - u;
+                            bArr(index) += (functionB(i1, l1, l2, p, a, b, r1, g1)
+                                            * MathUtil.minusOnePow(i2)
+                                            * functionB(i2, l3, l4, q, c, d, r2, g2)
+                                            * MathUtil.minusOnePow(u)
+                                            * MathUtil.factorialRatioSquared(i1+i2-2*(r1+r2), u)
+                                            * Math.pow(q-p, index-u)
+                                            / Math.pow(delta, index));
                         } // end u loop
                     } // end r2 loop
-                } // end r1 loop
-            } // end i2 loop
+                } // end i2 loop
+            } // end r1 loop
         } // end i1 loop
 
         return bArr;
     }
 
     /**
-     * Construct the B term
-     *
-     * <i> THO eq. 2.22 </i>
-     */
-    private def constructBTerm(i1:Int, i2:Int, r1:Int, r2:Int, u:Int,
-         l1:Int, l2:Int, l3:Int, l4:Int, px:Double, ax:Double, bx:Double,
-         qx:Double, cx:Double, dx:Double, gamma1:Double, gamma2:Double,
-         delta:Double) : Double {
-
-        return (functionB(i1, l1, l2, px, ax, bx, r1, gamma1)
-                * Math.pow(-1, i2)
-                * functionB(i2, l3, l4, qx, cx, dx, r2, gamma2)
-                * Math.pow(-1, u)
-                * MathUtil.factorialRatioSquared(i1+i2-2*(r1+r2), u)
-                * Math.pow(qx-px, i1+i2-2*(r1+r2)-2*u)
-                / Math.pow(delta, i1+i2-2*(r1+r2)-u));
-    }
-
-    /**
      * the function B
      */
-    private def functionB(i:Int, l1:Int, l2:Int, p:Double, a:Double,
+    private static def functionB(i:Int, l1:Int, l2:Int, p:Double, a:Double,
                           b:Double, r:Int, g:Double) : Double {
         return (MathUtil.binomialPrefactor(i, l1, l2, p-a, p-b)
                 * functionB0(i, r, g));
@@ -1731,13 +1713,13 @@ public class TwoElectronIntegrals {
     /**
      * the function B0
      */
-    private def functionB0(i:Int, r:Int, g:Double) : Double {
+    private static def functionB0(i:Int, r:Int, g:Double) : Double {
         return (MathUtil.factorialRatioSquared(i, r)
                 * Math.pow(4*g, r-i));
     }
 
     /** Product of two gaussians */
-    public def gaussianProductCenter(alpha1:Double, a:Point3d,  
+    public static def gaussianProductCenter(alpha1:Double, a:Point3d,  
                                     alpha2:Double, b:Point3d) : Point3d {
         val gamma:Double = alpha1 + alpha2;
         val center:Point3d =  Point3d(

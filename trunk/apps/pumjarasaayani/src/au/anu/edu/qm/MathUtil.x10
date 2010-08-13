@@ -75,5 +75,12 @@ public final class MathUtil {
     public static safe def factorialRatioSquared(a:Int, b:Int) : Double {
         return factorial(a) / factorial(b) / factorial(a-2*b);
     }
+
+    /**
+     * @return minus one to the power (a)
+     */
+    public static final safe def minusOnePow(a: Int) {
+        return (a % 2 == 0) ? 1 : -1;
+    }
 }
 
