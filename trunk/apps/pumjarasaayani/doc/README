@@ -1,7 +1,7 @@
 Introduction:
 ------------
 
-Pumjarasaayani is a very basic Quantum chemistry code written in X10 that performs 
+Pumjarasaayani is a very basic quantum chemistry code written in X10 that performs 
 Hartree-Fock (HF) single point energy (SPE) evaluation on a given molecular 
 system using a specified basis set.
 
@@ -11,18 +11,18 @@ No geometrical symmetry is employed.
 Convergence acceleration of HF - SCF procedure is applied automatically, but cannot be 
 switched off. 
 
-A prilinamary framework for implementing divide and conqure algorithm (specifically 
+A preliminary framework for a divide and conqure algorithm (specifically the
 Molecular Tailoring Approach - MTA) is also available with in Pumjarasaayani. However,
 this is not fully implemented and will only work for simple chain style molecules.
 
-Pumjarasaayani is licensed under EPL
+Pumjarasaayani is free software under the Eclipse Public License.
 
 Compiling:
 ----------
 
-ant clean && ant
+$ ant clean && ant
 
-Will build the required executable and put it in bin/pumjarasaayani.exe
+will build the required executable and put it in bin/pumjarasaayani.exe
 
 The default build script builds agaist pgas_sockets.
 To build against MPI change ${x10rt} to "mpi" and the 
@@ -31,14 +31,14 @@ ${x10.postcompiler} to "mpixx"
 Dependency for compiling:
 ------------------------
 * GSL or equivalent BLAS library, will require rewrite of native wrappers for 
-  any library other than GSL. Though, the code can be compiled with out any
-  native wrappers. Required for diagonalization and DIIS.
+  any library other than GSL. However, the code can be compiled without any
+  native wrappers. GSL is required for diagonalization and DIIS.
 * anu-chem library
 * x10x.lib library
 
 Code organization:
 -----------------
-* QM code in: au.anu.edu.qm  (Pumjarasaayani.x10 being main entry point)
+* QM code in: au.anu.edu.qm  (Pumjarasaayani.x10 is the main entry point)
 * XLA code in: x10x.xla, x10x.matrix and x10x.vector
 * GSL wrapper code in: org.gnu.gsl
 * ESSL wrapper in: bgp (this is incomplete and not tested)
@@ -54,7 +54,7 @@ To test, you need to be in a directory above basis/
 
 Single place:
 
-runx10 bin/pumjarasaayani.exe test/h2o.inp [<gmatype>] [-mta]
+$ runx10 bin/pumjarasaayani.exe test/h2o.inp [<gmatype>] [-mta]
 
 The -mta switch is used to invoke the molecular tailoring algorithm. This basically
 splits the molecule into a series of overlapping fragments and then performs HF on 
@@ -63,8 +63,8 @@ of the big molecule.
 
 Multiple place:
 
-launcher -t <n> bin/pumjarasaayani.exe test/h2o.inp [<gmatype>] [-mta]  { pgas compiled }
-mpirun -np <n> bin/pumjarasaayani.exe test/h2o.inp [<gmatype>]  [-mta] { mpi compiled  }
+$ launcher -t <n> bin/pumjarasaayani.exe test/h2o.inp [<gmatype>] [-mta]  { pgas compiled }
+$ mpirun -np <n> bin/pumjarasaayani.exe test/h2o.inp [<gmatype>]  [-mta] { mpi compiled  }
 
 where <n> is number of places
 
@@ -100,17 +100,17 @@ aspirin.inp(*) aspirin-321.inp(*)
 (*) Indicates it runs, but has convergence problems
 
 
-A summary of what is the code does:
+A summary of what the code does:
 -----------------------------------
 
 The code solves the Hartree-Fock equations of the form:
 
    FC = eSC
 
-which is a pseudo-eigen value problem, solved using a self consistent
+which is a pseudo-eigenvalue problem, solved using a self-consistent
 field (SCF) procedure. The most expensive step is the formation of the 
-F matrix called the Fock that requires computation of ~O(N^4) two electron integrals. 
-In the code, the F matrix is inturn constructed using Hcore and G matrix. 
+Fock (F) matrix, which requires computation of ~O(N^4) two electron integrals. 
+In the code, the F matrix is in turn constructed using Hcore and G matrices. 
 Of these the G matrix computation takes up most of the time and is implemented 
 using X10 parallel constructs in following ways.
 
@@ -122,8 +122,8 @@ Chemistry Kernel", Bernholdt et al. HIPS'08.
 1. Single place implementation
 ..............................
 
-'nfunc' is number of basis functions used to represent the molecule.
-Each of the compute (i, j, k, l) tasks are completely independent of each other. 
+'nfunc' is the number of basis functions used to represent the molecule.
+The compute (i, j, k, l) tasks are completely independent of each other. 
 
 Pseudo code for reference:
 
@@ -173,18 +173,18 @@ number of threads as indicated above. [ GMatrix.computeDirectOldMultiPlaceNoAtom
 
 Expected performace
 -------------------
-The computation of each (ij|kl) integral use to construct the G matrix is indipendent 
-of each other. However, the time it take to compute an (ij|kl) will variy depending
+The computation of each (ij|kl) integral used to construct the G matrix is independent 
+of the others. However, the time it take to compute an (ij|kl) will vary depending
 on the angular momemtum.  
 
-For a given molecular system and basis set, with proper load balance there should
-be near linear scaling in the time required to construct the G matrix with increase 
-in number of processors. The scaling will flatten if the number of integrals to 
-be evaluated are comparatively less as the number of processors avaliable.
+For a given molecular system and basis set, with proper load balancing there should
+be near-linear scaling in the time required to construct the G matrix with increase 
+in number of processors. Scaling will be worse if there are a relatively small number
+of integrals to be evaluated, relative to the number of places. (TODO quantify)
 
 The current implementation seem to have a bottleneck with the task scheduler 
-kind of approach (Pseudo code 2 above). As time is spent in spinning to so 
-see which place is free to take up a task.
+approach (Pseudo code 2 above), as time is spent in spinning to see which place 
+is free to take up a task.
 
 With Option 11; the shell based loops; the scaling on larger number of processors
 is reasonable. However the job set up cost and the time for GMatrix summation 
