@@ -82,19 +82,20 @@ public class PumjaRasaayani {
     public def getEnergy() = energy;
     public def getTime() = time;
 
-    public def runIt() {      
+    public def runIt() {
+        Console.OUT.println("PumjaRasaayani shunya.tri, Quantum Chemisty program in x10, v0.3");
+
+        Console.OUT.println("No. of places: " + Place.places.length);
+        Console.OUT.println("No. of threads per place: " + Runtime.INIT_THREADS);
+
+        Console.OUT.println("\nInput deck:");
+        Console.OUT.println(mol);
+        Console.OUT.println("Number of atoms: " + mol.getNumberOfAtoms());
+
         if (isMTA) { runMTA(); return; } // is it an MTA run?
  
         val timer = new Timer(3);
         timer.start(0);
-
-        Console.OUT.println("PumjaRasaayani shunya.tri, Quantum Chemisty program in x10, v0.3");
-
-        Console.OUT.println("\tNo. of places: " + Place.places.length);
-        Console.OUT.println("\tNo. of threads per place: " + Runtime.INIT_THREADS);
-
-        Console.OUT.println("\nInput deck:");
-        Console.OUT.println(mol);
 
         Console.OUT.println("\nSetting up basis set: " + basisName);
 
@@ -168,12 +169,6 @@ public class PumjaRasaayani {
     }
 
     public def runMTA() {
-        Console.OUT.println("PumjaRasaayani shunya.tri, Quantum Chemisty program in x10, v0.3");
-
-        Console.OUT.println("\nInput deck:");
-        Console.OUT.println(mol);
-        Console.OUT.println("Number of atoms: " + mol.getNumberOfAtoms());
-
         val timer = new Timer(1);
         timer.start(0);
 
