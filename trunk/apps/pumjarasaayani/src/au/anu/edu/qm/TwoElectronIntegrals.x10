@@ -12,8 +12,6 @@ package au.anu.edu.qm;
 
 import x10.util.ArrayList;
 
-import x10.array.Array;
-
 import x10x.matrix.Matrix;
 import x10x.vector.Point3d;
 import au.edu.anu.chem.Molecule;

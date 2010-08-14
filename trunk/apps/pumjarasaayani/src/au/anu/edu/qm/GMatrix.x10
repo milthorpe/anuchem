@@ -32,7 +32,7 @@ public class GMatrix extends Matrix {
 
     /** top level method to form the G Matrix, depending on gMatType appropriate functions are called */
     public def compute(twoE:TwoElectronIntegrals!, density:Density!, gMatType:Int) : void {
-        if (twoE.isDirect()) { 
+        if (twoE.isDirect()) {
            val timer = new Timer(1);
 
            timer.start(0);
@@ -57,10 +57,10 @@ public class GMatrix extends Matrix {
                Console.OUT.println("   GMatrix.computeDirectLowMemNewNoAtomic: " + gMatType);
                computeDirectLowMemNewNoAtomic(twoE, density); 
                break;
-	   case 5:
+	       case 5:
                Console.OUT.println("   GMatrix.computeDirectOldMultiPlaceNoAtomic: " + gMatType);
- 	       computeDirectOldMultiPlaceNoAtomic(twoE, density);
-	       break;
+ 	           computeDirectOldMultiPlaceNoAtomic(twoE, density);
+	           break;
            case 6:
                Console.OUT.println("   GMatrix.computeDirectNewMultiPlaceNoAtomic: " + gMatType);
                computeDirectNewMultiPlaceNoAtomic(twoE, density);
@@ -382,9 +382,6 @@ public class GMatrix extends Matrix {
         val nPlaces = Place.places.length;
         val computeInst = Rail.make[ComputePlaceOld](nPlaces);
 
-        Console.OUT.println("\tNo. of places: " + nPlaces);
-        Console.OUT.println("\tNo. of threads per place: " + Runtime.INIT_THREADS);
-
         val timer = new Timer(3);
 
         timer.start(0);
@@ -475,9 +472,6 @@ public class GMatrix extends Matrix {
         val nPlaces = Place.places.length;
         val computeInst = Rail.make[ComputePlaceOldDirect](nPlaces);
 
-        Console.OUT.println("\tNo. of places: " + nPlaces);
-        Console.OUT.println("\tNo. of threads per place: " + Runtime.INIT_THREADS);
-
         val timer = new Timer(3);
 
         timer.start(0);
@@ -566,9 +560,6 @@ public class GMatrix extends Matrix {
 
         val nPlaces = Place.places.length;
         val computeInst = Rail.make[ComputePlaceOldPool](nPlaces);
-
-        Console.OUT.println("\tNo. of places: " + nPlaces);
-        Console.OUT.println("\tNo. of threads per place: " + Runtime.INIT_THREADS);
 
         val timer = new Timer(4);
 
@@ -868,9 +859,6 @@ public class GMatrix extends Matrix {
         val nPlaces = Place.places.length;
         val computeInst = Rail.make[ComputePlaceNew](nPlaces);
 
-        Console.OUT.println("\tNo. of places: " + nPlaces);
-        Console.OUT.println("\tNo. of threads per place: " + Runtime.INIT_THREADS);
-
         val timer = new Timer(3);
 
         timer.start(0);
@@ -987,9 +975,6 @@ public class GMatrix extends Matrix {
         val nPlaces = Place.places.length;
         val computeInst = Rail.make[ComputePlaceNewDirect](nPlaces);
 
-        Console.OUT.println("\tNo. of places: " + nPlaces);
-        Console.OUT.println("\tNo. of threads per place: " + Runtime.INIT_THREADS);
-
         val timer = new Timer(3);
 
         timer.start(0);
@@ -1097,9 +1082,6 @@ public class GMatrix extends Matrix {
         val noOfAtoms = molecule.getNumberOfAtoms();
         val nPlaces = Place.places.length;
         val computeInst = Rail.make[ComputePlaceNewFuture](nPlaces);
-
-        Console.OUT.println("\tNo. of places: " + nPlaces);
-        Console.OUT.println("\tNo. of threads per place: " + Runtime.INIT_THREADS);
   
         val timer = new Timer(2);
 
@@ -1268,9 +1250,6 @@ public class GMatrix extends Matrix {
         val noOfAtoms = molecule.getNumberOfAtoms(); 
         val nPlaces = Place.places.length;
         val computeInst = Rail.make[ComputePlaceNewDirect](nPlaces);
-
-        Console.OUT.println("\tNo. of places: " + nPlaces);
-        Console.OUT.println("\tNo. of threads per place: " + Runtime.INIT_THREADS);
 
         val timer = new Timer(3);
 
