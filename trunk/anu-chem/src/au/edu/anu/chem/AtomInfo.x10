@@ -85,9 +85,9 @@ public class AtomInfo {
         return _theInstance;
     }
 
-    public global def getAtomicNumber(atm:Atom) = atomicNumbers.getOrElse(atm.symbol, -1);
-    public global def getCovalentRadius(atm:Atom) = covalentRadii.getOrElse(atm.symbol, -1);
-    public global def getVdwRadius(atm:Atom) = vdWRadii.getOrElse(atm.symbol, -1);
-    public global def getAtomicMass(atm:Atom) = atomicMass.getOrElse(atm.symbol, -1);
+    public def getAtomicNumber(atm:Atom) = atomicNumbers.getOrElse(atm.symbol, -1);
+    public def getCovalentRadius(atm:Atom) = covalentRadii.getOrElse(atm.symbol, -1);
+    public def getVdwRadius(atm:Atom) = vdWRadii.getOrElse(atm.symbol, -1);
+    public def getAtomicMass(atm:Atom) = atomicMass.getOrElse(atm.symbol, -1);
 }
 

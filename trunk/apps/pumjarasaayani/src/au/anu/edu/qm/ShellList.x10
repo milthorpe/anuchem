@@ -65,7 +65,7 @@ public class ShellList {
          return n;
     }
 
-    public def getShellPrimitives() : GrowableRail[ContractedGaussian] {
+    public def getShellPrimitives() : GrowableRail[ContractedGaussian]! {
          val shellPrimitives = new GrowableRail[ContractedGaussian]();
 
          for(shell in shellList.keySet()) { 
@@ -79,7 +79,7 @@ public class ShellList {
 
     var shellPairsGenerated:Boolean = false;
 
-    public def getShellPairs() : GrowableRail[Pair[Int, Int]] {
+    public def getShellPairs() : GrowableRail[Pair[Int, Int]]! {
          if (!shellPairsGenerated) {
            val noOfShells = getNumberOfShellPrimitives();
            // Console.OUT.println("No of shells : " + noOfShells);
