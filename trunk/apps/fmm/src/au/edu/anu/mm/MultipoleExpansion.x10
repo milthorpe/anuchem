@@ -135,7 +135,7 @@ public class MultipoleExpansion extends Expansion {
         val p : Int = terms.region.max(0);
         val parentExpansion = new MultipoleExpansion(p);
         for ((l,m) in terms.region) {
-            parentExpansion.terms(l,m) = terms(l,m) * Math.pow(3, l);
+            parentExpansion.terms(l,m) = terms(l,m) * Math.pow(3.0, l);
         }
         return parentExpansion;
     }

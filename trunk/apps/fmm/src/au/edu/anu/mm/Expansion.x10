@@ -58,8 +58,8 @@ public class Expansion {
     private safe def toStringLocal() : String {
         val p : Int = terms.region.max(0);
         val s = new StringBuilder();
-        for (val(i) : Point in [0..p]) {
-            for (val(j) : Point in [-i..i]) {
+        for ((i) in 0..p) {
+            for ((j) in -i..i) {
 			    s.add(terms(i,j) + " ");
             }
             s.add("\n");

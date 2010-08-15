@@ -398,7 +398,7 @@ public class Fmm3d {
             val multipoleTranslations = DistArray.make[MultipoleExpansion](Dist.makeBlock([0..Place.MAX_PLACES-1,topChildLevel..numLevels, 0..1, 0..1, 0..1],0));
             //Console.OUT.println("multipole dist = " + multipoleTranslations.dist);
             finish ateach ((p) : Point in Dist.makeUnique(Place.places)) {
-                for (val(placeId,level,i,j,k) in multipoleTranslations.dist | here) {
+                for ((placeId,level,i,j,k) in multipoleTranslations.dist | here) {
                     val dim = Math.pow2(level);
                     val sideLength = size / dim;
                     val translationVector = Vector3d((i*2-1) * 0.5 * sideLength,
@@ -423,7 +423,7 @@ public class Fmm3d {
         //Console.OUT.println("multipoleTransformRegion = " + multipoleTransformRegion);
         val multipoleTransforms = DistArray.make[LocalExpansion](Dist.makeBlock(multipoleTransformRegion,0));
         finish ateach ((p) : Point in Dist.makeUnique(Place.places)) {
-            for (val(placeId,level,i,j,k) in multipoleTransforms.dist | here) {
+            for ((placeId,level,i,j,k) in multipoleTransforms.dist | here) {
                 dim : Int = Math.pow2(level);
                 sideLength : Double = size / dim;
                 val translationVector = Vector3d(i * sideLength,

@@ -47,8 +47,8 @@ class TestMultipoleExpansion extends MathTest {
 
         // test copy
         val localCopy = MultipoleExpansion.getLocalCopy(p, roundtrip);
-		for ((i): Point in [0..p]) {
-            for ((j): Point in [-i..i]) {
+		for ((i): Point in 0..p) {
+            for ((j): Point in -i..i) {
                 chk(roundtrip.terms(i,j) == localCopy.terms(i,j));
 		    }
         }        

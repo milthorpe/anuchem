@@ -183,7 +183,7 @@ public class LocalExpansion extends Expansion {
         val p : Int = terms.region.max(0);
         val parentExpansion = new LocalExpansion(p);
         for ((l,m) in terms.region) {
-            parentExpansion.terms(l,m) = terms(l,m) / Math.pow(3, l+1);
+            parentExpansion.terms(l,m) = terms(l,m) / Math.pow(3.0, l+1);
         }
         return parentExpansion;
     }
