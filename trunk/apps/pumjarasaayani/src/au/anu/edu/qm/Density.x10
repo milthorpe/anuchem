@@ -41,7 +41,7 @@ public class Density extends Matrix {
         val res = dVector.transpose().mul(dVector).getMatrix();
 
         val thisMat = getMatrix();
-        for(val(i, j) in thisMat.region)
+        for((i, j) in thisMat.region)
            thisMat(i, j) = res(i, j);
 
         // mute();

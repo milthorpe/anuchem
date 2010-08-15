@@ -28,7 +28,7 @@ public class Fock extends Matrix {
         val res = hCore.add(gMatrix).getMatrix();
         val thisMat = getMatrix();
 
-        for(val(i, j) in res.region)
+        for((i, j) in res)
            thisMat(i, j) = res(i, j);
     }
 }

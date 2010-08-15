@@ -200,8 +200,8 @@ public class GMatrix extends Matrix {
         } // end i loop
 
         // form the G matrix
-        finish foreach(val(x,y) in gMatrix.region)
-                  gMatrix(x,y) = jMatrix(x,y) - (0.25*kMatrix(x,y));
+        finish foreach((x,y) in gMatrix.region)
+            gMatrix(x,y) = jMatrix(x,y) - (0.25*kMatrix(x,y));
 
     }
 
@@ -291,8 +291,8 @@ public class GMatrix extends Matrix {
         } // finish
 
         // form the G matrix
-        finish foreach(val(x,y) in gMatrix.region)
-                  gMatrix(x,y) = jMatrix(x,y) - (0.25*kMatrix(x,y));
+        finish foreach((x,y) in gMatrix.region)
+            gMatrix(x,y) = jMatrix(x,y) - (0.25*kMatrix(x,y));
     }
 
     /* No atomic used, local GMatrix per thread, but introduces artificial sync */
@@ -359,7 +359,7 @@ public class GMatrix extends Matrix {
              val jMatrix = computeInst(ix).getJMat().getMatrix();
              val kMatrix = computeInst(ix).getKMat().getMatrix();
 
-             finish foreach(val(x,y) in gMatrix.region) {
+             finish foreach((x,y) in gMatrix.region) {
                    gMatrix(x,y) += jMatrix(x,y) - (0.25*kMatrix(x,y));
              } // finish
         } // end for
@@ -724,7 +724,7 @@ public class GMatrix extends Matrix {
         } // center a
      
         // form the G matrix
-        finish foreach(val(x,y) in gMatrix.region)
+        finish foreach((x,y) in gMatrix.region)
                   gMatrix(x,y) = jMatrix(x,y) - (0.25*kMatrix(x,y));     
     }
 
@@ -822,7 +822,7 @@ public class GMatrix extends Matrix {
              val jMatrix = computeInst(idx).getJMat().getMatrix();
              val kMatrix = computeInst(idx).getKMat().getMatrix();
              
-             finish foreach(val(x,y) in gMatrix.region) {
+             finish foreach((x,y) in gMatrix) {
                    gMatrix(x,y) += jMatrix(x,y) - (0.25*kMatrix(x,y));     
              } // finish
         } // end for

@@ -40,7 +40,7 @@ public class MolecularOrbitals extends Matrix {
         val res = diag.getEigenVectors().mul(x).getMatrix(); 
         val thisMat = getMatrix();
 
-        for(val(i, j) in res.region)
+        for((i, j) in res.region)
            thisMat(i, j) = res(i, j);
     }
 }

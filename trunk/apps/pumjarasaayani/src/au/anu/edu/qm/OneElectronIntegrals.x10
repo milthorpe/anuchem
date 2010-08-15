@@ -52,7 +52,7 @@ public class OneElectronIntegrals {
        val ovr = overlap.getMatrix();
        val h   = hCore.getMatrix();
 
-       finish for(val(i, j) in h.region) {
+       finish for((i, j) in h) {
               val bfi = bfs.get(i);
               val bfj = bfs.get(j);
 
