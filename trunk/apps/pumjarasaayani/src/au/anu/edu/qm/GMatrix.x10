@@ -1423,35 +1423,35 @@ public class GMatrix extends Matrix {
         val twoEI:TwoElectronIntegrals!;
         val shellList:ShellList{self.at(this)};
         val jMat:Matrix!, kMat:Matrix!;
-        val density:Density;
+        val density:Density!;
 
-        public def this(te:TwoElectronIntegrals, sh:ShellList, den:Density) { 
-            twoEI = te as TwoElectronIntegrals!;
+        public def this(te:TwoElectronIntegrals!, sh:ShellList, den:Density!) { 
+            twoEI = te;
             shellList = sh;
             density = den;
 
             val N = density.getRowCount();
 
-            jMat = new Matrix(N) as Matrix!;
-            kMat = new Matrix(N) as Matrix!;
+            jMat = new Matrix(N);
+            kMat = new Matrix(N);
 
             jMat.makeZero();
             kMat.makeZero();
         }
 
         public def compute() {
-            twoEI.compute2EAndRecord(i as ContractedGaussian!, j as ContractedGaussian!, 
-                                     k as ContractedGaussian!, l as ContractedGaussian!,  
-                                     shellList as ShellList!, 
-                                     jMat as Matrix!, kMat as Matrix!, density as Density!);
+            twoEI.compute2EAndRecord(i, j, 
+                                     k, l,  
+                                     shellList, 
+                                     jMat, kMat, density);
             atomic computing = false;
         }
 
         public def computeSingle(i:ContractedGaussian!, j:ContractedGaussian!,
                                  k:ContractedGaussian!, l:ContractedGaussian!) {
             twoEI.compute2EAndRecord(i, j, k, l, 
-                                     shellList as ShellList!,
-                                     jMat as Matrix!, kMat as Matrix!, density as Density!);
+                                     shellList,
+                                     jMat, kMat, density);
         }
 
         public def computeSingle2(i:ContractedGaussian!, j:ContractedGaussian!,
@@ -1461,8 +1461,8 @@ public class GMatrix extends Matrix {
                                   aStrt:Int, bStrt:Int, cStrt:Int, dStrt:Int,
                                   aLim:Int, bLim:Int, abLim:Int) {
             twoEI.compute2EAndRecord2(i, j, k, l,
-                                      shellList as ShellList!,
-                                      jMat as Matrix!, kMat as Matrix!, density as Density!,
+                                      shellList,
+                                      jMat, kMat, density,
                                       radiusABSquared,
                                       aAng, bAng, cAng, dAng, angMomAB,
                                       aStrt, bStrt, cStrt, dStrt,
@@ -1719,29 +1719,6 @@ public class GMatrix extends Matrix {
             } // end for
         }
 
-        public def computeSingle(i:ContractedGaussian, j:ContractedGaussian,
-                                 k:ContractedGaussian, l:ContractedGaussian) {
-             val ix = 0;
-             computeInst(ix).computeSingle(i as ContractedGaussian!, j as ContractedGaussian!,
-                                           k as ContractedGaussian!, l as ContractedGaussian!);
-        }
-
-        public def computeSingle2(i:ContractedGaussian, j:ContractedGaussian,
-                                  k:ContractedGaussian, l:ContractedGaussian,
-                                  radiusABSquared:Double,
-                                  aAng:Int, bAng:Int, cAng:Int, dAng:Int, angMomAB:Int,
-                                  aStrt:Int, bStrt:Int, cStrt:Int, dStrt:Int,
-                                  aLim:Int, bLim:Int, abLim:Int) {
-             val ix = 0;
-             computeInst(ix).computeSingle2(i as ContractedGaussian!, j as ContractedGaussian!,
-                                            k as ContractedGaussian!, l as ContractedGaussian!, 
-                                            radiusABSquared,
-                                            aAng, bAng, cAng, dAng, angMomAB,
-                                            aStrt, bStrt, cStrt, dStrt,
-                                            aLim, bLim, abLim);
-      
-        }
-
         public def compute(start:Int, end:Int) {
             var i:Int, j:Int, k:Int, l:Int;
             var a:Int, b:Int, c:Int, d:Int;
@@ -1788,7 +1765,7 @@ public class GMatrix extends Matrix {
 
                                        // TODO: 
                                        // Console.OUT.println(a + ", " + b + ", " + c + ", " + d + " | " + i + ", " + j + ", " + k + ", " + l);
-                                       computeSingle(iaFunc, jbFunc, kcFunc, ldFunc);
+                                       computeInst(0).computeSingle(iaFunc, jbFunc, kcFunc, ldFunc);
                                    } // end l
                                } // center d
                            } // end k
@@ -1849,7 +1826,7 @@ public class GMatrix extends Matrix {
 
                      // Console.OUT.println(aa + ", " + bb + ", " + cc + ", " + dd + " : (" + a + "," + b + "," + c + "," + d + ") " + skp);
                      // twoE.compute2EAndRecord(aFunc, bFunc, cFunc, dFunc, shellList, jMat, kMat, density);
-                     computeSingle2(aFunc, bFunc, cFunc, dFunc,
+                     computeInst(0).computeSingle2(aFunc, bFunc, cFunc, dFunc,
                                     radiusABSquared, aAng, bAng, cAng, dAng, angMomAB,
                                     aStrt, bStrt, cStrt, dStrt, aLim, bLim, abLim);
                   } // end for

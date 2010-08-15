@@ -34,10 +34,10 @@ public class CardinalityExpression {
    }
 
    /** add cardinality fragments */
-   public def addCardinalityFragments(fragList:ArrayList[Fragment]!) {
+   public def addCardinalityFragments(fragList:ArrayList[Fragment!]!) {
        val noOfFragments = fragList.size();
        val combs = Rail.make[Int](noOfFragments, (Int)=>-1);
-       val cfList = new ArrayList[Fragment]();
+       val cfList = new ArrayList[Fragment!]();
        var l:Int, pos:Int, m:Int;
 
        for(var i:Int=0; i<noOfFragments; i++) {
@@ -90,11 +90,11 @@ public class CardinalityExpression {
        else           return 1;
    }
 
-   private def computeIntersections(fragList:ArrayList[Fragment]!, cfList:ArrayList[Fragment]!, combs:Rail[Int], nTerms:Int, sign:Int) : Boolean {
-       var fInter:Fragment = fragList.get(combs(0));       
+   private def computeIntersections(fragList:ArrayList[Fragment!]!, cfList:ArrayList[Fragment!]!, combs:Rail[Int], nTerms:Int, sign:Int) : Boolean {
+       var fInter:Fragment! = fragList.get(combs(0));       
 
        for(var i:Int=1; i<=nTerms; i++) {
-           fInter = fInter.intersection(fragList.get(combs(i)) as Fragment!);
+           fInter = fInter.intersection(fragList.get(combs(i)));
 
            if (fInter.getNumberOfTrueAtoms() == 0) return false;
        } // end for
@@ -103,7 +103,7 @@ public class CardinalityExpression {
        return true;
    }
 
-   private def addFragmentToList(fragList:ArrayList[Fragment]!, cfList:ArrayList[Fragment]!, fragment:Fragment!, sign:Int) {
+   private def addFragmentToList(fragList:ArrayList[Fragment!]!, cfList:ArrayList[Fragment!]!, fragment:Fragment!, sign:Int) {
        mergedIntoPreviousTerm = false;
 
        for(frag in cfList) {

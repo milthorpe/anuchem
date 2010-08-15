@@ -53,15 +53,15 @@ public class Fragmentor {
    }
 
    /** fragment the molecule into overlapping fragments */
-   public def fragment(mol:Molecule[QMAtom]!) : ArrayList[Fragment]! {
-       val fragList = new ArrayList[Fragment]() as ArrayList[Fragment]!;
+   public def fragment(mol:Molecule[QMAtom]!) : ArrayList[Fragment!]! {
+       val fragList = new ArrayList[Fragment!]();
 
        val noOfAtoms = mol.getNumberOfAtoms();
 
        // TODO: reorder the atom indices, depending on nearness to the 
        // center of mass of the molecule so as to ensure a more 
        // consistant ordering that is indipendent of the input order
-       val sortedAtomIndices = Rail.make[Int](noOfAtoms) as Rail[Int]!;
+       val sortedAtomIndices = Rail.make[Int](noOfAtoms);
        for(var i:Int=0; i<noOfAtoms; i++) { 
           mol.getAtom(i).setIndex(i);
           sortedAtomIndices(i) = i;
@@ -94,7 +94,7 @@ public class Fragmentor {
        // step4: purge or expand depending on any rules being broken when a bond is cut
        //        remove dangling atoms, expand double bonds or planar rings 
        finish foreach(fragment in fragList) {
-          removeDanglingAtoms(fragment as Fragment!);
+          removeDanglingAtoms(fragment);
        } // finish 
 
        while(includeMissedAtoms(fragList));
@@ -105,7 +105,7 @@ public class Fragmentor {
        // step6: add dummy hydrogens, for bonds that are cut
        Console.OUT.println("Adding dummy atoms ...");
        finish foreach(fragment in fragList) {
-          addDummyAtoms(fragment as Fragment!);
+          addDummyAtoms(fragment);
        } // finish
 
        // step7: print out general statistics 
@@ -122,11 +122,11 @@ public class Fragmentor {
    }
 
    /** generate atom centered fragments with minimum r-goodness as requeated */
-   def generateAtomCenteredFragments(mol:Molecule[QMAtom]!, fragList:ArrayList[Fragment]!) {
+   def generateAtomCenteredFragments(mol:Molecule[QMAtom]!, fragList:ArrayList[Fragment!]!) {
        val noOfAtoms = mol.getNumberOfAtoms();
 
        finish foreach(atom1 in mol.getAtoms()) {
-           val aFragment = new Fragment() as Fragment!;
+           val aFragment = new Fragment();
            aFragment.centeredOn = atom1.getIndex();
            aFragment.addAtom(atom1);
 
@@ -148,9 +148,9 @@ public class Fragmentor {
    }
 
    /** merge fragments along the connectivity path */
-   def mergeAlongConnectivity(mol:Molecule[QMAtom]!, sortedAtomIndices:Rail[Int]!, fragList:ArrayList[Fragment]!) {
+   def mergeAlongConnectivity(mol:Molecule[QMAtom]!, sortedAtomIndices:Rail[Int]!, fragList:ArrayList[Fragment!]!) {
        val noOfAtoms = mol.getNumberOfAtoms(); 
-       val visited = Rail.make[Boolean](noOfAtoms, (Int)=>false) as Rail[Boolean]!;        
+       val visited = Rail.make[Boolean](noOfAtoms, (Int)=>false);        
         
        for(var i:Int=0; i<noOfAtoms; i++) {
            val idx = sortedAtomIndices(i);
@@ -166,7 +166,7 @@ public class Fragmentor {
    }
 
    /** simple traversal and merge */
-   def traverseAndMergeFragments(v:Int, sortedAtomIndices:Rail[Int]!, mol:Molecule[QMAtom]!, visited:Rail[Boolean]!, fragList:ArrayList[Fragment]!) {
+   def traverseAndMergeFragments(v:Int, sortedAtomIndices:Rail[Int]!, mol:Molecule[QMAtom]!, visited:Rail[Boolean]!, fragList:ArrayList[Fragment!]!) {
        val bonds = mol.getAtom(v).getBonds();
  
        Console.OUT.println("Number of bonds for atom " + v + " is " + bonds.size());
@@ -182,7 +182,7 @@ public class Fragmentor {
    }
 
    /** merge fragments centerd on the given atom indices */
-   def mergeFragmentsCenteredOn(a:Int, b:Int, fragList:ArrayList[Fragment]!) {
+   def mergeFragmentsCenteredOn(a:Int, b:Int, fragList:ArrayList[Fragment!]!) {
        Console.OUT.println("Merging " + a + " and " + b + " ...");
        val f1 = findFragmentCenteredOn(a, fragList);
        val f2 = findFragmentCenteredOn(b, fragList);
@@ -202,23 +202,23 @@ public class Fragmentor {
    } 
 
    /** return the atom centered fragment */
-   def findFragmentCenteredOn(idx:Int, fragList:ArrayList[Fragment]!) : Fragment! {
+   def findFragmentCenteredOn(idx:Int, fragList:ArrayList[Fragment!]!) : Fragment! {
        for(frag in fragList) {
-           if (frag.centeredOn == idx) return (frag as Fragment!);
+           if (frag.centeredOn == idx) return (frag);
        } // end for
 
        return null;  // should never come here!
    }
 
    /** general merge procedure, keep merging until the maxFragmentSize criteria can not be met */
-   def mergeCommonFragments(fragList:ArrayList[Fragment]!) {
+   def mergeCommonFragments(fragList:ArrayList[Fragment!]!) {
        var doneMerging:Boolean = false;
 
        while(!doneMerging) {
            outer_loop: for(var i:Int=0; i<fragList.size(); i++) {
-              val fi = fragList.get(i) as Fragment!;
+              val fi = fragList.get(i);
               for(var j:Int=0; j<fragList.size(); j++) {
-                  val fj = fragList.get(j) as Fragment!;
+                  val fj = fragList.get(j);
                   doneMerging = (i == fragList.size()-1) && (j == fragList.size()-1);
 
                   if (i == j) continue;
@@ -239,7 +239,7 @@ public class Fragmentor {
 
    /** include any missed atoms, that violate conditions like double bond breaking
        or breaking rings at inappropriate positions */
-   def includeMissedAtoms(fragList:ArrayList[Fragment]!) : Boolean {
+   def includeMissedAtoms(fragList:ArrayList[Fragment!]!) : Boolean {
        val includedMissedAtoms = Rail.make[Boolean](1, (Int)=>false);
 
        // TODO: 

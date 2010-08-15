@@ -59,12 +59,12 @@ public class TwoElectronIntegrals {
 
         if (!direct) {
            // allocate required memory
-           twoEInts = new Array[Double]([0..noOfIntegrals]) as Array[Double]{self.at(this), rank==1};
+           twoEInts = new Array[Double]([0..noOfIntegrals]);
            this.contractedList = null;
            compute2EShellPair(molecule);
         } else {
            this.contractedList = basisFunctions.getBasisFunctions();
-           twoEInts = new Array[Double]([0..1]) as Array[Double]{self.at(this), rank==1};
+           twoEInts = new Array[Double]([0..1]);
         } // end if
 
     
@@ -83,13 +83,13 @@ public class TwoElectronIntegrals {
 
         // Console.OUT.println("alloc: " + maxam + " " + maxam2N);
 
-        fmt    = Rail.make[Double](maxam4+1) as Rail[Double]!;
-        zeroM  = Rail.make[Double](maxam4+1) as Rail[Double]!;
+        fmt    = Rail.make[Double](maxam4+1);
+        zeroM  = Rail.make[Double](maxam4+1);
 
-        rM     = new Array[Double]([0..maxam4+1, 0..((maxam4+1)*(maxam4+2)/2)]) as Array[Double]{rank==2,self.at(this)};
-        pqInts = new Array[Double]([0..maxam2N, 0..maxam2N]) as Array[Double]{rank==2,self.at(this)};
-        npint  = new Array[Double]([0..maxam2+1, 0..maxam2M+1]) as Array[Double]{rank==2,self.at(this)};
-        pcdint = new Array[Double]([0..maxamN+1, 0..maxamN+1, 0..maxam2N]) as Array[Double]{rank==3,self.at(this)};
+        rM     = new Array[Double]([0..maxam4+1, 0..((maxam4+1)*(maxam4+2)/2)]);
+        pqInts = new Array[Double]([0..maxam2N, 0..maxam2N]);
+        npint  = new Array[Double]([0..maxam2+1, 0..maxam2M+1]);
+        pcdint = new Array[Double]([0..maxamN+1, 0..maxamN+1, 0..maxam2N]);
 
         // Console.OUT.println("alloc2: " + pcdint.region.size());
     }
@@ -255,7 +255,7 @@ public class TwoElectronIntegrals {
          val shellB = shellList.getPowers(bAng);
 
          val nTot = aLim*bLim*cLim*dLim;
-         val twoEInts = Rail.make[Double](nTot, (Int)=>0.0) as Rail[Double]!;
+         val twoEInts = Rail.make[Double](nTot, (Int)=>0.0);
 
          // Console.OUT.println("New block - Allocated size: " + nInt);
          for(aPrim in aPrims) {
@@ -424,7 +424,7 @@ public class TwoElectronIntegrals {
          val shellB = shellList.getPowers(bAng);
 
          val nTot = abLim*cLim*dLim;
-         val twoEInts = Rail.make[Double](nTot, (Int)=>0.0) as Rail[Double]!;
+         val twoEInts = Rail.make[Double](nTot, (Int)=>0.0);
 
          // Console.OUT.println("New block - Allocated size: " + nInt);
          for(aPrim in aPrims) {
