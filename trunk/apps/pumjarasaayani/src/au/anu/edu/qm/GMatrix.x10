@@ -1249,8 +1249,7 @@ public class GMatrix extends Matrix {
 
         val noOfAtoms = molecule.getNumberOfAtoms(); 
         val nPlaces = Place.places.length;
-        val computeInst = Rail.make[ComputePlaceNewDirect](nPlaces);
-
+        
         val timer = new Timer(3);
 
         // TODO:
@@ -1258,57 +1257,34 @@ public class GMatrix extends Matrix {
 
         timer.start(0);
         val nPairs = shellPairs.length();
-        var i:Int = 0;
-        var j:Int = 0;
         val basisFunctions = twoE.getBasisFunctions();
-        for(place in Place.places) {
-           computeInst(i) = at(place) { return new ComputePlaceNewDirect(molecule, basisFunctions, density, place); };
-           i++;
-        }
+        val computeInst = DistArray.make[ComputePlaceNewDirect](Dist.makeUnique(Place.places), ((p) : Point) => new ComputePlaceNewDirect(molecule, basisFunctions, density, Place.place(p)));
 
-        val workPerPlace = Rail.make[Int](nPlaces, (Int)=>0);
-
-        i = nPairs;
-        while(i > 0) {
-           for(j=0; j<nPlaces; j++) {
-              workPerPlace(j) += (i <= 0) ? 0 : 1;
-              i--;
-           } // end for
-        } // end while
         timer.stop(0);
         Console.OUT.println("\tTime for setting up place(s) with initial data: " + (timer.total(0) as Double) / 1e9 + " seconds");
 
-        Console.OUT.print("\tWorks units per place: ");
-        for(j=0; j<nPlaces; j++) Console.OUT.print(workPerPlace(j) + ", ");
-        Console.OUT.println(" ");
+        val workPerPlace = nPairs / nPlaces;
+        val remainder = nPairs % nPlaces;
+        val firstChunk = remainder * (workPerPlace + 1);
+        Console.OUT.println("\tWorks units per place: " + workPerPlace + " remainder " + remainder);
 
         timer.start(1);
 
-        finish {
-
-          var curInd:Int = 0;
-          i = 0;
-          for (place in Place.places) {
-              val comp_loc = computeInst(i);
-              val st = curInd;
-              val ed = st + workPerPlace(i);
-
-              async at(comp_loc) { comp_loc.computeShell(st, ed, nPairs); };
-              curInd = ed;
-              i++;
-          } // end for
-        } // finish
+        finish ateach ((placeId) in computeInst) {
+            val start = placeId < remainder ? (placeId * (workPerPlace + 1)) : (firstChunk + (placeId-remainder) * workPerPlace);
+            val end = start + workPerPlace + (placeId < remainder ? 1 : 0);
+            computeInst(placeId).computeShell(start, end, nPairs);
+        }
 
         timer.stop(1);
         Console.OUT.println("\tTime for actual computation: " + (timer.total(1) as Double) / 1e9 + " seconds");
 
         timer.start(2);
         // form the G matrix
-        // form the G matrix
         // TODO following need to change once XTENLANG-787 is resolved
-        for(comp_loc in computeInst) {
-             val jVal = at(comp_loc) { comp_loc.getJMatVal() };
-             val kVal = at(comp_loc) { comp_loc.getKMatVal() };
+        for(p in computeInst) {
+             val jVal = at(computeInst.dist(p)) { computeInst(p).getJMatVal() };
+             val kVal = at(computeInst.dist(p)) { computeInst(p).getKMatVal() };
 
              var ii:Int=0;
              for(var x:Int=0; x<N; x++) {
@@ -1505,7 +1481,7 @@ public class GMatrix extends Matrix {
             k:ContractedGaussian!, l:ContractedGaussian!;
 
         val twoEI:TwoElectronIntegrals!;
-        val shellList:ShellList;
+        val shellList:ShellList{self.at(this)};
         val jMat:Matrix!, kMat:Matrix!;
         val density:Density;
 
