@@ -12,10 +12,10 @@ import x10.array.Array;
  * @author V.Ganesh
  */
 public class Matrix { 
-    global val mat:Array[Double](2)!;
+    global val mat:Array[Double](2){rect, self.at(this)};
 
-    global val region:Region{rank==2, self.at(this)};
-    global val distribution:Dist{rank==2, self.at(this)};
+    global val region:Region{rect,rank==2};
+    global val distribution:Dist{rect,rank==2};
 
     /**
      * Make instance of Matrix class 
@@ -24,9 +24,9 @@ public class Matrix {
      */
     public def this(siz:Int) {
         region       = [0..(siz-1), 0..(siz-1)];
-        // distribution = Dist.makeBlock(region, 1) as Dist{rank==2, self.at(this)};
-        distribution = Dist.makeConstant(region) as Dist{rank==2, self.at(this)};
-        mat          = new Array[Double](region) as Array[Double](2)!;
+        // distribution = Dist.makeBlock(region, 1);
+        distribution = Dist.makeConstant(region);
+        mat          = new Array[Double](region);
     }
 
     /**
@@ -36,18 +36,18 @@ public class Matrix {
      */
     public def this(row:Int, col:Int) {
         region       = [0..(row-1), 0..(col-1)];
-        // distribution = Dist.makeBlock(region, 1) as Dist{rank==2, self.at(this)};
-        distribution = Dist.makeConstant(region) as Dist{rank==2, self.at(this)};
-        mat          = new Array[Double](region) as Array[Double](2)!;
+        // distribution = Dist.makeBlock(region, 1);
+        distribution = Dist.makeConstant(region);
+        mat          = new Array[Double](region);
     }
 
     /**
      * Construct a Matrix with a custom distribution
      */
     public def this(dist:Dist{rank==2}) {
-        distribution = dist as Dist{rank==2, self.at(this)};
-        region       = distribution.region as Region{rank==2, self.at(this)};
-        mat          = new Array[Double](region) as Array[Double](2)!;
+        distribution = dist;
+        region       = distribution.region;
+        mat          = new Array[Double](region);
     }
 
     /**
@@ -76,26 +76,26 @@ public class Matrix {
         val rowCount      = getRowCount(); 
         val eigenValues   = diag.getEigenValues().getVector();
         val eigenVectors  = diag.getEigenVectors();
-        val sHalf         = new Matrix(rowCount) as Matrix!;
+        val sHalf         = new Matrix(rowCount);
         
         sHalf.makeIdentity();
 
         val sqrtEVal = Rail.make[Double](rowCount);
 
-        finish foreach(val(i,j) in sHalf.mat.region) {
+        finish foreach((i,j) in sHalf.mat.region) {
              if (i==j) {
                 sHalf.mat(i,i) /= Math.sqrt(eigenValues(i));
              }
         }
 
-        return (sHalf.similarityTransformT(eigenVectors) as Matrix!); 
+        return (sHalf.similarityTransformT(eigenVectors)); 
     }
 
     /**
      * Make the current Matrix as Identity
      */
     public def makeIdentity() : void {
-        finish foreach(val(i,j) in mat.region)
+        finish foreach((i,j) in mat)
            if (i == j) mat(i, j) = 1.0;
            else        mat(i, j) = 0.0;
     }
@@ -104,7 +104,7 @@ public class Matrix {
      * Fill the current Matrix with zero
      */
     public def makeZero() : void {
-        finish foreach(val(i,j) in mat.region)
+        finish foreach((i,j) in mat)
            mat(i, j) = 0.0;
     }
 
@@ -112,14 +112,14 @@ public class Matrix {
      * Perform a similarity transform: X' . this . X
      */
     public def similarityTransformT(x:Matrix{self.at(this)}) : Matrix{self.at(this)} {
-        return x.transpose().mul(this).mul(x) as Matrix{self.at(this)};
+        return x.transpose().mul(this).mul(x);
     }
 
     /**
      * Perform a similarity transform: X . this . X'
      */
     public def similarityTransform(x:Matrix{self.at(this)}) : Matrix{self.at(this)} {
-        return x.mul(this as Matrix{self.at(this)}).mul(x.transpose());
+        return x.mul(this).mul(x.transpose());
     }
 
     /**
@@ -131,7 +131,7 @@ public class Matrix {
          val M   = x.getColCount();
          val res = new Matrix(N, M);
 
-         for(val(i, j) in res.mat.region) {
+         for((i, j) in res.mat) {
             var cij:Double = 0.0;
             for(var k:Int=0; k<N1; k++) {
                cij += mat(i, k) * x.mat(k, j);
@@ -151,7 +151,7 @@ public class Matrix {
 
          val res = new Matrix(N, M);
       
-         finish foreach(val(i, j) in res.mat.region)
+         finish foreach((i, j) in res.mat)
             res.mat(i, j) = mat(i, j) * fac;
 
          return res;
@@ -165,7 +165,7 @@ public class Matrix {
          val M   = getColCount();
          val res = new Matrix(N, M);
 
-         finish foreach(val(i, j) in res.mat.region)
+         finish foreach((i, j) in res.mat)
             res.mat(i, j) = mat(i, j) + x.mat(i, j);
 
          return res;
@@ -179,7 +179,7 @@ public class Matrix {
          val M   = getColCount();
          val res = new Matrix(N, M);
 
-         finish foreach(val(i, j) in res.mat.region)
+         finish foreach((i, j) in res.mat)
             res.mat(i, j) = mat(i, j) - x.mat(i, j);
 
          return res;
@@ -191,9 +191,9 @@ public class Matrix {
     public def transpose() : Matrix! {
          val N   = getRowCount();
          val M   = getColCount();
-         val res = new Matrix(M, N) as Matrix!;
+         val res = new Matrix(M, N);
 
-         finish foreach(val(i,j) in res.region) {
+         finish foreach((i,j) in res.mat) {
              res.mat(i, j) = mat(j, i);
          }
  
@@ -208,7 +208,7 @@ public class Matrix {
          val tr = Rail.make[Double](1);
          
          tr(0) = 0.0;
-         finish foreach(val(i,j) in mat.region) {
+         finish foreach((i,j) in mat) {
                  if (i==j) {
                      atomic tr(0) += mat(i, i);
                  }
@@ -226,7 +226,7 @@ public class Matrix {
        val N = getRowCount();
 
        sum(0) = 0.0;
-       finish foreach(val(i,j) in mat.region) {
+       finish foreach((i,j) in mat) {
                 if (i!=j && j>i) {
                     atomic sum(0) += Math.abs(mat(i, j));
                 }
@@ -238,7 +238,7 @@ public class Matrix {
     public def getRowVector(rowIdx:Int) : Vector! {
        val N = getColCount();
 
-       val vec = new Vector(N) as Vector!;
+       val vec = new Vector(N);
        val vecVal = vec.getVector();
 
        // TODO:
@@ -292,7 +292,7 @@ public class Matrix {
            for(j=0; j<M; j++)
               r(ii++) = mat(i,j);
 
-        return ValRail.make[Double](N*M, (i:Int)=>r(i)) as ValRail[Double]!;
+        return ValRail.make[Double](N*M, (i:Int)=>r(i));
     }
 
     public global safe def toString() : String { 

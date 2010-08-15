@@ -34,8 +34,8 @@ public class JacobiDiagonalizer {
        val aMat = new Matrix(Dist.make([0..n1,0..n1])) as Matrix!;
        val a = aMat.getMatrix();
 
-       finish foreach(val(i,j) in matrix.region) { 
-                 a(i, j) = matrix(i, j); 
+       finish foreach((i,j) in matrix) { 
+            a(i, j) = matrix(i, j); 
        }
 
        eigenValuesVec = new Vector(Dist.make([0..n1])) as Vector!; 
@@ -47,7 +47,7 @@ public class JacobiDiagonalizer {
        val z = zVec.getVector();
 
        // do diagonalization at Place.FIRST_PLACE
-       finish foreach(val(i,j) in a.region) {
+       finish foreach((i,j) in a) {
            if (i == j) { 
                eigenValues(i) = b(i) = a(i,i);
                z(i) = 0.0;
@@ -70,7 +70,7 @@ public class JacobiDiagonalizer {
 
           for(var ip:Int = 0; ip<n-1; ip++) { for(var iq:Int = ip+1; iq<n; iq++) {
 
-          // finish foreach(plc in a.dist.places()) { at(plc) { for(val(ip, iq) in a.dist.get(plc)) {
+          // finish foreach(plc in a.dist.places()) { at(plc) { for((ip, iq) in a.dist.get(plc)) {
              // x10.io.Console.OUT.println(ip + " , " + iq);
              // x10.io.Console.OUT.println(a.dist.contains(Point.make(ip, iq)));
 
@@ -105,13 +105,13 @@ public class JacobiDiagonalizer {
                      a(ip,iq) = 0.0;
 
                      /**
-                     for(val(i,j) in a.dist) if (i==j && j<ip)             
+                     for((i,j) in a.dist) if (i==j && j<ip)             
                          doRotate(a, j, ip, j, iq, sin, tau);
-                     for(val(i,j) in a.dist) if (i==j && j>=ip+1 && j<iq)  
+                     for((i,j) in a.dist) if (i==j && j>=ip+1 && j<iq)  
                          doRotate(a, ip, j, j, iq, sin, tau);
-                     for(val(i,j) in a.dist) if (i==j && j>=iq+1 && j<n)   
+                     for((i,j) in a.dist) if (i==j && j>=iq+1 && j<n)   
                          doRotate(a, ip, j, iq, j, sin, tau);
-                     for(val(i,j) in eigenVectors.dist) if (i==j)          
+                     for((i,j) in eigenVectors.dist) if (i==j)          
                          doRotate(eigenVectors, j, ip, j, iq, sin, tau);
                      **/
 
@@ -125,7 +125,7 @@ public class JacobiDiagonalizer {
            // }}} // end foreach
            }} // end for
 
-          finish foreach(val(ip) in b.region) {
+          finish foreach((ip) in b) {
              b(ip) += z(ip);
              eigenValues(ip) = b(ip);
              z(ip) = 0.0;

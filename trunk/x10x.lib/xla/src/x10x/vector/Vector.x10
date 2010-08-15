@@ -9,18 +9,18 @@ import x10x.matrix.Matrix;
  * @author V.Ganesh
  */
 public class Vector { 
-    global val vec:Array[Double](1)!;
-    global val region:Region(1)!;
-    global val distribution:Dist(1)!;
+    global val vec:Array[Double](1);
+    global val region:Region(1){rect};
+    global val distribution:Dist(1){rect};
 
     /**
      * Construct a Vector of dimention N, with default block distribution
      */
     public def this(siz:Int) { 
         region       = [0..(siz-1)];
-        // distribution = Dist.makeBlock(region, 0) as Dist{rank==1, self.at(this)};
-        distribution = Dist.makeConstant(region) as Dist{rank==1, self.at(this)};
-        vec          = new Array[Double](region) as Array[Double]{rank==1, self.at(this)};
+        // distribution = Dist.makeBlock(region, 0);
+        distribution = Dist.makeConstant(region);
+        vec          = new Array[Double](region);
     }
 
     /**
@@ -42,9 +42,9 @@ public class Vector {
      * Construct a Vector of dimention N, with a custom distribution
      */
     public def this(dist:Dist{rank==1}) {
-        distribution = dist as Dist{rank==1, self.at(this)};
-        region       = distribution.region as Region{rank==1, self.at(this)};
-        vec          = new Array[Double](region) as Array[Double]{rank==1, self.at(this)};
+        distribution = dist;
+        region       = distribution.region;
+        vec          = new Array[Double](region);
     }
  
     /**
