@@ -11,7 +11,6 @@
 package au.edu.anu.mm;
 
 import x10.array.BaseDist;
-import x10.array.U;
 
 /**
  * This class represents a Morton- or Z-ordering of a dense 3-dimensional cubic array.  
@@ -37,8 +36,8 @@ public class MortonDist extends BaseDist{self.rank==3} {
         public global def isConvex() = true;
         public global def isEmpty() = (end < start);
         // TODO I hope these aren't used
-        public global def boundingBox(): Region(rank) {throw U.unsupported(this, "boundingBox()");}
-        global protected  def computeBoundingBox(): Region(rank) {throw U.unsupported(this, "computeBoundingBox()");}
+        public global def boundingBox(): Region(rank) {throw new UnsupportedOperationException("boundingBox()");}
+        global protected  def computeBoundingBox(): Region(rank) {throw new UnsupportedOperationException("computeBoundingBox()");}
         public global def min(): ValRail[int] = ValRail.make(rank, (Int) => 0);
         public global def max(): ValRail[int] = ValRail.make(rank, (Int) => (Math.cbrt(totalLength) as Int));
 
@@ -59,15 +58,15 @@ public class MortonDist extends BaseDist{self.rank==3} {
                 if (this.totalLength != thatMS.totalLength) return Region.makeEmpty(rank); // non-compatible regions
                 return new MortonSubregion(Math.max(start, thatMS.start), Math.min(end, thatMS.end), this.totalLength) as Region(rank);
             } else {
-                throw U.unsupported(this, "intersection(Region(!MortonSubregion))");
+                throw new UnsupportedOperationException("intersection(Region(!MortonSubregion))");
             }
         }
 
-        public global def complement(): Region(rank) {throw U.unsupported(this, "complement()");}
-        public global def product(that: Region): Region { throw U.unsupported(this, "product(Region)");}
-        public global def projection(axis: int): Region(1) {throw U.unsupported(this, "projection(axis : Int)");}
-        public global def translate(v: Point(rank)): Region(rank){throw U.unsupported(this, "translate(Point)");}
-        public global def eliminate(axis: int): Region /*(rank-1)*/{throw U.unsupported(this, "eliminate(axis : Int)");}
+        public global def complement(): Region(rank) {throw new UnsupportedOperationException("complement()");}
+        public global def product(that: Region): Region {throw new UnsupportedOperationException("product(Region)");}
+        public global def projection(axis: int): Region(1) {throw new UnsupportedOperationException("projection(axis : Int)");}
+        public global def translate(v: Point(rank)): Region(rank){throw new UnsupportedOperationException("translate(Point)");}
+        public global def eliminate(axis: int): Region /*(rank-1)*/{throw new UnsupportedOperationException("eliminate(axis : Int)");}
 
         public global def contains(p: Point): boolean {
             if (p.rank != 3) return false;
@@ -99,7 +98,7 @@ public class MortonDist extends BaseDist{self.rank==3} {
         }
 
         public global def scanners():Iterator[Region.Scanner]! {
-            throw U.unsupported("TODO: scanners not defined for MortonSubregion");
+            throw new UnsupportedOperationException("TODO: scanners not defined for MortonSubregion");
         }
 
         public global safe def toString(): String {
@@ -134,7 +133,7 @@ public class MortonDist extends BaseDist{self.rank==3} {
      * (1, 1, 0) = (01, 01, 00)    = 000110
      */
     public static safe def getMortonIndex(p : Point/*(rank)*/, totalLength : Int) : Int {
-        if (p.rank != 3) throw U.unsupported("getMortonIndex(p{self.rank!=3})");
+        if (p.rank != 3) throw new UnsupportedOperationException("getMortonIndex(p{self.rank!=3})");
         val digitsPerSide = Math.cbrt(totalLength) as Int;
         //Console.OUT.println("getMortonIndex for " + p + " digitsPerSide = " + digitsPerSide);
         var index : Int = 0;
@@ -194,7 +193,7 @@ public class MortonDist extends BaseDist{self.rank==3} {
     }
 
     public global safe def apply(pt: Point/*(rank)*/): Place {
-        if (pt.rank != 3) throw U.unsupported("getMortonIndex(p{self.rank!=3})");
+        if (pt.rank != 3) throw new UnsupportedOperationException("getMortonIndex(p{self.rank!=3})");
         val index = getMortonIndex(pt, totalLength);
         for (p:Place in places) {
             val mr = get(p) as MortonSubregion;

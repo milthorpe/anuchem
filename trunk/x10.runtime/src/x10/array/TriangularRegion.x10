@@ -57,27 +57,27 @@ public class TriangularRegion extends Region {
             }
             return false;
         }
-        throw U.unsupported(this, "contains(" + p + ")");
+        throw new UnsupportedOperationException("contains(" + p + ")");
     }
 
     public global def contains(r:Region(rank)): boolean {
         // TODO
-        throw U.unsupported(this, "contains(Region)");
+        throw new UnsupportedOperationException("contains(Region)");
     }
 
     public global def complement(): Region(rank) {
         // TODO
-        throw U.unsupported(this, "complement()");
+        throw new UnsupportedOperationException("complement()");
     }
 
     public global def intersection(t: Region(rank)): Region(rank) {
         // TODO
-        throw U.unsupported(this, "intersection()");
+        throw new UnsupportedOperationException("intersection()");
     }
 
     public global def product(r: Region): Region {
         // TODO
-        throw U.unsupported(this, "product()");
+        throw new UnsupportedOperationException("product()");
     }
 
     public global def translate(v: Point(rank)): Region(rank) {
@@ -91,7 +91,7 @@ public class TriangularRegion extends Region {
             case 1:
                 return colMin..colMin+dim;
             default:
-                throw U.unsupported(this, "projection(" + axis + ")");
+                throw new UnsupportedOperationException("projection(" + axis + ")");
         }
     }
 
@@ -102,7 +102,7 @@ public class TriangularRegion extends Region {
             case 1:
                 return rowMin..rowMin+dim;
             default:
-                throw U.unsupported(this, "projection(" + axis + ")");
+                throw new UnsupportedOperationException("projection(" + axis + ")");
         }
     }
 
@@ -156,7 +156,7 @@ public class TriangularRegion extends Region {
     }
 
     public global def scanners():Iterator[Region.Scanner]! {
-        throw U.unsupported("TODO: scanners not defined for TriangularRegion");
+        throw new UnsupportedOperationException("TODO: scanners not defined for TriangularRegion");
     }
 
     public global safe def toString(): String {

@@ -51,32 +51,32 @@ public class ExpansionRegion extends Region  {
         if (p.rank == 2) {
             return (p(0) >= 0 && p(0) <= this.p && Math.abs(p(1)) <= p(0));
         }
-        throw U.unsupported(this, "contains(" + p + ")");
+        throw new UnsupportedOperationException("contains(" + p + ")");
     }
 
     public global def contains(r:Region(rank)): boolean {
         // TODO
-        throw U.unsupported(this, "contains(Region)");
+        throw new UnsupportedOperationException("contains(Region)");
     }
 
     public global def complement(): Region(rank) {
         // TODO
-        throw U.unsupported(this, "complement()");
+        throw new UnsupportedOperationException("complement()");
     }
 
     public global def intersection(t: Region(rank)): Region(rank) {
         // TODO
-        throw U.unsupported(this, "intersection()");
+        throw new UnsupportedOperationException("intersection()");
     }
 
     public global def product(r: Region): Region {
         // TODO
-        throw U.unsupported(this, "product()");
+        throw new UnsupportedOperationException("product()");
     }
 
     public global def translate(v: Point(rank)): Region(rank) {
         // TODO
-        throw U.unsupported(this, "translate()");
+        throw new UnsupportedOperationException("translate()");
     }
 
     public global def projection(axis: int): Region(1) {
@@ -86,7 +86,7 @@ public class ExpansionRegion extends Region  {
             case 1:
                 return -p..p;
             default:
-                throw U.unsupported(this, "projection(" + axis + ")");
+                throw new UnsupportedOperationException("projection(" + axis + ")");
         }
     }
 
@@ -97,7 +97,7 @@ public class ExpansionRegion extends Region  {
             case 1:
                 return 0..p;
             default:
-                throw U.unsupported(this, "projection(" + axis + ")");
+                throw new UnsupportedOperationException("projection(" + axis + ")");
         }
     }
 
@@ -141,7 +141,7 @@ public class ExpansionRegion extends Region  {
     }
 
     public global def scanners():Iterator[Region.Scanner]! {
-        throw U.unsupported("TODO: scanners not defined for ExpansionRegion");
+        throw new UnsupportedOperationException("TODO: scanners not defined for ExpansionRegion");
     }
 
     public global safe def toString(): String {
