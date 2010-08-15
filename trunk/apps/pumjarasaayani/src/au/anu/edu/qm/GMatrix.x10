@@ -305,7 +305,6 @@ public class GMatrix extends Matrix {
         makeZero();
 
         val gMatrix = getMatrix();
-        val dMatrix = density.getMatrix();
 
         var i:Int, j:Int, k:Int, l:Int, m:Int, ij:Int, kl:Int;
 
@@ -650,7 +649,6 @@ public class GMatrix extends Matrix {
         makeZero();
 
         val gMatrix = getMatrix();
-        val dMatrix = density.getMatrix();
 
         val jMat = new Matrix(N) as Matrix!;
         val kMat = new Matrix(N) as Matrix!;
@@ -735,7 +733,6 @@ public class GMatrix extends Matrix {
         makeZero();
 
         val gMatrix = getMatrix();
-        val dMatrix = density.getMatrix();
 
         val molecule = twoE.getMolecule();
         val bfs = twoE.getBasisFunctions().getBasisFunctions();
@@ -830,102 +827,69 @@ public class GMatrix extends Matrix {
 
     private def computeDirectNewMultiPlaceNoAtomic(twoE:TwoElectronIntegrals!, 
                                                    density:Density!) : void {
-        val N = density.getRowCount();
-
         makeZero();
-
-        val gMatrix = getMatrix();
-        val dMatrix = density.getMatrix();
 
         val molecule = twoE.getMolecule();
         val basisFunctions = twoE.getBasisFunctions();
-        val bfs = twoE.getBasisFunctions().getBasisFunctions();
-        val shellList = twoE.getBasisFunctions().getShellList();
-        val noOfBasisFunctions = bfs.size();
-
         val noOfAtoms = molecule.getNumberOfAtoms();
-
-        // create another future to feed in the futures created above
-        var i:Int, j:Int, k:Int, l:Int;
-        var a:Int, b:Int, c:Int, d:Int;
-        var iaFunc:ContractedGaussian{self.at(this)}, jbFunc:ContractedGaussian{self.at(this)},
-              kcFunc:ContractedGaussian{self.at(this)}, ldFunc:ContractedGaussian{self.at(this)};
-        var naFunc:Int, nbFunc:Int, ncFunc:Int, ndFunc:Int;
-        var aFunc:ArrayList[ContractedGaussian{self.at(this)}]{self.at(this)},
-              bFunc:ArrayList[ContractedGaussian{self.at(this)}]{self.at(this)},
-              cFunc:ArrayList[ContractedGaussian{self.at(this)}]{self.at(this)},
-              dFunc:ArrayList[ContractedGaussian{self.at(this)}]{self.at(this)};
-
-        val nPlaces = Place.places.length;
-        val computeInst = Rail.make[ComputePlaceNew](nPlaces);
 
         val timer = new Timer(3);
 
         timer.start(0);
-        i = 0;
-        for(place in Place.places) {
-           computeInst(i) = at(place) { 
-                return new ComputePlaceNew(molecule, basisFunctions, density, place); 
-           };
-           i++;
-        }
+        val computeInst = DistArray.make[ComputePlaceNew](Dist.makeUnique(Place.places), ((p) : Point) => new ComputePlaceNewDirect(molecule, basisFunctions, density, Place.place(p)));
         timer.stop(0);
         Console.OUT.println("\tTime for setting up place(s) with initial data: " + (timer.total(0) as Double) / 1e9 + " seconds"); 
 
         timer.start(1);
-        // center a
         finish {
-          for(a=0; a<noOfAtoms; a++) {
-            aFunc = molecule.getAtom(a).getBasisFunctions();
-            naFunc = aFunc.size();
-            // basis functions on a
-            for(i=0; i<naFunc; i++) {
-               iaFunc = aFunc.get(i);
+            // center a
+            for ((a) in 0..(noOfAtoms-1)) {
+                val aFunc = molecule.getAtom(a).getBasisFunctions();
+                val naFunc = aFunc.size();
+                // basis functions on a
+                for ((i) in 0..(naFunc-1)) {
+                    val iaFunc = aFunc.get(i);
 
-               // center b
-               for(b=0; b<=a; b++) {
-                   bFunc = molecule.getAtom(b).getBasisFunctions();
-                   nbFunc = (b<a) ? bFunc.size() : i+1;
-                   // basis functions on b
-                   for(j=0; j<nbFunc; j++) {
-                       jbFunc = bFunc.get(j);
+                    // center b
+                    for ((b) in 0..a) {
+                        val bFunc = molecule.getAtom(b).getBasisFunctions();
+                        val nbFunc = (b<a) ? bFunc.size() : i+1;
+                        // basis functions on b
+                        for ((j) in 0..(nbFunc-1)) {
+                            val jbFunc = bFunc.get(j);
 
-                       // center c
-                       for(c=0; c<noOfAtoms; c++) {
-                           cFunc = molecule.getAtom(c).getBasisFunctions();
-                           ncFunc = cFunc.size();
-                           // basis functions on c
-                           for(k=0; k<ncFunc; k++) {
-                               kcFunc = cFunc.get(k);
+                            // center c
+                            for ((c) in 0..(noOfAtoms-1)) {
+                                val cFunc = molecule.getAtom(c).getBasisFunctions();
+                                val ncFunc = cFunc.size();
+                                // basis functions on c
+                                for ((k) in 0..(ncFunc-1)) {
+                                    val kcFunc = cFunc.get(k);
 
-                               // center d
-                               for(d=0; d<=c; d++) {
-                                   dFunc = molecule.getAtom(d).getBasisFunctions();
-                                   ndFunc = (d<c) ? dFunc.size() : k+1;
-                                   // basis functions on d
-                                   for(l=0; l<ndFunc; l++) {
-                                       ldFunc = dFunc.get(l);
+                                    // center d
+                                    for ((d) in 0..c) {
+                                       val dFunc = molecule.getAtom(d).getBasisFunctions();
+                                       val ndFunc = (d<c) ? dFunc.size() : k+1;
+                                        // basis functions on d
+                                        for ((l) in 0..(ndFunc-1)) {
+                                            val ldFunc = dFunc.get(l);
+                                            var setIt:Boolean = false;
 
-				       var setIt:Boolean = false;
-                           
-                                       val a_l = a, b_l = b, c_l = c, d_l = d;
-                                       val i_l = i, j_l = j, k_l = k, l_l = l;
+                                            outer: while(!setIt) {
+                                                for(p in computeInst) {
+                                                    setIt = at(computeInst.dist(p)) { computeInst(p).setValue(a, b, c, d, i, j, k, l) };
 
-                                       outer: while(!setIt) {
-                                         for(comp_loc in computeInst) {
-                                           setIt = at(comp_loc) { comp_loc.setValue(a_l, b_l, c_l, d_l, i_l, j_l, k_l, l_l) };
-
-                                           if (setIt) break outer;
-                                         } // end for
-                                       } // end while                               
-				   } // end l
-			       } // center d
-                           } // end k
-                       } // center c
-                   } // end j
-               } // center b
-            } // end i
-          } // center a
+                                                    if (setIt) break outer;
+                                                } // end for
+                                            } // end while                               
+                                        } // end l
+                                    } // center d
+                                } // end k
+                            } // center c
+                        } // end j
+                    } // center b
+                } // end i
+            } // center a
         } // finish
         timer.stop(1);
         Console.OUT.println("\tTime for actual computation: " + (timer.total(1) as Double) / 1e9 + " seconds"); 
@@ -934,9 +898,11 @@ public class GMatrix extends Matrix {
 
         // form the G matrix
         // TODO following need to change once XTENLANG-787 is resolved
-        for(comp_loc in computeInst) {
-             val jVal = at(comp_loc) { comp_loc.getJMatVal() };
-             val kVal = at(comp_loc) { comp_loc.getKMatVal() };
+        val N = density.getRowCount();
+        val gMatrix = getMatrix();
+        for(p in computeInst) {
+             val jVal = at(computeInst.dist(p)) { computeInst(p).getJMatVal() };
+             val kVal = at(computeInst.dist(p)) { computeInst(p).getKMatVal() };
 
              var ii:Int=0;
              for(var x:Int=0; x<N; x++) {
@@ -1063,7 +1029,6 @@ public class GMatrix extends Matrix {
         makeZero();
 
         val gMatrix = getMatrix();
-        val dMatrix = density.getMatrix();
 
         val jMat = new Matrix(N) as Matrix!;
         val kMat = new Matrix(N) as Matrix!;
@@ -1226,34 +1191,13 @@ public class GMatrix extends Matrix {
     }
 
     private def computeDirectMultiPlaceShellLoop(twoE:TwoElectronIntegrals!, density:Density!) : void {
-        val N = density.getRowCount();
-
         makeZero();
-
-        val gMatrix = getMatrix();
-        val dMatrix = density.getMatrix();
-
-        val jMat = new Matrix(N) as Matrix!;
-        val kMat = new Matrix(N) as Matrix!;
-
-        jMat.makeZero();
-        kMat.makeZero();
-
-        val jMatrix = jMat.getMatrix();
-        val kMatrix = kMat.getMatrix();
 
         val molecule = twoE.getMolecule();
         val shellList = twoE.getBasisFunctions().getShellList();
-        val bfs = shellList.getShellPrimitives();
-        val noOfBasisFunctions = bfs.length();
-
-        val noOfAtoms = molecule.getNumberOfAtoms(); 
-        val nPlaces = Place.places.length;
-        
-        val timer = new Timer(3);
-
-        // TODO:
         val shellPairs = shellList.getShellPairs();
+
+        val timer = new Timer(3);
 
         timer.start(0);
         val nPairs = shellPairs.length();
@@ -1263,17 +1207,18 @@ public class GMatrix extends Matrix {
         timer.stop(0);
         Console.OUT.println("\tTime for setting up place(s) with initial data: " + (timer.total(0) as Double) / 1e9 + " seconds");
 
+        val nPlaces = Place.places.length;
         val workPerPlace = nPairs / nPlaces;
         val remainder = nPairs % nPlaces;
         val firstChunk = remainder * (workPerPlace + 1);
-        Console.OUT.println("\tWorks units per place: " + workPerPlace + " remainder " + remainder);
+        Console.OUT.println("\tWork units per place: " + workPerPlace + " remainder " + remainder);
 
         timer.start(1);
 
         finish ateach ((placeId) in computeInst) {
             val start = placeId < remainder ? (placeId * (workPerPlace + 1)) : (firstChunk + (placeId-remainder) * workPerPlace);
             val end = start + workPerPlace + (placeId < remainder ? 1 : 0);
-            computeInst(placeId).computeShell(start, end, nPairs);
+            computeInst(placeId).computeShells(start, end, nPairs);
         }
 
         timer.stop(1);
@@ -1282,25 +1227,20 @@ public class GMatrix extends Matrix {
         timer.start(2);
         // form the G matrix
         // TODO following need to change once XTENLANG-787 is resolved
+        val gMatrix = getMatrix();
+        val N = density.getRowCount();
         for(p in computeInst) {
-             val jVal = at(computeInst.dist(p)) { computeInst(p).getJMatVal() };
-             val kVal = at(computeInst.dist(p)) { computeInst(p).getKMatVal() };
+            val gVal = at(computeInst.dist(p)) { computeInst(p).getGMatVal() };
 
-             var ii:Int=0;
-             for(var x:Int=0; x<N; x++) {
-               for(var y:Int=0; y<N; y++) {
-                  /**
-                  val x_loc = x; val y_loc = y;
-                  val jVal = at(comp_loc) { comp_loc.getJMat().getMatrix()(x_loc, y_loc) };
-                  val kVal = at(comp_loc) { comp_loc.getKMat().getMatrix()(x_loc, y_loc) };
-
-                  gMatrix(x,y) += jVal - (0.25*kVal);
-                  **/
-
-                  gMatrix(x,y) += jVal(ii) - (0.25*kVal(ii));
+            // add place contribution to gMatrix
+            var ii:Int = 0;
+            for(var x:Int=0; x<N; x++) {
+                for(var y:Int=0; y<N; y++) {
+                  gMatrix(x,y) += gVal(ii);
                   ii++;
                } // end for
              } // end for
+
         } // end for
         timer.stop(2);
         Console.OUT.println("\tTime for summing up GMatrix bits: " + (timer.total(2) as Double) / 1e9 + " seconds");
@@ -1755,11 +1695,14 @@ public class GMatrix extends Matrix {
     class ComputePlaceNewDirect extends ComputePlaceNew {
 
         val molecule:Molecule[QMAtom]!;
+        val gMatrixContribution : Matrix!;
 
         public def this(mol:Molecule[QMAtom], bfs:BasisFunctions, den:Density, tp:Place) {
             super(mol, bfs, den, tp);
 
             molecule = mol_loc;
+            val N = den.getRowCount();
+            gMatrixContribution = new Matrix(N);
         }
 
         public def compute(i:ContractedGaussian, j:ContractedGaussian, 
@@ -1856,7 +1799,7 @@ public class GMatrix extends Matrix {
           } // center a
         }
 
-        public def computeShell(startShell:Int, endShell:Int, nPairs:Int) {
+        public def computeShells(startShell:Int, endShell:Int, nPairs:Int) {
                val bfs = computeInst(0).shellList.getShellPrimitives();
                val shellPairs = computeInst(0).shellList.getShellPairs();
 
@@ -1911,6 +1854,19 @@ public class GMatrix extends Matrix {
                                     aStrt, bStrt, cStrt, dStrt, aLim, bLim, abLim);
                   } // end for
                } // end for
+
+            // calculate this place's contribution to G Matrix
+            val jMat = getJMat().getMatrix();
+            val kMat = getKMat().getMatrix();
+            val gMat = gMatrixContribution.getMatrix();
+            for (p in jMat.region) {
+                gMat(p) = jMat(p) - 0.25 * kMat(p);
+            }
+        }
+
+        // TODO following method should not be necessary once XTENLANG-787 is resolved
+        public def getGMatVal() : ValRail[Double]! {
+           return gMatrixContribution.getValRail();
         }
     } 
 
