@@ -264,16 +264,10 @@ public class TwoElectronIntegrals {
 
            for(bPrim in bPrims) {
 
-             /*
              for(i=0; i<=maxamN+1; i++) 
                for(j=0; j<=maxamN+1; j++) 
                   for(k=0; k<=maxam2N; k++) 
                      pcdint(i,j,k) = 0.0;
-              */
-
-             // pcdint.lift(pcdint, (a:Double)=>0.0);
-             for(p in pcdint) pcdint(p) = 0.0;
-             // pcdint.set(0.0);
 
              val bAlpha = bPrim.getExponent();
              val gamma1 = aAlpha + bAlpha;
@@ -433,16 +427,10 @@ public class TwoElectronIntegrals {
 
            for(bPrim in bPrims) {
 
-             /*
              for(i=0; i<=maxamN+1; i++) 
                for(j=0; j<=maxamN+1; j++) 
                   for(k=0; k<=maxam2N; k++) 
                      pcdint(i,j,k) = 0.0;
-              */
-
-             // pcdint.lift(pcdint, (a:Double)=>0.0);
-             for (p in pcdint) pcdint(p) = 0.0;
-             // pcdint.set(0.0);
 
              val bAlpha = bPrim.getExponent();
              val gamma1 = aAlpha + bAlpha;
