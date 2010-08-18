@@ -34,12 +34,21 @@ public final class MathUtil {
     }
 
     /**
-     * Returns the binomial coefficient
+     * Calculates the binomial coefficient
      * (i)      
      * (j) = i! / (i-j)!j!
+     * using a simple recurrence relation.  See e.g.
+     * http://blog.plover.com/math/choose.html
      */
-    public static safe def binomial(i:Int, j:Int) : Double {
-        return (factorial(i) / factorial(j) / factorial(i - j));
+    public static safe def binomial(i:Int, j:Int) : Long {
+        assert (i > j);
+        var n : Long = i;
+        var r : Long = 1;
+        for (var d:Long=1; d <= j; d++) {
+            r *= n--;
+            r /= d;
+        }
+        return r;
     } 
 
     /**
@@ -72,8 +81,24 @@ public final class MathUtil {
         return value;
     }
 
+    /**
+     * Calculates the ratio
+     * i! / (i-2*j)!j!
+     * using a simple recurrence relation.  See e.g.
+     * http://blog.plover.com/math/choose.html
+     */
     public static safe def factorialRatioSquared(a:Int, b:Int) : Double {
-        return factorial(a) / factorial(b) / factorial(a-2*b);
+        assert (a > b);
+        var n : Long = a;
+        var r : Long = 1;
+        for (var d:Long=1; d <= b; d++) {
+            r *= n--;
+            r /= d;
+        }
+        for (var i:Int=(a-b); i>(a-2*b); i--) {
+            r *= i;
+        }
+        return r;
     }
 
     /**
