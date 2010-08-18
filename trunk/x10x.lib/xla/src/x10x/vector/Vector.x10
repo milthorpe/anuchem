@@ -71,7 +71,7 @@ public class Vector {
      * make this Vector a null vector
      */
     public def makeZero() : void {
-        finish foreach((i) in vec.region) vec(i) = 0;
+        vec.fill(0.0);
     }
 
     /**

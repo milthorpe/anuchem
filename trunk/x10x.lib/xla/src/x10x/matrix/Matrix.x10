@@ -104,8 +104,7 @@ public class Matrix {
      * Fill the current Matrix with zero
      */
     public def makeZero() : void {
-        finish foreach((i,j) in mat)
-           mat(i, j) = 0.0;
+        mat.fill(0.0);
     }
 
     /**
