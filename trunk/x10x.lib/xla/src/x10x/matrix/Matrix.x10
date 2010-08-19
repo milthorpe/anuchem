@@ -54,10 +54,11 @@ public class Matrix {
      * Construct a Matrix as a copy of an existing Matrix (may be remote)
      */
     public def this(source : Matrix) {
+        val sourceMat = source.getMatrix();
         distribution = source.distribution;
-        region       = source.getMatrix().region;
-        mat          = new Array[Double](region);
-        mat.copyFrom(source.getMatrix());
+        region       = sourceMat.region;
+        mat          = new Array[Double](sourceMat.region);
+        mat.copyFrom(sourceMat);
     }
 
     public global def region() = region;
@@ -293,7 +294,7 @@ public class Matrix {
            for(j=0; j<M; j++)
               r(ii++) = mat(i,j);
 
-        return ValRail.make[Double](N*M, (i:Int)=>r(i));
+        return r as ValRail[Double]!;
     }
 
     public global safe def toString() : String { 

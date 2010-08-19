@@ -9,7 +9,7 @@ import x10x.matrix.Matrix;
  * @author V.Ganesh
  */
 public class Vector { 
-    global val vec:Array[Double](1);
+    global val vec:Array[Double](1){self.at(this)};
     global val region:Region(1){rect};
     global val distribution:Dist(1){rect};
 

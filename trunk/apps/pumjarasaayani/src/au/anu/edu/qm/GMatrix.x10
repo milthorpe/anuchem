@@ -97,7 +97,7 @@ public class GMatrix extends Matrix {
 
         val noOfBasisFunctions = density.getRowCount();
         val densityOneD = new Vector(density); // form 1D vector of density
-        val tempVector  = new Vector(noOfBasisFunctions*noOfBasisFunctions) as Vector!;
+        val tempVector  = new Vector(noOfBasisFunctions*noOfBasisFunctions);
 
         val gMatrix = getMatrix();
         val ints = twoE.getTwoElectronIntegrals();
@@ -136,8 +136,8 @@ public class GMatrix extends Matrix {
         val gMatrix = getMatrix();
         val dMatrix = density.getMatrix();
 
-        val jMat = new Matrix(N) as Matrix!;
-        val kMat = new Matrix(N) as Matrix!;
+        val jMat = new Matrix(N);
+        val kMat = new Matrix(N);
 
         jMat.makeZero();
         kMat.makeZero();
@@ -214,8 +214,8 @@ public class GMatrix extends Matrix {
         val gMatrix = getMatrix();
         val dMatrix = density.getMatrix();
 
-        val jMat = new Matrix(N) as Matrix!;
-        val kMat = new Matrix(N) as Matrix!;
+        val jMat = new Matrix(N);
+        val kMat = new Matrix(N);
 
         jMat.makeZero();
         kMat.makeZero();
@@ -650,8 +650,8 @@ public class GMatrix extends Matrix {
 
         val gMatrix = getMatrix();
 
-        val jMat = new Matrix(N) as Matrix!;
-        val kMat = new Matrix(N) as Matrix!;
+        val jMat = new Matrix(N);
+        val kMat = new Matrix(N);
 
         jMat.makeZero();
         kMat.makeZero();
@@ -1030,8 +1030,8 @@ public class GMatrix extends Matrix {
 
         val gMatrix = getMatrix();
 
-        val jMat = new Matrix(N) as Matrix!;
-        val kMat = new Matrix(N) as Matrix!;
+        val jMat = new Matrix(N);
+        val kMat = new Matrix(N);
 
         jMat.makeZero();
         kMat.makeZero();
@@ -1065,7 +1065,7 @@ public class GMatrix extends Matrix {
             Console.OUT.println("Copying data..." + here);
             // TODO: better way to pass global data instead?
             // make local copies of data 
-            val mol_loc = new Molecule[QMAtom]() as Molecule[QMAtom]!;
+            val mol_loc = new Molecule[QMAtom]();
 
             for(i=0; i<noOfAtoms; i++) {
                 val i_loc = i;
@@ -1288,9 +1288,9 @@ public class GMatrix extends Matrix {
         val kMatrix:Array[Double](2)!;
         val dMatrix:Array[Double](2)!;
     
-        public def this(te:TwoElectronIntegrals, den:Density) {
-            twoEI = te as TwoElectronIntegrals!;
-            density = den as Density!;
+        public def this(te:TwoElectronIntegrals!, den:Density!) {
+            twoEI = te;
+            density = den;
 
             idx_loc = Rail.make[Int](8);
             jdx_loc = Rail.make[Int](8);
@@ -1299,14 +1299,14 @@ public class GMatrix extends Matrix {
  
             validIdx = Rail.make[Boolean](8, (Int)=>true);
 
-            val N = density.getRowCount();
+            val N = den.getRowCount();
 
-            jMat = new Matrix(N) as Matrix!;
-            kMat = new Matrix(N) as Matrix!;
+            jMat = new Matrix(N);
+            kMat = new Matrix(N);
 
             jMatrix = jMat.getMatrix();
             kMatrix = kMat.getMatrix();
-            dMatrix = density.getMatrix();
+            dMatrix = den.getMatrix();
 
             jMat.makeZero();
             kMat.makeZero();
@@ -1487,7 +1487,7 @@ public class GMatrix extends Matrix {
         public def this(mol:Molecule[QMAtom], bfs:BasisFunctions, den:Density, tp:Place) {
             thePlace = tp;
 
-            val mol_loc = new Molecule[QMAtom]() as Molecule[QMAtom]!;
+            val mol_loc = new Molecule[QMAtom]();
             val nAtoms  = at(mol) { mol.getNumberOfAtoms() };
  
             for(var i:Int=0; i<nAtoms; i++) {
@@ -1542,7 +1542,7 @@ public class GMatrix extends Matrix {
 
         public def getJMat() : Matrix! {
             val N = density.getRowCount();
-            var jM:Matrix! = new Matrix(N) as Matrix!;
+            var jM:Matrix! = new Matrix(N);
 
             jM.makeZero();
             for(var i:Int=0; i<Runtime.INIT_THREADS; i++) {
@@ -1554,7 +1554,7 @@ public class GMatrix extends Matrix {
 
         public def getKMat() : Matrix! {
             val N = density.getRowCount();
-            var kM:Matrix! = new Matrix(N) as Matrix!;
+            var kM:Matrix! = new Matrix(N);
 
             kM.makeZero();
             for(var i:Int=0; i<Runtime.INIT_THREADS; i++) {
@@ -1582,7 +1582,7 @@ public class GMatrix extends Matrix {
         public def this(mol:Molecule[QMAtom], bfs:BasisFunctions, den:Density, tp:Place) {
            super(mol, bfs, den, tp);
 
-           taskPool = new Stack[BlockIndices]() as Stack[BlockIndices]!;
+           taskPool = new Stack[BlockIndices]();
            noMoreTasks = false;
         }
 
@@ -1673,14 +1673,13 @@ public class GMatrix extends Matrix {
             gMatrixContribution = new Matrix(N);
         }
 
-        public def compute(i:ContractedGaussian, j:ContractedGaussian, 
-                           k:ContractedGaussian, l:ContractedGaussian) {
+        public def compute(i:ContractedGaussian!, j:ContractedGaussian!, 
+                           k:ContractedGaussian!, l:ContractedGaussian!) {
             // TODO: this is actually handling only one thread
             for(var ix:Int=0; ix<Runtime.INIT_THREADS; ix++) {
                 await (computeInst(ix).computing == false);
 
-                computeInst(ix).setValue(i as ContractedGaussian!, j as ContractedGaussian!, 
-                                         k as ContractedGaussian!, l as ContractedGaussian!);
+                computeInst(ix).setValue(i, j, k, l);
                 val ix_loc = ix;
                 async computeInst(ix_loc).compute();
                 if (ix == 0) break;
@@ -1819,7 +1818,7 @@ public class GMatrix extends Matrix {
         public def this(mol:Molecule[QMAtom], bfs:BasisFunctions, den:Density, tp:Place) {
             thePlace = tp;
 
-            val mol_loc = new Molecule[QMAtom]() as Molecule[QMAtom]!;
+            val mol_loc = new Molecule[QMAtom]();
             val nAtoms  = at(mol) { mol.getNumberOfAtoms() };
  
             for(var i:Int=0; i<nAtoms; i++) {
@@ -1878,7 +1877,7 @@ public class GMatrix extends Matrix {
 
         public def getJMat() : Matrix! {
             val N = density.getRowCount();
-            var jM:Matrix! = new Matrix(N) as Matrix!;
+            var jM:Matrix! = new Matrix(N);
 
             jM.makeZero();
             for(var i:Int=0; i<Runtime.INIT_THREADS; i++) {
@@ -1890,7 +1889,7 @@ public class GMatrix extends Matrix {
 
         public def getKMat() : Matrix! {
             val N = density.getRowCount();
-            var kM:Matrix! = new Matrix(N) as Matrix!;
+            var kM:Matrix! = new Matrix(N);
 
             kM.makeZero();
             for(var i:Int=0; i<Runtime.INIT_THREADS; i++) {
@@ -1926,8 +1925,8 @@ public class GMatrix extends Matrix {
 
              val N = den.getRowCount();
 
-             jM = new Matrix(N) as Matrix!;
-             kM = new Matrix(N) as Matrix!;
+             jM = new Matrix(N);
+             kM = new Matrix(N);
          }
 
          public def compute2EAndRecord(iaFunc:ContractedGaussian!, jbFunc:ContractedGaussian!, 

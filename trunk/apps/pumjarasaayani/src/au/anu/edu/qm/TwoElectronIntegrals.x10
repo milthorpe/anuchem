@@ -255,7 +255,7 @@ public class TwoElectronIntegrals {
          val shellB = shellList.getPowers(bAng);
 
          val nTot = aLim*bLim*cLim*dLim;
-         val twoEInts = Rail.make[Double](nTot, (Int)=>0.0);
+         val twoEInts = new Array[Double](nTot);
 
          // Console.OUT.println("New block - Allocated size: " + nInt);
          for(aPrim in aPrims) {
@@ -415,7 +415,7 @@ public class TwoElectronIntegrals {
          val shellB = shellList.getPowers(bAng);
 
          val nTot = abLim*cLim*dLim;
-         val twoEInts = Rail.make[Double](nTot, (Int)=>0.0);
+         val twoEInts = new Array[Double](nTot);
 
          // Console.OUT.println("New block - Allocated size: " + nInt);
          for(aPrim in aPrims) {
@@ -795,7 +795,7 @@ public class TwoElectronIntegrals {
                             dStrt:Int, cStrt:Int, bStrt:Int, aStrt:Int,
                             shellList:ShellList!, bAng:Int, aAng:Int, 
                             aCen:Point3d, bCen:Point3d, p:Point3d, gamma1:Double,
-                            twoEInts:Rail[Double]!) {
+                            twoEInts:Array[Double](1)!) {
          var dd:Int, cc:Int, bb:Int, aa:Int, k:Int, l:Int;
          val shellB = shellList.getPowers(bAng);
          val shellA = shellList.getPowers(aAng);
@@ -858,7 +858,7 @@ public class TwoElectronIntegrals {
     private def fillJKMatrices(dLim:Int, cLim:Int, bLim:Int, aLim:Int,
                                dStrt:Int, cStrt:Int, bStrt:Int, aStrt:Int,
                                shellList:ShellList!, bAng:Int, aAng:Int,
-                               twoEInts:Rail[Double]!,
+                               twoEInts:Array[Double](1)!,
                                jMatrix:Array[Double](2)!, 
                                kMatrix:Array[Double](2)!,
                                dMatrix:Array[Double](2)!) {
