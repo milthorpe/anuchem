@@ -15,7 +15,7 @@ public class Matrix {
     global val mat:Array[Double](2){rect, self.at(this)};
 
     global val region:Region{rect,rank==2};
-    global val distribution:Dist{rect,rank==2};
+    global val distribution:Dist{rect,rank==2}; // TODO actually distribute Matrix!
 
     /**
      * Make instance of Matrix class 
@@ -51,17 +51,19 @@ public class Matrix {
     }
 
     /**
-     * Get associated region
+     * Construct a Matrix as a copy of an existing Matrix (may be remote)
      */
+    public def this(source : Matrix) {
+        distribution = source.distribution;
+        region       = source.getMatrix().region;
+        mat          = new Array[Double](region);
+        mat.copyFrom(source.getMatrix());
+    }
 
-    public def region() = region;
+    public global def region() = region;
+    public global def dist() = distribution;
 
-    /**
-     * Get associated distribution
-     */
-    public def dist() = distribution;
-
-    public def getMatrix() = mat;
+    public global def getMatrix() = mat;
     public global def getRowCount() = mat.region.max(0)+1;
     public global def getColCount() = mat.region.max(1)+1;
 

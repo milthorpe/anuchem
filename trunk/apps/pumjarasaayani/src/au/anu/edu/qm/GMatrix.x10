@@ -1080,15 +1080,7 @@ public class GMatrix extends Matrix {
             val basisName = at(bfs) { bfs.getBasisName() };
             val bas_loc = new BasisFunctions(mol_loc, basisName, "basis");
 
-            val den_loc = new Density(N);
-            val den_loc_mat = den_loc.getMatrix();
-            val den_rem = at(density) { density.getValRail() };
-            var ii:Int;
-
-            ii = 0 ;
-            for(i=0; i<N; i++)
-              for(j=0; j<N; j++)
-                  den_loc_mat(i, j) = den_rem(ii++);
+            val den_loc = new Density(density);
 
             val twoE_loc = new TwoElectronIntegrals(bas_loc, mol_loc, true);
             val comp_loc = new ComputePlaceNewFuture(den_loc, twoE_loc);
@@ -1172,14 +1164,6 @@ public class GMatrix extends Matrix {
              var ii:Int=0;
              for(var x:Int=0; x<N; x++) {
                for(var y:Int=0; y<N; y++) {
-                  /**
-                  val x_loc = x; val y_loc = y;
-                  val jVal = at(comp_loc) { comp_loc.getJMat().getMatrix()(x_loc, y_loc) };
-                  val kVal = at(comp_loc) { comp_loc.getKMat().getMatrix()(x_loc, y_loc) };
-
-                  gMatrix(x,y) += jVal - (0.25*kVal);
-                  **/
-
                   gMatrix(x,y) += jVal(ii) - (0.25*kVal(ii));
                   ii++;
                } // end for
@@ -1523,23 +1507,10 @@ public class GMatrix extends Matrix {
 
             // Console.OUT.println("\tDone making local Molecule and BasisFunctions @ " + here);
 
-            // Console.OUT.println("\tMake local copy of density @ " + here);
-
-            val N = at(den) { den.getRowCount() };
-            val den_loc = new Density(N);
+            val den_loc = new Density(den);
             density = den_loc;
-            val den_loc_mat = den_loc.getMatrix();
-            val den_rem = at(den) { den.getValRail() };
-            var i:Int, j:Int, ii:Int;
 
-            ii = 0 ;  
-            for(i=0; i<N; i++) 
-              for(j=0; j<N; j++) 
-                  den_loc_mat(i, j) = den_rem(ii++);
-
-            // Console.OUT.println("\tDone making local copy of density @ " + here);
-
-            for(i=0; i<Runtime.INIT_THREADS; i++) {
+            for(var i:Int=0; i<Runtime.INIT_THREADS; i++) {
                 computeInst(i) = new ComputeOld(new TwoElectronIntegrals(bas_loc, mol_loc, true), den_loc);
             } // end for
 
@@ -1693,14 +1664,11 @@ public class GMatrix extends Matrix {
 
     /** Compute class for the new code - multi place version , just a direct compute wrapper */
     class ComputePlaceNewDirect extends ComputePlaceNew {
-
-        val molecule:Molecule[QMAtom]!;
         val gMatrixContribution : Matrix!;
 
         public def this(mol:Molecule[QMAtom], bfs:BasisFunctions, den:Density, tp:Place) {
             super(mol, bfs, den, tp);
 
-            molecule = mol_loc;
             val N = den.getRowCount();
             gMatrixContribution = new Matrix(N);
         }
@@ -1720,48 +1688,38 @@ public class GMatrix extends Matrix {
         }
 
         public def compute(start:Int, end:Int) {
-            var i:Int, j:Int, k:Int, l:Int;
-            var a:Int, b:Int, c:Int, d:Int;
-            var iaFunc:ContractedGaussian{self.at(this)}, jbFunc:ContractedGaussian{self.at(this)},
-                kcFunc:ContractedGaussian{self.at(this)}, ldFunc:ContractedGaussian{self.at(this)};
-            var naFunc:Int, nbFunc:Int, ncFunc:Int, ndFunc:Int;
-            var aFunc:ArrayList[ContractedGaussian{self.at(this)}]{self.at(this)},
-                bFunc:ArrayList[ContractedGaussian{self.at(this)}]{self.at(this)},
-                cFunc:ArrayList[ContractedGaussian{self.at(this)}]{self.at(this)},
-                dFunc:ArrayList[ContractedGaussian{self.at(this)}]{self.at(this)};
+            val noOfAtoms = mol_loc.getNumberOfAtoms();
 
-            val noOfAtoms = molecule.getNumberOfAtoms();
-
-            for(a=start; a<end; a++) {
-             aFunc = molecule.getAtom(a).getBasisFunctions();
-             naFunc = aFunc.size();
+            for(var a:Int=start; a<end; a++) {
+             val aFunc = mol_loc.getAtom(a).getBasisFunctions();
+             val naFunc = aFunc.size();
              // basis functions on a
-             for(i=0; i<naFunc; i++) {
-               iaFunc = aFunc.get(i);
+             for(var i:Int=0; i<naFunc; i++) {
+               val iaFunc = aFunc.get(i);
 
                // center b
-               for(b=0; b<=a; b++) {
-                   bFunc = molecule.getAtom(b).getBasisFunctions();
-                   nbFunc = (b<a) ? bFunc.size() : i+1;
+               for(var b:Int=0; b<=a; b++) {
+                   val bFunc = mol_loc.getAtom(b).getBasisFunctions();
+                   val nbFunc = (b<a) ? bFunc.size() : i+1;
                    // basis functions on b
-                   for(j=0; j<nbFunc; j++) {
-                       jbFunc = bFunc.get(j);
+                   for(var j:Int=0; j<nbFunc; j++) {
+                       val jbFunc = bFunc.get(j);
 
                        // center c
-                       for(c=0; c<noOfAtoms; c++) {
-                           cFunc = molecule.getAtom(c).getBasisFunctions();
-                           ncFunc = cFunc.size();
+                       for(var c:Int=0; c<noOfAtoms; c++) {
+                           val cFunc = mol_loc.getAtom(c).getBasisFunctions();
+                           val ncFunc = cFunc.size();
                            // basis functions on c
-                           for(k=0; k<ncFunc; k++) {
-                               kcFunc = cFunc.get(k);
+                           for(var k:Int=0; k<ncFunc; k++) {
+                               val kcFunc = cFunc.get(k);
 
                                // center d
-                               for(d=0; d<=c; d++) {
-                                   dFunc = molecule.getAtom(d).getBasisFunctions();
-                                   ndFunc = (d<c) ? dFunc.size() : k+1;
+                               for(var d:Int=0; d<=c; d++) {
+                                   val dFunc = mol_loc.getAtom(d).getBasisFunctions();
+                                   val ndFunc = (d<c) ? dFunc.size() : k+1;
                                    // basis functions on d
-                                   for(l=0; l<ndFunc; l++) {
-                                       ldFunc = dFunc.get(l);
+                                   for(var l:Int=0; l<ndFunc; l++) {
+                                       val ldFunc = dFunc.get(l);
 
                                        // TODO: 
                                        // Console.OUT.println(a + ", " + b + ", " + c + ", " + d + " | " + i + ", " + j + ", " + k + ", " + l);
@@ -1887,21 +1845,12 @@ public class GMatrix extends Matrix {
 
             // Console.OUT.println("\tMake local copy of density @ " + here);
 
-            val N = at(den) { den.getRowCount() };
-            val den_loc = new Density(N);
+            val den_loc = new Density(den);
             density = den_loc;
-            val den_loc_mat = den_loc.getMatrix();
-            val den_rem = at(den) { den.getValRail() };
-            var i:Int, j:Int, ii:Int;
-
-            ii = 0 ;
-            for(i=0; i<N; i++)
-              for(j=0; j<N; j++)
-                  den_loc_mat(i, j) = den_rem(ii++);
 
             // Console.OUT.println("\tDone making local copy of density @ " + here);
 
-            for(i=0; i<Runtime.INIT_THREADS; i++) {
+            for(var i:Int=0; i<Runtime.INIT_THREADS; i++) {
                 computeInst(i) = new ComputeNew(new TwoElectronIntegrals(bas_loc, mol_loc, true), bas_loc.getShellList(), den_loc);          
             } // end for
 

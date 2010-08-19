@@ -25,6 +25,10 @@ public class Density extends Matrix {
         super(n);
     }
 
+    public def this(d:Density) {
+        super(d);
+    }
+
     public def compute(noOfOccupancies:Int, mos:MolecularOrbitals!) : void {
         // unmute();
 
