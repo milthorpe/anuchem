@@ -17,15 +17,14 @@
 
     <property name="mainClass" value="src/au/anu/edu/qm/PumjaRasaayani.x10" />
 
-    <property name="gsl.include" location="/scratch/gsl/include" />
-    <property name="gsl.lib" location="/scratch/gsl/lib" />
+    <property name="gsl.include" location="/tmp/gsl/include" />
+    <property name="gsl.lib" location="/tmp/gsl/lib" />
 
     <property name="usenativegsl" value="true" />
 
     <!-- <property name="x10rt" value="standalone" /> -->
-    <property name="x10rt" value="pgas_sockets" />
     <!-- <property name="x10rt" value="pgas_bgp" />  -->
-    <!--<property name="x10rt" value="mpi" />-->
+    <property name="x10rt" value="mpi" />
     
     <property name="target" location="${basedir}/target" />
     <property name="target-src" location="${target}/classes" />
