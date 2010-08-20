@@ -115,12 +115,7 @@ public class PumjaRasaayani {
         // Console.OUT.println("Overlap");
         // Console.OUT.println(oneE.getOverlap());   
 
-        val twoE = new TwoElectronIntegrals(bsf, mol, true);
-        Console.OUT.println("\nNumber of 2E integrals: " + twoE.getNumberOfIntegrals());
-        Console.OUT.println("\nComputed two-electron integrals. If direct, this is skipped for now.");
-        Console.OUT.println("Is Direct: " + twoE.isDirect());
-
-        val hfscf = new HartreeFockSCFMethod(mol, oneE, twoE, gMatType);
+        val hfscf = new HartreeFockSCFMethod(mol, oneE, bsf, gMatType);
         hfscf.scf();
         timer.stop(0);
         Console.OUT.println ("\n-End of SCF-\n\nTotal time since start: " + (timer.total(0) as Double) / 1e9 + " seconds\n");
@@ -154,12 +149,7 @@ public class PumjaRasaayani {
         // Console.OUT.println("Overlap");
         // Console.OUT.println(oneE.getOverlap());
 
-        val twoE = new TwoElectronIntegrals(bsf, fragment, true);
-        Console.OUT.println("\nNumber of 2E integrals: " + twoE.getNumberOfIntegrals());
-        Console.OUT.println("\nComputed two-electron integrals. If direct, this is skipped for now.");
-        Console.OUT.println("Is Direct: " + twoE.isDirect());
-
-        val hfscf = new HartreeFockSCFMethod(fragment, oneE, twoE, gMatType);
+        val hfscf = new HartreeFockSCFMethod(fragment, oneE, bsf, gMatType);
         hfscf.scf();
         timer.stop(0);
         Console.OUT.println ("\n-End of SCF-\n\nTotal time since start: " + (timer.total(0) as Double) / 1e9 + " seconds\n");

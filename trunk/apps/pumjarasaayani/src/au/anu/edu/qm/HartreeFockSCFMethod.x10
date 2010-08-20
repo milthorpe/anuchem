@@ -25,13 +25,19 @@ public class HartreeFockSCFMethod extends SCFMethod {
 
     public def this(mol:Molecule[QMAtom]!,  
                     oneE:OneElectronIntegrals!, 
-                    twoE:TwoElectronIntegrals!, gMatType:Int) {
-        super(mol, oneE, twoE);
+                    bfs:BasisFunctions!, gMatType:Int) {
+        super(mol, oneE, bfs);
 
         this.gMatType = gMatType;
     }
 
     public def scf() : Void {
+        val noOfBasisFunctions = bfs.getBasisFunctions().size();
+        val noOfIntegrals = noOfBasisFunctions * (noOfBasisFunctions + 1)
+                          * (noOfBasisFunctions * noOfBasisFunctions
+                             + noOfBasisFunctions + 2) / 8;
+        Console.OUT.println("\nNumber of 2E integrals: " + noOfIntegrals);
+    
         // check first if closed shell run?
         val noOfElectrons = molecule.getNumberOfElectrons();
         val noOfOccupancies = noOfElectrons / 2;
@@ -75,7 +81,7 @@ public class HartreeFockSCFMethod extends SCFMethod {
             density.compute(noOfOccupancies, mos);
             
             // make the G matrix
-            gMatrix.compute(twoE, density, gMatType);
+            gMatrix.compute(bfs, molecule, density, gMatType);
            
             val timer = new Timer(2);
 

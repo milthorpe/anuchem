@@ -23,7 +23,7 @@ import au.edu.anu.chem.Molecule;
 public abstract class SCFMethod { 
     protected global val molecule:Molecule[QMAtom]{self.at(this)};
     protected global val oneE:OneElectronIntegrals{self.at(this)};
-    protected global val twoE:TwoElectronIntegrals{self.at(this)};
+    protected global val bfs:BasisFunctions{self.at(this)};
 
     protected var maxIteration:Int;
     protected var energyTolerance:Double;
@@ -31,11 +31,11 @@ public abstract class SCFMethod {
     protected var energy:Double;
 
     public def this(mol:Molecule[QMAtom]!,  
-                    oneE:OneElectronIntegrals!, 
-                    twoE:TwoElectronIntegrals!) { 
+                    oneE:OneElectronIntegrals!,
+                    bfs:BasisFunctions!) { 
         this.molecule = mol;
-        this.oneE     = oneE;
-        this.twoE     = twoE;
+        this.oneE = oneE;
+        this.bfs = bfs;
 
         val jd = JobDefaults.getInstance();
 
