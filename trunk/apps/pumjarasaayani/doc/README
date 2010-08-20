@@ -69,24 +69,18 @@ $ mpirun -np <n> bin/pumjarasaayani.exe test/h2o.inp [<gmatype>]  [-mta] { mpi c
 where <n> is number of places
 
 [<gmatype>] is:
-0 : default serial G matrix formation
-1 : G matrix formation using pseudo code (1)  
-2 : G matrix formation using pseudo code (2)   
-3 : serial G matrix formation using a low flop count integral evaluation (but uses recursion)
-4 : 3 , but uses (2) for multithread implementation
-5 : Multiplace implementation  using pseudo code akin to (2) [*]
-6 : (4) implemented as multi place code [*]
-7 : (5) using (static) task pool interface [*]
-8 : (5) using purely static load balancing [*]
-9 : (4) using purely static load balancing [*]
-10: (4) load balancing based on Bernholdt, Code 3, uses future and atomic [*] [**]
-11: (9) but uses a shell based loop [*]
+0 : serial G matrix formation using a low flop count integral evaluation (but uses recursion)
+1 : like (0) , but uses pseudo code (2) for multithread implementation
+2 : (1) implemented as multi place code [*]
+3 : (1) using purely static load balancing [*]
+4 : (1) load balancing based on Bernholdt "Code 3", uses future and atomic [*] [**]
+5 : like (3) but uses a shell based loop [*]
 
 [*] - most relevent for timings and scaling at this point
 [**] - currently segfaults for many test cases with multiple places
 
-Note: 8, 9, 11 do not have multithreaded implementation at present, so wont scale on a single place
-For most performance tests, Option 11 is the best suitable at the moment. 
+Note: options 3 and 5 do not have multithreaded implementation at present, so wont scale on a single place
+For most performance tests, Option 5 is the best suitable at the moment. 
 
 When -mta switch is active each fragment is run sequentially over multiple places. This is not 
 optimal but works at the moment. 
@@ -160,7 +154,7 @@ for(i=0; i<nfuncs; i++)
 (c)
 SUM all partial G matrices 
 
-Currently, for option 11, (b) scales OK, but parts (a) and (c) scale negatively and needs
+Currently, for option 5, (b) scales OK, but parts (a) and (c) scale negatively and needs
 to be re-written. 
 
 2. Multi place implementation

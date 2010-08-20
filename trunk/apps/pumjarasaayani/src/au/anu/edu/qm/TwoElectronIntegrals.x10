@@ -29,39 +29,28 @@ import au.edu.anu.chem.Molecule;
  * New Murchie-Davidson (MD) code based on:
  * McMurchie, L. E.; Davidson, E. R. J Comput Phys, 26, 218, 1978.
  */
-public class TwoElectronIntegrals { 
-    private val basisFunctions:BasisFunctions!;
-    private val molecule:Molecule[QMAtom]!;
-    private val contractedList:ArrayList[ContractedGaussian{self.at(this)}]{self.at(this)};
-
+public class TwoElectronIntegrals {
     private val fmt:Rail[Double]!, zeroM:Rail[Double]!;
 
     private val rM:Array[Double](2){rect, self.at(this)};
     private val pqInts:Array[Double](2){rect, self.at(this)};
     private val npint:Array[Double](2){rect, self.at(this)};
     private val pcdint:Array[Double](3){rect, self.at(this)};
-    private val pdsz:Int;
 
     private val maxam:Int, maxam2:Int, maxam4:Int, maxamN:Int, maxam2M:Int, maxam2N:Int, pqdim:Int;
 
-    public def this(basisFunctions:BasisFunctions!, molecule:Molecule[QMAtom]!) {
-        this.basisFunctions = basisFunctions;
-        this.molecule = molecule;    
-
-        this.contractedList = basisFunctions.getBasisFunctions();
-    
-        // scratch scpace needed for direct calculation    
-        val shellList = basisFunctions.getShellList();
-
+    /**
+     * @param maxam maximum angular momentum (determines total number of integrals)
+     */
+    public def this(maxam : Int) {
         // allocate scratch memory
-        maxam  = shellList.getMaximumAngularMomentum();
+        this.maxam = maxam;
         maxam2 = 2*maxam;
         maxam4 = 4*maxam;
         maxamN = ((maxam+1)*(maxam+2)/2);
         maxam2M  = ((maxam2+1)*(maxam2+2)/2);
         maxam2N  = ((maxam2+1)*(maxam2M+1));
         pqdim = maxam2M+1;
-        pdsz  = (maxamN+1)*(maxamN+1)*maxam2N;
 
         // Console.OUT.println("alloc: " + maxam + " " + maxam2N);
 
@@ -74,105 +63,6 @@ public class TwoElectronIntegrals {
         pcdint = new Array[Double]([0..maxamN+1, 0..maxamN+1, 0..maxam2N]);
 
         // Console.OUT.println("alloc2: " + pcdint.region.size());
-    }
-
-    public def getBasisFunctions() : BasisFunctions{self.at(this)} = basisFunctions;
-    public def getMolecule() = molecule;
-
-    public def compute2E(i:Int, j:Int, k:Int, l:Int) : Double {
-        return coulomb(contractedList.get(i), contractedList.get(j), 
-                       contractedList.get(k), contractedList.get(l));
-    }
-
-    public def compute2E(ia:ContractedGaussian{self.at(this)}, ja:ContractedGaussian{self.at(this)}, 
-                         ka:ContractedGaussian{self.at(this)}, la:ContractedGaussian{self.at(this)}) : Double {
-        return coulomb(ia, ja, ka, la);
-    }
- 
-    public interface TwoEAvailable {
-        public def coulomb(i:Int, j:Int, k:Int, l:Int, twoE:Double) : void;
-    }
-
-    /** Default method: uses THO integrals. */
-    public def compute2E(i:Int, j:Int, k:Int, l:Int, twoEUpdate:TwoEAvailable{self.at(this)}) : void {        
-         var jij:Double = 0.0;
-
-         val a = contractedList.get(i);
-         val b = contractedList.get(j);
-         val c = contractedList.get(k);
-         val d = contractedList.get(l);
-
-         val aExps   = a.getExponents();
-         val aCoefs  = a.getCoefficients();
-         val aNorms  = a.getPrimNorms();
-         val aOrigin = a.getOrigin();
-         val aPower  = a.getPower();
-
-         val bExps   = b.getExponents();
-         val bCoefs  = b.getCoefficients();
-         val bNorms  = b.getPrimNorms();
-         val bOrigin = b.getOrigin();
-         val bPower  = b.getPower();
-
-         val cExps   = c.getExponents();
-         val cCoefs  = c.getCoefficients();
-         val cNorms  = c.getPrimNorms();
-         val cOrigin = c.getOrigin();
-         val cPower  = c.getPower();
-
-         val dExps   = d.getExponents();
-         val dCoefs  = d.getCoefficients();
-         val dNorms  = d.getPrimNorms();
-         val dOrigin = d.getOrigin();
-         val dPower  = d.getPower();
-
-         var ii:Int, jj:Int, kk:Int, ll:Int;
-         var iaExp:Double, iaCoef:Double, iaNorm:Double,
-             jbExp:Double, jbCoef:Double, jbNorm:Double,
-             kcExp:Double, kcCoef:Double, kcNorm:Double;
-
-         val na = aExps.size();
-         val nb = bExps.size();
-         val nc = cExps.size();
-         val nd = dExps.size();
-
-         // TODO: x10 parallel
-         for(ii=0; ii<na; ii++) {
-             iaCoef = aCoefs.get(ii);
-             iaExp  = aExps.get(ii);
-             iaNorm = aNorms.get(ii);
-
-             for(jj=0; jj<nb; jj++) {
-                jbCoef = bCoefs.get(jj);
-                jbExp  = bExps.get(jj);
-                jbNorm = bNorms.get(jj);
-
-                for(kk=0; kk<nc; kk++) {
-                    kcCoef = cCoefs.get(kk);
-                    kcExp  = cExps.get(kk);
-                    kcNorm = cNorms.get(kk);
-
-                    for(ll=0; ll<nd; ll++) {
-                        jij += iaCoef * jbCoef * kcCoef
-                               * dCoefs.get(ll)
-                               * coulombRepulsion(
-                                         aOrigin, iaNorm, aPower, iaExp,
-                                         bOrigin, jbNorm, bPower, jbExp,
-                                         cOrigin, kcNorm, cPower, kcExp,
-                                         dOrigin,
-                                         dNorms.get(ll),
-                                         dPower,
-                                         dExps.get(ll)
-                                        ); 
-                    } // end l loop
-                } // end k loop
-             } // end j loop
-         } // end i loop
-
-         jij = a.getNormalization() * b.getNormalization()
-                 * c.getNormalization() * d.getNormalization() * jij;
-
-         twoEUpdate.coulomb(i,j,k,l, jij);
     }
 
     private val sq2pi = Math.pow((2.0/Math.PI), 0.5);
@@ -515,9 +405,10 @@ public class TwoElectronIntegrals {
                        dMatrix);
     }
 
-    // TODO: following three are duplicate methods from GMatrix, must be cleaned
 
     /** find unique elements and mark the onces that are not */
+    /** 8 => is the level of integral symmetry, given (i,j|k.l)
+        there are 8 combinations that are unique */
     private def filterUniqueElements(idx:Rail[Int]!, jdx:Rail[Int]!,
                                      kdx:Rail[Int]!, ldx:Rail[Int]!,
                                      validIdx:Rail[Boolean]!) : void {
@@ -530,27 +421,6 @@ public class TwoElectronIntegrals {
                     validIdx(n) = false;
             } // end for
         } // end for
-    }
-
-    /** Set the J and K value for a given combination */
-    private def setJKMatrixElements(jMatrix:Array[Double](2){rect,self.at(this)}, kMatrix:Array[Double](2){rect,self.at(this)},
-                                    dMatrix:Array[Double](2){rect,self.at(this)},
-                                    i:Int, j:Int, k:Int, l:Int, twoEIntVal:Double) : void {
-        val v1 = dMatrix(k,l) * twoEIntVal;
-        val v2 = dMatrix(i,j) * twoEIntVal;
-        val v3 = dMatrix(j,l) * twoEIntVal;
-        val v4 = dMatrix(j,k) * twoEIntVal;
-        val v5 = dMatrix(i,l) * twoEIntVal;
-        val v6 = dMatrix(i,k) * twoEIntVal;
-
-        // atomic {
-          jMatrix(i,j) += v1;
-          jMatrix(k,l) += v2;
-          kMatrix(i,k) += v3;
-          kMatrix(i,l) += v4;
-          kMatrix(j,k) += v5;
-          kMatrix(j,l) += v6;
-        // } // atomic
     }
 
     /** MD recurrance relation steps in following two subroutines */
@@ -905,25 +775,17 @@ public class TwoElectronIntegrals {
                                     // and evaluate them
                                     for(var m:Int=1; m<8; m++) {
                                         if (validIdx(m)) {
-                                           // setJKMatrixElements(jMatrix, kMatrix, dMatrix, iidx(m), jjdx(m), kkdx(m), lldx(m), twoEIntVal);
                                            val ii_l = iidx(m);
                                            val jj_l = jjdx(m);
                                            val kk_l = kkdx(m);
                                            val ll_l = lldx(m);
 
-                                           val v1_l = dMatrix(kk_l,ll_l) * twoEIntVal;
-                                           val v2_l = dMatrix(ii_l,jj_l) * twoEIntVal;
-                                           val v3_l = dMatrix(jj_l,ll_l) * twoEIntVal;
-                                           val v4_l = dMatrix(jj_l,kk_l) * twoEIntVal;
-                                           val v5_l = dMatrix(ii_l,ll_l) * twoEIntVal;
-                                           val v6_l = dMatrix(ii_l,kk_l) * twoEIntVal;
-
-                                           jMatrix(ii_l,jj_l) += v1_l;
-                                           jMatrix(kk_l,ll_l) += v2_l;
-                                           kMatrix(ii_l,kk_l) += v3_l;
-                                           kMatrix(ii_l,ll_l) += v4_l;
-                                           kMatrix(jj_l,kk_l) += v5_l;
-                                           kMatrix(jj_l,ll_l) += v6_l;
+                                           jMatrix(ii_l,jj_l) += dMatrix(kk_l,ll_l) * twoEIntVal;
+                                           jMatrix(kk_l,ll_l) += dMatrix(ii_l,jj_l) * twoEIntVal;
+                                           kMatrix(ii_l,kk_l) += dMatrix(jj_l,ll_l) * twoEIntVal;
+                                           kMatrix(ii_l,ll_l) += dMatrix(jj_l,kk_l) * twoEIntVal;
+                                           kMatrix(jj_l,kk_l) += dMatrix(ii_l,ll_l) * twoEIntVal;
+                                           kMatrix(jj_l,ll_l) += dMatrix(ii_l,kk_l) * twoEIntVal;
                                         } // end if
                                     } // end m                    
                              } // end if
@@ -934,184 +796,6 @@ public class TwoElectronIntegrals {
          } // for dd
 
          // Console.OUT.println("\tNumber of actual integrals used in block: " + intIndx);
-    }
-
-    /** Return coulomb integral for a given pair of <ij|kl> contracted gaussian functions */
-    private def coulomb(a:ContractedGaussian{self.at(this)}, b:ContractedGaussian{self.at(this)},
-                        c:ContractedGaussian{self.at(this)}, d:ContractedGaussian{self.at(this)}) : Double {
-        val la = a.getTotalAngularMomentum(), 
-            lb = b.getTotalAngularMomentum(),
-            lc = c.getTotalAngularMomentum(),
-            ld = d.getTotalAngularMomentum();
-
-        if (la+lb+lc+ld > 0) { return coulombFlat(a,b,c,d); }
-        else                 { return coulombRec(a,b,c,d);  }
-    }
-
-    /** Return coulomb integral for a given pair of <ij|kl> contracted gaussian functions, uses non recursive routine */
-    private def coulombFlat(a:ContractedGaussian{self.at(this)}, b:ContractedGaussian{self.at(this)},
-                           c:ContractedGaussian{self.at(this)}, d:ContractedGaussian{self.at(this)}) : Double {
-         var jij:Double = 0.0;
-
-         val aExps   = a.getExponents();
-         val aCoefs  = a.getCoefficients();
-         val aNorms  = a.getPrimNorms();
-         val aOrigin = a.getOrigin();
-         val aPower  = a.getPower();
-
-         val bExps   = b.getExponents();
-         val bCoefs  = b.getCoefficients();
-         val bNorms  = b.getPrimNorms();
-         val bOrigin = b.getOrigin();
-         val bPower  = b.getPower();
-
-         val cExps   = c.getExponents();
-         val cCoefs  = c.getCoefficients();
-         val cNorms  = c.getPrimNorms();
-         val cOrigin = c.getOrigin();
-         val cPower  = c.getPower();
-
-         val dExps   = d.getExponents();
-         val dCoefs  = d.getCoefficients();
-         val dNorms  = d.getPrimNorms();
-         val dOrigin = d.getOrigin();
-         val dPower  = d.getPower();
-
-         var i:Int, j:Int, k:Int, l:Int;
-         var iaExp:Double, iaCoef:Double, iaNorm:Double,
-             jbExp:Double, jbCoef:Double, jbNorm:Double,
-             kcExp:Double, kcCoef:Double, kcNorm:Double;
-
-         val na = aExps.size();
-         val nb = bExps.size();
-         val nc = cExps.size();
-         val nd = dExps.size();
-
-         // TODO: x10 parallel
-         for(i=0; i<na; i++) {
-             iaCoef = aCoefs.get(i);
-             iaExp  = aExps.get(i);
-             iaNorm = aNorms.get(i);
-
-             for(j=0; j<nb; j++) {
-                jbCoef = bCoefs.get(j);
-                jbExp  = bExps.get(j);
-                jbNorm = bNorms.get(j);
-
-                for(k=0; k<nc; k++) {
-                    kcCoef = cCoefs.get(k);
-                    kcExp  = cExps.get(k);
-                    kcNorm = cNorms.get(k);
-
-                    for(l=0; l<nd; l++) {
-                        jij += iaCoef * jbCoef * kcCoef
-                               * dCoefs.get(l)
-                               * coulombRepulsion(
-                                         aOrigin, iaNorm, aPower, iaExp,
-                                         bOrigin, jbNorm, bPower, jbExp,
-                                         cOrigin, kcNorm, cPower, kcExp,
-                                         dOrigin,
-                                         dNorms.get(l),
-                                         dPower,
-                                         dExps.get(l)
-                                        ); 
-                    } // end l loop
-                } // end k loop
-             } // end j loop
-         } // end i loop
-
-         return (a.getNormalization() * b.getNormalization()
-                 * c.getNormalization() * d.getNormalization() * jij);
-    }
-
-    private def coulombRec(a:ContractedGaussian{self.at(this)}, b:ContractedGaussian{self.at(this)},
-                           c:ContractedGaussian{self.at(this)}, d:ContractedGaussian{self.at(this)}) : Double {
-
-          val jij = contrHrr(a.getOrigin(), a.getPower(),
-                             a.getCoefficients(), a.getExponents(), a.getPrimNorms(),
-                             b.getOrigin(), b.getPower(),
-                             b.getCoefficients(), b.getExponents(), b.getPrimNorms(),
-                             c.getOrigin(), b.getPower(),
-                             c.getCoefficients(), c.getExponents(), c.getPrimNorms(),
-                             d.getOrigin(), d.getPower(),
-                             d.getCoefficients(), d.getExponents(), d.getPrimNorms()
-                            );
-
-         return (a.getNormalization() * b.getNormalization()
-                 * c.getNormalization() * d.getNormalization() * jij);
-    }
-
-    private def coulombRepulsion(
-                    a:Point3d, aNorm:Double, aPower:Power, aAlpha:Double,
-                    b:Point3d, bNorm:Double, bPower:Power, bAlpha:Double,
-                    c:Point3d, cNorm:Double, cPower:Power, cAlpha:Double,
-                    d:Point3d, dNorm:Double, dPower:Power, dAlpha:Double) : Double {
-
-        val radiusABSquared = a.distanceSquared(b);
-        val radiusCDSquared = c.distanceSquared(d);
-
-        val p:Point3d = gaussianProductCenter(aAlpha, a, bAlpha, b);
-        val q:Point3d = gaussianProductCenter(cAlpha, c, dAlpha, d);
-
-        val radiusPQSquared = p.distanceSquared(q);
-
-        val gamma1 = aAlpha + bAlpha;
-        val gamma2 = cAlpha + dAlpha;
-        val delta  = 0.25 * (1/gamma1 + 1/gamma2);
-
-        val bx = constructBArray(
-                   aPower.getL(), bPower.getL(), cPower.getL(), dPower.getL(),
-                   p.i, a.i, b.i, q.i, c.i, d.i,
-                   gamma1, gamma2, delta);
-
-        val by = constructBArray(
-                   aPower.getM(), bPower.getM(), cPower.getM(), dPower.getM(),
-                   p.j, a.j, b.j, q.j, c.j, d.j,
-                   gamma1, gamma2, delta);
-
-        val bz = constructBArray(
-                   aPower.getN(), bPower.getN(), cPower.getN(), dPower.getN(),
-                   p.k, a.k, b.k, q.k, c.k, d.k,
-                   gamma1, gamma2, delta);
-
-        val nbx = bx.length;
-        val nby = by.length;
-        val nbz = bz.length;
-
-        var sum:Double = 0.0;
-        var i:Int, j:Int, k:Int;
-        val maxam = nbx+nby+nbz;
-        val fmt = Rail.make[Double](maxam+1);
-
-        // compute FmT
-        computeFmt(maxam, 0.25*radiusPQSquared/delta, fmt);
-
-        // TODO: x10 parallel
-        for(i=0; i<nbx; i++) {
-            for(j=0; j<nby; j++) {
-                for(k=0; k<nbz; k++) {
-                    sum += bx(i) * by(j) * bz(k) * fmt(i+j+k);
-                } // end for
-            } // end for
-        } // end for
-
-        /**
-        for(i=0; i<nbx; i++) {
-            for(j=0; j<nby; j++) {
-                for(k=0; k<nbz; k++) {
-                    sum += bx(i) * by(j) * bz(k)
-                           * IntegralsUtils.computeFGamma(
-                                            i+j+k, 0.25*radiusPQSquared/delta);
-                } // end for
-            } // end for
-        } // end for
-        **/
-
-        return (2.0 * Math.pow(Math.PI, 2.5)
-                  / (gamma1 * gamma2 * Math.sqrt(gamma1+gamma2))
-                  * Math.exp(-aAlpha*bAlpha*radiusABSquared/gamma1)
-                  * Math.exp(-cAlpha*dAlpha*radiusCDSquared/gamma2)
-                  * sum * aNorm * bNorm * cNorm * dNorm);
     }
 
     /** Compute the base FmT() - for evaluating integrals */
