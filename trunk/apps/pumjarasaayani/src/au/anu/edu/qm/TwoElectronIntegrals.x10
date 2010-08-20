@@ -30,20 +30,20 @@ import au.edu.anu.chem.Molecule;
  * McMurchie, L. E.; Davidson, E. R. J Comput Phys, 26, 218, 1978.
  */
 public class TwoElectronIntegrals { 
-    global val basisFunctions:BasisFunctions!;
-    global val molecule:Molecule[QMAtom]!;
-    global val twoEInts:Array[Double](1)!;
-    global val contractedList:ArrayList[ContractedGaussian{self.at(this)}]{self.at(this)};
-    val direct:Boolean;
-    val noOfIntegrals:Int;
+    private val basisFunctions:BasisFunctions!;
+    private val molecule:Molecule[QMAtom]!;
+    private val twoEInts:Array[Double](1){rect, self.at(this)};
+    private val contractedList:ArrayList[ContractedGaussian{self.at(this)}]{self.at(this)};
+    private val direct:Boolean;
+    private val noOfIntegrals:Int;
 
-    global val fmt:Rail[Double]!, zeroM:Rail[Double]!;
+    private val fmt:Rail[Double]!, zeroM:Rail[Double]!;
 
-    global val rM:Array[Double](2)!;
-    global val pqInts:Array[Double](2)!;
-    global val npint:Array[Double](2)!;
-    global val pcdint:Array[Double](3)!;
-    global val pdsz:Int;
+    private val rM:Array[Double](2){rect, self.at(this)};
+    private val pqInts:Array[Double](2){rect, self.at(this)};
+    private val npint:Array[Double](2){rect, self.at(this)};
+    private val pcdint:Array[Double](3){rect, self.at(this)};
+    private val pdsz:Int;
 
     private val maxam:Int, maxam2:Int, maxam4:Int, maxamN:Int, maxam2M:Int, maxam2N:Int, pqdim:Int;
 
@@ -553,8 +553,8 @@ public class TwoElectronIntegrals {
     }
 
     /** Set the J and K value for a given combination */
-    private def setJKMatrixElements(jMatrix:Array[Double](2)!, kMatrix:Array[Double](2)!,
-                                    dMatrix:Array[Double](2)!,
+    private def setJKMatrixElements(jMatrix:Array[Double](2){rect,self.at(this)}, kMatrix:Array[Double](2){rect,self.at(this)},
+                                    dMatrix:Array[Double](2){rect,self.at(this)},
                                     i:Int, j:Int, k:Int, l:Int, twoEIntVal:Double) : void {
         val v1 = dMatrix(k,l) * twoEIntVal;
         val v2 = dMatrix(i,j) * twoEIntVal;
@@ -795,7 +795,7 @@ public class TwoElectronIntegrals {
                             dStrt:Int, cStrt:Int, bStrt:Int, aStrt:Int,
                             shellList:ShellList!, bAng:Int, aAng:Int, 
                             aCen:Point3d, bCen:Point3d, p:Point3d, gamma1:Double,
-                            twoEInts:Array[Double](1)!) {
+                            twoEInts:Array[Double](1){rect,self.at(this)}) {
          var dd:Int, cc:Int, bb:Int, aa:Int, k:Int, l:Int;
          val shellB = shellList.getPowers(bAng);
          val shellA = shellList.getPowers(aAng);
@@ -858,10 +858,10 @@ public class TwoElectronIntegrals {
     private def fillJKMatrices(dLim:Int, cLim:Int, bLim:Int, aLim:Int,
                                dStrt:Int, cStrt:Int, bStrt:Int, aStrt:Int,
                                shellList:ShellList!, bAng:Int, aAng:Int,
-                               twoEInts:Array[Double](1)!,
-                               jMatrix:Array[Double](2)!, 
-                               kMatrix:Array[Double](2)!,
-                               dMatrix:Array[Double](2)!) {
+                               twoEInts:Array[Double](1){rect,self.at(this)},
+                               jMatrix:Array[Double](2){rect,self.at(this)}, 
+                               kMatrix:Array[Double](2){rect,self.at(this)},
+                               dMatrix:Array[Double](2){rect,self.at(this)}) {
          var dd:Int, cc:Int, bb:Int, aa:Int, k:Int, l:Int;
          
          var intIndx:Int = 0;
@@ -1061,7 +1061,7 @@ public class TwoElectronIntegrals {
         } // end for (a)
     }
 
-    public def getTwoElectronIntegrals() : Array[Double]{rank==1} = twoEInts;
+    public def getTwoElectronIntegrals() : Array[Double]{rect,rank==1} = twoEInts;
 
     /** Return coulomb integral for a given pair of <ij|kl> contracted gaussian functions */
     private def coulomb(a:ContractedGaussian{self.at(this)}, b:ContractedGaussian{self.at(this)},

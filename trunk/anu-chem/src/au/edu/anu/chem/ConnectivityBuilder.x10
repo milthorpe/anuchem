@@ -112,7 +112,7 @@ public class ConnectivityBuilder[T]{T <: Atom} {
        } // finish
    }
 
-   private def computeAxis(atom:Atom) : Vector3d {
+   private def computeAxis(atom:Atom!) : Vector3d {
        val bonds = atom.getBonds();
        var axis:Vector3d  = Vector3d.NULL;
 
@@ -253,7 +253,7 @@ class ConnectivitySupport {
         a bond. If yes, selectively store info that will
         be required to later determine the type of bond
       */
-    public def canFormBond(a:Atom, b:Atom) : Boolean {
+    public def canFormBond(a:Atom!, b:Atom!) : Boolean {
         x = Math.abs(a.centre.i - b.centre.i);
         if (x > BOND_RADIUS) return false;
 
