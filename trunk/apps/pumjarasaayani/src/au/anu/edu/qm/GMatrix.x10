@@ -344,10 +344,11 @@ public class GMatrix extends Matrix {
         val timer = new Timer(3);
 
         timer.start(0);
+        val basisName = bfs.getBasisName();
         i = 0;
         for(place in Place.places) {
            computeInst(i) = at(place) { 
-                return new ComputePlaceOld(mol, bfs, density, place); 
+                return new ComputePlaceOld(mol, basisName, density); 
            };
            i++;
         }
@@ -430,9 +431,10 @@ public class GMatrix extends Matrix {
         val timer = new Timer(3);
 
         timer.start(0);
+        val basisName = bfs.getBasisName();
         i = 0;
         for(place in Place.places) {
-           computeInst(i) = at(place) { return new ComputePlaceOldDirect(mol, bfs, density, place); };
+           computeInst(i) = at(place) { return new ComputePlaceOldDirect(mol, basisName, density); };
            i++;
         }
 
@@ -516,9 +518,10 @@ public class GMatrix extends Matrix {
 
         timer.start(0);
         i = 0;
+        val basisName = bfs.getBasisName();
         for(place in Place.places) {
            computeInst(i) = at(place) { 
-                return new ComputePlaceOldPool(mol, bfs, density, place); 
+                return new ComputePlaceOldPool(mol, basisName, density); 
            };
            i++;
         }
@@ -783,7 +786,8 @@ public class GMatrix extends Matrix {
         val timer = new Timer(3);
 
         timer.start(0);
-        val computeInst = DistArray.make[ComputePlaceNew](Dist.makeUnique(Place.places), ((p) : Point) => new ComputePlaceNewDirect(mol, bfs, density, Place.place(p)));
+        val basisName = bfs.getBasisName();
+        val computeInst = DistArray.make[ComputePlaceNew](Dist.makeUnique(Place.places), ((p) : Point) => new ComputePlaceNewDirect(mol, basisName, density));
         timer.stop(0);
         Console.OUT.println("\tTime for setting up place(s) with initial data: " + (timer.total(0) as Double) / 1e9 + " seconds"); 
 
@@ -887,8 +891,9 @@ public class GMatrix extends Matrix {
 
         timer.start(0);
         i = 0;
+        val basisName = bfs.getBasisName();
         for(place in Place.places) {
-           computeInst(i) = at(place) { return new ComputePlaceNewDirect(mol, bfs, density, place); };
+           computeInst(i) = at(place) { return new ComputePlaceNewDirect(mol, basisName, density); };
            i++;
         }
 
@@ -1115,7 +1120,8 @@ public class GMatrix extends Matrix {
 
         timer.start(0);
         val nPairs = shellPairs.length();
-        val computeInst = DistArray.make[ComputePlaceNewDirect](Dist.makeUnique(Place.places), ((p) : Point) => new ComputePlaceNewDirect(mol, bfs, density, Place.place(p)));
+        val basisName = bfs.getBasisName();
+        val computeInst = DistArray.make[ComputePlaceNewDirect](Dist.makeUnique(Place.places), ((p) : Point) => new ComputePlaceNewDirect(mol, basisName, density));
 
         timer.stop(0);
         Console.OUT.println("\tTime for setting up place(s) with initial data: " + (timer.total(0) as Double) / 1e9 + " seconds");
@@ -1401,8 +1407,6 @@ public class GMatrix extends Matrix {
 
     /** Compute class for the old code - multi place version */
     class ComputePlaceOld {
-      
-        val thePlace:Place;
 
         val computeInst = Rail.make[ComputeOld!](Runtime.INIT_THREADS);
 
@@ -1413,8 +1417,7 @@ public class GMatrix extends Matrix {
 
         val density:Density!;
 
-        public def this(mol:Molecule[QMAtom], bfs:BasisFunctions, den:Density, tp:Place) {
-            thePlace = tp;
+        public def this(mol:Molecule[QMAtom], basisName:String, den:Density) {
 
             val mol_loc = new Molecule[QMAtom]();
             val nAtoms  = at(mol) { mol.getNumberOfAtoms() };
@@ -1431,7 +1434,6 @@ public class GMatrix extends Matrix {
 
             // Console.OUT.println("\tStart making local Molecule and BasisFunctions @ " + here);
 
-            val basisName = at(bfs) { bfs.getBasisName() };
             val bas_loc = new BasisFunctions(mol_loc, basisName, "basis");
 
             // Console.OUT.println("\tDone making local Molecule and BasisFunctions @ " + here);
@@ -1508,8 +1510,8 @@ public class GMatrix extends Matrix {
         val taskPool:Stack[BlockIndices]!;
         var noMoreTasks:Boolean;
 
-        public def this(mol:Molecule[QMAtom], bfs:BasisFunctions, den:Density, tp:Place) {
-           super(mol, bfs, den, tp);
+        public def this(mol:Molecule[QMAtom], basisName:String, den:Density) {
+           super(mol, basisName, den);
 
            taskPool = new Stack[BlockIndices]();
            noMoreTasks = false;
@@ -1549,8 +1551,8 @@ public class GMatrix extends Matrix {
 
     /** Compute class for the old code - multi place version , just a direct compute wrapper */
     class ComputePlaceOldDirect extends ComputePlaceOld {
-        public def this(mol:Molecule[QMAtom], bfs:BasisFunctions, den:Density, tp:Place) {
-              super(mol, bfs, den, tp);
+        public def this(mol:Molecule[QMAtom], basisName:String, den:Density) {
+              super(mol, basisName, den);
         }
 
         public def compute(i:Int, j:Int, k:Int, l:Int) {
@@ -1595,8 +1597,8 @@ public class GMatrix extends Matrix {
     class ComputePlaceNewDirect extends ComputePlaceNew {
         val gMatrixContribution : Matrix!;
 
-        public def this(mol:Molecule[QMAtom], bfs:BasisFunctions, den:Density, tp:Place) {
-            super(mol, bfs, den, tp);
+        public def this(mol:Molecule[QMAtom], basisName:String, den:Density) {
+            super(mol, basisName, den);
 
             val N = den.getRowCount();
             gMatrixContribution = new Matrix(N);
@@ -1735,8 +1737,6 @@ public class GMatrix extends Matrix {
 
     /** Compute class for the new code - multi place version */
     class ComputePlaceNew {
-        val thePlace:Place;
-
         val computeInst = Rail.make[ComputeNew!](Runtime.INIT_THREADS);
 
         val density:Density!;
@@ -1744,9 +1744,7 @@ public class GMatrix extends Matrix {
         val bas_loc:BasisFunctions!;
         val mol_loc:Molecule[QMAtom]!;
 
-        public def this(mol:Molecule[QMAtom], bfs:BasisFunctions, den:Density, tp:Place) {
-            thePlace = tp;
-
+        public def this(mol:Molecule[QMAtom], basisName:String, den:Density) {
             val mol_loc = new Molecule[QMAtom]();
             val nAtoms  = at(mol) { mol.getNumberOfAtoms() };
  
@@ -1764,7 +1762,6 @@ public class GMatrix extends Matrix {
 
             // Console.OUT.println("\tStart making local Molecule and BasisFunctions @ " + here);
 
-            val basisName = at(bfs) { bfs.getBasisName() };
             val bas_loc = new BasisFunctions(mol_loc, basisName, "basis");
 
             this.bas_loc = bas_loc;
