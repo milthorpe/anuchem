@@ -37,7 +37,7 @@ public class HartreeFockSCFMethod extends SCFMethod {
         val noOfOccupancies = noOfElectrons / 2;
         
         if (noOfElectrons%2 != 0) {
-           x10.io.Console.OUT.println("Currently supports only closed shell calculations!");
+           Console.OUT.println("Currently supports only closed shell calculations!");
            return;
         } // end if
 
@@ -47,27 +47,25 @@ public class HartreeFockSCFMethod extends SCFMethod {
         energy = 0.0;
 
         var converged:Boolean = false;
-        var oldEnergy:Double = 0.0; 
-        var nuclearEnergy:Double = nuclearEnergy();
+        var oldEnergy:Double = 0.0;
 
-        x10.io.Console.OUT.println("Nuclear repulsion energy = " + nuclearEnergy + " a.u.");
+        val nuclearEnergy = getNuclearEnergy();
+        Console.OUT.println("Nuclear repulsion energy = " + nuclearEnergy + " a.u.");
 
-        var eOne:Double, eTwo:Double;
-
-        Console.OUT.println ("    Initializing matrices ...");
+        //Console.OUT.println ("    Initializing matrices ...");
         // init memory for the matrices
         val N = hCore.getRowCount();
-        val gMatrix  = new GMatrix(N) as GMatrix!;
-        val mos      = new MolecularOrbitals(N) as MolecularOrbitals!;
-        val density  = new Density(N) as Density!; // density.make();
+        val gMatrix  = new GMatrix(N);
+        val mos      = new MolecularOrbitals(N);
+        val density  = new Density(N); // density.make();
 
-        var fock:Fock!  = new Fock(N) as Fock!;
+        var fock:Fock!  = new Fock(N);
 
-        Console.OUT.println("    Forming initial guess ...");
+        //Console.OUT.println("    Forming initial guess ...");
         // compute initial MOs
         mos.compute(hCore, overlap);
 
-        x10.io.Console.OUT.println("    Starting RHF-SCF ... ");        
+        //Console.OUT.println("    Starting RHF-SCF ... ");        
 
         val diis = new DIISFockExtrapolator();
 
@@ -97,15 +95,15 @@ public class HartreeFockSCFMethod extends SCFMethod {
             Console.OUT.println ("    Time to form MOS: " + (timer.total(1) as Double) / 1e9 + " seconds");
          
             // compute the total energy at this point
-            eOne = density.mul(hCore).trace();
-            x10.io.Console.OUT.println("    Nuclear electron attraction energy = " + eOne + " a.u.");
+            val eOne = density.mul(hCore).trace();
+            Console.OUT.println("    Nuclear electron attraction energy = " + eOne + " a.u.");
 
-            eTwo = density.mul(fock).trace();
-            x10.io.Console.OUT.println("    Electron repulsion energy = " + eTwo + " a.u.");
+            val eTwo = density.mul(fock).trace();
+            Console.OUT.println("    Electron repulsion energy = " + eTwo + " a.u.");
             
             energy = eOne + eTwo + nuclearEnergy;
 
-            x10.io.Console.OUT.println("Cycle #" + scfIteration + " Total energy = " + energy);
+            Console.OUT.println("Cycle #" + scfIteration + " Total energy = " + energy);
                         
             // ckeck for convergence
             if (Math.abs(energy - oldEnergy) < energyTolerance) {
@@ -117,9 +115,9 @@ public class HartreeFockSCFMethod extends SCFMethod {
         } // end of SCF iteration
 
         if (!converged) 
-           x10.io.Console.OUT.println("SCF did not converge in " + maxIteration + " cycles!");
+           Console.OUT.println("SCF did not converge in " + maxIteration + " cycles!");
         else 
-           x10.io.Console.OUT.println("SCF converged. Final SCF energy = " + energy + " a.u.");
+           Console.OUT.println("SCF converged. Final SCF energy = " + energy + " a.u.");
     }
 }
 

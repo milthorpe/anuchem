@@ -59,7 +59,7 @@ public abstract class SCFMethod {
 
     public def getEnergy() = energy;
 
-    public def nuclearEnergy() : Double {
+    public def getNuclearEnergy() : Double {
         var eNuke:Double = 0.0;
         var i:Int, j:Int;
         val noOfAtoms = molecule.getNumberOfAtoms();
