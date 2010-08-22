@@ -13,7 +13,6 @@ package au.edu.anu.fft;
 import x10.compiler.Native;
 import x10.util.GrowableRail;
 import edu.mit.fftw.FFTW;
-import au.edu.anu.util.ScalableTreeBarrier;
 
 /**
  * This class implements a distributed three-dimensional FFT using
