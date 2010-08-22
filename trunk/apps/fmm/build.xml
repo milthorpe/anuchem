@@ -26,8 +26,8 @@
 	<property name="target-src" location="${target}/classes"/>
 	<property name="target-test" location="${target}/test-classes"/>
     <property name="bin" location="${basedir}/bin"/>
-	<property name="exe" value="fmm3d"/>
-    <property name="testclass" value="test/au/edu/anu/mm/TestFmm3d.x10"/>
+	<property name="exe" value="periodicFmm3d"/>
+    <property name="testclass" value="test/au/edu/anu/mm/TestPeriodicFmm3d.x10"/>
 
     <condition property="x10c.optimize" value="-O" else="">
         <istrue value="${optimize}"/>
@@ -101,7 +101,7 @@
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/src">
             <arg value="-c"/>
-            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} -report postcompile=1 -post '# ${x10c.optimize} ${post.profile} -Wall # ${link.mpiPprofile} ${post.cpuprofile}' -sourcepath .:${xre.src}:${xla.src}:${anuchem.src} -d ${target-src} ${basedir}/${testclass}"/>
+            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} -report postcompile=1 -post '# ${x10c.optimize} ${post.profile} # ${link.mpiPprofile} ${post.cpuprofile}' -sourcepath .:${xre.src}:${xla.src}:${anuchem.src} -d ${target-src} ${basedir}/${testclass}"/>
         </exec>
     </target>
 
