@@ -61,9 +61,9 @@ public class HartreeFockSCFMethod extends SCFMethod {
         //Console.OUT.println ("    Initializing matrices ...");
         // init memory for the matrices
         val N = hCore.getRowCount();
-        val gMatrix  = new GMatrix(N);
+        val gMatrix  = new GMatrix(N, bfs, molecule, gMatType);
         val mos      = new MolecularOrbitals(N);
-        val density  = new Density(N); // density.make();
+        val density  = new Density(N, noOfOccupancies); // density.make();
 
         var fock:Fock!  = new Fock(N);
 
@@ -78,10 +78,10 @@ public class HartreeFockSCFMethod extends SCFMethod {
         // start the SCF cycle
         for(var scfIteration:Int=0; scfIteration<maxIteration; scfIteration++) {
             // make or guess density
-            density.compute(noOfOccupancies, mos);
+            density.compute(mos);
             
             // make the G matrix
-            gMatrix.compute(bfs, molecule, density, gMatType);
+            gMatrix.compute(density);
            
             val timer = new Timer(2);
 

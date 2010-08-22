@@ -58,7 +58,7 @@ public class Matrix {
         distribution = source.distribution;
         region       = sourceMat.region;
         mat          = new Array[Double](sourceMat.region);
-        mat.copyFrom(sourceMat);
+        at (sourceMat) { sourceMat.copyTo(mat); }
     }
 
     public global def region() = region;

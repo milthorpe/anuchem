@@ -21,17 +21,21 @@ import x10x.matrix.Matrix;
  * @author: V.Ganesh
  */
 public class Density extends Matrix {
-    public def this(n:Int) {
+    private global val noOfOccupancies:Int;
+
+    public def this(n:Int, noOfOccupancies:Int) {
         super(n);
+        this.noOfOccupancies = noOfOccupancies;
     }
 
     public def this(d:Density) {
         super(d);
+        this.noOfOccupancies = d.getNoOfOccupancies();
     }
 
-    public def compute(noOfOccupancies:Int, mos:MolecularOrbitals!) : void {
-        // unmute();
+    public global def getNoOfOccupancies() = noOfOccupancies;
 
+    public def compute(mos:MolecularOrbitals!) : void {
         // construct it from the MOs .. C*C'
         val N = mos.getRowCount();
         val dVector:Matrix! = new Matrix(noOfOccupancies, N) as Matrix!;
@@ -47,8 +51,6 @@ public class Density extends Matrix {
         val thisMat = getMatrix();
         for((i, j) in thisMat.region)
            thisMat(i, j) = res(i, j);
-
-        // mute();
     }
 }
 
