@@ -468,28 +468,21 @@ public class GMatrix extends Matrix {
             var a:Int, b:Int, c:Int, d:Int;
             var naFunc:Int, nbFunc:Int, ncFunc:Int, ndFunc:Int, twoEIndx:Int;
 
-            Console.OUT.println("Copying data..." + here);
             // TODO: better way to pass global data instead?
             // make local copies of data 
             val mol_loc = new Molecule[QMAtom]();
 
-            for(i=0; i<noOfAtoms; i++) {
-                val i_loc = i;
-                val sym  = at(mol) { mol.getAtom(i_loc).symbol };
-                val x    = at(mol) { mol.getAtom(i_loc).centre.i };
-                val y    = at(mol) { mol.getAtom(i_loc).centre.j };
-                val z    = at(mol) { mol.getAtom(i_loc).centre.k };
-
-                mol_loc.addAtom(new QMAtom(sym, Point3d(x, y, z)));
-            } // end for
+            for((i) in 0..(nAtoms-1)) {
+                val sym  = at(mol) { mol.getAtom(i).symbol };
+                val centre = at(mol) {mol.getAtom(i).centre };
+                mol_loc.addAtom(new QMAtom(sym, centre));
+            }
 
             val den_loc = new Density(density);
 
             val bfs = new BasisFunctions(mol_loc, basisName, "basis");
             val comp_loc = new ComputePlaceNewFuture(bfs, den_loc);
             at(computeInst) { computeInst(PIdx(0)++) = comp_loc; };
-            
-            Console.OUT.println("Starting computation..." + here);
 
             val F1 = future(G) { 
                        var myG:Int; 
@@ -783,8 +776,8 @@ public class GMatrix extends Matrix {
                val shellPairs = computeInst(0).shellList.getShellPairs();
 
                for(var i:Int=startShell; i<endShell; i++) {
-                  val a = shellPairs(i).first as Int;
-                  val b = shellPairs(i).second as Int;
+                  val a = shellPairs(i).first;
+                  val b = shellPairs(i).second;
 
                   val aFunc = bfs(a) as ContractedGaussian!;
                   val bFunc = bfs(b) as ContractedGaussian!;
@@ -807,7 +800,7 @@ public class GMatrix extends Matrix {
                   val radiusABSquared = aFunc.distanceSquaredFrom(bFunc);
 
                   for(var j:Int=0; j<nPairs; j++) {
-                     val c = shellPairs(j).first as Int;
+                     val c = shellPairs(j).first;
                      val cFunc = bfs(c) as ContractedGaussian!;
                      val cStrt = cFunc.getIntIndex();
                      val cAng  = cFunc.getMaximumAngularMomentum();
@@ -815,7 +808,7 @@ public class GMatrix extends Matrix {
 
                      if (aa < cc) continue;
 
-                     val d = shellPairs(j).second as Int;
+                     val d = shellPairs(j).second;
                      val dFunc = bfs(d) as ContractedGaussian!;
                      val dStrt = dFunc.getIntIndex();
                      val dAng  = dFunc.getMaximumAngularMomentum();
@@ -864,15 +857,11 @@ public class GMatrix extends Matrix {
             val mol_loc = new Molecule[QMAtom]();
             val nAtoms  = at(mol) { mol.getNumberOfAtoms() };
  
-            for(var i:Int=0; i<nAtoms; i++) {
-                val i_loc = i;
-                val sym  = at(mol) { mol.getAtom(i_loc).symbol };
-                val x    = at(mol) { mol.getAtom(i_loc).centre.i };
-                val y    = at(mol) { mol.getAtom(i_loc).centre.j };
-                val z    = at(mol) { mol.getAtom(i_loc).centre.k };
-   
-                mol_loc.addAtom(new QMAtom(sym, Point3d(x, y, z)));
-            } // end for
+            for((i) in 0..(nAtoms-1)) {
+                val sym  = at(mol) { mol.getAtom(i).symbol };
+                val centre = at(mol) {mol.getAtom(i).centre };
+                mol_loc.addAtom(new QMAtom(sym, centre));
+            }
 
             this.mol_loc = mol_loc;
 
