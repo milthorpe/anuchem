@@ -42,7 +42,7 @@ public class LocallyEssentialTree {
      * with all atoms at a given place.
      * @see FmmLeafBox.getPackedAtoms()
      */
-    public global val packedAtoms : PeriodicArray[Future[ValRail[MMAtom.PackedRepresentation]]](3)!;
+    public global val packedAtoms : PeriodicArray[ValRail[MMAtom.PackedRepresentation]](3)!;
     
     public def this(combinedUList : ValRail[Point(3)],
                 combinedVList : ValRail[ValRail[Point(3)]],
@@ -66,6 +66,6 @@ public class LocallyEssentialTree {
         this.multipoleCopies = multipoleCopies as ValRail[PeriodicArray[Future[MultipoleExpansion]](3)!];
 
         val packedAtomsRegion : Region(3) = [uListMin(0)..uListMax(0), uListMin(1)..uListMax(1), uListMin(2)..uListMax(2)];
-        this.packedAtoms = new PeriodicArray[Future[ValRail[MMAtom.PackedRepresentation]]](packedAtomsRegion);
+        this.packedAtoms = new PeriodicArray[ValRail[MMAtom.PackedRepresentation]](packedAtomsRegion);
     }
 }

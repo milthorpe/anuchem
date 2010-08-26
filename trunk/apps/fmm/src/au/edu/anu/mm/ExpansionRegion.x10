@@ -55,7 +55,8 @@ public class ExpansionRegion extends Region  {
     }
 
     public global def contains(r:Region(rank)): boolean {
-        // TODO
+        if (r instanceof ExpansionRegion && (r as ExpansionRegion).p == this.p)
+            return true;
         throw new UnsupportedOperationException("contains(Region)");
     }
 

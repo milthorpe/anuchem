@@ -162,9 +162,9 @@ public class Fmm3d {
     
     public def calculateEnergy() : Double {
         timer.start(TIMER_INDEX_TOTAL);
-        multipoleLowestLevel();
-        // direct energy is independent of all subsequent steps of FMM
+        // direct energy is independent of all other steps of FMM
         val directEnergy = future {getDirectEnergy()};
+        multipoleLowestLevel();
         combineMultipoles();
         transformToLocal();
         farFieldEnergy = getFarFieldEnergy();
@@ -320,6 +320,7 @@ public class Fmm3d {
      * be done in parallel with other steps of the algorithm.
      */
     def getDirectEnergy() : Double {
+        //Console.OUT.println("direct");
         timer.start(TIMER_INDEX_DIRECT);
 
         finish ateach (p1 in locallyEssentialTrees) {
@@ -328,10 +329,10 @@ public class Fmm3d {
             val myCombinedUList = myLET.combinedUList;
             val packedAtoms = myLET.packedAtoms;
             for ((x,y,z) in myCombinedUList) {
-                myLET.packedAtoms(x,y,z) = future {at (lowestLevelBoxes.dist(x,y,z)) {getPackedAtomsForBox(x, y, z)}};
+                myLET.packedAtoms(x,y,z) = at (lowestLevelBoxes.dist(x,y,z)) {getPackedAtomsForBox(x, y, z)};
             }
 
-            foreach ((x1,y1,z1) in lowestLevelBoxes | here) {
+            for ((x1,y1,z1) in lowestLevelBoxes | here) {
                 val box1 = lowestLevelBoxes(x1,y1,z1) as FmmLeafBox!;
                 if (box1 != null) {
                     // TODO use shared var - XTENLANG-404
@@ -352,7 +353,7 @@ public class Fmm3d {
                     val uList = box1.getUList();
                     for ((x2,y2,z2) in uList) {
                         // here we force on the packed atoms for which a future was previously issued
-                        val boxAtoms = packedAtoms(x2,y2,z2)();
+                        val boxAtoms = packedAtoms(x2,y2,z2);
                         if (boxAtoms != null) {
                             for (var i : Int = 0; i < boxAtoms.length(); i++) {
                                 val atom2Packed = boxAtoms(i);
@@ -380,7 +381,7 @@ public class Fmm3d {
      * all atoms in all well-separated boxes.
      */ 
     def getFarFieldEnergy() : Double {
-        //Console.OUT.println("getFarFieldEnergy");
+        Console.OUT.println("getFarFieldEnergy");
         timer.start(TIMER_INDEX_FARFIELD);
         finish ateach (boxIndex1 in lowestLevelBoxes) {
             val box1 = lowestLevelBoxes(boxIndex1) as FmmLeafBox!;
