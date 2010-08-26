@@ -302,9 +302,10 @@ public class Fmm3d {
                                 box1.localExp.transformAndAddToLocal(transform21, box2MultipoleExp);
                             }
                         }
-                        val box1ParentExp = box1.parent.getLocalExpansionLocalCopy(numTerms);
+                        val box1ParentExp = at (box1.parent) {box1.parent.localExp};
+                        val box1ParentExpLocal = box1ParentExp.getLocalCopy(numTerms);
                         val shift = multipoleTranslations(Point.make([here.id, thisLevel, box1.x%2, box1.y%2, box1.z%2])) as MultipoleExpansion!;
-                        box1.localExp.translateAndAddLocal(shift, box1ParentExp);
+                        box1.localExp.translateAndAddLocal(shift, box1ParentExpLocal);
                     }
                 }
             }
@@ -591,13 +592,12 @@ public class Fmm3d {
     }
 
     /**
-     * TODO this is a workaround due to lack of Array copy facility - XTENLANG-787
-     * @return a local copy at the current place of this box's multipole expansion
+     * @return a local copy at the current place of a box's multipole expansion
      */
     private global def getMultipoleExpansionLocalCopy(thisLevelBoxes : DistArray[FmmBox](3), x : Int, y : Int, z : Int) : MultipoleExpansion! {
-        val data = at (thisLevelBoxes.dist(x,y,z)) {thisLevelBoxes(x,y,z) != null? Expansion.getData(numTerms, (thisLevelBoxes(x,y,z) as FmmBox!).multipoleExp) : null};
-        if (data != null) {
-            return new MultipoleExpansion(numTerms, data);
+        val remoteMultipoleExp = at (thisLevelBoxes.dist(x,y,z)) {thisLevelBoxes(x,y,z) != null ? (thisLevelBoxes(x,y,z) as FmmBox!).multipoleExp : null};
+        if (remoteMultipoleExp != null) {
+            return remoteMultipoleExp.getLocalCopy(numTerms);
         } else {
             return null;
         }

@@ -26,10 +26,6 @@ public class LocalExpansion extends Expansion {
         super(p);
     }
 
-    public def this(p : Int, data : ValRail[Complex]) {
-        super(p, data);
-    }
-
     /**
      * Calculate the local Taylor-type expansion M_{lm} (with m >= 0) for a single point v.
      */
@@ -188,13 +184,11 @@ public class LocalExpansion extends Expansion {
         return parentExpansion;
     }
 
-    /**
-     * TODO this should not be necessary once XTENLANG-787 is resolved
-     * @return a local copy of a local expansion from another place
-     */
-    static def getLocalCopy(p : Int, source : LocalExpansion) : LocalExpansion! {
-        val data = at (source) {getData(p, source)};
-        return new LocalExpansion(p, data);
+    public global def getLocalCopy(p : Int) : LocalExpansion! {
+        val localCopy = new LocalExpansion(p);
+        val localTerms = localCopy.terms;
+        finish at (this) {terms.copyTo(localTerms);}
+        return localCopy;
     }
 }
 

@@ -90,24 +90,6 @@ public class FmmBox {
         return Point.make(level, box2.x-x, box2.y-y, box2.z-z);
     }
 
-    /**
-     * TODO this should not be necessary once XTENLANG-787 is resolved
-     * @return a local copy at the current place of this box's multipole expansion
-     */
-    public global def getMultipoleExpansionLocalCopy(p : Int) : MultipoleExpansion! {
-        val data = at (this) {Expansion.getData(p, multipoleExp)};
-        return new MultipoleExpansion(p, data);
-    }
-
-    /**
-     * TODO this should not be necessary once XTENLANG-787 is resolved
-     * @return a local copy at the current place of this box's local expansion
-     */
-    public global def getLocalExpansionLocalCopy(p : Int) : LocalExpansion! {
-        val data = at (this) {Expansion.getData(p, localExp)};
-        return new LocalExpansion(p, data);
-    }
-
     public def getVList() = this.vList;
 
     public def setVList(vList : ValRail[Point(3)]) {

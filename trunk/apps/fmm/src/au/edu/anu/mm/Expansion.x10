@@ -34,17 +34,6 @@ public class Expansion {
         this.terms = new Array[Complex](expRegion, (Point) => Complex.ZERO);
     }
 
-    public def this(p : Int, data : ValRail[Complex]) {
-        val expRegion = new ExpansionRegion(p);
-	// FIXME: DG.  Change this constructor to take an Array to copyFrom to avoid useless zeroing in new LocalRectArray.
-	    val tmp = new Array[Complex](expRegion);
-        //data.copyTo(0, tmp.raw(), 0, data.length());
-        for ((i,j) in tmp) {
-            tmp(i,j) = data(i*i + i+j);
-        }
-        this.terms = tmp;
-    }
-
     public atomic def add(e : Expansion!) {
         for ((i,j) in terms.region) {
             this.terms(i,j) = this.terms(i,j) + e.terms(i,j);
@@ -65,19 +54,5 @@ public class Expansion {
             s.add("\n");
 		}
         return s.toString();
-    }
-
-    /**
-     * TODO this should not be necessary once XTENLANG-787 is resolved
-     * @return the expansion terms, shoehorned into a ValRail
-     */
-    public static safe def getData(p : Int, source : Expansion!) : ValRail[Complex] {
-        val size = (p+1)*(p+1);
-        val data = Rail.make[Complex](size);
-        for ((i,j) in source.terms) {
-            data(i*i + i+j) = source.terms(i,j);
-        }
-        return data;
-        //return source.terms.raw();
     }
 }

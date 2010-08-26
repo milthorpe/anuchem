@@ -26,11 +26,6 @@ public class MultipoleExpansion extends Expansion {
         super(p);
     }
 
-
-    public def this(p : Int, data : ValRail[Complex]) {
-        super(p, data);
-    }
-
     /**
      * Calculate the multipole-like term O_{lm} (with m >= 0) for a point v.
      */
@@ -105,7 +100,7 @@ public class MultipoleExpansion extends Expansion {
     public def translateAndAddMultipole(shift : MultipoleExpansion!,
                                          source : MultipoleExpansion) {
         val p : Int = terms.region.max(0);
-        val localSource = MultipoleExpansion.getLocalCopy(p, source);
+        val localSource = source.getLocalCopy(p);
         // TODO this atomic should be around inner loop update.
         // however as it's "stop the world" it's more efficient to do it out here
         atomic {
@@ -140,13 +135,12 @@ public class MultipoleExpansion extends Expansion {
         return parentExpansion;
     }
 
-    /**
-     * TODO this should not be necessary once XTENLANG-787 is resolved
-     * @return a local copy of a multipole expansion from another place
-     */
-    static def getLocalCopy(p : Int, source : MultipoleExpansion) : MultipoleExpansion! {
-        val data = at (source) {getData(p, source)};
-        return new MultipoleExpansion(p, data);
+
+    public global def getLocalCopy(p : Int) : MultipoleExpansion! {
+        val localCopy = new MultipoleExpansion(p);
+        val localTerms = localCopy.terms;
+        finish at (this) {terms.copyTo(localTerms);}
+        return localCopy;
     }
 }
 
