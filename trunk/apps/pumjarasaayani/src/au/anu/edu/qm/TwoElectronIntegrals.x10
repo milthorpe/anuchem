@@ -14,6 +14,7 @@ import x10.util.ArrayList;
 
 import x10x.matrix.Matrix;
 import x10x.vector.Point3d;
+import x10x.vector.Vector3d;
 import au.edu.anu.chem.Molecule;
 
 /**
@@ -30,6 +31,8 @@ import au.edu.anu.chem.Molecule;
  * McMurchie, L. E.; Davidson, E. R. J Comput Phys, 26, 218, 1978.
  */
 public class TwoElectronIntegrals {
+    private static val SQ2PI = Math.pow((2.0/Math.PI), 0.5); 
+
     private val fmt:Rail[Double]!, zeroM:Rail[Double]!;
 
     private val rM:Array[Double](2){rect, self.at(this)};
@@ -38,6 +41,12 @@ public class TwoElectronIntegrals {
     private val pcdint:Array[Double](3){rect, self.at(this)};
 
     private val maxam:Int, maxam2:Int, maxam4:Int, maxamN:Int, maxam2M:Int, maxam2N:Int, pqdim:Int;
+
+    private val iidx  = Rail.make[Int](8);
+    private val jjdx  = Rail.make[Int](8);
+    private val kkdx  = Rail.make[Int](8);
+    private val lldx  = Rail.make[Int](8);
+    private val validIdx = Rail.make[Boolean](8);
 
     /**
      * @param maxam maximum angular momentum (determines total number of integrals)
@@ -64,14 +73,6 @@ public class TwoElectronIntegrals {
 
         // Console.OUT.println("alloc2: " + pcdint.region.size());
     }
-
-    private val sq2pi = Math.pow((2.0/Math.PI), 0.5);
-
-    private val iidx  = Rail.make[Int](8);
-    private val jjdx  = Rail.make[Int](8);
-    private val kkdx  = Rail.make[Int](8);
-    private val lldx  = Rail.make[Int](8);
-    private val validIdx = Rail.make[Boolean](8);
 
     /* Note: M_D  routines mostly taken from Alistair's code, with a few changes. 
        Uses MD recurrance relations to evaluate higher angular momentum integrals.
@@ -178,13 +179,8 @@ public class TwoElectronIntegrals {
                  // Console.OUT.println("Coeff: " + cCoeff + " " + dCoeff);
                  // Console.OUT.println("Zeta, Gcd, Uq: " + gamma2 + " " + Gcd + " " + Uq);
 
-                 val xx = q.i-p.i;
-                 val yy = q.j-p.j;
-                 val zz = q.k-p.k;
-
-                 val r = Point3d(xx, yy, zz);
-                 val radiusPQSquared:Double = xx*xx+yy*yy+zz*zz;  
-                 val Upq = Up*Uq;
+                 val r = q.vector(p);
+                 val radiusPQSquared = r.lengthSquared();
                  val T = radiusPQSquared * eta;
 
                  // Console.OUT.println("Computing FmT");
@@ -203,6 +199,7 @@ public class TwoElectronIntegrals {
                  // Console.OUT.println("Up, Uq, Upq: " + Up + " " + Uq + " " + Upq);
 
                  // compute [0]m
+                 val Upq = Up*Uq;
                  computeZeroM(angMomABCD, Upq, eta);
 
                  // Console.OUT.println("Computing [r]m");
@@ -266,11 +263,7 @@ public class TwoElectronIntegrals {
          val dCen  = d.getCenter();
          
          val dLim = ((dAng+1)*(dAng+2)/2);
-         val cLim = ((cAng+1)*(cAng+2)/2);         
-         
-         val jMatrix = jMat.getMatrix();
-         val kMatrix = kMat.getMatrix();
-         val dMatrix = dMat.getMatrix();
+         val cLim = ((cAng+1)*(cAng+2)/2);
          
          val angMomCD = cAng + dAng;
          val angMomABCD = angMomAB+angMomCD;
@@ -338,13 +331,8 @@ public class TwoElectronIntegrals {
                  // Console.OUT.println("Coeff: " + cCoeff + " " + dCoeff);
                  // Console.OUT.println("Zeta, Gcd, Uq: " + gamma2 + " " + Gcd + " " + Uq);
 
-                 val xx = q.i-p.i;
-                 val yy = q.j-p.j;
-                 val zz = q.k-p.k;
-
-                 val r = Point3d(xx, yy, zz);
-                 val radiusPQSquared:Double = xx*xx+yy*yy+zz*zz;  
-                 val Upq = Up*Uq;
+                 val r = q.vector(p);
+                 val radiusPQSquared = r.lengthSquared();  
                  val T = radiusPQSquared * eta;
 
                  // Console.OUT.println("Computing FmT");
@@ -363,6 +351,7 @@ public class TwoElectronIntegrals {
                  // Console.OUT.println("Up, Uq, Upq: " + Up + " " + Uq + " " + Upq);
 
                  // compute [0]m
+                 val Upq = Up*Uq;
                  computeZeroM(angMomABCD, Upq, eta);
 
                  // Console.OUT.println("Computing [r]m");
@@ -397,6 +386,10 @@ public class TwoElectronIntegrals {
 
         // Console.OUT.println("Filling in JK matrix");
 
+        val jMatrix = jMat.getMatrix();
+        val kMatrix = kMat.getMatrix();
+        val dMatrix = dMat.getMatrix();
+
         fillJKMatrices(dLim, cLim, bLim, aLim,
                        dStrt, cStrt, bStrt, aStrt,
                        shellList, bAng, aAng,
@@ -412,11 +405,9 @@ public class TwoElectronIntegrals {
     private def filterUniqueElements(idx:Rail[Int]!, jdx:Rail[Int]!,
                                      kdx:Rail[Int]!, ldx:Rail[Int]!,
                                      validIdx:Rail[Boolean]!) : void {
-        var i:Int, j:Int, k:Int, l:Int, m:Int, n:Int;
-
-        for(m=0; m<8; m++) {
-            i = idx(m); j = jdx(m); k = kdx(m); l = ldx(m);
-            for(n=m+1; n<8; n++) {
+        for(var m:Int=0; m<8; m++) {
+            val i = idx(m); val j = jdx(m); val k = kdx(m); val l = ldx(m);
+            for(var n:Int=m+1; n<8; n++) {
                 if (i==idx(n) && j==jdx(n) && k==kdx(n) && l==ldx(n))
                     validIdx(n) = false;
             } // end for
@@ -425,7 +416,7 @@ public class TwoElectronIntegrals {
 
     /** MD recurrance relation steps in following two subroutines */
 
-    private def mdRecurse(r:Point3d, i:Int, j:Int, k:Int, m:Int) : Double {
+    private def mdRecurse(r:Vector3d, i:Int, j:Int, k:Int, m:Int) : Double {
          var res:Double = 0.0;
          val ijk = i|j|k;
 
@@ -464,59 +455,52 @@ public class TwoElectronIntegrals {
 
     private def mdHrr(xa:Int, ya:Int, za:Int, xb:Int, yb:Int, zb:Int, xp:Int, yp:Int, zp:Int,
                       pai:Double, paj:Double, pak:Double, pbi:Double, pbj:Double, pbk:Double, zeta2:Double) : Double {
-         var res:Double = 0.0;
+        var res:Double = 0.0;
 
-	 val al = xa|ya|za;
-         val bl = xb|yb|zb;
-
-         if (al != 0) {
-           if (xa != 0 ) {
-              val xa1 = xa-1;
-              res =   mdHrr(xa1, ya, za, xb, yb, zb, xp-1, yp, zp, pai, paj, pak, pbi, pbj, pbk, zeta2)*xp
-                        + mdHrr(xa1, ya, za, xb, yb, zb, xp  , yp, zp, pai, paj, pak, pbi, pbj, pbk, zeta2)*(pai)
-                        + mdHrr(xa1, ya, za, xb, yb, zb, xp+1, yp, zp, pai, paj, pak, pbi, pbj, pbk, zeta2)/(zeta2);
-           } else if (ya != 0) {
-              val ya1 = ya-1;
-              res =   mdHrr(xa, ya1, za, xb, yb, zb, xp, yp-1, zp, pai, paj, pak, pbi, pbj, pbk, zeta2)*yp
-                        + mdHrr(xa, ya1, za, xb, yb, zb, xp, yp  , zp, pai, paj, pak, pbi, pbj, pbk, zeta2)*(paj)
-                        + mdHrr(xa, ya1, za, xb, yb, zb, xp, yp+1, zp, pai, paj, pak, pbi, pbj, pbk, zeta2)/(zeta2);
-           } else if (za != 0) {
-              val za1 = za-1;
-              res =   mdHrr(xa, ya, za1, xb, yb, zb, xp, yp, zp-1, pai, paj, pak, pbi, pbj, pbk, zeta2)*zp
-                        + mdHrr(xa, ya, za1, xb, yb, zb, xp, yp, zp  , pai, paj, pak, pbi, pbj, pbk, zeta2)*(pak)
-                        + mdHrr(xa, ya, za1, xb, yb, zb, xp, yp, zp+1, pai, paj, pak, pbi, pbj, pbk, zeta2)/(zeta2);
-           } // end if
-         } else if (bl != 0) {
-           if (xb != 0 ) {
-             val xb1 = xb-1;
-             res =   mdHrr(xa, ya, za, xb1, yb, zb, xp-1, yp, zp, pai, paj, pak, pbi, pbj, pbk, zeta2)*xp
-                     + mdHrr(xa, ya, za, xb1, yb, zb, xp  , yp, zp, pai, paj, pak, pbi, pbj, pbk, zeta2)*(pbi)
-                     + mdHrr(xa, ya, za, xb1, yb, zb, xp+1, yp, zp, pai, paj, pak, pbi, pbj, pbk, zeta2)/(zeta2);
-           } else if (yb != 0) {
-             val yb1 = yb-1;
-             res =   mdHrr(xa, ya, za, xb, yb1, zb, xp, yp-1, zp, pai, paj, pak, pbi, pbj, pbk, zeta2)*yp
-                     + mdHrr(xa, ya, za, xb, yb1, zb, xp, yp  , zp, pai, paj, pak, pbi, pbj, pbk, zeta2)*(pbj)
-                     + mdHrr(xa, ya, za, xb, yb1, zb, xp, yp+1, zp, pai, paj, pak, pbi, pbj, pbk, zeta2)/(zeta2);
-           } else if (zb != 0) {
-             val zb1 = zb-1;
-             res =   mdHrr(xa, ya, za, xb, yb, zb1, xp, yp, zp-1, pai, paj, pak, pbi, pbj, pbk, zeta2)*zp
-                     + mdHrr(xa, ya, za, xb, yb, zb1, xp, yp, zp  , pai, paj, pak, pbi, pbj, pbk, zeta2)*(pbk)
-                     + mdHrr(xa, ya, za, xb, yb, zb1, xp, yp, zp+1, pai, paj, pak, pbi, pbj, pbk, zeta2)/(zeta2);
-           } // end if
-         } else if ( xp < 0 || yp < 0 || zp < 0) {
-           res = 0.0; 
-         } else {
-           val ptot = xp+yp+zp;
-           val idx  = xp*(2*(ptot)-xp+3)/2+yp;
-           res  = npint(ptot, idx);
-         } // end if
+        if (xa != 0 ) {
+            val xa1 = xa-1;
+            res = mdHrr(xa1, ya, za, xb, yb, zb, xp-1, yp, zp, pai, paj, pak, pbi, pbj, pbk, zeta2)*xp
+                + mdHrr(xa1, ya, za, xb, yb, zb, xp  , yp, zp, pai, paj, pak, pbi, pbj, pbk, zeta2)*(pai)
+                + mdHrr(xa1, ya, za, xb, yb, zb, xp+1, yp, zp, pai, paj, pak, pbi, pbj, pbk, zeta2)/(zeta2);
+        } else if (ya != 0) {
+            val ya1 = ya-1;
+            res = mdHrr(xa, ya1, za, xb, yb, zb, xp, yp-1, zp, pai, paj, pak, pbi, pbj, pbk, zeta2)*yp
+                + mdHrr(xa, ya1, za, xb, yb, zb, xp, yp  , zp, pai, paj, pak, pbi, pbj, pbk, zeta2)*(paj)
+                + mdHrr(xa, ya1, za, xb, yb, zb, xp, yp+1, zp, pai, paj, pak, pbi, pbj, pbk, zeta2)/(zeta2);
+        } else if (za != 0) {
+            val za1 = za-1;
+            res = mdHrr(xa, ya, za1, xb, yb, zb, xp, yp, zp-1, pai, paj, pak, pbi, pbj, pbk, zeta2)*zp
+                + mdHrr(xa, ya, za1, xb, yb, zb, xp, yp, zp  , pai, paj, pak, pbi, pbj, pbk, zeta2)*(pak)
+                + mdHrr(xa, ya, za1, xb, yb, zb, xp, yp, zp+1, pai, paj, pak, pbi, pbj, pbk, zeta2)/(zeta2);
+        } else if (xb != 0 ) {
+            val xb1 = xb-1;
+            res = mdHrr(xa, ya, za, xb1, yb, zb, xp-1, yp, zp, pai, paj, pak, pbi, pbj, pbk, zeta2)*xp
+                + mdHrr(xa, ya, za, xb1, yb, zb, xp  , yp, zp, pai, paj, pak, pbi, pbj, pbk, zeta2)*(pbi)
+                + mdHrr(xa, ya, za, xb1, yb, zb, xp+1, yp, zp, pai, paj, pak, pbi, pbj, pbk, zeta2)/(zeta2);
+        } else if (yb != 0) {
+            val yb1 = yb-1;
+            res = mdHrr(xa, ya, za, xb, yb1, zb, xp, yp-1, zp, pai, paj, pak, pbi, pbj, pbk, zeta2)*yp
+                + mdHrr(xa, ya, za, xb, yb1, zb, xp, yp  , zp, pai, paj, pak, pbi, pbj, pbk, zeta2)*(pbj)
+                + mdHrr(xa, ya, za, xb, yb1, zb, xp, yp+1, zp, pai, paj, pak, pbi, pbj, pbk, zeta2)/(zeta2);
+        } else if (zb != 0) {
+            val zb1 = zb-1;
+            res = mdHrr(xa, ya, za, xb, yb, zb1, xp, yp, zp-1, pai, paj, pak, pbi, pbj, pbk, zeta2)*zp
+                + mdHrr(xa, ya, za, xb, yb, zb1, xp, yp, zp  , pai, paj, pak, pbi, pbj, pbk, zeta2)*(pbk)
+                + mdHrr(xa, ya, za, xb, yb, zb1, xp, yp, zp+1, pai, paj, pak, pbi, pbj, pbk, zeta2)/(zeta2);
+        } else if ( xp < 0 || yp < 0 || zp < 0) {
+            res = 0.0; 
+        } else {
+            val ptot = xp+yp+zp;
+            val idx  = xp*(2*(ptot)-xp+3)/2+yp;
+            res  = npint(ptot, idx);
+        } // end if
 
          return res;
     }
 
     private def computeGmt(angMomABCD:Int) {
          for(var i:Int=0; i<=angMomABCD; i++) {
-             fmt(i) *= sq2pi;
+             fmt(i) *= SQ2PI;
              // Console.OUT.println(fmt(i));
          }
     }
@@ -529,13 +513,11 @@ public class TwoElectronIntegrals {
          }
     }
 
-    private def computeRm(angMomABCD:Int, shellList:ShellList!, r:Point3d) {
-         var i:Int, j:Int;
-
-         for(i=0; i<=angMomABCD; i++) {
+    private def computeRm(angMomABCD:Int, shellList:ShellList!, r:Vector3d) {
+         for(var i:Int=0; i<=angMomABCD; i++) {
              val shell = shellList.getPowers(i);
              val iLim  = ((i+1)*(i+2)/2);
-             for(j=0; j<iLim; j++) {
+             for(var j:Int=0; j<iLim; j++) {
                  val powers = shell(j);
                  val lp = powers.l;
                  val mp = powers.m;
@@ -978,7 +960,7 @@ public class TwoElectronIntegrals {
         return res;
     }
 
-    private val sqrt2PI:Double = Math.sqrt(2.0) * Math.pow(Math.PI, 1.25); 
+    private static val SQRT2PI = Math.sqrt(2.0) * Math.pow(Math.PI, 1.25);
 
     /**
      * VRR (Vertical Recurrance Relation)
@@ -1193,9 +1175,9 @@ public class TwoElectronIntegrals {
         } // end if
 
         val rab2 = a.distanceSquared(b);
-        val Kab  = sqrt2PI / zeta * Math.exp(-aAlpha*bAlpha / zeta*rab2);
+        val Kab  = SQRT2PI / zeta * Math.exp(-aAlpha*bAlpha / zeta*rab2);
         val rcd2 = c.distanceSquared(d);
-        val Kcd  = sqrt2PI / eta * Math.exp(-cAlpha*dAlpha / eta*rcd2);
+        val Kcd  = SQRT2PI / eta * Math.exp(-cAlpha*dAlpha / eta*rcd2);
         val rpq2 = p.distanceSquared(q);
         val T    = zeta*eta / zetaPlusEta*rpq2;
 
@@ -1204,59 +1186,8 @@ public class TwoElectronIntegrals {
         return res;
     }
 
-   /**
-     * Construct B array.
-     *
-     * <i> THO eq. 2.22 </i>
-     */
-    private def constructBArray(l1:Int, l2:Int, l3:Int, l4:Int,
-                  p:Double, a:Double, b:Double, q:Double, c:Double, d:Double,
-                  g1:Double, g2:Double, delta:Double) : Rail[Double]! {
-        val iMax = l1+l2+l3+l4+1;  // hold all the values (max angular momentum)
-        val bArr = Rail.make[Double](iMax);
-
-        // TODO: x10 parallel
-        for(var i1:Int=0; i1<(l1+l2+1); i1++) {
-            for(var r1:Int=0; r1<(i1/2+1); r1++) {
-                for(var i2:Int=0; i2<(l3+l4+1); i2++) {
-                    for(var r2:Int=0; r2<(i2/2+1); r2++) {
-                        for(var u:Int=0; u<((i1+i2)/2-r1-r2+1); u++) {
-                            val index = i1 + i2 - 2*(r1+r2) - u;
-                            bArr(index) += (functionB(i1, l1, l2, p, a, b, r1, g1)
-                                            * MathUtil.minusOnePow(i2)
-                                            * functionB(i2, l3, l4, q, c, d, r2, g2)
-                                            * MathUtil.minusOnePow(u)
-                                            * MathUtil.factorialRatioSquared(i1+i2-2*(r1+r2), u)
-                                            * Math.pow(q-p, index-u)
-                                            / Math.pow(delta, index));
-                        } // end u loop
-                    } // end r2 loop
-                } // end i2 loop
-            } // end r1 loop
-        } // end i1 loop
-
-        return bArr;
-    }
-
-    /**
-     * the function B
-     */
-    private static def functionB(i:Int, l1:Int, l2:Int, p:Double, a:Double,
-                          b:Double, r:Int, g:Double) : Double {
-        return (MathUtil.binomialPrefactor(i, l1, l2, p-a, p-b)
-                * functionB0(i, r, g));
-    }
-
-    /**
-     * the function B0
-     */
-    private static def functionB0(i:Int, r:Int, g:Double) : Double {
-        return (MathUtil.factorialRatioSquared(i, r)
-                * Math.pow(4*g, r-i));
-    }
-
     /** Product of two gaussians */
-    public static def gaussianProductCenter(alpha1:Double, a:Point3d,  
+    private static def gaussianProductCenter(alpha1:Double, a:Point3d,  
                                     alpha2:Double, b:Point3d) : Point3d {
         val gamma:Double = alpha1 + alpha2;
         val center:Point3d =  Point3d(

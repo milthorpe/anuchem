@@ -211,12 +211,14 @@ public class Fmm3d {
         timer.start(TIMER_INDEX_MULTIPOLE);
         finish ateach (boxIndex in lowestLevelBoxes) {
             val leafBox = lowestLevelBoxes(boxIndex) as FmmLeafBox!;
-            val boxLocation = leafBox.getCentre(size);
-            for ((i) in 0..leafBox.atoms.length()-1) {
-                val atom = leafBox.atoms(i);
-                val atomLocation = leafBox.getCentre(size).vector(atom.centre);
-                val atomExpansion = MultipoleExpansion.getOlm(atom.charge, atomLocation, numTerms);
-                leafBox.multipoleExp.add(atomExpansion);
+            if (leafBox != null) {
+                val boxLocation = leafBox.getCentre(size);
+                for ((i) in 0..leafBox.atoms.length()-1) {
+                    val atom = leafBox.atoms(i);
+                    val atomLocation = leafBox.getCentre(size).vector(atom.centre);
+                    val atomExpansion = MultipoleExpansion.getOlm(atom.charge, atomLocation, numTerms);
+                    leafBox.multipoleExp.add(atomExpansion);
+                }
             }
         }
         timer.stop(TIMER_INDEX_MULTIPOLE);
