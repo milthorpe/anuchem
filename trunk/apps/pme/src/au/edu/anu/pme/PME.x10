@@ -110,12 +110,6 @@ public class PME {
      */
     private global val packedAtomsCache : DistArray[HashMap[Point(3), ValRail[MMAtom.PackedRepresentation]]](1);
 
-    // TODO should be shared local to calculateEnergy() - XTENLANG-404
-    private var directEnergy : Double = 0.0;
-    private var selfEnergy: Double = 0.0;
-    private var correctionEnergy : Double = 0.0; // TODO masklist
-    private var reciprocalEnergy : Double = 0.0;
-
     /**
      * Creates a new particle mesh Ewald method.
      * @param edges the edge vectors of the unit cell
@@ -190,8 +184,8 @@ public class PME {
         timer.start(TIMER_INDEX_TOTAL);
 
         divideAtomsIntoSubCells();
-        directEnergy = getDirectEnergy();
-        selfEnergy = getSelfEnergy();
+        val directEnergy = getDirectEnergy();
+        val selfEnergy = getSelfEnergy();
         gridCharges();
 
         timer.start(TIMER_INDEX_INVFFT);
@@ -202,16 +196,17 @@ public class PME {
 
         timer.start(TIMER_INDEX_THETARECCONVQ);
         // create F^-1(thetaRecConvQ)
-        val thetaRecConvQ = DistArray.make[Complex](gridDist, (p : Point) => BdotC(p) * Qinv(p));
+        val thetaRecConvQ = DistArray.make[Complex](gridDist, (p : Point(3)) => BdotC(p) * Qinv(p));
 
         // and do inverse FFT
         new Distributed3dFft(gridSize(0), thetaRecConvQ, thetaRecConvQ, temp).doFFT3d(true);
         timer.stop(TIMER_INDEX_THETARECCONVQ);
-        reciprocalEnergy = getReciprocalEnergy(thetaRecConvQ);
+        val reciprocalEnergy = getReciprocalEnergy(thetaRecConvQ);
 
         Console.OUT.println("directEnergy = " + directEnergy);
         Console.OUT.println("selfEnergy = " + selfEnergy);
         //Console.OUT.println("correctionEnergy = " + correctionEnergy);
+        val correctionEnergy = 0.0;
         Console.OUT.println("reciprocalEnergy = " + reciprocalEnergy);
         val totalEnergy = directEnergy + reciprocalEnergy + (correctionEnergy + selfEnergy);
 
@@ -256,63 +251,65 @@ public class PME {
 
     public def getDirectEnergy() : Double {
         timer.start(TIMER_INDEX_DIRECT);
-        finish ateach (p in subCells.dist) {
-            var myDirectEnergy : Double = 0.0;
-            val thisCell = subCells(p);
-            for (var i : Int = p(0)-1; i<=p(0); i++) {
-                var n1 : Int = 0;
-                if (i < 0) {
-                    n1 = -1;
-                } // can't have (i > numSubCells+1)
-                for (var j : Int = p(1)-1; j<=p(1)+1; j++) {
-                    var n2 : Int = 0;
-                    if (j < 0) {
-                        n2 = -1;
-                    } else if (j > numSubCells-1) {
-                        n2 = 1;
-                    }
-                    for (var k : Int = p(2)-1; k<=p(2)+1; k++) {
-                        var n3 : Int = 0;
-                        if (k < 0) {
-                            n3 = -1;
-                        } else if (k > numSubCells-1) {
-                            n3 = 1;
+        val directEnergy = finish(SumReducer()) {
+            ateach (p in subCells.dist) {
+                var myDirectEnergy : Double = 0.0;
+                val thisCell = subCells(p);
+                for (var i : Int = p(0)-1; i<=p(0); i++) {
+                    var n1 : Int = 0;
+                    if (i < 0) {
+                        n1 = -1;
+                    } // can't have (i > numSubCells+1)
+                    for (var j : Int = p(1)-1; j<=p(1)+1; j++) {
+                        var n2 : Int = 0;
+                        if (j < 0) {
+                            n2 = -1;
+                        } else if (j > numSubCells-1) {
+                            n2 = 1;
                         }
-                        // interact with "left half" of other boxes i.e. only boxes with i<=p(0)
-                        if (i < p(0) || (i == p(0) && j < p(1)) || (i == p(0) && j == p(1) && k < p(2))) {
-                            val translation = imageTranslations(here.id,n1,n2,n3);
-                            val otherSubCellLocation = subCells.periodicDist(i,j,k);
-                            if (otherSubCellLocation == here) {
-                                val otherCell = subCells(i,j,k);
-                                for ((otherAtom) in 0..otherCell.length()-1) {
-                                    val imageLoc = otherCell(otherAtom).centre + translation;
-                                    for ((thisAtom) in 0..thisCell.length()-1) {
-                                        val r = thisCell(thisAtom).centre.distance(imageLoc);
-                                        if (r < cutoff) {
-                                            val chargeProduct = thisCell(thisAtom).charge * otherCell(otherAtom).charge;
-                                            val imageDirectComponent = chargeProduct * Math.erfc(beta * r) / r;
-                                            myDirectEnergy += imageDirectComponent;
+                        for (var k : Int = p(2)-1; k<=p(2)+1; k++) {
+                            var n3 : Int = 0;
+                            if (k < 0) {
+                                n3 = -1;
+                            } else if (k > numSubCells-1) {
+                                n3 = 1;
+                            }
+                            // interact with "left half" of other boxes i.e. only boxes with i<=p(0)
+                            if (i < p(0) || (i == p(0) && j < p(1)) || (i == p(0) && j == p(1) && k < p(2))) {
+                                val translation = imageTranslations(here.id,n1,n2,n3);
+                                val otherSubCellLocation = subCells.periodicDist(i,j,k);
+                                if (otherSubCellLocation == here) {
+                                    val otherCell = subCells(i,j,k);
+                                    for ((otherAtom) in 0..otherCell.length()-1) {
+                                        val imageLoc = otherCell(otherAtom).centre + translation;
+                                        for ((thisAtom) in 0..thisCell.length()-1) {
+                                            val r = thisCell(thisAtom).centre.distance(imageLoc);
+                                            if (r < cutoff) {
+                                                val chargeProduct = thisCell(thisAtom).charge * otherCell(otherAtom).charge;
+                                                val imageDirectComponent = chargeProduct * Math.erfc(beta * r) / r;
+                                                myDirectEnergy += imageDirectComponent;
+                                            }
                                         }
                                     }
-                                }
-                            } else {
-                                // other subcell is remote; need to transfer packed atoms
-                                var otherCellPacked : ValRail[MMAtom.PackedRepresentation] = null;
-                                // cache remote atoms
-                                val otherCellIndex = Point.make(i,j,k);
-                                atomic {otherCellPacked = packedAtomsCache(here.id).getOrElse(otherCellIndex, null);}
-                                if (otherCellPacked == null) {
-                                    otherCellPacked = at (subCells.periodicDist(otherCellIndex)) {getPackedAtomsForSubCell(otherCellIndex)};
-                                    atomic {packedAtomsCache(here.id).put(otherCellIndex, otherCellPacked);}
-                                }
-                                for ((otherAtom) in 0..otherCellPacked.length()-1) {
-                                    val imageLoc = otherCellPacked(otherAtom).centre + translation;
-                                    for ((thisAtom) in 0..thisCell.length()-1) {
-                                        val r = thisCell(thisAtom).centre.distance(imageLoc);
-                                        if (r < cutoff) {
-                                            val chargeProduct = thisCell(thisAtom).charge * otherCellPacked(otherAtom).charge;
-                                            val imageDirectComponent = chargeProduct * Math.erfc(beta * r) / r;
-                                            myDirectEnergy += imageDirectComponent;
+                                } else {
+                                    // other subcell is remote; need to transfer packed atoms
+                                    var otherCellPacked : ValRail[MMAtom.PackedRepresentation] = null;
+                                    // cache remote atoms
+                                    val otherCellIndex = Point.make(i,j,k);
+                                    atomic {otherCellPacked = packedAtomsCache(here.id).getOrElse(otherCellIndex, null);}
+                                    if (otherCellPacked == null) {
+                                        otherCellPacked = at (subCells.periodicDist(otherCellIndex)) {getPackedAtomsForSubCell(otherCellIndex)};
+                                        atomic {packedAtomsCache(here.id).put(otherCellIndex, otherCellPacked);}
+                                    }
+                                    for ((otherAtom) in 0..otherCellPacked.length()-1) {
+                                        val imageLoc = otherCellPacked(otherAtom).centre + translation;
+                                        for ((thisAtom) in 0..thisCell.length()-1) {
+                                            val r = thisCell(thisAtom).centre.distance(imageLoc);
+                                            if (r < cutoff) {
+                                                val chargeProduct = thisCell(thisAtom).charge * otherCellPacked(otherAtom).charge;
+                                                val imageDirectComponent = chargeProduct * Math.erfc(beta * r) / r;
+                                                myDirectEnergy += imageDirectComponent;
+                                            }
                                         }
                                     }
                                 }
@@ -320,28 +317,23 @@ public class PME {
                         }
                     }
                 }
-            }
 
-            // atoms in same cell
-            for ((i) in 0..thisCell.length()-1) {
-                for ((j) in 0..i-1) {
-                    val rjri = thisCell(j).centre - thisCell(i).centre;
-                    val r = rjri.length();
-                    if (r < cutoff) {
-                        val directComponent = thisCell(i).charge * thisCell(j).charge * Math.erfc(beta * r) / r;
-                        myDirectEnergy += directComponent;
+                // atoms in same cell
+                for ((i) in 0..thisCell.length()-1) {
+                    for ((j) in 0..i-1) {
+                        val rjri = thisCell(j).centre - thisCell(i).centre;
+                        val r = rjri.length();
+                        if (r < cutoff) {
+                            val directComponent = thisCell(i).charge * thisCell(j).charge * Math.erfc(beta * r) / r;
+                            myDirectEnergy += directComponent;
+                        }
                     }
                 }
-            }
 
-            // TODO this is slow because of lack of optimized atomic - XTENLANG-321
-            val myDirectEnergyFinal = myDirectEnergy;
-            at(this) {
-               atomic directEnergy += myDirectEnergyFinal;
+                offer myDirectEnergy;
             }
-        }
+        };
         
-        directEnergy = directEnergy;
         timer.stop(TIMER_INDEX_DIRECT);
         return directEnergy;
     }
@@ -361,20 +353,18 @@ public class PME {
      */
     public def getSelfEnergy() : Double {
         timer.start(TIMER_INDEX_SELF);
-        finish ateach (p in subCells.dist) {
-            val thisCell = subCells(p);
-            var mySelfEnergy : Double = 0.0;
-            for ((thisAtom) in 0..thisCell.length()-1) {
-                mySelfEnergy += thisCell(thisAtom).charge * thisCell(thisAtom).charge;
+        val selfEnergy = finish(SumReducer()) {
+            ateach (p in subCells.dist) {
+                val thisCell = subCells(p);
+                var mySelfEnergy : Double = 0.0;
+                for ((thisAtom) in 0..thisCell.length()-1) {
+                    mySelfEnergy += thisCell(thisAtom).charge * thisCell(thisAtom).charge;
+                }
+                offer mySelfEnergy;
             }
-            val mySelfEnergyFinal = mySelfEnergy;
-            at(this) {
-                atomic selfEnergy += mySelfEnergyFinal;
-            }
-        }
-        selfEnergy = -beta / Math.sqrt(Math.PI) * selfEnergy;
+        };
         timer.stop(TIMER_INDEX_SELF);
-        return selfEnergy;
+        return selfEnergy * -beta / Math.sqrt(Math.PI);
     }
 
     /** 
@@ -438,19 +428,20 @@ public class PME {
      */
     private def getReciprocalEnergy(thetaRecConvQ : DistArray[Complex]{self.dist==gridDist}) {
         timer.start(TIMER_INDEX_RECIPROCAL);
-        finish for (place1 in gridDist.places()) async(place1) {
-            var myReciprocalEnergy : Double = 0.0;
-            // TODO single-place parallel - requires efficient atomic XTENLANG-321
-            for ((i,j,k) in gridDist | here) {
-                val gridPointContribution = Q(i,j,k) * thetaRecConvQ(i,j,k);
-                myReciprocalEnergy = myReciprocalEnergy + gridPointContribution.re;
+
+        val reciprocalEnergy = finish(SumReducer()) {
+            for (place1 in gridDist.places()) async(place1) {
+                var myReciprocalEnergy : Double = 0.0;
+                for (p in gridDist | here) {
+                    val gridPointContribution = Q(p) * thetaRecConvQ(p);
+                    myReciprocalEnergy += gridPointContribution.re;
+                }
+                offer myReciprocalEnergy;
             }
-            myReciprocalEnergy = myReciprocalEnergy / 2.0;
-            val myReciprocalEnergyFinal = myReciprocalEnergy;
-            at (this) {atomic{reciprocalEnergy += myReciprocalEnergyFinal;}};
-        }
+        };
+
         timer.stop(TIMER_INDEX_RECIPROCAL);
-        return reciprocalEnergy;
+        return reciprocalEnergy / 2.0;
     }
 
     /**
@@ -569,5 +560,10 @@ public class PME {
      */
     private global safe def getVolume() {
         return edges(0).cross(edges(1)).dot(edges(2));
+    }
+
+    static struct SumReducer implements Reducible[Double] {
+        public global safe def zero() = 0.0;
+        public global safe def apply(a:Double, b:Double) = (a + b);
     }
 }
