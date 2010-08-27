@@ -101,14 +101,11 @@ public class PeriodicFmm3d extends Fmm3d {
     
     public def calculateEnergy() : Double {
         timer.start(TIMER_INDEX_TOTAL);
-        // direct energy is independent of all other steps of FMM
-        val directEnergy = getDirectEnergy();
         multipoleLowestLevel();
         combineMultipoles();
         combineMacroscopicExpansions();
         transformToLocal();
-        farFieldEnergy = getFarFieldEnergy();
-        val totalEnergy = directEnergy + farFieldEnergy;
+        val totalEnergy = getDirectEnergy() + getFarFieldEnergy();
         timer.stop(TIMER_INDEX_TOTAL);
         return totalEnergy;
     }
@@ -438,58 +435,59 @@ public class PeriodicFmm3d extends Fmm3d {
         //Console.OUT.println("direct");
         timer.start(TIMER_INDEX_DIRECT);
 
-        finish ateach (p1 in locallyEssentialTrees) {
-            // start the prefetch of all atoms required for direct calculations at each place
-            val myLET = locallyEssentialTrees(p1) as LocallyEssentialTree!;
-            val myCombinedUList = myLET.combinedUList;
-            val packedAtoms = myLET.packedAtoms;
-            for ((x,y,z) in myCombinedUList) {
-                myLET.packedAtoms(x,y,z) = at (lowestLevelBoxes.periodicDist(x,y,z)) {getPackedAtomsForBox(x, y, z)};
-            }
+        val directEnergy = finish (SumReducer()) {
+            ateach (p1 in locallyEssentialTrees) {
+                // prefetch all atoms required for direct calculations at each place
+                val myLET = locallyEssentialTrees(p1) as LocallyEssentialTree!;
+                val myCombinedUList = myLET.combinedUList;
+                val packedAtoms = myLET.packedAtoms;
+                finish foreach ((x,y,z) in myCombinedUList) {
+                    myLET.packedAtoms(x,y,z) = at (lowestLevelBoxes.periodicDist(x,y,z)) {getPackedAtomsForBox(x, y, z)};
+                }
 
-            foreach ((x1,y1,z1) in lowestLevelBoxes | here) {
-                val box1 = lowestLevelBoxes(x1,y1,z1) as FmmLeafBox!;
-                if (box1 != null) {
-                    // TODO use shared var - XTENLANG-404
-                    var thisBoxEnergy : Double = 0.0;
-                    val length = box1.atoms.length();
-                    for ((atomIndex1) in 0..length-1) {
-                        val atom1 = box1.atoms(atomIndex1);
+                for ((x1,y1,z1) in lowestLevelBoxes | here) {
+                    val box1 = lowestLevelBoxes(x1,y1,z1) as FmmLeafBox!;
+                    if (box1 != null) {
+                        // TODO use shared var - XTENLANG-404
+                        var thisBoxEnergy : Double = 0.0;
+                        val length = box1.atoms.length();
+                        for ((atomIndex1) in 0..length-1) {
+                            val atom1 = box1.atoms(atomIndex1);
 
-                        // direct calculation with all atoms in same box
-                        for ((sameBoxAtomIndex) in 0..atomIndex1-1) {
-                            val sameBoxAtom = box1.atoms(sameBoxAtomIndex);
-                            val pairEnergy = atom1.charge * sameBoxAtom.charge / atom1.centre.distance(sameBoxAtom.centre);
-                            thisBoxEnergy += pairEnergy;
+                            // direct calculation with all atoms in same box
+                            for ((sameBoxAtomIndex) in 0..atomIndex1-1) {
+                                val sameBoxAtom = box1.atoms(sameBoxAtomIndex);
+                                val pairEnergy = atom1.charge * sameBoxAtom.charge / atom1.centre.distance(sameBoxAtom.centre);
+                                thisBoxEnergy += pairEnergy;
+                            }
                         }
-                    }
 
-                    // direct calculation with all atoms in non-well-separated boxes
-                    val uList = box1.getUList();
-                    for ((x2,y2,z2) in uList) {
-                        // here we force on the packed atoms for which a future was previously issued
-                        val boxAtoms = packedAtoms(x2,y2,z2);
-                        if (boxAtoms != null) {
-                            // is box from a neighbouring image?
-                            val translation = getTranslation(x2, y2, z2);
-                            for (var i : Int = 0; i < boxAtoms.length(); i++) {
-                                val atom2Packed = boxAtoms(i);
-                                val imageCentre = atom2Packed.centre + translation;
-                                for ((atomIndex1) in 0..length-1) {
-                                    val atom1 = box1.atoms(atomIndex1);
-                                    if (atom1.centre != imageCentre) {
-                                    // necessary to check to avoid interactions between fictious charges
-                                        thisBoxEnergy += atom1.charge * atom2Packed.charge / atom1.centre.distance(imageCentre);
+                        // direct calculation with all atoms in non-well-separated boxes
+                        val uList = box1.getUList();
+                        for ((x2,y2,z2) in uList) {
+                            // here we force on the packed atoms for which a future was previously issued
+                            val boxAtoms = packedAtoms(x2,y2,z2);
+                            if (boxAtoms != null) {
+                                // is box from a neighbouring image?
+                                val translation = getTranslation(x2, y2, z2);
+                                for (var i : Int = 0; i < boxAtoms.length(); i++) {
+                                    val atom2Packed = boxAtoms(i);
+                                    val imageCentre = atom2Packed.centre + translation;
+                                    for ((atomIndex1) in 0..length-1) {
+                                        val atom1 = box1.atoms(atomIndex1);
+                                        if (atom1.centre != imageCentre) {
+                                        // necessary to check to avoid interactions between fictious charges
+                                            thisBoxEnergy += atom1.charge * atom2Packed.charge / atom1.centre.distance(imageCentre);
+                                        }
                                     }
                                 }
                             }
                         }
+                        offer thisBoxEnergy;
                     }
-                    val thisBoxEnergyFinal = thisBoxEnergy;
-                    async (this) {atomic {directEnergy += thisBoxEnergyFinal;}}
                 }
             }
-        }
+        };
         timer.stop(TIMER_INDEX_DIRECT);
 
         return directEnergy;
@@ -655,22 +653,23 @@ public class PeriodicFmm3d extends Fmm3d {
     def getFarFieldEnergy() : Double {
         //Console.OUT.println("getFarFieldEnergy");
         timer.start(TIMER_INDEX_FARFIELD);
-        finish ateach (boxIndex1 in lowestLevelBoxes) {
-            val box1 = lowestLevelBoxes(boxIndex1) as FmmLeafBox!;
-            if (box1 != null) {
-                // TODO use shared var - XTENLANG-404
-                var thisBoxEnergy : Double = 0.0;
-                val length = box1.atoms.length();
-                for ((atomIndex1) in 0..length-1) {
-                    val atom1 = box1.atoms(atomIndex1);
-                    val box1Centre = atom1.centre.vector(box1.getCentre(size));
-                    val farFieldEnergy = box1.localExp.getPotential(atom1.charge, box1Centre);
-                    thisBoxEnergy += farFieldEnergy;
+        val farFieldEnergy = finish(SumReducer()) {
+            ateach (boxIndex1 in lowestLevelBoxes) {
+                val box1 = lowestLevelBoxes(boxIndex1) as FmmLeafBox!;
+                if (box1 != null) {
+                    // TODO use shared var - XTENLANG-404
+                    var thisBoxEnergy : Double = 0.0;
+                    val length = box1.atoms.length();
+                    for ((atomIndex1) in 0..length-1) {
+                        val atom1 = box1.atoms(atomIndex1);
+                        val box1Centre = atom1.centre.vector(box1.getCentre(size));
+                        val farFieldEnergy = box1.localExp.getPotential(atom1.charge, box1Centre);
+                        thisBoxEnergy += farFieldEnergy;
+                    }
+                    offer thisBoxEnergy;
                 }
-                val thisBoxEnergyFinal = thisBoxEnergy;
-                async (this) {atomic {farFieldEnergy += thisBoxEnergyFinal;}}
             }
-        }
+        };
         timer.stop(TIMER_INDEX_FARFIELD);
 
         return farFieldEnergy / 2.0;

@@ -103,10 +103,6 @@ public class Fmm3d {
      */
     protected global val locallyEssentialTrees : DistArray[LocallyEssentialTree](1);
 
-    // TODO use shared local variable within getEnergy() - XTENLANG-404
-    protected var directEnergy : Double = 0.0;
-    protected var farFieldEnergy : Double = 0.0;
-
     /**
      * Initialises a fast multipole method electrostatics calculation
      * for the given system of atoms.
@@ -162,13 +158,10 @@ public class Fmm3d {
     
     public def calculateEnergy() : Double {
         timer.start(TIMER_INDEX_TOTAL);
-        // direct energy is independent of all other steps of FMM
-        val directEnergy = future {getDirectEnergy()};
         multipoleLowestLevel();
         combineMultipoles();
         transformToLocal();
-        farFieldEnergy = getFarFieldEnergy();
-        val totalEnergy = directEnergy() + farFieldEnergy;
+        val totalEnergy = getDirectEnergy() + getFarFieldEnergy();
         timer.stop(TIMER_INDEX_TOTAL);
         return totalEnergy;
     }
@@ -323,52 +316,52 @@ public class Fmm3d {
         //Console.OUT.println("direct");
         timer.start(TIMER_INDEX_DIRECT);
 
-        finish ateach (p1 in locallyEssentialTrees) {
-            // start the prefetch of all atoms required for direct calculations at each place
-            val myLET = locallyEssentialTrees(p1) as LocallyEssentialTree!;
-            val myCombinedUList = myLET.combinedUList;
-            val packedAtoms = myLET.packedAtoms;
-            finish foreach ((x,y,z) in myCombinedUList) {
-                myLET.packedAtoms(x,y,z) = at (lowestLevelBoxes.dist(x,y,z)) {getPackedAtomsForBox(x, y, z)};
-            }
+        val directEnergy = finish (SumReducer()) {
+            ateach (p1 in locallyEssentialTrees) {
+                // prefetch all atoms required for direct calculations at each place
+                val myLET = locallyEssentialTrees(p1) as LocallyEssentialTree!;
+                val myCombinedUList = myLET.combinedUList;
+                val packedAtoms = myLET.packedAtoms;
+                finish foreach ((x,y,z) in myCombinedUList) {
+                    myLET.packedAtoms(x,y,z) = at (lowestLevelBoxes.dist(x,y,z)) {getPackedAtomsForBox(x, y, z)};
+                }
 
-            for ((x1,y1,z1) in lowestLevelBoxes | here) {
-                val box1 = lowestLevelBoxes(x1,y1,z1) as FmmLeafBox!;
-                if (box1 != null) {
-                    // TODO use shared var - XTENLANG-404
-                    var thisBoxEnergy : Double = 0.0;
-                    val length = box1.atoms.length();
-                    for ((atomIndex1) in 0..length-1) {
-                        val atom1 = box1.atoms(atomIndex1);
+                for ((x1,y1,z1) in lowestLevelBoxes | here) {
+                    val box1 = lowestLevelBoxes(x1,y1,z1) as FmmLeafBox!;
+                    if (box1 != null) {
+                        var thisBoxEnergy : Double = 0.0;
+                        val length = box1.atoms.length();
+                        for ((atomIndex1) in 0..length-1) {
+                            val atom1 = box1.atoms(atomIndex1);
 
-                        // direct calculation with all atoms in same box
-                        for ((sameBoxAtomIndex) in 0..atomIndex1-1) {
-                            val sameBoxAtom = box1.atoms(sameBoxAtomIndex);
-                            val pairEnergy = atom1.charge * sameBoxAtom.charge / atom1.centre.distance(sameBoxAtom.centre);
-                            thisBoxEnergy += pairEnergy;
+                            // direct calculation with all atoms in same box
+                            for ((sameBoxAtomIndex) in 0..atomIndex1-1) {
+                                val sameBoxAtom = box1.atoms(sameBoxAtomIndex);
+                                val pairEnergy = atom1.charge * sameBoxAtom.charge / atom1.centre.distance(sameBoxAtom.centre);
+                                thisBoxEnergy += pairEnergy;
+                            }
                         }
-                    }
 
-                    // direct calculation with all atoms in non-well-separated boxes
-                    val uList = box1.getUList();
-                    for ((x2,y2,z2) in uList) {
-                        // here we force on the packed atoms for which a future was previously issued
-                        val boxAtoms = packedAtoms(x2,y2,z2);
-                        if (boxAtoms != null) {
-                            for (var i : Int = 0; i < boxAtoms.length(); i++) {
-                                val atom2Packed = boxAtoms(i);
-                                for ((atomIndex1) in 0..length-1) {
-                                    val atom1 = box1.atoms(atomIndex1);
-                                    thisBoxEnergy += atom1.charge * atom2Packed.charge / atom1.centre.distance(atom2Packed.centre);
+                        // direct calculation with all atoms in non-well-separated boxes
+                        val uList = box1.getUList();
+                        for ((x2,y2,z2) in uList) {
+                            // here we force on the packed atoms for which a future was previously issued
+                            val boxAtoms = packedAtoms(x2,y2,z2);
+                            if (boxAtoms != null) {
+                                for (var i : Int = 0; i < boxAtoms.length(); i++) {
+                                    val atom2Packed = boxAtoms(i);
+                                    for ((atomIndex1) in 0..length-1) {
+                                        val atom1 = box1.atoms(atomIndex1);
+                                        thisBoxEnergy += atom1.charge * atom2Packed.charge / atom1.centre.distance(atom2Packed.centre);
+                                    }
                                 }
                             }
                         }
+                        offer thisBoxEnergy;
                     }
-                    val thisBoxEnergyFinal = thisBoxEnergy;
-                    async (this) {atomic {directEnergy += thisBoxEnergyFinal;}}
                 }
             }
-        }
+        };
         timer.stop(TIMER_INDEX_DIRECT);
 
         return directEnergy;
@@ -381,27 +374,31 @@ public class Fmm3d {
      * all atoms in all well-separated boxes.
      */ 
     def getFarFieldEnergy() : Double {
-        Console.OUT.println("getFarFieldEnergy");
+        //Console.OUT.println("getFarFieldEnergy");
         timer.start(TIMER_INDEX_FARFIELD);
-        finish ateach (boxIndex1 in lowestLevelBoxes) {
-            val box1 = lowestLevelBoxes(boxIndex1) as FmmLeafBox!;
-            if (box1 != null) {
-                // TODO use shared var - XTENLANG-404
-                var thisBoxEnergy : Double = 0.0;
-                val length = box1.atoms.length();
-                for ((atomIndex1) in 0..length-1) {
-                    val atom1 = box1.atoms(atomIndex1);
-                    val box1Centre = atom1.centre.vector(box1.getCentre(size));
-                    val farFieldEnergy = box1.localExp.getPotential(atom1.charge, box1Centre);
-                    thisBoxEnergy += farFieldEnergy;
+        val farFieldEnergy = finish(SumReducer()) {
+            ateach (boxIndex1 in lowestLevelBoxes) {
+                val box1 = lowestLevelBoxes(boxIndex1) as FmmLeafBox!;
+                if (box1 != null) {
+                    var thisBoxEnergy : Double = 0.0;
+                    val length = box1.atoms.length();
+                    for ((atomIndex1) in 0..length-1) {
+                        val atom1 = box1.atoms(atomIndex1);
+                        val box1Centre = atom1.centre.vector(box1.getCentre(size));
+                        thisBoxEnergy += box1.localExp.getPotential(atom1.charge, box1Centre);
+                    }
+                    offer thisBoxEnergy;
                 }
-                val thisBoxEnergyFinal = thisBoxEnergy;
-                async (this) {atomic {farFieldEnergy += thisBoxEnergyFinal;}}
             }
-        }
+        };
         timer.stop(TIMER_INDEX_FARFIELD);
 
         return farFieldEnergy / 2.0;
+    }
+
+    static struct SumReducer implements Reducible[Double] {
+        public global safe def zero() = 0.0;
+        public global safe def apply(a:Double, b:Double) = (a + b);
     }
 
     /**
