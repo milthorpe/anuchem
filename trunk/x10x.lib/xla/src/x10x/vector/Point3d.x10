@@ -37,11 +37,6 @@ public struct Point3d(i : Double, j : Double, k : Double) implements Tuple3d {
         return this.vector(that);
     }
 
-    /**
-     * check equality of two points
-     */
-    public static safe operator (x:Point3d) == (y:Point3d) = ((x.i==y.i) && (x.j==y.j) && (x.k==y.k));
-
     public global safe def distanceSquared(b : Point3d) {
         return (i - b.i) * (i - b.i)
              + (j - b.j) * (j - b.j)

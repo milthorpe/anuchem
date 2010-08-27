@@ -328,7 +328,7 @@ public class Fmm3d {
             val myLET = locallyEssentialTrees(p1) as LocallyEssentialTree!;
             val myCombinedUList = myLET.combinedUList;
             val packedAtoms = myLET.packedAtoms;
-            for ((x,y,z) in myCombinedUList) {
+            finish foreach ((x,y,z) in myCombinedUList) {
                 myLET.packedAtoms(x,y,z) = at (lowestLevelBoxes.dist(x,y,z)) {getPackedAtomsForBox(x, y, z)};
             }
 
