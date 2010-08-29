@@ -326,10 +326,10 @@ public class Fmm3d {
                     myLET.packedAtoms(x,y,z) = at (lowestLevelBoxes.dist(x,y,z)) {getPackedAtomsForBox(x, y, z)};
                 }
 
+                var thisPlaceEnergy : Double = 0.0;
                 for ((x1,y1,z1) in lowestLevelBoxes | here) {
                     val box1 = lowestLevelBoxes(x1,y1,z1) as FmmLeafBox!;
                     if (box1 != null) {
-                        var thisBoxEnergy : Double = 0.0;
                         val length = box1.atoms.length();
                         for ((atomIndex1) in 0..length-1) {
                             val atom1 = box1.atoms(atomIndex1);
@@ -338,7 +338,7 @@ public class Fmm3d {
                             for ((sameBoxAtomIndex) in 0..atomIndex1-1) {
                                 val sameBoxAtom = box1.atoms(sameBoxAtomIndex);
                                 val pairEnergy = atom1.charge * sameBoxAtom.charge / atom1.centre.distance(sameBoxAtom.centre);
-                                thisBoxEnergy += pairEnergy;
+                                thisPlaceEnergy += pairEnergy;
                             }
                         }
 
@@ -352,14 +352,14 @@ public class Fmm3d {
                                     val atom2Packed = boxAtoms(i);
                                     for ((atomIndex1) in 0..length-1) {
                                         val atom1 = box1.atoms(atomIndex1);
-                                        thisBoxEnergy += atom1.charge * atom2Packed.charge / atom1.centre.distance(atom2Packed.centre);
+                                        thisPlaceEnergy += atom1.charge * atom2Packed.charge / atom1.centre.distance(atom2Packed.centre);
                                     }
                                 }
                             }
                         }
-                        offer thisBoxEnergy;
                     }
                 }
+                offer thisPlaceEnergy;
             }
         };
         timer.stop(TIMER_INDEX_DIRECT);
