@@ -68,35 +68,15 @@
     <target name="build-src-java" depends="check-src-java" unless="src.uptodate.java">
         <echo message="Building source tree"/>
 
-        <fileset id="changed.src.files" dir="${basedir}/src" includes="**/*.x10">
-            <depend targetdir="${target}/classes">
-                <mapper type="glob" from="*.x10" to="*.java"/>
-            </depend>
-        </fileset>
-
-        <pathconvert property="src.list" refid="changed.src.files" dirsep="/" pathsep=" ">
-            <map from="${basedir}${file.separator}src${file.separator}" to=""/>
-        </pathconvert>
-        <echo message="x10c ${src.list}"/>
-
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/src">
             <arg value="-c"/>
-            <arg value="'x10c' ${x10c.optimize} -sourcepath .:${xre.src}:${xla.src}:${anuchem.src} -classpath ${xre.lib}:${xla.lib}:${anuchem.lib} -d ${target-src} ${src.list}"/>
+            <arg value="'x10c' ${x10c.optimize} -sourcepath .:${xre.src}:${xla.src}:${anuchem.src} -classpath ${xre.lib}:${xla.lib}:${anuchem.lib} -d ${target-src} ${basedir}/${testclass}"/>
         </exec>
     </target>
 
     <target name="build-src-cpp" depends="check-src-cpp" unless="src.uptodate.cpp">
         <echo message="Building source tree"/>
 
-        <fileset id="changed.src.files" dir="${basedir}/src" includes="**/*.x10">
-            <depend targetdir="${target}/classes">
-                <mapper type="glob" from="*.x10" to="*.cc"/>
-            </depend>
-        </fileset>
-
-        <pathconvert property="src.list" refid="changed.src.files" dirsep="/" pathsep=" ">
-            <map from="${basedir}${file.separator}src${file.separator}" to=""/>
-        </pathconvert>
         <echo message="x10c++ -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} -post '# ${post.profile} -Wall # ${link.mpiPprofile} ${post.cpuprofile}' -sourcepath .:${xre.src}:${xla.src}:${anuchem.src} ${basedir}/${testclass}"/>
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/src">
