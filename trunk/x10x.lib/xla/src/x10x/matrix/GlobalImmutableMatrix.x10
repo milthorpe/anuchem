@@ -55,7 +55,7 @@ import x10.array.Array;
 
 public class GlobalImmutableMatrix extends Matrix {
 
-    global val replicatedArray:DistArray[Array[Double]{rank==2}]!;
+    global val replicatedArray:DistArray[Array[Double]{rect,rank==2}](1);
 
     global val size:Int;
 
@@ -66,7 +66,7 @@ public class GlobalImmutableMatrix extends Matrix {
         super(size);
         this.size = size;
         	
-        replicatedArray = DistArray.make[Array[Double]{rank==2}](Dist.makeUnique());        
+        replicatedArray = DistArray.make[Array[Double]{rect,rank==2}](Dist.makeUnique());        
 
         muted = Rail.make[Boolean](1);
     }
@@ -76,7 +76,7 @@ public class GlobalImmutableMatrix extends Matrix {
         super(row, col);
 
         this.size = 0;
-        replicatedArray = DistArray.make[Array[Double]{rank==2}](Dist.makeUnique());
+        replicatedArray = DistArray.make[Array[Double]{rect,rank==2}](Dist.makeUnique());
 
         muted = Rail.make[Boolean](1);
     }
@@ -86,7 +86,7 @@ public class GlobalImmutableMatrix extends Matrix {
         super(dist);
 
         this.size = 0;
-        replicatedArray = DistArray.make[Array[Double]{rank==2}](Dist.makeUnique());
+        replicatedArray = DistArray.make[Array[Double]{rect,rank==2}](Dist.makeUnique());
 
         muted = Rail.make[Boolean](1);
     }
@@ -115,11 +115,7 @@ public class GlobalImmutableMatrix extends Matrix {
     public global def set(ar:Array[Double]{rank==2}) : Boolean {
         if (muted(0)) return false;
 
-        // TODO: raw() to change!
-        // ar.raw().copyTo(0, mat.raw(), 0, size*size);
-        val arr = ar.raw();
-        val mr  = mat.raw();
-        for(var i:Int=0; i<size*size; i++) arr(i) = mr(i);
+        ar.copyFrom(mat);
         
         return true;
     }
@@ -151,18 +147,15 @@ public class GlobalImmutableMatrix extends Matrix {
     public def mute() {       
        muted(0) = true;
 
-       // TODO : 
-       // 1. raw() needs to change, it won't be supported in future releases 
-       // 2. possibility of using MPI collectives for broadcast (under the hood)
-       // 3. This is a bit weird implementation. This is actually not a
+       // TODO :
+       // 1. possibility of using MPI collectives for broadcast (under the hood)
+       // 2. This is a bit weird implementation. This is actually not a
        //    broadcast, but each place "reading" from Place 0
-       finish ateach(idx in replicatedArray.dist) {
-          val repArr = replicatedArray(idx);          
-          val mr = at(mat) { return mat.raw(); };             
-          // mr.copyTo(0, repArr.raw(), 0, size*size);
-          val ra = repArr.raw();
-          for(var i:Int=0; i<size*size; i++) ra(i) = mr(i);
-       }       
+        val myMat = mat;
+        finish ateach(idx in replicatedArray.dist) {
+            val repArr = replicatedArray(idx);
+            repArr.copyFrom(myMat);
+        }       
     }
 
     /** 

@@ -2,7 +2,7 @@
 <!DOCTYPE project [<!ENTITY buildfile SYSTEM "file:./build-user.xml">]>
 <project name="X10 Linear Algebra project" default="build" basedir=".">
     <property environment="env"/>
-    <property name="x10home" location="${env.X10HOME}" />
+    <property name="x10home" location="${user.home}/x10-trunk/x10.dist" />
     <property name="x10.testlib" location="${user.home}/x10-trunk/x10.tests/examples/x10lib"/>
     <property name="bash.exe" value="bash"/>    
     <property name="optimize" value="true" />
@@ -85,7 +85,7 @@
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/src">
             <arg value="-c"/>
-            <arg value="'x10c++' ${x10c.optimize} ${x10c.nochecks} -c -report postcompile=1 -sourcepath . -commandlineonly -d ${target-src} ${src.list}"/>
+            <arg value="'x10c++' -c ${x10c.optimize} ${x10c.nochecks} -report postcompile=1 -sourcepath . -d ${target-src} ${src.list}"/>
         </exec>
 
         <fileset id="generated.cpp.files" dir="${target}/classes">
