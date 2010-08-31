@@ -4,7 +4,7 @@
  *  This file is licensed to You under the Eclipse Public License (EPL);
  *  You may not use this file except in compliance with the License.
  *  You may obtain a copy of the License at
- *      http://www.opensource.org/licenses/eclipse-1.0.php
+ *      http://www.opensource.org/lipcenses/eclipse-1.0.php
  *
  * (C) Copyright Josh Milthorpe 2010.
  */
@@ -19,7 +19,7 @@ public class TestDistributedFFT {
     }
 
     public static def testFft3d() {
-        val N = 3;
+        val N = 32;
 
         val twoPlusI = 2.0 + Complex.I;
         val r = Region.make(0, N-1);
@@ -29,33 +29,29 @@ public class TestDistributedFFT {
         val output = DistArray.make[Complex](input.dist);
         val temp = DistArray.make[Complex](input.dist);
         Console.OUT.println("input");
-        for (p in input.dist.places()) {
-            at (p) {
-                for (p in input | here) {
-                    Console.OUT.println(input(p));
-                }
+        for (p1 in input.dist.places()) at (p1) {
+            for (p in input.dist | here) {
+                Console.OUT.println(input(p));
             }
         }
 
-        val fft = new Distributed3dFft(N);
+        val fft = new Distributed3dFft(N, input, output, temp);
 
         //Console.OUT.println("\noutput");
-        fft.doFFT3d(input, output, temp, false);
-        for (p in output.dist.places()) {
-            at (p) {
-                for (p in output | here) {
-                    //Console.OUT.println(output(p));
-                }
+        fft.doFFT3d(false);
+        for (p1 in output.dist.places()) at (p1) {
+            for (p in output.dist | here) {
+                //Console.OUT.println(output(p));
             }
         }
 
+        val roundtrip = new Distributed3dFft(N, output, output, temp);
+
         Console.OUT.println("\nroundtrip");
-        fft.doFFT3d(output, output, temp, true);
-        for (p in output.dist.places()) {
-            at (p) {
-                for (p in output | here) {
-                    Console.OUT.println((output(p) / (N*N*N)));
-                }
+        roundtrip.doFFT3d(true);
+        for (p1 in output.dist.places()) at (p1) {
+            for (p in output.dist | here) {
+                Console.OUT.println((output(p) / (N*N*N)));
             }
         }
     }
