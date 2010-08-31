@@ -17,8 +17,8 @@
 
     <property name="mainClass" value="src/au/anu/edu/qm/PumjaRasaayani.x10" />
 
-    <property name="gsl.include" location="/tmp/gsl/include" />
-    <property name="gsl.lib" location="/tmp/gsl/lib" />
+    <property name="gsl.include" location="/scratch/gsl/include" />
+    <property name="gsl.lib" location="/scratch/gsl/lib" />
 
     <property name="usenativegsl" value="true" />
 
