@@ -44,7 +44,7 @@ public class PowerList {
             }
         }
 
-        return pList as ValRail[Power];
+        return ValRail.make(pList);
     }
 
     private static val _theInstance = new PowerList() as PowerList!;

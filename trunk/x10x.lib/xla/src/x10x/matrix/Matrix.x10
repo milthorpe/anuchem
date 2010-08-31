@@ -283,7 +283,7 @@ public class Matrix {
         return true;
     }
 
-    public def getValRail() : ValRail[Double]! {
+    public def getValRail() {
         val N = getRowCount();
         val M = getColCount();
         val r = Rail.make[Double](N*M);
@@ -294,7 +294,7 @@ public class Matrix {
            for(j=0; j<M; j++)
               r(ii++) = mat(i,j);
 
-        return r as ValRail[Double]!;
+        return ValRail.make(r);
     }
 
     public global safe def toString() : String { 

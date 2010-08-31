@@ -462,7 +462,7 @@ public class Fmm3d {
             boxesTemp(thisLevel) = DistArray.make[FmmBox](thisLevelDist);
             Console.OUT.println("level " + thisLevel + " dist: " + thisLevelDist);
         }
-        val boxesValRail = boxesTemp as ValRail[DistArray[FmmBox](3)];
+        val boxesValRail = ValRail.make(boxesTemp);
 
         for ((thisLevel) in getTopLevel()..numLevels-1) {
             val levelDim = Math.pow2(thisLevel) as Int;
@@ -510,8 +510,8 @@ public class Fmm3d {
                     }
                 }
             }
-            val uListMin = uMin as ValRail[Int](3);
-            val uListMax = uMax as ValRail[Int](3);
+            val uListMin = ValRail.make(uMin);
+            val uListMax = ValRail.make(uMax);
             val combinedUList = combinedUSet.toValRail();
 
             val combinedVList = Rail.make[ValRail[Point(3)]](numLevels+1);
@@ -538,16 +538,16 @@ public class Fmm3d {
                     }
                 }
                 //Console.OUT.println("done " + combinedVSet.size());
-                vListMin(thisLevel) = vMin as ValRail[Int](3);
-                vListMax(thisLevel) = vMax as ValRail[Int](3);
+                vListMin(thisLevel) = ValRail.make(vMin);
+                vListMax(thisLevel) = ValRail.make(vMax);
                 combinedVList(thisLevel) = combinedVSet.toValRail();
             }
             locallyEssentialTrees(p1) = new LocallyEssentialTree(combinedUList,
-                                                                 combinedVList as ValRail[ValRail[Point(3)]],
+                                                                 ValRail.make(combinedVList),
                                                                  uListMin,
                                                                  uListMax,
-                                                                 vListMin as ValRail[ValRail[Int]],
-                                                                 vListMax as ValRail[ValRail[Int]]);
+                                                                 ValRail.make(vListMin),
+                                                                 ValRail.make(vListMax));
         }
         return locallyEssentialTrees;
     }

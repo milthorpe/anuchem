@@ -537,7 +537,7 @@ public class GMatrix extends Matrix {
         public abstract def getGMat() : Matrix!;
 
         // TODO following method should not be necessary once XTENLANG-787 is resolved
-        public def getGMatVal() : ValRail[Double]! {
+        public def getGMatVal() {
            return getGMat().getValRail();
         }
     }

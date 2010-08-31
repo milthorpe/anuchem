@@ -407,7 +407,7 @@ public class PME {
                 for (p in place1ContributionDist) {
                     place1Contribution(i++) = myQ(p);
                 }
-                val place1ContributionToTransfer = place1Contribution as ValRail[Double];
+                val place1ContributionToTransfer = ValRail.make(place1Contribution);
                 async (place2) {
                     atomic {
                         var j : Int = 0;

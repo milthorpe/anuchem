@@ -63,7 +63,7 @@ public class LocallyEssentialTree {
                 multipoleCopies(i) = new PeriodicArray[Future[MultipoleExpansion]](multipoleCopiesLevelRegion);
             }
         }
-        this.multipoleCopies = multipoleCopies as ValRail[PeriodicArray[Future[MultipoleExpansion]](3)!];
+        this.multipoleCopies = ValRail.make(multipoleCopies);
 
         val packedAtomsRegion : Region(3) = [uListMin(0)..uListMax(0), uListMin(1)..uListMax(1), uListMin(2)..uListMax(2)];
         this.packedAtoms = new PeriodicArray[ValRail[MMAtom.PackedRepresentation]](packedAtomsRegion);

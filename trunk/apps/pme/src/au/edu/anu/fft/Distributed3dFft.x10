@@ -142,7 +142,7 @@ public class Distributed3dFft {
                     for (p in transferRegion) {
                         elementsToTransfer(i++) = temp(p);
                     }
-                    val toTransfer = elementsToTransfer as ValRail[Complex];
+                    val toTransfer = ValRail.make(elementsToTransfer);
                     async (p2) {
                         var i : Int = 0;
                         for ((x,y,z) in transferRegion) {
