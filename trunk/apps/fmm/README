@@ -27,6 +27,7 @@ Compile dependencies:
 ------------------------
 * anu-chem library
 * x10x.lib library
+* Periodic Array patches to X10 array libraries - see http://jira.codehaus.org/browse/XTENLANG-1365
 
 
 To run:
@@ -38,7 +39,7 @@ runx10 bin/fmm3d numAtoms [density] [numTerms] [wellSpaced]
 
 Multiple place:
 
-mpiexec -n <n> runx10 bin/fmm3d numAtoms [density] [numTerms] [wellSpaced]
+mpiexec -n <n> bin/fmm3d numAtoms [density] [numTerms] [wellSpaced]
 
 where <n> is number of places
 
