@@ -60,15 +60,15 @@ final public class ScalableTreeBarrier {
             thisNode.children(1) = (childId1 >= P) ? null : at (nodes.dist(childId1)) {nodes(childId1)};
         }
     }
-  
+
     public global def barrier() {
         //Console.OUT.println("treeBarrier starting at " + here.id);
 
-        val or = (a:Boolean,b:Boolean) => a || b;
         val thisNode = nodes(here.id);
         //Console.OUT.println("waiting for children at " + here.id);
 
-        await (thisNode.childNotReady.reduce(or, true));
+        val booleanOr = (a:Boolean,b:Boolean) => a || b;
+        await (thisNode.childNotReady.reduce(booleanOr, true));
 
         //Console.OUT.println("children ready at " + here.id);
         // prepare for next barrier
