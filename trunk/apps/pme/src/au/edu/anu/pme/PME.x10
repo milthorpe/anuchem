@@ -421,8 +421,6 @@ public class PME {
                 val place2Region = place2Dist.region;
                 // each halo region could be scattered to other regions in up to four chunks,
                 // as the region is periodic and divided along two dimensions.
-                // these are rather arbitrarily named after compass directions.
-                // the situation would be a lot more complicated if the region was divided along >=3 dimensions...
                 val shiftX = (place1HaloRegion.max(0) < place2Region.min(0) || place1HaloRegion.min(0) < gridRegion.min(0)) ? gridSize(0) : ((place1HaloRegion.min(0) > place2Region.max(0) || place1HaloRegion.max(0) > gridRegion.max(0)) ? -gridSize(0) : 0);
                 val shiftY = (place1HaloRegion.max(1) < place2Region.min(1) || place1HaloRegion.min(1) < gridRegion.min(1)) ? gridSize(0) : ((place1HaloRegion.min(1) > place2Region.max(1) || place1HaloRegion.max(1) > gridRegion.max(1)) ? -gridSize(0) : 0);
                 scatterAndReduceShiftedGridContribution(myQ, Point.make(0,0,0), place2);
