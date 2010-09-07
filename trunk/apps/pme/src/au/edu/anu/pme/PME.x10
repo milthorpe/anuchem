@@ -330,12 +330,7 @@ public class PME {
                         }
                     }
                 }
-
-                // TODO shouldn't need to offer at(this) XTENLANG-1785
-                val myDirectVal = myDirectEnergy;
-                at (this) {
-                    offer myDirectVal;
-                }
+                offer myDirectEnergy;
             }
         };
         
@@ -365,11 +360,7 @@ public class PME {
                 for ((thisAtom) in 0..thisCell.length()-1) {
                     mySelfEnergy += thisCell(thisAtom).charge * thisCell(thisAtom).charge;
                 }
-                // TODO shouldn't need to offer at(this) XTENLANG-1785
-                val mySelfVal = mySelfEnergy;
-                at (this) {
-                    offer mySelfVal;
-                }
+                offer mySelfEnergy;
             }
         };
         timer.stop(TIMER_INDEX_SELF);
@@ -512,11 +503,7 @@ public class PME {
                     val gridPointContribution = Q(p) * thetaRecConvQ(p);
                     myReciprocalEnergy += gridPointContribution.re;
                 }
-                // TODO shouldn't need to offer at(this) XTENLANG-1785
-                val myRecVal = myReciprocalEnergy;
-                at (this) {
-                    offer myRecVal;
-                }
+                offer myReciprocalEnergy;
             }
         };
 
