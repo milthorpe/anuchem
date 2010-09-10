@@ -323,11 +323,48 @@ public class Fmm3d {
             val myLET = locallyEssentialTrees(p1) as LocallyEssentialTree!;
             val myCombinedUList = myLET.combinedUList;
             val packedAtoms = myLET.packedAtoms;
-            finish foreach ((x,y,z) in myCombinedUList) {
-                myLET.packedAtoms(x,y,z) = at (lowestLevelBoxes.dist(x,y,z)) {getPackedAtomsForBox(x, y, z)};
+
+            val uListPlaces = new HashMap[Int,GrowableRail[Point(3)]](26); // a place may have up to 26 immediate neighbours
+            
+            // separate the uList into partial lists stored at each nearby place
+            for (boxIndex in myCombinedUList) {
+                val placeId = lowestLevelBoxes.dist(boxIndex).id;
+                var uListForPlace : GrowableRail[Point(3)] = uListPlaces.getOrElse(placeId, null);
+                if (uListForPlace == null) {
+                    uListForPlace = new GrowableRail[Point(3)]();
+                    uListPlaces.put(placeId, uListForPlace);
+                }
+                uListForPlace.add(boxIndex);
+            }
+
+            // retrieve the partial list for each place and store into my LET
+            finish foreach(placeEntry in uListPlaces.entries()) {
+                val placeId = placeEntry.getKey();
+                val uListForPlace = placeEntry.getValue();
+                val uListValRail = uListForPlace.toValRail();
+                val packedForPlace = at (Place.place(placeId)) { getPackedAtomsForBoxList(uListValRail)};
+                for ((i) in 0..uListValRail.length()-1) {
+                    myLET.packedAtoms(uListValRail(i)) = packedForPlace(i);
+                }
             }
         }
         timer.stop(TIMER_INDEX_PREFETCH);
+    }
+
+    /**
+     * Given a list of box indexes (as Point(3) stored at a single
+     * place, returns a ValRail, each element of which is in turn
+     * a ValRail of MMAtom.PackedRepresentation containing the 
+     * packed atoms for each box.
+     */
+    def getPackedAtomsForBoxList(boxList : ValRail[Point(3)]) {
+        val packedAtomList = ValRail.make[ValRail[MMAtom.PackedRepresentation]](boxList.length(), 
+                                                            (i : Int) => 
+                                                                getPackedAtomsForBox(boxList(i)(0), 
+                                                                                     boxList(i)(1),
+                                                                                     boxList(i)(2))
+                                                            );
+        return packedAtomList;
     }
 
     /**
