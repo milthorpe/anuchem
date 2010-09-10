@@ -65,8 +65,9 @@ public class TestFmm3d extends TestElectrostatic {
         Console.OUT.println("energy = " + energy);
 
         val timer = fmm3d.timer;
-        logTime("Multipole", Fmm3d.TIMER_INDEX_MULTIPOLE, fmm3d.timer);
+        logTime("Prefetch",  Fmm3d.TIMER_INDEX_PREFETCH,  fmm3d.timer);
         logTime("Direct",    Fmm3d.TIMER_INDEX_DIRECT,    fmm3d.timer);
+        logTime("Multipole", Fmm3d.TIMER_INDEX_MULTIPOLE, fmm3d.timer);
         logTime("Combine",   Fmm3d.TIMER_INDEX_COMBINE,   fmm3d.timer);
         logTime("Transform", Fmm3d.TIMER_INDEX_TRANSFORM, fmm3d.timer);
         logTime("Far field", Fmm3d.TIMER_INDEX_FARFIELD,  fmm3d.timer);
