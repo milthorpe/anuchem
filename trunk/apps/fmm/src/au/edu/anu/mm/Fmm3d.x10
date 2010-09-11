@@ -357,7 +357,7 @@ public class Fmm3d {
      * a ValRail of MMAtom.PackedRepresentation containing the 
      * packed atoms for each box.
      */
-    def getPackedAtomsForBoxList(boxList : ValRail[Point(3)]) {
+    private def getPackedAtomsForBoxList(boxList : ValRail[Point(3)]) {
         val packedAtomList = ValRail.make[ValRail[MMAtom.PackedRepresentation]](boxList.length(), 
                                                             (i : Int) => 
                                                                 getPackedAtomsForBox(boxList(i)(0), 
@@ -379,10 +379,10 @@ public class Fmm3d {
 
         val directEnergy = finish (SumReducer()) {
             ateach (p1 in locallyEssentialTrees) {
-            val myLET = locallyEssentialTrees(p1) as LocallyEssentialTree!;
-            val packedAtoms = myLET.packedAtoms;
+                val myLET = locallyEssentialTrees(p1) as LocallyEssentialTree!;
+                val packedAtoms = myLET.packedAtoms;
                 var thisPlaceEnergy : Double = 0.0;
-                for ((x1,y1,z1) in lowestLevelBoxes.dist | here) {
+                for ((x1,y1,z1) in lowestLevelBoxes | here) {
                     val box1 = lowestLevelBoxes(x1,y1,z1) as FmmLeafBox!;
                     if (box1 != null) {
                         val length = box1.atoms.length();
