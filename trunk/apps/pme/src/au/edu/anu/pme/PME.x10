@@ -250,8 +250,10 @@ public class PME {
         return Point.make(i, j, k);
     }
 
+
     public def getDirectEnergy() : Double {
         timer.start(TIMER_INDEX_DIRECT);
+        val cutoffSquared = cutoff*cutoff;
         val directEnergy = finish(SumReducer()) {
             ateach (p in subCells.dist) {
                 var myDirectEnergy : Double = 0.0;
@@ -284,8 +286,9 @@ public class PME {
                                     for ((otherAtom) in 0..otherCell.length()-1) {
                                         val imageLoc = otherCell(otherAtom).centre + translation;
                                         for ((thisAtom) in 0..thisCell.length()-1) {
-                                            val r = thisCell(thisAtom).centre.distance(imageLoc);
-                                            if (r < cutoff) {
+                                            val rSquared = thisCell(thisAtom).centre.distanceSquared(imageLoc);
+                                            if (rSquared < cutoffSquared) {
+                                                val r = Math.sqrt(rSquared);
                                                 val chargeProduct = thisCell(thisAtom).charge * otherCell(otherAtom).charge;
                                                 val imageDirectComponent = chargeProduct * Math.erfc(beta * r) / r;
                                                 myDirectEnergy += imageDirectComponent;
@@ -305,8 +308,9 @@ public class PME {
                                     for ((otherAtom) in 0..otherCellPacked.length()-1) {
                                         val imageLoc = otherCellPacked(otherAtom).centre + translation;
                                         for ((thisAtom) in 0..thisCell.length()-1) {
-                                            val r = thisCell(thisAtom).centre.distance(imageLoc);
-                                            if (r < cutoff) {
+                                            val rSquared = thisCell(thisAtom).centre.distanceSquared(imageLoc);
+                                            if (rSquared < cutoffSquared) {
+                                                val r = Math.sqrt(rSquared);
                                                 val chargeProduct = thisCell(thisAtom).charge * otherCellPacked(otherAtom).charge;
                                                 val imageDirectComponent = chargeProduct * Math.erfc(beta * r) / r;
                                                 myDirectEnergy += imageDirectComponent;
@@ -323,8 +327,9 @@ public class PME {
                 for ((i) in 0..thisCell.length()-1) {
                     for ((j) in 0..i-1) {
                         val rjri = thisCell(j).centre - thisCell(i).centre;
-                        val r = rjri.length();
-                        if (r < cutoff) {
+                        val rSquared = rjri.lengthSquared();
+                        if (rSquared < cutoffSquared) {
+                            val r = Math.sqrt(rSquared);
                             val directComponent = thisCell(i).charge * thisCell(j).charge * Math.erfc(beta * r) / r;
                             myDirectEnergy += directComponent;
                         }
