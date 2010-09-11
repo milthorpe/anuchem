@@ -178,13 +178,14 @@ public class PME {
         finish ateach (p in BdotC) {
             BdotC(p) = B(p) * C(p);
         }
-        timer.start(TIMER_INDEX_SETUP);
+        divideAtomsIntoSubCells();
+        timer.stop(TIMER_INDEX_SETUP);
     }
 	
     public def getEnergy() : Double {
         timer.start(TIMER_INDEX_TOTAL);
 
-        divideAtomsIntoSubCells();
+
         val directEnergy = getDirectEnergy();
         val selfEnergy = getSelfEnergy();
         gridCharges();
