@@ -29,7 +29,7 @@ import x10.util.Pair;
 public class PME {
     // TODO enum - XTENLANG-1118
     public const TIMER_INDEX_TOTAL : Int = 0;
-    public const TIMER_INDEX_DIVIDE : Int = 1;
+    public const TIMER_INDEX_PREFETCH : Int = 1;
     public const TIMER_INDEX_DIRECT : Int = 2;
     public const TIMER_INDEX_SELF : Int = 3;
     public const TIMER_INDEX_GRIDCHARGES : Int = 4;
@@ -55,8 +55,8 @@ public class PME {
     /** The conjugate reciprocal vectors for each dimension. */
     private global val edgeReciprocals : ValRail[Vector3d](3);
 
-    private global val gridRegion : Region(3);
-    private global val gridDist : Dist(3);
+    private global val gridRegion : Region(3){rect};
+    private global val gridDist : Dist(3){rect};
     
     /** The order of B-spline interpolation */
     private global val splineOrder : Int;
@@ -86,14 +86,18 @@ public class PME {
     private global val C : DistArray[Double]{self.dist==gridDist};
     private global val BdotC : DistArray[Double]{self.dist==gridDist};
 
+    /** The reciprocal pair potential as defined in eq. 4.7 */
+    private global val thetaRecConvQ : DistArray[Complex]{self.dist==gridDist};
+
+    /** The gridded charge array Q as defined in Eq. 4.6 */
     private global val Q : DistArray[Complex]{self.dist==gridDist};
 
     /** 
      * An array of box divisions within the unit cell, with a side length
-     * equal to the direct sum cutoff distance.  (N.B. if the unit cell side
-     * length is not an exact multiple of the cutoff distance, the last box
-     * in each dimension will be smaller than the cutoff distance, resulting
-     * in anisotropy in the direct potential.)
+     * equal to half the direct sum cutoff distance.  (N.B. if the unit cell
+     * side length is not an exact multiple of the subcell side length, the
+     * last box in each dimension will be smaller than the cutoff distance, 
+     * resulting in anisotropy in the direct potential.)
      * Direct sums are only calculated between particles in the same box and
      * the 26 neighbouring boxes.
      * Dimensions of the array region are (x,y,z)
@@ -108,7 +112,7 @@ public class PME {
      * stored at other places.  This is used to prefetch atom data
      * for direct energy calculation.
      */
-    private global val packedAtomsCache : DistArray[HashMap[Point(3), ValRail[MMAtom.PackedRepresentation]]](1);
+    private global val packedAtomsCache : DistArray[Array[ValRail[MMAtom.PackedRepresentation]](3)](1);
 
     /**
      * Creates a new particle mesh Ewald method.
@@ -143,17 +147,25 @@ public class PME {
         val imageTranslationRegion = [0..Place.MAX_PLACES-1,-1..1,-1..1,-1..1] as Region(4){rect};
         this.imageTranslations = DistArray.make[Vector3d](Dist.makeBlock(imageTranslationRegion, 0), ((place,i,j,k) : Point(4)) => (edges(0).mul(i)).add(edges(1).mul(j)).add(edges(2).mul(k)));
 
-        if (edgeLengths(0) % cutoff != 0.0) {
-            Console.ERR.println("warning: edge length " + edgeLengths(0) + " is not an exact multiple of cutoff " + cutoff);
+        if (edgeLengths(0) % (cutoff/2.0) != 0.0) {
+            Console.ERR.println("warning: edge length " + edgeLengths(0) + " is not an exact multiple of (cutoff/2.0) " + (cutoff/2.0));
         }
-        val numSubCells = Math.ceil(edgeLengths(0) / cutoff) as Int;
+        val numSubCells = Math.ceil(edgeLengths(0) / (cutoff/2.0)) as Int;
         val subCellRegion = [0..numSubCells-1,0..numSubCells-1,0..numSubCells-1] as Region(3){rect};
         val subCells = PeriodicDistArray.make[ValRail[MMAtom]](Dist.makeBlockBlock(subCellRegion, 0, 1));
         Console.OUT.println("subCells dist = " + subCells.dist);
         this.subCells = subCells;
         this.numSubCells = numSubCells;
 
-        packedAtomsCache = DistArray.make[HashMap[Point(3), ValRail[MMAtom.PackedRepresentation]]](Dist.makeUnique(), (Point)=> new HashMap[Point(3), ValRail[MMAtom.PackedRepresentation]]());
+        packedAtomsCache = DistArray.make[Array[ValRail[MMAtom.PackedRepresentation]](3)](Dist.makeUnique(subCells.dist.places()));
+        finish ateach (p in packedAtomsCache) {
+            val mySubCellRegion = (subCells.dist | here).region;
+            val directRequiredRegion = [(mySubCellRegion.min(0) - 2)..(mySubCellRegion.max(0) + 2),
+                                        (mySubCellRegion.min(1) - 2)..(mySubCellRegion.max(1) + 2),
+                                        (mySubCellRegion.min(2) - 2)..(mySubCellRegion.max(2) + 2)];
+            packedAtomsCache(p) = new Array[ValRail[MMAtom.PackedRepresentation]](directRequiredRegion);
+        }
+
 
         Console.OUT.println("gridDist = " + gridDist);
 
@@ -163,6 +175,7 @@ public class PME {
         B = DistArray.make[Double](gridDist);
         C = DistArray.make[Double](gridDist);
         BdotC = DistArray.make[Double](gridDist);
+        thetaRecConvQ = DistArray.make[Complex](gridDist);
     }
 
     /**
@@ -185,25 +198,32 @@ public class PME {
     public def getEnergy() : Double {
         timer.start(TIMER_INDEX_TOTAL);
 
+        finish {
+            async { prefetchPackedAtoms(); }
 
-        val directEnergy = getDirectEnergy();
+            gridCharges();
+
+            timer.start(TIMER_INDEX_INVFFT);
+            val temp = DistArray.make[Complex](gridDist); 
+            val Qinv = DistArray.make[Complex](gridDist);
+            new Distributed3dFft(gridSize(0), Q, Qinv, temp).doFFT3d(false);
+            timer.stop(TIMER_INDEX_INVFFT);
+
+            timer.start(TIMER_INDEX_THETARECCONVQ);
+            // create F^-1(thetaRecConvQ)
+            finish for (place in thetaRecConvQ.dist.places()) async (place) {
+                for (p in thetaRecConvQ | here) {
+                    thetaRecConvQ(p) = BdotC(p) * Qinv(p);
+                }
+            }
+            // and do inverse FFT
+            new Distributed3dFft(gridSize(0), thetaRecConvQ, thetaRecConvQ, temp).doFFT3d(true);
+            timer.stop(TIMER_INDEX_THETARECCONVQ);
+        }
+
+        val reciprocalEnergy = getReciprocalEnergy();
         val selfEnergy = getSelfEnergy();
-        gridCharges();
-
-        timer.start(TIMER_INDEX_INVFFT);
-        val temp = DistArray.make[Complex](gridDist); 
-        val Qinv = DistArray.make[Complex](gridDist);
-        new Distributed3dFft(gridSize(0), Q, Qinv, temp).doFFT3d(false);
-        timer.stop(TIMER_INDEX_INVFFT);
-
-        timer.start(TIMER_INDEX_THETARECCONVQ);
-        // create F^-1(thetaRecConvQ)
-        val thetaRecConvQ = DistArray.make[Complex](gridDist, (p : Point(3)) => BdotC(p) * Qinv(p));
-
-        // and do inverse FFT
-        new Distributed3dFft(gridSize(0), thetaRecConvQ, thetaRecConvQ, temp).doFFT3d(true);
-        timer.stop(TIMER_INDEX_THETARECCONVQ);
-        val reciprocalEnergy = getReciprocalEnergy(thetaRecConvQ);
+        val directEnergy = getDirectEnergy();
 
         Console.OUT.println("directEnergy = " + directEnergy);
         Console.OUT.println("selfEnergy = " + selfEnergy);
@@ -217,7 +237,6 @@ public class PME {
     }
 
     private def divideAtomsIntoSubCells() {
-        timer.start(TIMER_INDEX_DIVIDE);
         val subCellsTemp = DistArray.make[GrowableRail[MMAtom]](subCells.dist, (Point) => new GrowableRail[MMAtom]());
         finish ateach (p1 in atoms) {
             val localAtoms = atoms(p1);
@@ -235,20 +254,38 @@ public class PME {
         finish ateach (p in subCells.dist) {
             subCells(p) = subCellsTemp(p).toValRail();
         }
-        timer.stop(TIMER_INDEX_DIVIDE);
     }
 
     /**
      * Gets the index of the sub-cell for this atom within
      * the grid of sub-cells for direct sum calculation.
+     * Each sub-cell is half the cutoff distance on every side.
      */
     private global safe def getSubCellIndex(atom : MMAtom) : Point(3) {
         // TODO assumes cubic unit cell
+        val halfCutoff = (cutoff / 2.0);
         val r = Vector3d(atom.centre);
-        val i = (r.i / cutoff) as Int;
-        val j = (r.j / cutoff) as Int;
-        val k = (r.k / cutoff) as Int;
+        val i = (r.i / halfCutoff) as Int;
+        val j = (r.j / halfCutoff) as Int;
+        val k = (r.k / halfCutoff) as Int;
         return Point.make(i, j, k);
+    }
+
+    /**
+     * At each place, fetch all required atoms from neighbouring
+     * places for direct calculation.
+     */
+    private def prefetchPackedAtoms() {
+        timer.start(TIMER_INDEX_PREFETCH);
+        finish for (place in subCells.dist.places()) async (place) {
+            val packedAtoms = packedAtomsCache(here.id);
+            for (q in packedAtoms) {
+                if (subCells.periodicDist(q) != here) {
+                    packedAtoms(q) = at (subCells.periodicDist(q)) {getPackedAtomsForSubCell(q)};
+                }
+            }
+        }
+        timer.stop(TIMER_INDEX_PREFETCH);
     }
 
 
@@ -256,22 +293,23 @@ public class PME {
         timer.start(TIMER_INDEX_DIRECT);
         val cutoffSquared = cutoff*cutoff;
         val directEnergy = finish(SumReducer()) {
-            ateach (p in subCells.dist) {
+            ateach (p in subCells) {
                 var myDirectEnergy : Double = 0.0;
                 val thisCell = subCells(p);
-                for (var i : Int = p(0)-1; i<=p(0); i++) {
+                val packedAtoms = packedAtomsCache(here.id);
+                for (var i : Int = p(0)-2; i<=p(0); i++) {
                     var n1 : Int = 0;
                     if (i < 0) {
                         n1 = -1;
                     } // can't have (i > numSubCells+1)
-                    for (var j : Int = p(1)-1; j<=p(1)+1; j++) {
+                    for (var j : Int = p(1)-2; j<=p(1)+2; j++) {
                         var n2 : Int = 0;
                         if (j < 0) {
                             n2 = -1;
                         } else if (j > numSubCells-1) {
                             n2 = 1;
                         }
-                        for (var k : Int = p(2)-1; k<=p(2)+1; k++) {
+                        for (var k : Int = p(2)-2; k<=p(2)+2; k++) {
                             var n3 : Int = 0;
                             if (k < 0) {
                                 n3 = -1;
@@ -297,15 +335,8 @@ public class PME {
                                         }
                                     }
                                 } else {
-                                    // other subcell is remote; need to transfer packed atoms
-                                    var otherCellPacked : ValRail[MMAtom.PackedRepresentation] = null;
-                                    // cache remote atoms
-                                    val otherCellIndex = Point.make(i,j,k);
-                                    atomic {otherCellPacked = packedAtomsCache(here.id).getOrElse(otherCellIndex, null);}
-                                    if (otherCellPacked == null) {
-                                        otherCellPacked = at (subCells.periodicDist(otherCellIndex)) {getPackedAtomsForSubCell(otherCellIndex)};
-                                        atomic {packedAtomsCache(here.id).put(otherCellIndex, otherCellPacked);}
-                                    }
+                                    // other subcell is remote; use cached packed atoms
+                                    val otherCellPacked = packedAtoms(i,j,k);
                                     for ((otherAtom) in 0..otherCellPacked.length()-1) {
                                         val imageLoc = otherCellPacked(otherAtom).centre + translation;
                                         for ((thisAtom) in 0..thisCell.length()-1) {
@@ -495,11 +526,9 @@ public class PME {
     }
 
     /**
-     * @param Q the gridded charge array as defined in Eq. 4.6
-     * @param thetaRecConvQ the reciprocal pair potential as defined in eq. 4.7
      * @return the approximation to the reciprocal energy ~E_rec as defined in Eq. 4.7
      */
-    private def getReciprocalEnergy(thetaRecConvQ : DistArray[Complex]{self.dist==gridDist}) {
+    private def getReciprocalEnergy() {
         timer.start(TIMER_INDEX_RECIPROCAL);
 
         val reciprocalEnergy = finish(SumReducer()) {

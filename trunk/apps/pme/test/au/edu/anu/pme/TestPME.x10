@@ -85,6 +85,7 @@ public class TestPME extends TestElectrostatic {
         logTime("Reciprocal energy", PME.TIMER_INDEX_RECIPROCAL,    pme.timer);
         logTime("Total",             PME.TIMER_INDEX_TOTAL,         pme.timer);
         logTime("Setup",             PME.TIMER_INDEX_SETUP,         pme.timer);
+        logTime("Prefetch",          PME.TIMER_INDEX_PREFETCH,      pme.timer);
  
         val direct = new ElectrostaticDirectMethod(atoms);
         val directEnergy = direct.getEnergy();
