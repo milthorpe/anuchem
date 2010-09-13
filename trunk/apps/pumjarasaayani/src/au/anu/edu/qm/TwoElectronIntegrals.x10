@@ -115,15 +115,8 @@ public class TwoElectronIntegrals {
          val angMomCD = cAng + dAng;
          val angMomABCD = angMomAB+angMomCD;
 
-         var i:Int, j:Int, k:Int, l:Int;
-         var bb:Int, aa:Int;
-         var dd:Int, cc:Int;
-
          val radiusABSquared = a.distanceSquaredFrom(b); 
          val radiusCDSquared = c.distanceSquaredFrom(d);
-
-         val shellA = shellList.getPowers(aAng);
-         val shellB = shellList.getPowers(bAng);
 
          val nTot = aLim*bLim*cLim*dLim;
          val twoEInts = new Array[Double](nTot);
@@ -267,15 +260,8 @@ public class TwoElectronIntegrals {
          
          val angMomCD = cAng + dAng;
          val angMomABCD = angMomAB+angMomCD;
-
-         var i:Int, j:Int, k:Int, l:Int;
-         var bb:Int, aa:Int;
-         var dd:Int, cc:Int;
           
          val radiusCDSquared = c.distanceSquaredFrom(d);
-
-         val shellA = shellList.getPowers(aAng);
-         val shellB = shellList.getPowers(bAng);
 
          val nTot = abLim*cLim*dLim;
          val twoEInts = new Array[Double](nTot);
@@ -789,36 +775,28 @@ public class TwoElectronIntegrals {
 
     /** Compute the base FmT() - for evaluating integrals */
     protected def computeFmt(maxam:Int, T:Double, fmt:Rail[Double]!) {
-        var m:Int, i:Int;
-        var num:Double, denom:Double, term:Double, sum:Double;
-        val threshold = 1.0e-15;
-
-        // lifted!
-
         if (T > 30.0){
-           fmt(0) = Math.sqrt(Math.PI/T)*0.5;
+            fmt(0) = Math.sqrt(Math.PI/T)*0.5;
            
-           // TODO: x10 parallel
-           for (m=1; m <= maxam; m++) {
-               fmt(m) = fmt(m-1) *(m-0.5) / T;
-           } // end for
-
+            // TODO: x10 parallel
+            for (var m:Int=1; m <= maxam; m++) {
+                fmt(m) = fmt(m-1) * (m-0.5) / T;
+            }
         } else {
-           denom = maxam + 0.5;
-           term  = 0.5 / denom;
-           sum   = term;
-           i     = 0;
-           while (term > threshold)  {
-             i++;
-             denom = (denom + 1.0);
-             term  = term * T / denom;
-             sum   = sum + term;
-           } // end while
+            var denom : Double = maxam + 0.5;
+            var term : Double = 0.5 / denom;
+            var sum : Double = term;
+            while (term > 1.0e-15)  {
+                denom = (denom + 1.0);
+                term  = term * T / denom;
+                sum   = sum + term;
+            }
 
-           fmt(maxam) = Math.exp(-T) * sum;
-           for (m=maxam-1; m >= 0; m--) {
-              fmt(m) = (2.0 * T * fmt(m+1) + Math.exp(-T)) / (2.0 * m + 1);
-           } // end for
+            val expNegT = Math.exp(-T);
+            fmt(maxam) = expNegT * sum;
+            for (var m:Int=maxam-1; m >= 0; m--) {
+                fmt(m) = (2.0 * T * fmt(m+1) + expNegT) / (2*m + 1);
+            }
         } // end if
     }
 
