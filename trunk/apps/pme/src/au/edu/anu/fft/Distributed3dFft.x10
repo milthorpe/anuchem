@@ -12,6 +12,7 @@ package au.edu.anu.fft;
 
 import x10.compiler.Native;
 import x10.util.GrowableRail;
+import x10.util.Team;
 import edu.mit.fftw.FFTW;
 
 /**
@@ -55,37 +56,24 @@ public class Distributed3dFft {
             FFTW.fftwExecute(plan);
             FFTW.fftwDestroyPlan(plan); 
         } else {
-            val oneDSource = DistArray.make[Rail[Complex]](Dist.makeUnique(source.dist.places()), (Point) => Rail.make[Complex](dataSize));
-            val oneDTarget = DistArray.make[Rail[Complex]](oneDSource.dist, (Point) => Rail.make[Complex](dataSize));
-            finish ateach(p1 in oneDSource) do1DFftToTemp(source, oneDSource(p1), oneDTarget(p1), forward);
-            finish ateach(p1 in oneDSource) transposeTempToTarget();
-            finish ateach(p1 in oneDSource) do1DFftToTemp(target, oneDSource(p1), oneDTarget(p1), forward);
-            finish ateach(p1 in oneDSource) transposeTempToTarget();
-            finish ateach(p1 in oneDSource) do1DFftToTemp(target, oneDSource(p1), oneDTarget(p1), forward);
-            finish ateach(p1 in oneDSource) transposeTempToTarget();
-/* 
- * TODO uncomment once clocks work on Blue Gene
- * or replace with ScalableTreeBarrier once XTENLANG-1660 is resolved
-            val c = Clock.make();
             finish {
-                for (p1 in source.dist.places()) async(p1) clocked (c) {
+                val fftTeam = Team(Rail.make(source.dist.places()));
+                for (p1 in source.dist.places()) async(p1) {
                     // 'scratch' rails, for use in the 1D FFTs
                     val oneDSource = Rail.make[Complex](dataSize);
-                    val
+                    val oneDTarget = Rail.make[Complex](dataSize);
                     do1DFftToTemp(source, oneDSource, oneDTarget, forward);
                     transposeTempToTarget();
-                    next;
+                    fftTeam.barrier(here.id);
                     do1DFftToTemp(target, oneDSource, oneDTarget, forward);
-                    next;
+                    fftTeam.barrier(here.id);
                     transposeTempToTarget();
-                    next;
+                    fftTeam.barrier(here.id);
                     do1DFftToTemp(target, oneDSource, oneDTarget, forward);
-                    next;
+                    fftTeam.barrier(here.id);
                     transposeTempToTarget();
                 }
-                c.drop();
             }
-*/
         }
     }
 
