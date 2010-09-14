@@ -352,7 +352,7 @@ public class Fmm3d {
     }
 
     /**
-     * Given a list of box indexes (as Point(3) stored at a single
+     * Given a list of box indices as Point(3) stored at a single
      * place, returns a ValRail, each element of which is in turn
      * a ValRail of MMAtom.PackedRepresentation containing the 
      * packed atoms for each box.
