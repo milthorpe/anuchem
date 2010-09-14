@@ -278,16 +278,51 @@ public class PME {
     private def prefetchPackedAtoms() {
         timer.start(TIMER_INDEX_PREFETCH);
         finish for (place in subCells.dist.places()) async (place) {
-            val packedAtoms = packedAtomsCache(here.id);
-            for (q in packedAtoms) {
-                if (subCells.periodicDist(q) != here) {
-                    packedAtoms(q) = at (subCells.periodicDist(q)) {getPackedAtomsForSubCell(q)};
+            val myPackedAtoms = packedAtomsCache(here.id);
+            val haloDist = subCells.dist | myPackedAtoms.region;
+
+            val haloPlaces = new HashMap[Int,GrowableRail[Point(3)]](8); // a place may have up to 8 immediate neighbours in the two block-divided dimensions
+            
+            // separate the halo subcells into partial lists stored at each nearby place
+            for (boxIndex in haloDist) {
+                val placeId = subCells.periodicDist(boxIndex).id;
+                if (placeId != here.id) {
+                    var haloForPlace : GrowableRail[Point(3)] = haloPlaces.getOrElse(placeId, null);
+                    if (haloForPlace == null) {
+                        haloForPlace = new GrowableRail[Point(3)]();
+                        haloPlaces.put(placeId, haloForPlace);
+                    }
+                    haloForPlace.add(boxIndex);
+                }
+            }
+
+            // retrieve the partial list for each place and store into my LET
+            finish foreach(placeEntry in haloPlaces.entries()) {
+                val placeId = placeEntry.getKey();
+                val haloForPlace = placeEntry.getValue();
+                val haloListValRail = haloForPlace.toValRail();
+                val packedForPlace = at (Place.place(placeId)) { getPackedAtomsForSubcellList(haloListValRail)};
+                for ((i) in 0..haloListValRail.length()-1) {
+                    myPackedAtoms(haloListValRail(i)) = packedForPlace(i);
                 }
             }
         }
         timer.stop(TIMER_INDEX_PREFETCH);
     }
 
+    /**
+     * Given a list of subcell indices as Point(3) stored at a single
+     * place, returns a ValRail, each element of which is in turn
+     * a ValRail of MMAtom.PackedRepresentation containing the 
+     * packed atoms for each subcell.
+     */
+    private def getPackedAtomsForSubcellList(boxList : ValRail[Point(3)]) {
+        val packedAtomList = ValRail.make[ValRail[MMAtom.PackedRepresentation]](boxList.length(), 
+                                                            (i : Int) => 
+                                                                getPackedAtomsForSubCell(boxList(i))
+                                                            );
+        return packedAtomList;
+    }
 
     public def getDirectEnergy() : Double {
         timer.start(TIMER_INDEX_DIRECT);
