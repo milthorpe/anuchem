@@ -20,9 +20,9 @@ import x10x.vector.Point3d;
  * @author: V.Ganesh
  */
 public class PrimitiveGaussian { 
-    global val origin:Point3d;
-    global val power:Power;
-    global val exponent:Double;
+    val origin:Point3d;
+    val power:Power;
+    val exponent:Double;
     var coefficient:Double;
     var normalization:Double;
 
@@ -45,11 +45,11 @@ public class PrimitiveGaussian {
 
     public def setCoefficient(coef:Double) { coefficient = coef; }
 
-    public def overlap(pg:PrimitiveGaussian{self.at(this)}) : Double {
+    public def overlap(pg:PrimitiveGaussian) : Double {
         return normalization * pg.normalization * ovrlp(pg);
     }
 
-    private def ovrlp(pg:PrimitiveGaussian{self.at(this)}) : Double {
+    private def ovrlp(pg:PrimitiveGaussian) : Double {
         val radiusABSquared = origin.distanceSquared(pg.origin);
         val prod = mul(pg);
 
@@ -69,14 +69,14 @@ public class PrimitiveGaussian {
     }
 
 
-    public def mul(pg:PrimitiveGaussian{self.at(this)}) : PrimitiveGaussian{self.at(this)} {
+    public def mul(pg:PrimitiveGaussian) : PrimitiveGaussian {
         val gamma = exponent + pg.exponent;
         val newOrigin = Point3d(
                          (exponent * origin.i + pg.exponent * pg.origin.i) / gamma,
                          (exponent * origin.j + pg.exponent * pg.origin.j) / gamma,
                          (exponent * origin.k + pg.exponent * pg.origin.k) / gamma
                         );
-        val pgres:PrimitiveGaussian{self.at(this)} = new PrimitiveGaussian(newOrigin, Power(0,0,0), gamma, 0.0);
+        val pgres = new PrimitiveGaussian(newOrigin, Power(0,0,0), gamma, 0.0);
 
         return pgres;
     }
@@ -118,7 +118,7 @@ public class PrimitiveGaussian {
      *
      * <i> Taken from THO eq. 2.12 <i>
      */
-    public def kinetic(pg:PrimitiveGaussian{self.at(this)}) : Double {
+    public def kinetic(pg:PrimitiveGaussian) : Double {
         val l1 = power.l;
         val m1 = power.m;
         val n1 = power.n;
@@ -153,7 +153,7 @@ public class PrimitiveGaussian {
      *
      * <i> Taken from THO eq. 2.12 <i>
      */
-    public def nuclear(pg:PrimitiveGaussian{self.at(this)}, center:Point3d) :Double {
+    public def nuclear(pg:PrimitiveGaussian, center:Point3d) :Double {
         val prod = mul(pg); 
         val rABSquared = origin.distanceSquared(pg.origin);
         val rCPSquared = center.distanceSquared(prod.origin);

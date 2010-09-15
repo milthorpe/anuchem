@@ -13,7 +13,7 @@ package edu.mit.fftw;
 import x10.array.BaseArray;
 
 public class TestFFTW {
-    public static def main(args : Rail[String]!) {
+    public static def main(args : Array[String](1)) {
         Console.OUT.println("1D");
         val N : Int = 50;
         val input = Rail.make[Complex](N, (i : Int) => 1.0 / (i+1.0) * (1.0 + Complex.I));

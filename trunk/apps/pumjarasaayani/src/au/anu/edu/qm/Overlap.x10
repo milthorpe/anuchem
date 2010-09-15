@@ -18,13 +18,13 @@ import x10x.matrix.Matrix;
  * @author: V.Ganesh
  */
 public class Overlap extends Matrix {
-    var sHalf:Matrix! = null;
+    var sHalf:Matrix = null;
 
     public def this(n:Int) {
         super(n);
     }
 
-    public def getSHalf() : Matrix! {
+    public def getSHalf() : Matrix {
        if (sHalf == null) sHalf = this.symmetricOrthogonalization();
 
        return sHalf;

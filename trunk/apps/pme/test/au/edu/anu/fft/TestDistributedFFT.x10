@@ -14,7 +14,7 @@ package au.edu.anu.fft;
  * Tests distributed Fast Fourier Transform.
  */
 public class TestDistributedFFT {
-    public static def main(args : Rail[String]!) {
+    public static def main(args : Array[String](1)) {
         testFft3d();
     }
 
@@ -24,7 +24,7 @@ public class TestDistributedFFT {
         val twoPlusI = 2.0 + Complex.I;
         val r = Region.make(0, N-1);
         val r3 = (r * r * r) as Region(3);
-        val input = DistArray.make[Complex](Dist.makeBlockBlock(r3, 0, 1), (p(i,j,k) : Point(3)) => twoPlusI * (1.0 / (i + j + k + 1)));
+        val input = DistArray.make[Complex](Dist.makeBlockBlock(r3, 0, 1), (p[i,j,k] : Point(3)) => twoPlusI * (1.0 / (i + j + k + 1)));
         Console.OUT.println("dist = " + input.dist);
         val output = DistArray.make[Complex](input.dist);
         val temp = DistArray.make[Complex](input.dist);

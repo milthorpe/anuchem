@@ -25,7 +25,7 @@ public class ConnectivityBuilder[T]{T <: Atom} {
    /**
     * Build connectivity for the given molecule object
     */
-   public def buildConnectivity(mol:Molecule[T]!) {
+   public def buildConnectivity(mol:Molecule[T]) {
        val noOfAtoms = mol.getNumberOfAtoms();
        val ai = AtomInfo.getInstance();
 
@@ -57,7 +57,7 @@ public class ConnectivityBuilder[T]{T <: Atom} {
    /**
     * detect weak bonds in the molecule object 
     */
-   public def detectWeakBonds(mol:Molecule[T]!) {
+   public def detectWeakBonds(mol:Molecule[T]) {
        // TODO:
        val noOfAtoms = mol.getNumberOfAtoms();
        val ai = AtomInfo.getInstance();
@@ -112,7 +112,7 @@ public class ConnectivityBuilder[T]{T <: Atom} {
        } // finish
    }
 
-   private def computeAxis(atom:Atom!) : Vector3d {
+   private def computeAxis(atom:Atom) : Vector3d {
        val bonds = atom.getBonds();
        var axis:Vector3d  = Vector3d.NULL;
 
@@ -134,11 +134,11 @@ public class ConnectivityBuilder[T]{T <: Atom} {
     * detect rings (with classification of planar / non-planar) 
     * in the molecule objects
     */
-   public def identifyRings(mol:Molecule[T]!) {
+   public def identifyRings(mol:Molecule[T]) {
        val noOfAtoms = mol.getNumberOfAtoms();
        
-       val color  = Rail.make[Int](noOfAtoms, (Int)=>WHITE) as Rail[Int]!;
-       val parent = Rail.make[Int](noOfAtoms, (Int)=>-1) as Rail[Int]!;
+       val color  = Rail.make[Int](noOfAtoms, (Int)=>WHITE);
+       val parent = Rail.make[Int](noOfAtoms, (Int)=>-1);
 
        // detect rings
        for(var i:Int=0; i<noOfAtoms; i++) {
@@ -185,7 +185,7 @@ public class ConnectivityBuilder[T]{T <: Atom} {
        } // end for
    }
 
-   private def traverseAndRecordRing(mol:Molecule[T]!, v:Int, color:Rail[Int]!, parent:Rail[Int]!) {
+   private def traverseAndRecordRing(mol:Molecule[T], v:Int, color:Rail[Int], parent:Rail[Int]) {
         color(v) = GRAY;  // this vertex is to be processed now
         
         val bonds = mol.getAtom(v).getBonds();
@@ -200,7 +200,7 @@ public class ConnectivityBuilder[T]{T <: Atom} {
                     parent(atomIndex) = v;
                     traverseAndRecordRing(mol, atomIndex, color, parent); // recursive call
                 } else if (color(atomIndex) == BLACK) { // found a ring!
-                    val theRing = new Ring[T]() as Ring[T]{self.at(this)};
+                    val theRing = new Ring[T]();
                     
                     theRing.addAtom(mol.getAtom(atomIndex));
                     
@@ -231,64 +231,64 @@ public class ConnectivityBuilder[T]{T <: Atom} {
         color(v) = BLACK;
    }
 
+    /** The support class */
+    static class ConnectivitySupport {
+        static val BOND_RADIUS = 7.56; // a.u. ~= 4 angstroms
+        static val COVALENT_BOND_TOLERANCE = 0.7558903950887472; // a.u. ~= 0.4 angstroms
+        static val WEAK_BOND_TOLERANCE_LOWER = 0.1889725987721868; // a.u. ~= 0.1 angstroms
+        static val WEAK_BOND_TOLERANCE_UPPER = 1.9842122871079613; // a.u. ~= 1.05 angstroms
+        static val DOUBLE_BOND_OVERLAP_PERCENTAGE = 0.92;  // 92%
+        static val TRIPLE_BOND_OVERLAP_PERCENTAGE = 0.72;  // 72%
+       
+        var x:Double, y:Double, z:Double;
+        var distance:Double;
+        var covalentRadiusSum:Double;
+        var vdwRadiusSum:Double;
+
+        public def this() { }
+
+        /** Check if the given two atoms can at all form 
+            a bond. If yes, selectively store info that will
+            be required to later determine the type of bond
+          */
+        public def canFormBond(a:Atom, b:Atom) : Boolean {
+            x = Math.abs(a.centre.i - b.centre.i);
+            if (x > BOND_RADIUS) return false;
+
+            y = Math.abs(a.centre.j - b.centre.j);
+            if (y > BOND_RADIUS) return false;
+
+            z = Math.abs(a.centre.k - b.centre.k);
+            if (z > BOND_RADIUS) return false;
+
+            distance = Math.sqrt(x*x+y*y+z*z);
+
+            return true;
+        } 
+
+        /**
+         * check for presence of single bonds  
+         */
+        public def isSingleBondPresent() : Boolean {
+            return (((covalentRadiusSum - COVALENT_BOND_TOLERANCE) < distance) 
+                    && (distance < (covalentRadiusSum + COVALENT_BOND_TOLERANCE)));
+        } 
+
+        /**
+         * check for presence of double bonds  
+         */
+        public def isDoubleBondPresent() : Boolean {
+            return (distance < (DOUBLE_BOND_OVERLAP_PERCENTAGE * covalentRadiusSum));                
+        } // end of method isWeekBondPresent()
+
+        /**
+         * method to check the presence of weak bond, using distance criterion
+         */
+        public def isWeekBondPresent() : Boolean {
+            return ((distance < (vdwRadiusSum - WEAK_BOND_TOLERANCE_LOWER)
+                 && (vdwRadiusSum - WEAK_BOND_TOLERANCE_UPPER) < distance));
+        } 
+    }
 }
 
-/** The support class */
-class ConnectivitySupport {
-    global val BOND_RADIUS = 7.56; // a.u. ~= 4 angstroms
-    global val COVALENT_BOND_TOLERANCE = 0.7558903950887472; // a.u. ~= 0.4 angstroms
-    global val WEAK_BOND_TOLERANCE_LOWER = 0.1889725987721868; // a.u. ~= 0.1 angstroms
-    global val WEAK_BOND_TOLERANCE_UPPER = 1.9842122871079613; // a.u. ~= 1.05 angstroms
-    global val DOUBLE_BOND_OVERLAP_PERCENTAGE = 0.92;  // 92%
-    global val TRIPLE_BOND_OVERLAP_PERCENTAGE = 0.72;  // 72%
-   
-    var x:Double, y:Double, z:Double;
-    var distance:Double;
-    var covalentRadiusSum:Double;
-    var vdwRadiusSum:Double;
-
-    public def this() { }
-
-    /** Check if the given two atoms can at all form 
-        a bond. If yes, selectively store info that will
-        be required to later determine the type of bond
-      */
-    public def canFormBond(a:Atom!, b:Atom!) : Boolean {
-        x = Math.abs(a.centre.i - b.centre.i);
-        if (x > BOND_RADIUS) return false;
-
-        y = Math.abs(a.centre.j - b.centre.j);
-        if (y > BOND_RADIUS) return false;
-
-        z = Math.abs(a.centre.k - b.centre.k);
-        if (z > BOND_RADIUS) return false;
-
-        distance = Math.sqrt(x*x+y*y+z*z);
-
-        return true;
-    } 
-
-    /**
-     * check for presence of single bonds  
-     */
-    public def isSingleBondPresent() : Boolean {
-        return (((covalentRadiusSum - COVALENT_BOND_TOLERANCE) < distance) 
-                && (distance < (covalentRadiusSum + COVALENT_BOND_TOLERANCE)));
-    } 
-
-    /**
-     * check for presence of double bonds  
-     */
-    public def isDoubleBondPresent() : Boolean {
-        return (distance < (DOUBLE_BOND_OVERLAP_PERCENTAGE * covalentRadiusSum));                
-    } // end of method isWeekBondPresent()
-
-    /**
-     * method to check the presence of weak bond, using distance criterion
-     */
-    public def isWeekBondPresent() : Boolean {
-        return ((distance < (vdwRadiusSum - WEAK_BOND_TOLERANCE_LOWER)
-             && (vdwRadiusSum - WEAK_BOND_TOLERANCE_UPPER) < distance));
-    } 
-}
 

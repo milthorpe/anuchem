@@ -23,9 +23,9 @@ import au.edu.anu.util.Timer;
 public class HartreeFockSCFMethod extends SCFMethod { 
     val gMatType:Int;
 
-    public def this(mol:Molecule[QMAtom]!,  
-                    oneE:OneElectronIntegrals!, 
-                    bfs:BasisFunctions!, gMatType:Int) {
+    public def this(mol:Molecule[QMAtom],  
+                    oneE:OneElectronIntegrals, 
+                    bfs:BasisFunctions, gMatType:Int) {
         super(mol, oneE, bfs);
 
         this.gMatType = gMatType;
@@ -65,7 +65,7 @@ public class HartreeFockSCFMethod extends SCFMethod {
         val mos      = new MolecularOrbitals(N);
         val density  = new Density(N, noOfOccupancies); // density.make();
 
-        var fock:Fock!  = new Fock(N);
+        var fock:Fock  = new Fock(N);
 
         //Console.OUT.println("    Forming initial guess ...");
         // compute initial MOs

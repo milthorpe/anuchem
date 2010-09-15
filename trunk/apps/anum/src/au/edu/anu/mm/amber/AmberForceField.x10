@@ -42,7 +42,7 @@ public class AmberForceField implements ForceField {
         finish ateach(p in atoms) { 
             var myEnergy : Double = 0.0;
             val myAtoms = atoms(p);
-            for((i) in 0..myAtoms.length()-1) {
+            for([i] in 0..myAtoms.length()-1) {
                 val atom = myAtoms(i);
                 atom.force = Vector3d.NULL;
                 // bond stretching

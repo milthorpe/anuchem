@@ -29,7 +29,7 @@ public class MMAtom extends Atom {
     public var velocity : Vector3d;
 
     /** The effective charge in atomic units. */
-    public global val charge : Double;
+    public val charge : Double;
 
     public def this(symbol : String, centre : Point3d, charge : Double) {
         super(symbol, centre);
@@ -52,8 +52,8 @@ public class MMAtom extends Atom {
     public def this(atom : MMAtom) {
         super(atom);
         this.charge = atom.charge;
-        this.force = at (atom) {atom.force};
-        this.velocity = at (atom) {atom.velocity};
+        this.force = atom.force;
+        this.velocity = atom.velocity;
     }
 
     public def this(centre : Point3d) { 
@@ -61,7 +61,7 @@ public class MMAtom extends Atom {
     }
 
     public def pairEnergy(atom2 : MMAtom) : Double {
-        return charge * atom2.charge / centre.distance(at(atom2){atom2.centre});
+        return charge * atom2.charge / centre.distance(atom2.centre);
     }
 
     /**

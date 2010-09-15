@@ -14,11 +14,11 @@ package au.edu.anu.fft;
  * Implements regular (non-fast) Discrete Fourier Transforms.
  */
 public class DFT {
-	public static def dft1D(input : Rail[Complex]!, forward : boolean) : Rail[Complex]! {
+	public static def dft1D(input : Array[Complex](1), forward : boolean) : Array[Complex](1) {
         val sign = forward ? -1.0 : 1.0;
-        val n = input.length;
+        val n = input.size;
         val N = n as Double;
-        val output = Rail.make[Complex](n, (Int) => Complex.ZERO);
+        val output = new Array[Complex](n, (Point) => Complex.ZERO);
         for (var m:int=0; m<n; m++) {
             val mDivN = (m as Double)* sign * 2.0 * Math.PI / N ;
             var mKDivN : Double = 0.0;
@@ -32,7 +32,7 @@ public class DFT {
         return output;
     }
 
-    public static def dft3D(input : Array[Complex](3)!{self.rect,self.zeroBased}, forward : boolean) : Array[Complex](3)! {
+    public static def dft3D(input : Array[Complex](3){self.rect,self.zeroBased}, forward : boolean) : Array[Complex](3){self.region==input.region} {
         val sign = forward ? -1.0 : 1.0;
         val r = input.region;
         val n1 = r.max(0) + 1;
@@ -61,6 +61,6 @@ public class DFT {
                 }
             }
         }
-        return output as Array[Complex](3)!;
+        return output;
     }
 }

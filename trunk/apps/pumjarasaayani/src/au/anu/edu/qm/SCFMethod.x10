@@ -21,26 +21,26 @@ import au.edu.anu.chem.Molecule;
  * @author: V.Ganesh
  */
 public abstract class SCFMethod { 
-    protected global val molecule:Molecule[QMAtom]{self.at(this)};
-    protected global val oneE:OneElectronIntegrals{self.at(this)};
-    protected global val bfs:BasisFunctions{self.at(this)};
+    protected val molecule:Molecule[QMAtom];
+    protected val oneE:OneElectronIntegrals;
+    protected val bfs:BasisFunctions;
 
     protected var maxIteration:Int;
     protected var energyTolerance:Double;
 
     protected var energy:Double;
 
-    public def this(mol:Molecule[QMAtom]!,  
-                    oneE:OneElectronIntegrals!,
-                    bfs:BasisFunctions!) { 
+    public def this(mol:Molecule[QMAtom],  
+                    oneE:OneElectronIntegrals,
+                    bfs:BasisFunctions) { 
         this.molecule = mol;
         this.oneE = oneE;
         this.bfs = bfs;
 
         val jd = JobDefaults.getInstance();
 
-        maxIteration    = at(jd) { jd.getMaxIterations() };
-        energyTolerance = at(jd) { jd.getEnergyTolerance() }; 
+        maxIteration    = jd.getMaxIterations();
+        energyTolerance = jd.getEnergyTolerance(); 
 
         energy = 0.0;
     } 
@@ -64,10 +64,10 @@ public abstract class SCFMethod {
         var i:Int, j:Int;
         val noOfAtoms = molecule.getNumberOfAtoms();
         
-        var atomI:QMAtom{self.at(this)}, atomJ:QMAtom{self.at(this)};
+        var atomI:QMAtom, atomJ:QMAtom;
         
         // read in the atomic numbers
-        atomicNumbers:Array[Int](1)! = new Array[Int]([0..noOfAtoms]);
+        val atomicNumbers = new Array[Int]([0..noOfAtoms]);
         val ai = AtomInfo.getInstance();
         
         for(i=0; i<noOfAtoms; i++) {

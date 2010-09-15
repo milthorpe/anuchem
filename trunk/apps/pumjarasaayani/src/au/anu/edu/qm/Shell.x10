@@ -21,7 +21,7 @@ import x10.util.*;
  */
 public class Shell { 
     val angularMomentum:Int;
-    global val shellPrimitives:GrowableRail[ContractedGaussian]{self.at(this)};
+    val shellPrimitives:GrowableRail[ContractedGaussian];
 
     public def this(am:Int) { 
        angularMomentum = am;

@@ -4,10 +4,10 @@ public class TriangularRegion extends Region {
     // XTENLANG-49
     static type TriangularRegion(rank:Int) = TriangularRegion{self.rank==rank};
 
-    global val dim : Int;
-    global val rowMin : Int;
-    global val colMin : Int;
-    global val lower : Boolean;
+    val dim : Int;
+    val rowMin : Int;
+    val colMin : Int;
+    val lower : Boolean;
 
     /**
      * Constructs a new TriangularRegion 
@@ -21,27 +21,27 @@ public class TriangularRegion extends Region {
         this.lower = lower;
     }
 
-    public global def isConvex() : Boolean {
+    public def isConvex() : Boolean {
         return true;
     }
 
-    public global def isEmpty() : Boolean {
+    public def isEmpty() : Boolean {
         return false;
     }
 
-    public global def min(): ValRail[Int] {
+    public def min(): ValRail[Int] {
         return [rowMin,colMin];
     }
 
-    public global def max(): ValRail[Int] {
+    public def max(): ValRail[Int] {
         return [rowMin+dim,colMin+dim];
     }   
 
-    public global def size() : Int { 
+    public def size() : Int { 
         return dim * (dim + 1) / 2;
     }
 
-    public global def contains(p: Point): boolean {
+    public def contains(p: Point): boolean {
         if (p.rank == 2) {
             if (p(0) >= rowMin && p(0) <= (rowMin + dim)) {
                 if (lower) {
@@ -60,31 +60,31 @@ public class TriangularRegion extends Region {
         throw new UnsupportedOperationException("contains(" + p + ")");
     }
 
-    public global def contains(r:Region(rank)): boolean {
+    public def contains(r:Region(rank)): boolean {
         // TODO
         throw new UnsupportedOperationException("contains(Region)");
     }
 
-    public global def complement(): Region(rank) {
+    public def complement(): Region(rank) {
         // TODO
         throw new UnsupportedOperationException("complement()");
     }
 
-    public global def intersection(t: Region(rank)): Region(rank) {
+    public def intersection(t: Region(rank)): Region(rank) {
         // TODO
         throw new UnsupportedOperationException("intersection()");
     }
 
-    public global def product(r: Region): Region {
+    public def product(r: Region): Region {
         // TODO
         throw new UnsupportedOperationException("product()");
     }
 
-    public global def translate(v: Point(rank)): Region(rank) {
+    public def translate(v: Point(rank)): Region(rank) {
         return new TriangularRegion(rowMin + v(0), colMin + v(1), dim, lower) as Region(rank);
     }
 
-    public global def projection(axis: Int): Region(1) {
+    public def projection(axis: Int): Region(1) {
         switch (axis) {
             case 0:
                 return rowMin..rowMin+dim;
@@ -95,7 +95,7 @@ public class TriangularRegion extends Region {
         }
     }
 
-    public global def eliminate(axis: Int): Region(1) {
+    public def eliminate(axis: Int): Region(1) {
         switch (axis) {
             case 0:
                 return colMin..colMin+dim;
@@ -106,15 +106,15 @@ public class TriangularRegion extends Region {
         }
     }
 
-    public global def boundingBox(): Region(rank) {
+    public def boundingBox(): Region(rank) {
         return [rowMin..rowMin+dim,colMin..colMin+dim];
     }
 
-    protected global def computeBoundingBox(): Region(rank) {
+    protected def computeBoundingBox(): Region(rank) {
         return [rowMin..rowMin+dim,colMin..colMin+dim];
     }
 
-    public global def iterator(): Iterator[Point(rank)] {
+    public def iterator(): Iterator[Point(rank)] {
         return new TriangularRegionIterator(this) as Iterator[Point(rank)];
     }
 
@@ -155,11 +155,11 @@ public class TriangularRegion extends Region {
         } 
     }
 
-    public global def scanners():Iterator[Region.Scanner]! {
+    public def scanners():Iterator[Region.Scanner]! {
         throw new UnsupportedOperationException("TODO: scanners not defined for TriangularRegion");
     }
 
-    public global safe def toString(): String {
+    public safe def toString(): String {
         val triangleString = "triangular region " + colMin + ".." + (colMin + dim) + "," + rowMin + ".." + (rowMin + dim);
         if (lower) {
             return "lower " + triangleString;

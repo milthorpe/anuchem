@@ -57,7 +57,7 @@ public class LocallyEssentialTree {
         this.vListMin = vListMin;
         this.vListMax = vListMax;
         val multipoleCopies = Rail.make[PeriodicArray[MultipoleExpansion](3)!](combinedVList.length());
-        for ((i) in 0..combinedVList.length()-1) {
+        for ([i] in 0..combinedVList.length()-1) {
             if (combinedVList(i) != null) {
                 val multipoleCopiesLevelRegion : Region(3) = [vListMin(i)(0)..vListMax(i)(0), vListMin(i)(1)..vListMax(i)(1), vListMin(i)(2)..vListMax(i)(2)];
                 multipoleCopies(i) = new PeriodicArray[MultipoleExpansion](multipoleCopiesLevelRegion);

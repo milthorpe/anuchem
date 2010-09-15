@@ -34,7 +34,7 @@ final public class ScalableTreeBarrier {
         public def this(numPlaces : Int) {
             this.parent = parent;
             val i = here.id;
-            for ((j) in 0..3) {
+            for ([j] in 0..3) {
                 haveChild(j) = (4*i+j+1 < numPlaces);
                 childNotReady(j) = haveChild(j);
             }
@@ -50,7 +50,7 @@ final public class ScalableTreeBarrier {
     public def this(places : ValRail[Place]) {
         nodes = DistArray.make[TreeNode](Dist.makeUnique(places), ((i) : Point) => new TreeNode(places.length()));
         val P = nodes.region.size();
-        finish ateach ((i) in nodes) {
+        finish ateach ([i] in nodes) {
             val thisNode = nodes(i);
             val parentId = Math.floor((i-1)/4) as Int;
             thisNode.parent = (i == 0) ? null : at (nodes.dist(parentId)) {nodes(parentId)};

@@ -22,13 +22,13 @@ import org.gnu.gsl.GSL;
  * @author V. Ganesh
  */
 public class NativeDiagonalizer implements Diagonalizer {
-    var eigenValuesVec:Vector!;
-    var eigenVectorsMat:Matrix!;
+    var eigenValuesVec:Vector;
+    var eigenVectorsMat:Matrix;
 
-    public def diagonalize(mat:Matrix!) : void {
+    public def diagonalize(mat:Matrix) : void {
          val n:Int = mat.getRowCount();
-         eigenVectorsMat = new Matrix(n) as Matrix!;
-         eigenValuesVec  = new Vector(n) as Vector!;
+         eigenVectorsMat = new Matrix(n);
+         eigenValuesVec  = new Vector(n);
 
          eigenVectorsMat.makeZero();
          eigenValuesVec.makeZero();
@@ -38,7 +38,7 @@ public class NativeDiagonalizer implements Diagonalizer {
          eigenVectorsMat = eigenVectorsMat.transpose();
     }
 
-    public def getEigenValues() : Vector! = eigenValuesVec;
-    public def getEigenVectors() : Matrix! = eigenVectorsMat;
+    public def getEigenValues() : Vector = eigenValuesVec;
+    public def getEigenVectors() : Matrix = eigenVectorsMat;
 }
 

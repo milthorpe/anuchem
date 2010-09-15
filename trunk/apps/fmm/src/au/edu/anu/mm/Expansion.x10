@@ -35,20 +35,20 @@ public class Expansion {
     }
 
     public atomic def add(e : Expansion!) {
-        for ((i,j) in terms.region) {
+        for ([i,j] in terms.region) {
             this.terms(i,j) = this.terms(i,j) + e.terms(i,j);
         }
     }
 
-    public global safe def toString() : String {
+    public safe def toString() : String {
         return at(this) {toStringLocal()};
     }
 
     private safe def toStringLocal() : String {
         val p : Int = terms.region.max(0);
         val s = new StringBuilder();
-        for ((i) in 0..p) {
-            for ((j) in -i..i) {
+        for ([i] in 0..p) {
+            for ([j] in -i..i) {
 			    s.add(terms(i,j) + " ");
             }
             s.add("\n");

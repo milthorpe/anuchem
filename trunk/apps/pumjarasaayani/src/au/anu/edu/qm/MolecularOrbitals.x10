@@ -21,7 +21,7 @@ import x10x.xla.JacobiDiagonalizer;
  * @author: V.Ganesh
  */
 public class MolecularOrbitals extends Matrix {
-    var orbitalEnergies:Array[Double](1)!;
+    var orbitalEnergies:Array[Double](1);
 
     public def this(n:Int) {
         super(n);
@@ -29,7 +29,7 @@ public class MolecularOrbitals extends Matrix {
 
     public def getOrbitalEnergies() : Array[Double]{rank==1} = orbitalEnergies;
  
-    public def compute(theMat:Matrix!, overlap:Overlap!) : void {
+    public def compute(theMat:Matrix, overlap:Overlap) : void {
         val x = overlap.getSHalf();
         val a = theMat.similarityTransform(x);
         // val diag = new JacobiDiagonalizer();
@@ -40,7 +40,7 @@ public class MolecularOrbitals extends Matrix {
         val res = diag.getEigenVectors().mul(x).getMatrix(); 
         val thisMat = getMatrix();
 
-        for((i, j) in res.region)
+        for([i, j] in res.region)
            thisMat(i, j) = res(i, j);
     }
 }

@@ -27,7 +27,7 @@ public class TestPMEFunctions extends TestElectrostatic {
         super(numAtoms);
     }
 
-    public static def main(args : Rail[String]!) {
+    public static def main(args : Array[String](1)) {
         new TestPMEFunctions(2).test();
     }
 

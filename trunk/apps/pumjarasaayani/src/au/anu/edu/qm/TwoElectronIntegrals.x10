@@ -33,12 +33,12 @@ import au.edu.anu.chem.Molecule;
 public class TwoElectronIntegrals {
     private static val SQ2PI = Math.pow((2.0/Math.PI), 0.5); 
 
-    private val fmt:Rail[Double]!, zeroM:Rail[Double]!;
+    private val fmt:Rail[Double], zeroM:Rail[Double];
 
-    private val rM:Array[Double](2){rect, self.at(this)};
-    private val pqInts:Array[Double](2){rect, self.at(this)};
-    private val npint:Array[Double](2){rect, self.at(this)};
-    private val pcdint:Array[Double](3){rect, self.at(this)};
+    private val rM:Array[Double](2){rect};
+    private val pqInts:Array[Double](2){rect};
+    private val npint:Array[Double](2){rect};
+    private val pcdint:Array[Double](3){rect};
 
     private val maxam:Int, maxam2:Int, maxam4:Int, maxamN:Int, maxam2M:Int, maxam2N:Int, pqdim:Int;
 
@@ -77,11 +77,11 @@ public class TwoElectronIntegrals {
     /* Note: M_D  routines mostly taken from Alistair's code, with a few changes. 
        Uses MD recurrance relations to evaluate higher angular momentum integrals.
        Direct update to GMtarix is based on the code in GMatrix.compute..() */
-    public def compute2EAndRecord(a:ContractedGaussian{self.at(this)}, b:ContractedGaussian{self.at(this)}, 
-                                  c:ContractedGaussian{self.at(this)}, d:ContractedGaussian{self.at(this)}, 
-                                  shellList:ShellList{self.at(this)}, 
-                                  jMat:Matrix{self.at(this)}, kMat:Matrix{self.at(this)},
-                                  dMat:Density{self.at(this)}) : void {
+    public def compute2EAndRecord(a:ContractedGaussian, b:ContractedGaussian, 
+                                  c:ContractedGaussian, d:ContractedGaussian, 
+                                  shellList:ShellList, 
+                                  jMat:Matrix, kMat:Matrix,
+                                  dMat:Density) : void {
          val aPrims = a.getPrimitives();
          val bPrims = b.getPrimitives();
          val cPrims = c.getPrimitives();
@@ -236,11 +236,11 @@ public class TwoElectronIntegrals {
     }
 
     /** A modification of above function */
-    public def compute2EAndRecord2(a:ContractedGaussian{self.at(this)}, b:ContractedGaussian{self.at(this)}, 
-                                  c:ContractedGaussian{self.at(this)}, d:ContractedGaussian{self.at(this)}, 
-                                  shellList:ShellList{self.at(this)}, 
-                                  jMat:Matrix{self.at(this)}, kMat:Matrix{self.at(this)},
-                                  dMat:Density{self.at(this)},
+    public def compute2EAndRecord2(a:ContractedGaussian, b:ContractedGaussian, 
+                                  c:ContractedGaussian, d:ContractedGaussian, 
+                                  shellList:ShellList, 
+                                  jMat:Matrix, kMat:Matrix,
+                                  dMat:Density,
                                   radiusABSquared:Double, 
                                   aAng:Int, bAng:Int, cAng:Int, dAng:Int, angMomAB:Int,
                                   aStrt:Int, bStrt:Int, cStrt:Int, dStrt:Int,
@@ -388,9 +388,9 @@ public class TwoElectronIntegrals {
     /** find unique elements and mark the onces that are not */
     /** 8 => is the level of integral symmetry, given (i,j|k.l)
         there are 8 combinations that are unique */
-    private def filterUniqueElements(idx:Rail[Int]!, jdx:Rail[Int]!,
-                                     kdx:Rail[Int]!, ldx:Rail[Int]!,
-                                     validIdx:Rail[Boolean]!) : void {
+    private def filterUniqueElements(idx:Rail[Int], jdx:Rail[Int],
+                                     kdx:Rail[Int], ldx:Rail[Int],
+                                     validIdx:Rail[Boolean]) : void {
         for(var m:Int=0; m<8; m++) {
             val i = idx(m); val j = jdx(m); val k = kdx(m); val l = ldx(m);
             for(var n:Int=m+1; n<8; n++) {
@@ -499,7 +499,7 @@ public class TwoElectronIntegrals {
          }
     }
 
-    private def computeRm(angMomABCD:Int, shellList:ShellList!, r:Vector3d) {
+    private def computeRm(angMomABCD:Int, shellList:ShellList, r:Vector3d) {
          for(var i:Int=0; i<=angMomABCD; i++) {
              val shell = shellList.getPowers(i);
              val iLim  = ((i+1)*(i+2)/2);
@@ -514,7 +514,7 @@ public class TwoElectronIntegrals {
          }
     }
 
-    private def computePq(angMomAB:Int, angMomCD:Int, shellList:ShellList!) {
+    private def computePq(angMomAB:Int, angMomCD:Int, shellList:ShellList) {
          var i:Int, j:Int, pp:Int, qq:Int;
          
          for(i=0; i<=angMomAB; i++) {
@@ -559,7 +559,7 @@ public class TwoElectronIntegrals {
     }
 
     private def computePcd(angMomAB:Int, gamma2:Double, q:Point3d, dLim:Int, cLim:Int, 
-                           dAng:Int, cAng:Int, dCen:Point3d, cCen:Point3d, shellList:ShellList!) {
+                           dAng:Int, cAng:Int, dCen:Point3d, cCen:Point3d, shellList:ShellList) {
          var i:Int, j:Int, pp:Int, k:Int, l:Int, dd:Int, cc:Int;
          val shellD = shellList.getPowers(dAng);
          val shellC = shellList.getPowers(cAng);
@@ -611,9 +611,9 @@ public class TwoElectronIntegrals {
  
     private def computeAbcd(dLim:Int, cLim:Int, bLim:Int, aLim:Int,
                             dStrt:Int, cStrt:Int, bStrt:Int, aStrt:Int,
-                            shellList:ShellList!, bAng:Int, aAng:Int, 
+                            shellList:ShellList, bAng:Int, aAng:Int, 
                             aCen:Point3d, bCen:Point3d, p:Point3d, gamma1:Double,
-                            twoEInts:Array[Double](1){rect,self.at(this)}) {
+                            twoEInts:Array[Double](1){rect}) {
          var dd:Int, cc:Int, bb:Int, aa:Int, k:Int, l:Int;
          val shellB = shellList.getPowers(bAng);
          val shellA = shellList.getPowers(aAng);
@@ -675,11 +675,11 @@ public class TwoElectronIntegrals {
 
     private def fillJKMatrices(dLim:Int, cLim:Int, bLim:Int, aLim:Int,
                                dStrt:Int, cStrt:Int, bStrt:Int, aStrt:Int,
-                               shellList:ShellList!, bAng:Int, aAng:Int,
-                               twoEInts:Array[Double](1){rect,self.at(this)},
-                               jMatrix:Array[Double](2){rect,self.at(this)}, 
-                               kMatrix:Array[Double](2){rect,self.at(this)},
-                               dMatrix:Array[Double](2){rect,self.at(this)}) {
+                               shellList:ShellList, bAng:Int, aAng:Int,
+                               twoEInts:Array[Double](1){rect},
+                               jMatrix:Array[Double](2){rect}, 
+                               kMatrix:Array[Double](2){rect},
+                               dMatrix:Array[Double](2){rect}) {
          var dd:Int, cc:Int, bb:Int, aa:Int, k:Int, l:Int;
          
          var intIndx:Int = 0;
@@ -767,14 +767,14 @@ public class TwoElectronIntegrals {
     }
 
     /** Compute the base FmT() - for evaluating integrals */
-    protected def computeFmtFGamma(maxam:Int, T:Double, fmt:Rail[Double]!) {
+    protected def computeFmtFGamma(maxam:Int, T:Double, fmt:Rail[Double]) {
         for(var m:Int=0; m<maxam; m++) { 
             fmt(m) = IntegralsUtils.computeFGamma(m, T);
         } // end for
     }
 
     /** Compute the base FmT() - for evaluating integrals */
-    protected def computeFmt(maxam:Int, T:Double, fmt:Rail[Double]!) {
+    protected def computeFmt(maxam:Int, T:Double, fmt:Rail[Double]) {
         if (T > 30.0){
             fmt(0) = Math.sqrt(Math.PI/T)*0.5;
            
@@ -804,14 +804,14 @@ public class TwoElectronIntegrals {
      * recursively form the columb repulsion term using HGP, stage one: form HRR 
      * HRR (Horizontal Recurrance Relation)
      */
-    protected def contrHrr(a:Point3d, aPower:Power, aCoeff:ArrayList[Double]{self.at(this)},
-                           aExps:ArrayList[Double]{self.at(this)}, aNorms:ArrayList[Double]{self.at(this)},
-                           b:Point3d, bPower:Power, bCoeff:ArrayList[Double]{self.at(this)},
-                           bExps:ArrayList[Double]{self.at(this)}, bNorms:ArrayList[Double]{self.at(this)},
-                           c:Point3d, cPower:Power, cCoeff:ArrayList[Double]{self.at(this)},
-                           cExps:ArrayList[Double]{self.at(this)}, cNorms:ArrayList[Double]{self.at(this)},
-                           d:Point3d, dPower:Power, dCoeff:ArrayList[Double]{self.at(this)},
-                           dExps:ArrayList[Double]{self.at(this)}, dNorms:ArrayList[Double]{self.at(this)}) : Double {
+    protected def contrHrr(a:Point3d, aPower:Power, aCoeff:ArrayList[Double],
+                           aExps:ArrayList[Double], aNorms:ArrayList[Double],
+                           b:Point3d, bPower:Power, bCoeff:ArrayList[Double],
+                           bExps:ArrayList[Double], bNorms:ArrayList[Double],
+                           c:Point3d, cPower:Power, cCoeff:ArrayList[Double],
+                           cExps:ArrayList[Double], cNorms:ArrayList[Double],
+                           d:Point3d, dPower:Power, dCoeff:ArrayList[Double],
+                           dExps:ArrayList[Double], dNorms:ArrayList[Double]) : Double {
         val la = aPower.getL(), ma = aPower.getM(), na = aPower.getN();
         val lb = bPower.getL(), mb = bPower.getM(), nb = bPower.getN();
         val lc = cPower.getL(), mc = cPower.getM(), nc = cPower.getN();
@@ -894,14 +894,14 @@ public class TwoElectronIntegrals {
     /**
      * VRR (Vertical Recurrance Relation) contribution
      */
-    protected def contrVrr(a:Point3d, aPower:Power, aCoeff:ArrayList[Double]{self.at(this)},
-                           aExps:ArrayList[Double]{self.at(this)}, aNorms:ArrayList[Double]{self.at(this)},
-                           b:Point3d, bCoeff:ArrayList[Double]{self.at(this)},
-                           bExps:ArrayList[Double]{self.at(this)}, bNorms:ArrayList[Double]{self.at(this)},
-                           c:Point3d, cPower:Power, cCoeff:ArrayList[Double]{self.at(this)},
-                           cExps:ArrayList[Double]{self.at(this)}, cNorms:ArrayList[Double]{self.at(this)},
-                           d:Point3d, dCoeff:ArrayList[Double]{self.at(this)},
-                           dExps:ArrayList[Double]{self.at(this)}, dNorms:ArrayList[Double]{self.at(this)}) : Double {
+    protected def contrVrr(a:Point3d, aPower:Power, aCoeff:ArrayList[Double],
+                           aExps:ArrayList[Double], aNorms:ArrayList[Double],
+                           b:Point3d, bCoeff:ArrayList[Double],
+                           bExps:ArrayList[Double], bNorms:ArrayList[Double],
+                           c:Point3d, cPower:Power, cCoeff:ArrayList[Double],
+                           cExps:ArrayList[Double], cNorms:ArrayList[Double],
+                           d:Point3d, dCoeff:ArrayList[Double],
+                           dExps:ArrayList[Double], dNorms:ArrayList[Double]) : Double {
         var res:Double = 0.0;
 
         var i:Int, j:Int, k:Int, l:Int;

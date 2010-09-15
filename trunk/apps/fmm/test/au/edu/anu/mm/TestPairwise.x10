@@ -27,7 +27,7 @@ public class TestPairwise extends TestElectrostatic {
         super(numAtoms);
     }
 
-    public static def main(args : Rail[String]!) {
+    public static def main(args : Array[String](1)) {
         var numAtoms : Int;
         if (args.length > 0) {
             numAtoms = Int.parseInt(args(0));

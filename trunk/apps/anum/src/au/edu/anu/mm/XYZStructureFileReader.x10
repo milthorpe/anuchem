@@ -32,7 +32,7 @@ public class XYZStructureFileReader {
         val file = new FileReader(new File(fileName));
         val numAtoms = Int.parseInt(file.readLine());
         val title = file.readLine().split(" ");
-        var molecule : Molecule[MMAtom]{self.at(this)} = new Molecule[MMAtom](title(0));
+        var molecule : Molecule[MMAtom] = new Molecule[MMAtom](title(0));
         for(var i:Int=0; i<numAtoms; i++) {
             val words = file.readLine().split(" ");
             molecule.addAtom(new MMAtom(words(0),
@@ -47,7 +47,7 @@ public class XYZStructureFileReader {
        return molecule;
     }
 
-    public safe def setFileName(fileName : String!) {
+    public safe def setFileName(fileName : String) {
         this.fileName = fileName;
     }
 }

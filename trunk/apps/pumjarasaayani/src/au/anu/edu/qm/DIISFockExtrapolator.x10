@@ -21,33 +21,33 @@ import x10x.xla.GaussianElimination;
  * DIIS based fock extrapolation
  * Note: Mostly lifted from MeTA Studio code.
  * For reference see:
- * "CONVERGENCE ACCELERATION OF ITERATWE SEQUENCES. THE CASE OF SCF ITERATION", Peter Pulay, Chem. Phys. Lett., 73, 393, 1980.
+ * "CONVERGENCE ACCELERATION OF ITERATIVE SEQUENCES. THE CASE OF SCF ITERATION", Peter Pulay, Chem. Phys. Lett., 73, 393, 1980.
  * (opps! thats my birth year ;-))
  *
  * @author: V.Ganesh
  */
 public class DIISFockExtrapolator {
-    global val fockMatrixList:ArrayList[Fock!]!;
-    global val errorVectorList:ArrayList[Vector!]!;
+    val fockMatrixList:ArrayList[Fock];
+    val errorVectorList:ArrayList[Vector];
 
-    global val errorThreshold = 0.1;
+    val errorThreshold = 0.1;
 
     var diisStep:Int = 0;
     var diisStarted:Boolean = false;
 
-    var oldFock:Fock!;
+    var oldFock:Fock;
 
     public def this() {
-        fockMatrixList  = new ArrayList[Fock!]();
-        errorVectorList = new ArrayList[Vector!]();
+        fockMatrixList  = new ArrayList[Fock]();
+        errorVectorList = new ArrayList[Vector]();
 
         diisStep = 0;
     }
 
     /** Generate a new Fock by extrapolating from previous recorded Fock and their difference vectors */
-    public def next(currentFock:Fock!, overlap:Overlap!, density:Density!) : Fock! {
+    public def next(currentFock:Fock, overlap:Overlap, density:Density) : Fock {
         val N = currentFock.getRowCount();
-        var newFock:Fock! = new Fock(N) as Fock!;
+        var newFock:Fock = new Fock(N);
 
         val newFockMat = newFock.getMatrix();
         val curFockMat = currentFock.getMatrix();
@@ -61,7 +61,7 @@ public class DIISFockExtrapolator {
         val FPS = currentFock.mul(density).mul(overlap);
         val SPF = overlap.mul(density).mul(currentFock);
 
-        val errorVector = new Vector(FPS.sub(SPF)) as Vector!;
+        val errorVector = new Vector(FPS.sub(SPF));
         val mxerr = errorVector.maxNorm();
 
         if (mxerr < errorThreshold && !diisStarted) {
@@ -95,8 +95,8 @@ public class DIISFockExtrapolator {
 
         val noOfIterations = errorVectorList.size();
 
-        val A = new Matrix(noOfIterations+1) as Matrix!;
-        val B = new Vector(noOfIterations+1) as Vector!;
+        val A = new Matrix(noOfIterations+1);
+        val B = new Vector(noOfIterations+1);
 
         val aMatrix = A.getMatrix();
         val bVector = B.getVector();

@@ -13,20 +13,20 @@ import x10x.matrix.Matrix;
 
 public class GaussianElimination extends LinearEquationSolver {
 
-    private var row:Rail[Int]!;
-    private var a:Array[Double]{rank==2, self.at(this)};
-    private var x:Array[Double]{rank==1, self.at(this)};
+    private var row:Rail[Int];
+    private var a:Array[Double]{rank==2};
+    private var x:Array[Double]{rank==1};
 
-    private var matrixA:Matrix!;
+    private var matrixA:Matrix;
     
     public def this() {
     }
 
     private var n:Int, n1:Int;
 
-    public def findSolution(matA:Matrix!, vectorB:Vector!) : Vector! throws Exception {
+    public def findSolution(matA:Matrix, vectorB:Vector) : Vector throws Exception {
         val N = matA.getRowCount();
-        this.matrixA = new Matrix(N, N+1) as Matrix!;
+        this.matrixA = new Matrix(N, N+1);
         a = this.matrixA.getMatrix(); 
         x = vectorB.getVector();
 

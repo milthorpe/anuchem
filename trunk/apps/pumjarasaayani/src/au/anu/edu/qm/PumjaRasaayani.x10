@@ -27,7 +27,7 @@ import au.anu.edu.qm.mta.Fragmentor;
  * @author: V.Ganesh
  */
 public class PumjaRasaayani { 
-    var mol:Molecule[QMAtom]{self.at(this)};
+    var mol:Molecule[QMAtom];
     var basisName:String;
     var gMatType:Int;
     var isMTA:Boolean;
@@ -124,7 +124,7 @@ public class PumjaRasaayani {
         time   = (timer.total(0) as Double) / 1e9;
     }
 
-    private def runHF(fragment:Fragment!) {
+    private def runHF(fragment:Fragment) {
         val timer = new Timer(3);
         timer.start(0);
 
@@ -170,7 +170,7 @@ public class PumjaRasaayani {
         // run hf for all all the fragments, 
         // TODO: how to parallelize?
         for(fragment in fragments) {
-            runHF(fragment as Fragment!); 
+            runHF(fragment); 
         } // end for
 
         // collect and patch the results using cardinality expression
@@ -184,11 +184,11 @@ public class PumjaRasaayani {
         Console.OUT.println ("\n-End of MTA run-\n\nTotal time since start: " + (timer.total(0) as Double) / 1e9 + " seconds\n");
     }
 
-    public static def main(args:Rail[String]!) {
-        val qmApp = args.length == 0 ? new PumjaRasaayani() : 
-                    args.length == 1 ? new PumjaRasaayani(args(0)) : 
-                    args.length == 2 ? new PumjaRasaayani(args(0), Int.parseInt(args(1))) : 
-                                       new PumjaRasaayani(args(0), Int.parseInt(args(1)), args(2));
+    public static def main(args : Array[String](1)) {
+        val qmApp = args.size == 0 ? new PumjaRasaayani() : 
+                    args.size == 1 ? new PumjaRasaayani(args(0)) : 
+                    args.size == 2 ? new PumjaRasaayani(args(0), Int.parseInt(args(1))) : 
+                                     new PumjaRasaayani(args(0), Int.parseInt(args(1)), args(2));
         qmApp.runIt();
     }
 }

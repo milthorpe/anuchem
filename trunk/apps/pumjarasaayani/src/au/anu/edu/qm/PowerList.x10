@@ -21,7 +21,7 @@ import x10.util.*;
  */
 public class PowerList { 
 
-    val powerList = new HashMap[String,ValRail[Power]]() as HashMap[String,ValRail[Power]]!; 
+    val powerList = new HashMap[String,ValRail[Power]](); 
 
     private def this() {
        powerList.put("S", generatePowerList(0));
@@ -30,7 +30,7 @@ public class PowerList {
        powerList.put("F", generatePowerList(3)); 
     }
 
-    public def generatePowerList(maxAngularMomentum:Int) : ValRail[Power] {
+    public final def generatePowerList(maxAngularMomentum:Int) : ValRail[Power] {
         var n:Int = ((maxAngularMomentum+1)*(maxAngularMomentum+2)/2);
 
         val pList = Rail.make[Power](n);
@@ -47,9 +47,9 @@ public class PowerList {
         return ValRail.make(pList);
     }
 
-    private static val _theInstance = new PowerList() as PowerList!;
+    private static val _theInstance = new PowerList();
 
-    public static def getInstance() : PowerList! { 
+    public static def getInstance() : PowerList { 
        // return _theInstance as PowerList!;
        return new PowerList();
     }

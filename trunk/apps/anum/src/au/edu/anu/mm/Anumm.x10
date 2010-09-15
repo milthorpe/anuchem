@@ -64,9 +64,9 @@ public class Anumm {
      */
     public def mdStep(timestep : Double) {
         val t = timestep * 0.001;
-        finish ateach((p) in atoms) {
+        finish ateach([p] in atoms) {
             val myAtoms = atoms(p);
-            for((i) in 0..myAtoms.length-1) {
+            for([i] in 0..myAtoms.length-1) {
                 val atom = myAtoms(i);
                 val invMass = 1.0 / forceField.getAtomMass(atom.symbol);
                 atom.velocity = atom.velocity + 0.5 * t * invMass * atom.force;
@@ -74,9 +74,9 @@ public class Anumm {
             }
         }
         forceField.getPotentialAndForces(atoms);
-        finish ateach((p) in atoms) {
+        finish ateach([p] in atoms) {
             val myAtoms = atoms(p);
-            for((i) in 0..myAtoms.length-1) {
+            for([i] in 0..myAtoms.length-1) {
                 val atom = myAtoms(i);
                 val invMass = 1.0 / forceField.getAtomMass(atom.symbol);
                 atom.velocity = atom.velocity + 0.5 * t * invMass * atom.force;
@@ -85,7 +85,7 @@ public class Anumm {
         }
     }
 
-    public static def main(args : Rail[String]!) {
+    public static def main(args : Array[String](1)) {
         var structureFileName : String = null;
         var timestep : Double = 0.2;
         var numSteps : Int = 200;

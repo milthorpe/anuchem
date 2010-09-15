@@ -27,7 +27,7 @@ public class TestPeriodicFmm3d extends TestElectrostatic {
         super(numAtoms);
     }
 
-    public static def main(args : Rail[String]!) {
+    public static def main(args : Array[String](1)) {
         var numAtoms : Int;
         var density : Double = 60.0;
         var numTerms : Int = 10;
