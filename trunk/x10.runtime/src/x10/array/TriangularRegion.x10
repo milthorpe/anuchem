@@ -29,6 +29,11 @@ public class TriangularRegion extends Region {
         return false;
     }
 
+    public def indexOf(pt:Point) {
+        if (pt.rank != 2) return -1;
+        return ((pt(0) * pt(0)) / 2) + pt(1);
+    }
+
     public def min(): ValRail[Int] {
         return [rowMin,colMin];
     }
@@ -155,7 +160,7 @@ public class TriangularRegion extends Region {
         } 
     }
 
-    public def scanners():Iterator[Region.Scanner]! {
+    public def scanners():Iterator[Region.Scanner] {
         throw new UnsupportedOperationException("TODO: scanners not defined for TriangularRegion");
     }
 

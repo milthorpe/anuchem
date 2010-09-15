@@ -41,7 +41,7 @@ final public class ScalableTreeBarrier {
         }
     }
 
-    global val nodes : DistArray[TreeNode](1);
+    val nodes : DistArray[TreeNode](1);
 
     public def this() {
         this(Place.places);
@@ -61,7 +61,7 @@ final public class ScalableTreeBarrier {
         }
     }
 
-    public global def barrier() {
+    public def barrier() {
         //Console.OUT.println("treeBarrier starting at " + here.id);
 
         val thisNode = nodes(here.id);

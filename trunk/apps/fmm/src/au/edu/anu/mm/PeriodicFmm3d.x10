@@ -33,7 +33,7 @@ import au.edu.anu.util.Timer;
  */
 public class PeriodicFmm3d extends Fmm3d {
     /** The number of concentric shells of copies of the unit cell. */
-    public global val numShells : Int;
+    public val numShells : Int;
 
     /** All boxes in the octree division of space. 
      * ValRail has numLevels elements, for levels [1..numLevels]
@@ -43,14 +43,14 @@ public class PeriodicFmm3d extends Fmm3d {
      * 1: y coordinate
      * 2: z coordinate
      */
-    global val boxes : ValRail[PeriodicDistArray[FmmBox](3){rect}];
+    val boxes : ValRail[PeriodicDistArray[FmmBox](3){rect}];
 
-    global val lowestLevelBoxes : PeriodicDistArray[FmmBox](3){rect};
+    val lowestLevelBoxes : PeriodicDistArray[FmmBox](3){rect};
 
     /**
      * An array of locally essential trees (LETs), one for each place.
      */
-    protected global val locallyEssentialTrees : DistArray[LocallyEssentialTree](1);
+    protected val locallyEssentialTrees : DistArray[LocallyEssentialTree](1);
 
     public const TIMER_INDEX_MACROSCOPIC : Int = 7;
     /** 
@@ -60,10 +60,10 @@ public class PeriodicFmm3d extends Fmm3d {
     public val timer = new Timer(8);
 
     /** A region representing a cube of 3x3x3 boxes, used for constructing macroscopic multipoles. */
-    global val threeCube : Region(3) = [-1..1,-1..1,-1..1] as Region(3);
+    static val threeCube : Region(3) = [-1..1,-1..1,-1..1] as Region(3);
 
     /** A region representing a cube of 9x9x9 boxes, used for interacting with macroscopic multipoles. */
-    global val nineCube : Region(3) = [-4..4,-4..4,-4..4] as Region(3);
+    static val nineCube : Region(3) = [-4..4,-4..4,-4..4] as Region(3);
 
     /** The net dipole moment of the unit cell. */
     var dipole : Vector3d = Vector3d.NULL;
@@ -97,7 +97,7 @@ public class PeriodicFmm3d extends Fmm3d {
         timer.stop(TIMER_INDEX_TREE);
     }
 
-    public global def getTopLevel() : Int = 0;
+    public def getTopLevel() : Int = 0;
     
     public def calculateEnergy() : Double {
         timer.start(TIMER_INDEX_TOTAL);
@@ -447,7 +447,7 @@ public class PeriodicFmm3d extends Fmm3d {
      * Creates the U-list of <code>box</code>.
      * The U-list consists of all leaf boxes not well-separated from <code>box</code>.
      */
-    private global def createUList(box : FmmLeafBox!) {
+    private def createUList(box : FmmLeafBox!) {
         // interact with "left half" of uList i.e. only boxes with x<=box.x
         val uList = new GrowableRail[Point(3)]();
         for ([x] in box.x-ws..box.x) {
@@ -467,7 +467,7 @@ public class PeriodicFmm3d extends Fmm3d {
      * The V-list consists of the children of those boxes not 
      * well-separated from the parent of <code>box</code>.
      */
-    private global def createVList(box : FmmBox!) {
+    private def createVList(box : FmmBox!) {
         val xOffset = box.x%2 == 1 ? -1 : 0;
         val yOffset = box.y%2 == 1 ? -1 : 0;
         val zOffset = box.z%2 == 1 ? -1 : 0;
@@ -539,7 +539,7 @@ public class PeriodicFmm3d extends Fmm3d {
      * Gets the atom centre translation vector due to a lowest-level box 
      * being in a neighbouring image, rather than the central unit cell.
      */
-    global def getTranslation(x:  Int, y : Int, z : Int) : Vector3d {
+    def getTranslation(x:  Int, y : Int, z : Int) : Vector3d {
         var translationX : Double = 0.0;
         if (x >= lowestLevelDim) {
             translationX = size;
@@ -567,7 +567,7 @@ public class PeriodicFmm3d extends Fmm3d {
     // TODO all after this point shouldn't be necessary if DistArray, PeriodicDistArray can inherit from same class
     //
 
-    private global def getParentForChild(boxes : ValRail[PeriodicDistArray[FmmBox](3)], level : Int, x : Int, y : Int, z : Int) : FmmBox {
+    private def getParentForChild(boxes : ValRail[PeriodicDistArray[FmmBox](3)], level : Int, x : Int, y : Int, z : Int) : FmmBox {
         if (level == getTopLevel())
             return null;
         return (at (boxes(level-1).dist(x/2, y/2, z/2)) {boxes(level-1)(x/2, y/2, z/2)});
@@ -643,7 +643,7 @@ public class PeriodicFmm3d extends Fmm3d {
     /**
      * @return a local copy at the current place of a box's multipole expansion
      */
-    private global def getMultipoleExpansionLocalCopy(thisLevelBoxes : PeriodicDistArray[FmmBox](3), x : Int, y : Int, z : Int) : MultipoleExpansion! {
+    private def getMultipoleExpansionLocalCopy(thisLevelBoxes : PeriodicDistArray[FmmBox](3), x : Int, y : Int, z : Int) : MultipoleExpansion! {
         val remoteMultipoleExp = at (thisLevelBoxes.periodicDist(x,y,z)) {thisLevelBoxes(x,y,z) != null ? (thisLevelBoxes(x,y,z) as FmmBox!).multipoleExp : null};
         if (remoteMultipoleExp != null) {
             return remoteMultipoleExp.getLocalCopy(numTerms);
@@ -652,7 +652,7 @@ public class PeriodicFmm3d extends Fmm3d {
         }
     }
 
-    private global def getPackedAtomsForBox(x : Int, y : Int, z : Int) {
+    private def getPackedAtomsForBox(x : Int, y : Int, z : Int) {
         val box = lowestLevelBoxes(x, y, z) as FmmLeafBox!;
         if (box != null) {
             return box.getPackedAtoms();

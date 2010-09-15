@@ -21,7 +21,7 @@ import au.edu.anu.chem.mm.TestElectrostatic;
  * @author milthorpe
  */
 public class TestPMEFunctions extends TestElectrostatic {
-    public global def sizeOfCentralCluster() : Double = 80.0;
+    public def sizeOfCentralCluster() : Double = 80.0;
 
     public def this(numAtoms : Int) {
         super(numAtoms);

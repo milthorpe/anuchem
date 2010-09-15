@@ -29,7 +29,7 @@ public class MultipoleExpansion extends Expansion {
     /**
      * Calculate the multipole-like term O_{lm} (with m >= 0) for a point v.
      */
-    public static safe def getOlm(q : Double, v : Tuple3d, p : Int) : MultipoleExpansion! {
+    public static safe def getOlm(q : Double, v : Tuple3d, p : Int) : MultipoleExpansion {
         val exp = new MultipoleExpansion(p);
         var v_pole : Polar3d = Polar3d.getPolar3d(v);
         val pplm = AssociatedLegendrePolynomial.getPlm(Math.cos(v_pole.theta), p); 
@@ -60,7 +60,7 @@ public class MultipoleExpansion extends Expansion {
     /**
      * Calculate the chargeless multipole-like term O_{lm} (with m >= 0) for a point v.
      */
-    public static safe def getOlm(v : Tuple3d, p : Int) : MultipoleExpansion! {
+    public static safe def getOlm(v : Tuple3d, p : Int) : MultipoleExpansion {
         val exp = new MultipoleExpansion(p);
         var v_pole : Polar3d = Polar3d.getPolar3d(v);
         val pplm = AssociatedLegendrePolynomial.getPlm(Math.cos(v_pole.theta), p); 
@@ -97,15 +97,14 @@ public class MultipoleExpansion extends Expansion {
      * @param b the vector along which to translate the multipole
      * @param source the source multipole expansion, centred at the origin
      */
-    public def translateAndAddMultipole(shift : MultipoleExpansion!,
+    public def translateAndAddMultipole(shift : MultipoleExpansion,
                                          source : MultipoleExpansion) {
         val p : Int = terms.region.max(0);
-        val localSource = source.getLocalCopy(p);
         // TODO this atomic should be around inner loop update.
         // however as it's "stop the world" it's more efficient to do it out here
         atomic {
             for ([j,k] in terms.region) {
-                val O_jk = localSource.terms(j,k);
+                val O_jk = source.terms(j,k);
                 for ([l] in j..p) {
                     for ([m] in -l..l) {
                         if (Math.abs(m-k) <= (l-j)) {
@@ -126,21 +125,13 @@ public class MultipoleExpansion extends Expansion {
      * M^(j+1)_(lm) = M^j_(lm) * 3^l
      * @see Kudin & Scuseria (1998) eq. 2.5
      */ 
-    public def getMacroscopicParent() : MultipoleExpansion! {
+    public def getMacroscopicParent() : MultipoleExpansion {
         val p : Int = terms.region.max(0);
         val parentExpansion = new MultipoleExpansion(p);
         for ([l,m] in terms.region) {
             parentExpansion.terms(l,m) = terms(l,m) * Math.pow(3.0, l);
         }
         return parentExpansion;
-    }
-
-
-    public global def getLocalCopy(p : Int) : MultipoleExpansion! {
-        val localCopy = new MultipoleExpansion(p);
-        val localTerms = localCopy.terms;
-        finish at (this) {terms.copyTo(localTerms);}
-        return localCopy;
     }
 }
 

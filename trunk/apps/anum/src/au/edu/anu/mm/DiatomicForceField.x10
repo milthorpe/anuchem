@@ -21,7 +21,7 @@ public class DiatomicForceField implements ForceField {
         this.diatomicPotentials = diatomicPotentials;
     }
     
-    public global def getPotentialAndForces(atoms: DistArray[ValRail[MMAtom]](1)) : Double {
+    public def getPotentialAndForces(atoms: DistArray[ValRail[MMAtom]](1)) : Double {
         var V : Double = 0.0;        
         for([p] in 0..diatomicPotentials.length-1) {
             val potential = diatomicPotentials(p);

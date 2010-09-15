@@ -29,9 +29,9 @@ public class LocalExpansion extends Expansion {
     /**
      * Calculate the local Taylor-type expansion M_{lm} (with m >= 0) for a single point v.
      */
-    public static safe def getMlm(v : Tuple3d, p : int) : LocalExpansion! {
+    public static safe def getMlm(v : Tuple3d, p : int) : LocalExpansion {
         val exp = new LocalExpansion(p);
-        val terms = exp.terms as Array[Complex](2)!;
+        val terms = exp.terms;
         val v_pole : Polar3d = Polar3d.getPolar3d(v);
         val pplm = AssociatedLegendrePolynomial.getPlm(Math.cos(v_pole.theta), p); 
 
@@ -68,8 +68,8 @@ public class LocalExpansion extends Expansion {
      * @param shift the multipole expansion of the translation
      * @param source the source local expansion, centred at the origin
      */
-    public safe def translateAndAddLocal(shift : MultipoleExpansion!,
-                                         source : LocalExpansion!) {
+    public safe def translateAndAddLocal(shift : MultipoleExpansion,
+                                         source : LocalExpansion) {
         val p = terms.region.max(0);
 
         // BEGIN HAND-INLINED ITERATOR
@@ -105,8 +105,8 @@ public class LocalExpansion extends Expansion {
      * @param b the vector along which to translate the multipole
      * @param source the source multipole expansion, centred at the origin
      */
-    public safe def transformAndAddToLocal(transform : LocalExpansion!,
-                                         source : MultipoleExpansion!) {
+    public safe def transformAndAddToLocal(transform : LocalExpansion,
+                                         source : MultipoleExpansion) {
         val p : Int = terms.region.max(0);
 
         // BEGIN HAND-INLINED ITERATOR
@@ -175,20 +175,13 @@ public class LocalExpansion extends Expansion {
      * L^(j+1)_(lm) = L^j_(lm) / 3^l+1
      * @see Kudin & Scuseria (1998) eq. 2.5
      */ 
-    public def getMacroscopicParent() : LocalExpansion! {
+    public def getMacroscopicParent() : LocalExpansion {
         val p : Int = terms.region.max(0);
         val parentExpansion = new LocalExpansion(p);
         for ([l,m] in terms.region) {
             parentExpansion.terms(l,m) = terms(l,m) / Math.pow(3.0, l+1);
         }
         return parentExpansion;
-    }
-
-    public global def getLocalCopy(p : Int) : LocalExpansion! {
-        val localCopy = new LocalExpansion(p);
-        val localTerms = localCopy.terms;
-        finish at (this) {terms.copyTo(localTerms);}
-        return localCopy;
     }
 }
 

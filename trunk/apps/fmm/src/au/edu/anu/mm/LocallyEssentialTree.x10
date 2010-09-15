@@ -33,7 +33,7 @@ public class LocallyEssentialTree {
      * The ValRail has one element for each level; each element
      * holds the portion of the combined V-list for that level.
      */
-    public global val multipoleCopies : ValRail[PeriodicArray[MultipoleExpansion](3)!];
+    public val multipoleCopies : ValRail[PeriodicArray[MultipoleExpansion](3)];
 
     /**
      * A cache of packed for the combined U-list of all
@@ -42,7 +42,7 @@ public class LocallyEssentialTree {
      * with all atoms at a given place.
      * @see FmmLeafBox.getPackedAtoms()
      */
-    public global val packedAtoms : PeriodicArray[ValRail[MMAtom.PackedRepresentation]](3)!;
+    public val packedAtoms : PeriodicArray[ValRail[MMAtom.PackedRepresentation]](3);
     
     public def this(combinedUList : ValRail[Point(3)],
                 combinedVList : ValRail[ValRail[Point(3)]],
@@ -56,7 +56,7 @@ public class LocallyEssentialTree {
         this.uListMax = uListMax;
         this.vListMin = vListMin;
         this.vListMax = vListMax;
-        val multipoleCopies = Rail.make[PeriodicArray[MultipoleExpansion](3)!](combinedVList.length());
+        val multipoleCopies = Rail.make[PeriodicArray[MultipoleExpansion](3)](combinedVList.length());
         for ([i] in 0..combinedVList.length()-1) {
             if (combinedVList(i) != null) {
                 val multipoleCopiesLevelRegion : Region(3) = [vListMin(i)(0)..vListMax(i)(0), vListMin(i)(1)..vListMax(i)(1), vListMin(i)(2)..vListMax(i)(2)];

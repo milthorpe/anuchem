@@ -20,7 +20,7 @@ import au.edu.anu.util.Timer;
  * @author milthorpe
  */
 public class TestSingleThreadPairwise extends TestElectrostatic {
-    public global def sizeOfCentralCluster() : Double = 80.0;
+    public def sizeOfCentralCluster() : Double = 80.0;
 
     public def this(numAtoms : Int) {
         super(numAtoms);
@@ -59,7 +59,7 @@ public class TestSingleThreadPairwise extends TestElectrostatic {
     }
 
     /** Assign all atoms to place 0. */
-    global safe def getPlaceId(x : Double, y : Double, z : Double) : Int {
+    safe def getPlaceId(x : Double, y : Double, z : Double) : Int {
         return 0;
     }
 }

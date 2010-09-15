@@ -26,10 +26,10 @@ import au.edu.anu.mm.uff.UniversalForceField;
  */
 public class Anumm {
     /** The atoms in the simulation, divided up into an array of ValRails, one for each place. */
-    private global val atoms : DistArray[ValRail[MMAtom]](1);
+    private val atoms : DistArray[ValRail[MMAtom]](1);
 
     /** The force field applied to the atoms in this simulation. */
-    private global val forceField : ForceField;
+    private val forceField : ForceField;
 
     public def this(atoms: DistArray[ValRail[MMAtom]](1),
                     forceField: ForceField) {

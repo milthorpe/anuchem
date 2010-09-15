@@ -13,7 +13,7 @@ package au.edu.anu.mm;
 public class ExpansionRegion extends Region  {
     // XTENLANG-49
     static type ExpansionRegion(rank:Int) = ExpansionRegion{self.rank==rank};
-    global val p : Int;
+    val p : Int;
 
     /**
      * Constructs a new ExpansionRegion for a multipole
@@ -25,17 +25,17 @@ public class ExpansionRegion extends Region  {
         this.p = p;
     }
 
-    public global def isConvex() : Boolean {
+    public def isConvex() : Boolean {
         return true;
     }
 
-    public global def isEmpty() : Boolean {
+    public def isEmpty() : Boolean {
         return false;
     }
 
-    public global safe def min(): ValRail[int] = [0,-p];
+    public safe def min(): ValRail[int] = [0,-p];
 
-    public global safe def max(): ValRail[int] = [p,p];
+    public safe def max(): ValRail[int] = [p,p];
 
     /**
      * Returns the number of points in this region.
@@ -43,44 +43,44 @@ public class ExpansionRegion extends Region  {
      * (X10 gives it as (x0+x1>=0 && x0-x1>=0 && x0<=3),
      * which gives a size of (p+1)^2.
      */
-    public global def size() : Int { 
+    public def size() : Int { 
         return (p+1) * (p+1);
     }
 
-    public global def contains(p: Point): boolean {
+    public def contains(p: Point): boolean {
         if (p.rank == 2) {
             return (p(0) >= 0 && p(0) <= this.p && Math.abs(p(1)) <= p(0));
         }
         throw new UnsupportedOperationException("contains(" + p + ")");
     }
 
-    public global def contains(r:Region(rank)): boolean {
+    public def contains(r:Region(rank)): boolean {
         if (r instanceof ExpansionRegion && (r as ExpansionRegion).p == this.p)
             return true;
         throw new UnsupportedOperationException("contains(Region)");
     }
 
-    public global def complement(): Region(rank) {
+    public def complement(): Region(rank) {
         // TODO
         throw new UnsupportedOperationException("complement()");
     }
 
-    public global def intersection(t: Region(rank)): Region(rank) {
+    public def intersection(t: Region(rank)): Region(rank) {
         // TODO
         throw new UnsupportedOperationException("intersection()");
     }
 
-    public global def product(r: Region): Region {
+    public def product(r: Region): Region {
         // TODO
         throw new UnsupportedOperationException("product()");
     }
 
-    public global def translate(v: Point(rank)): Region(rank) {
+    public def translate(v: Point(rank)): Region(rank) {
         // TODO
         throw new UnsupportedOperationException("translate()");
     }
 
-    public global def projection(axis: int): Region(1) {
+    public def projection(axis: int): Region(1) {
         switch (axis) {
             case 0:
                 return 0..p;
@@ -91,7 +91,7 @@ public class ExpansionRegion extends Region  {
         }
     }
 
-    public global def eliminate(axis: int): Region(1) {
+    public def eliminate(axis: int): Region(1) {
         switch (axis) {
             case 0:
                 return -p..p;
@@ -102,15 +102,20 @@ public class ExpansionRegion extends Region  {
         }
     }
 
-    public global def boundingBox(): Region(rank) {
+    public def indexOf(pt:Point) {
+	    if (pt.rank != 2) return -1;
+        return (pt(0) * pt(0)) + pt(1);
+    }
+
+    public def boundingBox(): Region(rank) {
         return [0..p,-p..p];
     }
 
-    protected global def computeBoundingBox(): Region(rank) {
+    protected def computeBoundingBox(): Region(rank) {
         return [0..p,-p..p];
     }
 
-    public global def iterator(): Iterator[Point(rank)] {
+    public def iterator(): Iterator[Point(rank)] {
         return new ExpansionRegionIterator(this) as Iterator[Point(rank)];
     }
 
@@ -141,11 +146,11 @@ public class ExpansionRegion extends Region  {
         } 
     }
 
-    public global def scanners():Iterator[Region.Scanner]! {
+    public def scanners():Iterator[Region.Scanner] {
         throw new UnsupportedOperationException("TODO: scanners not defined for ExpansionRegion");
     }
 
-    public global safe def toString(): String {
+    public safe def toString(): String {
         return "ExpansionRegion (p = " + p + ")";
     }
 }
