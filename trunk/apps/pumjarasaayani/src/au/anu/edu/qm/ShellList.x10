@@ -20,15 +20,15 @@ import x10.util.*;
  * @author: V.Ganesh
  */
 public class ShellList { 
-    global val shellList:HashMap[Int, Shell{self.at(this)}]{self.at(this)};
-    global val shellPairs = new GrowableRail[Pair[Int,Int]]();
+    val shellList:HashMap[Int, Shell];
+    val shellPairs = new GrowableRail[Pair[Int,Int]]();
     
-    var powerList:Rail[ValRail[Power]]{self.at(this)};
+    var powerList:Rail[ValRail[Power]];
 
     var maxam:Int;
 
     public def this() { 
-        shellList = new HashMap[Int, Shell{self.at(this)}]();
+        shellList = new HashMap[Int, Shell]();
         maxam = 0;
     }
 
@@ -36,18 +36,18 @@ public class ShellList {
         val maxam4 = (maxam*4)+2;
  
         val pl = new GrowableRail[ValRail[Power]](); 
-        val pList = PowerList.getInstance() as PowerList{self.at(this)};
+        val pList = PowerList.getInstance();
         for(var i:Int=0; i<=maxam4; i++)
            pl.add(pList.generatePowerList(i)); 
 
         powerList = pl.toRail();
     }
 
-    public def addShellPrimitive(cg:ContractedGaussian{self.at(this)}) : void {
+    public def addShellPrimitive(cg:ContractedGaussian) : void {
         val am = cg.getMaximumAngularMomentum();
         maxam  = Math.max(am, maxam);
 
-        var shell:Shell{self.at(this)} = getShell(am);
+        var shell:Shell = getShell(am);
         if (shell == null) {
            shell = new Shell(am);
            shellList.put(am, shell);
@@ -65,7 +65,7 @@ public class ShellList {
          return n;
     }
 
-    public def getShellPrimitives() : GrowableRail[ContractedGaussian]! {
+    public def getShellPrimitives() : GrowableRail[ContractedGaussian] {
          val shellPrimitives = new GrowableRail[ContractedGaussian]();
 
          for(shell in shellList.keySet()) { 
@@ -79,7 +79,7 @@ public class ShellList {
 
     var shellPairsGenerated:Boolean = false;
 
-    public def getShellPairs() : GrowableRail[Pair[Int, Int]]! {
+    public def getShellPairs() : GrowableRail[Pair[Int, Int]] {
          if (!shellPairsGenerated) {
            val noOfShells = getNumberOfShellPrimitives();
            // Console.OUT.println("No of shells : " + noOfShells);

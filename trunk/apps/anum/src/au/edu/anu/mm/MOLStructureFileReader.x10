@@ -39,7 +39,7 @@ public class MOLStructureFileReader {
         file.readLine(); // line 2 contains file meta-info
         file.readLine(); // line 3 contains comment
         val numAtoms = Int.parseInt(file.readLine()); // line 4 contains numAtoms etc.
-        var molecule : Molecule[MMAtom]{self.at(this)} = new Molecule[MMAtom](title);
+        var molecule : Molecule[MMAtom] = new Molecule[MMAtom](title);
         // following lines up to numAtoms contain atom data
         for(var i:Int=0; i<numAtoms; i++) {
             val line = file.readLine();
@@ -84,7 +84,7 @@ public class MOLStructureFileReader {
         return molecule;
     }
 
-    public safe def setFileName(fileName : String!) {
+    public safe def setFileName(fileName : String) {
         this.fileName = fileName;
     }
 }

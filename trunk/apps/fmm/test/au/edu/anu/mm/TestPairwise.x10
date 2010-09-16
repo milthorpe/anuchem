@@ -21,13 +21,13 @@ import au.edu.anu.util.Timer;
  * @author milthorpe
  */
 public class TestPairwise extends TestElectrostatic {
-    public global def sizeOfCentralCluster() : Double = 80.0;
+    public def sizeOfCentralCluster() : Double = 80.0;
 
     public def this(numAtoms : Int) {
         super(numAtoms);
     }
 
-    public static def main(args : Rail[String]!) {
+    public static def main(args : Array[String](1)) {
         var numAtoms : Int;
         if (args.length > 0) {
             numAtoms = Int.parseInt(args(0));

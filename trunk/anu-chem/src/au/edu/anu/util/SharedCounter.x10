@@ -29,15 +29,15 @@ import x10.array.DistArray;
  * @author V. Ganesh, with modifications from Igor
  */
 public class SharedCounter {
-   global val localCounters:DistArray[Double](1);
+   val localCounters:DistArray[Double](1);
 
    public def this() {
        localCounters = DistArray.make[Double](Dist.makeUnique());
    }
 
-   public global def increment() = localCounters(here.id) += 1.0;
+   public def increment() = localCounters(here.id) += 1.0;
  
-   public global def increment(step:Double) = localCounters(here.id) += step;
+   public def increment(step:Double) = localCounters(here.id) += step;
 
    public def get() = localCounters.reduce((a:Double,b:Double)=>a+b, 0.0);
 }

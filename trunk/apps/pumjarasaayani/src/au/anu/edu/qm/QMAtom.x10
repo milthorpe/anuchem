@@ -46,12 +46,12 @@ public class QMAtom extends Atom {
 
     public def isDummy() = dummy;
     
-    var basisFunctions:ArrayList[ContractedGaussian{self.at(this)}]{self.at(this)};
+    var basisFunctions:ArrayList[ContractedGaussian];
 
-    public def setBasisFunctions(bfs:ArrayList[ContractedGaussian{self.at(this)}]{self.at(this)}) {
+    public def setBasisFunctions(bfs:ArrayList[ContractedGaussian]) {
         basisFunctions = bfs;
     }
 
-    public def getBasisFunctions() : ArrayList[ContractedGaussian{self.at(this)}]{self.at(this)} = basisFunctions;
+    public def getBasisFunctions() : ArrayList[ContractedGaussian] = basisFunctions;
 }
 

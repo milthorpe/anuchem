@@ -22,28 +22,28 @@ import x10x.vector.Point3d;
  * @author: V.Ganesh
  */
 public class Ring[T]{T <: Atom} {
-    global val atomList = new ArrayList[T{self.at(this)}](); 
+    val atomList = new ArrayList[T](); 
     var planar:Boolean;
 
     public def this() { 
         planar = true;   
     }
 
-    public def addAtom(atm:T{self.at(this)}) : void {
+    public def addAtom(atm:T) : void {
         atomList.add(atm); 
     }
 
-    public safe def getAtom(index:Int) : T{self.at(this)} = atomList.get(index) as T{self.at(this)};
-    public global safe def getAtoms() = atomList;
-    public global safe def getSize() = atomList.size();
+    public safe def getAtom(index:Int) : T = atomList.get(index);
+    public safe def getAtoms() = atomList;
+    public safe def getSize() = atomList.size();
 
     public def isPlanar() = planar;
     public def setPlanar(p:Boolean) { planar = p; }
 
-    public global safe def toString() : String {
+    public safe def toString() : String {
        var str:String = "[ ";
 
-       for(atm:T{self.at(this)} in atomList)
+       for(atm:T in atomList)
          str += atm.toString() + " ";
        
        str += "]\n";

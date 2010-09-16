@@ -20,15 +20,15 @@ import x10.util.*;
  * @author: V.Ganesh
  */
 public class Orbital { 
-    global val exps:ArrayList[Double]{self.at(this)};
-    global val coeff:ArrayList[Double]{self.at(this)};
-    global val type:String{self.at(this)};
-    global val angularMomentum:Int;
+    val exps:ArrayList[Double];
+    val coeff:ArrayList[Double];
+    val type:String;
+    val angularMomentum:Int;
 
     public def this(type:String) { 
        exps      = new ArrayList[Double]();
        coeff     = new ArrayList[Double]();
-       this.type = type as String{self.at(this)};
+       this.type = type;
 
        if (type.equals("S")) angularMomentum = 0;
        else if (type.equals("P")) angularMomentum = 1;
@@ -50,9 +50,9 @@ public class Orbital {
        coeff.add(co);
     }
 
-    public def getType() : String{self.at(this)} = this.type;
+    public def getType() : String = this.type;
     public def getAngularMomentum() = this.angularMomentum;
-    public def getExponents() : ArrayList[Double]{self.at(this)} = this.exps;
-    public def getCoefficients() : ArrayList[Double]{self.at(this)} = this.coeff;
+    public def getExponents() : ArrayList[Double] = this.exps;
+    public def getCoefficients() : ArrayList[Double] = this.coeff;
 }
 

@@ -29,9 +29,9 @@ public class LocalExpansion extends Expansion {
     /**
      * Calculate the local Taylor-type expansion M_{lm} (with m >= 0) for a single point v.
      */
-    public static safe def getMlm(v : Tuple3d, p : int) : LocalExpansion! {
+    public static safe def getMlm(v : Tuple3d, p : int) : LocalExpansion {
         val exp = new LocalExpansion(p);
-        val terms = exp.terms as Array[Complex](2)!;
+        val terms = exp.terms;
         val v_pole : Polar3d = Polar3d.getPolar3d(v);
         val pplm = AssociatedLegendrePolynomial.getPlm(Math.cos(v_pole.theta), p); 
 
@@ -39,17 +39,17 @@ public class LocalExpansion extends Expansion {
         val phifac0 = Complex(Math.cos(v_pole.phi), Math.sin(v_pole.phi));
         var rfac : Double = rfac0;
         var il : Double = 1.0;
-        for ((l) in 0..p) {
+        for ([l] in 0..p) {
             il = il * Math.max(l,1);
             var ilm : Double = il;
             var phifac : Complex = Complex.ONE;
             terms(l,0) = phifac * (rfac * pplm(l,0) * ilm);
-            for ((m) in 1..l) {
+            for ([m] in 1..l) {
                 ilm = ilm / (l+1-m);
                 phifac = phifac * phifac0;
                 terms(l,m) = phifac * (rfac * pplm(l,m) * ilm);
             }
-            for ((m) in -l..-1) {
+            for ([m] in -l..-1) {
                 terms(l,m) = terms(l,-m).conjugate() * ((2*((-m+1)%2)-1 as Double));
             }
             rfac = rfac * rfac0;
@@ -68,12 +68,12 @@ public class LocalExpansion extends Expansion {
      * @param shift the multipole expansion of the translation
      * @param source the source local expansion, centred at the origin
      */
-    public safe def translateAndAddLocal(shift : MultipoleExpansion!,
-                                         source : LocalExpansion!) {
+    public safe def translateAndAddLocal(shift : MultipoleExpansion,
+                                         source : LocalExpansion) {
         val p = terms.region.max(0);
 
         // BEGIN HAND-INLINED ITERATOR
-        // should be just:  for ((l,m) in terms) {
+        // should be just:  for ([l,m] in terms) {
         val it_p = (terms.region as ExpansionRegion).p;
         var it_l:int = 0;
         var it_m:int = 0;
@@ -86,8 +86,8 @@ public class LocalExpansion extends Expansion {
                 it_m = -it_l;
             }
         // END HAND-INLINED ITERATOR
-            for ((j) in l..p) {
-                for ((k) in (l-j+m)..(-l+j+m)) {
+            for ([j] in l..p) {
+                for ([k] in (l-j+m)..(-l+j+m)) {
                     val C_lmjk = shift.terms(j-l, k-m);
                     val O_jk = source.terms(j,k);
                     this.terms(l,m) = this.terms(l,m) + C_lmjk * O_jk;
@@ -105,12 +105,12 @@ public class LocalExpansion extends Expansion {
      * @param b the vector along which to translate the multipole
      * @param source the source multipole expansion, centred at the origin
      */
-    public safe def transformAndAddToLocal(transform : LocalExpansion!,
-                                         source : MultipoleExpansion!) {
+    public safe def transformAndAddToLocal(transform : LocalExpansion,
+                                         source : MultipoleExpansion) {
         val p : Int = terms.region.max(0);
 
         // BEGIN HAND-INLINED ITERATOR
-        // should be just:  for ((j,k) in terms) {
+        // should be just:  for ([j,k] in terms) {
         val it_p = (terms.region as ExpansionRegion).p;
         var it_l:int = 0;
         var it_m:int = 0;
@@ -124,8 +124,8 @@ public class LocalExpansion extends Expansion {
             }
         // END HAND-INLINED ITERATOR
             val O_jk = source.terms(j,k);
-            for ((l) in 0..p-j) {
-                for ((m) in -l..l) {
+            for ([l] in 0..p-j) {
+                for ([m] in -l..l) {
                     if (Math.abs(k+m) <= (j+l)) {
                         val B_lmjk = transform.terms(j+l, k+m);
                         //Console.OUT.println("source.terms.dist(" + j + "," + k + ") = " + source.terms.dist(j,k));
@@ -149,7 +149,7 @@ public class LocalExpansion extends Expansion {
         var potential : Double = 0.0;
         // TODO use lift/reduction?
         // BEGIN HAND-INLINED ITERATOR
-        // should be just:  for ((i,j) in terms.region) {
+        // should be just:  for ([i,j] in terms.region) {
         val it_p = (terms.region as ExpansionRegion).p;
         var it_l:int = 0;
         var it_m:int = 0;
@@ -175,20 +175,13 @@ public class LocalExpansion extends Expansion {
      * L^(j+1)_(lm) = L^j_(lm) / 3^l+1
      * @see Kudin & Scuseria (1998) eq. 2.5
      */ 
-    public def getMacroscopicParent() : LocalExpansion! {
+    public def getMacroscopicParent() : LocalExpansion {
         val p : Int = terms.region.max(0);
         val parentExpansion = new LocalExpansion(p);
-        for ((l,m) in terms.region) {
+        for ([l,m] in terms.region) {
             parentExpansion.terms(l,m) = terms(l,m) / Math.pow(3.0, l+1);
         }
         return parentExpansion;
-    }
-
-    public global def getLocalCopy(p : Int) : LocalExpansion! {
-        val localCopy = new LocalExpansion(p);
-        val localTerms = localCopy.terms;
-        finish at (this) {terms.copyTo(localTerms);}
-        return localCopy;
     }
 }
 

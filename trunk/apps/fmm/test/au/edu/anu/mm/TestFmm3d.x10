@@ -21,24 +21,24 @@ import au.edu.anu.util.Timer;
  * @author milthorpe
  */
 public class TestFmm3d extends TestElectrostatic {
-    public global def sizeOfCentralCluster() : Double = 80.0;
+    public def sizeOfCentralCluster() : Double = 80.0;
 
     public def this(numAtoms : Int) {
         super(numAtoms);
     }
 
-    public static def main(args : Rail[String]!) {
+    public static def main(args : Array[String](1)) {
         var numAtoms : Int;
         var density : Double = 60.0;
         var numTerms : Int = 10;
         var wellSpaced : Int = 2;
-        if (args.length > 0) {
+        if (args.size > 0) {
             numAtoms = Int.parseInt(args(0));
-            if (args.length > 1) {
+            if (args.size > 1) {
                 density = Double.parseDouble(args(1));
-                if (args.length > 2) {
+                if (args.size > 2) {
                     numTerms = Int.parseInt(args(2));
-                    if (args.length > 3) {
+                    if (args.size > 3) {
                         wellSpaced = Int.parseInt(args(3));
                     }
                 }

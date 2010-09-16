@@ -14,7 +14,7 @@ package au.edu.anu.fft;
  * Tests regular (non-fast) Discrete Fourier Transforms.
  */
 public class TestDFT {
-    public static def main(args : Rail[String]!) {
+    public static def main(args : Array[String](1)) {
         testDft1D();
         testDft3D();
     }
@@ -23,21 +23,21 @@ public class TestDFT {
         val N = 10;
 
         val onePlusI = Complex.ONE + Complex.I;
-        val input = Rail.make[Complex](N, (i : Int) => onePlusI * (1.0 / (i + 1))) as Rail[Complex]!;
+        val input = new Array[Complex](N, ([i] : Point) => onePlusI * (1.0 / (i + 1)));
         Console.OUT.println("input");
-        for (var i:int=0; i<input.length; i++) {
+        for (var i:int=0; i<input.size; i++) {
             Console.OUT.println(input(i));
         }
 
         Console.OUT.println("\noutput");
         val output = DFT.dft1D(input, false);
-        for (var i:int=0; i<output.length; i++) {
+        for (var i:int=0; i<output.size; i++) {
             Console.OUT.println(output(i));
         }
 
         Console.OUT.println("\nroundtrip");
         val roundtrip = DFT.dft1D(output, true);
-        for (var i:int=0; i<roundtrip.length; i++) {
+        for (var i:int=0; i<roundtrip.size; i++) {
             Console.OUT.println(roundtrip(i) / N);
         }
     }
@@ -47,8 +47,8 @@ public class TestDFT {
 
         val twoPlusI = 2.0 + Complex.I;
         val r = Region.make(0, N-1);
-        val r3 = r * r * r as Region(3);
-        val input = Array.make[Complex](r3, (p(i,j,k) : Point(3)) => twoPlusI * (1.0 / (i + j + k + 1)));
+        val r3 = (r * r * r) as Region(3){rect,zeroBased};
+        val input = new Array[Complex](r3, (p[i,j,k] : Point(3)) => twoPlusI * (1.0 / (i + j + k + 1)));
         Console.OUT.println("input");
         for (p in input) {
             Console.OUT.println(input(p));

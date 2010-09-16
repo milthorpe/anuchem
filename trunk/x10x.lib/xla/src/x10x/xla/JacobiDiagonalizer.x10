@@ -10,44 +10,43 @@ import x10x.matrix.Matrix;
  * @author V.Ganesh
  */
 public class JacobiDiagonalizer {
-    var eigenValuesVec:Vector!; 
-    var eigenVectorsMat:Matrix!;
-    var eigenValues:Array[Double](1)!;
-    var eigenVectors:Array[Double](2)!;
+    var eigenValuesVec:Vector; 
+    var eigenVectorsMat:Matrix;
+    var eigenValues:Array[Double](1);
+    var eigenVectors:Array[Double](2);
     var cos:Double, sin:Double, tau:Double;
 
-    global val maxIterations : Int = 100;
+    val maxIterations : Int = 100;
 
     public def this() { }
 
-    public def diagonalize(mat:Matrix!) : void {
+    public def diagonalize(mat:Matrix) : void {
        val matrix = mat.getMatrix();
        val n  = mat.getRowCount();
-       val n1 = n-1;
 
-       eigenVectorsMat = new Matrix(Dist.make([0..n1,0..n1])) as Matrix!;
+       eigenVectorsMat = new Matrix(n);
        eigenVectorsMat.makeIdentity();
 
        eigenVectors = eigenVectorsMat.getMatrix();
 
        // clone the matrix (make it single place), do not tamper the actual matrix
-       val aMat = new Matrix(Dist.make([0..n1,0..n1])) as Matrix!;
+       val aMat = new Matrix(n);
        val a = aMat.getMatrix();
 
-       finish foreach((i,j) in matrix) { 
+       finish foreach([i,j] in matrix) { 
             a(i, j) = matrix(i, j); 
        }
 
-       eigenValuesVec = new Vector(Dist.make([0..n1])) as Vector!; 
+       eigenValuesVec = new Vector(n); 
        eigenValues = eigenValuesVec.getVector();
       
-       val bVec = new Vector(Dist.make([0..n1])) as Vector!;
-       val zVec = new Vector(Dist.make([0..n1])) as Vector!;
+       val bVec = new Vector(n);
+       val zVec = new Vector(n);
        val b = bVec.getVector();
        val z = zVec.getVector();
 
        // do diagonalization at Place.FIRST_PLACE
-       finish foreach((i,j) in a) {
+       finish foreach([i,j] in a) {
            if (i == j) { 
                eigenValues(i) = b(i) = a(i,i);
                z(i) = 0.0;
@@ -70,7 +69,7 @@ public class JacobiDiagonalizer {
 
           for(var ip:Int = 0; ip<n-1; ip++) { for(var iq:Int = ip+1; iq<n; iq++) {
 
-          // finish foreach(plc in a.dist.places()) { at(plc) { for((ip, iq) in a.dist.get(plc)) {
+          // finish foreach(plc in a.dist.places()) { at(plc) { for([ip, iq] in a.dist.get(plc)) {
              // x10.io.Console.OUT.println(ip + " , " + iq);
              // x10.io.Console.OUT.println(a.dist.contains(Point.make(ip, iq)));
 
@@ -105,13 +104,13 @@ public class JacobiDiagonalizer {
                      a(ip,iq) = 0.0;
 
                      /**
-                     for((i,j) in a.dist) if (i==j && j<ip)             
+                     for([i,j] in a.dist) if (i==j && j<ip)             
                          doRotate(a, j, ip, j, iq, sin, tau);
-                     for((i,j) in a.dist) if (i==j && j>=ip+1 && j<iq)  
+                     for([i,j] in a.dist) if (i==j && j>=ip+1 && j<iq)  
                          doRotate(a, ip, j, j, iq, sin, tau);
-                     for((i,j) in a.dist) if (i==j && j>=iq+1 && j<n)   
+                     for([i,j] in a.dist) if (i==j && j>=iq+1 && j<n)   
                          doRotate(a, ip, j, iq, j, sin, tau);
-                     for((i,j) in eigenVectors.dist) if (i==j)          
+                     for([i,j] in eigenVectors.dist) if (i==j)          
                          doRotate(eigenVectors, j, ip, j, iq, sin, tau);
                      **/
 
@@ -125,7 +124,7 @@ public class JacobiDiagonalizer {
            // }}} // end foreach
            }} // end for
 
-          finish foreach((ip) in b) {
+          finish foreach([ip] in b) {
              b(ip) += z(ip);
              eigenValues(ip) = b(ip);
              z(ip) = 0.0;
@@ -136,7 +135,7 @@ public class JacobiDiagonalizer {
        eigenVectorsMat = eigenVectorsMat.transpose();
     }
 
-    private static def doRotate(a:Array[Double](2)!, i:Int, j:Int, k:Int, l:Int,
+    private static def doRotate(a:Array[Double](2), i:Int, j:Int, k:Int, l:Int,
                                 sin:Double, tau:Double) : void {
        var g:Double = a(i,j);
        var h:Double = a(k,l);
@@ -169,8 +168,8 @@ public class JacobiDiagonalizer {
         } // end for
     }
 
-    public def getEigenValues() : Vector! = eigenValuesVec;
+    public def getEigenValues() : Vector = eigenValuesVec;
 
-    public def getEigenVectors() : Matrix! = eigenVectorsMat; 
+    public def getEigenVectors() : Matrix = eigenVectorsMat; 
 }
 

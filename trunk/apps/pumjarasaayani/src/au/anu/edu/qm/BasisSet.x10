@@ -22,20 +22,20 @@ import au.edu.anu.chem.Atom;
  * @author: V.Ganesh
  */
 public class BasisSet { 
-    global val name:String;
-    global val basisInfo:HashMap[String, AtomicBasis{self.at(this)}]{self.at(this)};
+    val name:String;
+    val basisInfo:HashMap[String, AtomicBasis];
 
     public def this(name:String) { 
        this.name = name;
 
-       basisInfo = new HashMap[String, AtomicBasis{self.at(this)}]();
+       basisInfo = new HashMap[String, AtomicBasis]();
        init(name);
     } 
 
     public def this(name:String, basisDir:String) {
        // x10.io.Console.OUT.println("\tReading in basis info. for " + name + " from " + basisDir);
 
-       basisInfo = new HashMap[String, AtomicBasis{self.at(this)}]();
+       basisInfo = new HashMap[String, AtomicBasis]();
        this.name = name;
 
        try {
@@ -56,17 +56,17 @@ public class BasisSet {
        for(var i:Int=0; i<noOfAtoms; i++) {
           // var words:ArrayList[String] = Utility.split(fil.readLine(), ' ');
           val words = fil.readLine().split(" ");
-          var symbol:String = words(0);
-          var noOfContractions:Int = Int.parseInt(words(1));
+          val symbol = words(0);
+          val noOfContractions = Int.parseInt(words(1));
 
-          var atomBasis:AtomicBasis{self.at(this)} = new AtomicBasis();
+          val atomBasis = new AtomicBasis();
 
           for(var j:Int=0; j<noOfContractions; j++) {
              val words1 = fil.readLine().split(" ");
              var orbitalType:String = words1(0);
              var noOfPrimitives:Int = Int.parseInt(words1(1));
 
-             val orbital:Orbital{self.at(this)} = new Orbital(orbitalType);
+             val orbital = new Orbital(orbitalType);
 
              for(var k:Int=0; k<noOfPrimitives; k++) { 
                 val words2 = fil.readLine().split(" ");
@@ -89,7 +89,7 @@ public class BasisSet {
           var orbType:String;
           val hBasis = new AtomicBasis();
           orbType = "S";
-          val hOrb = new Orbital(orbType as String{self.at(this)});
+          val hOrb = new Orbital(orbType);
           hOrb.add(3.425251, 0.154329);
           hOrb.add(0.623914, 0.535328);
           hOrb.add(0.168855, 0.444635); 
@@ -98,19 +98,19 @@ public class BasisSet {
 
           val cBasis = new AtomicBasis();
           orbType = "S";
-          val cOrb1 = new Orbital(orbType as String{self.at(this)});
+          val cOrb1 = new Orbital(orbType);
           cOrb1.add(71.616837, 0.154329);
           cOrb1.add(13.045096, 0.535328);
           cOrb1.add(3.530512, 0.444635);
           cBasis.addOrbital(cOrb1);
           orbType = "S";
-          val cOrb2 = new Orbital(orbType as String{self.at(this)});
+          val cOrb2 = new Orbital(orbType);
           cOrb2.add(2.941249, -0.099967);
           cOrb2.add(0.683483, 0.399513);
           cOrb2.add(0.222290, 0.700115);
           cBasis.addOrbital(cOrb2); 
           orbType = "P";
-          val cOrb3 = new Orbital(orbType as String{self.at(this)});
+          val cOrb3 = new Orbital(orbType);
           cOrb3.add(2.941249, 0.155916);
           cOrb3.add(0.683483, 0.607684);
           cOrb3.add(0.222290, 0.391957);
@@ -119,19 +119,19 @@ public class BasisSet {
 
           val nBasis = new AtomicBasis();;
           orbType = "S";
-          val nOrb1 = new Orbital(orbType as String{self.at(this)});
+          val nOrb1 = new Orbital(orbType);
           nOrb1.add(99.106169, 0.154329);
           nOrb1.add(18.052312, 0.535328);
           nOrb1.add(4.885660, 0.444635);
           nBasis.addOrbital(nOrb1);
           orbType = "S";
-          val nOrb2 = new Orbital(orbType as String{self.at(this)});
+          val nOrb2 = new Orbital(orbType);
           nOrb2.add(3.780456, -0.099967);
           nOrb2.add(0.878497, 0.399513);
           nOrb2.add(0.285714, 0.700115);
           nBasis.addOrbital(nOrb2);
           orbType = "P";
-          val nOrb3 = new Orbital(orbType as String{self.at(this)});
+          val nOrb3 = new Orbital(orbType);
           nOrb3.add(3.780456, 0.155916);
           nOrb3.add(0.878497, 0.607684);
           nOrb3.add(0.285714, 0.391957);
@@ -140,19 +140,19 @@ public class BasisSet {
 
           val oBasis = new AtomicBasis();
           orbType = "S";
-          val oOrb1 = new Orbital(orbType as String{self.at(this)});
+          val oOrb1 = new Orbital(orbType);
           oOrb1.add(130.709321, 0.154329);
           oOrb1.add(23.808866, 0.535328);
           oOrb1.add(6.443608, 0.444635);
           oBasis.addOrbital(oOrb1);
           orbType = "S";
-          val oOrb2 = new Orbital(orbType as String{self.at(this)});
+          val oOrb2 = new Orbital(orbType);
           oOrb2.add(5.033151, -0.099967);
           oOrb2.add(1.169596, 0.399513);
           oOrb2.add(0.380389, 0.700115);
           oBasis.addOrbital(oOrb2);
           orbType = "P";
-          val oOrb3 = new Orbital(orbType as String{self.at(this)});
+          val oOrb3 = new Orbital(orbType);
           oOrb3.add(5.033151, 0.155916);
           oOrb3.add(1.169596, 0.607684);
           oOrb3.add(0.380389, 0.391957);      
@@ -163,6 +163,6 @@ public class BasisSet {
 
     public def getName() = this.name;
 
-    public def getBasis(atom:Atom{self.at(this)}) = basisInfo.getOrElse(atom.symbol, null);
+    public def getBasis(atom:Atom) = basisInfo.getOrElse(atom.symbol, null);
 }
 

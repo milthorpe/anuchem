@@ -35,6 +35,6 @@ public struct BondType(description : String, bondOrder : Double) {
         return (this != BondType.NO_BOND && this != BondType.WEAK_BOND);
     }
 
-    public global safe def toString() = description;
+    public safe def toString() = description;
 }
 

@@ -18,12 +18,12 @@ import x10x.vector.Point3d;
  * @author milthorpe
  */
 public class FmmBox {
-    public global val parent : FmmBox;
+    public val parent : GlobalRef[FmmBox];
 
-    public global val level : Int;
-    public global val x : Int;
-    public global val y : Int;
-    public global val z : Int;
+    public val level : Int;
+    public val x : Int;
+    public val y : Int;
+    public val z : Int;
 
     /** 
      * The V-list consists of the children of those boxes 
@@ -32,16 +32,16 @@ public class FmmBox {
     private var vList : ValRail[Point(3)];
 
     /** The multipole expansion of the charges within this box. */
-    public val multipoleExp : MultipoleExpansion{self.at(this)};
+    public val multipoleExp : MultipoleExpansion;
 
     /** The Taylor expansion of the potential within this box due to particles in well separated boxes. */
-    public val localExp : LocalExpansion{self.at(this)};
+    public val localExp : LocalExpansion;
 
     /**
      * Creates a new FmmBox with multipole and local expansions
      * of the given number of terms.
      */
-    public def this(level : Int, x : Int, y : Int, z : Int, numTerms : Int, parent : FmmBox) {
+    public def this(level : Int, x : Int, y : Int, z : Int, numTerms : Int, parent : GlobalRef[FmmBox]) {
         this.level = level;
         this.x = x;
         this.y = y;
@@ -51,7 +51,7 @@ public class FmmBox {
         this.localExp = new LocalExpansion(numTerms);
     }
 
-    public global safe def getCentre(size : Double) : Point3d {
+    public safe def getCentre(size : Double) : Point3d {
         dim : Int = Math.pow2(level);
         sideLength : Double = size / dim;
         offset : Double = 0.5 * size;
@@ -65,7 +65,7 @@ public class FmmBox {
      * on the same level, i.e. if there are at least <code>ws</code>
      * boxes separating them.
      */
-    public global safe def wellSeparated(ws : Int, x2 : Int, y2 : Int, z2 : Int) : Boolean {
+    public safe def wellSeparated(ws : Int, x2 : Int, y2 : Int, z2 : Int) : Boolean {
         return Math.abs(x - x2) > ws 
             || Math.abs(y - y2) > ws 
             || Math.abs(z - z2) > ws;
@@ -76,17 +76,17 @@ public class FmmBox {
      * on the same level, i.e. if there are at least <code>ws</code>
      * boxes separating them.
      */
-    public global safe def wellSeparated(ws : Int, box2 : FmmBox) : Boolean {
+    public safe def wellSeparated(ws : Int, box2 : FmmBox) : Boolean {
         return Math.abs(x - box2.x) > ws 
             || Math.abs(y - box2.y) > ws 
             || Math.abs(z - box2.z) > ws;
     }
 
-    public global safe def getTranslationIndex(level2 : Int, x2 : Int, y2 : Int, z2 : Int) : Point(4) {
+    public safe def getTranslationIndex(level2 : Int, x2 : Int, y2 : Int, z2 : Int) : Point(4) {
         return Point.make(level, x2-x, y2-y, z2-z);
     }
 
-    public global safe def getTranslationIndex(box2 : FmmBox) : Point(4) {
+    public safe def getTranslationIndex(box2 : FmmBox) : Point(4) {
         return Point.make(level, box2.x-x, box2.y-y, box2.z-z);
     }
 
@@ -96,7 +96,7 @@ public class FmmBox {
         this.vList = vList;
     }
 
-    public global safe def toString(): String {
+    public safe def toString(): String {
         return "FmmBox level " + level + " (" + x + "," + y + "," + z + ")";
     }
 }

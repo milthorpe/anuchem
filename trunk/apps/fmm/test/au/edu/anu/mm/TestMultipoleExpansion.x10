@@ -34,8 +34,8 @@ class TestMultipoleExpansion extends MathTest {
         val reverseTranslation = MultipoleExpansion.getOlm(new Point3d(-2.0, 3.0, -1.0) as Tuple3d, p);
         roundtrip.translateAndAddMultipole(reverseTranslation, target);
         Console.OUT.println("translated multipole - roundtrip:\n" + roundtrip.toString());
-		for ((i) in 0..p) {
-            for ((j) in -i..i) {
+		for ([i] in 0..p) {
+            for ([j] in -i..i) {
                 chk(nearlyEqual(roundtrip.terms(i,j), Olm.terms(i,j), 1.0e-6, 1.0e-12)); 
 		    }
         }

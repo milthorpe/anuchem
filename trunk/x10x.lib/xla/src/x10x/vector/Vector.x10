@@ -5,52 +5,40 @@ import x10x.matrix.Matrix;
 /**
  * This class represents a N-dimentional Vector
  * (Initial DRAFT)
+ * TODO distribute Vector
  * 
  * @author V.Ganesh
  */
 public class Vector { 
-    global val vec:Array[Double](1){self.at(this)};
-    global val region:Region(1){rect};
-    global val distribution:Dist(1){rect};
+    val vec:Array[Double](1);
+    val region:Region(1){rect};
 
     /**
-     * Construct a Vector of dimention N, with default block distribution
+     * Construct a Vector of dimention N
      */
     public def this(siz:Int) { 
         region       = [0..(siz-1)];
         // distribution = Dist.makeBlock(region, 0);
-        distribution = Dist.makeConstant(region);
         vec          = new Array[Double](region);
     }
 
     /**
      * Construct a Vector from a Matrix
      */
-    public def this(mat:Matrix!) {
+    public def this(mat:Matrix) {
         this(mat.getRowCount()*mat.getColCount());
-
-        val N = getSize();
          
         var ii:Int = 0;
         val m = mat.getMatrix();
 
-        for((i,j) in m.region)
+        for([i,j] in m.region)
             vec(ii++) =  m(i, j);
-    }
-
-    /**
-     * Construct a Vector of dimention N, with a custom distribution
-     */
-    public def this(dist:Dist{rank==1}) {
-        distribution = dist;
-        region       = distribution.region;
-        vec          = new Array[Double](region);
     }
  
     /**
      * The size of this matrix
      */
-    public global def getSize() = vec.region.max(0)+1;
+    public def getSize() = vec.region.max(0)+1;
  
     /**
      * Actual data stored
@@ -61,11 +49,6 @@ public class Vector {
      * Get associated region
      */ 
     public def region() = region;
- 
-    /**
-     * Get associated distribution
-     */
-    public def dist() = distribution;
 
     /**
      * make this Vector a null vector
@@ -77,12 +60,12 @@ public class Vector {
     /**
      * the dot product
      */
-    public def dot(b:Vector!) : Double {
-        val res = Rail.make[Double](1, (Int)=>0.0);
+    public def dot(b:Vector) : Double {
+        val res = Rail.make[Double](1);
 
         // TODO: this is introduced till a fix for XTENLANG-508 is there
-        // finish foreach((i) in vec.region) res += vec(i) * b.vec(i);
-        finish foreach((i) in vec.region) res(0) += vec(i) * b.vec(i);
+        // finish foreach([i] in vec.region) res += vec(i) * b.vec(i);
+        finish foreach([i] in vec) res(0) += vec(i) * b.vec(i);
 
         return res(0);
     }
@@ -90,11 +73,11 @@ public class Vector {
     /**
      * add two vectors: this + b 
      */
-    public def add(b:Vector!) : Vector {
+    public def add(b:Vector) : Vector {
         val N   = getSize();
         val res = new Vector(N);
 
-        finish foreach((i) in vec.region) res.vec(i) = vec(i) + b.vec(i);
+        finish foreach([i] in vec) res.vec(i) = vec(i) + b.vec(i);
 
         return res;
     }
@@ -102,11 +85,11 @@ public class Vector {
     /**
      * subtract two vectors: this - b
      */
-    public def sub(b:Vector!) : Vector {
+    public def sub(b:Vector) : Vector {
         val N   = getSize();
         val res = new Vector(N);
 
-        finish foreach((i) in vec.region) res.vec(i) = vec(i) - b.vec(i);
+        finish foreach([i] in vec) res.vec(i) = vec(i) - b.vec(i);
 
         return res;
     }
@@ -133,7 +116,7 @@ public class Vector {
         
         val n = new Vector(N);
        
-        finish foreach((i) in vec.region) n.vec(i) = vec(i) / mag;
+        finish foreach([i] in vec) n.vec(i) = vec(i) / mag;
         
         return n;
     }
@@ -145,7 +128,7 @@ public class Vector {
         val N = getSize();
         val n = new Vector(N);
         
-        finish foreach((i) in vec.region) n.vec(i) = -vec(i);
+        finish foreach([i] in vec) n.vec(i) = -vec(i);
         
         return n;
     }
@@ -157,7 +140,7 @@ public class Vector {
         val N   = getSize();
         val res = new Vector(N);
         
-        finish foreach((i) in vec.region) res.vec(i) = vec(i) * k;
+        finish foreach([i] in vec) res.vec(i) = vec(i) * k;
         
         return res;
     }
@@ -167,14 +150,14 @@ public class Vector {
      */
     public def maxNorm() : Double {
         val N   = getSize();
-        val res = Rail.make[Double](1, (Int)=>0.0);
+        val res = Rail.make[Double](1);
 
-        finish foreach((i) in vec.region) res(0) = Math.max(Math.abs(vec(i)), res(0));
+        finish foreach([i] in vec) res(0) = Math.max(Math.abs(vec(i)), res(0));
         
         return res(0);       
     }
 
-    public global safe def toString() : String {
+    public safe def toString() : String {
          var str : String = "";
          val N = getSize();
 

@@ -55,11 +55,11 @@ import x10.array.Array;
 
 public class GlobalImmutableMatrix extends Matrix {
 
-    global val replicatedArray:DistArray[Array[Double]{rect,rank==2}](1);
+    val replicatedArray:DistArray[Array[Double]{rect,rank==2}](1);
 
-    global val size:Int;
+    val size:Int;
 
-    global val muted:Rail[Boolean];
+    val muted:Rail[Boolean];
 
     /** Create a new instance of matrix which is square */
     public def this(size:Int) {
@@ -101,7 +101,7 @@ public class GlobalImmutableMatrix extends Matrix {
      * set a value in the matrix, sets are always local. so if muted is 
      * true, then this method simply returns false
      */
-    public global def set(i:Int, j:Int, val:Double) : Boolean {        
+    public def set(i:Int, j:Int, val:Double) : Boolean {        
         if (muted(0)) return false;
 
         mat(i,j) = val;
@@ -112,7 +112,7 @@ public class GlobalImmutableMatrix extends Matrix {
      * set all the values in the matrix, sets are always local. so if muted is 
      * true, then this method simply returns false
      */
-    public global def set(ar:Array[Double]{rank==2}) : Boolean {
+    public def set(ar:Array[Double]{rank==2}) : Boolean {
         if (muted(0)) return false;
 
         ar.copyFrom(mat);
@@ -123,7 +123,7 @@ public class GlobalImmutableMatrix extends Matrix {
     /**
      * get a value from the matrix.
      */ 
-    public global def get(i:Int, j:Int) : Double {        
+    public def get(i:Int, j:Int) : Double {        
         val isMuted = at(muted) { return muted(0); };        
         if (!isMuted) { return mat(i,j); }
         else          { return replicatedArray(here.id)(i,j); }
@@ -132,7 +132,7 @@ public class GlobalImmutableMatrix extends Matrix {
     /**
      * get all the values of the matrix
      */
-    public global def get() : Array[Double]{rank==2} {
+    public def get() : Array[Double]{rank==2} {
         val isMuted = at(muted) { return muted(0); };        
         if (!isMuted) { return mat; }
         else          { return replicatedArray(here.id); }
