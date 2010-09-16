@@ -19,10 +19,10 @@ import au.edu.anu.chem.BondType;
 import au.edu.anu.chem.mm.MMAtom;
 
 public class UniversalForceField implements ForceField {
-    global val BOND_ORDER_PROPORTIONALITY_CONSTANT = -0.1332;
+    val BOND_ORDER_PROPORTIONALITY_CONSTANT = -0.1332;
 
-    global val defaultParams = UffParameters("default", 1.0, 0.0, 0.0, LennardJonesParameters("default", 0.0, 0.0, 0.0), 0.0, 0.0);
-    global val atomParameters : HashMap[String, UffParameters];
+    val defaultParams = UffParameters("default", 1.0, 0.0, 0.0, LennardJonesParameters("default", 0.0, 0.0, 0.0), 0.0, 0.0);
+    val atomParameters : HashMap[String, UffParameters];
 
     /* The potential of the system as calculated by this force field.
        TODO should be shared var within getPotentialAndForces
@@ -38,16 +38,16 @@ public class UniversalForceField implements ForceField {
         atomParameters.put("O", oxygen3);
     }
 
-    public global safe def getAtomMass(symbol : String) : Double {
+    public safe def getAtomMass(symbol : String) : Double {
         return atomParameters.getOrElse(symbol, defaultParams).mass;
     }
     
-    public global def getPotentialAndForces(atoms: DistArray[ValRail[MMAtom]](1)) : Double {
+    public def getPotentialAndForces(atoms: DistArray[ValRail[MMAtom]](1)) : Double {
         energy = 0.0;
         finish ateach(p in atoms) { 
             var myEnergy : Double = 0.0;
             val myAtoms = atoms(p);
-            for((i) in 0..myAtoms.length()-1) {
+            for([i] in 0..myAtoms.length()-1) {
                 val atomI = myAtoms(i);
                 atomI.force = Vector3d.NULL;
                 // bond stretching
@@ -77,7 +77,7 @@ public class UniversalForceField implements ForceField {
      * @param paramsI the UFF parameters for the second atom
      * @return the bond stretch contribution (in Hartrees)
      */
-    private global safe def getBondStretchTerm(bond : BondType,
+    private safe def getBondStretchTerm(bond : BondType,
                                                atomI : MMAtom, paramsI : UffParameters,
                                                atomJ : MMAtom, paramsJ : UffParameters) {
         val direction = atomJ.centre - atomI.centre;
@@ -114,7 +114,7 @@ public class UniversalForceField implements ForceField {
      * @param paramsI the UFF parameters for the second atom
      * @return the natural bond radius between the atoms
      */
-    private global safe def getNaturalBondRadius(bond : BondType, 
+    private safe def getNaturalBondRadius(bond : BondType, 
                                                 atomI : MMAtom, paramsI : UffParameters,
                                                atomJ : MMAtom, paramsJ : UffParameters) {
         val radiusI = paramsI.bondRadius;

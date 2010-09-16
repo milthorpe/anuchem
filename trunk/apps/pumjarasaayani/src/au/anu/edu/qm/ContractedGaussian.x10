@@ -21,14 +21,14 @@ import x10x.vector.Point3d;
  * @author: V.Ganesh
  */
 public class ContractedGaussian { 
-    global val center : Point3d;
-    global val power : Power;
-    global val primitives : ArrayList[PrimitiveGaussian{self.at(this)}]{self.at(this)};
-    global val exponents:ArrayList[Double]{self.at(this)};
-    global val coefficients:ArrayList[Double]{self.at(this)};
-    global val primNorms:ArrayList[Double]{self.at(this)};
+    val center : Point3d;
+    val power : Power;
+    val primitives : ArrayList[PrimitiveGaussian];
+    val exponents:ArrayList[Double];
+    val coefficients:ArrayList[Double];
+    val primNorms:ArrayList[Double];
 
-    global val maxam:Int, minam:Int, totam:Int;
+    val maxam:Int, minam:Int, totam:Int;
 
     var normalization : Double;
 
@@ -36,7 +36,7 @@ public class ContractedGaussian {
         this.center = center;
         this.power = pwr;
         normalization = 1.0; 
-        primitives = new ArrayList[PrimitiveGaussian{self.at(this)}]();
+        primitives = new ArrayList[PrimitiveGaussian]();
 
         exponents = new ArrayList[Double]();
         coefficients = new ArrayList[Double]();
@@ -52,11 +52,11 @@ public class ContractedGaussian {
     public def getPower() = power;
     public def getNormalization() = normalization;
     public def setNormalization(n:Double) : Void { normalization = n; }
-    public def getPrimitives() : ArrayList[PrimitiveGaussian{self.at(this)}]{self.at(this)} = primitives;
-    public def getPrimitive(i:Int) : PrimitiveGaussian{self.at(this)} = primitives.get(i);
-    public def getExponents() : ArrayList[Double]{self.at(this)} = exponents;
-    public def getCoefficients() : ArrayList[Double]{self.at(this)} = coefficients;
-    public def getPrimNorms() : ArrayList[Double]{self.at(this)} = primNorms;
+    public def getPrimitives() : ArrayList[PrimitiveGaussian] = primitives;
+    public def getPrimitive(i:Int) : PrimitiveGaussian = primitives.get(i);
+    public def getExponents() : ArrayList[Double] = exponents;
+    public def getCoefficients() : ArrayList[Double] = coefficients;
+    public def getPrimNorms() : ArrayList[Double] = primNorms;
     public def getPrimNorm(i:Int) = primNorms(i);
     public def getTotalAngularMomentum() = totam;
     public def getMaximumAngularMomentum() = maxam;
@@ -87,16 +87,16 @@ public class ContractedGaussian {
         coefficients.add(coeff);
     }
 
-    public def overlap(cg:ContractedGaussian!) : Double {
+    public def overlap(cg:ContractedGaussian) : Double {
         val cgPrimitives = cg.getPrimitives();
         var i:Int, j:Int;
         var sij:Double = 0.0;
 
         // TODO: x10 - parallel 
         for(i=0; i<primitives.size(); i++) {
-            var iPG:PrimitiveGaussian{self.at(this)} = primitives.get(i);            
+            var iPG:PrimitiveGaussian = primitives.get(i);            
             for(j=0; j<cgPrimitives.size(); j++) {
-                var jPG:PrimitiveGaussian{self.at(this)} = cgPrimitives.get(j);                
+                var jPG:PrimitiveGaussian = cgPrimitives.get(j);                
                 
                 sij += iPG.getCoefficient() * jPG.getCoefficient() * iPG.overlap(jPG);
             } // end for
@@ -105,16 +105,16 @@ public class ContractedGaussian {
         return normalization * cg.normalization * sij;
     }
 
-    public def kinetic(cg:ContractedGaussian{self.at(this)}) : Double {
+    public def kinetic(cg:ContractedGaussian) : Double {
         var tij:Double = 0.0;
         var i:Int, j:Int;
         val cgPrimitives = cg.getPrimitives();
         
         // TODO: x10 - parallel 
         for(i=0; i<primitives.size(); i++) {
-            var iPG:PrimitiveGaussian{self.at(this)} = primitives.get(i);            
+            var iPG:PrimitiveGaussian = primitives.get(i);            
             for(j=0; j<cgPrimitives.size(); j++) {
-                var jPG:PrimitiveGaussian{self.at(this)} = cgPrimitives.get(j);                
+                var jPG:PrimitiveGaussian = cgPrimitives.get(j);                
                 
                 tij += iPG.getCoefficient() * jPG.getCoefficient() * iPG.kinetic(jPG);
             } // end for
@@ -123,16 +123,16 @@ public class ContractedGaussian {
         return normalization * cg.normalization * tij;
     }
 
-    public def nuclear(cg:ContractedGaussian{self.at(this)}, center : Point3d) : Double {
+    public def nuclear(cg:ContractedGaussian, center : Point3d) : Double {
         var vij:Double = 0.0;
         var i:Int, j:Int;
         val cgPrimitives = cg.getPrimitives();
 
         // TODO: x10 - parallel        
         for(i=0; i<primitives.size(); i++) {
-            val iPG:PrimitiveGaussian{self.at(this)} = primitives.get(i);            
+            val iPG = primitives.get(i);            
             for(j=0; j<cgPrimitives.size(); j++) {
-                val jPG:PrimitiveGaussian{self.at(this)} = cgPrimitives.get(j);                
+                val jPG = cgPrimitives.get(j);                
                 
                 vij += iPG.getCoefficient() * jPG.getCoefficient() 
                        * iPG.nuclear(jPG, center);                                

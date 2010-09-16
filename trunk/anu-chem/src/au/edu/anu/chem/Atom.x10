@@ -27,10 +27,10 @@ public class Atom {
     public var centre : Point3d;
 
     /** The symbol for this atom species. */
-    public global val symbol : String;
+    public val symbol : String;
 
     /** A list of atoms to which this atom is bonded. */
-    private var bonds : ArrayList[Pair[BondType, Atom]]{self.at(this)};
+    private var bonds : ArrayList[Pair[BondType, Atom]];
 
     public def this(symbol : String, centre : Point3d) { 
         this.symbol = symbol;
@@ -48,15 +48,8 @@ public class Atom {
      */
     public def this(atom : Atom) {
         this.symbol = atom.symbol;
-        this.centre = at (atom) {atom.centre};
-        val bondsValRail = at(atom) {atom.bonds == null ? null : atom.bonds.toValRail()};
-        if (bondsValRail != null) {
-            val bonds = new ArrayList[Pair[BondType, Atom]](bondsValRail.length);
-            for ((i) in 0..bondsValRail.length-1) {
-                bonds.add(bondsValRail(i));
-            }
-            this.bonds = bonds;
-        }
+        this.centre = atom.centre;
+        this.bonds = ArrayList.make(atom.bonds);
     }
 
     public def getBonds() = bonds;
@@ -69,7 +62,7 @@ public class Atom {
      */
     public def addBond(bondType : BondType, atom : Atom) {
         addBondInternal(bondType, atom);
-        at (atom) { atom.addBondInternal(bondType, this); }
+        atom.addBondInternal(bondType, this);
     }
 
     /**
@@ -79,7 +72,7 @@ public class Atom {
      */
     protected def addBondInternal(bondType : BondType, atom : Atom) {
         if (bonds == null) { 
-           bonds = new ArrayList[Pair[BondType, Atom]]() as ArrayList[Pair[BondType, Atom]]{self.at(this)}; 
+           bonds = new ArrayList[Pair[BondType, Atom]]() as ArrayList[Pair[BondType, Atom]]; 
         }
         bonds.add(Pair[BondType, Atom](bondType, atom));
     }
@@ -89,8 +82,8 @@ public class Atom {
     public def setIndex(i:Int) { index = i; }
     public def getIndex() = index;
 
-    public global safe def toString() : String {
-        return at(this){symbol + " " + centre.i + " " + centre.j + " " + centre.k};
+    public safe def toString() : String {
+        return symbol + " " + centre.i + " " + centre.j + " " + centre.k;
     }
 }
 

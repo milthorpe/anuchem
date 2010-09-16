@@ -21,12 +21,12 @@ import edu.mit.fftw.FFTW;
  */
 public class Distributed3dFft {
     /** The length of one dimension of the 3D source and target arrays. */
-    public global val dataSize : Int;
+    public val dataSize : Int;
 
     // TODO these arrays should be parameters, but can't be because of GC problems
-    private global val source : DistArray[Complex](3); 
-    private global val target : DistArray[Complex](3){self.dist==source.dist};
-    private global val temp : DistArray[Complex](3){self.dist==source.dist};
+    private val source : DistArray[Complex](3); 
+    private val target : DistArray[Complex](3){self.dist==source.dist};
+    private val temp : DistArray[Complex](3){self.dist==source.dist};
 
     public def this(dataSize : Int,
                     source : DistArray[Complex](3), 
@@ -49,7 +49,7 @@ public class Distributed3dFft {
      * This operation would have to be renamed "doFFT3dTranspose"
      * to indicate that the target array has its dimensions transposed.
      */
-    public global def doFFT3d(forward : Boolean) {
+    public def doFFT3d(forward : Boolean) {
         if (source.dist.constant) {
             // all source data at one place.  use local 3D FFT rather than distributed
             val plan : FFTW.FFTWPlan = FFTW.fftwPlan3d(dataSize, dataSize, dataSize, source, target, forward);
@@ -116,20 +116,20 @@ public class Distributed3dFft {
      * Performs a 1D FFT for each 1D slice along the Z dimension,
      * and store the result in the temp array.
      */
-    private global def do1DFftToTemp(source : DistArray[Complex](3),
+    private def do1DFftToTemp(source : DistArray[Complex](3),
                                      oneDSource : Rail[Complex],
                                      oneDTarget : Rail[Complex],
                                      forward : Boolean) {
         val plan : FFTW.FFTWPlan = FFTW.fftwPlan1d(dataSize, oneDSource, oneDTarget, forward);
         val mySource = source.dist | here;
         val gridRegionWithoutZ = (mySource.region().eliminate(2)) as Region(2);
-        for ((i,j) in gridRegionWithoutZ) {
+        for ([i,j] in gridRegionWithoutZ) {
             // TODO need to copy into ValRail - can use raw()?
-            for ((k) in 0..dataSize-1) {
+            for ([k] in 0..dataSize-1) {
                 oneDSource(k) = source(i,j,k);
             }
             FFTW.fftwExecute(plan);
-            for ((k) in 0..dataSize-1) {
+            for ([k] in 0..dataSize-1) {
                 temp(i,j,k) = oneDTarget(k);
             }
         }
@@ -142,7 +142,7 @@ public class Distributed3dFft {
      * Assumes NxNxN arrays, and that source and target arrays contain complete
      * slabs or lines in the second dimension.
      */
-    private global def transposeTempToTarget() {
+    private def transposeTempToTarget() {
         val sourceDist = temp.dist | here;
         val sourceStartX = sourceDist.region.min(0);
         val sourceEndX = sourceDist.region.max(0);
@@ -166,9 +166,9 @@ public class Distributed3dFft {
                         elementsToTransfer(i++) = temp(p);
                     }
                     val toTransfer = ValRail.make(elementsToTransfer);
-                    async (p2) {
+                    async at (p2) {
                         var i : Int = 0;
-                        for ((x,y,z) in transferRegion) {
+                        for ([x,y,z] in transferRegion) {
                             // transpose dimensions
                             target(z,x,y) = toTransfer(i++);
                         }

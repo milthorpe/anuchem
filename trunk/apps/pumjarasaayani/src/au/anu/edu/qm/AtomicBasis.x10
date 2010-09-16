@@ -20,16 +20,16 @@ import x10.util.*;
  * @author: V.Ganesh
  */
 public class AtomicBasis { 
-    global val orbitals:ArrayList[Orbital{self.at(this)}]{self.at(this)};
+    val orbitals:ArrayList[Orbital];
 
     public def this() { 
-       orbitals = new ArrayList[Orbital{self.at(this)}]();
+       orbitals = new ArrayList[Orbital]();
     } 
 
-    public def addOrbital(orb:Orbital{self.at(this)}) {
+    public def addOrbital(orb:Orbital) {
        orbitals.add(orb);
     }
 
-    public def getOrbitals() : ArrayList[Orbital{self.at(this)}]{self.at(this)} = this.orbitals;
+    public def getOrbitals() : ArrayList[Orbital] = this.orbitals;
 }
 

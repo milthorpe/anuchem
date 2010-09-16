@@ -22,15 +22,12 @@ import au.edu.anu.util.Timer;
  */
 public class ElectrostaticDirectMethod {
     // TODO enum - XTENLANG-1118
-    public const TIMER_INDEX_TOTAL : Int = 0;
+    public static val TIMER_INDEX_TOTAL : Int = 0;
     /** A multi-timer for the several segments of a single getEnergy invocation, indexed by the constants above. */
     public val timer = new Timer(6);
 
     /** The atoms in the simulation, divided up into an array of ValRails, one for each place. */
-    private global val atoms : DistArray[ValRail[MMAtom]](1);
-
-    // TODO should be shared local to getEnergy() - XTENLANG-404
-    private var directEnergy : Double = 0.0;
+    private val atoms : DistArray[ValRail[MMAtom]](1);
 
     /**
      * Creates a new electrostatic direct method.
@@ -44,47 +41,48 @@ public class ElectrostaticDirectMethod {
     public def getEnergy() : Double {
         timer.start(TIMER_INDEX_TOTAL);
 
-        finish ateach ((p1) in atoms) {
-            val myAtoms = atoms(p1);
-            finish {
+        val directEnergy = finish(SumReducer()) {
+            ateach ([p1] in atoms) {
+                val myAtoms = atoms(p1);
                 // energy for all interactions with other atoms at other places
-                foreach ((p2) in atoms) {
+                foreach ([p2] in atoms) {
                     if (p2 != p1) { // TODO region difference
                         var energyWithOther : Double = 0.0;
                         val otherAtomsPacked = at(atoms.dist(p2)) {getPackedAtomsForPlace(p2)};
-                        for ((j) in 0..otherAtomsPacked.length-1) {
-                            for ((i) in 0..myAtoms.length-1) {
+                        for ([j] in 0..otherAtomsPacked.length-1) {
+                            for ([i] in 0..myAtoms.length-1) {
                                 val myAtom = myAtoms(i);
                                 energyWithOther += myAtom.charge * otherAtomsPacked(j).charge / otherAtomsPacked(j).centre.distance(myAtom.centre);
                             }
                         }
-                        val energyWithOtherFinal = energyWithOther;
-                        // TODO this is slow because of lack of optimized atomic - XTENLANG-321
-                        at(this) {atomic { directEnergy += energyWithOtherFinal; }}
+                        offer energyWithOther;
                     }
                 }
 
                 // energy for all interactions within this place
-                foreach ((i) in 0..myAtoms.length-1) {
+                foreach ([i] in 0..myAtoms.length-1) {
                     var energyThisPlace : Double = 0.0;
-                    for ((j) in 0..i-1) {
+                    for ([j] in 0..i-1) {
                         energyThisPlace += 2.0 * myAtoms(i).charge * myAtoms(j).charge / myAtoms(j).centre.distance(myAtoms(i).centre);
                     }
-                    val energyThisPlaceFinal = energyThisPlace;
-                    // TODO this is slow because of lack of optimized atomic - XTENLANG-321
-                    at(this) {atomic { directEnergy += energyThisPlaceFinal; }}
+                    offer energyThisPlace;
                 }
             }
-        }
+        };
        
         timer.stop(TIMER_INDEX_TOTAL);
         return directEnergy / 2.0;
     }
 
+    static struct SumReducer implements Reducible[Double] {
+        public safe def zero() = 0.0;
+        public safe def apply(a:Double, b:Double) = (a + b);
+    }
+
     /*
      * Returns all atom charges and coordinates for a place, in packed representation
      */
-    private global safe def getPackedAtomsForPlace(placeId : Int) : ValRail[MMAtom.PackedRepresentation] {
+    private safe def getPackedAtomsForPlace(placeId : Int) : ValRail[MMAtom.PackedRepresentation] {
         val myAtoms = atoms(placeId);
         return ValRail.make[MMAtom.PackedRepresentation](myAtoms.length(), (i : Int) => myAtoms(i).getPackedRepresentation());
     }

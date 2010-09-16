@@ -22,27 +22,27 @@ import au.edu.anu.util.Timer;
  * @author milthorpe
  */
 public class TestPME extends TestElectrostatic {
-    public global def sizeOfCentralCluster() : Double = 80.0;
+    public def sizeOfCentralCluster() : Double = 80.0;
 
     public def this(numAtoms : Int) {
         super(numAtoms);
     }
 
-    public static def main(args : Rail[String]!) {
+    public static def main(args : Array[String](1)) {
         var numAtoms : Int;
         var ewaldCoefficient : Double = 0.35;
         var cutoff : Double = 10.0;
         var gridSize : Int = 64;
         var splineOrder : Int = 4;
-        if (args.length > 0) {
+        if (args.size > 0) {
             numAtoms = Int.parseInt(args(0));
-            if (args.length > 1) {
+            if (args.size > 1) {
                 ewaldCoefficient = Double.parseDouble(args(1));
-                if (args.length > 2) {
+                if (args.size > 2) {
                     cutoff = Double.parseDouble(args(2));
-                    if (args.length > 3) {
+                    if (args.size > 3) {
                         gridSize = Int.parseInt(args(3));
-                        if (args.length > 4) {
+                        if (args.size > 4) {
                             splineOrder = Int.parseInt(args(4));
                         }
                     }

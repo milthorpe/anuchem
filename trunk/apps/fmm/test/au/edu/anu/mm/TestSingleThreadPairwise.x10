@@ -20,13 +20,13 @@ import au.edu.anu.util.Timer;
  * @author milthorpe
  */
 public class TestSingleThreadPairwise extends TestElectrostatic {
-    public global def sizeOfCentralCluster() : Double = 80.0;
+    public def sizeOfCentralCluster() : Double = 80.0;
 
     public def this(numAtoms : Int) {
         super(numAtoms);
     }
 
-    public static def main(args : Rail[String]!) {
+    public static def main(args : Array[String](1)) {
         var numAtoms : Int;
         if (args.length > 0) {
             numAtoms = Int.parseInt(args(0));
@@ -47,8 +47,8 @@ public class TestSingleThreadPairwise extends TestElectrostatic {
         timer.start(0);
 
         var directEnergy : Double = 0.0;
-        for ((i) in 0..myAtoms.length-1) {
-            for ((j) in 0..i-1) {
+        for ([i] in 0..myAtoms.length-1) {
+            for ([j] in 0..i-1) {
                 directEnergy += myAtoms(i).charge * myAtoms(j).charge / myAtoms(j).centre.distance(myAtoms(i).centre);
             }
         }
@@ -59,7 +59,7 @@ public class TestSingleThreadPairwise extends TestElectrostatic {
     }
 
     /** Assign all atoms to place 0. */
-    global safe def getPlaceId(x : Double, y : Double, z : Double) : Int {
+    safe def getPlaceId(x : Double, y : Double, z : Double) : Int {
         return 0;
     }
 }

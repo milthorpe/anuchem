@@ -17,8 +17,8 @@ import au.edu.anu.mm.ForceField;
 import au.edu.anu.chem.mm.MMAtom;
 
 public class AmberForceField implements ForceField {
-    global val bondParameters : HashMap[String, AmberBondParameters];
-    global val angleParameters : HashMap[String, AmberAngleParameters];
+    val bondParameters : HashMap[String, AmberBondParameters];
+    val angleParameters : HashMap[String, AmberAngleParameters];
 
     /* The potential of the system as calculated by this force field.
        TODO should be shared var within getPotentialAndForces
@@ -37,12 +37,12 @@ public class AmberForceField implements ForceField {
         angleParameters.put(waterAngle.description, waterAngle);
     }
     
-    public global def getPotentialAndForces(atoms: DistArray[ValRail[MMAtom]](1)) : Double {
+    public def getPotentialAndForces(atoms: DistArray[ValRail[MMAtom]](1)) : Double {
         energy = 0.0;
         finish ateach(p in atoms) { 
             var myEnergy : Double = 0.0;
             val myAtoms = atoms(p);
-            for((i) in 0..myAtoms.length()-1) {
+            for([i] in 0..myAtoms.length()-1) {
                 val atom = myAtoms(i);
                 atom.force = Vector3d.NULL;
                 // bond stretching

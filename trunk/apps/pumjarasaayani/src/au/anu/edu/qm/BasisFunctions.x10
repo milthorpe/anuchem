@@ -21,16 +21,16 @@ import au.edu.anu.chem.Molecule;
  * @author: V.Ganesh
  */
 public class BasisFunctions { 
-    global val molecule:Molecule[QMAtom]!;
-    global val basisName:String;
-    global val basisFunctions:ArrayList[ContractedGaussian{self.at(this)}]{self.at(this)};
-    global val shellList:ShellList!;
+    val molecule:Molecule[QMAtom];
+    val basisName:String;
+    val basisFunctions:ArrayList[ContractedGaussian];
+    val shellList:ShellList;
 
-    public def this(mol:Molecule[QMAtom]!, basNam:String, basisDir:String) { 
+    public def this(mol:Molecule[QMAtom], basNam:String, basisDir:String) { 
         this.molecule  = mol;
         this.basisName = basNam;
 
-        basisFunctions = new ArrayList[ContractedGaussian{self.at(this)}](); 
+        basisFunctions = new ArrayList[ContractedGaussian](); 
         initBasisFunctions(basisDir);
 
         shellList = new ShellList();
@@ -38,7 +38,7 @@ public class BasisFunctions {
     } 
 
     private def initBasisFunctions(basisDir:String) {
-        val basisSet:BasisSet{self.at(this)} = new BasisSet(basisName, basisDir);
+        val basisSet:BasisSet = new BasisSet(basisName, basisDir);
         var indx:Int = 0;
         var intIndx:Int = 0;
         val plInst = PowerList.getInstance();
@@ -47,21 +47,20 @@ public class BasisFunctions {
             val atom      = molecule.getAtom(atmno);
             val atomBasis = basisSet.getBasis(atom);
             val orbitals  = atomBasis.getOrbitals();
-            val atombfs:ArrayList[ContractedGaussian{self.at(this)}]{self.at(this)} 
-                          = new ArrayList[ContractedGaussian{self.at(this)}]();
+            val atombfs   = new ArrayList[ContractedGaussian]();
 
             for(var orbno:Int=0; orbno<orbitals.size(); orbno++) { 
                val orb = orbitals.get(orbno);
                val typ = orb.getType();
                val pList = plInst.getPowers(typ);
 
-               val coeff:ArrayList[Double]{self.at(this)} = orb.getCoefficients();
-               val exps:ArrayList[Double]{self.at(this)}  = orb.getExponents();
+               val coeff:ArrayList[Double] = orb.getCoefficients();
+               val exps:ArrayList[Double]  = orb.getExponents();
 
                for(var l:Int=0; l<pList.length; l++) {
                   val center = atom.centre;
                   val power = pList(l);
-                  val cg:ContractedGaussian{self.at(this)} = new ContractedGaussian(center, power);
+                  val cg = new ContractedGaussian(center, power);
                   cg.setIndex(indx++);
                   cg.setIntIndex(intIndx);
               
@@ -75,7 +74,7 @@ public class BasisFunctions {
                } // end for
 
                val am = orb.getAngularMomentum();
-               val acg:ContractedGaussian{self.at(this)} = new ContractedGaussian(atom.centre, 
+               val acg = new ContractedGaussian(atom.centre, 
                                                                                   Power(am, 0, 0));
                acg.setIntIndex(intIndx);
 

@@ -23,7 +23,7 @@ import au.edu.anu.util.Timer;
  * @author milthorpe
  */
 public class TestMorseOscillator {
-    public static def main(args : Rail[String]!) {
+    public static def main(args : Array[String](1)) {
 
         Console.OUT.println("Testing simple HF morse oscillator.");
 

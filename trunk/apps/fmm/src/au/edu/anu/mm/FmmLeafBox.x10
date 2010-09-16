@@ -22,16 +22,16 @@ import au.edu.anu.chem.mm.MMAtom;
  * @author milthorpe
  */
 public class FmmLeafBox extends FmmBox {
-    public val atoms : GrowableRail[MMAtom{self.at(this)}]{self.at(this)} = new GrowableRail[MMAtom{self.at(this)}]();
+    public val atoms : GrowableRail[MMAtom] = new GrowableRail[MMAtom]();
 
     /** The U-list consists of all leaf boxes not well-separated to this box. */
     private var uList : ValRail[Point(3)];
 
-    public def this(level : Int, x : Int, y : Int, z : Int, numTerms : Int, parent : FmmBox) { 
+    public def this(level : Int, x : Int, y : Int, z : Int, numTerms : Int, parent : GlobalRef[FmmBox]) { 
         super(level, x, y, z, numTerms, parent);
     }
 
-    public safe atomic def addAtom(atom : MMAtom{self.at(this)}) {
+    public safe atomic def addAtom(atom : MMAtom) {
         atoms.add(atom);
     }
 

@@ -24,10 +24,8 @@ import x10x.vector.Point3d;
  *  ...
  */
 public class JobInput { 
-    var molecule:Molecule[QMAtom]{self.at(this)};
+    var molecule:Molecule[QMAtom];
     var basisName:String;
-
-    public def this() { } 
 
     public def make(inpFile:String) throws IOException { 
        readInp(inpFile);
@@ -58,7 +56,7 @@ public class JobInput {
        fil.close();
     }
 
-    public def getMolecule()  : Molecule[QMAtom]{self.at(this)} = molecule;
+    public def getMolecule()  : Molecule[QMAtom] = molecule;
     public def getBasisName() : String   = basisName;
 }
 

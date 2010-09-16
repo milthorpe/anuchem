@@ -20,16 +20,16 @@ import au.edu.anu.chem.Molecule;
  * @author: V.Ganesh
  */
 public class OneElectronIntegrals { 
-    global val basisFunctions:BasisFunctions!;
-    global val hCore:HCore!;
-    global val overlap:Overlap!;
+    val basisFunctions:BasisFunctions;
+    val hCore:HCore;
+    val overlap:Overlap;
 
-    public def this(bfs:BasisFunctions!, mol:Molecule[QMAtom]!) { 
+    public def this(bfs:BasisFunctions, mol:Molecule[QMAtom]) { 
        this.basisFunctions = bfs;
 
        val nbf  = basisFunctions.getBasisFunctions().size();
-       hCore    = new HCore(nbf) as HCore!;
-       overlap  = new Overlap(nbf) as Overlap!;
+       hCore    = new HCore(nbf);
+       overlap  = new Overlap(nbf);
 
        compute1E(mol);
     } 
@@ -38,7 +38,7 @@ public class OneElectronIntegrals {
     public def getOverlap() = overlap;
     public def getBasisFunctions() = basisFunctions;
 
-    protected def compute1E(molecule:Molecule[QMAtom]!) : void {
+    private def compute1E(molecule:Molecule[QMAtom]) : void {
        val bfs  = basisFunctions.getBasisFunctions();
        val nbf  = bfs.size();
        val nat  = molecule.getNumberOfAtoms();
@@ -52,7 +52,7 @@ public class OneElectronIntegrals {
        val ovr = overlap.getMatrix();
        val h   = hCore.getMatrix();
 
-       finish for((i, j) in h) {
+       finish for([i, j] in h) {
               val bfi = bfs.get(i);
               val bfj = bfs.get(j);
 

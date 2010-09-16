@@ -21,7 +21,7 @@ import x10x.matrix.Matrix;
  * @author: V.Ganesh
  */
 public class Density extends Matrix {
-    private global val noOfOccupancies:Int;
+    private val noOfOccupancies:Int;
 
     public def this(n:Int, noOfOccupancies:Int) {
         super(n);
@@ -33,12 +33,12 @@ public class Density extends Matrix {
         this.noOfOccupancies = d.getNoOfOccupancies();
     }
 
-    public global def getNoOfOccupancies() = noOfOccupancies;
+    public def getNoOfOccupancies() = noOfOccupancies;
 
-    public def compute(mos:MolecularOrbitals!) : void {
+    public def compute(mos:MolecularOrbitals) : void {
         // construct it from the MOs .. C*C'
         val N = mos.getRowCount();
-        val dVector:Matrix! = new Matrix(noOfOccupancies, N) as Matrix!;
+        val dVector = new Matrix(noOfOccupancies, N);
 
         val dMat = dVector.getMatrix();
         val mosMat = mos.getMatrix();
@@ -49,7 +49,7 @@ public class Density extends Matrix {
         val res = dVector.transpose().mul(dVector).getMatrix();
 
         val thisMat = getMatrix();
-        for((i, j) in thisMat.region)
+        for([i, j] in thisMat.region)
            thisMat(i, j) = res(i, j);
     }
 }

@@ -20,7 +20,7 @@ import au.edu.anu.util.Timer;
  * @author milthorpe
  */
 public class TestSinglePlacePairwise extends TestElectrostatic {
-    public global def sizeOfCentralCluster() : Double = 80.0;
+    public def sizeOfCentralCluster() : Double = 80.0;
 
     private var directEnergy : Double = 0.0;
 
@@ -28,7 +28,7 @@ public class TestSinglePlacePairwise extends TestElectrostatic {
         super(numAtoms);
     }
 
-    public static def main(args : Rail[String]!) {
+    public static def main(args : Array[String](1)) {
         var numAtoms : Int;
         if (args.length > 0) {
             numAtoms = Int.parseInt(args(0));
@@ -48,9 +48,9 @@ public class TestSinglePlacePairwise extends TestElectrostatic {
         val timer = new Timer(1);
         timer.start(0);
 
-        finish foreach ((i) in 0..myAtoms.length-1) {
+        finish foreach ([i] in 0..myAtoms.length-1) {
             var atomEnergy : Double = 0.0;
-            for ((j) in 0..i-1) {
+            for ([j] in 0..i-1) {
                 atomEnergy += myAtoms(i).charge * myAtoms(j).charge / myAtoms(j).centre.distance(myAtoms(i).centre);
             }
             val atomEnergyFinal = atomEnergy;
@@ -63,7 +63,7 @@ public class TestSinglePlacePairwise extends TestElectrostatic {
     }
 
     /** Assign all atoms to place 0. */
-    global safe def getPlaceId(x : Double, y : Double, z : Double) : Int {
+    safe def getPlaceId(x : Double, y : Double, z : Double) : Int {
         return 0;
     }
 }

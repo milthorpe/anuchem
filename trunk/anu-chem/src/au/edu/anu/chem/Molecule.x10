@@ -23,10 +23,10 @@ import x10x.vector.Point3d;
  * @author: V.Ganesh
  */
 public class Molecule[T]{T <: Atom} {
-    global val atomList = new ArrayList[T{self.at(this)}](); 
-    global val name : String;
+    val atomList = new ArrayList[T](); 
+    val name : String;
 
-    global val ringList = new ArrayList[Ring[T]{self.at(this)}]();
+    val ringList = new ArrayList[Ring[T]]();
 
     /** 
      * Measures the maximum absolute value of any coordinate x,y,z
@@ -42,27 +42,27 @@ public class Molecule[T]{T <: Atom} {
         this.name = name;
     }
 
-    public global safe def getName() = this.name;
+    public safe def getName() = this.name;
 
-    public def addAtom(atm:T{self.at(this)}) : void {
+    public def addAtom(atm:T) : void {
         atomList.add(atm); 
         maxExtent = Math.max(maxExtent, Math.abs(atm.centre.i));
         maxExtent = Math.max(maxExtent, Math.abs(atm.centre.j));
         maxExtent = Math.max(maxExtent, Math.abs(atm.centre.k));      
     }
 
-    public safe def getAtom(index:Int) : T{self.at(this)} = atomList.get(index) as T{self.at(this)};
-    public global safe def getAtoms() = atomList;
-    public global safe def getNumberOfAtoms() : Int = atomList.size();
+    public safe def getAtom(index:Int) : T = atomList.get(index);
+    public safe def getAtoms() = atomList;
+    public safe def getNumberOfAtoms() : Int = atomList.size();
 
-    public global safe def addRing(r:Ring[T]{self.at(this)}) { ringList.add(r); }
-    public global safe def getRings() = ringList;
+    public safe def addRing(r:Ring[T]) { ringList.add(r); }
+    public safe def getRings() : ArrayList[Ring[T]] = ringList;
 
     public safe def getNumberOfElectrons() : int {
        val ai = AtomInfo.getInstance();
        var ne:Int = 0;
 
-       for(atm:T{self.at(this)} in atomList)
+       for(atm:T in atomList)
           ne += ai.getAtomicNumber(atm);
 
        return ne;
@@ -83,7 +83,7 @@ public class Molecule[T]{T <: Atom} {
         var x:Double = 0.0, y:Double = 0.0, z:Double = 0.0;
         var massSum:Double = 0.0;
 
-        for(atm:T{self.at(this)} in atomList) {
+        for(atm:T in atomList) {
             val mass = ai.getAtomicMass(atm);
             x += mass * atm.centre.i;
             y += mass * atm.centre.j;
@@ -95,10 +95,10 @@ public class Molecule[T]{T <: Atom} {
         return Point3d(x/massSum,y/massSum,z/massSum);
     }
 
-    public global safe def toString() : String {
+    public safe def toString() : String {
        var str:String = "";
 
-       for(atm:T{self.at(this)} in atomList)
+       for(atm:T in atomList)
          str += atm.toString() + "\n";
 
        return str;

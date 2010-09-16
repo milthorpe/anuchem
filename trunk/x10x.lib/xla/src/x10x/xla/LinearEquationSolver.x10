@@ -14,6 +14,6 @@ public abstract class LinearEquationSolver {
     public def this() {
     }
 
-    public abstract def findSolution(matrixA:Matrix!, vectorB:Vector!) : Vector! throws Exception;
+    public abstract def findSolution(matrixA:Matrix, vectorB:Vector) : Vector throws Exception;
 }
 

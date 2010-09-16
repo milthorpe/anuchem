@@ -33,15 +33,15 @@ public class TestElectrostatic {
      * to produce a central cluster of particles surrounded
      * by a large empty shell.
      */
-    public global def sizeOfCentralCluster() : Double = SIZE;
+    public def sizeOfCentralCluster() : Double = SIZE;
 
-    protected global val numAtoms : Int;
+    protected val numAtoms : Int;
 
     public def this(numAtoms : Int) {
         this.numAtoms = numAtoms;
     }
 
-    public def logTime(desc : String, timerIndex : Int, timer : Timer!) {
+    public def logTime(desc : String, timerIndex : Int, timer : Timer) {
         Console.OUT.printf(desc + " (one cycle): %g seconds\n", (timer.total(timerIndex) as Double) / 1e9);
     }
 
@@ -67,14 +67,14 @@ public class TestElectrostatic {
             val z = clusterStart + (gridZ + 0.5 + randomNoise()) * (sizeOfCentralCluster() / gridSize);
             val charge = i%2==0?1:-1;
             val p = getPlaceId(x, y, z);
-            async (Place.places(p)) {
+            async at (Place.places(p)) {
                 val atom = new MMAtom(Point3d(x, y, z), charge);
                 //Console.OUT.println(atom);
-                atomic { (tempAtoms(p) as GrowableRail[MMAtom]!).add(atom); }
+                atomic { (tempAtoms(p) as GrowableRail[MMAtom]).add(atom); }
             }
             gridPoint++;
         }
-        val atoms = DistArray.make[ValRail[MMAtom]](Dist.makeUnique(Place.places), ((p) : Point) => (tempAtoms(p) as GrowableRail[MMAtom]!).toValRail());
+        val atoms = DistArray.make[ValRail[MMAtom]](Dist.makeUnique(Place.places), ([p] : Point) => (tempAtoms(p) as GrowableRail[MMAtom]).toValRail());
         return atoms;
     }
 
@@ -82,7 +82,7 @@ public class TestElectrostatic {
      * Gets the place ID to which to assign the given atom coordinates.
      * Currently just splits them up into slices by X coordinate.
      */
-    global safe def getPlaceId(x : Double, y : Double, z : Double) : Int {
+    safe def getPlaceId(x : Double, y : Double, z : Double) : Int {
         return ((x / SIZE) * Place.MAX_PLACES) as Int;
     }
 
@@ -91,7 +91,7 @@ public class TestElectrostatic {
      * assigned grid point.
      */
     static def randomNoise() : Double {
-        return ((at(R){R.nextDouble()}) - 0.5) * NOISE;
+        return (R.nextDouble() - 0.5) * NOISE;
     }
 }
 

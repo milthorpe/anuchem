@@ -49,8 +49,8 @@ public class Fragment extends Molecule[QMAtom] {
           return nAtoms;
      }
 
-     public def intersection(frag:Fragment!) : Fragment! {
-          val newFrag = new Fragment() as Fragment!;
+     public def intersection(frag:Fragment) : Fragment {
+          val newFrag = new Fragment();
 
           var foundAtom:Boolean;
 
@@ -73,8 +73,8 @@ public class Fragment extends Molecule[QMAtom] {
           return newFrag;
      }
 
-     public def union(frag:Fragment!) : Fragment! {
-          val newFrag = new Fragment() as Fragment!;
+     public def union(frag:Fragment) : Fragment {
+          val newFrag = new Fragment();
 
           var foundAtom:Boolean;
 
@@ -100,7 +100,7 @@ public class Fragment extends Molecule[QMAtom] {
           return newFrag;
      } 
 
-     public def equals(frag:Fragment!) : Boolean {          
+     public def equals(frag:Fragment) : Boolean {          
 
           if (getNumberOfTrueAtoms() != frag.getNumberOfTrueAtoms()) return false;
 

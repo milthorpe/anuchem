@@ -24,11 +24,11 @@ public class Fock extends Matrix {
         super(n);
     }
 
-    public def compute(hCore:HCore!, gMatrix:GMatrix!) : void {
+    public def compute(hCore:HCore, gMatrix:GMatrix) : void {
         val res = hCore.add(gMatrix).getMatrix();
         val thisMat = getMatrix();
 
-        for((i, j) in res)
+        for([i, j] in res)
            thisMat(i, j) = res(i, j);
     }
 }

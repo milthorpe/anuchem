@@ -19,12 +19,12 @@ import x10.array.BaseDist;
  * and zero-based.
  */
 public class MortonDist extends BaseDist{self.rank==3} {
-    global val totalLength : Int;
+    val totalLength : Int;
 
     public static class MortonSubregion extends Region {
-        global val start : Int;
-        global val end : Int;
-        global val totalLength : Int;
+        val start : Int;
+        val end : Int;
+        val totalLength : Int;
         public def this(start : Int, end : Int, totalLength : Int) : MortonSubregion{self.rank==3} {
             super(3, false, false);
             this.start = start;
@@ -32,16 +32,21 @@ public class MortonDist extends BaseDist{self.rank==3} {
             this.totalLength = totalLength;
         }
         
-        public global def size() = end-start+1;
-        public global def isConvex() = true;
-        public global def isEmpty() = (end < start);
-        // TODO I hope these aren't used
-        public global def boundingBox(): Region(rank) {throw new UnsupportedOperationException("boundingBox()");}
-        global protected  def computeBoundingBox(): Region(rank) {throw new UnsupportedOperationException("computeBoundingBox()");}
-        public global def min(): ValRail[int] = ValRail.make(rank, (Int) => 0);
-        public global def max(): ValRail[int] = ValRail.make(rank, (Int) => (Math.cbrt(totalLength) as Int));
+        public def size() = end-start+1;
+        public def isConvex() = true;
+        public def isEmpty() = (end < start);
+        public def indexOf(pt:Point) {
+	        if (pt.rank != 3) return -1;
+            return MortonDist.getMortonIndex(pt, this.totalLength);
+        }
 
-        public global def contains(that: Region(rank)): boolean {
+        // TODO I hope these aren't used
+        public def boundingBox(): Region(rank) {throw new UnsupportedOperationException("boundingBox()");}
+        protected  def computeBoundingBox(): Region(rank) {throw new UnsupportedOperationException("computeBoundingBox()");}
+        public def min(): ValRail[int] = ValRail.make(rank, (Int) => 0);
+        public def max(): ValRail[int] = ValRail.make(rank, (Int) => (Math.cbrt(totalLength) as Int));
+
+        public def contains(that: Region(rank)): boolean {
             if (that instanceof MortonSubregion) {
                 val thatMS = that as MortonSubregion;
                 if (this.totalLength == thatMS.totalLength
@@ -52,7 +57,7 @@ public class MortonDist extends BaseDist{self.rank==3} {
             return false;
         }
 
-        public global def intersection(that: Region(rank)) : Region(rank) {
+        public def intersection(that: Region(rank)) : Region(rank) {
             if (that instanceof MortonSubregion) {
                 val thatMS = that as MortonSubregion;
                 if (this.totalLength != thatMS.totalLength) return Region.makeEmpty(rank); // non-compatible regions
@@ -62,19 +67,19 @@ public class MortonDist extends BaseDist{self.rank==3} {
             }
         }
 
-        public global def complement(): Region(rank) {throw new UnsupportedOperationException("complement()");}
-        public global def product(that: Region): Region {throw new UnsupportedOperationException("product(Region)");}
-        public global def projection(axis: int): Region(1) {throw new UnsupportedOperationException("projection(axis : Int)");}
-        public global def translate(v: Point(rank)): Region(rank){throw new UnsupportedOperationException("translate(Point)");}
-        public global def eliminate(axis: int): Region /*(rank-1)*/{throw new UnsupportedOperationException("eliminate(axis : Int)");}
+        public def complement(): Region(rank) {throw new UnsupportedOperationException("complement()");}
+        public def product(that: Region): Region {throw new UnsupportedOperationException("product(Region)");}
+        public def projection(axis: int): Region(1) {throw new UnsupportedOperationException("projection(axis : Int)");}
+        public def translate(v: Point(rank)): Region(rank){throw new UnsupportedOperationException("translate(Point)");}
+        public def eliminate(axis: int): Region /*(rank-1)*/{throw new UnsupportedOperationException("eliminate(axis : Int)");}
 
-        public global def contains(p: Point): boolean {
+        public def contains(p: Point): boolean {
             if (p.rank != 3) return false;
             val index = MortonDist.getMortonIndex(p, this.totalLength);
             return (index >= start && index <= end);
         }
 
-        public global def iterator(): Iterator[Point(rank)] {
+        public def iterator(): Iterator[Point(rank)] {
             return new MortonSubregionIterator(this) as Iterator[Point(rank)];
         }
 
@@ -97,11 +102,11 @@ public class MortonDist extends BaseDist{self.rank==3} {
             } 
         }
 
-        public global def scanners():Iterator[Region.Scanner]! {
+        public def scanners():Iterator[Region.Scanner] {
             throw new UnsupportedOperationException("TODO: scanners not defined for MortonSubregion");
         }
 
-        public global safe def toString(): String {
+        public safe def toString(): String {
             return "Z[" + start + ".." + end + "]";
         }
     }
@@ -192,7 +197,7 @@ public class MortonDist extends BaseDist{self.rank==3} {
         }
     }
 
-    public global safe def apply(pt: Point/*(rank)*/): Place {
+    public safe def apply(pt: Point/*(rank)*/): Place {
         if (pt.rank != 3) throw new UnsupportedOperationException("getMortonIndex(p{self.rank!=3})");
         val index = getMortonIndex(pt, totalLength);
         for (p:Place in places) {
@@ -204,7 +209,7 @@ public class MortonDist extends BaseDist{self.rank==3} {
         throw new ArrayIndexOutOfBoundsException("point " + pt + " not contained in distribution");
     }
 
-    public global safe def toString(): String {
+    public safe def toString(): String {
         var s: String = "MortonDist(";
         var first: boolean = true;
         for (p:Place in places) {

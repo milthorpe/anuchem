@@ -22,12 +22,10 @@ import org.gnu.gsl.GSL;
  * @author V. Ganesh
  */
 public class NativeLinearEquationSolver extends LinearEquationSolver {
-
-     public def this() {}
  
-     public def findSolution(matrixA:Matrix!, vectorB:Vector!) : Vector! throws Exception {
+     public def findSolution(matrixA:Matrix, vectorB:Vector) : Vector throws Exception {
           val N = matrixA.getRowCount();
-          val vectorX = new Vector(N) as Vector!;
+          val vectorX = new Vector(N);
 
           vectorX.makeZero();
           

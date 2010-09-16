@@ -21,13 +21,13 @@ import au.edu.anu.util.Timer;
  * @author milthorpe
  */
 public class TestPeriodicFmm3d extends TestElectrostatic {
-    public global def sizeOfCentralCluster() : Double = 80.0;
+    public def sizeOfCentralCluster() : Double = 80.0;
 
     public def this(numAtoms : Int) {
         super(numAtoms);
     }
 
-    public static def main(args : Rail[String]!) {
+    public static def main(args : Array[String](1)) {
         var numAtoms : Int;
         var density : Double = 60.0;
         var numTerms : Int = 10;

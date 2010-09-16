@@ -8,14 +8,13 @@ import x10.array.Array;
 /**
  * This class represents an (NxM)  Matrix.
  * (Initial DRAFT)
+ * TODO distribute Matrix
  *
  * @author V.Ganesh
  */
 public class Matrix { 
-    global val mat:Array[Double](2){rect, self.at(this)};
-
-    global val region:Region{rect,rank==2};
-    global val distribution:Dist{rect,rank==2}; // TODO actually distribute Matrix!
+    val mat:Array[Double](2){rect};
+    val region:Region{rect,rank==2};
 
     /**
      * Make instance of Matrix class 
@@ -24,8 +23,6 @@ public class Matrix {
      */
     public def this(siz:Int) {
         region       = [0..(siz-1), 0..(siz-1)];
-        // distribution = Dist.makeBlock(region, 1);
-        distribution = Dist.makeConstant(region);
         mat          = new Array[Double](region);
     }
 
@@ -36,42 +33,30 @@ public class Matrix {
      */
     public def this(row:Int, col:Int) {
         region       = [0..(row-1), 0..(col-1)];
-        // distribution = Dist.makeBlock(region, 1);
-        distribution = Dist.makeConstant(region);
         mat          = new Array[Double](region);
     }
 
     /**
-     * Construct a Matrix with a custom distribution
-     */
-    public def this(dist:Dist{rank==2}) {
-        distribution = dist;
-        region       = distribution.region;
-        mat          = new Array[Double](region);
-    }
-
-    /**
-     * Construct a Matrix as a copy of an existing Matrix (may be remote)
+     * Construct a Matrix as a copy of an existing Matrix
      */
     public def this(source : Matrix) {
         val sourceMat = source.getMatrix();
-        distribution = source.distribution;
+        mat = sourceMat;
         region       = sourceMat.region;
-        mat          = new Array[Double](sourceMat.region);
-        finish {mat.copyFrom(sourceMat);}
+        //mat          = new Array[Double](sourceMat.region);
+        //finish {mat.asyncCopy(sourceMat);}
     }
 
-    public global def region() = region;
-    public global def dist() = distribution;
+    public def region() = region;
 
-    public global def getMatrix() = mat;
-    public global def getRowCount() = mat.region.max(0)+1;
-    public global def getColCount() = mat.region.max(1)+1;
+    public def getMatrix() = mat;
+    public def getRowCount() = mat.region.max(0)+1;
+    public def getColCount() = mat.region.max(1)+1;
 
     /**
      * Perform symmetric orthogonalization of this matrix
      */
-    public def symmetricOrthogonalization() : Matrix! { 
+    public def symmetricOrthogonalization() : Matrix { 
         val diag = new JacobiDiagonalizer();
        
         diag.diagonalize(this);
@@ -85,7 +70,7 @@ public class Matrix {
 
         val sqrtEVal = Rail.make[Double](rowCount);
 
-        finish foreach((i,j) in sHalf.mat.region) {
+        finish foreach([i,j] in sHalf.mat.region) {
              if (i==j) {
                 sHalf.mat(i,i) /= Math.sqrt(eigenValues(i));
              }
@@ -98,7 +83,7 @@ public class Matrix {
      * Make the current Matrix as Identity
      */
     public def makeIdentity() : void {
-        finish foreach((i,j) in mat)
+        finish foreach([i,j] in mat)
            if (i == j) mat(i, j) = 1.0;
            else        mat(i, j) = 0.0;
     }
@@ -113,27 +98,27 @@ public class Matrix {
     /**
      * Perform a similarity transform: X' . this . X
      */
-    public def similarityTransformT(x:Matrix{self.at(this)}) : Matrix{self.at(this)} {
+    public def similarityTransformT(x:Matrix) : Matrix {
         return x.transpose().mul(this).mul(x);
     }
 
     /**
      * Perform a similarity transform: X . this . X'
      */
-    public def similarityTransform(x:Matrix{self.at(this)}) : Matrix{self.at(this)} {
+    public def similarityTransform(x:Matrix) : Matrix {
         return x.mul(this).mul(x.transpose());
     }
 
     /**
      * Multiply two matrices: this . X
      */
-    public def mul(x:Matrix!) : Matrix! {
+    public def mul(x:Matrix) : Matrix {
          val N   = getRowCount();
          val N1  = x.getRowCount();
          val M   = x.getColCount();
          val res = new Matrix(N, M);
 
-         for((i, j) in res.mat) {
+         for([i,j] in res.mat) {
             var cij:Double = 0.0;
             for(var k:Int=0; k<N1; k++) {
                cij += mat(i, k) * x.mat(k, j);
@@ -147,13 +132,13 @@ public class Matrix {
     /**
      * Scale each element of this matrix by fac
      */
-    public def mul(fac:Double) : Matrix! {
+    public def mul(fac:Double) : Matrix {
          val N   = getRowCount();
          val M   = getColCount();
 
          val res = new Matrix(N, M);
       
-         finish foreach((i, j) in res.mat)
+         finish foreach([i,j] in res.mat)
             res.mat(i, j) = mat(i, j) * fac;
 
          return res;
@@ -162,12 +147,12 @@ public class Matrix {
     /**
      * Add two matrices: this + X
      */
-    public def add(x:Matrix!) : Matrix! {
+    public def add(x:Matrix) : Matrix {
          val N   = getRowCount();
          val M   = getColCount();
          val res = new Matrix(N, M);
 
-         finish foreach((i, j) in res.mat)
+         finish foreach([i,j] in res.mat)
             res.mat(i, j) = mat(i, j) + x.mat(i, j);
 
          return res;
@@ -176,12 +161,12 @@ public class Matrix {
     /**
      * Subtract two matrices: this - X
      */
-    public def sub(x:Matrix!) : Matrix! {
+    public def sub(x:Matrix) : Matrix {
          val N   = getRowCount();
          val M   = getColCount();
          val res = new Matrix(N, M);
 
-         finish foreach((i, j) in res.mat)
+         finish foreach([i,j] in res.mat)
             res.mat(i, j) = mat(i, j) - x.mat(i, j);
 
          return res;
@@ -190,12 +175,12 @@ public class Matrix {
     /**
      * Find transpose of this matrix
      */
-    public def transpose() : Matrix! {
+    public def transpose() : Matrix {
          val N   = getRowCount();
          val M   = getColCount();
          val res = new Matrix(M, N);
 
-         finish foreach((i,j) in res.mat) {
+         finish foreach([i,j] in res.mat) {
              res.mat(i, j) = mat(j, i);
          }
  
@@ -210,7 +195,7 @@ public class Matrix {
          val tr = Rail.make[Double](1);
          
          tr(0) = 0.0;
-         finish foreach((i,j) in mat) {
+         finish foreach([i,j] in mat) {
                  if (i==j) {
                      atomic tr(0) += mat(i, i);
                  }
@@ -228,7 +213,7 @@ public class Matrix {
        val N = getRowCount();
 
        sum(0) = 0.0;
-       finish foreach((i,j) in mat) {
+       finish foreach([i,j] in mat) {
                 if (i!=j && j>i) {
                     atomic sum(0) += Math.abs(mat(i, j));
                 }
@@ -237,7 +222,7 @@ public class Matrix {
        return sum(0); 
     }
 
-    public def getRowVector(rowIdx:Int) : Vector! {
+    public def getRowVector(rowIdx:Int) : Vector {
        val N = getColCount();
 
        val vec = new Vector(N);
@@ -267,7 +252,7 @@ public class Matrix {
         return true;
     }
 
-    public def isSingular(p:Int, row:Rail[Int]!) : Boolean {
+    public def isSingular(p:Int, row:Rail[Int]) : Boolean {
         val N = getColCount();
         var i:Int;
 
@@ -297,7 +282,7 @@ public class Matrix {
         return ValRail.make(r);
     }
 
-    public global safe def toString() : String { 
+    public safe def toString() : String { 
          var str : String = "";
          val N = getRowCount();
          val M = getColCount();
@@ -316,21 +301,21 @@ public class Matrix {
    /**
     * Inverse of this matrix
     */
-    public incomplete def inverse() : Matrix;
+    //@Incomplete public def inverse() : Matrix;
 
     /**
      * The determinant of this Matrix
      */
-    public incomplete def determinant() : Double;
+    //@Incomplete public def determinant() : Double;
 
     /**
      * Get a row of this matrix
      */
-    public incomplete def getRow(row:Int) : Vector;
+    //@Incomplete public def getRow(row:Int) : Vector;
 
     /**
      * Get a column of this matrix
      */
-    public incomplete def getColumn(col:Int) : Vector;
+    //@Incomplete public def getColumn(col:Int) : Vector;
 }
 
