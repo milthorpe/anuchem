@@ -397,7 +397,7 @@ public class GMatrix extends Matrix {
 
             val mol_loc = comp_loc.mol_loc;
 
-            val F1 = new Future[Int](() => { 
+            val F1 = Future.make[Int](() => { 
                        var myG:Int; 
                        atomic myG = G(0)++;
                        return myG;
@@ -438,7 +438,7 @@ public class GMatrix extends Matrix {
                                         val ldFunc = dFunc.get(l);
 
                                         if (L == myG) {
-                                          val F2 = new Future[Int](() => { 
+                                          val F2 = Future.make[Int](() => { 
                                                        var myG:Int; 
                                                        atomic myG = G(0)++;
                                                        return myG;
