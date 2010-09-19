@@ -385,12 +385,13 @@ public class TwoElectronIntegrals {
     }
 
 
-    /** find unique elements and mark the onces that are not */
+    /** find unique elements and mark the ones that are not */
     /** 8 => is the level of integral symmetry, given (i,j|k.l)
         there are 8 combinations that are unique */
     private def filterUniqueElements(idx:Rail[Int], jdx:Rail[Int],
                                      kdx:Rail[Int], ldx:Rail[Int],
                                      validIdx:Rail[Boolean]) : void {
+        validIdx.reset(true);
         for(var m:Int=0; m<8; m++) {
             val i = idx(m); val j = jdx(m); val k = kdx(m); val l = ldx(m);
             for(var n:Int=m+1; n<8; n++) {
@@ -732,12 +733,7 @@ public class TwoElectronIntegrals {
                                     kkdx(4) = ii; lldx(5) = ii; kkdx(6) = ii; lldx(7) = ii;
 
                                     // else this is symmetry unique integral, so need to
-                                    // use this value for all 8 combinations
-                                    // (if unique)
-
-                                    for(var valIdx:Int=0; valIdx<8; valIdx++) validIdx(valIdx) = true;
-
-                                    // filter unique elements
+                                    // use this value for all 8 combinations (if unique)
                                     filterUniqueElements(iidx, jjdx, kkdx, lldx, validIdx);
 
                                     // and evaluate them
