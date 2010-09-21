@@ -13,7 +13,7 @@ import x10.array.Array;
  * @author V.Ganesh
  */
 public class Matrix { 
-    val mat:Array[Double](2){rect};
+    protected val mat:Array[Double](2){rect};
     val region:Region{rect,rank==2};
 
     /**

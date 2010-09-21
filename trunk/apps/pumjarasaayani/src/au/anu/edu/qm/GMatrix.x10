@@ -256,20 +256,13 @@ public class GMatrix extends Matrix {
     public def gatherAndReduceGMatrix() {
         makeZero();
         val N = getRowCount();
+
+        val sum = (a:Double, b:Double) => (a+b);
         // form the G matrix
-        // TODO following need to change once XTENLANG-787 is resolved
         val gMatrix = getMatrix();
         for(p in computeInst) {
-            val gVal = at(computeInst.dist(p)) { computeInst(p).getGMatVal() };
-
-            // add place contribution to gMatrix
-            var ii:Int = 0;
-            for(var x:Int=0; x<N; x++) {
-                for(var y:Int=0; y<N; y++) {
-                  gMatrix(x,y) += gVal(ii);
-                  ii++;
-               } // end for
-             } // end for
+            val gVal = at(computeInst.dist(p)) { computeInst(p).getGMatContributionArray() };
+            gMatrix.map[Double,Double](gMatrix, gVal, sum);
         } // end for
     }
 
@@ -526,9 +519,8 @@ public class GMatrix extends Matrix {
 
         public abstract def getGMat() : Matrix;
 
-        // TODO following method should not be necessary once XTENLANG-787 is resolved
-        public def getGMatVal() {
-           return getGMat().getValRail();
+        public def getGMatContributionArray() {
+           return getGMat().getMatrix();
         }
     }
 
