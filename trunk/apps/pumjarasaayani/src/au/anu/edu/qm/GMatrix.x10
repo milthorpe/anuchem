@@ -260,9 +260,9 @@ public class GMatrix extends Matrix {
         val sum = (a:Double, b:Double) => (a+b);
         // form the G matrix
         val gMatrix = getMatrix();
-        for(p in computeInst) {
+        finish for(p in computeInst) async {
             val gVal = at(computeInst.dist(p)) { computeInst(p).getGMatContributionArray() };
-            gMatrix.map[Double,Double](gMatrix, gVal, sum);
+            atomic { gMatrix.map[Double,Double](gMatrix, gVal, sum); }
         } // end for
     }
 
