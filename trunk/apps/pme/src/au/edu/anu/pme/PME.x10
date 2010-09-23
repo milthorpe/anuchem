@@ -109,7 +109,7 @@ public class PME {
      * Dimensions of the array region are (x,y,z)
      * TODO assumes cubic unit cell
      */
-    private val subCells : PeriodicDistArray[ValRail[MMAtom]](3);
+    private val subCells : PeriodicDistArray[ValRail[MMAtom]](3){rect};
     /** The number of sub-cells per side of the unit cell. */
     private val numSubCells : Int;
 
@@ -118,7 +118,7 @@ public class PME {
      * stored at other places.  This is used to prefetch atom data
      * for direct energy calculation.
      */
-    private val packedAtomsCache : DistArray[Array[ValRail[MMAtom.PackedRepresentation]](3)](1);
+    private val packedAtomsCache : DistArray[Array[ValRail[MMAtom.PackedRepresentation]](3){rect}](1);
 
     /**
      * Creates a new particle mesh Ewald method.
@@ -162,7 +162,7 @@ public class PME {
         this.subCells = subCells;
         this.numSubCells = numSubCells;
 
-        packedAtomsCache = DistArray.make[Array[ValRail[MMAtom.PackedRepresentation]](3)](Dist.makeUnique(subCells.dist.places()));
+        packedAtomsCache = DistArray.make[Array[ValRail[MMAtom.PackedRepresentation]](3){rect}](Dist.makeUnique(subCells.dist.places()));
         finish ateach (p in packedAtomsCache) {
             val mySubCellRegion = (subCells.dist | here).region;
             val directRequiredRegion = [(mySubCellRegion.min(0) - 2)..(mySubCellRegion.max(0) + 2),
