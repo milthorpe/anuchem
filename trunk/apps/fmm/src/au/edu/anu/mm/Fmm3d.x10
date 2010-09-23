@@ -57,7 +57,7 @@ public class Fmm3d {
      * Return the top level of boxes actually used in the method.
      * This is 0 for the periodic FMM and 2 for the non-periodic FMM.
      */
-    public static def getTopLevel() : Int = 2;
+    protected val topLevel : Int;
 
     // TODO enum - XTENLANG-1118
     public static val TIMER_INDEX_TOTAL : Int = 0;
@@ -126,11 +126,34 @@ public class Fmm3d {
                     size : Double,  
                     numAtoms : Int,
                     atoms: DistArray[ValRail[MMAtom]](1)) {
+        // topLevel in regular FMM is 2 (boxes higher than this cannot be well-spaced)
+        this(density, numTerms, ws, topLeftFront, size, numAtoms, atoms, 2);
+    }
+
+    /**
+     * Initialises a fast multipole method electrostatics calculation
+     * for the given system of atoms.
+     * @param density mean number of particles per lowest level box
+     * @param numTerms number of terms in multipole and local expansions
+     * @param ws well-separated parameter
+     * @param size length of a side of the simulation cube
+     * @param atoms the atoms for which to calculate electrostatics
+     * @param topLevel the topmost level for which boxes in the octree are used
+     */
+    protected def this(density : Double, 
+                    numTerms : Int,
+                    ws : Int,
+                    topLeftFront : Point3d,
+                    size : Double,  
+                    numAtoms : Int,
+                    atoms: DistArray[ValRail[MMAtom]](1),
+                    topLevel : Int) {
+        this.topLevel = topLevel;
         val numLevels = Math.max(2, (Math.log(numAtoms / density) / Math.log(8.0) + 1.0) as Int);
         this.numLevels = numLevels;
 
         var nBox : Int = 0;
-        for ([i] in getTopLevel()..numLevels) {
+        for ([i] in topLevel..numLevels) {
             nBox += Math.pow2(3*i) as Int;
         }
         val lowestLevelDim = Math.pow2(numLevels);
@@ -229,7 +252,7 @@ public class Fmm3d {
      */
     def combineMultipoles() {
         timer.start(TIMER_INDEX_COMBINE);
-        for (var level: Int = numLevels; level > getTopLevel(); level--) {
+        for (var level: Int = numLevels; level > topLevel; level--) {
             val thisLevel = level;
             //Console.OUT.println("combine level " + level + " => " + (level-1));
             val thisLevelBoxes = boxes(thisLevel);
@@ -258,7 +281,7 @@ public class Fmm3d {
     def transformToLocal() {
         timer.start(TIMER_INDEX_TRANSFORM);
         
-        for ([thisLevel] in (getTopLevel())..numLevels) {
+        for ([thisLevel] in (topLevel)..numLevels) {
             //Console.OUT.println("transform level " + thisLevel);
             val thisLevelBoxes = boxes(thisLevel);
             finish ateach (p1 in Dist.makeUnique(thisLevelBoxes.dist.places())) {
@@ -266,7 +289,7 @@ public class Fmm3d {
                 val combinedVList = myLET.combinedVList;
 
                 val thisLevelMultipoleCopies = myLET.multipoleCopies(thisLevel);
-                if (thisLevel == getTopLevel()) {
+                if (thisLevel == topLevel) {
                     // must fetch top level multipoles synchronously before starting
                     val thisLevelBoxes = boxes(thisLevel);
                     finish foreach ([x,y,z] in combinedVList(thisLevel)) {
@@ -300,7 +323,7 @@ public class Fmm3d {
                                 box1.localExp.transformAndAddToLocal(transform21, box2MultipoleExp);
                             }
                         }
-                        if (thisLevel > getTopLevel()) {
+                        if (thisLevel > topLevel) {
                             val box1Parent = box1.parent;
                             val box1ParentExp = at (box1Parent) {box1Parent().localExp};
                             val shift = multipoleTranslations(Point.make([here.id, thisLevel, box1.x%2, box1.y%2, box1.z%2]));
@@ -460,7 +483,7 @@ public class Fmm3d {
      * TODO workaround due to lack of global immutable arrays - XTENLANG-787
      */
     private def precomputeTranslations() : DistArray[MultipoleExpansion](5){rect} {
-        val topChildLevel = getTopLevel() + 1;
+        val topChildLevel = topLevel + 1;
         if (numLevels < topChildLevel) {
             return null;
         } else {
@@ -485,7 +508,7 @@ public class Fmm3d {
      * TODO workaround due to lack of global immutable arrays - XTENLANG-787
      */
     private def precomputeTransforms() : DistArray[LocalExpansion](5){rect} {
-        var multipoleTransformRegion : Region(5){rect} = [0..Place.MAX_PLACES-1,getTopLevel()..numLevels,-(ws+3)..ws+3,-(ws+3)..ws+3,-(ws+3)..ws+3];
+        var multipoleTransformRegion : Region(5){rect} = [0..Place.MAX_PLACES-1,topLevel..numLevels,-(ws+3)..ws+3,-(ws+3)..ws+3,-(ws+3)..ws+3];
         val multipoleTransforms = DistArray.make[LocalExpansion](Dist.makeBlock(multipoleTransformRegion,0));
         finish ateach ([placeId,level,i,j,k] in multipoleTransforms) {
             val dim = Math.pow2(level);
@@ -500,7 +523,7 @@ public class Fmm3d {
 
     private def constructTree() : ValRail[DistArray[FmmBox](3){rect}] {
         val boxesTemp = Rail.make[DistArray[FmmBox](3){rect}](numLevels+1);
-        for ([thisLevel] in getTopLevel()..numLevels) {
+        for ([thisLevel] in topLevel..numLevels) {
             val levelDim = Math.pow2(thisLevel) as Int;
             val thisLevelRegion : Region(3){rect} = [0..levelDim-1, 0..levelDim-1, 0..levelDim-1];
             val thisLevelDist = MortonDist.make(thisLevelRegion);
@@ -509,7 +532,7 @@ public class Fmm3d {
         }
         val boxesValRail = ValRail.make(boxesTemp);
 
-        for ([thisLevel] in getTopLevel()..numLevels-1) {
+        for ([thisLevel] in topLevel..numLevels-1) {
             val levelDim = Math.pow2(thisLevel) as Int;
             val thisLevelBoxes = boxesValRail(thisLevel);
             finish ateach ([x,y,z] in thisLevelBoxes) {
@@ -562,7 +585,7 @@ public class Fmm3d {
             val combinedVList = Rail.make[ValRail[Point(3)]](numLevels+1);
             val vListMin = Rail.make[ValRail[Int](3)](numLevels+1);
             val vListMax = Rail.make[ValRail[Int](3)](numLevels+1);
-            for ([thisLevel] in getTopLevel()..numLevels) {
+            for ([thisLevel] in topLevel..numLevels) {
                 val vMin = Rail.make[Int](3, (Int) => Int.MAX_VALUE);
                 val vMax = Rail.make[Int](3, (Int) => Int.MIN_VALUE);
                 //Console.OUT.println("create combined V-list for level " + thisLevel + " at " + here);
@@ -602,7 +625,7 @@ public class Fmm3d {
     }
 
     private def getParentForChild(boxes : ValRail[DistArray[FmmBox](3)], level : Int, x : Int, y : Int, z : Int) : GlobalRef[FmmBox] {
-        if (level == getTopLevel())
+        if (level == topLevel)
             return GlobalRef[FmmBox](null);
         return (at (boxes(level-1).dist(x/2, y/2, z/2)) {GlobalRef[FmmBox](boxes(level-1)(x/2, y/2, z/2))});
     }
