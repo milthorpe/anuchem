@@ -37,7 +37,7 @@ public class PME {
     public static val TIMER_INDEX_THETARECCONVQ : Int = 6;
     public static val TIMER_INDEX_RECIPROCAL : Int = 7;
     public static val TIMER_INDEX_SETUP : Int = 8;
-    /** A multi-timer for the several segments of a single getEnergy invocation, indexed by the static valants above. */
+    /** A multi-timer for the several segments of a single getEnergy invocation, indexed by the constants above. */
     public val timer = new Timer(9);
 
     /** The number of grid lines in each dimension of the simulation unit cell. */
@@ -91,6 +91,12 @@ public class PME {
 
     /** The gridded charge array Q as defined in Eq. 4.6 */
     private val Q : DistArray[Complex]{self.dist==gridDist};
+
+    /** The inverse DFT of the Q array.  TODO this should be a scoped local variable in getEnergy() XTENLANG-??? */
+    private val Qinv : DistArray[Complex]{self.dist==gridDist};
+
+    /** Scratch array for use during 3D FFT.  TODO this should be a scoped local variable in getEnergy() XTENLANG-??? */
+    private val temp : DistArray[Complex]{self.dist==gridDist};
 
     /** 
      * An array of box divisions within the unit cell, with a side length
@@ -170,17 +176,20 @@ public class PME {
 
         // TODO should be able to automatically zero arrays of Complex
         Q = DistArray.make[Complex](gridDist, (Point) => Complex.ZERO);
-
-        B = DistArray.make[Double](gridDist);
-        C = DistArray.make[Double](gridDist);
         BdotC = DistArray.make[Double](gridDist);
         thetaRecConvQ = DistArray.make[Complex](gridDist);
+
+        // TODO following arrays should be scoped local variables XTENLANG-???
+        Qinv = DistArray.make[Complex](gridDist, (Point) => Complex.ZERO);
+        temp = DistArray.make[Complex](gridDist, (Point) => Complex.ZERO);
+        B = DistArray.make[Double](gridDist);
+        C = DistArray.make[Double](gridDist);
     }
 
     /**
      * This method sets up the B, C and BdotC arrays, which only need be done once
      * in the simulation (as it is dependent on the grid size).
-     * TODO this should be done in the static valructor, but can't be done without big 
+     * TODO this should be done in the constructor, but can't be done without big 
      * memory leaks due to proto rules.
      */
     public def setup() {
@@ -203,8 +212,6 @@ public class PME {
             gridCharges();
 
             timer.start(TIMER_INDEX_INVFFT);
-            val temp = DistArray.make[Complex](gridDist); 
-            val Qinv = DistArray.make[Complex](gridDist);
             new Distributed3dFft(gridSize(0), Q, Qinv, temp).doFFT3d(false);
             timer.stop(TIMER_INDEX_INVFFT);
 
@@ -582,7 +589,7 @@ public class PME {
 
     /**
      * Initialises the array B as defined by Eq 4.8 and 4.4
-     * TODO should be able to static valruct array as local and return, but can't due to GC limitations
+     * TODO should be able to construct array as local and return, but can't due to GC limitations
      */
     public def initBArray() {
         finish ateach ([m1,m2,m3] in B) {
@@ -614,7 +621,7 @@ public class PME {
 
     /**
      * Initialises the array C as defined by Eq 3.9
-     * TODO should be able to static valruct array as local and return, but can't due to GC limitations
+     * TODO should be able to construct array as local and return, but can't due to GC limitations
      */
     public def initCArray() {
         val V = getVolume();
