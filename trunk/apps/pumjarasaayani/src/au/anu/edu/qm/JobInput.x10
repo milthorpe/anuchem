@@ -27,11 +27,11 @@ public class JobInput {
     var molecule:Molecule[QMAtom];
     var basisName:String;
 
-    public def make(inpFile:String) throws IOException { 
+    public def make(inpFile:String) { 
        readInp(inpFile);
     } 
 
-    private def readInp(inpFile:String) throws IOException { 
+    private def readInp(inpFile:String) { 
        x10.io.Console.OUT.println("NOTE: the input file is expected to be in ** a.u. ** units");
 
        val fil = new FileReader(new File(inpFile));

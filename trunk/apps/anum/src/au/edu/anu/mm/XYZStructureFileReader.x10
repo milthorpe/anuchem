@@ -28,7 +28,7 @@ public class XYZStructureFileReader {
         this.fileName = fileName;
     }
 
-    public def readMolecule() : Molecule[MMAtom] throws IOException {
+    public def readMolecule() : Molecule[MMAtom] {
         val file = new FileReader(new File(fileName));
         val numAtoms = Int.parseInt(file.readLine());
         val title = file.readLine().split(" ");

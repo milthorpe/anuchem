@@ -33,7 +33,7 @@ public class MOLStructureFileReader {
         this.fileName = fileName;
     }
 
-    public def readMolecule() : Molecule[MMAtom] throws IOException {
+    public def readMolecule() : Molecule[MMAtom] {
         val file = new FileReader(new File(fileName));
         val title = file.readLine();
         file.readLine(); // line 2 contains file meta-info

@@ -48,7 +48,7 @@ public class BasisSet {
        } // end of try .. catch block
     }
 
-    private def init(name:String, basisDir:String) throws IOException {
+    private def init(name:String, basisDir:String) {
        // TODO: use file separator in the following line!
        val fil = new FileReader(new File(basisDir + "/" + name));       
        val noOfAtoms = Int.parseInt(fil.readLine());

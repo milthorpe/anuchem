@@ -23,7 +23,7 @@ import org.gnu.gsl.GSL;
  */
 public class NativeLinearEquationSolver extends LinearEquationSolver {
  
-     public def findSolution(matrixA:Matrix, vectorB:Vector) : Vector throws Exception {
+     public def findSolution(matrixA:Matrix, vectorB:Vector) : Vector {
           val N = matrixA.getRowCount();
           val vectorX = new Vector(N);
 
