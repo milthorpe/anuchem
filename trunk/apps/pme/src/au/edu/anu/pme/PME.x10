@@ -138,8 +138,7 @@ public class PME {
         this.edgeReciprocals = ValRail.make[Vector3d](3, (i : Int) => edges(i).inverse());
 
         this.atoms = atoms;
-        val r = Region.makeRectangular(0, gridSize(0)-1);
-        gridRegion = (r * [0..(gridSize(1)-1)] * [0..(gridSize(2)-1)]) as Region(3);
+        gridRegion = Region.make([0..gridSize(0)-1, 0..gridSize(1)-1, 0..gridSize(2)-1]);
         gridDist = Dist.makeBlockBlock(gridRegion, 0, 1);
         this.splineOrder = splineOrder;
         this.beta = beta;
@@ -151,7 +150,7 @@ public class PME {
             Console.ERR.println("warning: edge length " + edgeLengths(0) + " is not an exact multiple of (cutoff/2.0) " + (cutoff/2.0));
         }
         val numSubCells = Math.ceil(edgeLengths(0) / (cutoff/2.0)) as Int;
-        val subCellRegion = [0..numSubCells-1,0..numSubCells-1,0..numSubCells-1] as Region(3){rect};
+        val subCellRegion = Region.make([0..numSubCells-1,0..numSubCells-1,0..numSubCells-1]);
         val subCells = PeriodicDistArray.make[ValRail[MMAtom]](Dist.makeBlockBlock(subCellRegion, 0, 1));
         Console.OUT.println("subCells dist = " + subCells.dist);
         this.subCells = subCells;
@@ -446,9 +445,9 @@ public class PME {
     public def gridCharges() {
         timer.start(TIMER_INDEX_GRIDCHARGES);
         finish foreach (place1 in gridDist.places()) async at(place1) {
-            val place1Region = (subCells | here).region as Region(3);
+            val place1Region = subCells.dist.get(here);
 
-            val place1HaloRegion = getGridRegionForSubcellAtoms(place1Region.min(), place1Region.max());
+            val place1HaloRegion = getGridRegionForSubcellAtoms(place1Region);
             val myQ = new Array[Double](place1HaloRegion, (Point) => 0.0);
 
             for (p in subCells | place1Region) {
@@ -551,13 +550,13 @@ public class PME {
      * the spline order.  (A larger spline order spreads the atoms in a subcell
      * over a larger area of the grid.)
      */
-    private def getGridRegionForSubcellAtoms(subCellMin : ValRail[Int](3), subCellMax : ValRail[Int](3)) {
+    private def getGridRegionForSubcellAtoms(subCellRegion : Region(3)) {
         val gridPointsPerSubCell = (gridSize(0) as Double) / numSubCells;
-        val minX = Math.floor(subCellMin(0) * gridPointsPerSubCell) as Int - splineOrder + 1;
-        val maxX = Math.ceil((subCellMax(0)+1) * gridPointsPerSubCell) as Int - 1;
-        val minY = Math.floor(subCellMin(1) * gridPointsPerSubCell) as Int - splineOrder + 1;
-        val maxY = Math.ceil((subCellMax(1)+1) * gridPointsPerSubCell) as Int - 1;
-        return [minX..maxX, minY..maxY, 0..(gridSize(2)-1)] as Region(3);
+        val minX = Math.floor(subCellRegion.min(0) * gridPointsPerSubCell) as Int - splineOrder + 1;
+        val maxX = Math.ceil((subCellRegion.max(0)+1) * gridPointsPerSubCell) as Int - 1;
+        val minY = Math.floor(subCellRegion.min(1) * gridPointsPerSubCell) as Int - splineOrder + 1;
+        val maxY = Math.ceil((subCellRegion.max(1)+1) * gridPointsPerSubCell) as Int - 1;
+        return Region.make([minX..maxX, minY..maxY, 0..(gridSize(2)-1)]);
     }
 
     /**
