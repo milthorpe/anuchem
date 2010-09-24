@@ -62,7 +62,7 @@ public struct Polar3d {
         return Polar3d(r, theta, phi);
     }
 
-    public safe def toString() : String {
+    public def toString() : String {
         return ("(r:" + r + ",theta:" + theta + ",phi:" + phi + ")");
     }
 }

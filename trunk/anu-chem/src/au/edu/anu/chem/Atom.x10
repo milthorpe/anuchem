@@ -82,7 +82,7 @@ public class Atom {
     public def setIndex(i:Int) { index = i; }
     public def getIndex() = index;
 
-    public safe def toString() : String {
+    public def toString() : String {
         return symbol + " " + centre.i + " " + centre.j + " " + centre.k;
     }
 }

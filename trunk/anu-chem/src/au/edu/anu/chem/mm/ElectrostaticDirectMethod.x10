@@ -75,14 +75,14 @@ public class ElectrostaticDirectMethod {
     }
 
     static struct SumReducer implements Reducible[Double] {
-        public safe def zero() = 0.0;
-        public safe def apply(a:Double, b:Double) = (a + b);
+        public def zero() = 0.0;
+        public def apply(a:Double, b:Double) = (a + b);
     }
 
     /*
      * Returns all atom charges and coordinates for a place, in packed representation
      */
-    private safe def getPackedAtomsForPlace(placeId : Int) : ValRail[MMAtom.PackedRepresentation] {
+    private def getPackedAtomsForPlace(placeId : Int) : ValRail[MMAtom.PackedRepresentation] {
         val myAtoms = atoms(placeId);
         return ValRail.make[MMAtom.PackedRepresentation](myAtoms.length(), (i : Int) => myAtoms(i).getPackedRepresentation());
     }

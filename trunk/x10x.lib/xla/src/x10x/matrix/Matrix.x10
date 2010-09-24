@@ -282,7 +282,7 @@ public class Matrix {
         return ValRail.make(r);
     }
 
-    public safe def toString() : String { 
+    public def toString() : String { 
          var str : String = "";
          val N = getRowCount();
          val M = getColCount();

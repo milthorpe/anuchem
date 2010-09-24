@@ -76,7 +76,7 @@ public class MMAtom extends Atom {
         }
     }
 
-    public safe def getPackedRepresentation() {
+    public def getPackedRepresentation() {
         return PackedRepresentation(symbol, charge, centre);
     }
 }

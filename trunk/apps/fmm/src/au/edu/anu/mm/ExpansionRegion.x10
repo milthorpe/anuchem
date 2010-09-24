@@ -33,9 +33,9 @@ public class ExpansionRegion extends Region  {
         return false;
     }
 
-    public safe def min(): ValRail[int] = [0,-p];
+    public def min(): ValRail[int] = [0,-p];
 
-    public safe def max(): ValRail[int] = [p,p];
+    public def max(): ValRail[int] = [p,p];
 
     /**
      * Returns the number of points in this region.
@@ -130,12 +130,12 @@ public class ExpansionRegion extends Region  {
             this.m = 0;
         }
 
-        final public safe def hasNext(): boolean {
+        final public def hasNext(): boolean {
             if (l <= p && m <= l) return true;
             else return false;
         }
 
-        final public safe def next(): Point(2) {
+        final public def next(): Point(2) {
             nextPoint : Point(2) = Point.make(l,m);
             if (m < l) m++;
             else {
@@ -150,7 +150,7 @@ public class ExpansionRegion extends Region  {
         throw new UnsupportedOperationException("TODO: scanners not defined for ExpansionRegion");
     }
 
-    public safe def toString(): String {
+    public def toString(): String {
         return "ExpansionRegion (p = " + p + ")";
     }
 }

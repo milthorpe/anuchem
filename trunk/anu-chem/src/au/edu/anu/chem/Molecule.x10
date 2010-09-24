@@ -42,7 +42,7 @@ public class Molecule[T]{T <: Atom} {
         this.name = name;
     }
 
-    public safe def getName() = this.name;
+    public def getName() = this.name;
 
     public def addAtom(atm:T) : void {
         atomList.add(atm); 
@@ -51,14 +51,14 @@ public class Molecule[T]{T <: Atom} {
         maxExtent = Math.max(maxExtent, Math.abs(atm.centre.k));      
     }
 
-    public safe def getAtom(index:Int) : T = atomList.get(index);
-    public safe def getAtoms() = atomList;
-    public safe def getNumberOfAtoms() : Int = atomList.size();
+    public def getAtom(index:Int) : T = atomList.get(index);
+    public def getAtoms() = atomList;
+    public def getNumberOfAtoms() : Int = atomList.size();
 
-    public safe def addRing(r:Ring[T]) { ringList.add(r); }
-    public safe def getRings() : ArrayList[Ring[T]] = ringList;
+    public def addRing(r:Ring[T]) { ringList.add(r); }
+    public def getRings() : ArrayList[Ring[T]] = ringList;
 
-    public safe def getNumberOfElectrons() : int {
+    public def getNumberOfElectrons() : int {
        val ai = AtomInfo.getInstance();
        var ne:Int = 0;
 
@@ -68,9 +68,9 @@ public class Molecule[T]{T <: Atom} {
        return ne;
     }
 
-    public safe def getMaxExtent() = maxExtent;
+    public def getMaxExtent() = maxExtent;
 
-    public safe def getCoords() : ValRail[Pair[String,Point3d]] {
+    public def getCoords() : ValRail[Pair[String,Point3d]] {
         val coords = new ValRailBuilder[Pair[String,Point3d]](atomList.size());
         for(atom in atomList) {
             coords.add(Pair[String,Point3d](atom.symbol, atom.centre));
@@ -78,7 +78,7 @@ public class Molecule[T]{T <: Atom} {
         return coords.result();
     }
 
-    public safe def centreOfMass() : Point3d {
+    public def centreOfMass() : Point3d {
         val ai = AtomInfo.getInstance();
         var x:Double = 0.0, y:Double = 0.0, z:Double = 0.0;
         var massSum:Double = 0.0;
@@ -95,7 +95,7 @@ public class Molecule[T]{T <: Atom} {
         return Point3d(x/massSum,y/massSum,z/massSum);
     }
 
-    public safe def toString() : String {
+    public def toString() : String {
        var str:String = "";
 
        for(atm:T in atomList)

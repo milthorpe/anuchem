@@ -29,7 +29,7 @@ public class LocalExpansion extends Expansion {
     /**
      * Calculate the local Taylor-type expansion M_{lm} (with m >= 0) for a single point v.
      */
-    public static safe def getMlm(v : Tuple3d, p : int) : LocalExpansion {
+    public static def getMlm(v : Tuple3d, p : int) : LocalExpansion {
         val exp = new LocalExpansion(p);
         val terms = exp.terms;
         val v_pole : Polar3d = Polar3d.getPolar3d(v);
@@ -68,7 +68,7 @@ public class LocalExpansion extends Expansion {
      * @param shift the multipole expansion of the translation
      * @param source the source local expansion, centred at the origin
      */
-    public safe def translateAndAddLocal(shift : MultipoleExpansion,
+    public def translateAndAddLocal(shift : MultipoleExpansion,
                                          source : LocalExpansion) {
         val p = terms.region.max(0);
 
@@ -105,7 +105,7 @@ public class LocalExpansion extends Expansion {
      * @param b the vector along which to translate the multipole
      * @param source the source multipole expansion, centred at the origin
      */
-    public safe def transformAndAddToLocal(transform : LocalExpansion,
+    public def transformAndAddToLocal(transform : LocalExpansion,
                                          source : MultipoleExpansion) {
         val p : Int = terms.region.max(0);
 
@@ -142,7 +142,7 @@ public class LocalExpansion extends Expansion {
      * @param q the charge at point v
      * @param v the location of charge q
      */
-    public safe def getPotential(q : Double,
+    public def getPotential(q : Double,
                                 v : Tuple3d) : Double {
         val numTerms = terms.region.max(0);
         val transform = MultipoleExpansion.getOlm(q, v, numTerms);

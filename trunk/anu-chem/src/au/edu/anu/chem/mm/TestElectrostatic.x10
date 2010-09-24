@@ -82,7 +82,7 @@ public class TestElectrostatic {
      * Gets the place ID to which to assign the given atom coordinates.
      * Currently just splits them up into slices by X coordinate.
      */
-    safe def getPlaceId(x : Double, y : Double, z : Double) : Int {
+    def getPlaceId(x : Double, y : Double, z : Double) : Int {
         return ((x / SIZE) * Place.MAX_PLACES) as Int;
     }
 

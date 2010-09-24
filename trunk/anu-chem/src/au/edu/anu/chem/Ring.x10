@@ -33,14 +33,14 @@ public class Ring[T]{T <: Atom} {
         atomList.add(atm); 
     }
 
-    public safe def getAtom(index:Int) : T = atomList.get(index);
-    public safe def getAtoms() = atomList;
-    public safe def getSize() = atomList.size();
+    public def getAtom(index:Int) : T = atomList.get(index);
+    public def getAtoms() = atomList;
+    public def getSize() = atomList.size();
 
     public def isPlanar() = planar;
     public def setPlanar(p:Boolean) { planar = p; }
 
-    public safe def toString() : String {
+    public def toString() : String {
        var str:String = "[ ";
 
        for(atm:T in atomList)

@@ -84,7 +84,7 @@ public class MOLStructureFileReader {
         return molecule;
     }
 
-    public safe def setFileName(fileName : String) {
+    public def setFileName(fileName : String) {
         this.fileName = fileName;
     }
 }

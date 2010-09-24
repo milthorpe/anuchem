@@ -267,7 +267,7 @@ public class PME {
      * the grid of sub-cells for direct sum calculation.
      * Each sub-cell is half the cutoff distance on every side.
      */
-    private safe def getSubCellIndex(atom : MMAtom) : Point(3) {
+    private def getSubCellIndex(atom : MMAtom) : Point(3) {
         // TODO assumes cubic unit cell
         val halfCutoff = (cutoff / 2.0);
         val r = Vector3d(atom.centre);
@@ -419,7 +419,7 @@ public class PME {
     /*
      * Returns atom charges and coordinates for a sub-cell, in packed representation
      */
-    private safe def getPackedAtomsForSubCell(subCellIndex : Point(3)) : ValRail[MMAtom.PackedRepresentation] {
+    private def getPackedAtomsForSubCell(subCellIndex : Point(3)) : ValRail[MMAtom.PackedRepresentation] {
         val subCell = subCells(subCellIndex);
         return ValRail.make[MMAtom.PackedRepresentation](subCell.length(), (i : Int) => subCell(i).getPackedRepresentation());
     }
@@ -642,7 +642,7 @@ public class PME {
     /* 
      * Gets the nth order B-spline M_n(u) as per Eq. 4.1
      */
-    public final static safe def bSpline(n : Int, u : Double) : Double {
+    public final static def bSpline(n : Int, u : Double) : Double {
         if (u < 0.0 || u > n) {
             return 0.0;
         } else if (n == 4) {
@@ -657,7 +657,7 @@ public class PME {
     /* 
      * Gets the 4th order B-spline M_4(u) as per Eq. 4.1
      */
-    private final static safe def bSpline4(u : Double) : Double {
+    private final static def bSpline4(u : Double) : Double {
         if (u <= 0.0 || u >= 4) {
             return 0.0;
         } else {
@@ -668,7 +668,7 @@ public class PME {
     /* 
      * Gets the 3rd order B-spline M_3(u) as per Eq. 4.1
      */
-    private final static safe def bSpline3(u : Double) : Double {
+    private final static def bSpline3(u : Double) : Double {
         if (u <= 0.0 || u >= 3) {
             return 0.0;
         } else {
@@ -679,7 +679,7 @@ public class PME {
     /* 
      * Gets the 2nd order B-spline M_2(u) as per Eq. 4.1
      */
-    private final static safe def bSpline2(u : Double) : Double {
+    private final static def bSpline2(u : Double) : Double {
         if (u <= 0.0 || u >= 2) {
             return 0.0;
         } else {
@@ -688,12 +688,12 @@ public class PME {
     }
 
     /** Gets scaled fractional coordinate u as per Eq. 3.1 - cubic only */
-    public safe def getScaledFractionalCoordinates(r : Point3d) : Vector3d {
+    public def getScaledFractionalCoordinates(r : Point3d) : Vector3d {
         return Vector3d(edgeReciprocals(0).i * K1 * r.i, edgeReciprocals(1).j * K2 * r.j, edgeReciprocals(2).k * K3 * r.k);
     }
     
     /** Gets scaled fractional coordinate u as per Eq. 3.1 - general rectangular */
-    public safe def getScaledFractionalCoordinates(r : Vector3d) : Vector3d {
+    public def getScaledFractionalCoordinates(r : Vector3d) : Vector3d {
         // this method allows general non-rectangular cells
         return Vector3d(edgeReciprocals(0).mul(K1).dot(r), edgeReciprocals(1).mul(K2).dot(r), edgeReciprocals(2).mul(K3).dot(r));
     }
@@ -701,12 +701,12 @@ public class PME {
     /**
      * Gets the volume V of the unit cell.
      */
-    private safe def getVolume() {
+    private def getVolume() {
         return edges(0).cross(edges(1)).dot(edges(2));
     }
 
     static struct SumReducer implements Reducible[Double] {
-        public safe def zero() = 0.0;
-        public safe def apply(a:Double, b:Double) = (a + b);
+        public def zero() = 0.0;
+        public def apply(a:Double, b:Double) = (a + b);
     }
 }

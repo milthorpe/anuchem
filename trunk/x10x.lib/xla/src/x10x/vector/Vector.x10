@@ -157,7 +157,7 @@ public class Vector {
         return res(0);       
     }
 
-    public safe def toString() : String {
+    public def toString() : String {
          var str : String = "";
          val N = getSize();
 

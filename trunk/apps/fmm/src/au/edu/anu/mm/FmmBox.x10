@@ -51,7 +51,7 @@ public class FmmBox {
         this.localExp = new LocalExpansion(numTerms);
     }
 
-    public safe def getCentre(size : Double) : Point3d {
+    public def getCentre(size : Double) : Point3d {
         dim : Int = Math.pow2(level);
         sideLength : Double = size / dim;
         offset : Double = 0.5 * size;
@@ -65,7 +65,7 @@ public class FmmBox {
      * on the same level, i.e. if there are at least <code>ws</code>
      * boxes separating them.
      */
-    public safe def wellSeparated(ws : Int, x2 : Int, y2 : Int, z2 : Int) : Boolean {
+    public def wellSeparated(ws : Int, x2 : Int, y2 : Int, z2 : Int) : Boolean {
         return Math.abs(x - x2) > ws 
             || Math.abs(y - y2) > ws 
             || Math.abs(z - z2) > ws;
@@ -76,17 +76,17 @@ public class FmmBox {
      * on the same level, i.e. if there are at least <code>ws</code>
      * boxes separating them.
      */
-    public safe def wellSeparated(ws : Int, box2 : FmmBox) : Boolean {
+    public def wellSeparated(ws : Int, box2 : FmmBox) : Boolean {
         return Math.abs(x - box2.x) > ws 
             || Math.abs(y - box2.y) > ws 
             || Math.abs(z - box2.z) > ws;
     }
 
-    public safe def getTranslationIndex(level2 : Int, x2 : Int, y2 : Int, z2 : Int) : Point(4) {
+    public def getTranslationIndex(level2 : Int, x2 : Int, y2 : Int, z2 : Int) : Point(4) {
         return Point.make(level, x2-x, y2-y, z2-z);
     }
 
-    public safe def getTranslationIndex(box2 : FmmBox) : Point(4) {
+    public def getTranslationIndex(box2 : FmmBox) : Point(4) {
         return Point.make(level, box2.x-x, box2.y-y, box2.z-z);
     }
 
@@ -96,7 +96,7 @@ public class FmmBox {
         this.vList = vList;
     }
 
-    public safe def toString(): String {
+    public def toString(): String {
         return "FmmBox level " + level + " (" + x + "," + y + "," + z + ")";
     }
 }
