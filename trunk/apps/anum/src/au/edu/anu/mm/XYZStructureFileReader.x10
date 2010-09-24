@@ -47,7 +47,7 @@ public class XYZStructureFileReader {
        return molecule;
     }
 
-    public safe def setFileName(fileName : String) {
+    public def setFileName(fileName : String) {
         this.fileName = fileName;
     }
 }

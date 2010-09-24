@@ -723,8 +723,8 @@ public class PeriodicFmm3d extends Fmm3d {
     }
 
     static struct VectorSumReducer implements Reducible[Vector3d] {
-        public safe def zero() = Vector3d.NULL;
-        public safe def apply(a:Vector3d, b:Vector3d) = (a + b);
+        public def zero() = Vector3d.NULL;
+        public def apply(a:Vector3d, b:Vector3d) = (a + b);
     }
 
 }

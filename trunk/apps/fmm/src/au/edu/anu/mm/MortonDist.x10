@@ -92,12 +92,12 @@ public class MortonDist extends BaseDist{self.rank==3} {
                 this.index = r.start-1;
             }
 
-            final public safe def hasNext(): boolean {
+            final public def hasNext(): boolean {
                 if (index < end) return true;
                 else return false;
             }
 
-            final public safe def next(): Point(3) {
+            final public def next(): Point(3) {
                 return MortonDist.getPoint(++index, this.totalLength);
             } 
         }
@@ -106,7 +106,7 @@ public class MortonDist extends BaseDist{self.rank==3} {
             throw new UnsupportedOperationException("TODO: scanners not defined for MortonSubregion");
         }
 
-        public safe def toString(): String {
+        public def toString(): String {
             return "Z[" + start + ".." + end + "]";
         }
     }
@@ -137,7 +137,7 @@ public class MortonDist extends BaseDist{self.rank==3} {
      * (1, 1, 2) = (01, 01, 10)    = 001110
      * (1, 1, 0) = (01, 01, 00)    = 000110
      */
-    public static safe def getMortonIndex(p : Point/*(rank)*/, totalLength : Int) : Int {
+    public static def getMortonIndex(p : Point/*(rank)*/, totalLength : Int) : Int {
         if (p.rank != 3) throw new UnsupportedOperationException("getMortonIndex(p{self.rank!=3})");
         val digitsPerSide = Math.cbrt(totalLength) as Int;
         //Console.OUT.println("getMortonIndex for " + p + " digitsPerSide = " + digitsPerSide);
@@ -159,7 +159,7 @@ public class MortonDist extends BaseDist{self.rank==3} {
      * @param index the Morton index into the 3D array
      * @param totalLength the total length of the array = (2n)^3
      */
-    public static safe def getPoint(index : Int, totalLength : Int) : Point(3) {
+    public static def getPoint(index : Int, totalLength : Int) : Point(3) {
         val digitsPerSide = Math.log2(Math.cbrt(totalLength) as Int);
         //Console.OUT.println("getPoint for " + index + " totalLength = " + totalLength + " digitsPerSide = " + digitsPerSide);
         val p = Rail.make[Int](3);
@@ -175,7 +175,7 @@ public class MortonDist extends BaseDist{self.rank==3} {
         return Point.make(p);
     }
 
-    public static safe def getPlaceStart(placeId : Int, numPlaces : Int, totalLength : Int) {
+    public static def getPlaceStart(placeId : Int, numPlaces : Int, totalLength : Int) {
         val blockSize = totalLength / numPlaces;
         val numLargerBlocks = totalLength % numPlaces;
         if (placeId < numLargerBlocks) {
@@ -186,7 +186,7 @@ public class MortonDist extends BaseDist{self.rank==3} {
         }
     }
 
-    public static safe def getPlaceEnd(placeId : Int, numPlaces : Int, totalLength : Int) {
+    public static def getPlaceEnd(placeId : Int, numPlaces : Int, totalLength : Int) {
         val blockSize = totalLength / numPlaces;
         val numLargerBlocks = totalLength % numPlaces;
         if (placeId < numLargerBlocks) {
@@ -197,7 +197,7 @@ public class MortonDist extends BaseDist{self.rank==3} {
         }
     }
 
-    public safe def apply(pt: Point/*(rank)*/): Place {
+    public def apply(pt: Point/*(rank)*/): Place {
         if (pt.rank != 3) throw new UnsupportedOperationException("getMortonIndex(p{self.rank!=3})");
         val index = getMortonIndex(pt, totalLength);
         for (p:Place in places) {
@@ -209,7 +209,7 @@ public class MortonDist extends BaseDist{self.rank==3} {
         throw new ArrayIndexOutOfBoundsException("point " + pt + " not contained in distribution");
     }
 
-    public safe def toString(): String {
+    public def toString(): String {
         var s: String = "MortonDist(";
         var first: boolean = true;
         for (p:Place in places) {

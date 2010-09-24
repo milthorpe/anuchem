@@ -38,7 +38,7 @@ public class UniversalForceField implements ForceField {
         atomParameters.put("O", oxygen3);
     }
 
-    public safe def getAtomMass(symbol : String) : Double {
+    public def getAtomMass(symbol : String) : Double {
         return atomParameters.getOrElse(symbol, defaultParams).mass;
     }
     
@@ -77,7 +77,7 @@ public class UniversalForceField implements ForceField {
      * @param paramsI the UFF parameters for the second atom
      * @return the bond stretch contribution (in Hartrees)
      */
-    private safe def getBondStretchTerm(bond : BondType,
+    private def getBondStretchTerm(bond : BondType,
                                                atomI : MMAtom, paramsI : UffParameters,
                                                atomJ : MMAtom, paramsJ : UffParameters) {
         val direction = atomJ.centre - atomI.centre;
@@ -114,7 +114,7 @@ public class UniversalForceField implements ForceField {
      * @param paramsI the UFF parameters for the second atom
      * @return the natural bond radius between the atoms
      */
-    private safe def getNaturalBondRadius(bond : BondType, 
+    private def getNaturalBondRadius(bond : BondType, 
                                                 atomI : MMAtom, paramsI : UffParameters,
                                                atomJ : MMAtom, paramsJ : UffParameters) {
         val radiusI = paramsI.bondRadius;

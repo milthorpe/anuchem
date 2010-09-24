@@ -5,6 +5,6 @@ package x10x.vector;
  * @author milthorpe
  */
 public abstract interface Tuple3d(i : Double, j : Double, k : Double) {
-    public abstract safe def toString() : String;
+    public abstract def toString() : String;
 }
 

@@ -471,8 +471,8 @@ public class Fmm3d {
     }
 
     static struct SumReducer implements Reducible[Double] {
-        public safe def zero() = 0.0;
-        public safe def apply(a:Double, b:Double) = (a + b);
+        public def zero() = 0.0;
+        public def apply(a:Double, b:Double) = (a + b);
     }
 
     /**

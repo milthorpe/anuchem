@@ -31,7 +31,7 @@ public class FmmLeafBox extends FmmBox {
         super(level, x, y, z, numTerms, parent);
     }
 
-    public safe atomic def addAtom(atom : MMAtom) {
+    public atomic def addAtom(atom : MMAtom) {
         atoms.add(atom);
     }
 

@@ -156,7 +156,7 @@ public class Anumm {
      * Gets the place ID to which to assign the given atom coordinates.
      * Currently just splits them up into slices by X coordinate.
      */
-    private static safe def getPlaceId(x : Double, y : Double, z : Double, size : Double) : Int {
+    private static def getPlaceId(x : Double, y : Double, z : Double, size : Double) : Int {
         return ((x / (size * 2) + 0.5) * Place.MAX_PLACES) as Int;
     }
 

@@ -19,42 +19,42 @@ public struct Vector3d(i : Double, j : Double, k : Double) implements Tuple3d {
         this(t.i(), t.j(), t.k());
     }
 
-    public safe def toString() = ("(" + i + "i + " + j + "j + " + k + "k)");
+    public def toString() = ("(" + i + "i + " + j + "j + " + k + "k)");
 
     /**
      * @return the sum of this vector and the given vector
      */
-    public safe operator this + (that:Vector3d):Vector3d {
+    public operator this + (that:Vector3d):Vector3d {
         return this.add(that);
     }
 
-    public safe def add(b: Vector3d) : Vector3d {
+    public def add(b: Vector3d) : Vector3d {
         return Vector3d(i + b.i(), j + b.j(), k + b.k());
     }
 
     /**
      * @return the difference of vector x and vector y
      */
-    public static safe operator (x:Vector3d) - (y:Vector3d):Vector3d {
+    public static operator (x:Vector3d) - (y:Vector3d):Vector3d {
         return x.sub(y);
     }
 
-    public safe def sub(b: Vector3d) : Vector3d {
+    public def sub(b: Vector3d) : Vector3d {
         return Vector3d(i - b.i(), j - b.j(), k - b.k());
     }
 
     /**
      * @return the dot product of this vector and the given vector
      */
-    public safe operator this * (that:Vector3d):Double {
+    public operator this * (that:Vector3d):Double {
         return this.dot(that);
     }
 
-    public safe def dot(vec : Vector3d) : Double {
+    public def dot(vec : Vector3d) : Double {
         return this.i * vec.i + this.j * vec.j + this.k * vec.k;
     }
 
-    public safe def cross(vec : Vector3d) : Vector3d {
+    public def cross(vec : Vector3d) : Vector3d {
         return Vector3d(j * vec.k - k * vec.j,
                         k * vec.i - i * vec.k,
                         i * vec.j - j * vec.i);
@@ -63,41 +63,41 @@ public struct Vector3d(i : Double, j : Double, k : Double) implements Tuple3d {
     /**
      * @return the product of this vector and the given scalar
      */
-    public safe operator this * (that:Double):Vector3d {
+    public operator this * (that:Double):Vector3d {
         return this.mul(that);
     }
 
     /**
      * @return the product of the given double and the given vector
      */
-    public static safe operator (x:Double) * (y:Vector3d): Vector3d = y * x;
+    public static operator (x:Double) * (y:Vector3d): Vector3d = y * x;
 
-    public safe def mul(c : Double) : Vector3d {
+    public def mul(c : Double) : Vector3d {
         return Vector3d(this.i * c, this.j * c, this.k * c);
     }
 
-    public safe def mixedProduct(v2 : Vector3d, v3 : Vector3d) : Double {
+    public def mixedProduct(v2 : Vector3d, v3 : Vector3d) : Double {
         return this.dot(v2.cross(v3));
     }
 
-    public safe def lengthSquared() : Double {
+    public def lengthSquared() : Double {
         return i * i + j * j + k * k;
     }
 
-    public safe def length() : Double {
+    public def length() : Double {
         return Math.sqrt(i * i + j * j + k * k);
     }
 
-    public safe def maxNorm() : Double {
+    public def maxNorm() : Double {
         return Math.max(Math.max(Math.abs(i), Math.abs(j)), Math.abs(k));
     }
 
     /* Should which name to use - length or magnitude? */
-    public safe def magnitude() : Double {
+    public def magnitude() : Double {
         return Math.sqrt(i * i + j * j + k * k);
     }
 
-    public safe def angleWith(vec : Vector3d) : Double {
+    public def angleWith(vec : Vector3d) : Double {
         val aDotb = this.dot(vec);
         val ab    = magnitude() * vec.magnitude();
         
@@ -112,14 +112,14 @@ public struct Vector3d(i : Double, j : Double, k : Double) implements Tuple3d {
     /** 
      * Returns the geometric inverse of this vector a^(-1) = a / ||a||^2
      */
-    public safe def inverse() : Vector3d {
+    public def inverse() : Vector3d {
         val l2 = lengthSquared();
         return Vector3d(i / l2, j / l2, k / l2);
     }
 
-    public static safe operator - (x:Vector3d) = x.negate();
+    public static operator - (x:Vector3d) = x.negate();
 
-    public safe def negate() : Vector3d {
+    public def negate() : Vector3d {
         return Vector3d(-i, -j, -k);
     }
 }
