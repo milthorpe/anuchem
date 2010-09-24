@@ -465,8 +465,6 @@ public class GMatrix extends Matrix {
         val shellList = bfs.getShellList();
         val shellPairs = shellList.getShellPairs();
 
-        val timer = new Timer(2);
-
         val nPairs = shellPairs.length();
         val nPlaces = Place.places.length;
         val workPerPlace = nPairs / nPlaces;
@@ -474,24 +472,31 @@ public class GMatrix extends Matrix {
         val firstChunk = remainder * (workPerPlace + 1);
         Console.OUT.println("\tWork units per place: " + workPerPlace + " remainder " + remainder);
 
-        timer.start(0);
+        makeZero();
 
+        val gMatrix = GlobalRef[GMatrix](this);
         finish ateach ([placeId] in computeInst) {
+            //val placeTimer = new Timer(2);
+            //placeTimer.start(0);
             val comp_loc = computeInst(placeId) as ComputePlaceDirect;
             comp_loc.reset(density);
             val start = placeId < remainder ? (placeId * (workPerPlace + 1)) : (firstChunk + (placeId-remainder) * workPerPlace);
             val end = start + workPerPlace + (placeId < remainder ? 1 : 0);
             comp_loc.computeShells(start, end, nPairs);
+            placeTimer.stop(0);
+            //Console.OUT.println("\tcompute at " + here + " " + (placeTimer.total(0) as Double) / 1e9 + " seconds");
+
+            //placeTimer.start(1);
+            // scatter and reduce my gMatrix contribution
+            val myContribution = comp_loc.getGMatContributionArray();
+            at (gMatrix) {
+                val gMat = gMatrix().getMatrix();
+                val sum = (a:Double, b:Double) => (a+b);
+                atomic { gMat.map[Double,Double](gMat, myContribution, sum); }
+            }
+            //placeTimer.stop(1);
+            //Console.OUT.println("\tscatter at " + here + " " + (placeTimer.total(1) as Double) / 1e9 + " seconds");
         }
-
-        timer.stop(0);
-        Console.OUT.println("\tTime for actual computation: " + (timer.total(0) as Double) / 1e9 + " seconds");
-
-        timer.start(1);
-        gatherAndReduceGMatrix();
-        timer.stop(1);
-        Console.OUT.println("\tTime for summing up GMatrix bits: " + (timer.total(1) as Double) / 1e9 + " seconds");
-
     }
 
     /** Compute class for the new code - multi place version */
