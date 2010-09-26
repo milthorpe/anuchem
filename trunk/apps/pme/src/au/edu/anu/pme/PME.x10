@@ -82,21 +82,21 @@ public class PME {
     /** The atoms in the simulation, divided up into an array of ValRails, one for each place. */
     private val atoms : DistArray[ValRail[MMAtom]](1);
 
-    private val B : DistArray[Double]{self.dist==gridDist};
-    private val C : DistArray[Double]{self.dist==gridDist};
-    private val BdotC : DistArray[Double]{self.dist==gridDist};
+    private val B : DistArray[Double](3){self.dist==gridDist};
+    private val C : DistArray[Double](3){self.dist==gridDist};
+    private val BdotC : DistArray[Double](3){self.dist==gridDist};
 
     /** The reciprocal pair potential as defined in eq. 4.7 */
-    private val thetaRecConvQ : DistArray[Complex]{self.dist==gridDist};
+    private val thetaRecConvQ : DistArray[Complex](3){self.dist==gridDist};
 
     /** The gridded charge array Q as defined in Eq. 4.6 */
-    private val Q : DistArray[Complex]{self.dist==gridDist};
+    private val Q : DistArray[Complex](3){self.dist==gridDist};
 
     /** The inverse DFT of the Q array.  TODO this should be a scoped local variable in getEnergy() XTENLANG-??? */
-    private val Qinv : DistArray[Complex]{self.dist==gridDist};
+    private val Qinv : DistArray[Complex](3){self.dist==gridDist};
 
     /** Scratch array for use during 3D FFT.  TODO this should be a scoped local variable in getEnergy() XTENLANG-??? */
-    private val temp : DistArray[Complex]{self.dist==gridDist};
+    private val temp : DistArray[Complex](3){self.dist==gridDist};
 
     /** 
      * An array of box divisions within the unit cell, with a side length
