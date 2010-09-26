@@ -108,7 +108,6 @@ public class PeriodicFmm3d extends Fmm3d {
             combineMacroscopicExpansions();
             transformToLocal();
         }
-        Console.OUT.println("about to do direct");
         val totalEnergy = getDirectEnergy() + getFarFieldEnergy();
         timer.stop(TIMER_INDEX_TOTAL);
         return totalEnergy;
@@ -121,14 +120,11 @@ public class PeriodicFmm3d extends Fmm3d {
     def combineMacroscopicExpansions() {
         timer.start(TIMER_INDEX_MACROSCOPIC);
         // TODO distributed impl.
-        val macroMultipoles = DistArray.make[MultipoleExpansion](Dist.makeBlock([0..Place.MAX_PLACES-1,0..numShells],0));
-        val macroLocalTranslations = DistArray.make[LocalExpansion](Dist.makeBlock([0..Place.MAX_PLACES-1,0..numShells],0));
-        val topLevelBox = at (boxes(0).dist(0,0,0)) { GlobalRef[FmmBox](boxes(0)(0,0,0)) };
-        finish for (place in Place.places) async at(place) {
-            val p = place.id;
-            Console.OUT.println("shells at " + p + " top level = " + topLevel);
-            // "shell 0" is the unit cell itself
-            macroMultipoles(p, 0) = at(topLevelBox) {topLevelBox().multipoleExp};
+        at (boxes(0).dist(0,0,0)) {
+            val macroMultipoles = new Array[MultipoleExpansion](numShells);
+            val macroLocalTranslations = new Array[LocalExpansion](numShells);
+            val topLevelBox = boxes(0)(0,0,0);
+            macroMultipoles(0) = topLevelBox.multipoleExp;
 
             var macroTranslation : MultipoleExpansion = new MultipoleExpansion(numTerms);
 
@@ -140,12 +136,12 @@ public class PeriodicFmm3d extends Fmm3d {
                 val translation = MultipoleExpansion.getOlm(translationVector, numTerms);
                 macroTranslation.add(translation);
             }
-            macroMultipoles(p, 1) = new MultipoleExpansion(numTerms);
-            macroMultipoles(p, 1).translateAndAddMultipole(macroTranslation, macroMultipoles(p, 0));
-            //Console.OUT.println("final for 1 = " + macroMultipoles(p, 1));
+            macroMultipoles(1) = new MultipoleExpansion(numTerms);
+            macroMultipoles(1).translateAndAddMultipole(macroTranslation, macroMultipoles(0));
+            //Console.OUT.println("final for 1 = " + macroMultipoles(1));
 
             // locals for shell 1
-            macroLocalTranslations(p,0) = new LocalExpansion(numTerms);
+            macroLocalTranslations(0) = new LocalExpansion(numTerms);
             for ([i,j,k] in nineCube) {
                 if (Math.abs(i) > 1 || Math.abs(j) > 1 || Math.abs(k) > 1) {
                     // inner 27 boxes done at a lower level
@@ -153,27 +149,27 @@ public class PeriodicFmm3d extends Fmm3d {
                                                      j * size,
                                                      k * size);
                     val transform = LocalExpansion.getMlm(translationVector, numTerms);
-                    macroLocalTranslations(p,0).add(transform);
+                    macroLocalTranslations(0).add(transform);
                 }
             }
-            macroLocalTranslations(p,1) = macroLocalTranslations(p,0).getMacroscopicParent();
+            macroLocalTranslations(1) = macroLocalTranslations(0).getMacroscopicParent();
 
             // remaining shells
             for (var shell: Int = 2; shell <= numShells; shell++) {
                 macroTranslation = macroTranslation.getMacroscopicParent();
-                macroMultipoles(p, shell) = new MultipoleExpansion(numTerms);
-                macroMultipoles(p, shell).translateAndAddMultipole(macroTranslation, macroMultipoles(p, shell-1));
-                //Console.OUT.println("final for " + shell + " = " + macroMultipoles(p, shell));
-                macroLocalTranslations(p,shell) = macroLocalTranslations(p,shell-1).getMacroscopicParent();
+                macroMultipoles(shell) = new MultipoleExpansion(numTerms);
+                macroMultipoles(shell).translateAndAddMultipole(macroTranslation, macroMultipoles(shell-1));
+                //Console.OUT.println("final for " + shell + " = " + macroMultipoles(shell));
+                macroLocalTranslations(shell) = macroLocalTranslations(shell-1).getMacroscopicParent();
             }
 
             // now transform and add macroscopic multipoles to local expansion for top level box
             for (var shell: Int = 0; shell <= numShells; shell++) {
-                val localExpansion = macroLocalTranslations(p,shell);
-                at(topLevelBox) {topLevelBox().localExp.transformAndAddToLocal(localExpansion, macroMultipoles(p, shell)); }
+                val localExpansion = macroLocalTranslations(shell);
+                topLevelBox.localExp.transformAndAddToLocal(localExpansion, macroMultipoles(shell));
             }
+            //Console.OUT.println("final for topLevel = " + topLevelBox.localExp);
         }
-        //Console.OUT.println("final for topLevel = " + at(topLevelBox) {topLevelBox().localExp});
         timer.stop(TIMER_INDEX_MACROSCOPIC);
     }
 
@@ -219,7 +215,7 @@ public class PeriodicFmm3d extends Fmm3d {
      * lowest level box that contains the atom.
      */
     def multipoleLowestLevel() {
-        Console.OUT.println("multipole lowest level");
+        //Console.OUT.println("multipole lowest level");
         timer.start(TIMER_INDEX_MULTIPOLE);
         finish ateach (boxIndex in lowestLevelBoxes) {
             val leafBox = lowestLevelBoxes(boxIndex) as FmmLeafBox;
@@ -258,7 +254,7 @@ public class PeriodicFmm3d extends Fmm3d {
      * @see Kudin & Scuseria, section 2.3
      */
     def cancelDipole(dipole : Vector3d) : Vector3d {
-        Console.OUT.println("dipole = " + dipole);
+        //Console.OUT.println("dipole = " + dipole);
         var newDipole : Vector3d = dipole;
         finish {
             val p1 = Point3d(size, 0.0, 0.0) + offset;
@@ -308,7 +304,7 @@ public class PeriodicFmm3d extends Fmm3d {
         
         for ([thisLevel] in (topLevel+1)..numLevels) {
             val dim = size / Math.pow2(thisLevel);
-            Console.OUT.println("transform level " + thisLevel);
+            //Console.OUT.println("transform level " + thisLevel);
             val thisLevelBoxes = boxes(thisLevel);
             finish ateach (p1 in Dist.makeUnique(thisLevelBoxes.dist.places())) {
                 val myLET = locallyEssentialTrees(p1);
@@ -396,7 +392,7 @@ public class PeriodicFmm3d extends Fmm3d {
             }
         }
         timer.stop(TIMER_INDEX_PREFETCH);
-        Console.OUT.println("done prefetch");
+        //Console.OUT.println("done prefetch");
     }
 
     /**
@@ -495,7 +491,7 @@ public class PeriodicFmm3d extends Fmm3d {
      * be done in parallel with other steps of the algorithm.
      */
     def getDirectEnergy() : Double {
-        Console.OUT.println("direct");
+        //Console.OUT.println("direct");
         timer.start(TIMER_INDEX_DIRECT);
 
         val directEnergy = finish (SumReducer()) {
@@ -671,7 +667,7 @@ public class PeriodicFmm3d extends Fmm3d {
         timer.start(TIMER_INDEX_COMBINE);
         for (var level: Int = numLevels; level > topLevel; level--) {
             val thisLevel = level;
-            Console.OUT.println("combine level " + level + " => " + (level-1));
+            //Console.OUT.println("combine level " + level + " => " + (level-1));
             val thisLevelBoxes = boxes(thisLevel);
             finish ateach (boxIndex in thisLevelBoxes) {
                 val child = thisLevelBoxes(boxIndex);
@@ -695,7 +691,7 @@ public class PeriodicFmm3d extends Fmm3d {
      * all atoms in all well-separated boxes.
      */ 
     def getFarFieldEnergy() : Double {
-        Console.OUT.println("getFarFieldEnergy");
+        //Console.OUT.println("getFarFieldEnergy");
         timer.start(TIMER_INDEX_FARFIELD);
         val farFieldEnergy = finish(SumReducer()) {
             ateach (boxIndex1 in lowestLevelBoxes) {

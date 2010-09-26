@@ -26,8 +26,8 @@
 	<property name="target-src" location="${target}/classes"/>
 	<property name="target-test" location="${target}/test-classes"/>
     <property name="bin" location="${basedir}/bin"/>
-	<property name="exe" value="fmm3d"/>
-    <property name="testclass" value="test/au/edu/anu/mm/TestFmm3d.x10"/>
+	<property name="exe" value="periodicFmm3d"/>
+    <property name="testclass" value="test/au/edu/anu/mm/TestPeriodicFmm3d.x10"/>
 
     <condition property="x10c.optimize" value="-O" else="">
         <istrue value="${optimize}"/>
