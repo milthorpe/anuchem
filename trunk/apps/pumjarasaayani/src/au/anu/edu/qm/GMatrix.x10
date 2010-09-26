@@ -483,7 +483,7 @@ public class GMatrix extends Matrix {
             val start = placeId < remainder ? (placeId * (workPerPlace + 1)) : (firstChunk + (placeId-remainder) * workPerPlace);
             val end = start + workPerPlace + (placeId < remainder ? 1 : 0);
             comp_loc.computeShells(start, end, nPairs);
-            placeTimer.stop(0);
+            //placeTimer.stop(0);
             //Console.OUT.println("\tcompute at " + here + " " + (placeTimer.total(0) as Double) / 1e9 + " seconds");
 
             //placeTimer.start(1);
