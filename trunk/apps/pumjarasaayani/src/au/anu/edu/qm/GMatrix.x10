@@ -50,14 +50,14 @@ public class GMatrix extends Matrix {
             break;
         case 2:
         case 3:
-            computeInst = DistArray.make[ComputePlace](Dist.makeUnique(Place.places), (Point) => new ComputePlaceDirect(N, molecule, basisName));
+            computeInst = DistArray.make[ComputePlace](Dist.makeUnique(), (Point) => new ComputePlaceDirect(N, molecule, basisName));
             break;
         case 4:
-            computeInst = DistArray.make[ComputePlace](Dist.makeUnique(Place.places), (Point) => new ComputePlaceFuture(N, molecule, basisName));
+            computeInst = DistArray.make[ComputePlace](Dist.makeUnique(), (Point) => new ComputePlaceFuture(N, molecule, basisName));
             break;
         case 5:
         default:
-            computeInst = DistArray.make[ComputePlace](Dist.makeUnique(Place.places), (Point) => new ComputePlaceDirect(N, molecule, basisName));
+            computeInst = DistArray.make[ComputePlace](Dist.makeUnique(), (Point) => new ComputePlaceDirect(N, molecule, basisName));
             break;
         } // end switch .. case
     }

@@ -53,7 +53,7 @@ public class TestElectrostatic {
      */
     public def generateAtoms() : DistArray[ValRail[MMAtom]](1) {
         Console.OUT.println("size of cluster =  " + sizeOfCentralCluster());
-        val tempAtoms = DistArray.make[GrowableRail[MMAtom]](Dist.makeUnique(Place.places), (Point) => new GrowableRail[MMAtom]());
+        val tempAtoms = DistArray.make[GrowableRail[MMAtom]](Dist.makeUnique(), (Point) => new GrowableRail[MMAtom]());
         val gridSize = (Math.ceil(Math.cbrt(numAtoms)) as Int);
         // assign atoms to a central cluster of size "sizeOfCentralCluster()"
         val clusterStart = SIZE / 2.0 - sizeOfCentralCluster() / 2.0;
@@ -74,7 +74,7 @@ public class TestElectrostatic {
             }
             gridPoint++;
         }
-        val atoms = DistArray.make[ValRail[MMAtom]](Dist.makeUnique(Place.places), ([p] : Point) => (tempAtoms(p) as GrowableRail[MMAtom]).toValRail());
+        val atoms = DistArray.make[ValRail[MMAtom]](Dist.makeUnique(), ([p] : Point) => (tempAtoms(p) as GrowableRail[MMAtom]).toValRail());
         return atoms;
     }
 

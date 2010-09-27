@@ -56,7 +56,7 @@ public class Distributed3dFft {
             FFTW.fftwExecute(plan);
             FFTW.fftwDestroyPlan(plan); 
         } else {
-            val oneDSource = DistArray.make[Rail[Complex]](Dist.makeUnique(source.dist.places()), (Point) => Rail.make[Complex](dataSize));
+            val oneDSource = DistArray.make[Rail[Complex]](Dist.makeUnique(), (Point) => Rail.make[Complex](dataSize));
             val oneDTarget = DistArray.make[Rail[Complex]](oneDSource.dist, (Point) => Rail.make[Complex](dataSize));
             finish ateach(p1 in oneDSource) do1DFftToTemp(source, oneDSource(p1), oneDTarget(p1), forward);
             finish ateach(p1 in oneDSource) transposeTempToTarget();

@@ -136,7 +136,7 @@ public class Anumm {
      * MD requires that the atoms have already been distributed. 
      */
     public static def assignAtoms(molecule : Molecule[MMAtom]) : DistArray[ValRail[MMAtom]](1) {
-        val tempAtoms = DistArray.make[GrowableRail[MMAtom]](Dist.makeUnique(Place.places), (Point) => new GrowableRail[MMAtom]());
+        val tempAtoms = DistArray.make[GrowableRail[MMAtom]](Dist.makeUnique(), (Point) => new GrowableRail[MMAtom]());
         val atomList = molecule.getAtoms();
         val maxExtent = molecule.getMaxExtent();
         finish for (var i : Int = 0; i < atomList.size(); i++) {
@@ -148,7 +148,7 @@ public class Anumm {
                 atomic { (tempAtoms(p) as GrowableRail[MMAtom]!).add(remoteAtom); }
             }
         }
-        val atoms = DistArray.make[ValRail[MMAtom]](Dist.makeUnique(Place.places), ((p) : Point) => (tempAtoms(p) as GrowableRail[MMAtom]!).toValRail());
+        val atoms = DistArray.make[ValRail[MMAtom]](Dist.makeUnique(), ((p) : Point) => (tempAtoms(p) as GrowableRail[MMAtom]!).toValRail());
         return atoms;
     }
 
