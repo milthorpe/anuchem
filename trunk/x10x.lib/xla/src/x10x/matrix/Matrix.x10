@@ -159,6 +159,17 @@ public class Matrix {
     }
 
     /**
+     * this = this + X
+     */
+    public def addInPlace(x:Matrix)  {
+         val N   = getRowCount();
+         val M   = getColCount();
+
+         finish for([i,j] in mat) async
+            mat(i, j) = mat(i, j) + x.mat(i, j);
+    }
+
+    /**
      * Subtract two matrices: this - X
      */
     public def sub(x:Matrix) : Matrix {

@@ -529,19 +529,27 @@ public class GMatrix extends Matrix {
 
     static class ComputePlaceDirect extends ComputePlace {
         val gMatrixContribution : Matrix;
+        val jMatrixContribution : Matrix;
+        val kMatrixContribution : Matrix;
         val computeThreads = Rail.make[ComputeThread](Runtime.INIT_THREADS);
 
         public def this(N : Int, mol:Molecule[QMAtom], basisName:String) {
             super(mol, basisName);
 
             gMatrixContribution = new Matrix(N);
+            jMatrixContribution = new Matrix(N);
+            kMatrixContribution = new Matrix(N);
+
+            val maxam = bas_loc.getShellList().getMaximumAngularMomentum();
+            for(var i:Int=0; i<Runtime.INIT_THREADS; i++) {
+                computeThreads(i) = new ComputeThread(gMatrixContribution.getRowCount(), new TwoElectronIntegrals(maxam), bas_loc.getShellList());
+            }
         }
 
         public def reset(density : Density) {
             super.reset(density);
-            val maxam = bas_loc.getShellList().getMaximumAngularMomentum();
             for(var i:Int=0; i<Runtime.INIT_THREADS; i++) {
-                computeThreads(i) = new ComputeThread(gMatrixContribution.getRowCount(), new TwoElectronIntegrals(maxam), bas_loc.getShellList());
+                computeThreads(i).reset();
             }
         }
 
@@ -692,27 +700,21 @@ public class GMatrix extends Matrix {
 
 
         private def getJMat() : Matrix {
-            val N = density.getRowCount();
-            var jM:Matrix = new Matrix(N);
-
-            jM.makeZero();
+            jMatrixContribution.makeZero();
             for(var i:Int=0; i<Runtime.INIT_THREADS; i++) {
-               jM = jM.add(computeThreads(i).getJMat());
-            } //  end for
+               jMatrixContribution.addInPlace(computeThreads(i).getJMat());
+            }
 
-            return jM;             
+            return jMatrixContribution;             
         }
 
         private def getKMat() : Matrix {
-            val N = density.getRowCount();
-            var kM:Matrix = new Matrix(N);
-
-            kM.makeZero();
+            kMatrixContribution.makeZero();
             for(var i:Int=0; i<Runtime.INIT_THREADS; i++) {
-               kM = kM.add(computeThreads(i).getKMat());
-            } //  end for
+               kMatrixContribution.addInPlace(computeThreads(i).getKMat());
+            }
 
-            return kM;
+            return kMatrixContribution;
         }
 
         /**
@@ -788,7 +790,9 @@ public class GMatrix extends Matrix {
 
             jMat = new Matrix(N);
             kMat = new Matrix(N);
+        }
 
+        public def reset() {
             jMat.makeZero();
             kMat.makeZero();
         }
