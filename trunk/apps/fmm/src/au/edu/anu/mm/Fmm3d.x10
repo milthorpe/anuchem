@@ -200,7 +200,7 @@ public class Fmm3d {
         //Console.OUT.println("assignAtomsToBoxes");
         finish ateach (p1 in atoms) {
             val localAtoms = atoms(p1);
-            finish foreach ([i] in 0..localAtoms.length-1) {
+            finish for ([i] in 0..localAtoms.length-1) async {
                 val atom = localAtoms(i);
                 val charge = atom.charge;
                 val offsetCentre = atom.centre + offset;
@@ -292,7 +292,7 @@ public class Fmm3d {
                 if (thisLevel == topLevel) {
                     // must fetch top level multipoles synchronously before starting
                     val thisLevelBoxes = boxes(thisLevel);
-                    finish foreach ([x,y,z] in combinedVList(thisLevel)) {
+                    finish for ([x,y,z] in combinedVList(thisLevel)) async {
                         thisLevelMultipoleCopies(x,y,z) = getMultipoleExpansionLocalCopy(thisLevelBoxes,x,y,z);
                     }
                 }
@@ -309,7 +309,7 @@ public class Fmm3d {
                     }
                 }
 
-                finish foreach ([x1,y1,z1] in thisLevelBoxes | here) {
+                finish for ([x1,y1,z1] in thisLevelBoxes | here) async {
                     val box1 = thisLevelBoxes(x1,y1,z1);
                     if (box1 != null) {
                         val vList = box1.getVList();
@@ -361,7 +361,7 @@ public class Fmm3d {
             }
 
             // retrieve the partial list for each place and store into my LET
-            finish foreach(placeEntry in uListPlaces.entries()) {
+            finish for (placeEntry in uListPlaces.entries()) async {
                 val placeId = placeEntry.getKey();
                 val uListForPlace = placeEntry.getValue();
                 val uListValRail = uListForPlace.toValRail();

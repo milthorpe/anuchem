@@ -163,7 +163,7 @@ public class GMatrix extends Matrix {
         val gMatrix = getMatrix();
         val jMatrix = jMat.getMatrix();
         val kMatrix = kMat.getMatrix();
-        finish foreach([x,y] in gMatrix.region)
+        finish for([x,y] in gMatrix.region) async
                   gMatrix(x,y) = jMatrix(x,y) - (0.25*kMatrix(x,y));     
     }
 
@@ -243,7 +243,7 @@ public class GMatrix extends Matrix {
              val jMatrix = computeThreads(idx).getJMat().getMatrix();
              val kMatrix = computeThreads(idx).getKMat().getMatrix();
              
-             finish foreach([x,y] in gMatrix) {
+             finish for([x,y] in gMatrix) async {
                    gMatrix(x,y) += jMatrix(x,y) - (0.25*kMatrix(x,y));     
              } // finish
         } // end for

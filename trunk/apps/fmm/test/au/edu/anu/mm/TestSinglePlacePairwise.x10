@@ -48,7 +48,7 @@ public class TestSinglePlacePairwise extends TestElectrostatic {
         val timer = new Timer(1);
         timer.start(0);
 
-        finish foreach ([i] in 0..myAtoms.length-1) {
+        finish for ([i] in 0..myAtoms.length-1) async {
             var atomEnergy : Double = 0.0;
             for ([j] in 0..i-1) {
                 atomEnergy += myAtoms(i).charge * myAtoms(j).charge / myAtoms(j).centre.distance(myAtoms(i).centre);

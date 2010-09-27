@@ -33,7 +33,7 @@ public class JacobiDiagonalizer {
        val aMat = new Matrix(n);
        val a = aMat.getMatrix();
 
-       finish foreach([i,j] in matrix) { 
+       finish for([i,j] in matrix) async{ 
             a(i, j) = matrix(i, j); 
        }
 
@@ -46,7 +46,7 @@ public class JacobiDiagonalizer {
        val z = zVec.getVector();
 
        // do diagonalization at Place.FIRST_PLACE
-       finish foreach([i,j] in a) {
+       finish for([i,j] in a) async {
            if (i == j) { 
                eigenValues(i) = b(i) = a(i,i);
                z(i) = 0.0;
@@ -69,7 +69,7 @@ public class JacobiDiagonalizer {
 
           for(var ip:Int = 0; ip<n-1; ip++) { for(var iq:Int = ip+1; iq<n; iq++) {
 
-          // finish foreach(plc in a.dist.places()) { at(plc) { for([ip, iq] in a.dist.get(plc)) {
+          // finish for(plc in a.dist.places()) { at(plc) { for([ip, iq] in a.dist.get(plc)) async {
              // x10.io.Console.OUT.println(ip + " , " + iq);
              // x10.io.Console.OUT.println(a.dist.contains(Point.make(ip, iq)));
 
@@ -121,10 +121,10 @@ public class JacobiDiagonalizer {
                    } // end if
                 } // end if
              } // end if
-           // }}} // end foreach
+           // }}} // end for async
            }} // end for
 
-          finish foreach([ip] in b) {
+          finish for([ip] in b) async {
              b(ip) += z(ip);
              eigenValues(ip) = b(ip);
              z(ip) = 0.0;

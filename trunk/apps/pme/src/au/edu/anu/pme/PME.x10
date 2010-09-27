@@ -246,7 +246,7 @@ public class PME {
         val subCellsTemp = DistArray.make[GrowableRail[MMAtom]](subCells.dist, (Point) => new GrowableRail[MMAtom]());
         finish ateach (p1 in atoms) {
             val localAtoms = atoms(p1);
-            finish foreach ([i] in 0..localAtoms.length-1) {
+            finish for ([i] in 0..localAtoms.length-1) async {
                 val atom = localAtoms(i);
                 val charge = atom.charge;
                 val centre = atom.centre;
@@ -303,7 +303,7 @@ public class PME {
             }
 
             // retrieve the partial list for each place and store into my LET
-            finish foreach(placeEntry in haloPlaces.entries()) {
+            finish for (placeEntry in haloPlaces.entries()) async {
                 val placeId = placeEntry.getKey();
                 val haloForPlace = placeEntry.getValue();
                 val haloListValRail = haloForPlace.toValRail();
@@ -451,7 +451,7 @@ public class PME {
      */
     public def gridCharges() {
         timer.start(TIMER_INDEX_GRIDCHARGES);
-        finish foreach (place1 in gridDist.places()) async at(place1) {
+        finish for (place1 in gridDist.places()) async at(place1) async {
             val place1Region = subCells.dist.get(here);
 
             val place1HaloRegion = getGridRegionForSubcellAtoms(place1Region);

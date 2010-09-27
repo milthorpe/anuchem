@@ -64,8 +64,8 @@ public class Vector {
         val res = Rail.make[Double](1);
 
         // TODO: this is introduced till a fix for XTENLANG-508 is there
-        // finish foreach([i] in vec.region) res += vec(i) * b.vec(i);
-        finish foreach([i] in vec) res(0) += vec(i) * b.vec(i);
+        // finish for([i] in vec.region) async res += vec(i) * b.vec(i);
+        finish for([i] in vec) async res(0) += vec(i) * b.vec(i);
 
         return res(0);
     }
@@ -77,7 +77,7 @@ public class Vector {
         val N   = getSize();
         val res = new Vector(N);
 
-        finish foreach([i] in vec) res.vec(i) = vec(i) + b.vec(i);
+        finish for([i] in vec) async res.vec(i) = vec(i) + b.vec(i);
 
         return res;
     }
@@ -89,7 +89,7 @@ public class Vector {
         val N   = getSize();
         val res = new Vector(N);
 
-        finish foreach([i] in vec) res.vec(i) = vec(i) - b.vec(i);
+        finish for([i] in vec) async res.vec(i) = vec(i) - b.vec(i);
 
         return res;
     }
@@ -116,7 +116,7 @@ public class Vector {
         
         val n = new Vector(N);
        
-        finish foreach([i] in vec) n.vec(i) = vec(i) / mag;
+        finish for([i] in vec) async n.vec(i) = vec(i) / mag;
         
         return n;
     }
@@ -128,7 +128,7 @@ public class Vector {
         val N = getSize();
         val n = new Vector(N);
         
-        finish foreach([i] in vec) n.vec(i) = -vec(i);
+        finish for([i] in vec) async n.vec(i) = -vec(i);
         
         return n;
     }
@@ -140,7 +140,7 @@ public class Vector {
         val N   = getSize();
         val res = new Vector(N);
         
-        finish foreach([i] in vec) res.vec(i) = vec(i) * k;
+        finish for([i] in vec) async res.vec(i) = vec(i) * k;
         
         return res;
     }
@@ -152,7 +152,7 @@ public class Vector {
         val N   = getSize();
         val res = Rail.make[Double](1);
 
-        finish foreach([i] in vec) res(0) = Math.max(Math.abs(vec(i)), res(0));
+        finish for([i] in vec) async res(0) = Math.max(Math.abs(vec(i)), res(0));
         
         return res(0);       
     }

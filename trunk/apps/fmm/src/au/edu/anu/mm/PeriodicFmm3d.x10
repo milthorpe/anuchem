@@ -314,7 +314,7 @@ public class PeriodicFmm3d extends Fmm3d {
                 if (thisLevel == topLevel) {
                     // must fetch top level multipoles synchronously before starting
                     val thisLevelBoxes = boxes(thisLevel);
-                    finish foreach ([x,y,z] in combinedVList(thisLevel)) {
+                    finish for ([x,y,z] in combinedVList(thisLevel)) async {
                         thisLevelMultipoleCopies(x,y,z) = getMultipoleExpansionLocalCopy(thisLevelBoxes,x,y,z);
                     }
                 }
@@ -331,7 +331,7 @@ public class PeriodicFmm3d extends Fmm3d {
                     }
                 }
 
-                foreach ([x1,y1,z1] in thisLevelBoxes | here) {
+                for ([x1,y1,z1] in thisLevelBoxes | here) async {
                     val box1 = thisLevelBoxes(x1,y1,z1);
                     if (box1 != null) {
                         val vList = box1.getVList();
@@ -381,7 +381,7 @@ public class PeriodicFmm3d extends Fmm3d {
             }
 
             // retrieve the partial list for each place and store into my LET
-            finish foreach(placeEntry in uListPlaces.entries()) {
+            finish for(placeEntry in uListPlaces.entries()) async {
                 val placeId = placeEntry.getKey();
                 val uListForPlace = placeEntry.getValue();
                 val uListValRail = uListForPlace.toValRail();

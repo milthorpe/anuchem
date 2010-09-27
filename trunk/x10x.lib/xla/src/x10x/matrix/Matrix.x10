@@ -70,7 +70,7 @@ public class Matrix {
 
         val sqrtEVal = Rail.make[Double](rowCount);
 
-        finish foreach([i,j] in sHalf.mat.region) {
+        finish for([i,j] in sHalf.mat.region) async {
              if (i==j) {
                 sHalf.mat(i,i) /= Math.sqrt(eigenValues(i));
              }
@@ -83,7 +83,7 @@ public class Matrix {
      * Make the current Matrix as Identity
      */
     public def makeIdentity() : void {
-        finish foreach([i,j] in mat)
+        finish for([i,j] in mat) async
            if (i == j) mat(i, j) = 1.0;
            else        mat(i, j) = 0.0;
     }
@@ -138,7 +138,7 @@ public class Matrix {
 
          val res = new Matrix(N, M);
       
-         finish foreach([i,j] in res.mat)
+         finish for([i,j] in res.mat) async
             res.mat(i, j) = mat(i, j) * fac;
 
          return res;
@@ -152,7 +152,7 @@ public class Matrix {
          val M   = getColCount();
          val res = new Matrix(N, M);
 
-         finish foreach([i,j] in res.mat)
+         finish for([i,j] in res.mat) async
             res.mat(i, j) = mat(i, j) + x.mat(i, j);
 
          return res;
@@ -166,7 +166,7 @@ public class Matrix {
          val M   = getColCount();
          val res = new Matrix(N, M);
 
-         finish foreach([i,j] in res.mat)
+         finish for([i,j] in res.mat) async
             res.mat(i, j) = mat(i, j) - x.mat(i, j);
 
          return res;
@@ -180,7 +180,7 @@ public class Matrix {
          val M   = getColCount();
          val res = new Matrix(M, N);
 
-         finish foreach([i,j] in res.mat) {
+         finish for([i,j] in res.mat) async {
              res.mat(i, j) = mat(j, i);
          }
  
@@ -195,7 +195,7 @@ public class Matrix {
          val tr = Rail.make[Double](1);
          
          tr(0) = 0.0;
-         finish foreach([i,j] in mat) {
+         finish for([i,j] in mat) async {
                  if (i==j) {
                      atomic tr(0) += mat(i, i);
                  }
@@ -213,7 +213,7 @@ public class Matrix {
        val N = getRowCount();
 
        sum(0) = 0.0;
-       finish foreach([i,j] in mat) {
+       finish for([i,j] in mat) async {
                 if (i!=j && j>i) {
                     atomic sum(0) += Math.abs(mat(i, j));
                 }

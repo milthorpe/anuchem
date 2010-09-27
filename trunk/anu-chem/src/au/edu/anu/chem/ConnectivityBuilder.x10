@@ -29,7 +29,7 @@ public class ConnectivityBuilder[T]{T <: Atom} {
        val noOfAtoms = mol.getNumberOfAtoms();
        val ai = AtomInfo.getInstance();
 
-       finish foreach(atom in mol.getAtoms()) {
+       finish for(atom in mol.getAtoms()) async {
            val conn = new ConnectivitySupport();
            val idx  = atom.getIndex();
 
@@ -64,7 +64,7 @@ public class ConnectivityBuilder[T]{T <: Atom} {
        val WEAK_BOND_AXIS_REJECTION_FACTOR = 0.1;
        val WEAK_BOND_ANGLE_TOLERANCE = 1.222;
 
-       finish foreach(atom in mol.getAtoms()) {
+       finish for(atom in mol.getAtoms()) async {
            val conn = new ConnectivitySupport();
            val idx  = atom.getIndex();
 

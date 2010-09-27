@@ -93,7 +93,7 @@ public class Fragmentor {
 
        // step4: purge or expand depending on any rules being broken when a bond is cut
        //        remove dangling atoms, expand double bonds or planar rings 
-       finish foreach(fragment in fragList) {
+       finish for (fragment in fragList) async {
           removeDanglingAtoms(fragment);
        } // finish 
 
@@ -104,7 +104,7 @@ public class Fragmentor {
 
        // step6: add dummy hydrogens, for bonds that are cut
        Console.OUT.println("Adding dummy atoms ...");
-       finish foreach(fragment in fragList) {
+       finish for (fragment in fragList) async {
           addDummyAtoms(fragment);
        } // finish
 
@@ -125,7 +125,7 @@ public class Fragmentor {
    def generateAtomCenteredFragments(mol:Molecule[QMAtom], fragList:ArrayList[Fragment]) {
        val noOfAtoms = mol.getNumberOfAtoms();
 
-       finish foreach(atom1 in mol.getAtoms()) {
+       finish for (atom1 in mol.getAtoms()) async {
            val aFragment = new Fragment();
            aFragment.centeredOn = atom1.getIndex();
            aFragment.addAtom(atom1);
@@ -144,7 +144,7 @@ public class Fragmentor {
            } // end for
 
            async atomic fragList.add(aFragment); 
-       } // finish foreach
+       } // finish for async
    }
 
    /** merge fragments along the connectivity path */
@@ -162,7 +162,7 @@ public class Fragmentor {
    
               traverseAndMergeFragments(idx, sortedAtomIndices, mol, visited, fragList); 
            } // end if
-       } // finish foreach
+       } // finish for
    }
 
    /** simple traversal and merge */
@@ -245,7 +245,7 @@ public class Fragmentor {
        // TODO: 
 
        // first see if we are missing any pendant atoms 
-       finish foreach(fragment in fragList) {
+       finish for (fragment in fragList) async {
            val missedAtoms = new ArrayList[QMAtom]();
            for(atom in fragment.getAtoms()) {
               for(bond in atom.getBonds()) {

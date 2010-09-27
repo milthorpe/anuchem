@@ -45,7 +45,7 @@ public class ElectrostaticDirectMethod {
             ateach ([p1] in atoms) {
                 val myAtoms = atoms(p1);
                 // energy for all interactions with other atoms at other places
-                foreach ([p2] in atoms) {
+                for ([p2] in atoms) async {
                     if (p2 != p1) { // TODO region difference
                         var energyWithOther : Double = 0.0;
                         val otherAtomsPacked = at(atoms.dist(p2)) {getPackedAtomsForPlace(p2)};
@@ -60,7 +60,7 @@ public class ElectrostaticDirectMethod {
                 }
 
                 // energy for all interactions within this place
-                foreach ([i] in 0..myAtoms.length-1) {
+                for ([i] in 0..myAtoms.length-1) async {
                     var energyThisPlace : Double = 0.0;
                     for ([j] in 0..i-1) {
                         energyThisPlace += 2.0 * myAtoms(i).charge * myAtoms(j).charge / myAtoms(j).centre.distance(myAtoms(i).centre);
