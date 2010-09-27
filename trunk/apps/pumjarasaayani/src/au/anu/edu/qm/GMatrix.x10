@@ -480,9 +480,7 @@ public class GMatrix extends Matrix {
             //placeTimer.start(0);
             val comp_loc = computeInst(placeId) as ComputePlaceDirect;
             comp_loc.reset(density);
-            val start = placeId < remainder ? (placeId * (workPerPlace + 1)) : (firstChunk + (placeId-remainder) * workPerPlace);
-            val end = start + workPerPlace + (placeId < remainder ? 1 : 0);
-            comp_loc.computeShells(start, end, nPairs);
+            comp_loc.computeShells(nPairs);
             //placeTimer.stop(0);
             //Console.OUT.println("\tcompute at " + here + " " + (placeTimer.total(0) as Double) / 1e9 + " seconds");
 
@@ -632,11 +630,11 @@ public class GMatrix extends Matrix {
             computeGMatContribution();
         }
 
-        public def computeShells(startShell:Int, endShell:Int, nPairs:Int) {
+        public def computeShells(nPairs:Int) {
             val bfs = computeThreads(0).shellList.getShellPrimitives();
             val shellPairs = computeThreads(0).shellList.getShellPairs();
 
-            for(var i:Int=startShell; i<endShell; i++) {
+            for(var i:Int=here.id; i<nPairs; i+=Place.MAX_PLACES) {
                 val a = shellPairs(i).first;
                 val b = shellPairs(i).second;
 
