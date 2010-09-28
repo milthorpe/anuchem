@@ -162,13 +162,15 @@ public class PME {
         this.subCells = subCells;
         this.numSubCells = numSubCells;
 
-        packedAtomsCache = DistArray.make[Array[ValRail[MMAtom.PackedRepresentation]](3){rect}](Dist.makeUnique(subCells.dist.places()));
+        packedAtomsCache = DistArray.make[Array[ValRail[MMAtom.PackedRepresentation]](3){rect}](Dist.makeUnique());
         finish ateach (p in packedAtomsCache) {
             val mySubCellRegion = (subCells.dist | here).region;
-            val directRequiredRegion = [(mySubCellRegion.min(0) - 2)..(mySubCellRegion.max(0) + 2),
-                                        (mySubCellRegion.min(1) - 2)..(mySubCellRegion.max(1) + 2),
-                                        (mySubCellRegion.min(2) - 2)..(mySubCellRegion.max(2) + 2)];
-            packedAtomsCache(p) = new Array[ValRail[MMAtom.PackedRepresentation]](directRequiredRegion);
+            if (! mySubCellRegion.isEmpty()) {
+                val directRequiredRegion = [(mySubCellRegion.min(0) - 2)..(mySubCellRegion.max(0) + 2),
+                                            (mySubCellRegion.min(1) - 2)..(mySubCellRegion.max(1) + 2),
+                                            (mySubCellRegion.min(2) - 2)..(mySubCellRegion.max(2) + 2)];
+                packedAtomsCache(p) = new Array[ValRail[MMAtom.PackedRepresentation]](directRequiredRegion);
+            }
         }
 
 
