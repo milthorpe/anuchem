@@ -28,6 +28,12 @@ import au.edu.anu.util.Timer;
 public class GMatrix extends Matrix {
     private val gMatType : Int;
     private val computeInst : DistArray[ComputePlace](1){rect};
+    /*
+     * a temporary store at place 0 for remote places' G matrix contributions
+     * this is to avoid OOM errors due to 
+     * TODO should not be necessary with a good implementation of dist reduce
+     */
+    private val gMatPlaceContribution : Array[Array[Double](2){rect}](1){rail};
 
     // TODO: need to use shared variable instead
     private val G = Rail.make[Int](1, (Int)=>0);
@@ -41,6 +47,8 @@ public class GMatrix extends Matrix {
         this.mol = molecule;
         this.gMatType = gMatType;
         val basisName = bfs.getBasisName();
+
+        gMatPlaceContribution = new Array[Array[Double](2){rect}](Place.MAX_PLACES, (Int) => new Array[Double]([0..N-1,0..N-1]));
 
         switch(gMatType) {
         case 0:
@@ -475,25 +483,28 @@ public class GMatrix extends Matrix {
         makeZero();
 
         val gMatrix = GlobalRef[GMatrix](this);
-        finish ateach ([placeId] in computeInst) {
-            //val placeTimer = new Timer(2);
-            //placeTimer.start(0);
-            val comp_loc = computeInst(placeId) as ComputePlaceDirect;
-            comp_loc.reset(density);
-            comp_loc.computeShells(nPairs);
-            //placeTimer.stop(0);
-            //Console.OUT.println("\tcompute at " + here + " " + (placeTimer.total(0) as Double) / 1e9 + " seconds");
+        finish for ([placeId] in computeInst) {
+            async {
+                val placeContribution = new RemoteArray[Double](gMatPlaceContribution(placeId));
+                at (Place.place(placeId)) {
+                    //val placeTimer = new Timer(2);
+                    //placeTimer.start(0);
+                    val comp_loc = computeInst(placeId) as ComputePlaceDirect;
+                    comp_loc.reset(density);
+                    comp_loc.computeShells(nPairs);
+                    //placeTimer.stop(0);
+                    //Console.OUT.println("\tcompute at " + here + " " + (placeTimer.total(0) as Double) / 1e9 + " seconds");
 
-            //placeTimer.start(1);
-            // scatter and reduce my gMatrix contribution
-            val myContribution = comp_loc.getGMatContributionArray();
-            at (gMatrix) {
+                    //placeTimer.start(1);
+                    // scatter and reduce my gMatrix contribution
+                    finish Array.asyncCopy[Double](comp_loc.getGMatContributionArray(), placeContribution);
+                    //placeTimer.stop(1);
+                    //Console.OUT.println("\tscatter at " + here + " " + (placeTimer.total(1) as Double) / 1e9 + " seconds");
+                }
                 val gMat = gMatrix().getMatrix();
                 val sum = (a:Double, b:Double) => (a+b);
-                atomic { gMat.map[Double,Double](gMat, myContribution, sum); }
+                atomic { gMat.map[Double,Double](gMat, gMatPlaceContribution(placeId), sum); }
             }
-            //placeTimer.stop(1);
-            //Console.OUT.println("\tscatter at " + here + " " + (placeTimer.total(1) as Double) / 1e9 + " seconds");
         }
     }
 
