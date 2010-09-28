@@ -284,7 +284,7 @@ public class Fmm3d {
         for ([thisLevel] in (topLevel)..numLevels) {
             //Console.OUT.println("transform level " + thisLevel);
             val thisLevelBoxes = boxes(thisLevel);
-            finish ateach (p1 in Dist.makeUnique(thisLevelBoxes.dist.places())) {
+            finish ateach (p1 in Dist.makeUnique()) {
                 val myLET = locallyEssentialTrees(p1);
                 val combinedVList = myLET.combinedVList;
 

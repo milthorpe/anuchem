@@ -306,7 +306,7 @@ public class PeriodicFmm3d extends Fmm3d {
             val dim = size / Math.pow2(thisLevel);
             //Console.OUT.println("transform level " + thisLevel);
             val thisLevelBoxes = boxes(thisLevel);
-            finish ateach (p1 in Dist.makeUnique(thisLevelBoxes.dist.places())) {
+            finish ateach (p1 in Dist.makeUnique()) {
                 val myLET = locallyEssentialTrees(p1);
                 val combinedVList = myLET.combinedVList;
 
