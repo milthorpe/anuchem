@@ -51,12 +51,6 @@ public class DIISFockExtrapolator {
 
         val newFockMat = newFock.getMatrix();
         val curFockMat = currentFock.getMatrix();
-
-        var i:Int, j:Int, k:Int;
-
-        for(i=0; i<N; i++)
-           for(j=0; j<N; j++)
-              newFockMat(i,j) = curFockMat(i,j);
         
         val FPS = currentFock.mul(density).mul(overlap);
         val SPF = overlap.mul(density).mul(currentFock);
@@ -75,10 +69,10 @@ public class DIISFockExtrapolator {
 
                 return currentFock;
             } else {
-                val nf = oldFock.mul(0.5).add(currentFock.mul(0.5)).getMatrix();
-                for(i=0; i<N; i++) {
-                   for(j=0; j<N; j++) {
-                      newFockMat(i, j) = nf(i, j);
+                val oldFockMat = oldFock.getMatrix();
+                for(var i:Int=0; i<N; i++) {
+                   for(var j:Int=0; j<N; j++) {
+                      newFockMat(i, j) = oldFockMat(i,j) * 0.5 + curFockMat(i,j) * 0.5;
                    }
                 }
 
@@ -91,8 +85,6 @@ public class DIISFockExtrapolator {
         errorVectorList.add(errorVector);
         fockMatrixList.add(currentFock);
 
-        newFock.makeZero();
-
         val noOfIterations = errorVectorList.size();
 
         val A = new Matrix(noOfIterations+1);
@@ -102,13 +94,13 @@ public class DIISFockExtrapolator {
         val bVector = B.getVector();
 
         // set up A x = B to be solved
-        for (i = 0; i < noOfIterations; i++) {
-            for (j = 0; j < noOfIterations; j++) {
+        for (var i:Int=0; i < noOfIterations; i++) {
+            for (var j:Int=0; j < noOfIterations; j++) {
                 aMatrix(i,j) = errorVectorList.get(i).dot(errorVectorList.get(j));
             } // end for
         } // end for
 
-        for (i = 0; i < noOfIterations; i++) {
+        for (var i:Int=0; i < noOfIterations; i++) {
             aMatrix(noOfIterations,i) = aMatrix(i,noOfIterations) = -1.0;
             bVector(i) = 0.0;
         } // end for
@@ -122,10 +114,10 @@ public class DIISFockExtrapolator {
         try {
           val solVec = gele.findSolution(A, B).getVector();
 
-          for (i = 0; i < noOfIterations; i++) {
+          for (var i:Int=0; i < noOfIterations; i++) {
               val prevFockMat = fockMatrixList.get(i).getMatrix();
-              for (j = 0; j < N; j++) {
-                 for (k = 0; k < N; k++) {
+              for (var j:Int=0; j < N; j++) {
+                 for (var k:Int=0; k < N; k++) {
                      newFockMat(j,k) += solVec(i) * prevFockMat(j,k);
                  } // end for
               } // end for
