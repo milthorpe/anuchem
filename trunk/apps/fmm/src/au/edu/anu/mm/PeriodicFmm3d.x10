@@ -52,12 +52,12 @@ public class PeriodicFmm3d extends Fmm3d {
      */
     protected val locallyEssentialTrees : DistArray[LocallyEssentialTree](1);
 
-    public static val TIMER_INDEX_MACROSCOPIC : Int = 7;
+    public static val TIMER_INDEX_MACROSCOPIC : Int = 9;
     /** 
      * A multi-timer for the several segments of a single getEnergy 
      * invocation, indexed by the constants above and in the superclass. 
      */
-    public val timer = new Timer(8);
+    public val timer = new Timer(10);
 
     /** A region representing a cube of 3x3x3 boxes, used for constructing macroscopic multipoles. */
     static val threeCube : Region(3) = [-1..1,-1..1,-1..1] as Region(3);
