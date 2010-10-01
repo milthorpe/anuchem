@@ -313,22 +313,13 @@ public class PeriodicFmm3d extends Fmm3d {
                 val thisLevelMultipoleCopies = myLET.multipoleCopies(thisLevel);
                 if (thisLevel == topLevel) {
                     // must fetch top level multipoles synchronously before starting
-                    val thisLevelBoxes = boxes(thisLevel);
-                    finish for ([x,y,z] in combinedVList(thisLevel)) async {
-                        thisLevelMultipoleCopies(x,y,z) = getMultipoleExpansionLocalCopy(thisLevelBoxes,x,y,z);
-                    }
+                    prefetchMultipoles(thisLevel);
                 }
 
                 // can fetch next level multipoles asynchronously while computing this level
-                async {
-                    val lowerLevel = thisLevel+1;
-                    if (lowerLevel <= numLevels) {
-                        val lowerLevelCopies = myLET.multipoleCopies(lowerLevel);
-                        val lowerLevelBoxes = boxes(lowerLevel);
-                        for ([x,y,z] in combinedVList(lowerLevel)) {
-                            lowerLevelCopies(x,y,z) = getMultipoleExpansionLocalCopy(lowerLevelBoxes,x,y,z);
-                        }
-                    }
+                val lowerLevel = thisLevel+1;
+                if (lowerLevel <= numLevels) {
+                    async prefetchMultipoles(lowerLevel);
                 }
 
                 for ([x1,y1,z1] in thisLevelBoxes | here) async {
@@ -354,6 +345,57 @@ public class PeriodicFmm3d extends Fmm3d {
             }
         }
         timer.stop(TIMER_INDEX_TRANSFORM);
+    }
+
+    /**
+     * Fetch all multipole expansions required for transform to local at this place.
+     * This is communication-intensive, so can be overlapped with computation.
+     */
+    def prefetchMultipoles(level : Int) : void {
+        val myLET = locallyEssentialTrees(here.id);
+        val combinedVList = myLET.combinedVList(level);
+        val thisLevelCopies = myLET.multipoleCopies(level);
+        val thisLevelBoxes = boxes(level);
+
+        val vListPlaces = new HashMap[Int,GrowableRail[Point(3)]](26); // a place may have up to 26 immediate neighbours
+        
+        // separate the vList into partial lists stored at each nearby place
+        for (boxIndex in combinedVList) {
+            val placeId = thisLevelBoxes.periodicDist(boxIndex).id;
+            var vListForPlace : GrowableRail[Point(3)] = vListPlaces.getOrElse(placeId, null);
+            if (vListForPlace == null) {
+                vListForPlace = new GrowableRail[Point(3)]();
+                vListPlaces.put(placeId, vListForPlace);
+            }
+            vListForPlace.add(boxIndex);
+        }
+
+        // retrieve the partial list for each place and store into my LET
+        finish for(placeEntry in vListPlaces.entries()) async {
+            val placeId = placeEntry.getKey();
+            val vListForPlace = placeEntry.getValue();
+            val vListValRail = vListForPlace.toValRail();
+            val multipolesForPlace = at (Place.place(placeId)) { getMultipolesForBoxList(thisLevelBoxes, vListValRail)};
+            for ([i] in 0..vListValRail.length()-1) {
+                thisLevelCopies(vListValRail(i)) = multipolesForPlace(i);
+            }
+        }
+    }
+
+    /**
+     * Given a level and a list of box indexes (as Point(3)) stored
+     * at a single place, returns a ValRail, each element of which 
+     * is in turn a MultipoleExpansion for the box.
+     */
+    private def getMultipolesForBoxList(thisLevelBoxes : PeriodicDistArray[FmmBox](3), boxList : ValRail[Point(3)]) {
+        val multipoleList = ValRail.make[MultipoleExpansion](boxList.length(), 
+                                                            (i : Int) => 
+                                                                getMultipoleExpansionLocalCopy(thisLevelBoxes,
+                                                                                     boxList(i)(0), 
+                                                                                     boxList(i)(1),
+                                                                                     boxList(i)(2))
+                                                            );
+        return multipoleList;
     }
 
     /**
