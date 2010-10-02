@@ -122,7 +122,7 @@ public class Distributed3dFft {
                                      forward : Boolean) {
         val plan : FFTW.FFTWPlan = FFTW.fftwPlan1d(dataSize, oneDSource, oneDTarget, forward);
         val mySource = source.dist | here;
-        val gridRegionWithoutZ = (mySource.region().eliminate(2)) as Region(2);
+        val gridRegionWithoutZ = (mySource.region().eliminate(2)) as Region(2){rect};
         for ([i,j] in gridRegionWithoutZ) {
             // TODO need to copy into ValRail - can use raw()?
             for ([k] in 0..dataSize-1) {
