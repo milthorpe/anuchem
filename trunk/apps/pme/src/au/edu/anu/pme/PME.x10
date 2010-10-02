@@ -219,9 +219,10 @@ public class PME {
 
             timer.start(TIMER_INDEX_THETARECCONVQ);
             // create F^-1(thetaRecConvQ)
-            finish for (place in thetaRecConvQ.dist.places()) async at (place) {
-                for (p in thetaRecConvQ | here) {
-                    thetaRecConvQ(p) = BdotC(p) * Qinv(p);
+            finish ateach (place in Dist.makeUnique()) {
+                val myGridRegion = gridDist.get(here) as Region(3){rect};
+                for ([i,j,k] in myGridRegion) {
+                    thetaRecConvQ(i,j,k) = BdotC(i,j,k) * Qinv(i,j,k);
                 }
             }
             // and do inverse FFT
@@ -453,58 +454,58 @@ public class PME {
      */
     public def gridCharges() {
         timer.start(TIMER_INDEX_GRIDCHARGES);
-        finish for (place1 in gridDist.places()) async at(place1) async {
+        finish ateach (place1 in Dist.makeUnique()) {
             val place1Region = subCells.dist.get(here);
+            if (!place1Region.isEmpty()) {
+                val place1HaloRegion = getGridRegionForSubcellAtoms(place1Region);
+                val myQ = new Array[Double](place1HaloRegion, (Point) => 0.0);
 
-            val place1HaloRegion = getGridRegionForSubcellAtoms(place1Region);
-            val myQ = new Array[Double](place1HaloRegion, (Point) => 0.0);
-
-            for (p in subCells | place1Region) {
-                val thisCell = subCells(p);
-                for (atom in thisCell) {
-                    val q = atom.charge;
-                    val u = getScaledFractionalCoordinates(atom.centre); // TODO general non-cubic
-                    val u1c = Math.ceil(u.i) as Int;
-                    val u2c = Math.ceil(u.j) as Int;
-                    val u3c = Math.ceil(u.k) as Int;
-                    for ([i] in 1..splineOrder) {
-                        val k1 = (u1c - i);
-                        for ([j] in 1..splineOrder) {
-                            val k2 = (u2c - j);
-                            for ([k] in 1..splineOrder) {
-                                val k3 = (u3c - k);
-                                val gridPointContribution = q
-                                             * bSpline(splineOrder, u.i - k1)
-                                             * bSpline(splineOrder, u.j - k2)
-                                             * bSpline(splineOrder, u.k - k3);
-                                // because array is not divided in the z (k3) dimension, we can apply periodicity in that dimension 
-                                val wrapk3 = k3 < 0 ? (k3 + gridSize(2)) : (k3 >= gridSize(2) ? (k3 - gridSize(2)) : k3);
-                                myQ(k1,k2,wrapk3) = myQ(k1,k2,wrapk3) + gridPointContribution;
+                for (p in subCells | place1Region) {
+                    val thisCell = subCells(p);
+                    for (atom in thisCell) {
+                        val q = atom.charge;
+                        val u = getScaledFractionalCoordinates(atom.centre); // TODO general non-cubic
+                        val u1c = Math.ceil(u.i) as Int;
+                        val u2c = Math.ceil(u.j) as Int;
+                        val u3c = Math.ceil(u.k) as Int;
+                        for ([i] in 1..splineOrder) {
+                            val k1 = (u1c - i);
+                            for ([j] in 1..splineOrder) {
+                                val k2 = (u2c - j);
+                                for ([k] in 1..splineOrder) {
+                                    val k3 = (u3c - k);
+                                    val gridPointContribution = q
+                                                 * bSpline(splineOrder, u.i - k1)
+                                                 * bSpline(splineOrder, u.j - k2)
+                                                 * bSpline(splineOrder, u.k - k3);
+                                    // because array is not divided in the z (k3) dimension, we can apply periodicity in that dimension 
+                                    val wrapk3 = k3 < 0 ? (k3 + gridSize(2)) : (k3 >= gridSize(2) ? (k3 - gridSize(2)) : k3);
+                                    myQ(k1,k2,wrapk3) = myQ(k1,k2,wrapk3) + gridPointContribution;
+                                }
                             }
                         }
                     }
                 }
-            }
 
-            // scatter myQ and accumulate to distributed Q
-            finish for (place2 in gridDist.places()) {
-                val place2Dist = gridDist | place2;
-                val place2Region = place2Dist.region;
-                // each halo region could be scattered to other regions in up to four chunks,
-                // as the region is periodic and divided along two dimensions.
-                val shiftX = (place1HaloRegion.max(0) < place2Region.min(0) || place1HaloRegion.min(0) < gridRegion.min(0)) ? gridSize(0) : ((place1HaloRegion.min(0) > place2Region.max(0) || place1HaloRegion.max(0) > gridRegion.max(0)) ? -gridSize(0) : 0);
-                val shiftY = (place1HaloRegion.max(1) < place2Region.min(1) || place1HaloRegion.min(1) < gridRegion.min(1)) ? gridSize(0) : ((place1HaloRegion.min(1) > place2Region.max(1) || place1HaloRegion.max(1) > gridRegion.max(1)) ? -gridSize(0) : 0);
-                scatterAndReduceShiftedGridContribution(myQ, Point.make(0,0,0), place2);
-                if (shiftX != 0) {
-                    scatterAndReduceShiftedGridContribution(myQ, Point.make(shiftX,0,0), place2);
-                }
-                if (shiftY != 0) {
-                    scatterAndReduceShiftedGridContribution(myQ, Point.make(0,shiftY,0), place2);
+                // scatter myQ and accumulate to distributed Q
+                finish for (place2 in gridDist.places()) {
+                    val place2Region = gridDist.get(place2);
+                    // each halo region could be scattered to other regions in up to four chunks,
+                    // as the region is periodic and divided along two dimensions.
+                    val shiftX = (place1HaloRegion.max(0) < place2Region.min(0) || place1HaloRegion.min(0) < gridRegion.min(0)) ? gridSize(0) : ((place1HaloRegion.min(0) > place2Region.max(0) || place1HaloRegion.max(0) > gridRegion.max(0)) ? -gridSize(0) : 0);
+                    val shiftY = (place1HaloRegion.max(1) < place2Region.min(1) || place1HaloRegion.min(1) < gridRegion.min(1)) ? gridSize(0) : ((place1HaloRegion.min(1) > place2Region.max(1) || place1HaloRegion.max(1) > gridRegion.max(1)) ? -gridSize(0) : 0);
+                    scatterAndReduceShiftedGridContribution(myQ, Point.make(0,0,0), place2);
                     if (shiftX != 0) {
-                       scatterAndReduceShiftedGridContribution(myQ, Point.make(shiftX,shiftY,0), place2);  
+                        scatterAndReduceShiftedGridContribution(myQ, Point.make(shiftX,0,0), place2);
                     }
+                    if (shiftY != 0) {
+                        scatterAndReduceShiftedGridContribution(myQ, Point.make(0,shiftY,0), place2);
+                        if (shiftX != 0) {
+                           scatterAndReduceShiftedGridContribution(myQ, Point.make(shiftX,shiftY,0), place2);  
+                        }
+                    }
+                  
                 }
-              
             }
         }
 
@@ -530,8 +531,8 @@ public class PME {
                                              shift : Point(3),
                                              targetPlace : Place) {
         val targetRegion = (gridDist | targetPlace).region;
-        val overlapRegion = sourceGrid.region + shift && targetRegion;
-        val sourceRegion = overlapRegion - shift;
+        val overlapRegion = (sourceGrid.region + shift && targetRegion) as Region(3){rect};
+        val sourceRegion = (overlapRegion - shift) as Region(3){rect};
         if (! overlapRegion.isEmpty()) {
             val overlap = Rail.make[Double](overlapRegion.size());
 
