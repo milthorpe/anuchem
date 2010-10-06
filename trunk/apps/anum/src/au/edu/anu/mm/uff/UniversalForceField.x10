@@ -43,29 +43,29 @@ public class UniversalForceField implements ForceField {
     }
     
     public def getPotentialAndForces(atoms: DistArray[ValRail[MMAtom]](1)) : Double {
-        energy = 0.0;
-        finish ateach(p in atoms) { 
-            var myEnergy : Double = 0.0;
-            val myAtoms = atoms(p);
-            for([i] in 0..myAtoms.length()-1) {
-                val atomI = myAtoms(i);
-                atomI.force = Vector3d.NULL;
-                // bond stretching
-                //Console.OUT.println("atom " + atomI);
-                for (bond in atomI.getBonds()) {
-                    if (bond.first.isStrongBond()) {
-                        //Console.OUT.println("found bond: " + bond);
-                        val atomJ = bond.second as MMAtom;
-                        val paramsI = atomParameters.getOrElse(atomI.symbol, defaultParams);
-                        val paramsJ = atomParameters.getOrElse(atomJ.symbol, defaultParams);
-                        val bondStretch = getBondStretchTerm(bond.first, atomI, paramsI, atomJ, paramsJ);
-                        myEnergy += bondStretch;
+        val energy = finish(SumReducer()) {
+            ateach(p in atoms) { 
+                var myEnergy : Double = 0.0;
+                val myAtoms = atoms(p);
+                for([i] in 0..myAtoms.length()-1) {
+                    val atomI = myAtoms(i);
+                    atomI.force = Vector3d.NULL;
+                    // bond stretching
+                    //Console.OUT.println("atom " + atomI);
+                    for (bond in atomI.getBonds()) {
+                        if (bond.first.isStrongBond()) {
+                            //Console.OUT.println("found bond: " + bond);
+                            val atomJ = bond.second as MMAtom;
+                            val paramsI = atomParameters.getOrElse(atomI.symbol, defaultParams);
+                            val paramsJ = atomParameters.getOrElse(atomJ.symbol, defaultParams);
+                            val bondStretch = getBondStretchTerm(bond.first, atomI, paramsI, atomJ, paramsJ);
+                            myEnergy += bondStretch;
+                        }
                     }
                 }
+                offer myEnergy;
             }
-            val myEnergyFinal = myEnergy;
-            at (this) { atomic { energy += myEnergyFinal; } };
-        }
+        };
         return energy;
     }
 
@@ -131,5 +131,10 @@ public class UniversalForceField implements ForceField {
         val electronegativityCorrection = radiusI * radiusJ * (dSqrtChi * dSqrtChi) / (chiI * radiusI + chiJ * radiusJ);
 
         return (naturalRadius + bondOrderCorrection - electronegativityCorrection);
+    }
+
+    static struct SumReducer implements Reducible[Double] {
+        public def zero() = 0.0;
+        public def apply(a:Double, b:Double) = (a + b);
     }
 }

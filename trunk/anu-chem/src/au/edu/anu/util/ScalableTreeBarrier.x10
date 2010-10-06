@@ -10,7 +10,7 @@
  */
 package au.edu.anu.util;
 
-import x10.compiler.Native;
+import x10.util.Box;
 
 /**
  * This class implements a scalable tree barrier across all X10 places.
@@ -26,8 +26,8 @@ final public class ScalableTreeBarrier {
     final static class TreeNode {
         var sense : Boolean = true;
         var parentSense : Boolean = false;
-        var parent : TreeNode;
-        val children = new Array[TreeNode](0..1);
+        var parent : Box[GlobalRef[TreeNode]];
+        val children = new Array[Box[GlobalRef[TreeNode]]](0..1);
         val haveChild = new Array[Boolean](0..3);
         val childNotReady = new Array[Boolean](0..3);
 
@@ -48,16 +48,16 @@ final public class ScalableTreeBarrier {
     }
 
     public def this(places : ValRail[Place]) {
-        nodes = DistArray.make[TreeNode](Dist.makeUnique(places), ((i) : Point) => new TreeNode(places.length()));
+        nodes = DistArray.make[TreeNode](Dist.makeUnique(places), ([i] : Point) => new TreeNode(places.length()));
         val P = nodes.region.size();
         finish ateach ([i] in nodes) {
             val thisNode = nodes(i);
             val parentId = Math.floor((i-1)/4) as Int;
-            thisNode.parent = (i == 0) ? null : at (nodes.dist(parentId)) {nodes(parentId)};
+            thisNode.parent = (i == 0) ? null : at (nodes.dist(parentId)) {new Box[GlobalRef[TreeNode]](GlobalRef[TreeNode](nodes(parentId)))};
             val childId0 = 2*i+1;
-            thisNode.children(0) = (childId0 >= P) ? null : at (nodes.dist(childId0)) {nodes(childId0)};
+            thisNode.children(0) = (childId0 >= P) ? null : at (nodes.dist(childId0)) {new Box[GlobalRef[TreeNode]](GlobalRef[TreeNode](nodes(childId0)))};
             val childId1 = 2*i+2;
-            thisNode.children(1) = (childId1 >= P) ? null : at (nodes.dist(childId1)) {nodes(childId1)};
+            thisNode.children(1) = (childId1 >= P) ? null : at (nodes.dist(childId1)) {new Box[GlobalRef[TreeNode]](GlobalRef[TreeNode](nodes(childId1)))};
         }
     }
 
@@ -68,37 +68,38 @@ final public class ScalableTreeBarrier {
         //Console.OUT.println("waiting for children at " + here.id);
 
         val booleanOr = (a:Boolean,b:Boolean) => a || b;
-        await (thisNode.childNotReady.reduce(booleanOr, true));
+        when (thisNode.childNotReady.reduce(booleanOr, true));
 
         //Console.OUT.println("children ready at " + here.id);
         // prepare for next barrier
-        thisNode.childNotReady.copyFrom(thisNode.haveChild);
+        Array.copy(thisNode.haveChild, thisNode.childNotReady);
 
         val i = here.id;
         if (i != 0) {
             // let parent know I'm ready
             Console.OUT.println("I am ready : " + i);
-            val parent = thisNode.parent;
+            val parent = thisNode.parent();
             at (parent) {
                 Console.OUT.println("At : " + here.id + " setting " + ((i-1)%4));
-                parent.childNotReady((i-1)%4) = false;
+                parent().childNotReady((i-1)%4) = false;
                 Console.OUT.println("At : " + here.id + " have set " + ((i-1)%4));
             }
             Console.OUT.println("Now sleep : " + i);
 
             // wait until my parent signals wakeup
-            await (thisNode.parentSense == thisNode.sense);
+            when (thisNode.parentSense == thisNode.sense);
 
             Console.OUT.println("Woke up : " + i);
         }
         // signal children in wakeup tree
         val thisNodeSense = thisNode.sense;
         for (p in thisNode.children) {
-            val child = thisNode.children(p);
-            if (child != null) {
+            val childBox = thisNode.children(p);
+            if (childBox != null) {
+                val child = childBox();
                 Console.OUT.println("About to signal : " + child.home);
                 at (child) { 
-                    child.parentSense = thisNodeSense;
+                    child().parentSense = thisNodeSense;
                     Console.OUT.println("Signalled : " + here.id);
                 }
             }

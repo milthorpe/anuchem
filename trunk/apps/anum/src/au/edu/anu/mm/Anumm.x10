@@ -89,11 +89,11 @@ public class Anumm {
         var structureFileName : String = null;
         var timestep : Double = 0.2;
         var numSteps : Int = 200;
-        if (args.length > 0) {
+        if (args.size > 0) {
             structureFileName = args(0);
-            if (args.length > 1) {
+            if (args.size > 1) {
                 timestep = Double.parseDouble(args(1));
-                if (args.length > 2) {
+                if (args.size > 2) {
                     numSteps = Int.parseInt(args(2));
                 }
             }
@@ -143,12 +143,12 @@ public class Anumm {
             val atom = atomList(i);
             val p = getPlaceId(atom.centre.i, atom.centre.j, atom.centre.k, maxExtent);
             Console.OUT.println(atom + " to " + p);
-            async (Place.places(p)) {
+            async at (Place.places(p)) {
                 val remoteAtom = new MMAtom(atom);
-                atomic { (tempAtoms(p) as GrowableRail[MMAtom]!).add(remoteAtom); }
+                atomic { (tempAtoms(p) as GrowableRail[MMAtom]).add(remoteAtom); }
             }
         }
-        val atoms = DistArray.make[ValRail[MMAtom]](Dist.makeUnique(), ((p) : Point) => (tempAtoms(p) as GrowableRail[MMAtom]!).toValRail());
+        val atoms = DistArray.make[ValRail[MMAtom]](Dist.makeUnique(), ([p] : Point) => (tempAtoms(p) as GrowableRail[MMAtom]).toValRail());
         return atoms;
     }
 
