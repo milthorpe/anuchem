@@ -160,7 +160,7 @@ public class Vector {
          val N = getSize();
 
          for(var i:Int=0; i<N; i++) {
-            str += vec(i) + " ";
+            str += "" + vec(i) + " ";
          } // end for
 
          return str;

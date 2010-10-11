@@ -285,7 +285,7 @@ public class Matrix {
          // TODO: 
          for(var i:Int=0; i<N; i++) {
             for(var j:Int=0; j<M; j++)  
-               str += mat(i, j) + " ";
+               str += "" + mat(i, j) + " ";
             str += "\n";
          } // end for
 
