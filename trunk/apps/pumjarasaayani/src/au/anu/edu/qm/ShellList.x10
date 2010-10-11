@@ -21,9 +21,9 @@ import x10.util.*;
  */
 public class ShellList { 
     val shellList:HashMap[Int, Shell];
-    val shellPairs = new GrowableRail[Pair[Int,Int]]();
+    val shellPairs = new ArrayList[Pair[Int,Int]]();
     
-    var powerList:Rail[ValRail[Power]];
+    var powerList:Array[Array[Power]{rail}]{rail};
 
     var maxam:Int;
 
@@ -35,12 +35,11 @@ public class ShellList {
     public def initPowerList() : void {
         val maxam4 = (maxam*4)+2;
  
-        val pl = new GrowableRail[ValRail[Power]](); 
+        powerList = new Array[Array[Power]{rail}](maxam4); 
         val pList = PowerList.getInstance();
         for(var i:Int=0; i<=maxam4; i++)
-           pl.add(pList.generatePowerList(i)); 
+           powerList(i) = pList.generatePowerList(i); 
 
-        powerList = pl.toRail();
     }
 
     public def addShellPrimitive(cg:ContractedGaussian) : void {
@@ -65,13 +64,13 @@ public class ShellList {
          return n;
     }
 
-    public def getShellPrimitives() : GrowableRail[ContractedGaussian] {
-         val shellPrimitives = new GrowableRail[ContractedGaussian]();
+    public def getShellPrimitives() : ArrayList[ContractedGaussian] {
+         val shellPrimitives = new ArrayList[ContractedGaussian]();
 
          for(shell in shellList.keySet()) { 
             val sp = shellList.getOrElse(shell, null).getShellPrimitives();
             
-            for(var i:Int=0; i<sp.length(); i++) shellPrimitives.add(sp(i));
+            for(var i:Int=0; i<sp.size(); i++) shellPrimitives.add(sp(i));
          } // end for
 
          return shellPrimitives;
@@ -79,7 +78,7 @@ public class ShellList {
 
     var shellPairsGenerated:Boolean = false;
 
-    public def getShellPairs() : GrowableRail[Pair[Int, Int]] {
+    public def getShellPairs() : ArrayList[Pair[Int, Int]] {
          if (!shellPairsGenerated) {
            val noOfShells = getNumberOfShellPrimitives();
            // Console.OUT.println("No of shells : " + noOfShells);

@@ -67,7 +67,7 @@ public abstract class SCFMethod {
         var atomI:QMAtom, atomJ:QMAtom;
         
         // read in the atomic numbers
-        val atomicNumbers = new Array[Int]([0..noOfAtoms]);
+        val atomicNumbers = new Array[Int](noOfAtoms);
         val ai = AtomInfo.getInstance();
         
         for(i=0; i<noOfAtoms; i++) {

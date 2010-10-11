@@ -33,7 +33,7 @@ import au.edu.anu.chem.Molecule;
 public class TwoElectronIntegrals {
     private static val SQ2PI = Math.pow((2.0/Math.PI), 0.5); 
 
-    private val fmt:Rail[Double], zeroM:Rail[Double];
+    private val fmt:Array[Double]{rail}, zeroM:Array[Double]{rail};
 
     private val rM:Array[Double](2){rect};
     private val pqInts:Array[Double](2){rect};
@@ -42,11 +42,11 @@ public class TwoElectronIntegrals {
 
     private val maxam:Int, maxam2:Int, maxam4:Int, maxamN:Int, maxam2M:Int, maxam2N:Int, pqdim:Int;
 
-    private val iidx  = Rail.make[Int](8);
-    private val jjdx  = Rail.make[Int](8);
-    private val kkdx  = Rail.make[Int](8);
-    private val lldx  = Rail.make[Int](8);
-    private val validIdx = Rail.make[Boolean](8);
+    private val iidx  = new Array[Int](8);
+    private val jjdx  = new Array[Int](8);
+    private val kkdx  = new Array[Int](8);
+    private val lldx  = new Array[Int](8);
+    private val validIdx = new Array[Boolean](8);
 
     /**
      * @param maxam maximum angular momentum (determines total number of integrals)
@@ -63,13 +63,13 @@ public class TwoElectronIntegrals {
 
         // Console.OUT.println("alloc: " + maxam + " " + maxam2N);
 
-        fmt    = Rail.make[Double](maxam4+1);
-        zeroM  = Rail.make[Double](maxam4+1);
+        fmt    = new Array[Double](maxam4+1);
+        zeroM  = new Array[Double](maxam4+1);
 
-        rM     = new Array[Double]([0..maxam4+1, 0..((maxam4+1)*(maxam4+2)/2)]);
-        pqInts = new Array[Double]([0..maxam2N, 0..maxam2N]);
-        npint  = new Array[Double]([0..maxam2+1, 0..maxam2M+1]);
-        pcdint = new Array[Double]([0..maxamN+1, 0..maxamN+1, 0..maxam2N]);
+        rM     = new Array[Double]((0..maxam4+1) * (0..((maxam4+1) * (maxam4+2)/2)));
+        pqInts = new Array[Double]((0..maxam2N) * (0..maxam2N));
+        npint  = new Array[Double]((0..maxam2+1) * (0..maxam2M+1));
+        pcdint = new Array[Double]((0..maxamN+1) * (0..maxamN+1) * (0..maxam2N));
 
         // Console.OUT.println("alloc2: " + pcdint.region.size());
     }
@@ -388,10 +388,10 @@ public class TwoElectronIntegrals {
     /** find unique elements and mark the ones that are not */
     /** 8 => is the level of integral symmetry, given (i,j|k.l)
         there are 8 combinations that are unique */
-    private def filterUniqueElements(idx:Rail[Int], jdx:Rail[Int],
-                                     kdx:Rail[Int], ldx:Rail[Int],
-                                     validIdx:Rail[Boolean]) : void {
-        validIdx.reset(true);
+    private def filterUniqueElements(idx:Array[Int]{rail}, jdx:Array[Int]{rail},
+                                     kdx:Array[Int]{rail}, ldx:Array[Int]{rail},
+                                     validIdx:Array[Boolean]{rail}) : void {
+        validIdx.fill(true);
         for(var m:Int=0; m<8; m++) {
             val i = idx(m); val j = jdx(m); val k = kdx(m); val l = ldx(m);
             for(var n:Int=m+1; n<8; n++) {
@@ -763,14 +763,14 @@ public class TwoElectronIntegrals {
     }
 
     /** Compute the base FmT() - for evaluating integrals */
-    protected def computeFmtFGamma(maxam:Int, T:Double, fmt:Rail[Double]) {
+    protected def computeFmtFGamma(maxam:Int, T:Double, fmt:Array[Double]{rail}) {
         for(var m:Int=0; m<maxam; m++) { 
             fmt(m) = IntegralsUtils.computeFGamma(m, T);
         } // end for
     }
 
     /** Compute the base FmT() - for evaluating integrals */
-    protected def computeFmt(maxam:Int, T:Double, fmt:Rail[Double]) {
+    protected def computeFmt(maxam:Int, T:Double, fmt:Array[Double]{rail}) {
         if (T > 30.0){
             fmt(0) = Math.sqrt(Math.PI/T)*0.5;
            

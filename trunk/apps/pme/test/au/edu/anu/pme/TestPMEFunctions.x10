@@ -34,7 +34,7 @@ public class TestPMEFunctions extends TestElectrostatic {
     public def test() {
         val atoms = generateAtoms();
         val edges = [Vector3d(SIZE, 0.0, 0.0), Vector3d(0.0, SIZE, 0.0), Vector3d(0.0, 0.0, SIZE)];
-        val gridSize = ValRail.make[Int](3, (Int) => 4);
+        val gridSize = new Array[Int](3, (Int) => 4);
         val pme = new PME(edges, gridSize, atoms, 4, 0.35, 9.0);
         val v = Vector3d(0.6, -0.4, 0.33);
         val r = pme.getScaledFractionalCoordinates(v);

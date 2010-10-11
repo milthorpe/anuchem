@@ -25,13 +25,13 @@ import au.edu.anu.mm.uff.UniversalForceField;
  * Performs molecular mechanics using the velocity-Verlet algorithm.
  */
 public class Anumm {
-    /** The atoms in the simulation, divided up into an array of ValRails, one for each place. */
-    private val atoms : DistArray[ValRail[MMAtom]](1);
+    /** The atoms in the simulation, divided up into a distributed array of Arrays, one for each place. */
+    private val atoms : DistArray[Array[MMAtom]{rail}](1);
 
     /** The force field applied to the atoms in this simulation. */
     private val forceField : ForceField;
 
-    public def this(atoms: DistArray[ValRail[MMAtom]](1),
+    public def this(atoms: DistArray[Array[MMAtom]{rail}](1),
                     forceField: ForceField) {
         this.atoms = atoms;
         this.forceField = forceField;
@@ -132,11 +132,11 @@ public class Anumm {
 
     /**
      * Partitions the molecule amongst all places, returning a distributed
-     * array of ValRail[MMAtom], one ValRail for each place.  
+     * array of Array[MMAtom], one Array for each place.  
      * MD requires that the atoms have already been distributed. 
      */
-    public static def assignAtoms(molecule : Molecule[MMAtom]) : DistArray[ValRail[MMAtom]](1) {
-        val tempAtoms = DistArray.make[GrowableRail[MMAtom]](Dist.makeUnique(), (Point) => new GrowableRail[MMAtom]());
+    public static def assignAtoms(molecule : Molecule[MMAtom]) : DistArray[Array[MMAtom]{rail}](1) {
+        val tempAtoms = DistArray.make[ArraList[MMAtom]](Dist.makeUnique(), (Point) => new ArrayList[MMAtom]());
         val atomList = molecule.getAtoms();
         val maxExtent = molecule.getMaxExtent();
         finish for (var i : Int = 0; i < atomList.size(); i++) {
@@ -145,10 +145,10 @@ public class Anumm {
             Console.OUT.println(atom + " to " + p);
             async at (Place.places(p)) {
                 val remoteAtom = new MMAtom(atom);
-                atomic { (tempAtoms(p) as GrowableRail[MMAtom]).add(remoteAtom); }
+                atomic { tempAtoms(p).add(remoteAtom); }
             }
         }
-        val atoms = DistArray.make[ValRail[MMAtom]](Dist.makeUnique(), ([p] : Point) => (tempAtoms(p) as GrowableRail[MMAtom]).toValRail());
+        val atoms = DistArray.make[Array[MMAtom]{rail}](Dist.makeUnique(), ([p] : Point) => tempAtoms(p).toArray());
         return atoms;
     }
 

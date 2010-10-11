@@ -12,7 +12,6 @@
 package au.anu.edu.qm.mta;
 
 import x10.util.ArrayList;
-import x10.util.ValRailBuilder;
 
 /**
  * CardinalityExpression.x10
@@ -36,7 +35,7 @@ public class CardinalityExpression {
    /** add cardinality fragments */
    public def addCardinalityFragments(fragList:ArrayList[Fragment]) {
        val noOfFragments = fragList.size();
-       val combs = Rail.make[Int](noOfFragments, (Int)=>-1);
+       val combs = new Array[Int](noOfFragments, (Int)=>-1);
        val cfList = new ArrayList[Fragment]();
        var l:Int, pos:Int, m:Int;
 
@@ -90,7 +89,7 @@ public class CardinalityExpression {
        else           return 1;
    }
 
-   private def computeIntersections(fragList:ArrayList[Fragment], cfList:ArrayList[Fragment], combs:Rail[Int], nTerms:Int, sign:Int) : Boolean {
+   private def computeIntersections(fragList:ArrayList[Fragment], cfList:ArrayList[Fragment], combs:Array[Int]{rail}, nTerms:Int, sign:Int) : Boolean {
        var fInter:Fragment = fragList.get(combs(0));       
 
        for(var i:Int=1; i<=nTerms; i++) {

@@ -10,6 +10,7 @@
  */
 package au.anu.edu.qm;
 
+import x10.compiler.NonEscaping;
 import x10.util.*;
 
 /**
@@ -21,7 +22,7 @@ import x10.util.*;
  */
 public class PowerList { 
 
-    val powerList = new HashMap[String,ValRail[Power]](); 
+    val powerList = new HashMap[String,Array[Power]{rail}](); 
 
     private def this() {
        powerList.put("S", generatePowerList(0));
@@ -30,10 +31,11 @@ public class PowerList {
        powerList.put("F", generatePowerList(3)); 
     }
 
-    public final def generatePowerList(maxAngularMomentum:Int) : ValRail[Power] {
+    @NonEscaping 
+    public final def generatePowerList(maxAngularMomentum:Int) : Array[Power]{rail} {
         var n:Int = ((maxAngularMomentum+1)*(maxAngularMomentum+2)/2);
 
-        val pList = Rail.make[Power](n);
+        val pList = new Array[Power](n);
 
         var idx:Int = 0;
         // for(var i:Int=maxAngularMomentum; i>=0; i--) {
@@ -44,7 +46,7 @@ public class PowerList {
             }
         }
 
-        return ValRail.make(pList);
+        return pList;
     }
 
     private static val _theInstance = new PowerList();

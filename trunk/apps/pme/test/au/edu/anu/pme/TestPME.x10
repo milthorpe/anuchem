@@ -64,10 +64,10 @@ public class TestPME extends TestElectrostatic {
 
         val edges = [Vector3d(SIZE, 0.0, 0.0), Vector3d(0.0, SIZE, 0.0), Vector3d(0.0, 0.0, SIZE)];
         val g = gridSize;
-        val gridSizes = ValRail.make[Int](3, (Int) => g);
+        val gridSizes = new Array[Int](3, (Int) => g);
 
         Console.OUT.println("Testing PME for " + numAtoms + " particles."
-            + "\nBox edges: " + edges
+            + "\nBox edges: " + edges(0) + "," + edges(1) + "," + edges(2)
             + "\nGrid size: " + gridSize
             + "\nspline order: " + splineOrder + " Beta: " + ewaldCoefficient + " Cutoff: " + cutoff);
 
@@ -86,13 +86,14 @@ public class TestPME extends TestElectrostatic {
         logTime("Total",             PME.TIMER_INDEX_TOTAL,         pme.timer);
         logTime("Setup",             PME.TIMER_INDEX_SETUP,         pme.timer);
         logTime("Prefetch",          PME.TIMER_INDEX_PREFETCH,      pme.timer);
- 
+ /*
         val direct = new ElectrostaticDirectMethod(atoms);
         val directEnergy = direct.getEnergy();
         logTime("cf. Direct calculation", ElectrostaticDirectMethod.TIMER_INDEX_TOTAL, direct.timer);
         // direct error comparison is only useful if there is a huge empty border around the particles
         val error = directEnergy - energy;
         Console.OUT.println("direct = " + directEnergy + " error = " + error + " relative error = " + Math.abs(error) / Math.abs(energy));
+*/
     }
 }
 

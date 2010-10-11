@@ -11,7 +11,6 @@
 package au.anu.edu.qm.mta;
 
 import x10.util.ArrayList;
-import x10.util.ValRailBuilder;
 
 import x10x.vector.Point3d;
 import x10x.vector.Vector3d;
@@ -61,7 +60,7 @@ public class Fragmentor {
        // TODO: reorder the atom indices, depending on nearness to the 
        // center of mass of the molecule so as to ensure a more 
        // consistant ordering that is indipendent of the input order
-       val sortedAtomIndices = Rail.make[Int](noOfAtoms);
+       val sortedAtomIndices = new Array[Int](noOfAtoms);
        for(var i:Int=0; i<noOfAtoms; i++) { 
           mol.getAtom(i).setIndex(i);
           sortedAtomIndices(i) = i;
@@ -148,9 +147,9 @@ public class Fragmentor {
    }
 
    /** merge fragments along the connectivity path */
-   def mergeAlongConnectivity(mol:Molecule[QMAtom], sortedAtomIndices:Rail[Int], fragList:ArrayList[Fragment]) {
+   def mergeAlongConnectivity(mol:Molecule[QMAtom], sortedAtomIndices:Array[Int]{rail}, fragList:ArrayList[Fragment]) {
        val noOfAtoms = mol.getNumberOfAtoms(); 
-       val visited = Rail.make[Boolean](noOfAtoms, (Int)=>false);        
+       val visited = new Array[Boolean](noOfAtoms, (Int)=>false);        
         
        for(var i:Int=0; i<noOfAtoms; i++) {
            val idx = sortedAtomIndices(i);
@@ -166,7 +165,7 @@ public class Fragmentor {
    }
 
    /** simple traversal and merge */
-   def traverseAndMergeFragments(v:Int, sortedAtomIndices:Rail[Int], mol:Molecule[QMAtom], visited:Rail[Boolean], fragList:ArrayList[Fragment]) {
+   def traverseAndMergeFragments(v:Int, sortedAtomIndices:Array[Int]{rail}, mol:Molecule[QMAtom], visited:Array[Boolean]{rail}, fragList:ArrayList[Fragment]) {
        val bonds = mol.getAtom(v).getBonds();
  
        Console.OUT.println("Number of bonds for atom " + v + " is " + bonds.size());
@@ -240,7 +239,7 @@ public class Fragmentor {
    /** include any missed atoms, that violate conditions like double bond breaking
        or breaking rings at inappropriate positions */
    def includeMissedAtoms(fragList:ArrayList[Fragment]) : Boolean {
-       val includedMissedAtoms = Rail.make[Boolean](1, (Int)=>false);
+       val includedMissedAtoms = new Array[Boolean](1, (Int)=>false);
 
        // TODO: 
 
@@ -298,7 +297,7 @@ public class Fragmentor {
 
    /** add dummy atoms to a fragment */
    def addDummyAtoms(fragment:Fragment) {
-       val boundaryAtoms = new ValRailBuilder[QMAtom]();
+       val boundaryAtoms = new ArrayList[QMAtom]();
  
        val ai = AtomInfo.getInstance(); 
        val hRadius = ai.getCovalentRadius(new QMAtom("H", Point3d(0,0,0), true));
@@ -312,7 +311,7 @@ public class Fragmentor {
        } // end for
         
        // then add dummy atoms at appropriate positions
-       for(atom in boundaryAtoms.result()) {
+       for(atom in boundaryAtoms) {
            val bonds = atom.getBonds();
            val bondDistance = hRadius + ai.getCovalentRadius(atom);
 

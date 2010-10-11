@@ -19,21 +19,21 @@ import au.edu.anu.chem.mm.MMAtom;
  * @author milthorpe
  */
 public class LocallyEssentialTree {
-    public val combinedUList : ValRail[Point(3)];
-    public val combinedVList : ValRail[ValRail[Point(3)]];
-    public val uListMin : ValRail[Int](3);
-    public val uListMax : ValRail[Int](3);
-    public val vListMin : ValRail[ValRail[Int](3)];
-    public val vListMax : ValRail[ValRail[Int](3)];
+    public val combinedUList : Array[Point(3)]{rail};
+    public val combinedVList : Array[Array[Point(3)]{rail}]{rail};
+    public val uListMin : Array[Int]{rail};
+    public val uListMax : Array[Int]{rail};
+    public val vListMin : Array[Array[Int]{rail}]{rail};
+    public val vListMax : Array[Array[Int]{rail}]{rail};
 
     /**
      * A cache of multipole copies for the combined V-list of all
      * boxes at this place.  Used to overlap fetching of the multipole
      * expansions with other computation.
-     * The ValRail has one element for each level; each element
+     * The Array has one element for each level; each element
      * holds the portion of the combined V-list for that level.
      */
-    public val multipoleCopies : ValRail[PeriodicArray[MultipoleExpansion](3)];
+    public val multipoleCopies : Array[PeriodicArray[MultipoleExpansion](3)]{rail};
 
     /**
      * A cache of packed for the combined U-list of all
@@ -42,30 +42,30 @@ public class LocallyEssentialTree {
      * with all atoms at a given place.
      * @see FmmLeafBox.getPackedAtoms()
      */
-    public val packedAtoms : PeriodicArray[ValRail[MMAtom.PackedRepresentation]](3);
+    public val packedAtoms : PeriodicArray[Array[MMAtom.PackedRepresentation]{rail}](3);
     
-    public def this(combinedUList : ValRail[Point(3)],
-                combinedVList : ValRail[ValRail[Point(3)]],
-                uListMin : ValRail[Int](3),
-                uListMax : ValRail[Int](3),
-                vListMin : ValRail[ValRail[Int](3)],
-                vListMax : ValRail[ValRail[Int](3)]) {
+    public def this(combinedUList : Array[Point(3)]{rail},
+                combinedVList : Array[Array[Point(3)]{rail}]{rail},
+                uListMin : Array[Int]{rail},
+                uListMax : Array[Int]{rail},
+                vListMin : Array[Array[Int]{rail}]{rail},
+                vListMax : Array[Array[Int]{rail}]{rail}) {
         this.combinedUList = combinedUList;
         this.combinedVList = combinedVList;
         this.uListMin = uListMin;
         this.uListMax = uListMax;
         this.vListMin = vListMin;
         this.vListMax = vListMax;
-        val multipoleCopies = Rail.make[PeriodicArray[MultipoleExpansion](3)](combinedVList.length());
-        for ([i] in 0..combinedVList.length()-1) {
+        val multipoleCopies = new Array[PeriodicArray[MultipoleExpansion](3)](combinedVList.size);
+        for ([i] in 0..combinedVList.size-1) {
             if (combinedVList(i) != null) {
-                val multipoleCopiesLevelRegion : Region(3) = [vListMin(i)(0)..vListMax(i)(0), vListMin(i)(1)..vListMax(i)(1), vListMin(i)(2)..vListMax(i)(2)];
+                val multipoleCopiesLevelRegion : Region(3) = (vListMin(i)(0)..vListMax(i)(0)) * (vListMin(i)(1)..vListMax(i)(1)) * (vListMin(i)(2)..vListMax(i)(2));
                 multipoleCopies(i) = new PeriodicArray[MultipoleExpansion](multipoleCopiesLevelRegion);
             }
         }
-        this.multipoleCopies = ValRail.make(multipoleCopies);
+        this.multipoleCopies = multipoleCopies;
 
-        val packedAtomsRegion : Region(3) = [uListMin(0)..uListMax(0), uListMin(1)..uListMax(1), uListMin(2)..uListMax(2)];
-        this.packedAtoms = new PeriodicArray[ValRail[MMAtom.PackedRepresentation]](packedAtomsRegion);
+        val packedAtomsRegion : Region(3) = (uListMin(0)..uListMax(0)) * (uListMin(1)..uListMax(1)) * (uListMin(2)..uListMax(2));
+        this.packedAtoms = new PeriodicArray[Array[MMAtom.PackedRepresentation]{rail}](packedAtomsRegion);
     }
 }

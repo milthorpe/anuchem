@@ -11,7 +11,7 @@
 package au.edu.anu.chem.mm;
 
 import x10.util.Random;
-import x10.util.GrowableRail;
+import x10.util.ArrayList;
 import x10x.vector.Point3d;
 import au.edu.anu.chem.mm.MMAtom;
 import au.edu.anu.util.Timer;
@@ -46,14 +46,14 @@ public class TestElectrostatic {
     }
 
     /**
-     * Generate an array of ValRails of MMAtoms, one ValRail for each
+     * Generate an array of local Arrays of MMAtoms, one Array for each
      * place.  FMM assumes that the atoms have already been distributed.
      * Locate all particles within a small displacement from points on 
      * a cbrt(N)-SIZE grid.
      */
-    public def generateAtoms() : DistArray[ValRail[MMAtom]](1) {
+    public def generateAtoms() : DistArray[Array[MMAtom]{rail}]{rail} {
         Console.OUT.println("size of cluster =  " + sizeOfCentralCluster());
-        val tempAtoms = DistArray.make[GrowableRail[MMAtom]](Dist.makeUnique(), (Point) => new GrowableRail[MMAtom]());
+        val tempAtoms = DistArray.make[ArrayList[MMAtom]](Dist.makeUnique(), (Point) => new ArrayList[MMAtom]());
         val gridSize = (Math.ceil(Math.cbrt(numAtoms)) as Int);
         // assign atoms to a central cluster of size "sizeOfCentralCluster()"
         val clusterStart = SIZE / 2.0 - sizeOfCentralCluster() / 2.0;
@@ -67,14 +67,14 @@ public class TestElectrostatic {
             val z = clusterStart + (gridZ + 0.5 + randomNoise()) * (sizeOfCentralCluster() / gridSize);
             val charge = i%2==0?1:-1;
             val p = getPlaceId(x, y, z);
-            async at (Place.places(p)) {
+            async at (Place.place(p)) {
                 val atom = new MMAtom(Point3d(x, y, z), charge);
                 //Console.OUT.println(atom);
-                atomic { (tempAtoms(p) as GrowableRail[MMAtom]).add(atom); }
+                atomic { tempAtoms(p).add(atom); }
             }
             gridPoint++;
         }
-        val atoms = DistArray.make[ValRail[MMAtom]](Dist.makeUnique(), ([p] : Point) => (tempAtoms(p) as GrowableRail[MMAtom]).toValRail());
+        val atoms = DistArray.make[Array[MMAtom]{rail}](Dist.makeUnique(), ([p] : Point) => (tempAtoms(p) as ArrayList[MMAtom]).toArray());
         return atoms;
     }
 

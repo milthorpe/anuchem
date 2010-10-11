@@ -10,14 +10,11 @@
  */
 package au.anu.edu.qm.mta;
 
-import x10.util.Pair;
 import x10.util.ArrayList;
-import x10.util.ValRailBuilder;
 
 import x10x.vector.Point3d;
 
 import au.anu.edu.qm.QMAtom;
-
 import au.edu.anu.chem.Molecule;
 
 /**

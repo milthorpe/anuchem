@@ -59,7 +59,7 @@ public class GlobalImmutableMatrix extends Matrix {
 
     val size:Int;
 
-    val muted:Rail[Boolean];
+    val muted:Array[Boolean]{rail};
 
     /** Create a new instance of matrix which is square */
     public def this(size:Int) {
@@ -68,7 +68,7 @@ public class GlobalImmutableMatrix extends Matrix {
         	
         replicatedArray = DistArray.make[Array[Double]{rect,rank==2}](Dist.makeUnique());        
 
-        muted = Rail.make[Boolean](1);
+        muted = new Array[Boolean](1);
     }
  
     public def this(row:Int, col:Int) {
@@ -78,7 +78,7 @@ public class GlobalImmutableMatrix extends Matrix {
         this.size = 0;
         replicatedArray = DistArray.make[Array[Double]{rect,rank==2}](Dist.makeUnique());
 
-        muted = Rail.make[Boolean](1);
+        muted = new Array[Boolean](1);
     }
 
     public def this(dist:Dist{rank==2}) {
@@ -88,7 +88,7 @@ public class GlobalImmutableMatrix extends Matrix {
         this.size = 0;
         replicatedArray = DistArray.make[Array[Double]{rect,rank==2}](Dist.makeUnique());
 
-        muted = Rail.make[Boolean](1);
+        muted = new Array[Boolean](1);
     }
 
     /** initialise memory */

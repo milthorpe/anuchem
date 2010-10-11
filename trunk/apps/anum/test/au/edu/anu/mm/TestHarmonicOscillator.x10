@@ -31,13 +31,13 @@ public class TestHarmonicOscillator {
         // equilibrium bond length is 0.09169nm; start with displacement of 0.01nm
         val hydrogen = new MMAtom("H", Point3d(0.10169, 0.0, 0.0), 1.0079, 0.0);
         val fluorine = new MMAtom("F", Point3d(0.0, 0.0, 0.0), 18.9984, 0.0);
-        val atoms = Rail.make[MMAtom](2);
+        val atoms = new Array[MMAtom](2);
         atoms(0) = hydrogen;
         atoms(1) = fluorine;
-        val distAtoms = DistArray.make[ValRail[MMAtom]](Dist.makeBlock(0..0, 0));
-        distAtoms(0) = atoms as ValRail[MMAtom];
+        val distAtoms = DistArray.make[Array[MMAtom]{rail}](Dist.makeBlock(0..0, 0));
+        distAtoms(0) = atoms;
 
-        val diatomicPotentials : ValRail[DiatomicPotential] = ValRail.make[DiatomicPotential](1, 
+        val diatomicPotentials = new Array[DiatomicPotential](1, 
            (Int) => new DiatomicHarmonicPotential(hydrogen, fluorine, 0.09169, 582000));
         val anumm = new Anumm(distAtoms, new DiatomicForceField(diatomicPotentials));
         anumm.mdRun(0.2, 200);

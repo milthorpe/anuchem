@@ -34,13 +34,17 @@ public class TriangularRegion extends Region {
         return ((pt(0) * pt(0)) / 2) + pt(1);
     }
 
-    public def min(): ValRail[Int] {
-        return [rowMin,colMin];
-    }
+    public def min():(int)=>int = (i:int)=> {
+        if (i==0) return rowMin;
+        else if (i==1) return colMin;
+        else throw new ArrayIndexOutOfBoundsException("min: "+i+" is not a valid rank for "+this);
+    };
 
-    public def max(): ValRail[Int] {
-        return [rowMin+dim,colMin+dim];
-    }   
+    public def max():(int)=>int = (i:int)=> {
+        if (i==0) return rowMin+dim;
+        else if (i==1) return colMin+dim;
+        else throw new ArrayIndexOutOfBoundsException("max: "+i+" is not a valid rank for "+this);
+    };
 
     public def size() : Int { 
         return dim * (dim + 1) / 2;
@@ -112,11 +116,11 @@ public class TriangularRegion extends Region {
     }
 
     public def boundingBox(): Region(rank) {
-        return [rowMin..rowMin+dim,colMin..colMin+dim];
+        return (rowMin..rowMin+dim) * (colMin..colMin+dim);
     }
 
     protected def computeBoundingBox(): Region(rank) {
-        return [rowMin..rowMin+dim,colMin..colMin+dim];
+        return (rowMin..rowMin+dim) * (colMin..colMin+dim);
     }
 
     public def iterator(): Iterator[Point(rank)] {

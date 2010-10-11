@@ -42,7 +42,7 @@ public class OneElectronIntegrals {
        val bfs  = basisFunctions.getBasisFunctions();
        val nbf  = bfs.size();
        val nat  = molecule.getNumberOfAtoms();
-       val atno = Rail.make[Double](nat);
+       val atno = new Array[Double](nat);
        val ai   = AtomInfo.getInstance();
        val atms = molecule.getAtoms();
 

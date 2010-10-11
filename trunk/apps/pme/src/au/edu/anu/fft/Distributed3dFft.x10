@@ -11,7 +11,7 @@
 package au.edu.anu.fft;
 
 import x10.compiler.Native;
-import x10.util.GrowableRail;
+import x10.util.ArrayList;
 import x10.util.Team;
 import edu.mit.fftw.FFTW;
 
@@ -56,8 +56,8 @@ public class Distributed3dFft {
             FFTW.fftwExecute(plan);
             FFTW.fftwDestroyPlan(plan); 
         } else {
-            val oneDSource = DistArray.make[Rail[Complex]](Dist.makeUnique(), (Point) => Rail.make[Complex](dataSize));
-            val oneDTarget = DistArray.make[Rail[Complex]](oneDSource.dist, (Point) => Rail.make[Complex](dataSize));
+            val oneDSource = DistArray.make[Array[Complex]{rail}](Dist.makeUnique(), (Point) => new Array[Complex](dataSize));
+            val oneDTarget = DistArray.make[Array[Complex]{rail}](oneDSource.dist, (Point) => new Array[Complex](dataSize));
             finish ateach(p1 in oneDSource) do1DFftToTemp(source, oneDSource(p1), oneDTarget(p1), forward);
             finish ateach(p1 in oneDSource) transposeTempToTarget();
             finish ateach(p1 in oneDSource) do1DFftToTemp(target, oneDSource(p1), oneDTarget(p1), forward);
@@ -117,14 +117,14 @@ public class Distributed3dFft {
      * and store the result in the temp array.
      */
     private def do1DFftToTemp(source : DistArray[Complex](3),
-                                     oneDSource : Rail[Complex],
-                                     oneDTarget : Rail[Complex],
+                                     oneDSource : Array[Complex]{rail},
+                                     oneDTarget : Array[Complex]{rail},
                                      forward : Boolean) {
         val plan : FFTW.FFTWPlan = FFTW.fftwPlan1d(dataSize, oneDSource, oneDTarget, forward);
         val mySource = source.dist | here;
         val gridRegionWithoutZ = (mySource.region().eliminate(2)) as Region(2){rect};
         for ([i,j] in gridRegionWithoutZ) {
-            // TODO need to copy into ValRail - can use raw()?
+            // TODO need to copy into Array - can use raw()?
             for ([k] in 0..dataSize-1) {
                 oneDSource(k) = source(i,j,k);
             }
@@ -158,19 +158,18 @@ public class Distributed3dFft {
                 val startZ = targetDist.region.min(0);
                 val endZ = targetDist.region.max(0);
 
-                val transferRegion : Region(3) = [startX..endX, startY..endY, startZ..endZ];
+                val transferRegion : Region(3) = (startX..endX) * (startY..endY) * (startZ..endZ);
                 if (transferRegion.size() > 0) {
-                    val elementsToTransfer = Rail.make[Complex](transferRegion.size());
+                    val elementsToTransfer = new Array[Complex](transferRegion.size());
                     var i : Int = 0;
                     for (p in transferRegion) {
                         elementsToTransfer(i++) = temp(p);
                     }
-                    val toTransfer = ValRail.make(elementsToTransfer);
                     async at (p2) {
                         var i : Int = 0;
                         for ([x,y,z] in transferRegion) {
                             // transpose dimensions
-                            target(z,x,y) = toTransfer(i++);
+                            target(z,x,y) = elementsToTransfer(i++);
                         }
                     }
                 }

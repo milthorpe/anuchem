@@ -177,9 +177,9 @@ public class PrimitiveGaussian {
         var sum:Double = 0.0;
 
         // TODO : x10 - parallel
-        for(var i : Int = 0; i<ax.length; i++) {
-            for(var j : Int = 0; j<ay.length; j++) {
-                for(var k : Int = 0; k<az.length; k++) {
+        for(var i : Int = 0; i<ax.size; i++) {
+            for(var j : Int = 0; j<ay.size; j++) {
+                for(var k : Int = 0; k<az.size; k++) {
                     sum += ax(i) * ay(j) * az(k)
                           * IntegralsUtils.computeFGamma(i + j + k,
                                                         rCPSquared * prod.exponent);
@@ -197,7 +197,7 @@ public class PrimitiveGaussian {
     private def constructAArray(l1:Int, l2:Int, pa:Double, pb:Double,
                                 cp:Double, gamma:Double) {
         val iMax    = l1 + l2 + 1;
-        val a = Rail.make[Double](iMax);
+        val a = new Array[Double](iMax);
 
         var i:Int, r:Int, u:Int, index:Int;
 

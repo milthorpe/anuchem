@@ -12,7 +12,6 @@ package au.edu.anu.chem;
 
 import x10.util.Pair;
 import x10.util.ArrayList;
-import x10.util.ValRailBuilder;
 
 import x10x.vector.Point3d;
 
@@ -70,12 +69,12 @@ public class Molecule[T]{T <: Atom} {
 
     public def getMaxExtent() = maxExtent;
 
-    public def getCoords() : ValRail[Pair[String,Point3d]] {
-        val coords = new ValRailBuilder[Pair[String,Point3d]](atomList.size());
+    public def getCoords() : Array[Pair[String,Point3d]]{rail} {
+        val coords = new ArrayList[Pair[String,Point3d]](atomList.size());
         for(atom in atomList) {
             coords.add(Pair[String,Point3d](atom.symbol, atom.centre));
         }
-        return coords.result();
+        return coords.toArray();
     }
 
     public def centreOfMass() : Point3d {

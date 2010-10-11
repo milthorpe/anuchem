@@ -10,10 +10,9 @@
  */
 package au.edu.anu.mm;
 
-import x10.util.GrowableRail;
+import x10.util.ArrayList;
 
 import x10x.vector.Point3d;
-
 import au.edu.anu.chem.mm.MMAtom;
 
 /**
@@ -22,10 +21,10 @@ import au.edu.anu.chem.mm.MMAtom;
  * @author milthorpe
  */
 public class FmmLeafBox extends FmmBox {
-    public val atoms : GrowableRail[MMAtom] = new GrowableRail[MMAtom]();
+    public val atoms : ArrayList[MMAtom] = new ArrayList[MMAtom]();
 
     /** The U-list consists of all leaf boxes not well-separated to this box. */
-    private var uList : ValRail[Point(3)];
+    private var uList : Array[Point(3)]{rail};
 
     public def this(level : Int, x : Int, y : Int, z : Int, numTerms : Int, parent : GlobalRef[FmmBox]) { 
         super(level, x, y, z, numTerms, parent);
@@ -37,16 +36,16 @@ public class FmmLeafBox extends FmmBox {
 
     public def getUList() = this.uList;
 
-    public def setUList(uList : ValRail[Point(3)]) {
+    public def setUList(uList : Array[Point(3)]{rail}) {
         this.uList = uList;
     }
     
     /*
      * Returns atom charges and coordinates in packed representation
      */
-    public def getPackedAtoms() : ValRail[MMAtom.PackedRepresentation] {
-        if (atoms.length() > 0) {
-            return ValRail.make[MMAtom.PackedRepresentation](atoms.length(), (i : Int) => atoms(i).getPackedRepresentation());
+    public def getPackedAtoms() : Array[MMAtom.PackedRepresentation]{rail} {
+        if (atoms.size() > 0) {
+            return new Array[MMAtom.PackedRepresentation](atoms.size(), (i : Int) => atoms(i).getPackedRepresentation());
         } else {
             return null;
         }

@@ -30,7 +30,7 @@ public class GMatrix extends Matrix {
     private val computeInst : DistArray[ComputePlace](1){rect};
 
     // TODO: need to use shared variable instead
-    private val G = Rail.make[Int](1, (Int)=>0);
+    private val G = new Array[Int](1, (Int)=>0);
 
     private val bfs : BasisFunctions;
     private val mol : Molecule[QMAtom];
@@ -174,7 +174,7 @@ public class GMatrix extends Matrix {
 
         val shellList = bfs.getShellList();
 
-        val computeThreads = Rail.make[ComputeThread](Runtime.INIT_THREADS);
+        val computeThreads = new Array[ComputeThread](Runtime.INIT_THREADS);
 
         val maxam = shellList.getMaximumAngularMomentum();
         for(var i:Int=0; i<Runtime.INIT_THREADS; i++) {
@@ -348,7 +348,7 @@ public class GMatrix extends Matrix {
         timer.start(0);
 
         val noOfAtoms = mol.getNumberOfAtoms();
-        val nPlaces = Place.places.length;
+        val nPlaces = Place.MAX_PLACES;
         val workPerPlace = noOfAtoms / nPlaces;
         val remainder = noOfAtoms % nPlaces;
         val firstChunk = remainder * (workPerPlace + 1);
@@ -465,8 +465,8 @@ public class GMatrix extends Matrix {
         val shellList = bfs.getShellList();
         val shellPairs = shellList.getShellPairs();
 
-        val nPairs = shellPairs.length();
-        val nPlaces = Place.places.length;
+        val nPairs = shellPairs.size();
+        val nPlaces = Place.MAX_PLACES;
         val workPerPlace = nPairs / nPlaces;
         val remainder = nPairs % nPlaces;
         val firstChunk = remainder * (workPerPlace + 1);
@@ -532,7 +532,7 @@ public class GMatrix extends Matrix {
         val gMatrixContribution : Matrix;
         val jMatrixContribution : Matrix;
         val kMatrixContribution : Matrix;
-        val computeThreads = Rail.make[ComputeThread](Runtime.INIT_THREADS);
+        val computeThreads = new Array[ComputeThread](Runtime.INIT_THREADS);
 
         public def this(N : Int, mol:Molecule[QMAtom], basisName:String) {
             super(mol, basisName);

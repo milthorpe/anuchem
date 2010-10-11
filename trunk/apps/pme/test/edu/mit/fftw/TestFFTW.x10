@@ -16,11 +16,11 @@ public class TestFFTW {
     public static def main(args : Array[String](1)) {
         Console.OUT.println("1D");
         val N : Int = 50;
-        val input = Rail.make[Complex](N, (i : Int) => 1.0 / (i+1.0) * (1.0 + Complex.I));
+        val input = new Array[Complex](N, (i : Int) => 1.0 / (i+1.0) * (1.0 + Complex.I));
         for (var i : int = 0; i < input.length; i++) {
             Console.OUT.println("input(" + i + ") = " + input(i));
         }
-        val output = Rail.make[Complex](N);
+        val output = new Array[Complex](N);
         val plan : FFTW.FFTWPlan = FFTW.fftwPlan1d(N, input, output, false);
         FFTW.fftwExecute(plan);
         FFTW.fftwDestroyPlan(plan);
@@ -28,7 +28,7 @@ public class TestFFTW {
             Console.OUT.println("output(" + i + ") =" + output(i));
         }
         
-        val roundtrip = Rail.make[Complex](N);
+        val roundtrip = new Array[Complex](N);
         val plan2 : FFTW.FFTWPlan = FFTW.fftwPlan1d(N, output, roundtrip, true);
         FFTW.fftwExecute(plan2);
         FFTW.fftwDestroyPlan(plan2);

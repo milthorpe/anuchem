@@ -57,7 +57,7 @@ public class BasisFunctions {
                val coeff:ArrayList[Double] = orb.getCoefficients();
                val exps:ArrayList[Double]  = orb.getExponents();
 
-               for(var l:Int=0; l<pList.length; l++) {
+               for(var l:Int=0; l<pList.size; l++) {
                   val center = atom.centre;
                   val power = pList(l);
                   val cg = new ContractedGaussian(center, power);

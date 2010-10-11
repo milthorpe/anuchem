@@ -33,9 +33,17 @@ public class ExpansionRegion extends Region  {
         return false;
     }
 
-    public def min(): ValRail[int] = [0,-p];
+    public def min():(int)=>int = (i:int)=> {
+        if (i==0) return 0;
+        else if (i==1) return -p;
+        else throw new ArrayIndexOutOfBoundsException("min: "+i+" is not a valid rank for "+this);
+    };
 
-    public def max(): ValRail[int] = [p,p];
+    public def max():(int)=>int = (i:int)=> {
+        if (i==0) return p;
+        else if (i==1) return p;
+        else throw new ArrayIndexOutOfBoundsException("max: "+i+" is not a valid rank for "+this);
+    };
 
     /**
      * Returns the number of points in this region.
@@ -94,9 +102,9 @@ public class ExpansionRegion extends Region  {
     public def eliminate(axis: int): Region(1) {
         switch (axis) {
             case 0:
-                return -p..p;
+                return (-p..p);
             case 1:
-                return 0..p;
+                return (0..p);
             default:
                 throw new UnsupportedOperationException("projection(" + axis + ")");
         }
@@ -108,11 +116,11 @@ public class ExpansionRegion extends Region  {
     }
 
     public def boundingBox(): Region(rank) {
-        return [0..p,-p..p];
+        return (0..p) * (-p..p);
     }
 
     protected def computeBoundingBox(): Region(rank) {
-        return [0..p,-p..p];
+        return (0..p) * (-p..p);
     }
 
     public def iterator(): Iterator[Point(rank)] {

@@ -29,7 +29,7 @@ public class FmmBox {
      * The V-list consists of the children of those boxes 
      * not well-separated from this box's parent.
      */
-    private var vList : ValRail[Point(3)];
+    private var vList : Array[Point(3)]{rail};
 
     /** The multipole expansion of the charges within this box. */
     public val multipoleExp : MultipoleExpansion;
@@ -82,17 +82,13 @@ public class FmmBox {
             || Math.abs(z - box2.z) > ws;
     }
 
-    public def getTranslationIndex(level2 : Int, x2 : Int, y2 : Int, z2 : Int) : Point(4) {
-        return Point.make(level, x2-x, y2-y, z2-z);
-    }
-
-    public def getTranslationIndex(box2 : FmmBox) : Point(4) {
-        return Point.make(level, box2.x-x, box2.y-y, box2.z-z);
+    public def getTranslationIndex(boxIndex2 : Point(3)) : Point(3) {
+        return Point.make(boxIndex2(0)-x, boxIndex2(1)-y, boxIndex2(2)-z);
     }
 
     public def getVList() = this.vList;
 
-    public def setVList(vList : ValRail[Point(3)]) {
+    public def setVList(vList : Array[Point(3)]{rail}) {
         this.vList = vList;
     }
 

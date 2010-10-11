@@ -17,7 +17,7 @@ public class Vector {
      * Construct a Vector of dimention N
      */
     public def this(siz:Int) { 
-        region       = [0..(siz-1)];
+        region       = (0..(siz-1));
         // distribution = Dist.makeBlock(region, 0);
         vec          = new Array[Double](region);
     }
@@ -61,13 +61,11 @@ public class Vector {
      * the dot product
      */
     public def dot(b:Vector) : Double {
-        val res = Rail.make[Double](1);
-
-        // TODO: this is introduced till a fix for XTENLANG-508 is there
-        // finish for([i] in vec.region) async res += vec(i) * b.vec(i);
-        finish for([i] in vec) async res(0) += vec(i) * b.vec(i);
-
-        return res(0);
+        var res : Double = 0.0;
+        for([i] in vec) {
+            res += vec(i) * b.vec(i);
+        }
+        return res;
     }
 
     /**
@@ -150,11 +148,11 @@ public class Vector {
      */
     public def maxNorm() : Double {
         val N   = getSize();
-        val res = Rail.make[Double](1);
+        var res : Double = 0.0;
 
-        finish for([i] in vec) async res(0) = Math.max(Math.abs(vec(i)), res(0));
+        for([i] in vec) res = Math.max(Math.abs(vec(i)), res);
         
-        return res(0);       
+        return res;       
     }
 
     public def toString() : String {

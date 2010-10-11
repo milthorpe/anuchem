@@ -22,7 +22,7 @@ public class Matrix {
      * @param siz the size of this matrix
      */
     public def this(siz:Int) {
-        region       = [0..(siz-1), 0..(siz-1)];
+        region       = (0..(siz-1)) * (0..(siz-1));
         mat          = new Array[Double](region);
     }
 
@@ -32,7 +32,7 @@ public class Matrix {
      * @param siz the size of this matrix
      */
     public def this(row:Int, col:Int) {
-        region       = [0..(row-1), 0..(col-1)];
+        region       = (0..(row-1)) * (0..(col-1));
         mat          = new Array[Double](region);
     }
 
@@ -67,8 +67,6 @@ public class Matrix {
         val sHalf         = new Matrix(rowCount);
         
         sHalf.makeIdentity();
-
-        val sqrtEVal = Rail.make[Double](rowCount);
 
         finish for([i,j] in sHalf.mat.region) async {
              if (i==j) {
@@ -203,7 +201,7 @@ public class Matrix {
      */
     public def trace() : Double {
          val N = getRowCount();
-         val tr = Rail.make[Double](1);
+         val tr = new Array[Double](1);
          
          tr(0) = 0.0;
          finish for([i,j] in mat) async {
@@ -220,7 +218,7 @@ public class Matrix {
      */
     public def sumOffDiagonal() : Double {
        // sum off diagonal elements of A
-       val sum = Rail.make[Double](1);
+       val sum = new Array[Double](1);
        val N = getRowCount();
 
        sum(0) = 0.0;
@@ -263,7 +261,7 @@ public class Matrix {
         return true;
     }
 
-    public def isSingular(p:Int, row:Rail[Int]) : Boolean {
+    public def isSingular(p:Int, row:Array[Int]{rail}) : Boolean {
         val N = getColCount();
         var i:Int;
 
@@ -277,20 +275,6 @@ public class Matrix {
         } // end for
 
         return true;
-    }
-
-    public def getValRail() {
-        val N = getRowCount();
-        val M = getColCount();
-        val r = Rail.make[Double](N*M);
-        var i:Int, j:Int, ii:Int;
-
-        ii = 0;
-        for(i=0; i<N; i++)
-           for(j=0; j<M; j++)
-              r(ii++) = mat(i,j);
-
-        return ValRail.make(r);
     }
 
     public def toString() : String { 

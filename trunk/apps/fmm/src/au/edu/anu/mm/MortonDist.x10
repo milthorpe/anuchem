@@ -43,8 +43,8 @@ public class MortonDist extends BaseDist{self.rank==3} {
         // TODO I hope these aren't used
         public def boundingBox(): Region(rank) {throw new UnsupportedOperationException("boundingBox()");}
         protected  def computeBoundingBox(): Region(rank) {throw new UnsupportedOperationException("computeBoundingBox()");}
-        public def min(): ValRail[int] = ValRail.make(rank, (Int) => 0);
-        public def max(): ValRail[int] = ValRail.make(rank, (Int) => (Math.cbrt(totalLength) as Int));
+        public def min():(int)=>int = (i:int)=> 0;
+        public def max():(int)=>int = (i:int)=> (Math.cbrt(totalLength) as Int);
 
         public def contains(that: Region(rank)): boolean {
             if (that instanceof MortonSubregion) {
@@ -112,19 +112,19 @@ public class MortonDist extends BaseDist{self.rank==3} {
     }
 
     public static def make(r: Region(3)) : MortonDist{self.region==r} {
-        return MortonDist.make(r, Place.places);
+        return MortonDist.make(r, new Array[Place](Place.MAX_PLACES, (i : Int) => Place.place(i)));
     }
 
-    public static def make(r: Region(3), ps: ValRail[Place]) : MortonDist{self.region==r} {
+    public static def make(r: Region(3), ps: Array[Place]{rail}) : MortonDist{self.region==r} {
         val totalLength = r.size();
-        val init = (p:Int) => new MortonSubregion(getPlaceStart(p,ps.length(),totalLength), 
-                                                  getPlaceEnd(p,ps.length(),totalLength), 
+        val init = (p:Int) => new MortonSubregion(getPlaceStart(p,ps.size,totalLength), 
+                                                  getPlaceEnd(p,ps.size,totalLength), 
                                                   totalLength) as Region(3);
-        val subregions = ValRail.make[Region(3)](ps.length(), init);
+        val subregions = new Array[Region(3)](ps.size, init);
         return new MortonDist(r, ps, subregions);
     }
 
-    public def this(r: Region, ps: ValRail[Place], rs: ValRail[Region(r.rank)]): MortonDist{self.region==r} {
+    public def this(r: Region, ps: Array[Place](1), rs: Array[Region(r.rank)](1)): MortonDist{self.region==r} {
         super(r, ps, rs);
         totalLength = r.size();
     }
@@ -162,7 +162,7 @@ public class MortonDist extends BaseDist{self.rank==3} {
     public static def getPoint(index : Int, totalLength : Int) : Point(3) {
         val digitsPerSide = Math.log2(Math.cbrt(totalLength) as Int);
         //Console.OUT.println("getPoint for " + index + " totalLength = " + totalLength + " digitsPerSide = " + digitsPerSide);
-        val p = Rail.make[Int](3);
+        val p = new Array[Int](3);
         var digitMask : Int = totalLength / 2; 
         for (var digit : Int = digitsPerSide; digit > 0; digit--) {
             for (var dim : Int = 0; dim < 3; dim++) {
@@ -200,7 +200,7 @@ public class MortonDist extends BaseDist{self.rank==3} {
     public def apply(pt: Point/*(rank)*/): Place {
         if (pt.rank != 3) throw new UnsupportedOperationException("getMortonIndex(p{self.rank!=3})");
         val index = getMortonIndex(pt, totalLength);
-        for (p:Place in places) {
+        for (p:Place in places()) {
             val mr = get(p) as MortonSubregion;
             if (mr.contains(pt)) {
                 return p;
@@ -212,7 +212,7 @@ public class MortonDist extends BaseDist{self.rank==3} {
     public def toString(): String {
         var s: String = "MortonDist(";
         var first: boolean = true;
-        for (p:Place in places) {
+        for (p:Place in places()) {
             if (!first) s += ",";
             s +=  get(p) + "->" + p.id;
             first = false;
