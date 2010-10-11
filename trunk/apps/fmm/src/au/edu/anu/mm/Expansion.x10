@@ -45,7 +45,7 @@ public class Expansion {
         val s = new StringBuilder();
         for ([i] in 0..p) {
             for ([j] in -i..i) {
-			    s.add(terms(i,j) + " ");
+			    s.add("" + terms(i,j) + " ");
             }
             s.add("\n");
 		}
