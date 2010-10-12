@@ -475,6 +475,7 @@ public class GMatrix extends Matrix {
         makeZero();
 
         val gMatrix = GlobalRef[GMatrix](this);
+        val computeInst = this.computeInst; // TODO this should not be required XTENLANG-1913
         finish for ([placeId] in computeInst) async {
             val placeContribution = at (Place.place(placeId)) {
                 //val placeTimer = new Timer(1);
