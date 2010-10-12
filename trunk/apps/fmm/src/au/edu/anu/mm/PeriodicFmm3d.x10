@@ -120,6 +120,10 @@ public class PeriodicFmm3d extends Fmm3d {
     def combineMacroscopicExpansions() {
         timer.start(TIMER_INDEX_MACROSCOPIC);
         // TODO distributed impl.
+        val numShells = this.numShells; // TODO shouldn't be necessary XTENLANG-1913
+        val numTerms = this.numTerms; // TODO shouldn't be necessary XTENLANG-1913
+        val size = this.size; // TODO shouldn't be necessary XTENLANG-1913
+        val boxes = this.boxes; // TODO shouldn't be necessary XTENLANG-1913
         at (boxes(0).dist(0,0,0)) {
             val macroMultipoles = new Array[MultipoleExpansion](numShells+1);
             val macroLocalTranslations = new Array[LocalExpansion](numShells+1);
@@ -175,6 +179,8 @@ public class PeriodicFmm3d extends Fmm3d {
 
     private def assignAtomsToBoxes(atoms: DistArray[Array[MMAtom]{rail}]{rail}, lowestLevelBoxes : PeriodicDistArray[FmmBox]{rank==3}) {
         //Console.OUT.println("assignAtomsToBoxes");
+        val size = this.size; // TODO shouldn't be necessary XTENLANG-1913
+        val offset = this.offset; // TODO shouldn't be necessary XTENLANG-1913
         val dipole = finish(VectorSumReducer()) {
             ateach (p1 in atoms) {
                 var myDipole : Vector3d = Vector3d.NULL;
@@ -184,7 +190,7 @@ public class PeriodicFmm3d extends Fmm3d {
                     val charge = atom.charge;
                     val offsetCentre = atom.centre + offset;
                     myDipole = myDipole + Vector3d(offsetCentre) * charge;
-                    val boxIndex = getLowestLevelBoxIndex(offsetCentre);
+                    val boxIndex = getLowestLevelBoxIndex(offsetCentre, size);
                     at(lowestLevelBoxes.dist(boxIndex)) {
                         val remoteAtom = new MMAtom(offsetCentre, charge);
                         val leafBox = lowestLevelBoxes(boxIndex) as FmmLeafBox;
@@ -217,6 +223,9 @@ public class PeriodicFmm3d extends Fmm3d {
     def multipoleLowestLevel() {
         //Console.OUT.println("multipole lowest level");
         timer.start(TIMER_INDEX_MULTIPOLE);
+        val size = this.size; // TODO shouldn't be necessary XTENLANG-1913
+        val numTerms = this.numTerms; // TODO shouldn't be necessary XTENLANG-1913
+        val lowestLevelBoxes = this.lowestLevelBoxes; // TODO shouldn't be necessary XTENLANG-1913
         finish ateach (boxIndex in lowestLevelBoxes) {
             val leafBox = lowestLevelBoxes(boxIndex) as FmmLeafBox;
             if (leafBox != null) {
@@ -236,6 +245,9 @@ public class PeriodicFmm3d extends Fmm3d {
     }
 
     def addAtomToLowestLevelBoxAsync(boxIndex : Point(3), offsetCentre : Point3d, charge : Double) {
+        val size = this.size; // TODO shouldn't be necessary XTENLANG-1913
+        val numTerms = this.numTerms; // TODO shouldn't be necessary XTENLANG-1913
+        val lowestLevelBoxes = this.lowestLevelBoxes; // TODO shouldn't be necessary XTENLANG-1913
         async at(lowestLevelBoxes.dist(boxIndex)) {
             val remoteAtom = new MMAtom(offsetCentre, charge);
             val leafBox = lowestLevelBoxes(boxIndex) as FmmLeafBox;
@@ -302,6 +314,11 @@ public class PeriodicFmm3d extends Fmm3d {
     def transformToLocal() {
         timer.start(TIMER_INDEX_TRANSFORM);
         
+        val numLevels = this.numLevels; // TODO shouldn't be necessary XTENLANG-1913
+        val topLevel = this.topLevel; // TODO shouldn't be necessary XTENLANG-1913
+        val multipoleTransforms = this.multipoleTransforms; // TODO shouldn't be necessary XTENLANG-1913
+        val multipoleTranslations = this.multipoleTranslations; // TODO shouldn't be necessary XTENLANG-1913
+        val locallyEssentialTrees = this.locallyEssentialTrees; // TODO shouldn't be necessary XTENLANG-1913
         for ([thisLevel] in (topLevel+1)..numLevels) {
             val dim = size / Math.pow2(thisLevel);
             //Console.OUT.println("transform level " + thisLevel);
@@ -389,7 +406,7 @@ public class PeriodicFmm3d extends Fmm3d {
      * at a single place, returns an Array, each element of which 
      * is in turn a MultipoleExpansion for the box.
      */
-    private def getMultipolesForBoxList(thisLevelBoxes : PeriodicDistArray[FmmBox]{rank==3}, boxList : Array[Point(3)]{rail}) {
+    private static def getMultipolesForBoxList(thisLevelBoxes : PeriodicDistArray[FmmBox]{rank==3}, boxList : Array[Point(3)]{rail}) {
         val multipoleList = new Array[MultipoleExpansion](boxList.size, 
                                                             (i : Int) => 
                                                                 getMultipoleExpansionLocalCopy(thisLevelBoxes,
@@ -406,6 +423,8 @@ public class PeriodicFmm3d extends Fmm3d {
      */
     def prefetchPackedAtoms() : void {
         timer.start(TIMER_INDEX_PREFETCH);
+        val locallyEssentialTrees = this.locallyEssentialTrees; // TODO shouldn't be necessary XTENLANG-1913
+        val lowestLevelBoxes = this.lowestLevelBoxes; // TODO shouldn't be necessary XTENLANG-1913
         finish ateach (p1 in locallyEssentialTrees) {
             val myLET = locallyEssentialTrees(p1);
             val myCombinedUList = myLET.combinedUList;
@@ -466,12 +485,15 @@ public class PeriodicFmm3d extends Fmm3d {
             //Console.OUT.println("level " + thisLevel + " dist: " + thisLevelDist);
         }
 
+        val numLevels = this.numLevels; // TODO shouldn't be necessary XTENLANG-1913
+        val numTerms = this.numTerms; // TODO shouldn't be necessary XTENLANG-1913
+        val ws = this.ws; // TODO shouldn't be necessary XTENLANG-1913
         for ([thisLevel] in topLevel..numLevels-1) {
             val levelDim = Math.pow2(thisLevel) as Int;
             val thisLevelBoxes = boxArray(thisLevel);
             finish ateach ([x,y,z] in thisLevelBoxes) {
                 val box = new FmmBox(thisLevel, x, y, z, numTerms, getParentForChild(boxArray, thisLevel, x,y,z));
-                createVList(box);
+                createVList(box, ws);
                 thisLevelBoxes(x,y,z) = box;
             }
         }
@@ -479,8 +501,8 @@ public class PeriodicFmm3d extends Fmm3d {
         val lowestLevelBoxes = boxArray(numLevels);
         finish ateach ([x,y,z] in lowestLevelBoxes) {
             val box = new FmmLeafBox(numLevels, x, y, z, numTerms, getParentForChild(boxArray, numLevels, x,y,z));
-            createUList(box);
-            createVList(box);
+            createUList(box, ws);
+            createVList(box, ws);
             lowestLevelBoxes(x,y,z) = box;
         }
 
@@ -491,7 +513,7 @@ public class PeriodicFmm3d extends Fmm3d {
      * Creates the U-list of <code>box</code>.
      * The U-list consists of all leaf boxes not well-separated from <code>box</code>.
      */
-    private def createUList(box : FmmLeafBox) {
+    private static def createUList(box : FmmLeafBox, ws : Int) {
         // interact with "left half" of uList i.e. only boxes with x<=box.x
         val uList = new ArrayList[Point(3)]();
         for ([x] in box.x-ws..box.x) {
@@ -511,7 +533,7 @@ public class PeriodicFmm3d extends Fmm3d {
      * The V-list consists of the children of those boxes not 
      * well-separated from the parent of <code>box</code>.
      */
-    private def createVList(box : FmmBox) {
+    private static def createVList(box : FmmBox, ws : Int) {
         val xOffset = box.x%2 == 1 ? -1 : 0;
         val yOffset = box.y%2 == 1 ? -1 : 0;
         val zOffset = box.z%2 == 1 ? -1 : 0;
@@ -538,6 +560,8 @@ public class PeriodicFmm3d extends Fmm3d {
         //Console.OUT.println("direct");
         timer.start(TIMER_INDEX_DIRECT);
 
+        val locallyEssentialTrees = this.locallyEssentialTrees; // TODO shouldn't be necessary XTENLANG-1913
+        val lowestLevelBoxes = this.lowestLevelBoxes; // TODO shouldn't be necessary XTENLANG-1913
         val directEnergy = finish (SumReducer()) {
             ateach (p1 in locallyEssentialTrees) {
                 val myLET = locallyEssentialTrees(p1);
@@ -624,6 +648,10 @@ public class PeriodicFmm3d extends Fmm3d {
      */
     private def createLocallyEssentialTrees() : DistArray[LocallyEssentialTree]{rank==1} {
         val locallyEssentialTrees = DistArray.make[LocallyEssentialTree](Dist.makeUnique(), (Point)=> null);
+        val topLevel = this.topLevel; // TODO shouldn't be necessary XTENLANG-1913
+        val numLevels = this.numLevels; // TODO shouldn't be necessary XTENLANG-1913
+        val boxes = this.boxes; // TODO shouldn't be necessary XTENLANG-1913
+        val lowestLevelBoxes = this.lowestLevelBoxes; // TODO shouldn't be necessary XTENLANG-1913
         finish ateach ([p1] in locallyEssentialTrees) {
             val uMin = new Array[Int](3, (Int) => Int.MAX_VALUE);
             val uMax = new Array[Int](3, (Int) => Int.MIN_VALUE);
@@ -698,7 +726,7 @@ public class PeriodicFmm3d extends Fmm3d {
     /**
      * @return a local copy at the current place of a box's multipole expansion
      */
-    private def getMultipoleExpansionLocalCopy(thisLevelBoxes : PeriodicDistArray[FmmBox]{rank==3}, x : Int, y : Int, z : Int) : MultipoleExpansion {
+    private static def getMultipoleExpansionLocalCopy(thisLevelBoxes : PeriodicDistArray[FmmBox]{rank==3}, x : Int, y : Int, z : Int) : MultipoleExpansion {
         return at (thisLevelBoxes.periodicDist(x,y,z)) {thisLevelBoxes(x,y,z) != null ? (thisLevelBoxes(x,y,z)).multipoleExp : null};
     }
 
@@ -721,6 +749,7 @@ public class PeriodicFmm3d extends Fmm3d {
             val thisLevel = level;
             //Console.OUT.println("combine level " + level + " => " + (level-1));
             val thisLevelBoxes = boxes(thisLevel);
+            val multipoleTranslations = this.multipoleTranslations; // TODO shouldn't be necessary XTENLANG-1913
             finish ateach (boxIndex in thisLevelBoxes) {
                 val child = thisLevelBoxes(boxIndex);
                 if (child != null) {
@@ -745,6 +774,8 @@ public class PeriodicFmm3d extends Fmm3d {
     def getFarFieldEnergy() : Double {
         //Console.OUT.println("getFarFieldEnergy");
         timer.start(TIMER_INDEX_FARFIELD);
+        val size = this.size; // TODO shouldn't be necessary XTENLANG-1913
+        val lowestLevelBoxes = this.lowestLevelBoxes; // TODO shouldn't be necessary XTENLANG-1913
         val farFieldEnergy = finish(SumReducer()) {
             ateach (boxIndex1 in lowestLevelBoxes) {
                 val box1 = lowestLevelBoxes(boxIndex1) as FmmLeafBox;
@@ -765,7 +796,7 @@ public class PeriodicFmm3d extends Fmm3d {
         return farFieldEnergy / 2.0;
     }
 
-    private def getLowestLevelBoxIndex(offsetCentre : Point3d) : Point(3) {
+    private static def getLowestLevelBoxIndex(offsetCentre : Point3d, size : Double) : Point(3) {
         return  Point.make((offsetCentre.i / size * lowestLevelDim + lowestLevelDim / 2) as Int, (offsetCentre.j / size * lowestLevelDim + lowestLevelDim / 2) as Int, (offsetCentre.k / size * lowestLevelDim + lowestLevelDim / 2) as Int);
     }
 
