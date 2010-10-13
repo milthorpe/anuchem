@@ -180,6 +180,7 @@ public class PeriodicFmm3d extends Fmm3d {
     private def assignAtomsToBoxes(atoms: DistArray[Array[MMAtom]{rail}]{rail}, lowestLevelBoxes : PeriodicDistArray[FmmBox]{rank==3}) {
         //Console.OUT.println("assignAtomsToBoxes");
         val size = this.size; // TODO shouldn't be necessary XTENLANG-1913
+        val lowestLevelDim = this.lowestLevelDim; // TODO shouldn't be necessary XTENLANG-1913
         val offset = this.offset; // TODO shouldn't be necessary XTENLANG-1913
         val dipole = finish(VectorSumReducer()) {
             ateach (p1 in atoms) {
@@ -190,7 +191,7 @@ public class PeriodicFmm3d extends Fmm3d {
                     val charge = atom.charge;
                     val offsetCentre = atom.centre + offset;
                     myDipole = myDipole + Vector3d(offsetCentre) * charge;
-                    val boxIndex = getLowestLevelBoxIndex(offsetCentre, size);
+                    val boxIndex = getLowestLevelBoxIndex(offsetCentre, size, lowestLevelDim);
                     at(lowestLevelBoxes.dist(boxIndex)) {
                         val remoteAtom = new MMAtom(offsetCentre, charge);
                         val leafBox = lowestLevelBoxes(boxIndex) as FmmLeafBox;
@@ -796,7 +797,7 @@ public class PeriodicFmm3d extends Fmm3d {
         return farFieldEnergy / 2.0;
     }
 
-    private static def getLowestLevelBoxIndex(offsetCentre : Point3d, size : Double) : Point(3) {
+    private def getLowestLevelBoxIndex(offsetCentre : Point3d, size : Double, lowestLevelDim : Int) : Point(3) {
         return  Point.make((offsetCentre.i / size * lowestLevelDim + lowestLevelDim / 2) as Int, (offsetCentre.j / size * lowestLevelDim + lowestLevelDim / 2) as Int, (offsetCentre.k / size * lowestLevelDim + lowestLevelDim / 2) as Int);
     }
 
