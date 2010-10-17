@@ -286,14 +286,14 @@ public class Fmm3d {
             val thisLevelBoxes = boxes(thisLevel);
             finish ateach (p1 in Dist.makeUnique()) {
                 val myLET = locallyEssentialTrees(p1);
-                val combinedVList = myLET.combinedVList;
 
                 val thisLevelMultipoleCopies = myLET.multipoleCopies(thisLevel);
                 if (thisLevel == topLevel) {
                     // must fetch top level multipoles synchronously before starting
                     val thisLevelBoxes = boxes(thisLevel);
-                    finish for (p in combinedVList(thisLevel)) async {
-                        val boxIndex = combinedVList(thisLevel)(p);
+                    val combinedVList = myLET.combinedVList(thisLevel);
+                    finish for ([p] in combinedVList) async {
+                        val boxIndex = combinedVList(p);
                         thisLevelMultipoleCopies(boxIndex) = getMultipoleExpansionLocalCopy(thisLevelBoxes,boxIndex);
                     }
                 }
@@ -304,8 +304,9 @@ public class Fmm3d {
                     if (lowerLevel <= numLevels) {
                         val lowerLevelCopies = myLET.multipoleCopies(lowerLevel);
                         val lowerLevelBoxes = boxes(lowerLevel);
-                        for (p in combinedVList(lowerLevel)) {
-                            val boxIndex = combinedVList(lowerLevel)(p);
+                        val combinedVList = myLET.combinedVList(lowerLevel);
+                        for ([p] in combinedVList) {
+                            val boxIndex = combinedVList(p);
                             lowerLevelCopies(boxIndex) = getMultipoleExpansionLocalCopy(lowerLevelBoxes,boxIndex);
                         }
                     }
@@ -409,7 +410,7 @@ public class Fmm3d {
                 val myLET = locallyEssentialTrees(p1);
                 val packedAtoms = myLET.packedAtoms;
                 var thisPlaceEnergy : Double = 0.0;
-                for ([x1,y1,z1] in lowestLevelBoxes | here) {
+                for ([x1,y1,z1] in lowestLevelBoxes.dist(here)) {
                     val box1 = lowestLevelBoxes(x1,y1,z1) as FmmLeafBox;
                     if (box1 != null) {
                         for ([atomIndex1] in 0..box1.atoms.size()-1) {
@@ -529,7 +530,7 @@ public class Fmm3d {
         for ([thisLevel] in topLevel..numLevels) {
             val levelDim = Math.pow2(thisLevel) as Int;
             val thisLevelRegion : Region(3){rect} = (0..levelDim-1) * (0..levelDim-1) * (0..levelDim-1);
-            val thisLevelDist = MortonDist.make(thisLevelRegion);
+            val thisLevelDist = MortonWorldDist.make(thisLevelRegion);
             boxArray(thisLevel) = DistArray.make[FmmBox](thisLevelDist);
             Console.OUT.println("level " + thisLevel + " dist: " + thisLevelDist);
         }

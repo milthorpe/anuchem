@@ -481,7 +481,7 @@ public class PeriodicFmm3d extends Fmm3d {
         for ([thisLevel] in topLevel..numLevels) {
             val levelDim = Math.pow2(thisLevel) as Int;
             val thisLevelRegion : Region(3){rect} = (0..levelDim-1) * (0..levelDim-1) * (0..levelDim-1);
-            val thisLevelDist = MortonDist.make(thisLevelRegion);
+            val thisLevelDist = MortonWorldDist.make(thisLevelRegion);
             boxArray(thisLevel) = PeriodicDistArray.make[FmmBox](thisLevelDist);
             //Console.OUT.println("level " + thisLevel + " dist: " + thisLevelDist);
         }
