@@ -56,6 +56,26 @@ public class Distributed3dFft {
             FFTW.fftwExecute(plan);
             FFTW.fftwDestroyPlan(plan); 
         } else {
+            finish {
+                for (p1 in source.dist.places()) async at(p1) {
+                    // 'scratch' rails, for use in the 1D FFTs
+                    val oneDSource = new Array[Complex](dataSize);
+                    val oneDTarget = new Array[Complex](dataSize);
+                    do1DFftToTemp(source, oneDSource, oneDTarget, forward);
+                    transposeTempToTarget();
+                    Team.WORLD.barrier(here.id);
+                    do1DFftToTemp(target, oneDSource, oneDTarget, forward);
+                    Team.WORLD.barrier(here.id);
+                    transposeTempToTarget();
+                    Team.WORLD.barrier(here.id);
+                    do1DFftToTemp(target, oneDSource, oneDTarget, forward);
+                    Team.WORLD.barrier(here.id);
+                    transposeTempToTarget();
+                }
+            }
+/*
+ *  Formerly, the above was:
+ *
             val oneDSource = DistArray.make[Array[Complex]{rail}](Dist.makeUnique(), (Point) => new Array[Complex](dataSize));
             val oneDTarget = DistArray.make[Array[Complex]{rail}](oneDSource.dist, (Point) => new Array[Complex](dataSize));
             finish ateach(p1 in oneDSource) do1DFftToTemp(source, oneDSource(p1), oneDTarget(p1), forward);
@@ -64,8 +84,8 @@ public class Distributed3dFft {
             finish ateach(p1 in oneDSource) transposeTempToTarget();
             finish ateach(p1 in oneDSource) do1DFftToTemp(target, oneDSource(p1), oneDTarget(p1), forward);
             finish ateach(p1 in oneDSource) transposeTempToTarget();
-/* 
- * TODO uncomment once clocks work on Blue Gene
+
+ * TODO uncomment once clocked async / at works
  * or replace with ScalableTreeBarrier once XTENLANG-1660 is resolved
             val c = Clock.make();
             finish {
@@ -85,28 +105,6 @@ public class Distributed3dFft {
                     transposeTempToTarget();
                 }
                 c.drop();
-            }
-
- * -- or -- 
- * use Teams to synchronize (currently hangs above 4 places)
-
-            finish {
-                val fftTeam = Team(Rail.make(source.dist.places()));
-                for (p1 in source.dist.places()) async(p1) {
-                    // 'scratch' rails, for use in the 1D FFTs
-                    val oneDSource = Rail.make[Complex](dataSize);
-                    val oneDTarget = Rail.make[Complex](dataSize);
-                    do1DFftToTemp(source, oneDSource, oneDTarget, forward);
-                    transposeTempToTarget();
-                    fftTeam.barrier(here.id);
-                    do1DFftToTemp(target, oneDSource, oneDTarget, forward);
-                    fftTeam.barrier(here.id);
-                    transposeTempToTarget();
-                    fftTeam.barrier(here.id);
-                    do1DFftToTemp(target, oneDSource, oneDTarget, forward);
-                    fftTeam.barrier(here.id);
-                    transposeTempToTarget();
-                }
             }
 */
         }
