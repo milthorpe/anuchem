@@ -436,11 +436,13 @@ public class PME {
     public def getSelfEnergy() : Double {
         timer.start(TIMER_INDEX_SELF);
         val selfEnergy = finish(SumReducer()) {
-            ateach (p in subCells.dist) {
-                val thisCell = subCells(p);
+            for (place1 in gridDist.places()) async at(place1) {
                 var mySelfEnergy : Double = 0.0;
-                for ([thisAtom] in 0..thisCell.size-1) {
-                    mySelfEnergy += thisCell(thisAtom).charge * thisCell(thisAtom).charge;
+                for (p in subCells.dist(here)) {
+                    val thisCell = subCells(p);
+                    for ([thisAtom] in 0..thisCell.size-1) {
+                        mySelfEnergy += thisCell(thisAtom).charge * thisCell(thisAtom).charge;
+                    }
                 }
                 offer mySelfEnergy;
             }
