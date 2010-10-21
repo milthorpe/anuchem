@@ -30,6 +30,7 @@ ${x10.postcompiler} to "mpixx"
 
 Dependency for compiling:
 ------------------------
+* X10 version 2.1
 * GSL or equivalent BLAS library, will require rewrite of native wrappers for 
   any library other than GSL. However, the code can be compiled without any
   native wrappers. GSL is required for diagonalization and DIIS.
