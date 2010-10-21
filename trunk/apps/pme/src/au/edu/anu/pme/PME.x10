@@ -164,7 +164,7 @@ public class PME {
 
         packedAtomsCache = DistArray.make[Array[Array[MMAtom.PackedRepresentation]{rail}]{rank==3,rect}](Dist.makeUnique());
         finish ateach (p in packedAtomsCache) {
-            val mySubCellRegion = (subCells.dist | here).region;
+            val mySubCellRegion = subCells.dist(here);
             if (! mySubCellRegion.isEmpty()) {
                 val directRequiredRegion = ((mySubCellRegion.min(0) - 2)..(mySubCellRegion.max(0) + 2))
                                          * ((mySubCellRegion.min(1) - 2)..(mySubCellRegion.max(1) + 2))
@@ -291,29 +291,31 @@ public class PME {
         timer.start(TIMER_INDEX_PREFETCH);
         finish for (place in subCells.dist.places()) async at (place) {
             val myPackedAtoms = packedAtomsCache(here.id);
-            val haloPlaces = new HashMap[Int,ArrayList[Point(3)]](8); // a place may have up to 8 immediate neighbours in the two block-divided dimensions
-            
-            // separate the halo subcells into partial lists stored at each nearby place
-            for (boxIndex in myPackedAtoms.region) {
-                val placeId = subCells.periodicDist(boxIndex).id;
-                if (placeId != here.id) {
-                    var haloForPlace : ArrayList[Point(3)] = haloPlaces.getOrElse(placeId, null);
-                    if (haloForPlace == null) {
-                        haloForPlace = new ArrayList[Point(3)]();
-                        haloPlaces.put(placeId, haloForPlace);
+            if (myPackedAtoms != null) {
+                val haloPlaces = new HashMap[Int,ArrayList[Point(3)]](8); // a place may have up to 8 immediate neighbours in the two block-divided dimensions
+                
+                // separate the halo subcells into partial lists stored at each nearby place
+                for (boxIndex in myPackedAtoms.region) {
+                    val placeId = subCells.periodicDist(boxIndex).id;
+                    if (placeId != here.id) {
+                        var haloForPlace : ArrayList[Point(3)] = haloPlaces.getOrElse(placeId, null);
+                        if (haloForPlace == null) {
+                            haloForPlace = new ArrayList[Point(3)]();
+                            haloPlaces.put(placeId, haloForPlace);
+                        }
+                        haloForPlace.add(boxIndex);
                     }
-                    haloForPlace.add(boxIndex);
                 }
-            }
 
-            // retrieve the partial list for each place and store into my LET
-            finish for (placeEntry in haloPlaces.entries()) async {
-                val placeId = placeEntry.getKey();
-                val haloForPlace = placeEntry.getValue();
-                val haloListArray = haloForPlace.toArray();
-                val packedForPlace = at (Place.place(placeId)) { getPackedAtomsForSubcellList(haloListArray)};
-                for ([i] in 0..haloListArray.size-1) {
-                    myPackedAtoms(haloListArray(i)) = packedForPlace(i);
+                // retrieve the partial list for each place and store into my LET
+                finish for (placeEntry in haloPlaces.entries()) async {
+                    val placeId = placeEntry.getKey();
+                    val haloForPlace = placeEntry.getValue();
+                    val haloListArray = haloForPlace.toArray();
+                    val packedForPlace = at (Place.place(placeId)) { getPackedAtomsForSubcellList(haloListArray)};
+                    for ([i] in 0..haloListArray.size-1) {
+                        myPackedAtoms(haloListArray(i)) = packedForPlace(i);
+                    }
                 }
             }
         }
@@ -581,7 +583,7 @@ public class PME {
         val reciprocalEnergy = finish(SumReducer()) {
             for (place1 in gridDist.places()) async at(place1) {
                 var myReciprocalEnergy : Double = 0.0;
-                for (p in gridDist | here) {
+                for (p in gridDist.get(here)) {
                     val gridPointContribution = Q(p) * thetaRecConvQ(p);
                     myReciprocalEnergy += gridPointContribution.re;
                 }
