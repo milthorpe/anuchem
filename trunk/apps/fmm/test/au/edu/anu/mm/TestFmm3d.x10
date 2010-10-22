@@ -23,10 +23,6 @@ import au.edu.anu.util.Timer;
 public class TestFmm3d extends TestElectrostatic {
     public def sizeOfCentralCluster() : Double = 80.0;
 
-    public def this(numAtoms : Int) {
-        super(numAtoms);
-    }
-
     public static def main(args : Array[String](1)) {
         var numAtoms : Int;
         var density : Double = 60.0;
@@ -48,17 +44,17 @@ public class TestFmm3d extends TestElectrostatic {
             return;
         }
 
-        new TestFmm3d(numAtoms).test(density, numTerms, wellSpaced);
+        new TestFmm3d().test(numAtoms, density, numTerms, wellSpaced);
     }
 
-    public def test(density : Double, numTerms : Int, wellSpaced : Int) {
+    public def test(numAtoms : Int, density : Double, numTerms : Int, wellSpaced : Int) {
         Console.OUT.println("Testing FMM for " + numAtoms 
                   + " atoms, target density = " + density
                   + " numTerms = " + numTerms
                   + " wellSpaced param = " + wellSpaced);
         
 
-        val atoms = generateAtoms();
+        val atoms = generateAtoms(numAtoms);
         val fmm3d = new Fmm3d(density, numTerms, wellSpaced, Point3d(0.0, 0.0, 0.0), SIZE, numAtoms, atoms);
         val energy = fmm3d.calculateEnergy();
         
