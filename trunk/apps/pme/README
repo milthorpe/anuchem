@@ -24,11 +24,13 @@ To build for Blue Gene change ${x10rt} to "pgas_bgp"
 
 Compile dependencies:
 ------------------------
+* X10 version 2.1 (patched - see below)
 * FFTW http://www.fftw.org/ 
   (linked to at the locations ${fftw3.include} and ${fftw3.lib} in the ant build script)
 * anu-chem library
 * x10x.lib library
-* Periodic Array patches to X10 array libraries - see http://jira.codehaus.org/browse/XTENLANG-1365
+* PeriodicDistArray.x10 - patch to X10 array library - see http://jira.codehaus.org/browse/XTENLANG-1365
+* BlockBlockWorldDist.x10 - patch to X10 array library - see http://jira.codehaus.org/browse/XTENLANG-1520
 
 To run:
 ------

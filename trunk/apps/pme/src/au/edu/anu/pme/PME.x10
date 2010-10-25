@@ -291,12 +291,10 @@ public class PME {
         timer.start(TIMER_INDEX_PREFETCH);
         finish for (place in subCells.dist.places()) async at (place) {
             val myPackedAtoms = packedAtomsCache(here.id);
-            val haloDist = subCells.dist | myPackedAtoms.region;
-
             val haloPlaces = new HashMap[Int,ArrayList[Point(3)]](8); // a place may have up to 8 immediate neighbours in the two block-divided dimensions
             
             // separate the halo subcells into partial lists stored at each nearby place
-            for (boxIndex in haloDist) {
+            for (boxIndex in myPackedAtoms.region) {
                 val placeId = subCells.periodicDist(boxIndex).id;
                 if (placeId != here.id) {
                     var haloForPlace : ArrayList[Point(3)] = haloPlaces.getOrElse(placeId, null);
@@ -438,11 +436,13 @@ public class PME {
     public def getSelfEnergy() : Double {
         timer.start(TIMER_INDEX_SELF);
         val selfEnergy = finish(SumReducer()) {
-            ateach (p in subCells.dist) {
-                val thisCell = subCells(p);
+            for (place1 in gridDist.places()) async at(place1) {
                 var mySelfEnergy : Double = 0.0;
-                for ([thisAtom] in 0..thisCell.size-1) {
-                    mySelfEnergy += thisCell(thisAtom).charge * thisCell(thisAtom).charge;
+                for (p in subCells.dist(here)) {
+                    val thisCell = subCells(p);
+                    for ([thisAtom] in 0..thisCell.size-1) {
+                        mySelfEnergy += thisCell(thisAtom).charge * thisCell(thisAtom).charge;
+                    }
                 }
                 offer mySelfEnergy;
             }
