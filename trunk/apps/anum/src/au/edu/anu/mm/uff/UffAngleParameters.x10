@@ -8,7 +8,7 @@
  *
  * (C) Copyright Josh Milthorpe 2010.
  */
-package au.edu.anu.mm.amber;
+package au.edu.anu.mm.uff;
 
 /**
  * This struct represents the AMBER parameters for given bond angle type.
