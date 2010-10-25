@@ -35,12 +35,6 @@ public class TestElectrostatic {
      */
     public def sizeOfCentralCluster() : Double = SIZE;
 
-    protected val numAtoms : Int;
-
-    public def this(numAtoms : Int) {
-        this.numAtoms = numAtoms;
-    }
-
     public def logTime(desc : String, timerIndex : Int, timer : Timer) {
         Console.OUT.printf(desc + " (one cycle): %g seconds\n", (timer.total(timerIndex) as Double) / 1e9);
     }
@@ -51,7 +45,7 @@ public class TestElectrostatic {
      * Locate all particles within a small displacement from points on 
      * a cbrt(N)-SIZE grid.
      */
-    public def generateAtoms() : DistArray[Array[MMAtom]{rail}]{rail} {
+    public def generateAtoms(numAtoms : Int) : DistArray[Array[MMAtom]{rail}]{rail} {
         Console.OUT.println("size of cluster =  " + sizeOfCentralCluster());
         val tempAtoms = DistArray.make[ArrayList[MMAtom]](Dist.makeUnique(), (Point) => new ArrayList[MMAtom]());
         val gridSize = (Math.ceil(Math.cbrt(numAtoms)) as Int);
@@ -82,7 +76,7 @@ public class TestElectrostatic {
      * Gets the place ID to which to assign the given atom coordinates.
      * Currently just splits them up into slices by X coordinate.
      */
-    def getPlaceId(x : Double, y : Double, z : Double) : Int {
+    protected def getPlaceId(x : Double, y : Double, z : Double) : Int {
         return ((x / SIZE) * Place.MAX_PLACES) as Int;
     }
 

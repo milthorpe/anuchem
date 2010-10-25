@@ -1,0 +1,9 @@
+#include "ffgmx.itp"
+#include "spc.itp"
+
+[ system ]
+Pure Water in water
+
+[ molecules ]
+
+SOL             17131
