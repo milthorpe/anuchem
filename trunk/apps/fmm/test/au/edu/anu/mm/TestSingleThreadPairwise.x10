@@ -22,32 +22,28 @@ import au.edu.anu.util.Timer;
 public class TestSingleThreadPairwise extends TestElectrostatic {
     public def sizeOfCentralCluster() : Double = 80.0;
 
-    public def this(numAtoms : Int) {
-        super(numAtoms);
-    }
-
     public static def main(args : Array[String](1)) {
         var numAtoms : Int;
-        if (args.length > 0) {
+        if (args.size > 0) {
             numAtoms = Int.parseInt(args(0));
         } else {
             Console.ERR.println("usage: pairwise [numAtoms]");
             return;
         }
 
-        new TestSingleThreadPairwise(numAtoms).test();
+        new TestSingleThreadPairwise().test(numAtoms);
     }
 
-    public def test() {
+    public def test(numAtoms : Int) {
         Console.OUT.println("Testing single thread pairwise electrostatic calculation for " + numAtoms + " atoms");
-        val atoms = generateAtoms();
+        val atoms = generateAtoms(numAtoms);
         val myAtoms = atoms(0);
 
         val timer = new Timer(1);
         timer.start(0);
 
         var directEnergy : Double = 0.0;
-        for ([i] in 0..myAtoms.length-1) {
+        for ([i] in 0..myAtoms.size-1) {
             for ([j] in 0..i-1) {
                 directEnergy += myAtoms(i).charge * myAtoms(j).charge / myAtoms(j).centre.distance(myAtoms(i).centre);
             }
@@ -59,7 +55,7 @@ public class TestSingleThreadPairwise extends TestElectrostatic {
     }
 
     /** Assign all atoms to place 0. */
-    def getPlaceId(x : Double, y : Double, z : Double) : Int {
+    protected def getPlaceId(x : Double, y : Double, z : Double) : Int {
         return 0;
     }
 }

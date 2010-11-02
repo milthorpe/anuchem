@@ -24,31 +24,27 @@ public class TestSinglePlacePairwise extends TestElectrostatic {
 
     private var directEnergy : Double = 0.0;
 
-    public def this(numAtoms : Int) {
-        super(numAtoms);
-    }
-
     public static def main(args : Array[String](1)) {
         var numAtoms : Int;
-        if (args.length > 0) {
+        if (args.size > 0) {
             numAtoms = Int.parseInt(args(0));
         } else {
             Console.ERR.println("usage: pairwise [numAtoms]");
             return;
         }
 
-        new TestSinglePlacePairwise(numAtoms).test();
+        new TestSinglePlacePairwise().test(numAtoms);
     }
 
-    public def test() {
-        Console.OUT.println("Testing pairwise electrostatic calculation for " + numAtoms + " atoms");
-        val atoms = generateAtoms();
+    public def test(numAtoms : Int) {
+        Console.OUT.println("Testing single place pairwise electrostatic calculation for " + numAtoms + " atoms");
+        val atoms = generateAtoms(numAtoms);
         val myAtoms = atoms(0);
 
         val timer = new Timer(1);
         timer.start(0);
 
-        finish for ([i] in 0..myAtoms.length-1) async {
+        finish for ([i] in 0..myAtoms.size-1) async {
             var atomEnergy : Double = 0.0;
             for ([j] in 0..i-1) {
                 atomEnergy += myAtoms(i).charge * myAtoms(j).charge / myAtoms(j).centre.distance(myAtoms(i).centre);
@@ -63,7 +59,7 @@ public class TestSinglePlacePairwise extends TestElectrostatic {
     }
 
     /** Assign all atoms to place 0. */
-    def getPlaceId(x : Double, y : Double, z : Double) : Int {
+    protected def getPlaceId(x : Double, y : Double, z : Double) : Int {
         return 0;
     }
 }

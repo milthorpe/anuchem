@@ -23,26 +23,22 @@ import au.edu.anu.util.Timer;
 public class TestPairwise extends TestElectrostatic {
     public def sizeOfCentralCluster() : Double = 80.0;
 
-    public def this(numAtoms : Int) {
-        super(numAtoms);
-    }
-
     public static def main(args : Array[String](1)) {
         var numAtoms : Int;
-        if (args.length > 0) {
+        if (args.size > 0) {
             numAtoms = Int.parseInt(args(0));
         } else {
-            Console.ERR.println("usage: TestFmm3d numAtoms [density] [numTerms] [wellSpaced]");
+            Console.ERR.println("usage: pairwise [numAtoms]");
             return;
         }
 
-        new TestPairwise(numAtoms).test();
+        new TestPairwise().test(numAtoms);
     }
 
-    public def test() {
+    public def test(numAtoms : Int) {
         Console.OUT.println("Testing pairwise electrostatic calculation for " + numAtoms + " atoms");
 
-        val atoms = generateAtoms();
+        val atoms = generateAtoms(numAtoms);
         val direct = new ElectrostaticDirectMethod(atoms);
         val directEnergy = direct.getEnergy();
         logTime("Total time", ElectrostaticDirectMethod.TIMER_INDEX_TOTAL, direct.timer);
