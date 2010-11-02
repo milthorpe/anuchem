@@ -1,0 +1,6 @@
+TODOs for Pumja Rasaayani (Quantum Chemistry) Hartree-Fock code
+
+- quantify scaling with number of integrals in README file
+- MTA Fragmentor: more testing, parallelise, accept parameters from user
+- review and test ConnectivityBuilder 
+- ESSL wrapper: test (and complete) on Blue Gene

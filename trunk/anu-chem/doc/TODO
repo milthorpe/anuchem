@@ -1,0 +1,6 @@
+General TODOs for ANU-Chem and ANUMM
+
+- implement UFF for energy minimization
+- implement dynamics
+- read atom info, bonding from files in GromacsStructureFileReader
+- review and test ScalableTreeBarrier
