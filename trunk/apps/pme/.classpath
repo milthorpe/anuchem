@@ -2,10 +2,6 @@
 <classpath>
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="src" path="test"/>
-	<classpathentry kind="lib" path="/usr/local/eclipse/plugins/x10.runtime_2.0.0.jar"/>
-	<classpathentry kind="lib" path="/usr/local/eclipse/plugins/x10.common_2.0.0.jar"/>
-	<classpathentry kind="lib" path="/usr/local/eclipse/plugins/x10.constraints_2.0.0.jar"/>
-	<classpathentry kind="lib" path="/home/jmilthorpe/anu-x10/x10.runtime/lib/x10re.jar"/>
-	<classpathentry kind="lib" path="/home/jmilthorpe/anu-x10/x10x.lib/xla/lib/xla.jar"/>
+	<classpathentry kind="con" path="x10dt.X10_CONTAINER"/>
 	<classpathentry kind="output" path="target/classes"/>
 </classpath>
