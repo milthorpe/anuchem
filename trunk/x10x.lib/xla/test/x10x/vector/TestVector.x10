@@ -8,14 +8,12 @@ import harness.x10Test;
  */
 public class TestVector extends x10Test {
     public def run(): boolean {
-        val vector = Vector.make(3) as Vector!;
-        ateach(p(i) : Point in vector.vec) {
+        val vector = new Vector(3);
+        for([i] in vector.vec) {
             vector.vec(i) = i as Double;
         }
-        // TODO magnitude not place-safe
-        //val magnitude : Double = vector.magnitude();
-        // TODO Vector.make returns vector of wrong size!
-        //chk(magnitude == Math.sqrt(5.0));
+        val magnitude : Double = vector.magnitude();
+        chk(magnitude == Math.sqrt(5.0));
         return true;
     }
 

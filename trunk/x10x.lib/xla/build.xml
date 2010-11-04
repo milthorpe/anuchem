@@ -7,12 +7,14 @@
     <property name="bash.exe" value="bash"/>    
     <property name="optimize" value="true" />
     <property name="nochecks" value="true" />
+    <property name="x10rt" value="mpi"/>
 	<property name="target" location="${basedir}/target" />
 	<property name="target-src" location="${target}/classes" />
 	<property name="target-test" location="${target}/test-classes" />
 	<property name="lib" location="${basedir}/lib" />
 	<property name="jar" value="xla.jar"/>
     <property name="ar" value="xla.a"/>
+    <property name="testclass" value="test/x10x/matrix/TestMatrixMultiply.x10"/>
 
     <condition property="x10c.optimize" value="-O" else="">
         <istrue value="${optimize}" />
@@ -49,43 +51,23 @@
         </jar>
     </target>
 
-    <target name="build-src-java" depends="check-src-java" unless="src.uptodate">
+    <target name="build-src-java" depends="check-src-java" unless="src.uptodate.java">
         <echo message="Building source tree"/>
-
-        <fileset id="changed.src.files" dir="${basedir}/src" includes="**/*.x10">
-            <depend targetdir="${target}/classes">
-                <mapper type="glob" from="*.x10" to="*.java"/>
-            </depend>
-        </fileset>
-
-        <pathconvert property="src.list" refid="changed.src.files" dirsep="/" pathsep=" ">
-            <map from="${basedir}${file.separator}src${file.separator}" to=""/>
-        </pathconvert>
-        <echo message="x10c ${src.list}"/>
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/src">
             <arg value="-c"/>
-            <arg value="'x10c' ${x10c.optimize} -sourcepath . -commandlineonly -d ${target-src} ${src.list}"/>
+            <arg value="'x10c' ${x10c.optimize} -sourcepath . -commandlineonly -d ${target-src} ${changed.src.files}"/>
         </exec>
     </target>
 
     <target name="build-src-cpp" depends="check-src-cpp" unless="src.uptodate.cpp">
         <echo message="Building source tree"/>
 
-        <fileset id="changed.src.files" dir="${basedir}/src" includes="**/*.x10">
-            <depend targetdir="${target}/classes">
-                <mapper type="glob" from="*.x10" to="*.cc"/>
-            </depend>
-        </fileset>
-
-        <pathconvert property="src.list" refid="changed.src.files" dirsep="/" pathsep=" ">
-            <map from="${basedir}${file.separator}src${file.separator}" to=""/>
-        </pathconvert>
-        <echo message="x10c++ ${src.list}"/>
+        <echo message="x10c++ -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} -sourcepath ${x10.testlib} ${basedir}/${testclass}"/>
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/src">
             <arg value="-c"/>
-            <arg value="'x10c++' -c ${x10c.optimize} ${x10c.nochecks} -report postcompile=1 -sourcepath . -d ${target-src} ${src.list}"/>
+            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} -report postcompile=1 -sourcepath .:${x10.testlib} -d ${target-src} ${basedir}/${testclass}"/>
         </exec>
 
         <fileset id="generated.cpp.files" dir="${target}/classes">
@@ -112,6 +94,9 @@
             <srcfiles refid="src.files"/>
             <globmapper from="*.x10" to="${target-src}/*.java" handledirsep="true"/>
         </uptodate>
+        <pathconvert property="changed.src.files" refid="src.files" dirsep="/" pathsep=" ">
+            <map from="${basedir}${file.separator}src${file.separator}" to=""/>
+        </pathconvert>
     </target>
 
     <target name="check-src-cpp" depends="init-src">
@@ -122,7 +107,7 @@
         </uptodate>
     </target>
     
-    <target name="build-test" depends="check-test,build-harness" unless="test.uptodate">
+    <target name="build-test" depends="check-test,build-harness,build-src-java" unless="test.uptodate">
         <echo message="Building tests"/>
 
         <fileset id="changed.test.files" dir="${basedir}/test" includes="**/*.x10">

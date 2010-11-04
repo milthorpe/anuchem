@@ -4,6 +4,8 @@ import x10x.xla.*;
 import x10x.vector.Vector;
 
 import x10.array.Array;
+import x10.compiler.Header;
+import x10.compiler.Inline;
 
 /**
  * This class represents an (NxM)  Matrix.
@@ -13,7 +15,7 @@ import x10.array.Array;
  * @author V.Ganesh
  */
 public class Matrix { 
-    protected val mat:Array[Double](2){rect};
+    protected val mat:Array[Double]{rect,rank==2};
     val region:Region{rect,rank==2};
 
     /**
@@ -52,6 +54,15 @@ public class Matrix {
     public def getMatrix() = mat;
     public def getRowCount() = mat.region.max(0)+1;
     public def getColCount() = mat.region.max(1)+1;
+
+    public @Header @Inline def apply(i0:int, i1:int) : Double {
+        return mat(i0,i1);
+    }
+
+    public @Header @Inline def set(v:Double, i0:int, i1:int) : Double {
+        mat(i0,i1) = v;
+        return v;
+    }
 
     /**
      * Perform symmetric orthogonalization of this matrix
