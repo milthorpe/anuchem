@@ -2,7 +2,7 @@
 <!DOCTYPE project [<!ENTITY buildfile SYSTEM "file:./build-user.xml">]>
 <project name="X10 runtime extensions" default="build" basedir=".">
     <property environment="env"/>
-    <property name="x10home" location="${env.X10HOME}" />
+    <property name="x10home" location="${env.X10_HOME}" />
     <property name="x10.testlib" location="${user.home}/x10-trunk/x10.tests/examples/x10lib"/>
     <property name="bash.exe" value="bash"/>   
     <property name="optimize" value="true" />
