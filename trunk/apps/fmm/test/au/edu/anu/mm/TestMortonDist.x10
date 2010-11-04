@@ -19,7 +19,7 @@ import harness.x10Test;
  */
 class TestMortonDist extends x10Test {
     public def run(): boolean {
-        var boxRegion : Region(3) = [0..7, 0..7, 0..7];
+        var boxRegion : Region(3) = (0..7) * (0..7) * (0..7);
         val boxDistribution = MortonDist.make(boxRegion);
         Console.OUT.println("boxDistribution: " + boxDistribution);
 
