@@ -105,7 +105,7 @@
         </uptodate>
     </target>
     
-    <target name="build-test" depends="check-test,build-harness" unless="test.uptodate">
+    <target name="build-test" depends="check-test,build-harness,build-src-java" unless="test.uptodate">
         <echo message="Building tests"/>
 
         <fileset id="changed.test.files" dir="${basedir}/test" includes="**/*.x10">
