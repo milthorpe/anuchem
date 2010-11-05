@@ -19,10 +19,10 @@ import au.edu.anu.mm.AssociatedLegendrePolynomial;
  */
 class TestAssociatedLegendrePolynomial extends x10Test {
     public def run(): boolean {
-        val p = 5;
+        val p = 10;
 
         Console.OUT.println("Associated Legendre Polynomials, calculated on theta:");
-        val Plk = AssociatedLegendrePolynomial.getPlk(Math.PI/4.0, p);
+        val Plk = AssociatedLegendrePolynomial.getPlk(Math.PI/3.0, p);
 		for ([l] in 0..p) {
 		var fa : Double = 1.0;
             for ([k] in 0..l) {
@@ -33,7 +33,7 @@ class TestAssociatedLegendrePolynomial extends x10Test {
 		}
 
         Console.OUT.println("Associated Legendre Polynomials, calculated on cos(theta):");
-        val Plm = AssociatedLegendrePolynomial.getPlm(Math.cos(Math.PI/4.0), p);
+        val Plm = AssociatedLegendrePolynomial.getPlm(Math.cos(Math.PI/3.0), p);
 		for ([i] in 0..p) {
             for ([j] in 0..i) {
 			    Console.OUT.print("" + Plm(i,j) + " ");

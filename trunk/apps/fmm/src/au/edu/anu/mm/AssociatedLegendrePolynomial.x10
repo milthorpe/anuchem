@@ -32,15 +32,25 @@ public class AssociatedLegendrePolynomial {
         val triRegion = new TriangularRegion(0,0,p+1,true);
         val P = new Array[Double](triRegion);
         P(0,0) = 1.0;
+		var fact : Double = 1.0;
+		var sign : Double = -1.0;
         for ([l] in 1..p) {
-            P(l,l) = (2.0*l-1.0) * sinTheta * P(l-1,l-1);
-            P(l,l-1) = (2.0*l-1.0) * cosTheta * P(l-1,l-1);
+            P(l,l) = sign * fact * sinTheta * P(l-1,l-1);
+			sign *= -1.0;
+            P(l,l-1) = sign * fact * cosTheta * P(l-1,l-1);
+			sign *= -1.0;
+			fact += 2.0;
         }
 
+		fact = 1.0;
         for ([l] in 2..p) {
+			fact += 2.0;
+			sign = 1.0;
             for ([k] in 0..l-2) {
-               P(l,k) = ((2*l-1) * cosTheta * P(l-1,k) - (l+k-1) * P(l-2,k)) / (l-k);
+            	P(l,k) = sign * (fact * cosTheta * P(l-1,k) - (l+k-1) * P(l-2,k)) / (l-k);
+				sign *= -1.0;
             }
+			
         }
         return P;
     }
