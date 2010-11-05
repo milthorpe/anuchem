@@ -70,7 +70,7 @@
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/src">
             <arg value="-c"/>
-            <arg value="'x10c' ${x10c.optimize} -sourcepath .:${xre.src}:${xla.src}:${anuchem.src} -classpath ${xre.lib}:${xla.lib}:${anuchem.lib} -d ${target-src} ${basedir}/${testclass}"/>
+            <arg value="'x10c' ${x10c.optimize} -sourcepath .:${xre.src}:${xla.src}:${anuchem.src} -classpath ${xre.lib}:${xla.lib}:${anuchem.lib} -d ${target-src} ${changed.src.files}"/>
         </exec>
     </target>
 
@@ -95,6 +95,9 @@
             <srcfiles refid="src.files"/>
             <globmapper from="*.x10" to="${target-src}/*.java" handledirsep="true"/>
         </uptodate>
+        <pathconvert property="changed.src.files" refid="src.files" dirsep="/" pathsep=" ">
+            <map from="${basedir}${file.separator}src${file.separator}" to=""/>
+        </pathconvert>
     </target>
 
     <target name="check-src-cpp" depends="init-src">

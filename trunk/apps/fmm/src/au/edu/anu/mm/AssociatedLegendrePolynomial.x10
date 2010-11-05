@@ -18,10 +18,40 @@ import x10.array.TriangularRegion;
  */
 public class AssociatedLegendrePolynomial {
 
-	/**
-	 * Calculate associated Legendre polynomials P_{lm}(x) up to l=p (m.ge.0)
-	 */
-	public static def getPlm(x: double, p : int) : Array[Double](2) {
+    /**
+     * Calculate associated Legendre polynomials P_{lk}(x) up to l=p (m.ge.0)
+     * @see Dachsel (1996).
+     *   "Fast and accurate determination of the Wigner rotation matrices in the fast multipole method".
+     *   J. Chem. Phys. 124 (14) 144115. 14 April 2006.
+     *   info:doi/10.1063/1.2194548
+     */
+    public static def getPlk(theta: double, p : int) : Array[Double](2) {
+        val cosTheta = Math.cos(theta);
+        val sinTheta = Math.sin(theta);
+
+        val triRegion = new TriangularRegion(0,0,p+1,true);
+        val P = new Array[Double](triRegion);
+        P(0,0) = 1.0;
+        for ([l] in 1..p) {
+            P(l,l) = (2.0*l-1.0) * sinTheta * P(l-1,l-1);
+            P(l,l-1) = (2.0*l-1.0) * cosTheta * P(l-1,l-1);
+        }
+
+        for ([l] in 2..p) {
+            for ([k] in 0..l-2) {
+               P(l,k) = ((2*l-1) * cosTheta * P(l-1,k) - (l+k-1) * P(l-2,k)) / (l-k);
+            }
+        }
+        return P;
+    }
+
+    /*
+     * Calculate associated Legendre polynomials P_{lm}(x) up to l=p (m.ge.0)
+     * @see White and Head-Gordon (1994).
+     *      "Derivation and efficient implementation of the fast multipole method".
+     *      J. Chem. Phys. 101 (8) 15 October 1994.
+     */
+    public static def getPlm(x: double, p : int) : Array[Double](2) {
         if (Math.abs(x) > 1.0) {
             throw new IllegalArgumentException("abs(x) > 1: Associated Legendre functions are only defined on [-1, 1].");
         }
@@ -46,5 +76,4 @@ public class AssociatedLegendrePolynomial {
 		}
 		return Plm;
 	}
-
 }
