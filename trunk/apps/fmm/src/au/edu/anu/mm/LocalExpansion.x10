@@ -33,7 +33,7 @@ public class LocalExpansion extends Expansion {
         val exp = new LocalExpansion(p);
         val terms = exp.terms;
         val v_pole : Polar3d = Polar3d.getPolar3d(v);
-        val pplm = AssociatedLegendrePolynomial.getPlm(Math.cos(v_pole.theta), p); 
+        val pplm = AssociatedLegendrePolynomial.getPlk(v_pole.theta, p); 
 
         val rfac0 : Double = 1.0 / v_pole.r;
         val phifac0 = Complex(Math.cos(v_pole.phi), Math.sin(v_pole.phi));
