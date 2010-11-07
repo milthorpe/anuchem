@@ -15,6 +15,8 @@ import x10x.vector.Vector3d;
 import au.edu.anu.chem.mm.MMAtom;
 import au.edu.anu.fft.Distributed3dFft;
 import au.edu.anu.util.Timer;
+
+import x10.compiler.Inline;
 import x10.util.ArrayList;
 import x10.util.HashMap;
 import x10.util.Pair;
@@ -55,7 +57,6 @@ public class PME {
     /** The conjugate reciprocal vectors for each dimension. */
     private val edgeReciprocals : Array[Vector3d]{rail};
 
-    private val gridRegion : Region{rank==3,rect};
     private val gridDist : Dist{rank==3,rect};
     
     /** The order of B-spline interpolation */
@@ -144,7 +145,7 @@ public class PME {
         this.edgeReciprocals = new Array[Vector3d](3, (i : Int) => edges(i).inverse());
 
         this.atoms = atoms;
-        gridRegion = (0..gridSize(0)-1) * (0..gridSize(1)-1) * (0..gridSize(2)-1);
+        val gridRegion = (0..gridSize(0)-1) * (0..gridSize(1)-1) * (0..gridSize(2)-1);
         gridDist = Dist.makeBlockBlock(gridRegion, 0, 1);
         this.splineOrder = splineOrder;
         this.beta = beta;
@@ -222,6 +223,10 @@ public class PME {
 
             timer.start(TIMER_INDEX_THETARECCONVQ);
             // create F^-1(thetaRecConvQ)
+			val gridDist = this.gridDist; // TODO shouldn't be necessary XTENLANG-1913
+			val thetaRecConvQ = this.thetaRecConvQ; // TODO shouldn't be necessary XTENLANG-1913
+			val BdotC = this.BdotC; // TODO shouldn't be necessary XTENLANG-1913
+			val Qinv = this.Qinv; // TODO shouldn't be necessary XTENLANG-1913
             finish ateach (place in Dist.makeUnique()) {
                 val myGridRegion = gridDist.get(here) as Region{rank==3,rect};
                 for ([i,j,k] in myGridRegion) {
@@ -289,6 +294,8 @@ public class PME {
      */
     private def prefetchPackedAtoms() {
         timer.start(TIMER_INDEX_PREFETCH);
+		val subCells = this.subCells; // TODO shouldn't be necessary XTENLANG-1913
+		val packedAtomsCache = this.packedAtomsCache; // TODO shouldn't be necessary XTENLANG-1913
         finish for (place in subCells.dist.places()) async at (place) {
             val myPackedAtoms = packedAtomsCache(here.id);
             val haloPlaces = new HashMap[Int,ArrayList[Point(3)]](8); // a place may have up to 8 immediate neighbours in the two block-divided dimensions
@@ -311,7 +318,7 @@ public class PME {
                 val placeId = placeEntry.getKey();
                 val haloForPlace = placeEntry.getValue();
                 val haloListArray = haloForPlace.toArray();
-                val packedForPlace = at (Place.place(placeId)) { getPackedAtomsForSubcellList(haloListArray)};
+                val packedForPlace = at (Place.place(placeId)) { getPackedAtomsForSubcellList(subCells, haloListArray)};
                 for ([i] in 0..haloListArray.size-1) {
                     myPackedAtoms(haloListArray(i)) = packedForPlace(i);
                 }
@@ -325,11 +332,12 @@ public class PME {
      * place, returns an Array, each element of which is in turn
      * a Array of MMAtom.PackedRepresentation containing the 
      * packed atoms for each subcell.
+	 * TODO should use instance fields instead of all those parameters - XTENLANG-1913
      */
-    private def getPackedAtomsForSubcellList(boxList : Array[Point(3)]{rail}) {
+    private static def getPackedAtomsForSubcellList(subCells : PeriodicDistArray[Array[MMAtom]{rail}]{rank==3,rect}, boxList : Array[Point(3)]{rail}) {
         val packedAtomList = new Array[Array[MMAtom.PackedRepresentation]{rail}](boxList.size, 
                                                             (i : Int) => 
-                                                                getPackedAtomsForSubCell(boxList(i))
+                                                                getPackedAtomsForSubCell(subCells, boxList(i))
                                                             );
         return packedAtomList;
     }
@@ -337,6 +345,11 @@ public class PME {
     public def getDirectEnergy() : Double {
         timer.start(TIMER_INDEX_DIRECT);
         val cutoffSquared = cutoff*cutoff;
+		val numSubCells = this.numSubCells; // TODO shouldn't be necessary XTENLANG-1913
+		val subCells = this.subCells; // TODO shouldn't be necessary XTENLANG-1913
+		val packedAtomsCache = this.packedAtomsCache; // TODO shouldn't be necessary XTENLANG-1913
+		val imageTranslations = this.imageTranslations; // TODO shouldn't be necessary XTENLANG-1913
+		val beta = this.beta; // TODO shouldn't be necessary XTENLANG-1913
         val directEnergy = finish(SumReducer()) {
             ateach (p in subCells) {
                 var myDirectEnergy : Double = 0.0;
@@ -422,8 +435,9 @@ public class PME {
 
     /*
      * Returns atom charges and coordinates for a sub-cell, in packed representation
+	 * TODO should use instance fields instead of all those parameters - XTENLANG-1913
      */
-    private def getPackedAtomsForSubCell(subCellIndex : Point(3)) : Array[MMAtom.PackedRepresentation]{rail} {
+    private static def getPackedAtomsForSubCell(subCells : PeriodicDistArray[Array[MMAtom]{rail}]{rank==3,rect}, subCellIndex : Point(3)) : Array[MMAtom.PackedRepresentation]{rail} {
         val subCell = subCells(subCellIndex);
         return new Array[MMAtom.PackedRepresentation](subCell.size, (i : Int) => subCell(i).getPackedRepresentation());
     }
@@ -435,6 +449,7 @@ public class PME {
      */
     public def getSelfEnergy() : Double {
         timer.start(TIMER_INDEX_SELF);
+		val subCells = this.subCells; // TODO shouldn't be necessary XTENLANG-1913
         val selfEnergy = finish(SumReducer()) {
             for (place1 in gridDist.places()) async at(place1) {
                 var mySelfEnergy : Double = 0.0;
@@ -457,10 +472,21 @@ public class PME {
      */
     public def gridCharges() {
         timer.start(TIMER_INDEX_GRIDCHARGES);
+		val numSubCells = this.numSubCells; // TODO shouldn't be necessary XTENLANG-1913
+		val splineOrder = this.splineOrder; // TODO shouldn't be necessary XTENLANG-1913
+		val gridSize = this.gridSize; // TODO shouldn't be necessary XTENLANG-1913
+		val gridDist = this.gridDist; // TODO shouldn't be necessary XTENLANG-1913
+		val subCells = this.subCells; // TODO shouldn't be necessary XTENLANG-1913
+		val K1 = this.K1; // TODO shouldn't be necessary XTENLANG-1913;
+		val K2 = this.K2; // TODO shouldn't be necessary XTENLANG-1913;
+		val K3 = this.K3; // TODO shouldn't be necessary XTENLANG-1913;
+		val Q = this.Q; // TODO shouldn't be necessary XTENLANG-1913;
+		val edgeReciprocals = this.edgeReciprocals; // TODO shouldn't be necessary XTENLANG-1913
         finish ateach (place1 in Dist.makeUnique()) {
+			val gridRegion = gridDist.region;
             val place1Region = subCells.dist.get(here);
             if (!place1Region.isEmpty()) {
-                val place1HaloRegion = getGridRegionForSubcellAtoms(place1Region);
+                val place1HaloRegion = getGridRegionForSubcellAtoms(gridSize, numSubCells, splineOrder, place1Region);
                 val myQ = new Array[Double](place1HaloRegion, (Point) => 0.0);
 
                 for (p in place1Region) {
@@ -468,7 +494,7 @@ public class PME {
                     for (atomIndex in thisCell) {
                         val atom = thisCell(atomIndex);
                         val q = atom.charge;
-                        val u = getScaledFractionalCoordinates(atom.centre); // TODO general non-cubic
+                        val u = getScaledFractionalCoordinates(K1, K2, K3, edgeReciprocals, atom.centre); // TODO general non-cubic
                         val u1c = Math.ceil(u.i) as Int;
                         val u2c = Math.ceil(u.j) as Int;
                         val u3c = Math.ceil(u.k) as Int;
@@ -498,14 +524,14 @@ public class PME {
                     // as the region is periodic and divided along two dimensions.
                     val shiftX = (place1HaloRegion.max(0) < place2Region.min(0) || place1HaloRegion.min(0) < gridRegion.min(0)) ? gridSize(0) : ((place1HaloRegion.min(0) > place2Region.max(0) || place1HaloRegion.max(0) > gridRegion.max(0)) ? -gridSize(0) : 0);
                     val shiftY = (place1HaloRegion.max(1) < place2Region.min(1) || place1HaloRegion.min(1) < gridRegion.min(1)) ? gridSize(0) : ((place1HaloRegion.min(1) > place2Region.max(1) || place1HaloRegion.max(1) > gridRegion.max(1)) ? -gridSize(0) : 0);
-                    scatterAndReduceShiftedGridContribution(myQ, Point.make(0,0,0), place2);
+                    scatterAndReduceShiftedGridContribution(myQ, Point.make(0,0,0), gridDist, Q, place2);
                     if (shiftX != 0) {
-                        scatterAndReduceShiftedGridContribution(myQ, Point.make(shiftX,0,0), place2);
+                        scatterAndReduceShiftedGridContribution(myQ, Point.make(shiftX,0,0), gridDist, Q, place2);
                     }
                     if (shiftY != 0) {
-                        scatterAndReduceShiftedGridContribution(myQ, Point.make(0,shiftY,0), place2);
+                        scatterAndReduceShiftedGridContribution(myQ, Point.make(0,shiftY,0), gridDist, Q, place2);
                         if (shiftX != 0) {
-                           scatterAndReduceShiftedGridContribution(myQ, Point.make(shiftX,shiftY,0), place2);  
+                           scatterAndReduceShiftedGridContribution(myQ, Point.make(shiftX,shiftY,0), gridDist, Q, place2);  
                         }
                     }
                   
@@ -530,9 +556,12 @@ public class PME {
      * is even worse!
      * TODO a more general solution to this problem with be required to solve
      * XTENLANG-1373 (in conjuction with XTENLANG-1365)
+	 * TODO should use instance fields instead of all those parameters - XTENLANG-1913
      */
-    private def scatterAndReduceShiftedGridContribution(sourceGrid : Array[Double]{self.rect,self.rank==3},
+    private static def scatterAndReduceShiftedGridContribution(sourceGrid : Array[Double]{self.rect,self.rank==3},
                                              shift : Point(3),
+										     gridDist : Dist{rank==3,rect},
+											 Q : DistArray[Complex]{self.dist==gridDist},
                                              targetPlace : Place) {
         val targetRegion = (gridDist | targetPlace).region;
         val overlapRegion = (sourceGrid.region + shift && targetRegion) as Region{rank==3,rect};
@@ -562,8 +591,10 @@ public class PME {
      * Each subcell only contributes to a portion of the grid, depending on
      * the spline order.  (A larger spline order spreads the atoms in a subcell
      * over a larger area of the grid.)
+	 * TODO general non-cubic grid
+	 * TODO should use instance fields instead of all those parameters - XTENLANG-1913
      */
-    private def getGridRegionForSubcellAtoms(subCellRegion : Region{rank==3}) {
+    private static @Inline def getGridRegionForSubcellAtoms(gridSize : Array[Int]{rail}, numSubCells : Int, splineOrder : Int, subCellRegion : Region{rank==3}) {
         val gridPointsPerSubCell = (gridSize(0) as Double) / numSubCells;
         val minX = Math.floor(subCellRegion.min(0) * gridPointsPerSubCell) as Int - splineOrder + 1;
         val maxX = Math.ceil((subCellRegion.max(0)+1) * gridPointsPerSubCell) as Int - 1;
@@ -579,6 +610,9 @@ public class PME {
         timer.start(TIMER_INDEX_RECIPROCAL);
 
         val reciprocalEnergy = finish(SumReducer()) {
+			val gridDist = this.gridDist; // TODO shouldn't be necessary XTENLANG-1913
+			val Q = this.Q; // TODO shouldn't be necessary XTENLANG-1913
+			val thetaRecConvQ = this.thetaRecConvQ; // TODO shouldn't be necessary XTENLANG-1913
             for (place1 in gridDist.places()) async at(place1) {
                 var myReciprocalEnergy : Double = 0.0;
                 for (p in gridDist | here) {
@@ -697,13 +731,16 @@ public class PME {
         }
     }
 
-    /** Gets scaled fractional coordinate u as per Eq. 3.1 - cubic only */
-    public def getScaledFractionalCoordinates(r : Point3d) : Vector3d {
+    /** 
+	 * Gets scaled fractional coordinate u as per Eq. 3.1 - cubic only 
+	 * TODO should use instance fields instead of all those parameters - XTENLANG-1913
+	 */
+    public static @Inline def getScaledFractionalCoordinates(K1 : Double, K2 : Double, K3 : Double, edgeReciprocals : Array[Vector3d]{rail}, r : Point3d) : Vector3d {
         return Vector3d(edgeReciprocals(0).i * K1 * r.i, edgeReciprocals(1).j * K2 * r.j, edgeReciprocals(2).k * K3 * r.k);
     }
     
     /** Gets scaled fractional coordinate u as per Eq. 3.1 - general rectangular */
-    public def getScaledFractionalCoordinates(r : Vector3d) : Vector3d {
+    public static @Inline def getScaledFractionalCoordinates(K1 : Double, K2 : Double, K3 : Double, edgeReciprocals : Array[Vector3d]{rail}, r : Vector3d) : Vector3d {
         // this method allows general non-rectangular cells
         return Vector3d(edgeReciprocals(0).mul(K1).dot(r), edgeReciprocals(1).mul(K2).dot(r), edgeReciprocals(2).mul(K3).dot(r));
     }
