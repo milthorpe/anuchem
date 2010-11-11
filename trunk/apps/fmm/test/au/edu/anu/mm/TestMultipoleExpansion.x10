@@ -43,7 +43,12 @@ class TestMultipoleExpansion extends MathTest {
         val localExp = new LocalExpansion(p);
         val transformation = LocalExpansion.getMlm(Point3d(2.0, -3.0, 1.0) as Tuple3d, p);
         localExp.transformAndAddToLocal(transformation, Olm);
-        Console.OUT.println("transformed multipole:\n" + localExp.toString());    
+        Console.OUT.println("transformed multipole:\n" + localExp.toString());
+
+        val rotated = Olm.rotate(0.0/*Math.PI/4.0*/, 3.0*Math.PI/4.0);
+        Console.OUT.println("rotated multipole:\n" + rotated.toString());
+        val restored = rotated.rotate(0.0/*-Math.PI/4.0*/, -3.0*Math.PI/4.0);
+        Console.OUT.println("restored multipole:\n" + restored.toString());
 
         return true;
     }

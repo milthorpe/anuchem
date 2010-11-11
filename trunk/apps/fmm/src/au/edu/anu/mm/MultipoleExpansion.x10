@@ -117,6 +117,43 @@ public class MultipoleExpansion extends Expansion {
         }
     }
 
+    /** 
+     * Rotate a multipole expansion in three dimensions.
+     * @param theta the Euler angle theta
+     * @param phi the Euler angle phi
+     * @see Dachsel 2006
+     */
+    public def rotate(theta : Double, phi : Double) {
+        val p : Int = terms.region.max(0);
+        val target = new MultipoleExpansion(p);
+        val targetTerms = target.terms;
+        targetTerms(0,0) = terms(0,0);
+        for ([l] in 1..p) {
+            Console.OUT.println(l + " = " + l);
+            val Dl = WignerRotationMatrix.getDmk(theta, l);
+            /*
+            Console.OUT.println("D^" + l + " = ");
+            for ([m] in -l..l) {
+		        for ([k] in -l..l) {
+			        Console.OUT.print("" + Dl(k,m) + " ");
+                }
+                Console.OUT.println();
+		    }
+            */
+            var O_lm : Complex = Complex.ZERO;
+            for ([m] in -l..l) {
+                val lmFac = factorial(l-m)*factorial(l+m);
+                for ([k] in -l..l) {
+                    val lkFac = factorial(l-k)*factorial(l+k);
+                    Console.OUT.println("k = " + k + " m = " + m + " lkFac = " + lkFac + " lmFac = " + lmFac);
+                    O_lm = O_lm + Math.sqrt(lkFac as Double / lmFac ) * Dl(m,k) * Math.exp(-Complex.I * k * phi) * terms(l,k); // Eq. 4
+                }
+                targetTerms(l,m) = O_lm;
+            }
+        }
+        return target;
+    }
+
     /**
      * For a periodic FMM, gets the macroscopic parent multipole
      * for the 3x3x3 box that is the parent of the box for which
@@ -132,6 +169,20 @@ public class MultipoleExpansion extends Expansion {
             parentExpansion.terms(l,m) = terms(l,m) * Math.pow(3.0, l);
         }
         return parentExpansion;
+    }
+
+    /**
+     * Returns the factorial n!
+     */
+    static def factorial(n:Int) : Long {
+        var value:Long = 1;
+        var x : Int = n;
+        while(x > 1) {
+            value = value * x;
+            x--;
+        } // end while
+        
+        return value;
     }
 }
 

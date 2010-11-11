@@ -11,7 +11,7 @@
 package au.edu.anu.mm;
 
 /**
- * This class calculates the Wigner rotation matrix D^l_{km}.
+ * This class calculates the Wigner rotation matrix D^l_{mk}.
  * @see Dachsel (1996).
  *   "Fast and accurate determination of the Wigner rotation matrices in the fast multipole method".
  *   J. Chem. Phys. 124 (14) 144115. 14 April 2006.
@@ -21,9 +21,9 @@ package au.edu.anu.mm;
 public class WignerRotationMatrix {
 
 	/**
-	 * Calculate Wigner rotation matrix D_{km}(theta, l) for k = -l..l
+	 * Calculate Wigner rotation matrix D_{mk}(theta, l) for m: [-l..l], k: [-l..l]
 	 */
-	public static def getDkm(theta: double, l : int) : Array[Double](2) {
+	public static def getDmk(theta: double, l : int) : Array[Double](2) {
         if (Math.abs(theta) > 2.0 * Math.PI) {
             throw new IllegalArgumentException("abs(x) > 2*PI: Wigner rotation matrix is only defined on [0..2*PI].");
         }
@@ -52,11 +52,11 @@ public class WignerRotationMatrix {
         }
 
         var thetaPrime : Double = theta;
-        // cosTheta < 0; need to calculate Dlm using addition theorems - Eq. 30
-        if (theta > Math.PI / 2) {
+        // if cosTheta < 0 need to calculate Dlm using addition theorems - Eq. 30
+        if (theta > Math.PI/2.0) {
             if (theta < Math.PI) {
                 thetaPrime = Math.PI - theta;
-            } else if (theta > Math.PI) {
+            } else if (theta > Math.PI && theta < 3.0*Math.PI/2.0) {
                 thetaPrime = theta - Math.PI;
             }
             // theta == PI already handled above
@@ -73,7 +73,6 @@ public class WignerRotationMatrix {
 
         // starting point for recursion, Eq. 28
         val gl0 = gk0;
-        Console.OUT.println("gl0 = " + gl0);
         D(0,l) = Math.pow(-1.0, l) * gl0 * Math.pow(sinTheta, l);
         var glm : Double = gl0;
         var sign : Double = Math.pow(-1, l);
@@ -102,6 +101,31 @@ public class WignerRotationMatrix {
             for ([k] in -l..l) {
                 D(m,k) = sign * D(-m,-k);
                 sign *= -1;
+            }
+        }
+
+        // if cosTheta < 0 need to calculate Dlm using addition theorems - Eq. 30
+        if (theta > Math.PI/2.0) {
+            if (theta < Math.PI) {
+                sign = -1.0;
+                for ([m] in -l..-1) {
+                    sign *= -1.0;
+                    for ([k] in -l..-1) {
+                        val tmp = D(m,k);
+                        D(m,k) = sign * D(m,-k);
+                        D(m,-k) = sign * tmp;
+                    }
+                }
+            } else if (theta > Math.PI && theta < 3.0*Math.PI/2.0) {
+                sign = -1.0;
+                for ([m] in -l..-1) {
+                    sign *= -1.0;
+                    for ([k] in -l..-1) {
+                        val tmp = D(m,k);
+                        D(m,k) = sign * D(-m,k);
+                        D(-m,k) = sign * tmp;
+                    }
+                }
             }
         }
 

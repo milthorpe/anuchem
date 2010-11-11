@@ -20,11 +20,11 @@ import au.edu.anu.mm.WignerRotationMatrix;
 class TestWignerRotationMatrix extends x10Test {
     public def run(): boolean {
         val l = 3;
-        val Dkm = WignerRotationMatrix.getDkm(Math.PI/4, l);
-        Console.OUT.println("Dkm(PI/4):");
+        val Dmk = WignerRotationMatrix.getDmk(5.0*Math.PI/4, l);
+        Console.OUT.println("Dkm(5PI/4):");
         for ([m] in -l..l) {
 		    for ([k] in -l..l) {
-			    Console.OUT.print("" + Dkm(k,m) + " ");
+			    Console.OUT.print("" + Dmk(k,m) + " ");
             }
             Console.OUT.println();
 		}
