@@ -66,7 +66,7 @@ public class Anumm {
         val t = timestep * 0.001;
         finish ateach([p] in atoms) {
             val myAtoms = atoms(p);
-            for([i] in 0..myAtoms.length-1) {
+            for([i] in 0..myAtoms.size-1) {
                 val atom = myAtoms(i);
                 val invMass = 1.0 / forceField.getAtomMass(atom.symbol);
                 atom.velocity = atom.velocity + 0.5 * t * invMass * atom.force;
@@ -76,7 +76,7 @@ public class Anumm {
         forceField.getPotentialAndForces(atoms);
         finish ateach([p] in atoms) {
             val myAtoms = atoms(p);
-            for([i] in 0..myAtoms.length-1) {
+            for([i] in 0..myAtoms.size-1) {
                 val atom = myAtoms(i);
                 val invMass = 1.0 / forceField.getAtomMass(atom.symbol);
                 atom.velocity = atom.velocity + 0.5 * t * invMass * atom.force;
@@ -136,14 +136,14 @@ public class Anumm {
      * MD requires that the atoms have already been distributed. 
      */
     public static def assignAtoms(molecule : Molecule[MMAtom]) : DistArray[Array[MMAtom]{rail}](1) {
-        val tempAtoms = DistArray.make[ArraList[MMAtom]](Dist.makeUnique(), (Point) => new ArrayList[MMAtom]());
+        val tempAtoms = DistArray.make[ArrayList[MMAtom]](Dist.makeUnique(), (Point) => new ArrayList[MMAtom]());
         val atomList = molecule.getAtoms();
         val maxExtent = molecule.getMaxExtent();
         finish for (var i : Int = 0; i < atomList.size(); i++) {
             val atom = atomList(i);
             val p = getPlaceId(atom.centre.i, atom.centre.j, atom.centre.k, maxExtent);
             Console.OUT.println(atom + " to " + p);
-            async at (Place.places(p)) {
+            async at (Place.place(p)) {
                 val remoteAtom = new MMAtom(atom);
                 atomic { tempAtoms(p).add(remoteAtom); }
             }
