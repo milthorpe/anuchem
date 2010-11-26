@@ -22,18 +22,18 @@ import x10.util.*;
 public class Orbital { 
     val exps:ArrayList[Double];
     val coeff:ArrayList[Double];
-    val type:String;
+    val shape:String;
     val angularMomentum:Int;
 
-    public def this(type:String) { 
+    public def this(shape:String) { 
        exps      = new ArrayList[Double]();
        coeff     = new ArrayList[Double]();
-       this.type = type;
+       this.shape = shape;
 
-       if (type.equals("S")) angularMomentum = 0;
-       else if (type.equals("P")) angularMomentum = 1;
-       else if (type.equals("D")) angularMomentum = 2;
-       else if (type.equals("F")) angularMomentum = 3;
+       if (shape.equals("S")) angularMomentum = 0;
+       else if (shape.equals("P")) angularMomentum = 1;
+       else if (shape.equals("D")) angularMomentum = 2;
+       else if (shape.equals("F")) angularMomentum = 3;
        else angularMomentum = 0;
     } 
 
@@ -50,7 +50,7 @@ public class Orbital {
        coeff.add(co);
     }
 
-    public def getType() : String = this.type;
+    public def getType() : String = this.shape;
     public def getAngularMomentum() = this.angularMomentum;
     public def getExponents() : ArrayList[Double] = this.exps;
     public def getCoefficients() : ArrayList[Double] = this.coeff;
