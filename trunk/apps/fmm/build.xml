@@ -66,6 +66,15 @@
         </exec>
     </target>
 
+    <target name="exe-java" depends="check-src-java" unless="src.uptodate.java">
+        <echo message="Building source tree"/>
+
+        <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/src">
+            <arg value="-c"/>
+            <arg value="'x10c' ${x10c.optimize} -sourcepath .${path.separator}${xre.src}${path.separator}${xla.src}${path.separator}${anuchem.src} -classpath ${xre.lib}${path.separator}${xla.lib}${path.separator}${anuchem.lib} -d ${target-src} '${basedir}/${testclass}'"/>
+        </exec>
+    </target>
+
     <target name="build-src-java" depends="check-src-java" unless="src.uptodate.java">
         <echo message="Building source tree"/>
 
