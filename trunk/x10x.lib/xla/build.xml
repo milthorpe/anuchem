@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE project [<!ENTITY buildfile SYSTEM "file:./build-user.xml">]>
 <project name="X10 Linear Algebra project" default="build" basedir=".">
+    &buildfile;
     <property environment="env"/>
     <property name="x10home" location="${user.home}/x10-trunk/x10.dist" />
     <property name="x10.testlib" location="${user.home}/x10-trunk/x10.tests/examples/x10lib"/>
@@ -56,31 +57,32 @@
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/src">
             <arg value="-c"/>
-            <arg value="'x10c' ${x10c.optimize} -sourcepath . -commandlineonly -d ${target-src} ${changed.src.files}"/>
+            <arg value="'x10c' ${x10c.optimize} -sourcepath . -commandlineonly -d '${target-src}' ${changed.src.files}"/>
         </exec>
     </target>
 
     <target name="build-src-cpp" depends="check-src-cpp" unless="src.uptodate.cpp">
         <echo message="Building source tree"/>
 
-        <echo message="x10c++ -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} -sourcepath ${x10.testlib} ${basedir}/${testclass}"/>
+        <echo message="x10c++ -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} -sourcepath '${x10.testlib}' '${basedir}/${testclass}'"/>
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/src">
             <arg value="-c"/>
-            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} -report postcompile=1 -sourcepath .:${x10.testlib} -d ${target-src} ${basedir}/${testclass}"/>
+            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} -report postcompile=1 -sourcepath '.${path.separator}${x10.testlib}' -d '${target-src}' '${basedir}/${testclass}'"/>
         </exec>
 
-        <fileset id="generated.cpp.files" dir="${target}/classes">
+        <fileset id="generated.cpp.files" dir="${target-src}">
             <include name="**/*.cc" />
         </fileset>
 
         <pathconvert property="cpp.list" refid="generated.cpp.files" dirsep="/" pathsep=" ">
-            <map from="${basedir}${file.separator}src${file.separator}" to=""/>
+            <map from="${target-src}${file.separator}" to=""/>
         </pathconvert>
 
-        <exec executable="${bash.exe}" failonerror="true" dir="${target}/classes">
+        <echo message="'g++' -c -g -I'${x10home}/include' -I. -DX10_USE_BDWGC -O2 -DNDEBUG -finline-functions -DNO_CHECKS -Wno-long-long -Wno-unused-parameter -msse2 -mfpmath=sse ${cpp.list}"/>
+        <exec executable="${bash.exe}" failonerror="true" dir="${target-src}">
             <arg value="-c"/>
-            <arg value="'g++' -c -g -I${x10home}/include -I. -DX10_USE_BDWGC -O2 -DNDEBUG -finline-functions -DNO_CHECKS -Wno-long-long -Wno-unused-parameter -pthread -msse2 -mfpmath=sse ${cpp.list}"/>
+            <arg value="'g++' -c -g -I'${x10home}/include' -I. -DX10_USE_BDWGC -O2 -DNDEBUG -finline-functions -DNO_CHECKS -Wno-long-long -Wno-unused-parameter -msse2 -mfpmath=sse ${cpp.list}"/>
         </exec>
     </target>
 
@@ -123,13 +125,13 @@
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/test">
             <arg value="-c"/>
-            <arg value="'x10c' ${x10c.optimize} -sourcepath ${x10.testlib}:${basedir}/src:. -classpath ${target-src} -commandlineonly -d ${target-test} ${test.list}"/>
+            <arg value="'x10c' ${x10c.optimize} -sourcepath '${x10.testlib}${path.separator}${basedir}/src${path.separator}.' -classpath '${target-src}' -commandlineonly -d '${target-test}' ${test.list}"/>
         </exec>
     </target>
 
     <target name="test" depends="build-test">
         <apply executable="x10" failonerror="true" dir="${target-test}" relative="true" addsourcefile="false">
-            <arg line="-t -v -mx 128M -classpath ${target-src}:${target-test}" />
+            <arg line="-t -v -mx 128M -classpath '${target-src}${path.separator}${target-test}'" />
             <targetfile/>
 
             <fileset dir="${target-test}" includes="**/Test*.java" />
@@ -151,10 +153,10 @@
 
 	<target name="build-harness" depends="init-test,check-harness" unless="harness.uptodate">
         <echo message="Building test harness"/>
-		<echo message="x10c ${x10.testlib}/harness/x10Test.x10"/>
+		<echo message="x10c '${x10.testlib}/harness/x10Test.x10'"/>
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/test">
             <arg value="-c"/>
-            <arg value="'x10c' ${x10c.optimize} -sourcepath . -commandlineonly -d ${target-test} ${x10.testlib}/harness/x10Test.x10"/>
+            <arg value="'x10c' ${x10c.optimize} -sourcepath . -commandlineonly -d '${target-test}' '${x10.testlib}/harness/x10Test.x10'"/>
         </exec>
     </target>
 

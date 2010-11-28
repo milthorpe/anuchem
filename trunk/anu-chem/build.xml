@@ -43,11 +43,11 @@
         </jar>
     </target>
 
-    <target name="build-src-java" depends="check-src-java" unless="src.uptodate">
+    <target name="build-src-java" depends="check-src-java" unless="src.uptodate.java">
         <echo message="Building source tree"/>
 
         <fileset id="changed.src.files" dir="${basedir}/src" includes="**/*.x10">
-            <depend targetdir="${target}/classes">
+            <depend targetdir="${target-src}">
                 <mapper type="glob" from="*.x10" to="*.java"/>
             </depend>
         </fileset>
@@ -59,7 +59,7 @@
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/src">
             <arg value="-c"/>
-            <arg value="'x10c' ${x10c.optimize} -sourcepath .:${xla.src} -classpath ${xla.lib} -commandlineonly -d ${target-src} ${src.list}"/>
+	    <arg value="'x10c' ${x10c.optimize} -sourcepath '.${path.separator}${xla.src}' -classpath '${xla.lib}' -commandlineonly -d '${target-src}' ${src.list}"/>
         </exec>
     </target>
 
@@ -91,13 +91,13 @@
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/test">
             <arg value="-c"/>
-            <arg value="'x10c' ${x10c.optimize} -sourcepath ${x10.testlib}:${basedir}/src:. -classpath ${target-src} -commandlineonly -d ${target-test} ${test.list}"/>
+            <arg value="'x10c' ${x10c.optimize} -sourcepath '${x10.testlib}${path.separator}${basedir}/src${path.separator}.' -classpath '${target-src}' -commandlineonly -d '${target-test}' ${test.list}"/>
         </exec>
     </target>
 
     <target name="test" depends="build-test">
         <apply executable="x10" failonerror="true" dir="${target-test}" relative="true" addsourcefile="false">
-            <arg line="-t -v -mx 128M -classpath ${target-src}:${target-test}" />
+            <arg line="-t -v -mx 128M -classpath '${target-src}${path.separator}${target-test}'" />
             <targetfile/>
 
             <fileset dir="${target-test}" includes="**/Test*.java" />
@@ -119,10 +119,10 @@
 
 	<target name="build-harness" depends="init-test,check-harness" unless="harness.uptodate">
         <echo message="Building test harness"/>
-		<echo message="x10c ${x10.testlib}/harness/x10Test.x10"/>
+		<echo message="x10c '${x10.testlib}/harness/x10Test.x10'"/>
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/test">
             <arg value="-c"/>
-            <arg value="'x10c' ${x10c.optimize} -sourcepath . -commandlineonly -d ${target-test} ${x10.testlib}/harness/x10Test.x10"/>
+            <arg value="'x10c' ${x10c.optimize} -sourcepath . -commandlineonly -d '${target-test}' '${x10.testlib}/harness/x10Test.x10'"/>
         </exec>
     </target>
 

@@ -55,11 +55,11 @@ public class Matrix {
     public def getRowCount() = mat.region.max(0)+1;
     public def getColCount() = mat.region.max(1)+1;
 
-    public @Header @Inline def apply(i0:int, i1:int) : Double {
+    public @Inline def apply(i0:int, i1:int) : Double {
         return mat(i0,i1);
     }
 
-    public @Header @Inline def set(v:Double, i0:int, i1:int) : Double {
+    public @Inline def set(v:Double, i0:int, i1:int) : Double {
         mat(i0,i1) = v;
         return v;
     }

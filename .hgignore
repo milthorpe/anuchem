@@ -1,0 +1,7 @@
+syntax: glob
+x10.runtime/target
+x10.runtime/lib
+x10x.lib/xla/target
+x10x.lib/xla/lib
+anu-chem/target
+apps/*/target

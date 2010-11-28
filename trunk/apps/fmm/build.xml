@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE project [<!ENTITY buildfile SYSTEM "file:./build-user.xml">]>
 <project name="X10 application project" default="build" basedir=".">
+    &buildfile;
 	<property name="x10x.lib" location="../../x10x.lib"/>
 	<property name="xla.src" location="${x10x.lib}/xla/src"/>
 	<property name="xla.lib" location="${x10x.lib}/xla/lib/xla.jar"/>
@@ -70,18 +71,18 @@
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/src">
             <arg value="-c"/>
-            <arg value="'x10c' ${x10c.optimize} -sourcepath .:${xre.src}:${xla.src}:${anuchem.src} -classpath ${xre.lib}:${xla.lib}:${anuchem.lib} -d ${target-src} ${changed.src.files}"/>
+            <arg value="'x10c' ${x10c.optimize} -sourcepath .${path.separator}${xre.src}${path.separator}${xla.src}${path.separator}${anuchem.src} -classpath ${xre.lib}${path.separator}${xla.lib}${path.separator}${anuchem.lib} -d ${target-src} ${changed.src.files}"/>
         </exec>
     </target>
 
     <target name="build-src-cpp" depends="check-src-cpp" unless="src.uptodate.cpp">
         <echo message="Building source tree"/>
 
-        <echo message="x10c++ -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} -post '# ${post.profile} -Wall # ${link.mpiPprofile} ${post.cpuprofile}' -sourcepath .:${xre.src}:${xla.src}:${anuchem.src} ${basedir}/${testclass}"/>
+        <echo message="x10c++ -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} -post '# ${post.profile} -Wall # ${link.mpiPprofile} ${post.cpuprofile}' -sourcepath '.${path.separator}${xre.src}${path.separator}${xla.src}${path.separator}${anuchem.src}' '${basedir}/${testclass}'"/>
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/src">
             <arg value="-c"/>
-            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} -report postcompile=1 -post '# ${post.profile} # ${link.mpiPprofile} ${post.cpuprofile}' -sourcepath .:${xre.src}:${xla.src}:${anuchem.src} -d ${target-src} ${basedir}/${testclass}"/>
+            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} -report postcompile=1 -post '# ${post.profile} # ${link.mpiPprofile} ${post.cpuprofile}' -sourcepath '.${path.separator}${xre.src}${path.separator}${xla.src}${path.separator}${anuchem.src}' -d '${target-src}' '${basedir}/${testclass}'"/>
         </exec>
     </target>
 
@@ -124,13 +125,13 @@
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/test">
             <arg value="-c"/>
-            <arg value="'x10c' ${x10c.optimize} -sourcepath .:${basedir}/src:${xre.src}:${xla.src}:${anuchem.src}:${x10.testlib} -classpath ${xre.lib}:${xla.lib}:${anuchem.lib}:${target-src} -commandlineonly -d ${target-test} ${test.list}"/>
+            <arg value="'x10c' ${x10c.optimize} -sourcepath '.${path.separator}${basedir}/src${path.separator}${xre.src}${path.separator}${xla.src}${path.separator}${anuchem.src}${path.separator}${x10.testlib}' -classpath '${xre.lib}${path.separator}${xla.lib}${path.separator}${anuchem.lib}${path.separator}${target-src}' -commandlineonly -d '${target-test}' ${test.list}"/>
         </exec>
     </target>
 
     <target name="test" depends="build-test">
         <apply executable="x10" failonerror="true" dir="${target-test}" relative="true" addsourcefile="false">
-            <arg line="-t -v -mx 128M -classpath ${xre.lib}:${xla.lib}:${anuchem.lib}:${target-src}:${target-test}"/>
+            <arg line="-t -v -mx 128M -classpath '${xre.lib}${path.separator}${xla.lib}${path.separator}${anuchem.lib}${path.separator}${target-src}${path.separator}${target-test}'"/>
             <targetfile/>
 
             <fileset dir="${target-test}" includes="**/Test*.java"/>
