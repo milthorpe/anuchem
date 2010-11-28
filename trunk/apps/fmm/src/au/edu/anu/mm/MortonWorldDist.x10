@@ -244,7 +244,7 @@ public final class MortonWorldDist extends Dist{self.rank==3} {
     public def apply(pt: Point/*(rank)*/): Place {
         if (pt.rank != 3) throw new UnsupportedOperationException("getMortonIndex(p{self.rank!=3})");
         val index = getMortonIndex(pt, totalLength);
-        assert (index > 0 && index <= totalLength);
+        assert (index >= 0 && index <= totalLength);
         return getPlaceForIndex(index);
     }
 
