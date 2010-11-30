@@ -23,13 +23,13 @@ $ ant clean && ant
 
 will build the executable bin/fmm3d
 
-The default build script builds agaist mpi.
+The default build script builds against MPI and therefore requires an X10 runtime built with X10RT_MPI=true.
 To build for Blue Gene change ${x10rt} to "pgas_bgp"
 
 
 Compile dependencies:
 ------------------------
-* X10 version 2.1 (patched - see below)
+* X10 version 2.1.1 including x10rt=mpi (patched - see below)
 * anu-chem library
 * x10x.lib library
 * PeriodicDistArray.x10, PeriodicArray.x10 - patches to X10 array library - see http://jira.codehaus.org/browse/XTENLANG-1365
