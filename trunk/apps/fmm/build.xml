@@ -91,7 +91,7 @@
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/src">
             <arg value="-c"/>
-            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} -report postcompile=1 -post '# ${post.profile} # ${link.mpiPprofile} ${post.cpuprofile}' -sourcepath '.${path.separator}${xre.src}${path.separator}${xla.src}${path.separator}${anuchem.src}' -d '${target-src}' '${basedir}/${testclass}'"/>
+            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} -report postcompile=1 -post '# ${post.profile} # ${link.mpiPprofile} ${post.cpuprofile}' -sourcepath '.${path.separator}${xre.src}${path.separator}${xla.src}${path.separator}${anuchem.src}${path.separator}${x10.testlib}' -d '${target-src}' '${basedir}/${testclass}'"/>
         </exec>
     </target>
 
