@@ -50,7 +50,7 @@ public class Distributed3dFft {
      * to indicate that the target array has its dimensions transposed.
      */
     public def doFFT3d(forward : Boolean) {
-        if (source.dist.constant) {
+        if (Place.MAX_PLACES==1) {
             // all source data at one place.  use local 3D FFT rather than distributed
             val plan : FFTW.FFTWPlan = FFTW.fftwPlan3d(dataSize, dataSize, dataSize, source, target, forward);
             FFTW.fftwExecute(plan);
