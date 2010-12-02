@@ -10,7 +10,7 @@
  */
 package au.edu.anu.util;
 
-import x10.array.DistArray;
+import x10.util.concurrent.atomic.AtomicInteger;
 
 /**
  * A simple shared counter.
@@ -19,26 +19,31 @@ import x10.array.DistArray;
  *      val sc = new SharedCounter();
  *      finish for(place in Place.places) {
  *          async at(place) {
- *              sc.increment();
+ *              val current = sc.increment();
  *          }
  *      }
- *      val total = sc.get();
- *      Console.OUT.println(total);
- *      Console.OUT.println("success? : " + (total == Place.places.length));
+ *      val final = sc.get();
  *
- * @author V. Ganesh, with modifications from Igor
+ * @author milthorpe
  */
 public class SharedCounter {
-   val localCounters:DistArray[Double](1);
+    private var counter : GlobalRef[AtomicInteger];
 
-   public def this() {
-       localCounters = DistArray.make[Double](Dist.makeUnique());
-   }
+    public def this() {
+        val a = new AtomicInteger();
+        counter = GlobalRef[AtomicInteger](a);
+    }
 
-   public def increment() = localCounters(here.id) += 1.0;
+    public def getAndIncrement() { 
+        return at(counter) {(counter as GlobalRef[AtomicInteger]{self.home==here})().getAndIncrement()};
+    }
  
-   public def increment(step:Double) = localCounters(here.id) += step;
+    public def get() {
+        return at(counter) {(counter as GlobalRef[AtomicInteger]{self.home==here})().get()};
+    }
 
-   public def get() = localCounters.reduce((a:Double,b:Double)=>a+b, 0.0);
+    public def set(v : Int) {
+        at(counter) {(counter as GlobalRef[AtomicInteger]{self.home==here})().set(v);};
+    }
 }
 

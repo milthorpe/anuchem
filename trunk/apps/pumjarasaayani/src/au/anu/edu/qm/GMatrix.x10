@@ -16,6 +16,7 @@ import x10x.matrix.Matrix;
 import x10x.vector.Vector;
 import x10x.vector.Point3d;
 import au.edu.anu.chem.Molecule;
+import au.edu.anu.util.SharedCounter;
 import au.edu.anu.util.Timer;
 
 /**
@@ -29,8 +30,8 @@ public class GMatrix extends Matrix {
     private val gMatType : Int;
     private val computeInst : DistArray[ComputePlace](1){rect};
 
-    // TODO: need to use shared variable instead
-    private val G = new Array[Int](1, (Int)=>0);
+    /* Shared counter for synchronising between tasks (used in Berhholdt code 6.) */
+    private val G : SharedCounter;
 
     private val bfs : BasisFunctions;
     private val mol : Molecule[QMAtom];
@@ -40,6 +41,8 @@ public class GMatrix extends Matrix {
         this.bfs = bfs;
         this.mol = molecule;
         this.gMatType = gMatType;
+        this.G = new SharedCounter();
+
         val basisName = bfs.getBasisName();
 
         switch(gMatType) {
@@ -373,9 +376,8 @@ public class GMatrix extends Matrix {
 
     /** Code snippet 3, Bernholdt paper  */
     private def computeDirectMultiPlaceFuture(density:Density) {
-        // init counter
-        G(0) = 0;
-  
+        G.set(0);
+
         val timer = new Timer(2);
 
         timer.start(0);
@@ -390,11 +392,7 @@ public class GMatrix extends Matrix {
 
             val mol_loc = comp_loc.mol_loc;
 
-            val F1 = Future.make[Int](() => { 
-                       var myG:Int; 
-                       atomic myG = G(0)++;
-                       return myG;
-            });
+            val F1 = Future.make[Int](() => G.getAndIncrement());
 
             myG = F1.force();
 
@@ -431,11 +429,7 @@ public class GMatrix extends Matrix {
                                         val ldFunc = dFunc.get(l);
 
                                         if (L == myG) {
-                                          val F2 = Future.make[Int](() => { 
-                                                       var myG:Int; 
-                                                       atomic myG = G(0)++;
-                                                       return myG;
-                                            });
+                                          val F2 = Future.make[Int](() => G.getAndIncrement());
 
             	                          comp_loc.compute2EAndRecord(iaFunc, jbFunc, kcFunc, ldFunc); 
 
