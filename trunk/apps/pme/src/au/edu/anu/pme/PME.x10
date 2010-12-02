@@ -163,7 +163,7 @@ public class PME {
         this.subCells = subCells;
         this.numSubCells = numSubCells;
 
-        packedAtomsCache = DistArray.make[Array[Array[MMAtom.PackedRepresentation]{rail}]{rank==3,rect}](Dist.makeUnique());
+        val packedAtomsCache = DistArray.make[Array[Array[MMAtom.PackedRepresentation]{rail}]{rank==3,rect}](Dist.makeUnique());
         finish ateach (p in packedAtomsCache) {
             val mySubCellRegion = (subCells.dist | here).region;
             if (! mySubCellRegion.isEmpty()) {
@@ -173,7 +173,7 @@ public class PME {
                 packedAtomsCache(p) = new Array[Array[MMAtom.PackedRepresentation]{rail}](directRequiredRegion);
             }
         }
-
+        this.packedAtomsCache = packedAtomsCache;
 
         Console.OUT.println("gridDist = " + gridDist);
 
