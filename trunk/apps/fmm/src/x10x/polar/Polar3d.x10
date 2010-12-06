@@ -56,11 +56,44 @@ public struct Polar3d {
             theta = Math.acos(point.k() / r);
             phi = Math.acos(point.i() / rxy);
             if (point.j() < 0.0) {
-                phi = Math.PI * 2.0 - phi;
+                phi = 2.0*Math.PI - phi;
             }
         }
         return Polar3d(r, theta, phi);
     }
+
+    /**
+     * Return this point rotated in three dimensions,
+     * composed of a rotation around the Z-axis followed by
+     * a rotation around the Y-axis.
+     * @param alpha the angle in radians to rotate around the Z-axis
+     * @param beta the angle in radians to rotate around the Y-axis
+     */
+    public def rotate(alpha : Double, beta : Double) {
+        var newPhi : Double = phi + alpha;
+        // assume 0 <= phi <= Math.PI * 2.0
+        val tempTheta = (Math.PI/2.0 < phi && phi <  3.0*Math.PI/2.0) ? theta : -theta;
+        var newTheta : Double = tempTheta + beta;
+        if (newTheta > 2.0*Math.PI) {
+            newTheta -= 2.0*Math.PI;
+        }
+
+        // constrain theta to 0..PI
+        if (newTheta < 0.0) {
+            newTheta = -newTheta;
+            //newPhi += Math.PI;
+        } else if (newTheta > Math.PI) {
+            newTheta = 2.0*Math.PI - newTheta;
+            //newPhi += Math.PI;
+        }
+
+        if (newPhi >= 2.0*Math.PI) {
+            newPhi -= 2.0*Math.PI;
+        } else if (newPhi < 0.0) {
+            newPhi += 2.0*Math.PI;
+        }
+        return Polar3d(r, newTheta, newPhi);
+    } 
 
     public def toString() : String {
         return ("(r:" + r + ",theta:" + theta + ",phi:" + phi + ")");
