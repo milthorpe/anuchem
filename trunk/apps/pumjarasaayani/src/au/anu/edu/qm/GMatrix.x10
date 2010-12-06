@@ -30,9 +30,6 @@ public class GMatrix extends Matrix {
     private val gMatType : Int;
     private val computeInst : DistArray[ComputePlace](1){rect};
 
-    /* Shared counter for synchronising between tasks (used in Berhholdt code 6.) */
-    private val G : SharedCounter;
-
     private val bfs : BasisFunctions;
     private val mol : Molecule[QMAtom];
 
@@ -41,7 +38,6 @@ public class GMatrix extends Matrix {
         this.bfs = bfs;
         this.mol = molecule;
         this.gMatType = gMatType;
-        this.G = new SharedCounter();
 
         val basisName = bfs.getBasisName();
 
@@ -252,23 +248,6 @@ public class GMatrix extends Matrix {
         } // end for
     }
 
-    /**
-     * Gathers the G matrix contribution from each place
-     * and reduces to this place (the complete G matrix).
-     */
-    public def gatherAndReduceGMatrix() {
-        makeZero();
-        val N = getRowCount();
-
-        val sum = (a:Double, b:Double) => (a+b);
-        // form the G matrix
-        val gMatrix = getMatrix();
-        finish for(p in computeInst) async {
-            val gVal = at(computeInst.dist(p)) { computeInst(p).getGMatContributionArray() };
-            atomic { gMatrix.map[Double,Double](gMatrix, gVal, sum); }
-        } // end for
-    }
-
     private def computeDirectMultiPlaceNoAtomic(density:Density) {
         val noOfAtoms = mol.getNumberOfAtoms();
 
@@ -276,6 +255,7 @@ public class GMatrix extends Matrix {
 
         timer.start(0);
 
+        val computeInst = this.computeInst; // TODO this should not be required XTENLANG-1913
         finish ateach (p in computeInst) {
             computeInst(p).reset(density);
         }
@@ -331,11 +311,6 @@ public class GMatrix extends Matrix {
             } // center a
         } // finish
 
-        finish ateach (p in computeInst) {
-            val comp_loc = computeInst(p) as ComputePlaceDirect;
-            comp_loc.computeGMatContribution();
-        }
-
         timer.stop(0);
         Console.OUT.println("\tTime for actual computation: " + (timer.total(0) as Double) / 1e9 + " seconds"); 
 
@@ -345,11 +320,25 @@ public class GMatrix extends Matrix {
         Console.OUT.println("\tTime for summing up GMatrix bits: " + (timer.total(1) as Double) / 1e9 + " seconds"); 
     }
 
+    /**
+     * Gathers the G matrix contribution from each place
+     * and reduces to this place (the complete G matrix).
+     */
+    public def gatherAndReduceGMatrix() {
+        makeZero();
+        val N = getRowCount();
+
+        val sum = (a:Double, b:Double) => (a+b);
+        // form the G matrix
+        val gMatrix = getMatrix();
+        val computeInst = this.computeInst; // TODO this should not be required XTENLANG-1913
+        finish for(p in computeInst) async {
+            val gVal = at(computeInst.dist(p)) { computeInst(p).getGMatContributionArray() };
+            atomic { gMatrix.map[Double,Double](gMatrix, gVal, sum); }
+        } // end for
+    }
+
     private def computeDirectMultiPlaceStatic(density:Density) {
-        val timer = new Timer(2);
-
-        timer.start(0);
-
         val noOfAtoms = mol.getNumberOfAtoms();
         val nPlaces = Place.MAX_PLACES;
         val workPerPlace = noOfAtoms / nPlaces;
@@ -357,102 +346,92 @@ public class GMatrix extends Matrix {
         val firstChunk = remainder * (workPerPlace + 1);
         Console.OUT.println("\tWork units per place: " + workPerPlace + " remainder " + remainder);
 
-        finish ateach ([placeId] in computeInst) {
-            val comp_loc = computeInst(placeId) as ComputePlaceDirect;
-            comp_loc.reset(density);
-            val start = placeId < remainder ? (placeId * (workPerPlace + 1)) : (firstChunk + (placeId-remainder) * workPerPlace);
-            val end = start + workPerPlace + (placeId < remainder ? 1 : 0);
-            comp_loc.compute(start, end);
-        } // finish
+        val gMat = getMatrix();
+        val computeInst = this.computeInst; // TODO this should not be required XTENLANG-1913
+        finish for ([placeId] in computeInst) async {
+            val placeContribution = at (Place.place(placeId)) {
+                //val placeTimer = new Timer(1);
+                //placeTimer.start(0);
 
-        timer.stop(0);
-        Console.OUT.println("\tTime for actual computation: " + (timer.total(0) as Double) / 1e9 + " seconds"); 
+                val comp_loc = computeInst(placeId) as ComputePlaceDirect;
+                comp_loc.reset(density);
+                val start = placeId < remainder ? (placeId * (workPerPlace + 1)) : (firstChunk + (placeId-remainder) * workPerPlace);
+                val end = start + workPerPlace + (placeId < remainder ? 1 : 0);
+                comp_loc.compute(start, end);
 
-        timer.start(1);
-        gatherAndReduceGMatrix();
-        timer.stop(1);
-        Console.OUT.println("\tTime for summing up GMatrix bits: " + (timer.total(1) as Double) / 1e9 + " seconds"); 
+                //placeTimer.stop(0);
+                //Console.OUT.println("\tcompute at " + here + " " + (placeTimer.total(0) as Double) / 1e9 + " seconds");
+
+                return comp_loc.getGMatContributionArray();
+            };
+
+            // gather and reduce my gMatrix contribution
+            //val gatherTimer = new Timer(1);
+            //gatherTimer.start(0);
+            val sum = (a:Double, b:Double) => (a+b);
+            atomic { gMat.map[Double,Double](gMat, placeContribution, sum); }
+            //gatherTimer.stop(0);
+            //Console.OUT.println("\tgather from " + placeId + " " + (gatherTimer.total(0) as Double) / 1e9 + " seconds");
+        }
     }
 
     /** Code snippet 3, Bernholdt paper  */
     private def computeDirectMultiPlaceFuture(density:Density) {
-        G.set(0);
-
-        val timer = new Timer(2);
-
-        timer.start(0);
+        val G = new SharedCounter();
+        makeZero();
+        val gMat = getMatrix();
     
-        // center a
-        finish ateach ([placeId] in computeInst) {
-            val comp_loc = computeInst(placeId) as ComputePlaceFuture;
-            comp_loc.reset(density);
+        val computeInst = this.computeInst; // TODO this should not be required XTENLANG-1913
+        finish for ([placeId] in computeInst) async {
+            val placeContribution = at (Place.place(placeId)) {
+                //val placeTimer = new Timer(1);
+                //placeTimer.start(0);
+                //var completedHere : Int = 0;
+                val F1 = Future.make[Int](() => G.getAndIncrement());
 
-            var myG:Int = 0;
-            var L:Int = 0;
+                val comp_loc = computeInst(placeId) as ComputePlaceFuture;
+                comp_loc.reset(density);
 
-            val mol_loc = comp_loc.mol_loc;
+                val mol_loc = comp_loc.mol_loc;
+                val noOfAtoms = mol_loc.getNumberOfAtoms();
 
-            val F1 = Future.make[Int](() => G.getAndIncrement());
+                var L : Int = 0;
+                var myG : Int = F1.force();
 
-            myG = F1.force();
-
-            val noOfAtoms = mol_loc.getNumberOfAtoms();
-            for(var a:Int=0; a<noOfAtoms; a++) {
-              val aFunc = mol_loc.getAtom(a).getBasisFunctions();
-              val naFunc = aFunc.size();
-              // basis functions on a
-              for(var i:Int=0; i<naFunc; i++) {
-                val iaFunc = aFunc.get(i);
-
-                // center b
-                for(var b:Int=0; b<=a; b++) {
-                    val bFunc = mol_loc.getAtom(b).getBasisFunctions();
-                    val nbFunc = (b<a) ? bFunc.size() : i+1;
-                    // basis functions on b
-                    for(var j:Int=0; j<nbFunc; j++) {
-                        val jbFunc = bFunc.get(j);
-
+                // center a
+                for(var a:Int=0; a<noOfAtoms; a++) {
+                    // center b
+                    for(var b:Int=0; b<=a; b++) {
                         // center c
                         for(var c:Int=0; c<noOfAtoms; c++) {
-                            val cFunc = mol_loc.getAtom(c).getBasisFunctions();
-                            val ncFunc = cFunc.size();
-                            // basis functions on c
-                            for(var k:Int=0; k<ncFunc; k++) {
-                                val kcFunc = cFunc.get(k);
-
-                                // center d
-                                for(var d:Int=0; d<=c; d++) {
-                                    val dFunc = mol_loc.getAtom(d).getBasisFunctions();
-                                    val ndFunc = (d<c) ? dFunc.size() : k+1;
-                                    // basis functions on d
-                                    for(var l:Int=0; l<ndFunc; l++) {
-                                        val ldFunc = dFunc.get(l);
-
-                                        if (L == myG) {
-                                          val F2 = Future.make[Int](() => G.getAndIncrement());
-
-            	                          comp_loc.compute2EAndRecord(iaFunc, jbFunc, kcFunc, ldFunc); 
-
-                                          myG = F2.force();
-                                        } // end if
-
-                                        L++;
-				    } // end l
-				} // center d
-                            } // end k
+                            // center d
+                            for(var d:Int=0; d<=c; d++) {
+                                if (L == myG) {
+                                    val F2 = Future.make[Int](() => G.getAndIncrement());
+                                    comp_loc.compute2EAndRecord(a, b, c, d);
+                                    //completedHere++;
+                                    myG = F2.force();
+                                }
+                                L++;
+			                } // center d
                         } // center c
-                    } // end j
-                } // center b
-              } // end i
-            } // center a
+                    } // center b
+                } // center a
+
+                //placeTimer.stop(0);
+                //Console.OUT.println("\tcompute at " + here + " completed " + completedHere + " " + (placeTimer.total(0) as Double) / 1e9 + " seconds");
+
+                return comp_loc.getGMatContributionArray();
+            };
+
+            // gather and reduce my gMatrix contribution
+            //val gatherTimer = new Timer(1);
+            //gatherTimer.start(0);
+            val sum = (a:Double, b:Double) => (a+b);
+            atomic { gMat.map[Double,Double](gMat, placeContribution, sum); }
+            //gatherTimer.stop(0);
+            //Console.OUT.println("\tgather from " + placeId + " " + (gatherTimer.total(0) as Double) / 1e9 + " seconds");
         } // ateach
-        timer.stop(0);
-        Console.OUT.println("\tTime for actual computation: " + (timer.total(0) as Double) / 1e9 + " seconds");
-    
-        timer.start(1);
-        gatherAndReduceGMatrix();
-        timer.stop(1);
-        Console.OUT.println("\tTime for summing up GMatrix bits: " + (timer.total(1) as Double) / 1e9 + " seconds");
     }
 
     private def computeDirectMultiPlaceShellLoop(density:Density) {
@@ -467,8 +446,8 @@ public class GMatrix extends Matrix {
         Console.OUT.println("\tWork units per place: " + workPerPlace + " remainder " + remainder);
 
         makeZero();
+        val gMat = getMatrix();
 
-        val gMatrix = GlobalRef[GMatrix](this);
         val computeInst = this.computeInst; // TODO this should not be required XTENLANG-1913
         finish for ([placeId] in computeInst) async {
             val placeContribution = at (Place.place(placeId)) {
@@ -485,7 +464,6 @@ public class GMatrix extends Matrix {
             // gather and reduce my gMatrix contribution
             //val gatherTimer = new Timer(1);
             //gatherTimer.start(0);
-            val gMat = gMatrix().getMatrix();
             val sum = (a:Double, b:Double) => (a+b);
             atomic { gMat.map[Double,Double](gMat, placeContribution, sum); }
             //gatherTimer.stop(0);
@@ -499,11 +477,19 @@ public class GMatrix extends Matrix {
         val mol_loc:Molecule[QMAtom];
         val bas_loc:BasisFunctions;
 
-        public def this(mol:Molecule[QMAtom], basisName:String) {
+        val gMatrixContribution : Matrix;
+        val jMatrixContribution : Matrix;
+        val kMatrixContribution : Matrix;
+
+        public def this(N : Int, mol:Molecule[QMAtom], basisName:String) {
             this.mol_loc = mol;
 
             val bas_loc = new BasisFunctions(mol_loc, basisName, "basis");
             this.bas_loc = bas_loc;
+
+            gMatrixContribution = new Matrix(N);
+            jMatrixContribution = new Matrix(N);
+            kMatrixContribution = new Matrix(N);
         }
 
         /**
@@ -514,27 +500,31 @@ public class GMatrix extends Matrix {
         public def reset(density : Density) {
             val den_loc = new Density(density);
             this.density = den_loc;
+            gMatrixContribution.makeZero();
+            jMatrixContribution.makeZero();
+            kMatrixContribution.makeZero();
         }
 
-        public abstract def getGMat() : Matrix;
-
+        /**
+         * Computes this place's contribution to the G Matrix
+         * given previously calculated J, K matrices.
+         */
         public def getGMatContributionArray() {
-           return getGMat().getMatrix();
+            val jMat = jMatrixContribution.getMatrix();
+            val kMat = kMatrixContribution.getMatrix();
+            val gMat = gMatrixContribution.getMatrix();
+            for (p in jMat.region) {
+                gMat(p) = jMat(p) - 0.25 * kMat(p);
+            }
+           return gMatrixContribution.getMatrix();
         }
     }
 
     static class ComputePlaceDirect extends ComputePlace {
-        val gMatrixContribution : Matrix;
-        val jMatrixContribution : Matrix;
-        val kMatrixContribution : Matrix;
         val computeThreads = new Array[ComputeThread](Runtime.INIT_THREADS);
 
         public def this(N : Int, mol:Molecule[QMAtom], basisName:String) {
-            super(mol, basisName);
-
-            gMatrixContribution = new Matrix(N);
-            jMatrixContribution = new Matrix(N);
-            kMatrixContribution = new Matrix(N);
+            super(N, mol, basisName);
 
             val maxam = bas_loc.getShellList().getMaximumAngularMomentum();
             for(var i:Int=0; i<Runtime.INIT_THREADS; i++) {
@@ -547,10 +537,6 @@ public class GMatrix extends Matrix {
             for(var i:Int=0; i<Runtime.INIT_THREADS; i++) {
                 computeThreads(i).reset();
             }
-        }
-
-        public def getGMat() : Matrix {
-            return gMatrixContribution;
         }
 
         public def setValue(a:Int, b:Int, c:Int, d:Int, i:Int, j:Int, k:Int, l:Int) : Boolean {
@@ -630,8 +616,6 @@ public class GMatrix extends Matrix {
                } // center b
              } // end i
           } // center a
-
-            computeGMatContribution();
         }
 
         public def computeShells(nPairs:Int) {
@@ -691,12 +675,12 @@ public class GMatrix extends Matrix {
                 } // end for
             } // end for
 
-            computeGMatContribution();
+            computeJMatContribution();
+            computeKMatContribution();
         }
 
 
-        private def getJMat() : Matrix {
-            jMatrixContribution.makeZero();
+        private def computeJMatContribution() : Matrix {
             for(var i:Int=0; i<Runtime.INIT_THREADS; i++) {
                jMatrixContribution.addInPlace(computeThreads(i).getJMat());
             }
@@ -704,65 +688,60 @@ public class GMatrix extends Matrix {
             return jMatrixContribution;             
         }
 
-        private def getKMat() : Matrix {
-            kMatrixContribution.makeZero();
+        private def computeKMatContribution() : Matrix {
             for(var i:Int=0; i<Runtime.INIT_THREADS; i++) {
                kMatrixContribution.addInPlace(computeThreads(i).getKMat());
             }
 
             return kMatrixContribution;
         }
-
-        /**
-         * Computes this place's contribution to the G Matrix
-         * given previously calculated J, K matrices.
-         */
-        public def computeGMatContribution() {
-            val jMat = getJMat().getMatrix();
-            val kMat = getKMat().getMatrix();
-            val gMat = gMatrixContribution.getMatrix();
-            for (p in jMat.region) {
-                gMat(p) = jMat(p) - 0.25 * kMat(p);
-            }
-        }
     }
 
     static class ComputePlaceFuture extends ComputePlace {
         val twoEI:TwoElectronIntegrals;
-        val jM:Matrix;
-        val kM:Matrix;
 
         public def this(N : Int, mol:Molecule[QMAtom], basisName:String) {
-            super(mol, basisName);
+            super(N, mol, basisName);
 
             val maxam = bas_loc.getShellList().getMaximumAngularMomentum();
             this.twoEI = new TwoElectronIntegrals(maxam);
-
-            jM = new Matrix(N);
-            kM = new Matrix(N); 
          }
-
-        public def reset(density : Density) {
-            super.reset(density);
-            jM.makeZero();
-            kM.makeZero();
-        }
 
          public def compute2EAndRecord(iaFunc:ContractedGaussian, jbFunc:ContractedGaussian, 
                                        kcFunc:ContractedGaussian, ldFunc:ContractedGaussian) {
-             twoEI.compute2EAndRecord(iaFunc, jbFunc, kcFunc, ldFunc, bas_loc.getShellList(), jM, kM, density);
+             twoEI.compute2EAndRecord(iaFunc, jbFunc, kcFunc, ldFunc, bas_loc.getShellList(), jMatrixContribution, kMatrixContribution, density);
          }
 
-        public def getGMat() : Matrix {
-            val gM = new Matrix(jM.getRowCount());
-            val gMat = gM.getMatrix();
-            val jMat = jM.getMatrix();
-            val kMat = kM.getMatrix();
+        public def compute2EAndRecord(a : Int, b : Int, c : Int, d : Int) {
+            val aFunc = mol_loc.getAtom(a).getBasisFunctions();
+            val bFunc = mol_loc.getAtom(b).getBasisFunctions();
+            val cFunc = mol_loc.getAtom(c).getBasisFunctions();
+            val dFunc = mol_loc.getAtom(d).getBasisFunctions();
+            val naFunc = aFunc.size();
 
-            for (p in jMat.region) {
-                gMat(p) = jMat(p) - 0.25 * kMat(p);
+            // basis functions on a
+            for(var i:Int=0; i<naFunc; i++) {
+                val iaFunc = aFunc.get(i);
+
+                // basis functions on b
+                val nbFunc = (b<a) ? bFunc.size() : i+1;
+                for(var j:Int=0; j<nbFunc; j++) {
+                    val jbFunc = bFunc.get(j);
+
+                    // basis functions on c
+                    val ncFunc = cFunc.size();
+                    for(var k:Int=0; k<ncFunc; k++) {
+                        val kcFunc = cFunc.get(k);
+
+                        // basis functions on d
+                        val ndFunc = (d<c) ? dFunc.size() : k+1;
+                        for(var l:Int=0; l<ndFunc; l++) {
+                            val ldFunc = dFunc.get(l);
+                            twoEI.compute2EAndRecord(iaFunc, jbFunc, kcFunc, ldFunc, bas_loc.getShellList(), jMatrixContribution, kMatrixContribution, density);
+                        }
+                    }
+                }
             }
-            return gM;
         }
     }
 
