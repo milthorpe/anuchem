@@ -27,13 +27,13 @@ public class ElectrostaticDirectMethod {
     public val timer = new Timer(6);
 
     /** The atoms in the simulation, divided up into an array of ValRails, one for each place. */
-    private val atoms : DistArray[Array[MMAtom]{rail}]{rail};
+    private val atoms : DistArray[Array[MMAtom](1){rail}](1){rail};
 
     /**
      * Creates a new electrostatic direct method.
      * @param atoms the atoms in the unit cell
      */
-    public def this(atoms : DistArray[Array[MMAtom]{rail}]{rail}) {
+    public def this(atoms : DistArray[Array[MMAtom](1){rail}](1){rail}) {
         this.atoms = atoms;
         // distribute all atoms to all places
     }
@@ -82,7 +82,7 @@ public class ElectrostaticDirectMethod {
     /*
      * Returns all atom charges and coordinates for a place, in packed representation
      */
-    private def getPackedAtomsForPlace(placeId : Int) : Array[MMAtom.PackedRepresentation]{rail} {
+    private def getPackedAtomsForPlace(placeId : Int) : Array[MMAtom.PackedRepresentation](1){rail} {
         val myAtoms = atoms(placeId);
         return new Array[MMAtom.PackedRepresentation](myAtoms.size, (i : Int) => myAtoms(i).getPackedRepresentation());
     }

@@ -43,14 +43,14 @@ public class PeriodicFmm3d extends Fmm3d {
      * 1: y coordinate
      * 2: z coordinate
      */
-    val boxes : Array[PeriodicDistArray[FmmBox]{rank==3,rect}]{rail};
+    val boxes : Array[PeriodicDistArray[FmmBox]{rank==3,rect}](1){rail};
 
     val lowestLevelBoxes : PeriodicDistArray[FmmBox]{rank==3,rect};
 
     /**
      * An array of locally essential trees (LETs), one for each place.
      */
-    protected val locallyEssentialTrees : DistArray[LocallyEssentialTree]{rail};
+    protected val locallyEssentialTrees : DistArray[LocallyEssentialTree](1){rail};
 
     public static val TIMER_INDEX_MACROSCOPIC : Int = 9;
     /** 
@@ -82,7 +82,7 @@ public class PeriodicFmm3d extends Fmm3d {
                     topLeftFront : Point3d,
                     size : Double,  
                     numAtoms : Int,
-                    atoms: DistArray[Array[MMAtom]{rail}]{rail},
+                    atoms: DistArray[Array[MMAtom](1){rail}](1){rail},
                     numShells : Int) {
         // Periodic FMM always uses ws = 1
         // TODO is it possible to formulate for well-spaced > 1?
@@ -177,7 +177,7 @@ public class PeriodicFmm3d extends Fmm3d {
         timer.stop(TIMER_INDEX_MACROSCOPIC);
     }
 
-    private def assignAtomsToBoxes(atoms: DistArray[Array[MMAtom]{rail}]{rail}, lowestLevelBoxes : PeriodicDistArray[FmmBox]{rank==3}) {
+    private def assignAtomsToBoxes(atoms: DistArray[Array[MMAtom](1){rail}](1){rail}, lowestLevelBoxes : PeriodicDistArray[FmmBox]{rank==3}) {
         //Console.OUT.println("assignAtomsToBoxes");
         val size = this.size; // TODO shouldn't be necessary XTENLANG-1913
         val lowestLevelDim = this.lowestLevelDim; // TODO shouldn't be necessary XTENLANG-1913
@@ -407,7 +407,7 @@ public class PeriodicFmm3d extends Fmm3d {
      * at a single place, returns an Array, each element of which 
      * is in turn a MultipoleExpansion for the box.
      */
-    private static def getMultipolesForBoxList(thisLevelBoxes : PeriodicDistArray[FmmBox]{rank==3}, boxList : Array[Point(3)]{rail}) {
+    private static def getMultipolesForBoxList(thisLevelBoxes : PeriodicDistArray[FmmBox]{rank==3}, boxList : Array[Point(3)](1){rail}) {
         val multipoleList = new Array[MultipoleExpansion](boxList.size, 
                                                             (i : Int) => 
                                                                 getMultipoleExpansionLocalCopy(thisLevelBoxes,
@@ -466,8 +466,8 @@ public class PeriodicFmm3d extends Fmm3d {
      * an Array of MMAtom.PackedRepresentation containing the 
      * packed atoms for each box.
      */
-    private def getPackedAtomsForBoxList(boxList : Array[Point(3)]{rail}) {
-        val packedAtomList = new Array[Array[MMAtom.PackedRepresentation]{rail}](boxList.size, 
+    private def getPackedAtomsForBoxList(boxList : Array[Point(3)](1){rail}) {
+        val packedAtomList = new Array[Array[MMAtom.PackedRepresentation](1){rail}](boxList.size, 
                                                             (i : Int) => 
                                                                 getPackedAtomsForBox(boxList(i)(0), 
                                                                                      boxList(i)(1),
@@ -476,7 +476,7 @@ public class PeriodicFmm3d extends Fmm3d {
         return packedAtomList;
     }
 
-    private def constructTree() : Array[PeriodicDistArray[FmmBox]{rank==3,rect}]{rail} {
+    private def constructTree() : Array[PeriodicDistArray[FmmBox]{rank==3,rect}](1){rail} {
         val boxArray = new Array[PeriodicDistArray[FmmBox]{rank==3,rect}](numLevels+1);
         for ([thisLevel] in topLevel..numLevels) {
             val levelDim = Math.pow2(thisLevel) as Int;
@@ -636,7 +636,7 @@ public class PeriodicFmm3d extends Fmm3d {
     // TODO all after this point shouldn't be necessary if DistArray, PeriodicDistArray can inherit from same class
     //
 
-    private def getParentForChild(boxes : Array[PeriodicDistArray[FmmBox]{rank==3,rect}]{rail}, level : Int, x : Int, y : Int, z : Int) : GlobalRef[FmmBox] {
+    private def getParentForChild(boxes : Array[PeriodicDistArray[FmmBox]{rank==3,rect}](1){rail}, level : Int, x : Int, y : Int, z : Int) : GlobalRef[FmmBox] {
         if (level == topLevel)
             return GlobalRef[FmmBox](null);
         return (at (boxes(level-1).dist(x/2, y/2, z/2)) {GlobalRef[FmmBox](boxes(level-1)(x/2, y/2, z/2))});
@@ -678,9 +678,9 @@ public class PeriodicFmm3d extends Fmm3d {
                 combinedUList(j++) = boxIndex;
             }
 
-            val combinedVList = new Array[Array[Point(3)]{rail}](numLevels+1);
-            val vListMin = new Array[Array[Int]{rail}](numLevels+1);
-            val vListMax = new Array[Array[Int]{rail}](numLevels+1);
+            val combinedVList = new Array[Array[Point(3)](1){rail}](numLevels+1);
+            val vListMin = new Array[Array[Int](1){rail}](numLevels+1);
+            val vListMax = new Array[Array[Int](1){rail}](numLevels+1);
             for ([thisLevel] in topLevel..numLevels) {
                 val vMin = new Array[Int](3, (Int) => Int.MAX_VALUE);
                 val vMax = new Array[Int](3, (Int) => Int.MIN_VALUE);

@@ -22,7 +22,7 @@ public interface ForceField {
      * on each atom in the system.
      * @return the energy of the system // TODO units?
      */
-    public def getPotentialAndForces(atoms: DistArray[Array[MMAtom]{rail}](1)) : Double;
+    public def getPotentialAndForces(atoms: DistArray[Array[MMAtom](1){rail}](1)) : Double;
 
     /**
      * @return the mass of the given atom type e.g. 1.00794 for H
