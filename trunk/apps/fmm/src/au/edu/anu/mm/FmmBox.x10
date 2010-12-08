@@ -10,6 +10,8 @@
  */
 package au.edu.anu.mm;
 
+import x10.util.ArrayList;
+
 import x10x.vector.Point3d;
 
 /**
@@ -90,6 +92,29 @@ public class FmmBox {
 
     public def setVList(vList : Array[Point(3)](1){rail}) {
         this.vList = vList;
+    }
+
+    /**
+     * Creates the V-list for this box.
+     * The V-list consists of the children of those boxes not 
+     * well-separated from the parent..
+     */
+    public def createVList(ws : Int) {
+        val levelDim = Math.pow2(this.level);
+        val xOffset = this.x%2 == 1 ? -1 : 0;
+        val yOffset = this.y%2 == 1 ? -1 : 0;
+        val zOffset = this.z%2 == 1 ? -1 : 0;
+        val vList = new ArrayList[Point(3)]();
+        for ([x] in Math.max(0,this.x-2*ws+xOffset)..Math.min(levelDim-1,this.x+2*ws+1+xOffset)) {
+            for ([y] in Math.max(0,this.y-2*ws+yOffset)..Math.min(levelDim-1,this.y+2*ws+1+yOffset)) {
+                for ([z] in Math.max(0,this.z-2*ws+zOffset)..Math.min(levelDim-1,this.z+2*ws+1+zOffset)) {
+                    if (wellSeparated(ws, x, y, z)) {
+                        vList.add(Point.make(x,y,z));
+                    }
+                }
+            }
+        }
+        this.vList = vList.toArray();
     }
 
     public def toString(): String {

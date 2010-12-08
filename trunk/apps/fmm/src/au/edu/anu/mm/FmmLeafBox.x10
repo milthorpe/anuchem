@@ -39,6 +39,26 @@ public class FmmLeafBox extends FmmBox {
     public def setUList(uList : Array[Point(3)](1){rail}) {
         this.uList = uList;
     }
+
+    /**
+     * Creates the U-list for this box.
+     * The U-list consists of all leaf boxes not well-separated from this box.
+     */
+    public def createUList(ws : Int) {
+        val levelDim = Math.pow2(this.level);
+        // interact with "left half" of uList i.e. only boxes with x<=box.x
+        val uList = new ArrayList[Point(3)]();
+        for ([x] in Math.max(0,this.x-ws)..this.x) {
+            for ([y] in Math.max(0,this.y-ws)..Math.min(levelDim-1,this.y+ws)) {
+                for ([z] in Math.max(0,this.z-ws)..Math.min(levelDim-1,this.z+ws)) {
+                    if (x < this.x || (x == this.x && y < this.y) || (x == this.x && y == this.y && z < this.z)) {
+                        uList.add(Point.make(x,y,z));
+                    }
+                }
+            }
+        }
+        this.uList = uList.toArray();
+    }
     
     /*
      * Returns atom charges and coordinates in packed representation
