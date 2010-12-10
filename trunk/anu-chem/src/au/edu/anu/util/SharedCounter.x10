@@ -10,7 +10,7 @@
  */
 package au.edu.anu.util;
 
-import x10.util.concurrent.atomic.AtomicInteger;
+import x10.util.concurrent.AtomicInteger;
 
 /**
  * A simple shared counter.
