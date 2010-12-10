@@ -33,7 +33,7 @@ import au.edu.anu.chem.Molecule;
 public class TwoElectronIntegrals {
     private static val SQ2PI = Math.pow((2.0/Math.PI), 0.5); 
 
-    private val fmt:Array[Double]{rail}, zeroM:Array[Double]{rail};
+    private val fmt:Array[Double](1){rail}, zeroM:Array[Double](1){rail};
 
     private val rM:Array[Double](2){rect};
     private val pqInts:Array[Double](2){rect};
@@ -388,9 +388,9 @@ public class TwoElectronIntegrals {
     /** find unique elements and mark the ones that are not */
     /** 8 => is the level of integral symmetry, given (i,j|k.l)
         there are 8 combinations that are unique */
-    private def filterUniqueElements(idx:Array[Int]{rail}, jdx:Array[Int]{rail},
-                                     kdx:Array[Int]{rail}, ldx:Array[Int]{rail},
-                                     validIdx:Array[Boolean]{rail}) : void {
+    private def filterUniqueElements(idx:Array[Int](1){rail}, jdx:Array[Int](1){rail},
+                                     kdx:Array[Int](1){rail}, ldx:Array[Int](1){rail},
+                                     validIdx:Array[Boolean](1){rail}) : void {
         validIdx.fill(true);
         for(var m:Int=0; m<8; m++) {
             val i = idx(m); val j = jdx(m); val k = kdx(m); val l = ldx(m);
@@ -763,14 +763,14 @@ public class TwoElectronIntegrals {
     }
 
     /** Compute the base FmT() - for evaluating integrals */
-    protected def computeFmtFGamma(maxam:Int, T:Double, fmt:Array[Double]{rail}) {
+    protected def computeFmtFGamma(maxam:Int, T:Double, fmt:Array[Double](1){rail}) {
         for(var m:Int=0; m<maxam; m++) { 
             fmt(m) = IntegralsUtils.computeFGamma(m, T);
         } // end for
     }
 
     /** Compute the base FmT() - for evaluating integrals */
-    protected def computeFmt(maxam:Int, T:Double, fmt:Array[Double]{rail}) {
+    protected def computeFmt(maxam:Int, T:Double, fmt:Array[Double](1){rail}) {
         if (T > 30.0){
             fmt(0) = Math.sqrt(Math.PI/T)*0.5;
            

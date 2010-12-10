@@ -43,7 +43,7 @@ public class PME {
     public val timer = new Timer(9);
 
     /** The number of grid lines in each dimension of the simulation unit cell. */
-    private val gridSize : Array[Int]{rail};
+    private val gridSize : Array[Int](1){rail};
 
     /** Double representations of the various grid dimensions */
     private val K1 : Double;
@@ -51,11 +51,11 @@ public class PME {
     private val K3 : Double;
 
     /** The edges of the unit cell. */
-    private val edges : Array[Vector3d]{rail};
-    private val edgeLengths : Array[Double]{rail};
+    private val edges : Array[Vector3d](1){rail};
+    private val edgeLengths : Array[Double](1){rail};
 
     /** The conjugate reciprocal vectors for each dimension. */
-    private val edgeReciprocals : Array[Vector3d]{rail};
+    private val edgeReciprocals : Array[Vector3d](1){rail};
 
     private val gridDist : Dist{rank==3,rect};
     
@@ -81,7 +81,7 @@ public class PME {
     private val imageTranslations : DistArray[Vector3d]{rank==4,rect};
 
     /** The atoms in the simulation, divided up into a distributed array of Arrays, one for each place. */
-    private val atoms : DistArray[Array[MMAtom]{rail}]{rail};
+    private val atoms : DistArray[Array[MMAtom](1){rail}](1){rail};
 
     private val B : DistArray[Double]{self.dist==gridDist};
     private val C : DistArray[Double]{self.dist==gridDist};
@@ -110,7 +110,7 @@ public class PME {
      * Dimensions of the array region are (x,y,z)
      * TODO assumes cubic unit cell
      */
-    private val subCells : PeriodicDistArray[Array[MMAtom]{rail}]{rank==3,rect};
+    private val subCells : PeriodicDistArray[Array[MMAtom](1){rail}]{rank==3,rect};
     /** The number of sub-cells per side of the unit cell. */
     private val numSubCells : Int;
 
@@ -119,7 +119,7 @@ public class PME {
      * stored at other places.  This is used to prefetch atom data
      * for direct energy calculation.
      */
-    private val packedAtomsCache : DistArray[Array[Array[MMAtom.PackedRepresentation]{rail}]{rank==3,rect}]{rail};
+    private val packedAtomsCache : DistArray[Array[Array[MMAtom.PackedRepresentation](1){rail}]{rank==3,rect}](1){rail};
 
     /**
      * Creates a new particle mesh Ewald method.
@@ -130,9 +130,9 @@ public class PME {
      * @param beta the Ewald coefficient beta
      * @param cutoff the distance in Angstroms beyond which direct interactions are ignored
      */
-    public def this(edges : Array[Vector3d]{rail},
-            gridSize : Array[Int]{rail},
-            atoms: DistArray[Array[MMAtom]{rail}]{rail},
+    public def this(edges : Array[Vector3d](1){rail},
+            gridSize : Array[Int](1){rail},
+            atoms: DistArray[Array[MMAtom](1){rail}](1){rail},
             splineOrder : Int,
             beta : Double,
             cutoff : Double) {
@@ -158,19 +158,19 @@ public class PME {
         }
         val numSubCells = Math.ceil(edgeLengths(0) / (cutoff/2.0)) as Int;
         val subCellRegion = (0..numSubCells-1) * (0..numSubCells-1) * (0..numSubCells-1);
-        val subCells = PeriodicDistArray.make[Array[MMAtom]{rail}](Dist.makeBlockBlock(subCellRegion, 0, 1));
+        val subCells = PeriodicDistArray.make[Array[MMAtom](1){rail}](Dist.makeBlockBlock(subCellRegion, 0, 1));
         Console.OUT.println("subCells dist = " + subCells.dist);
         this.subCells = subCells;
         this.numSubCells = numSubCells;
 
-        val packedAtomsCache = DistArray.make[Array[Array[MMAtom.PackedRepresentation]{rail}]{rank==3,rect}](Dist.makeUnique());
+        val packedAtomsCache = DistArray.make[Array[Array[MMAtom.PackedRepresentation](1){rail}]{rank==3,rect}](Dist.makeUnique());
         finish ateach (p in packedAtomsCache) {
             val mySubCellRegion = (subCells.dist | here).region;
             if (! mySubCellRegion.isEmpty()) {
                 val directRequiredRegion = ((mySubCellRegion.min(0) - 2)..(mySubCellRegion.max(0) + 2))
                                          * ((mySubCellRegion.min(1) - 2)..(mySubCellRegion.max(1) + 2))
                                          * ((mySubCellRegion.min(2) - 2)..(mySubCellRegion.max(2) + 2));
-                packedAtomsCache(p) = new Array[Array[MMAtom.PackedRepresentation]{rail}](directRequiredRegion);
+                packedAtomsCache(p) = new Array[Array[MMAtom.PackedRepresentation](1){rail}](directRequiredRegion);
             }
         }
         this.packedAtomsCache = packedAtomsCache;
@@ -334,8 +334,8 @@ public class PME {
      * packed atoms for each subcell.
 	 * TODO should use instance fields instead of all those parameters - XTENLANG-1913
      */
-    private static def getPackedAtomsForSubcellList(subCells : PeriodicDistArray[Array[MMAtom]{rail}]{rank==3,rect}, boxList : Array[Point(3)]{rail}) {
-        val packedAtomList = new Array[Array[MMAtom.PackedRepresentation]{rail}](boxList.size, 
+    private static def getPackedAtomsForSubcellList(subCells : PeriodicDistArray[Array[MMAtom](1){rail}]{rank==3,rect}, boxList : Array[Point(3)](1){rail}) {
+        val packedAtomList = new Array[Array[MMAtom.PackedRepresentation](1){rail}](boxList.size, 
                                                             (i : Int) => 
                                                                 getPackedAtomsForSubCell(subCells, boxList(i))
                                                             );
@@ -437,7 +437,7 @@ public class PME {
      * Returns atom charges and coordinates for a sub-cell, in packed representation
 	 * TODO should use instance fields instead of all those parameters - XTENLANG-1913
      */
-    private static def getPackedAtomsForSubCell(subCells : PeriodicDistArray[Array[MMAtom]{rail}]{rank==3,rect}, subCellIndex : Point(3)) : Array[MMAtom.PackedRepresentation]{rail} {
+    private static def getPackedAtomsForSubCell(subCells : PeriodicDistArray[Array[MMAtom](1){rail}]{rank==3,rect}, subCellIndex : Point(3)) : Array[MMAtom.PackedRepresentation](1){rail} {
         val subCell = subCells(subCellIndex);
         return new Array[MMAtom.PackedRepresentation](subCell.size, (i : Int) => subCell(i).getPackedRepresentation());
     }
@@ -594,7 +594,7 @@ public class PME {
 	 * TODO general non-cubic grid
 	 * TODO should use instance fields instead of all those parameters - XTENLANG-1913
      */
-    private static @Inline def getGridRegionForSubcellAtoms(gridSize : Array[Int]{rail}, numSubCells : Int, splineOrder : Int, subCellRegion : Region{rank==3}) {
+    private static @Inline def getGridRegionForSubcellAtoms(gridSize : Array[Int](1){rail}, numSubCells : Int, splineOrder : Int, subCellRegion : Region{rank==3}) {
         val gridPointsPerSubCell = (gridSize(0) as Double) / numSubCells;
         val minX = Math.floor(subCellRegion.min(0) * gridPointsPerSubCell) as Int - splineOrder + 1;
         val maxX = Math.ceil((subCellRegion.max(0)+1) * gridPointsPerSubCell) as Int - 1;
@@ -735,12 +735,12 @@ public class PME {
 	 * Gets scaled fractional coordinate u as per Eq. 3.1 - cubic only 
 	 * TODO should use instance fields instead of all those parameters - XTENLANG-1913
 	 */
-    public static @Inline def getScaledFractionalCoordinates(K1 : Double, K2 : Double, K3 : Double, edgeReciprocals : Array[Vector3d]{rail}, r : Point3d) : Vector3d {
+    public static @Inline def getScaledFractionalCoordinates(K1 : Double, K2 : Double, K3 : Double, edgeReciprocals : Array[Vector3d](1){rail}, r : Point3d) : Vector3d {
         return Vector3d(edgeReciprocals(0).i * K1 * r.i, edgeReciprocals(1).j * K2 * r.j, edgeReciprocals(2).k * K3 * r.k);
     }
     
     /** Gets scaled fractional coordinate u as per Eq. 3.1 - general rectangular */
-    public static @Inline def getScaledFractionalCoordinates(K1 : Double, K2 : Double, K3 : Double, edgeReciprocals : Array[Vector3d]{rail}, r : Vector3d) : Vector3d {
+    public static @Inline def getScaledFractionalCoordinates(K1 : Double, K2 : Double, K3 : Double, edgeReciprocals : Array[Vector3d](1){rail}, r : Vector3d) : Vector3d {
         // this method allows general non-rectangular cells
         return Vector3d(edgeReciprocals(0).mul(K1).dot(r), edgeReciprocals(1).mul(K2).dot(r), edgeReciprocals(2).mul(K3).dot(r));
     }

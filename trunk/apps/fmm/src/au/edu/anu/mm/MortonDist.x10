@@ -115,7 +115,7 @@ public class MortonDist extends BaseDist{self.rank==3} {
         return MortonDist.make(r, new Array[Place](Place.MAX_PLACES, (i : Int) => Place.place(i)));
     }
 
-    public static def make(r: Region(3), ps: Array[Place]{rail}) : MortonDist{self.region==r} {
+    public static def make(r: Region(3), ps: Array[Place](1){rail}) : MortonDist{self.region==r} {
         val totalLength = r.size();
         val init = (p:Int) => new MortonSubregion(getPlaceStart(p,ps.size,totalLength), 
                                                   getPlaceEnd(p,ps.size,totalLength), 

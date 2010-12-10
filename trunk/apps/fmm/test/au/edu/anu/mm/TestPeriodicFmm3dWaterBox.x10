@@ -89,7 +89,7 @@ public class TestPeriodicFmm3dWaterBox extends TestElectrostatic {
                 Console.ERR.println("could not map atom to place: " + atom.centre);
             }
         }
-        val atoms = DistArray.make[Array[MMAtom]{rail}](Dist.makeUnique(), ([p] : Point) => tempAtoms(p).toArray());
+        val atoms = DistArray.make[Array[MMAtom](1){rail}](Dist.makeUnique(), ([p] : Point) => tempAtoms(p).toArray());
 
         val fmm3d = new PeriodicFmm3d(density, numTerms, Point3d(0.0, 0.0, 0.0), SIZE, molAtoms.size(), atoms, numShells);
         val energy = fmm3d.calculateEnergy();

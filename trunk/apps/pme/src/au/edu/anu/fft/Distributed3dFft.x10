@@ -76,8 +76,8 @@ public class Distributed3dFft {
 /*
  *  Formerly, the above was:
  *
-            val oneDSource = DistArray.make[Array[Complex]{rail}](Dist.makeUnique(), (Point) => new Array[Complex](dataSize));
-            val oneDTarget = DistArray.make[Array[Complex]{rail}](oneDSource.dist, (Point) => new Array[Complex](dataSize));
+            val oneDSource = DistArray.make[Array[Complex](1){rail}](Dist.makeUnique(), (Point) => new Array[Complex](dataSize));
+            val oneDTarget = DistArray.make[Array[Complex](1){rail}](oneDSource.dist, (Point) => new Array[Complex](dataSize));
             finish ateach(p1 in oneDSource) do1DFftToTemp(source, oneDSource(p1), oneDTarget(p1), forward);
             finish ateach(p1 in oneDSource) transposeTempToTarget();
             finish ateach(p1 in oneDSource) do1DFftToTemp(target, oneDSource(p1), oneDTarget(p1), forward);
@@ -114,8 +114,8 @@ public class Distributed3dFft {
      * and store the result in the temp array.
      */
     private def do1DFftToTemp(source : DistArray[Complex](3),
-                                     oneDSource : Array[Complex]{rail},
-                                     oneDTarget : Array[Complex]{rail},
+                                     oneDSource : Array[Complex](1){rail},
+                                     oneDTarget : Array[Complex](1){rail},
                                      forward : Boolean) {
         val plan : FFTW.FFTWPlan = FFTW.fftwPlan1d(dataSize, oneDSource, oneDTarget, forward);
         val mySource = source.dist | here;

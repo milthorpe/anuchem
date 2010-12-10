@@ -23,7 +23,7 @@ public class ShellList {
     val shellList:HashMap[Int, Shell];
     val shellPairs = new ArrayList[Pair[Int,Int]]();
     
-    var powerList:Array[Array[Power]{rail}]{rail};
+    var powerList:Array[Array[Power](1){rail}](1){rail};
 
     var maxam:Int;
 
@@ -35,7 +35,7 @@ public class ShellList {
     public def initPowerList() : void {
         val maxam4 = (maxam*4)+2;
  
-        powerList = new Array[Array[Power]{rail}](maxam4); 
+        powerList = new Array[Array[Power](1){rail}](maxam4); 
         val pList = PowerList.getInstance();
         for(var i:Int=0; i<=maxam4; i++)
            powerList(i) = pList.generatePowerList(i); 

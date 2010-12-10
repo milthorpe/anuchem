@@ -449,14 +449,13 @@ public class GMatrix extends Matrix {
         val gMat = getMatrix();
 
         //computeInst(0).density = density; // prepare for broadcast
-
         val computeInst = this.computeInst; // TODO this should not be required XTENLANG-1913
         finish for ([placeId] in computeInst) async {
             val placeContribution = at (Place.place(placeId)) {
                 //val placeTimer = new Timer(1);
                 //placeTimer.start(0);
                 val comp_loc = computeInst(placeId) as ComputePlaceDirect;
-                comp_loc.reset(density);
+                comp_loc.reset();
                 comp_loc.computeShells(nPairs);
                 //placeTimer.stop(0);
                 //Console.OUT.println("\tcompute at " + here + " " + (placeTimer.total(0) as Double) / 1e9 + " seconds");
