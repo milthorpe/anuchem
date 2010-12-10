@@ -448,6 +448,8 @@ public class GMatrix extends Matrix {
         makeZero();
         val gMat = getMatrix();
 
+        //computeInst(0).density = density; // prepare for broadcast
+
         val computeInst = this.computeInst; // TODO this should not be required XTENLANG-1913
         finish for ([placeId] in computeInst) async {
             val placeContribution = at (Place.place(placeId)) {
@@ -490,6 +492,11 @@ public class GMatrix extends Matrix {
             gMatrixContribution = new Matrix(N);
             jMatrixContribution = new Matrix(N);
             kMatrixContribution = new Matrix(N);
+
+            // TODO not required with broadcast ateach above - XTENLANG-1725
+            val noOfElectrons = mol.getNumberOfElectrons();
+            val noOfOccupancies = noOfElectrons / 2;
+            density = new Density(N, noOfOccupancies);
         }
 
         /**
@@ -498,8 +505,21 @@ public class GMatrix extends Matrix {
          * and other temporary arrays to zero.
          */
         public def reset(density : Density) {
-            val den_loc = new Density(density);
-            this.density = den_loc;
+            this.density = density;
+            gMatrixContribution.makeZero();
+            jMatrixContribution.makeZero();
+            kMatrixContribution.makeZero();
+        }
+
+        /**
+         * Prepares to calculate G Matrix using a broadcast
+         * of the density matrix from place 0.  Sets partial 
+         * contribution to G and other temporary arrays to zero.
+         */
+        public def reset() {
+            // TODO should use ateach broadcast - XTENLANG-1725
+            val densityMatrix = density.getMatrix();
+            Team.WORLD.bcast[Double](here.id, 0, densityMatrix, 0, densityMatrix, 0, densityMatrix.size());
             gMatrixContribution.makeZero();
             jMatrixContribution.makeZero();
             kMatrixContribution.makeZero();
@@ -534,6 +554,13 @@ public class GMatrix extends Matrix {
 
         public def reset(density : Density) {
             super.reset(density);
+            for(var i:Int=0; i<Runtime.INIT_THREADS; i++) {
+                computeThreads(i).reset();
+            }
+        }
+
+        public def reset() {
+            super.reset();
             for(var i:Int=0; i<Runtime.INIT_THREADS; i++) {
                 computeThreads(i).reset();
             }
