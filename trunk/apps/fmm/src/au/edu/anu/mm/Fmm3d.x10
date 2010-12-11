@@ -566,8 +566,8 @@ public class Fmm3d {
         val locallyEssentialTrees = DistArray.make[LocallyEssentialTree](Dist.makeUnique(), (Point)=> null);
         finish ateach ([p1] in locallyEssentialTrees) {
             val lowestLevelBoxes = boxes(numLevels);
-            val uMin = new Array[Int](3, (Int) => Int.MAX_VALUE);
-            val uMax = new Array[Int](3, (Int) => Int.MIN_VALUE);
+            val uMin = new Array[Int](3, Int.MAX_VALUE);
+            val uMax = new Array[Int](3, Int.MIN_VALUE);
             val combinedUSet = new HashSet[Point(3)]();
             for ([x,y,z] in lowestLevelBoxes.dist(here)) {
                 val box1 = lowestLevelBoxes(x,y,z) as FmmLeafBox;
@@ -594,8 +594,8 @@ public class Fmm3d {
             val vListMin = new Array[Array[Int](1){rail}](numLevels+1);
             val vListMax = new Array[Array[Int](1){rail}](numLevels+1);
             for ([thisLevel] in topLevel..numLevels) {
-                val vMin = new Array[Int](3, (Int) => Int.MAX_VALUE);
-                val vMax = new Array[Int](3, (Int) => Int.MIN_VALUE);
+                val vMin = new Array[Int](3, Int.MAX_VALUE);
+                val vMax = new Array[Int](3, Int.MIN_VALUE);
                 //Console.OUT.println("create combined V-list for level " + thisLevel + " at " + here);
                 val combinedVSet = new HashSet[Point(3)]();
                 val thisLevelBoxes = boxes(thisLevel);

@@ -60,7 +60,7 @@ public class TestPME extends TestElectrostatic {
 
         val edges = [Vector3d(SIZE, 0.0, 0.0), Vector3d(0.0, SIZE, 0.0), Vector3d(0.0, 0.0, SIZE)];
         val g = gridSize;
-        val gridSizes = new Array[Int](3, (Int) => g);
+        val gridSizes = new Array[Int](3, g);
 
         Console.OUT.println("Testing PME for " + numAtoms + " particles."
             + "\nBox edges: " + edges(0) + "," + edges(1) + "," + edges(2)
