@@ -178,13 +178,13 @@ public class PME {
         Console.OUT.println("gridDist = " + gridDist);
 
         // TODO should be able to automatically zero arrays of Complex
-        Q = DistArray.make[Complex](gridDist, (Point) => Complex.ZERO);
+        Q = DistArray.make[Complex](gridDist);
         BdotC = DistArray.make[Double](gridDist);
         thetaRecConvQ = DistArray.make[Complex](gridDist);
 
         // TODO following arrays should be scoped local variables XTENLANG-???
-        Qinv = DistArray.make[Complex](gridDist, (Point) => Complex.ZERO);
-        temp = DistArray.make[Complex](gridDist, (Point) => Complex.ZERO);
+        Qinv = DistArray.make[Complex](gridDist);
+        temp = DistArray.make[Complex](gridDist);
         B = DistArray.make[Double](gridDist);
         C = DistArray.make[Double](gridDist);
     }
@@ -487,7 +487,7 @@ public class PME {
             val place1Region = subCells.dist.get(here);
             if (!place1Region.isEmpty()) {
                 val place1HaloRegion = getGridRegionForSubcellAtoms(gridSize, numSubCells, splineOrder, place1Region);
-                val myQ = new Array[Double](place1HaloRegion, (Point) => 0.0);
+                val myQ = new Array[Double](place1HaloRegion);
 
                 for (p in place1Region) {
                     val thisCell = subCells(p);

@@ -18,7 +18,7 @@ public class DFT {
         val sign = forward ? -1.0 : 1.0;
         val n = input.size;
         val N = n as Double;
-        val output = new Array[Complex](n, (Point) => Complex.ZERO);
+        val output = new Array[Complex](n);
         for (var m:int=0; m<n; m++) {
             val mDivN = (m as Double)* sign * 2.0 * Math.PI / N ;
             var mKDivN : Double = 0.0;

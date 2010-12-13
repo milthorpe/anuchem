@@ -45,15 +45,15 @@ public abstract class SCFMethod {
         energy = 0.0;
     } 
 
-    public abstract def scf() : Void;
+    public abstract def scf() : void;
 
     public def getMaxIteration() = maxIteration;
-    public def setMaxIteration(mxIter:Int) : Void {
+    public def setMaxIteration(mxIter:Int) : void {
         maxIteration = mxIter;
     }
 
     public def getEnergyTolerance() = energyTolerance;
-    public def setEnergyTolerance(eneTol:Double) : Void {
+    public def setEnergyTolerance(eneTol:Double) : void {
         energyTolerance = eneTol;
     }
 

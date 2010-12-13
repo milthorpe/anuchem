@@ -51,7 +51,7 @@ public class ContractedGaussian {
     public def getCenter() = center;
     public def getPower() = power;
     public def getNormalization() = normalization;
-    public def setNormalization(n:Double) : Void { normalization = n; }
+    public def setNormalization(n:Double) : void { normalization = n; }
     public def getPrimitives() : ArrayList[PrimitiveGaussian] = primitives;
     public def getPrimitive(i:Int) : PrimitiveGaussian = primitives.get(i);
     public def getExponents() : ArrayList[Double] = exponents;

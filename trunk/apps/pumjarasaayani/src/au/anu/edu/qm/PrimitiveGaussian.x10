@@ -38,7 +38,7 @@ public class PrimitiveGaussian {
     public def getExponent() = exponent;
     public def getCoefficient() = coefficient;
     public def getNormalization() = normalization;
-    public def setNormalization(n:Double) : Void { normalization = n; }
+    public def setNormalization(n:Double) : void { normalization = n; }
     public def getTotalAngularMomentum() = power.getTotalAngularMomentum();
     public def getMaximumAngularMomentum() = power.getMaximumAngularMomentum();
     public def getMinimumAngularMomentum() = power.getMinimumAngularMomentum();

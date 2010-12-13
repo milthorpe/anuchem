@@ -10,6 +10,8 @@
  */
 package au.edu.anu.mm;
 
+import x10.compiler.TempNoInline_1;
+
 public class ExpansionRegion extends Region  {
     // XTENLANG-49
     static type ExpansionRegion(rank:Int) = ExpansionRegion{self.rank==rank};
@@ -154,9 +156,78 @@ public class ExpansionRegion extends Region  {
         } 
     }
 
-    public def scanners():Iterator[Region.Scanner] {
-        throw new UnsupportedOperationException("TODO: scanners not defined for ExpansionRegion");
+    /**
+     * The Scanner class supports efficient scanning. Usage:
+     *
+     *    for (s:Scanner in r.scanners()) {
+     *        int min0 = s.min(0);
+     *        int max0 = s.max(0);
+     *        for (var i0:int=min0; i0<=max0; i0++) {
+     *            s.set(0,i0);
+     *            int min1 = s.min(1);
+     *            int max1 = s.max(1);
+     *            for (var i1:int=min1; i1<=max1; i1++) {
+     *                ...
+     *            }
+     *        }
+     *    }
+     *
+     */
+    private class ExpansionRegionScanner implements Region.Scanner {
+    	var m:Int=0;
+        var l:Int=0;
+        def this(){}
+        public def set(axis:int, position: int) {
+            Console.OUT.println("scanning set " + axis + ", " + position);
+        	switch(axis) {
+                case 0 :
+                    m = position;
+                    break;
+                case 1 :
+                    l = position;
+                    break;
+                default :
+                    throw new UnsupportedOperationException("set for axis " + axis);
+            }
+        }
+
+        public @TempNoInline_1 def min(axis:int):int {
+        	switch(axis) {
+                case 0 : return 0;
+                case 1 : return -m;
+                default : throw new UnsupportedOperationException("min for axis " + axis);
+            }
+        }
+        public @TempNoInline_1 def max(axis:int):int {
+        	switch(axis) {
+                case 0 : return p;
+                case 1 : return m;
+                default : throw new UnsupportedOperationException("max for axis " + axis);
+            }
+        }
     }
+
+    private class Scanners implements Iterator[Region.Scanner] {
+        var hasNext: boolean = true;
+
+        public def hasNext(): boolean {
+            return hasNext;
+        }
+
+        public def next(): Region.Scanner {
+            if (hasNext) {
+                hasNext = false;
+                return new ExpansionRegionScanner();
+            } else
+                throw new x10.util.NoSuchElementException("in scanner");
+        }
+
+        public def remove(): void {
+            throw new UnsupportedOperationException("remove");
+        }
+    }
+
+    public def scanners()=new Scanners();
 
     public def toString(): String {
         return "ExpansionRegion (p = " + p + ")";
