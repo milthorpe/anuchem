@@ -378,6 +378,7 @@ public class GMatrix extends Matrix {
     /** Code snippet 3, Bernholdt paper  */
     private def computeDirectMultiPlaceFuture(density:Density) {
         val G = new SharedCounter();
+        G.set(Place.MAX_PLACES); // each place is first assigned the counter value of its own place number
         makeZero();
         val gMat = getMatrix();
     
@@ -387,7 +388,6 @@ public class GMatrix extends Matrix {
                 //val placeTimer = new Timer(1);
                 //placeTimer.start(0);
                 //var completedHere : Int = 0;
-                val F1 = Future.make[Int](() => G.getAndIncrement());
 
                 val comp_loc = computeInst(placeId) as ComputePlaceFuture;
                 comp_loc.reset(density);
@@ -395,8 +395,8 @@ public class GMatrix extends Matrix {
                 val mol_loc = comp_loc.mol_loc;
                 val noOfAtoms = mol_loc.getNumberOfAtoms();
 
+                var myG : Int = placeId;
                 var L : Int = 0;
-                var myG : Int = F1.force();
 
                 // center a
                 for(var a:Int=0; a<noOfAtoms; a++) {
