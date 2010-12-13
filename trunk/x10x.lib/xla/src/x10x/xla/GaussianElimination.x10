@@ -79,7 +79,7 @@ public class GaussianElimination extends LinearEquationSolver {
     }
 
     /** Upper triangularize the matrix */
-    private def upperTriangularize(doOneScale:Boolean) : Void {
+    private def upperTriangularize(doOneScale:Boolean) : void {
         // check if matrix is already upper triangular
         // this check may be removed in future
         if (matrixA.isUpperTriangular()) {
@@ -104,7 +104,7 @@ public class GaussianElimination extends LinearEquationSolver {
      *                 interchanges the ith and jth rows.
      * @param p - The pth iteration in Gaussian elemination.
      */
-    public def simplePivot(p:Int) : Void {
+    public def simplePivot(p:Int) : void {
         var temp:Int = 0;
 
         if (p >= n) {

@@ -17,11 +17,11 @@ public class FFTW {
     
     @Native("c++", "::edu::mit::fftw::FFTWWrapper::fftwExecute(#1)")
     @Native("java", "")
-    public native static def fftwExecute(p : FFTWPlan) : Void;
+    public native static def fftwExecute(p : FFTWPlan) : void;
 
     @Native("c++", "::edu::mit::fftw::FFTWWrapper::fftwDestroyPlan(#1)")
     @Native("java", "")
-    public native static def fftwDestroyPlan(p : FFTWPlan) : Void;
+    public native static def fftwDestroyPlan(p : FFTWPlan) : void;
 
     // TODO threaded FFTW.  This is not needed ATM.
     /*
@@ -31,11 +31,11 @@ public class FFTW {
 
     @Native("c++", "::edu::mit::fftw::FFTWWrapper::fftwPlanWithNThreads(#1)")
     @Native("java", "")
-    public native static def fftwPlanWithNThreads(nThreads : Int) : Void;
+    public native static def fftwPlanWithNThreads(nThreads : Int) : void;
 
     @Native("c++", "::edu::mit::fftw::FFTWWrapper::fftwCleanupThreads()")
     @Native("java", "")
-    public native static def fftwCleanupThreads() : Void;
+    public native static def fftwCleanupThreads() : void;
     */
 
     @NativeRep("c++", "::edu::mit::fftw::FFTW_FFTWPlan", "::edu::mit::fftw::FFTW_FFTWPlan", null)

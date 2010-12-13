@@ -31,7 +31,7 @@ public class HartreeFockSCFMethod extends SCFMethod {
         this.gMatType = gMatType;
     }
 
-    public def scf() : Void {
+    public def scf() : void {
         val noOfBasisFunctions = bfs.getBasisFunctions().size();
         val noOfIntegrals = noOfBasisFunctions * (noOfBasisFunctions + 1)
                           * (noOfBasisFunctions * noOfBasisFunctions
