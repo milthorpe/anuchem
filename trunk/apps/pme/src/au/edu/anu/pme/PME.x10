@@ -500,17 +500,16 @@ public class PME {
                         val u3c = Math.ceil(u.k) as Int;
                         for ([i] in 1..splineOrder) {
                             val k1 = (u1c - i);
+                            val iVal = q * bSpline(splineOrder, u.i - k1);
                             for ([j] in 1..splineOrder) {
                                 val k2 = (u2c - j);
+                                val jVal = iVal * bSpline(splineOrder, u.j - k2);
                                 for ([k] in 1..splineOrder) {
                                     val k3 = (u3c - k);
-                                    val gridPointContribution = q
-                                                 * bSpline(splineOrder, u.i - k1)
-                                                 * bSpline(splineOrder, u.j - k2)
-                                                 * bSpline(splineOrder, u.k - k3);
+                                    val kVal = jVal * bSpline(splineOrder, u.k - k3);
                                     // because array is not divided in the z (k3) dimension, we can apply periodicity in that dimension 
                                     val wrapk3 = k3 < 0 ? (k3 + gridSize(2)) : (k3 >= gridSize(2) ? (k3 - gridSize(2)) : k3);
-                                    myQ(k1,k2,wrapk3) = myQ(k1,k2,wrapk3) + gridPointContribution;
+                                    myQ(k1,k2,wrapk3) = myQ(k1,k2,wrapk3) + kVal;
                                 }
                             }
                         }
