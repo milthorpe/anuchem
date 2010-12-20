@@ -472,21 +472,21 @@ public class PME {
      */
     public def gridCharges() {
         timer.start(TIMER_INDEX_GRIDCHARGES);
-		val numSubCells = this.numSubCells; // TODO shouldn't be necessary XTENLANG-1913
-		val splineOrder = this.splineOrder; // TODO shouldn't be necessary XTENLANG-1913
-		val gridSize = this.gridSize; // TODO shouldn't be necessary XTENLANG-1913
-		val gridDist = this.gridDist; // TODO shouldn't be necessary XTENLANG-1913
-		val subCells = this.subCells; // TODO shouldn't be necessary XTENLANG-1913
-		val K1 = this.K1; // TODO shouldn't be necessary XTENLANG-1913;
-		val K2 = this.K2; // TODO shouldn't be necessary XTENLANG-1913;
-		val K3 = this.K3; // TODO shouldn't be necessary XTENLANG-1913;
-		val Q = this.Q; // TODO shouldn't be necessary XTENLANG-1913;
+		val lnumSubCells = this.numSubCells; // TODO shouldn't be necessary XTENLANG-1913
+		val lsplineOrder = this.splineOrder; // TODO shouldn't be necessary XTENLANG-1913
+		val lgridSize = this.gridSize; // TODO shouldn't be necessary XTENLANG-1913
+		val lgridDist = this.gridDist; // TODO shouldn't be necessary XTENLANG-1913
+		val lsubCells = this.subCells; // TODO shouldn't be necessary XTENLANG-1913
+		val lK1 = this.K1; // TODO shouldn't be necessary XTENLANG-1913;
+		val lK2 = this.K2; // TODO shouldn't be necessary XTENLANG-1913;
+		val lK3 = this.K3; // TODO shouldn't be necessary XTENLANG-1913;
+		val lQ = this.Q; // TODO shouldn't be necessary XTENLANG-1913;
 		val edgeReciprocals = this.edgeReciprocals; // TODO shouldn't be necessary XTENLANG-1913
         finish ateach (place1 in Dist.makeUnique()) {
 			val gridRegion = gridDist.region;
             val place1Region = subCells.dist.get(here);
             if (!place1Region.isEmpty()) {
-                val place1HaloRegion = getGridRegionForSubcellAtoms(gridSize, numSubCells, splineOrder, place1Region);
+                val place1HaloRegion = getGridRegionForSubcellAtoms(gridSize, lnumSubCells, lsplineOrder, place1Region);
                 val myQ = new Array[Double](place1HaloRegion);
 
                 for (p in place1Region) {
@@ -498,15 +498,15 @@ public class PME {
                         val u1c = Math.ceil(u.i) as Int;
                         val u2c = Math.ceil(u.j) as Int;
                         val u3c = Math.ceil(u.k) as Int;
-                        for ([i] in 1..splineOrder) {
+                        for ([i] in 1..lsplineOrder) {
                             val k1 = (u1c - i);
-                            val iVal = q * bSpline(splineOrder, u.i - k1);
-                            for ([j] in 1..splineOrder) {
+                            val iVal = q * bSpline(lsplineOrder, u.i - k1);
+                            for ([j] in 1..lsplineOrder) {
                                 val k2 = (u2c - j);
-                                val jVal = iVal * bSpline(splineOrder, u.j - k2);
-                                for ([k] in 1..splineOrder) {
+                                val jVal = iVal * bSpline(lsplineOrder, u.j - k2);
+                                for ([k] in 1..lsplineOrder) {
                                     val k3 = (u3c - k);
-                                    val kVal = jVal * bSpline(splineOrder, u.k - k3);
+                                    val kVal = jVal * bSpline(lsplineOrder, u.k - k3);
                                     // because array is not divided in the z (k3) dimension, we can apply periodicity in that dimension 
                                     val wrapk3 = k3 < 0 ? (k3 + gridSize(2)) : (k3 >= gridSize(2) ? (k3 - gridSize(2)) : k3);
                                     myQ(k1,k2,wrapk3) = myQ(k1,k2,wrapk3) + kVal;
@@ -572,7 +572,7 @@ public class PME {
             for (p in sourceRegion) {
                 overlap(i++) = sourceGrid(p);
             }
-            at (targetPlace) {
+            async at (targetPlace) {
                 atomic {
                     var j : Int = 0;
                     for (p in overlapRegion) {
