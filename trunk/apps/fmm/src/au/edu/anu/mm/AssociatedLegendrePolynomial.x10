@@ -42,7 +42,7 @@ public class AssociatedLegendrePolynomial {
 		fact = 1.0;
         for ([l] in 2..p) {
 			fact += 2.0;
-            for ([k] in 0..l-2) {
+            for ([k] in 0..(l-2)) {
             	P(l,k) = (fact * cosTheta * P(l-1,k) - (l+k-1) * P(l-2,k)) / (l-k);
             }
         }
