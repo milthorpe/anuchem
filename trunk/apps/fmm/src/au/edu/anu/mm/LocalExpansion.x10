@@ -124,7 +124,7 @@ public class LocalExpansion extends Expansion {
             }
         // END HAND-INLINED ITERATOR
             val O_jk = source.terms(j,k);
-            for ([l] in 0..p-j) {
+            for ([l] in 0..(p-j)) {
                 for ([m] in -l..l) {
                     if (Math.abs(k+m) <= (j+l)) {
                         val B_lmjk = transform.terms(j+l, k+m);

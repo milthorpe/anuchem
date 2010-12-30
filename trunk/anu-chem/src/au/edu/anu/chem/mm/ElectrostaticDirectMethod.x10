@@ -27,13 +27,13 @@ public class ElectrostaticDirectMethod {
     public val timer = new Timer(6);
 
     /** The atoms in the simulation, divided up into an array of ValRails, one for each place. */
-    private val atoms : DistArray[Array[MMAtom](1){rail}](1){rail};
+    private val atoms : DistArray[Array[MMAtom](1){rail}](1);
 
     /**
      * Creates a new electrostatic direct method.
      * @param atoms the atoms in the unit cell
      */
-    public def this(atoms : DistArray[Array[MMAtom](1){rail}](1){rail}) {
+    public def this(atoms : DistArray[Array[MMAtom](1){rail}](1)) {
         this.atoms = atoms;
         // distribute all atoms to all places
     }
@@ -49,8 +49,8 @@ public class ElectrostaticDirectMethod {
                     if (p2 != p1) { // TODO region difference
                         var energyWithOther : Double = 0.0;
                         val otherAtomsPacked = at(atoms.dist(p2)) {getPackedAtomsForPlace(p2)};
-                        for ([j] in 0..otherAtomsPacked.size-1) {
-                            for ([i] in 0..myAtoms.size-1) {
+                        for ([j] in 0..(otherAtomsPacked.size-1)) {
+                            for ([i] in 0..(myAtoms.size-1)) {
                                 val myAtom = myAtoms(i);
                                 energyWithOther += myAtom.charge * otherAtomsPacked(j).charge / otherAtomsPacked(j).centre.distance(myAtom.centre);
                             }
@@ -60,9 +60,9 @@ public class ElectrostaticDirectMethod {
                 }
 
                 // energy for all interactions within this place
-                for ([i] in 0..myAtoms.size-1) async {
+                for ([i] in 0..(myAtoms.size-1)) async {
                     var energyThisPlace : Double = 0.0;
-                    for ([j] in 0..i-1) {
+                    for ([j] in 0..(i-1)) {
                         energyThisPlace += 2.0 * myAtoms(i).charge * myAtoms(j).charge / myAtoms(j).centre.distance(myAtoms(i).centre);
                     }
                     offer energyThisPlace;

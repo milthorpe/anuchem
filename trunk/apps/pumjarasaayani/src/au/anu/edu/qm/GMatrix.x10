@@ -28,7 +28,7 @@ import au.edu.anu.util.Timer;
  */
 public class GMatrix extends Matrix {
     private val gMatType : Int;
-    private val computeInst : DistArray[ComputePlace](1){rect};
+    private val computeInst : DistArray[ComputePlace](1);
 
     private val bfs : BasisFunctions;
     private val mol : Molecule[QMAtom];

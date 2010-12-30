@@ -66,10 +66,10 @@ public class TwoElectronIntegrals {
         fmt    = new Array[Double](maxam4+1);
         zeroM  = new Array[Double](maxam4+1);
 
-        rM     = new Array[Double]((0..maxam4+1) * (0..((maxam4+1) * (maxam4+2)/2)));
-        pqInts = new Array[Double]((0..maxam2N) * (0..maxam2N));
-        npint  = new Array[Double]((0..maxam2+1) * (0..maxam2M+1));
-        pcdint = new Array[Double]((0..maxamN+1) * (0..maxamN+1) * (0..maxam2N));
+        rM     = new Array[Double](0..(maxam4+1) * 0..((maxam4+1) * (maxam4+2)/2));
+        pqInts = new Array[Double](0..(maxam2N)  * 0..(maxam2N));
+        npint  = new Array[Double](0..(maxam2+1) * 0..(maxam2M+1));
+        pcdint = new Array[Double](0..(maxamN+1) * 0..(maxamN+1) * 0..(maxam2N));
 
         // Console.OUT.println("alloc2: " + pcdint.region.size());
     }

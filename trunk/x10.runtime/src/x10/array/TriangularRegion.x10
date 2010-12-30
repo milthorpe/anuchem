@@ -96,9 +96,9 @@ public class TriangularRegion extends Region {
     public def projection(axis: Int): Region(1) {
         switch (axis) {
             case 0:
-                return rowMin..rowMin+dim;
+                return rowMin..(rowMin+dim);
             case 1:
-                return colMin..colMin+dim;
+                return colMin..(colMin+dim);
             default:
                 throw new UnsupportedOperationException("projection(" + axis + ")");
         }
@@ -107,20 +107,20 @@ public class TriangularRegion extends Region {
     public def eliminate(axis: Int): Region(1) {
         switch (axis) {
             case 0:
-                return colMin..colMin+dim;
+                return colMin..(colMin+dim);
             case 1:
-                return rowMin..rowMin+dim;
+                return rowMin..(rowMin+dim);
             default:
                 throw new UnsupportedOperationException("projection(" + axis + ")");
         }
     }
 
     public def boundingBox(): Region(rank) {
-        return (rowMin..rowMin+dim) * (colMin..colMin+dim);
+        return rowMin..(rowMin+dim) * colMin..(colMin+dim);
     }
 
     protected def computeBoundingBox(): Region(rank) {
-        return (rowMin..rowMin+dim) * (colMin..colMin+dim);
+        return rowMin..(rowMin+dim) * colMin..(colMin+dim);
     }
 
     public def iterator(): Iterator[Point(rank)] {
