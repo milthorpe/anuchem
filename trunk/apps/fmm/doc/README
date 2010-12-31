@@ -29,10 +29,9 @@ To build for Blue Gene change ${x10rt} to "pgas_bgp"
 
 Compile dependencies:
 ------------------------
-* X10 version 2.1.1 including x10rt=mpi (patched - see below)
+* X10 version 2.1.2 including x10rt=mpi
 * anu-chem library
 * x10x.lib library
-* PeriodicDistArray.x10, PeriodicArray.x10 - patches to X10 array library - see http://jira.codehaus.org/browse/XTENLANG-1365
 
 
 To run:

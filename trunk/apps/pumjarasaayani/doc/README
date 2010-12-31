@@ -26,7 +26,7 @@ Compiling:
 
 $ ant clean && ant
 
-will build the required executable and put it in bin/pumjarasaayani.exe
+will build the required executable and put it in bin/pumjarasaayani
 
 The default build script builds agaist pgas_sockets.
 To build against MPI change ${x10rt} to "mpi" and the 
@@ -34,10 +34,11 @@ ${x10.postcompiler} to "mpixx"
 
 Dependency for compiling:
 ------------------------
-* X10 version 2.1
+* X10 version 2.1.2 including x10rt=mpi
 * GSL or equivalent BLAS library, will require rewrite of native wrappers for 
   any library other than GSL. However, the code can be compiled without any
   native wrappers. GSL is required for diagonalization and DIIS.
+  http://www.gnu.org/software/gsl/
 * anu-chem library
 * x10x.lib library
 
@@ -59,7 +60,7 @@ To test, you need to be in a directory above basis/
 
 Single place:
 
-$ runx10 bin/pumjarasaayani.exe test/h2o.inp [<gmatype>] [-mta]
+$ runx10 bin/pumjarasaayani test/h2o.inp [<gmatype>] [-mta]
 
 The -mta switch is used to invoke the molecular tailoring algorithm. This basically
 splits the molecule into a series of overlapping fragments and then performs HF on 
@@ -68,8 +69,8 @@ of the big molecule.
 
 Multiple place:
 
-$ launcher -t <n> bin/pumjarasaayani.exe test/h2o.inp [<gmatype>] [-mta]  { pgas compiled }
-$ mpirun -np <n> bin/pumjarasaayani.exe test/h2o.inp [<gmatype>]  [-mta] { mpi compiled  }
+$ launcher -t <n> bin/pumjarasaayani test/h2o.inp [<gmatype>] [-mta]  { pgas compiled }
+$ mpirun -np <n> bin/pumjarasaayani test/h2o.inp [<gmatype>]  [-mta] { mpi compiled  }
 
 where <n> is number of places
 
