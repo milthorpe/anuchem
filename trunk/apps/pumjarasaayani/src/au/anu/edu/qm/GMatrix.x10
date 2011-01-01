@@ -448,7 +448,7 @@ public class GMatrix extends Matrix {
         makeZero();
         val gMat = getMatrix();
 
-        //computeInst(0).density = density; // prepare for broadcast
+        computeInst(0).density = density; // prepare for broadcast
         val computeInst = this.computeInst; // TODO this should not be required XTENLANG-1913
         finish for ([placeId] in computeInst) async {
             val placeContribution = at (Place.place(placeId)) {
