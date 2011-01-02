@@ -157,8 +157,8 @@ public class PME {
             Console.ERR.println("warning: edge length " + edgeLengths(0) + " is not an exact multiple of (cutoff/2.0) " + (cutoff/2.0));
         }
         val numSubCells = Math.ceil(edgeLengths(0) / (cutoff/2.0)) as Int;
-        val subCellRegion = new PeriodicRegion((0..(numSubCells-1) * 0..(numSubCells-1) * 0..(numSubCells-1)) as RectRegion(3));
-        val subCells = DistArray.make[Array[MMAtom](1){rail}](Dist.makeBlockBlock(subCellRegion, 0, 1));
+        val subCellRegion = 0..(numSubCells-1) * 0..(numSubCells-1) * 0..(numSubCells-1);
+        val subCells = DistArray.make[Array[MMAtom](1){rail}](new PeriodicDist(Dist.makeBlockBlock(subCellRegion, 0, 1)));
         Console.OUT.println("subCells dist = " + subCells.dist);
         this.subCells = subCells;
         this.numSubCells = numSubCells;
@@ -228,7 +228,7 @@ public class PME {
 			val BdotC = this.BdotC; // TODO shouldn't be necessary XTENLANG-1913
 			val Qinv = this.Qinv; // TODO shouldn't be necessary XTENLANG-1913
             finish ateach (place in Dist.makeUnique()) {
-                val myGridRegion = (gridDist.get(here) as PeriodicRegion(3)).baseRegion as RectRegion(3);
+                val myGridRegion = gridDist.get(here) as RectRegion(3);
                 for ([i,j,k] in myGridRegion) {
                     thetaRecConvQ(i,j,k) = BdotC(i,j,k) * Qinv(i,j,k);
                 }

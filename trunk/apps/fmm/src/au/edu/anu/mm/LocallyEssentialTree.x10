@@ -59,13 +59,13 @@ public class LocallyEssentialTree {
         val multipoleCopies = new Array[DistArray[MultipoleExpansion](3)](combinedVList.size);
         for ([i] in 0..(combinedVList.size-1)) {
             if (combinedVList(i) != null) {
-                val multipoleCopiesLevelRegion = new PeriodicRegion((vListMin(i)(0)..vListMax(i)(0) * vListMin(i)(1)..vListMax(i)(1) * vListMin(i)(2)..vListMax(i)(2)) as RectRegion(3));
-                multipoleCopies(i) = DistArray.make[MultipoleExpansion](Dist.makeConstant(multipoleCopiesLevelRegion));
+                val multipoleCopiesLevelRegion = vListMin(i)(0)..vListMax(i)(0) * vListMin(i)(1)..vListMax(i)(1) * vListMin(i)(2)..vListMax(i)(2);
+                multipoleCopies(i) = DistArray.make[MultipoleExpansion](new PeriodicDist(Dist.makeConstant(multipoleCopiesLevelRegion)));
             }
         }
         this.multipoleCopies = multipoleCopies;
 
-        val packedAtomsRegion = new PeriodicRegion((uListMin(0)..uListMax(0) * uListMin(1)..uListMax(1) * uListMin(2)..uListMax(2)) as RectRegion(3));
-        this.packedAtoms = DistArray.make[Array[MMAtom.PackedRepresentation](1){rail}](Dist.makeConstant(packedAtomsRegion));
+        val packedAtomsRegion = uListMin(0)..uListMax(0) * uListMin(1)..uListMax(1) * uListMin(2)..uListMax(2);
+        this.packedAtoms = DistArray.make[Array[MMAtom.PackedRepresentation](1){rail}](new PeriodicDist(Dist.makeConstant(packedAtomsRegion)));
     }
 }
