@@ -291,7 +291,7 @@ public class PeriodicFmm3d extends Fmm3d {
             val thisLevelBoxes = boxArray(thisLevel);
             finish ateach ([x,y,z] in thisLevelBoxes) {
                 val box = new FmmBox(thisLevel, x, y, z, numTerms, Fmm3d.getParentForChild(boxArray, thisLevel, topLevel, x,y,z));
-                box.createVList(ws);
+                box.createVListPeriodic(ws);
                 thisLevelBoxes(x,y,z) = box;
             }
         }
@@ -299,8 +299,8 @@ public class PeriodicFmm3d extends Fmm3d {
         val lowestLevelBoxes = boxArray(numLevels);
         finish ateach ([x,y,z] in lowestLevelBoxes) {
             val box = new FmmLeafBox(numLevels, x, y, z, numTerms, Fmm3d.getParentForChild(boxArray, numLevels, topLevel, x,y,z));
-            box.createUList(ws);
-            box.createVList(ws);
+            box.createUListPeriodic(ws);
+            box.createVListPeriodic(ws);
             lowestLevelBoxes(x,y,z) = box;
         }
 

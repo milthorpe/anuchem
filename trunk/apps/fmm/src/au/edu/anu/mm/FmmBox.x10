@@ -97,7 +97,7 @@ public class FmmBox {
     /**
      * Creates the V-list for this box.
      * The V-list consists of the children of those boxes not 
-     * well-separated from the parent..
+     * well-separated from the parent.
      */
     public def createVList(ws : Int) {
         val levelDim = Math.pow2(this.level);
@@ -108,6 +108,30 @@ public class FmmBox {
         for ([x] in Math.max(0,this.x-2*ws+xOffset)..Math.min(levelDim-1,this.x+2*ws+1+xOffset)) {
             for ([y] in Math.max(0,this.y-2*ws+yOffset)..Math.min(levelDim-1,this.y+2*ws+1+yOffset)) {
                 for ([z] in Math.max(0,this.z-2*ws+zOffset)..Math.min(levelDim-1,this.z+2*ws+1+zOffset)) {
+                    if (wellSeparated(ws, x, y, z)) {
+                        vList.add(Point.make(x,y,z));
+                    }
+                }
+            }
+        }
+        this.vList = vList.toArray();
+    }
+
+    /**
+     * Creates the V-list for this box for use with
+     * the periodic FMM.
+     * The V-list consists of the children of those boxes not 
+     * well-separated from the parent.
+     */
+    public def createVListPeriodic(ws : Int) {
+        val levelDim = Math.pow2(this.level);
+        val xOffset = this.x%2 == 1 ? -1 : 0;
+        val yOffset = this.y%2 == 1 ? -1 : 0;
+        val zOffset = this.z%2 == 1 ? -1 : 0;
+        val vList = new ArrayList[Point(3)]();
+        for ([x] in (this.x-2*ws+xOffset)..(this.x+2*ws+1+xOffset)) {
+            for ([y] in (this.y-2*ws+yOffset)..(this.y+2*ws+1+yOffset)) {
+                for ([z] in (this.z-2*ws+zOffset)..(this.z+2*ws+1+zOffset)) {
                     if (wellSeparated(ws, x, y, z)) {
                         vList.add(Point.make(x,y,z));
                     }
