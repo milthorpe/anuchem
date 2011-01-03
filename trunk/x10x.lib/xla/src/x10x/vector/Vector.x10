@@ -75,6 +75,7 @@ public class Vector {
         val N   = getSize();
         val res = new Vector(N);
 
+        val vec = this.vec; // TODO this should not be required XTENLANG-1913;
         finish for([i] in vec) async res.vec(i) = vec(i) + b.vec(i);
 
         return res;
@@ -87,6 +88,7 @@ public class Vector {
         val N   = getSize();
         val res = new Vector(N);
 
+        val vec = this.vec; // TODO this should not be required XTENLANG-1913;
         finish for([i] in vec) async res.vec(i) = vec(i) - b.vec(i);
 
         return res;
@@ -113,7 +115,8 @@ public class Vector {
         val N   = getSize();
         
         val n = new Vector(N);
-       
+
+        val vec = this.vec; // TODO this should not be required XTENLANG-1913;
         finish for([i] in vec) async n.vec(i) = vec(i) / mag;
         
         return n;
@@ -125,7 +128,8 @@ public class Vector {
     public def negate() : Vector {
         val N = getSize();
         val n = new Vector(N);
-        
+
+        val vec = this.vec; // TODO this should not be required XTENLANG-1913;
         finish for([i] in vec) async n.vec(i) = -vec(i);
         
         return n;
@@ -137,7 +141,8 @@ public class Vector {
     public def mul(k:Double) : Vector {        
         val N   = getSize();
         val res = new Vector(N);
-        
+
+        val vec = this.vec; // TODO this should not be required XTENLANG-1913;
         finish for([i] in vec) async res.vec(i) = vec(i) * k;
         
         return res;
