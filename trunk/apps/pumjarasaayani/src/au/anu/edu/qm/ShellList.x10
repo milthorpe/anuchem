@@ -6,7 +6,7 @@
  *  You may obtain a copy of the License at
  *      http://www.opensource.org/licenses/eclipse-1.0.php
  *
- * (C) Copyright Australian National University 2010.
+ * (C) Copyright Australian National University 2010-2011.
  */
 package au.anu.edu.qm;
 
@@ -21,7 +21,6 @@ import x10.util.*;
  */
 public class ShellList { 
     val shellList:HashMap[Int, Shell];
-    val shellPairs = new ArrayList[Pair[Int,Int]]();
     
     var powerList:Array[Array[Power](1){rail}](1){rail};
 
@@ -74,23 +73,11 @@ public class ShellList {
          } // end for
 
          return shellPrimitives;
-    } 
+    }
 
-    var shellPairsGenerated:Boolean = false;
-
-    public def getShellPairs() : ArrayList[Pair[Int, Int]] {
-         if (!shellPairsGenerated) {
-           val noOfShells = getNumberOfShellPrimitives();
-           // Console.OUT.println("No of shells : " + noOfShells);
-           for(var a:Int=0; a<noOfShells; a++) {
-              for(var b:Int=0; b<noOfShells; b++) {
-                 shellPairs.add(Pair[Int,Int](a,b));
-              } // end for
-           } // end for
-           shellPairsGenerated = true;
-         } // end if
-
-         return shellPairs;
+    public def getNumberOfShellPairs() : Int {
+        val nPrimitives = getNumberOfShellPrimitives();
+        return nPrimitives * nPrimitives;
     }
 
     public def getShell(am:Int) = shellList.getOrElse(am, null);
