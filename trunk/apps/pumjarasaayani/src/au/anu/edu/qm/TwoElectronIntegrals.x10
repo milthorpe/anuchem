@@ -46,7 +46,6 @@ public class TwoElectronIntegrals {
     private val jjdx  = new Array[Int](8);
     private val kkdx  = new Array[Int](8);
     private val lldx  = new Array[Int](8);
-    private val validIdx = new Array[Boolean](8);
 
     /**
      * @param maxam maximum angular momentum (determines total number of integrals)
@@ -384,23 +383,6 @@ public class TwoElectronIntegrals {
                        dMatrix);
     }
 
-
-    /** find unique elements and mark the ones that are not */
-    /** 8 => is the level of integral symmetry, given (i,j|k.l)
-        there are 8 combinations that are unique */
-    private def filterUniqueElements(idx:Array[Int](1){rail}, jdx:Array[Int](1){rail},
-                                     kdx:Array[Int](1){rail}, ldx:Array[Int](1){rail},
-                                     validIdx:Array[Boolean](1){rail}) : void {
-        validIdx.fill(true);
-        for(var m:Int=0; m<8; m++) {
-            val i = idx(m); val j = jdx(m); val k = kdx(m); val l = ldx(m);
-            for(var n:Int=m+1; n<8; n++) {
-                if (i==idx(n) && j==jdx(n) && k==kdx(n) && l==ldx(n))
-                    validIdx(n) = false;
-            } // end for
-        } // end for
-    }
-
     /** MD recurrance relation steps in following two subroutines */
 
     private def mdRecurse(r:Vector3d, i:Int, j:Int, k:Int, m:Int) : Double {
@@ -615,7 +597,6 @@ public class TwoElectronIntegrals {
                             shellList:ShellList, bAng:Int, aAng:Int, 
                             aCen:Point3d, bCen:Point3d, p:Point3d, gamma1:Double,
                             twoEInts:Array[Double](1){rect}) {
-         var dd:Int, cc:Int, bb:Int, aa:Int, k:Int, l:Int;
          val shellB = shellList.getPowers(bAng);
          val shellA = shellList.getPowers(aAng);
 
@@ -629,33 +610,34 @@ public class TwoElectronIntegrals {
 
          var intIndx:Int = 0;
 
-         for(dd=0; dd<dLim; dd++) {
+         for([dd] in 0..(dLim-1)) {
              val ll = dStrt + dd;
 
-             for(cc=0; cc<cLim; cc++) {
+             for([cc] in 0..(cLim-1)) {
                  val kk = cStrt + cc;
 
                  if (kk < ll) continue;
+                 val kkll_st = kk*(kk+1)/2 + ll;
 
-                 for (k=0; k<=maxam2; k++) {
+                 for ([k] in 0..maxam2) {
                     val kpq = k*pqdim;
-                    for (l=0; l<=maxam2M; l++)
+                    for ([l] in 0..maxam2M)
                         npint(k,l) = pcdint(dd, cc, kpq+l);
                  }
 
-                 for(bb = 0; bb<bLim; bb++) {
+                 for([bb] in 0..(bLim-1)) {
                      val jj = bStrt + bb;
                      val powersB = shellB(bb);
                      val lp = powersB.l;
                      val mp = powersB.m;
                      val np = powersB.n;
 
-                     for(aa = 0; aa<aLim; aa++) {
+                     for([aa] in 0..(aLim-1)) {
                          val ii = aStrt + aa;
 
                          if (ii >= jj) {
                              val iijj_st = ii*(ii+1)/2 + jj;
-                             val kkll_st = kk*(kk+1)/2 + ll;
+
 
                              if (iijj_st >= kkll_st) {                                   
                                  val powersA = shellA(aa);
@@ -681,78 +663,83 @@ public class TwoElectronIntegrals {
                                jMatrix:Array[Double](2){rect}, 
                                kMatrix:Array[Double](2){rect},
                                dMatrix:Array[Double](2){rect}) {
-         var dd:Int, cc:Int, bb:Int, aa:Int, k:Int, l:Int;
-         
-         var intIndx:Int = 0;
+        var intIndx:Int = 0;
 
-         for(dd=0; dd<dLim; dd++) {
-             val ll = dStrt + dd;
-             lldx(0) = ll; lldx(1) = ll; kkdx(2) = ll; kkdx(3) = ll;
-             iidx(4) = ll; iidx(5) = ll; jjdx(6) = ll; jjdx(7) = ll;
+        for([ll] in dStrt..(dStrt+dLim-1)) {
+            val kStrt = Math.max(cStrt, ll);
+            for([kk] in kStrt..(cStrt+cLim-1)) {
+                val kkll = kk*(kk+1)/2 + ll;
 
-             for(cc=0; cc<cLim; cc++) {
-                 val kk = cStrt + cc;
-                 kkdx(0) = kk; kkdx(1) = kk; lldx(2) = kk; lldx(3) = kk;
-                 jjdx(4) = kk; jjdx(5) = kk; iidx(6) = kk; iidx(7) = kk;
+                for([jj] in bStrt..(bStrt+bLim-1)) {
+                    val iStrt = Math.max(aStrt, jj);
+                    for([ii] in iStrt..(aStrt+aLim-1)) {
+                        val iijj = ii*(ii+1)/2 + jj;
 
-                 if (kk < ll) continue;
+                        if (iijj >= kkll) {
+                            val twoEIntVal = twoEInts(intIndx++); 
 
-                 for(bb = 0; bb<bLim; bb++) {
-                     val jj = bStrt + bb;
-
-                     jjdx(0) = jj; iidx(1) = jj; iidx(2) = jj; jjdx(3) = jj;
-                     lldx(4) = jj; kkdx(5) = jj; lldx(6) = jj; kkdx(7) = jj;
-
-                     for(aa = 0; aa<aLim; aa++) {
-                         val ii = aStrt + aa;
-                  
-                         if (ii >= jj) {
-                             val iijj = ii*(ii+1)/2 + jj;
-                             val kkll = kk*(kk+1)/2 + ll;
-
-                             if (iijj >= kkll) {
-                                    val twoEIntVal = twoEInts(intIndx++); 
-                            
-                                    val v1 = dMatrix(kk,ll) * twoEIntVal;
-                                    val v2 = dMatrix(ii,jj) * twoEIntVal;
-                                    val v3 = dMatrix(jj,ll) * twoEIntVal;
-                                    val v4 = dMatrix(jj,kk) * twoEIntVal;
-                                    val v5 = dMatrix(ii,ll) * twoEIntVal;
-                                    val v6 = dMatrix(ii,kk) * twoEIntVal;
-
-                                    jMatrix(ii,jj) += v1;
-                                    jMatrix(kk,ll) += v2;
-                                    kMatrix(ii,kk) += v3;
-                                    kMatrix(ii,ll) += v4;
-                                    kMatrix(jj,kk) += v5;
-                                    kMatrix(jj,ll) += v6;
-
-                                    // special case
-                                    if ((ii|jj|kk|ll) == 0) continue;
-                                    iidx(0) = ii; jjdx(1) = ii; jjdx(2) = ii; iidx(3) = ii;
-                                    kkdx(4) = ii; lldx(5) = ii; kkdx(6) = ii; lldx(7) = ii;
-
-                                    // else this is symmetry unique integral, so need to
-                                    // use this value for all 8 combinations (if unique)
-                                    filterUniqueElements(iidx, jjdx, kkdx, lldx, validIdx);
-
-                                    // and evaluate them
-                                    for(var m:Int=1; m<8; m++) {
-                                        if (validIdx(m)) {
-                                           val ii_l = iidx(m);
-                                           val jj_l = jjdx(m);
-                                           val kk_l = kkdx(m);
-                                           val ll_l = lldx(m);
-
-                                           jMatrix(ii_l,jj_l) += dMatrix(kk_l,ll_l) * twoEIntVal;
-                                           jMatrix(kk_l,ll_l) += dMatrix(ii_l,jj_l) * twoEIntVal;
-                                           kMatrix(ii_l,kk_l) += dMatrix(jj_l,ll_l) * twoEIntVal;
-                                           kMatrix(ii_l,ll_l) += dMatrix(jj_l,kk_l) * twoEIntVal;
-                                           kMatrix(jj_l,kk_l) += dMatrix(ii_l,ll_l) * twoEIntVal;
-                                           kMatrix(jj_l,ll_l) += dMatrix(ii_l,kk_l) * twoEIntVal;
-                                        } // end if
-                                    } // end m                    
-                             } // end if
+                            jMatrix(ii,jj) += dMatrix(kk,ll) * twoEIntVal;
+                            jMatrix(kk,ll) += dMatrix(ii,jj) * twoEIntVal;
+                            kMatrix(ii,kk) += dMatrix(jj,ll) * twoEIntVal;
+                            kMatrix(ii,ll) += dMatrix(jj,kk) * twoEIntVal;
+                            kMatrix(jj,kk) += dMatrix(ii,ll) * twoEIntVal;
+                            kMatrix(jj,ll) += dMatrix(ii,kk) * twoEIntVal;
+                            if (ii != jj) {
+                                jMatrix(jj,ii) += dMatrix(kk,ll) * twoEIntVal;
+                                jMatrix(kk,ll) += dMatrix(jj,ii) * twoEIntVal;
+                                kMatrix(jj,kk) += dMatrix(ii,ll) * twoEIntVal;
+                                kMatrix(jj,ll) += dMatrix(ii,kk) * twoEIntVal;
+                                kMatrix(ii,kk) += dMatrix(jj,ll) * twoEIntVal;
+                                kMatrix(ii,ll) += dMatrix(jj,kk) * twoEIntVal;
+                                if (kk != ll) {
+                                    jMatrix(jj,ii) += dMatrix(ll,kk) * twoEIntVal;
+                                    jMatrix(ll,kk) += dMatrix(jj,ii) * twoEIntVal;
+                                    kMatrix(jj,ll) += dMatrix(ii,kk) * twoEIntVal;
+                                    kMatrix(jj,kk) += dMatrix(ii,ll) * twoEIntVal;
+                                    kMatrix(ii,ll) += dMatrix(jj,kk) * twoEIntVal;
+                                    kMatrix(ii,kk) += dMatrix(jj,ll) * twoEIntVal;
+                                }
+                            }
+                            if (kk != ll) {
+                                jMatrix(ii,jj) += dMatrix(ll,kk) * twoEIntVal;
+                                jMatrix(ll,kk) += dMatrix(ii,jj) * twoEIntVal;
+                                kMatrix(ii,ll) += dMatrix(jj,kk) * twoEIntVal;
+                                kMatrix(ii,kk) += dMatrix(jj,ll) * twoEIntVal;
+                                kMatrix(jj,ll) += dMatrix(ii,kk) * twoEIntVal;
+                                kMatrix(jj,kk) += dMatrix(ii,ll) * twoEIntVal;
+                            }
+                            if (ii != kk || jj != ll) {
+                                jMatrix(kk,ll) += dMatrix(ii,jj) * twoEIntVal;
+                                jMatrix(ii,jj) += dMatrix(kk,ll) * twoEIntVal;
+                                kMatrix(kk,ii) += dMatrix(ll,jj) * twoEIntVal;
+                                kMatrix(kk,jj) += dMatrix(ll,ii) * twoEIntVal;
+                                kMatrix(ll,ii) += dMatrix(kk,jj) * twoEIntVal;
+                                kMatrix(ll,jj) += dMatrix(kk,ii) * twoEIntVal;
+                                if (ii != jj) {
+                                    jMatrix(kk,ll) += dMatrix(jj,ii) * twoEIntVal;
+                                    jMatrix(jj,ii) += dMatrix(kk,ll) * twoEIntVal;
+                                    kMatrix(kk,jj) += dMatrix(ll,ii) * twoEIntVal;
+                                    kMatrix(kk,ii) += dMatrix(ll,jj) * twoEIntVal;
+                                    kMatrix(ll,jj) += dMatrix(kk,ii) * twoEIntVal;
+                                    kMatrix(ll,ii) += dMatrix(kk,jj) * twoEIntVal;
+                                    if (kk != ll) {
+                                        jMatrix(ll,kk) += dMatrix(jj,ii) * twoEIntVal;
+                                        jMatrix(jj,ii) += dMatrix(ll,kk) * twoEIntVal;
+                                        kMatrix(ll,jj) += dMatrix(kk,ii) * twoEIntVal;
+                                        kMatrix(ll,ii) += dMatrix(kk,jj) * twoEIntVal;
+                                        kMatrix(kk,jj) += dMatrix(ll,ii) * twoEIntVal;
+                                        kMatrix(kk,ii) += dMatrix(ll,jj) * twoEIntVal;
+                                    }
+                                }
+                                if (kk != ll) {
+                                    jMatrix(ll,kk) += dMatrix(ii,jj) * twoEIntVal;
+                                    jMatrix(ii,jj) += dMatrix(ll,kk) * twoEIntVal;
+                                    kMatrix(ll,ii) += dMatrix(kk,jj) * twoEIntVal;
+                                    kMatrix(ll,jj) += dMatrix(kk,ii) * twoEIntVal;
+                                    kMatrix(kk,ii) += dMatrix(ll,jj) * twoEIntVal;
+                                    kMatrix(kk,jj) += dMatrix(ll,ii) * twoEIntVal;
+                                }
+                            }
                          } // end if
                      } // for aa
                  } // for bb
