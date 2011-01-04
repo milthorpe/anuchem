@@ -181,7 +181,6 @@ public class TwoElectronIntegrals {
 
                  // compute FmT
                  computeFmt(angMomABCD, T, fmt);
-                 // computeFmtFGamma(angMomABCD, T, fmt);
         
                  // convert to GmT
                  computeGmt(angMomABCD);
@@ -326,7 +325,6 @@ public class TwoElectronIntegrals {
 
                  // compute FmT
                  computeFmt(angMomABCD, T, fmt);
-                 // computeFmtFGamma(angMomABCD, T, fmt);
         
                  // convert to GmT
                  computeGmt(angMomABCD);
@@ -475,11 +473,13 @@ public class TwoElectronIntegrals {
     }
 
     private def computeZeroM(angMomABCD:Int, Upq:Double, eta:Double) {
-         val twoEta = 2.0*eta;
-         for(var i:Int=0; i<=angMomABCD; i++) {
-             zeroM(i) = Upq * Math.pow(twoEta, i+0.5) * fmt(i);
-             // Console.OUT.println(Upq + " " + zeroM(i));
-         }
+        val twoEta = 2.0*eta;
+        var etaPow : Double = Math.sqrt(twoEta);
+        for([i] in 0..angMomABCD) {
+            zeroM(i) = Upq * etaPow * fmt(i);
+            etaPow *= twoEta; // etaPow = twoEta^(i+0.5)
+            // Console.OUT.println(Upq + " " + zeroM(i));
+        }
     }
 
     private def computeRm(angMomABCD:Int, shellList:ShellList, r:Vector3d) {
@@ -750,20 +750,13 @@ public class TwoElectronIntegrals {
     }
 
     /** Compute the base FmT() - for evaluating integrals */
-    protected def computeFmtFGamma(maxam:Int, T:Double, fmt:Array[Double](1){rail}) {
-        for(var m:Int=0; m<maxam; m++) { 
-            fmt(m) = IntegralsUtils.computeFGamma(m, T);
-        } // end for
-    }
-
-    /** Compute the base FmT() - for evaluating integrals */
     protected def computeFmt(maxam:Int, T:Double, fmt:Array[Double](1){rail}) {
         if (T > 30.0){
-            fmt(0) = Math.sqrt(Math.PI/T)*0.5;
+            val invT = 1/T;
+            fmt(0) = Math.sqrt(Math.PI*invT)*0.5;
            
-            // TODO: x10 parallel
-            for (var m:Int=1; m <= maxam; m++) {
-                fmt(m) = fmt(m-1) * (m-0.5) / T;
+            for ([m] in 1..maxam) {
+                fmt(m) = fmt(m-1) * (m-0.5) * invT;
             }
         } else {
             var denom : Double = maxam + 0.5;
