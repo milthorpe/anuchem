@@ -15,6 +15,7 @@ import x10x.vector.Vector3d;
 import au.edu.anu.chem.mm.MMAtom;
 import au.edu.anu.fft.Distributed3dFft;
 import au.edu.anu.util.Timer;
+import org.netlib.fdlibm.Erf;
 
 import x10.compiler.Inline;
 import x10.util.ArrayList;
@@ -387,7 +388,7 @@ public class PME {
                                             if (rSquared < cutoffSquared) {
                                                 val r = Math.sqrt(rSquared);
                                                 val chargeProduct = thisCell(thisAtom).charge * otherCell(otherAtom).charge;
-                                                val imageDirectComponent = chargeProduct * Math.erfc(beta * r) / r;
+                                                val imageDirectComponent = chargeProduct * Erf.erfc(beta * r) / r;
                                                 myDirectEnergy += imageDirectComponent;
                                             }
                                         }
@@ -402,7 +403,7 @@ public class PME {
                                             if (rSquared < cutoffSquared) {
                                                 val r = Math.sqrt(rSquared);
                                                 val chargeProduct = thisCell(thisAtom).charge * otherCellPacked(otherAtom).charge;
-                                                val imageDirectComponent = chargeProduct * Math.erfc(beta * r) / r;
+                                                val imageDirectComponent = chargeProduct * Erf.erfc(beta * r) / r;
                                                 myDirectEnergy += imageDirectComponent;
                                             }
                                         }
@@ -420,7 +421,7 @@ public class PME {
                         val rSquared = rjri.lengthSquared();
                         if (rSquared < cutoffSquared) {
                             val r = Math.sqrt(rSquared);
-                            val directComponent = thisCell(i).charge * thisCell(j).charge * Math.erfc(beta * r) / r;
+                            val directComponent = thisCell(i).charge * thisCell(j).charge * Erf.erfc(beta * r) / r;
                             myDirectEnergy += directComponent;
                         }
                     }
