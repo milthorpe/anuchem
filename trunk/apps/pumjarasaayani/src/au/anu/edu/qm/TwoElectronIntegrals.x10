@@ -6,7 +6,7 @@
  *  You may obtain a copy of the License at
  *      http://www.opensource.org/licenses/eclipse-1.0.php
  *
- * (C) Copyright Australian National University 2010.
+ * (C) Copyright Australian National University 2010-2011.
  */
 package au.anu.edu.qm;
 
@@ -18,17 +18,19 @@ import x10x.vector.Vector3d;
 import au.edu.anu.chem.Molecule;
 
 /**
- * TwoElectronIntegrals.x10
- *
- * Evaluate 2E integrals
+ * This class calculates two-electron integrals
  *
  * @author: V.Ganesh
  *
- * Old code based on original integral evaluation paper by:
- * H. Taketa, S. Huzinaga, and K. O-ohata. H. Phys. Soc. Japan, 21, 2313, 1966.
+ * Old code based on original integral evaluation paper:
+ *   H. Taketa, S. Huzinaga, and K. O-ohata. H. (1966).
+ *   "Gaussian-Expansion Methods for Molecular Integrals".
+ *   Phys. Soc. Japan, 21 (11) p. 2313.
  *
  * New Murchie-Davidson (MD) code based on:
- * McMurchie, L. E.; Davidson, E. R. J Comput Phys, 26, 218, 1978.
+ *   McMurchie, L. E.; Davidson, E. R. (1978).
+ *   "One- and two-electron integrals over cartesian gaussian functions".
+ *   J. Comp. Phys, 26 (2) pp. 218-231.
  */
 public class TwoElectronIntegrals {
     private static val SQ2PI = Math.pow((2.0/Math.PI), 0.5); 
@@ -41,11 +43,6 @@ public class TwoElectronIntegrals {
     private val pcdint:Array[Double](3){rect};
 
     private val maxam:Int, maxam2:Int, maxam4:Int, maxamN:Int, maxam2M:Int, maxam2N:Int, pqdim:Int;
-
-    private val iidx  = new Array[Int](8);
-    private val jjdx  = new Array[Int](8);
-    private val kkdx  = new Array[Int](8);
-    private val lldx  = new Array[Int](8);
 
     /**
      * @param maxam maximum angular momentum (determines total number of integrals)
@@ -74,7 +71,7 @@ public class TwoElectronIntegrals {
     }
 
     /* Note: M_D  routines mostly taken from Alistair's code, with a few changes. 
-       Uses MD recurrance relations to evaluate higher angular momentum integrals.
+       Uses MD recurrence relations to evaluate higher angular momentum integrals.
        Direct update to GMtarix is based on the code in GMatrix.compute..() */
     public def compute2EAndRecord(a:ContractedGaussian, b:ContractedGaussian, 
                                   c:ContractedGaussian, d:ContractedGaussian, 
@@ -381,7 +378,7 @@ public class TwoElectronIntegrals {
                        dMatrix);
     }
 
-    /** MD recurrance relation steps in following two subroutines */
+    /** MD recurrence relation steps in following two subroutines */
 
     private def mdRecurse(r:Vector3d, i:Int, j:Int, k:Int, m:Int) : Double {
          var res:Double = 0.0;
@@ -778,7 +775,7 @@ public class TwoElectronIntegrals {
 
     /**
      * recursively form the columb repulsion term using HGP, stage one: form HRR 
-     * HRR (Horizontal Recurrance Relation)
+     * HRR (Horizontal Recurrence Relation)
      */
     protected def contrHrr(a:Point3d, aPower:Power, aCoeff:ArrayList[Double],
                            aExps:ArrayList[Double], aNorms:ArrayList[Double],
@@ -868,7 +865,7 @@ public class TwoElectronIntegrals {
     }
 
     /**
-     * VRR (Vertical Recurrance Relation) contribution
+     * VRR (Vertical Recurrence Relation) contribution
      */
     protected def contrVrr(a:Point3d, aPower:Power, aCoeff:ArrayList[Double],
                            aExps:ArrayList[Double], aNorms:ArrayList[Double],
@@ -917,7 +914,7 @@ public class TwoElectronIntegrals {
     private static val SQRT2PI = Math.sqrt(2.0) * Math.pow(Math.PI, 1.25);
 
     /**
-     * VRR (Vertical Recurrance Relation)
+     * VRR (Vertical Recurrence Relation)
      */
     protected def vrrWrapper(
                          a:Point3d, aNorm:Double, aPower:Power, aAlpha:Double,
@@ -929,7 +926,7 @@ public class TwoElectronIntegrals {
     }
 
     /**
-     * VRR (Vertical Recurrance Relation)
+     * VRR (Vertical Recurrence Relation)
      */
     protected def vrr(a:Point3d, aNorm:Double, aPower:Power, aAlpha:Double,
                       b:Point3d, bNorm:Double, bAlpha:Double,
