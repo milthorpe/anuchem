@@ -49,7 +49,7 @@ public final class MortonDist extends Dist(3) {
         public def isEmpty() = (end < start);
         public def indexOf(pt:Point):Int {
 	        if (pt.rank != 3) return -1;
-            return MortonDist.this.getMortonIndex(pt);
+            return MortonDist.this.getMortonIndex(pt) - start;
         }
 
         // TODO I hope these aren't used
