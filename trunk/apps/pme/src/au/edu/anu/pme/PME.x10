@@ -88,9 +88,6 @@ public class PME {
     private val C : DistArray[Double]{self.dist==gridDist};
     private val BdotC : DistArray[Double]{self.dist==gridDist};
 
-    /** The reciprocal pair potential as defined in eq. 4.7 */
-    private val thetaRecConvQ : DistArray[Complex]{self.dist==gridDist};
-
     /** The gridded charge array Q as defined in Eq. 4.6 */
     private val Q : DistArray[Complex]{self.dist==gridDist};
 
@@ -178,10 +175,8 @@ public class PME {
 
         Console.OUT.println("gridDist = " + gridDist);
 
-        // TODO should be able to automatically zero arrays of Complex
         Q = DistArray.make[Complex](gridDist);
         BdotC = DistArray.make[Double](gridDist);
-        thetaRecConvQ = DistArray.make[Complex](gridDist);
 
         // TODO following arrays should be scoped local variables XTENLANG-???
         Qinv = DistArray.make[Complex](gridDist);
@@ -212,6 +207,7 @@ public class PME {
     public def getEnergy() : Double {
         timer.start(TIMER_INDEX_TOTAL);
 
+        val thetaRecConvQ : DistArray[Complex]{self.dist==gridDist};
         finish {
             async { prefetchPackedAtoms(); }
 
@@ -225,21 +221,17 @@ public class PME {
             timer.start(TIMER_INDEX_THETARECCONVQ);
             // create F^-1(thetaRecConvQ)
 			val gridDist = this.gridDist; // TODO shouldn't be necessary XTENLANG-1913
-			val thetaRecConvQ = this.thetaRecConvQ; // TODO shouldn't be necessary XTENLANG-1913
 			val BdotC = this.BdotC; // TODO shouldn't be necessary XTENLANG-1913
 			val Qinv = this.Qinv; // TODO shouldn't be necessary XTENLANG-1913
-            finish ateach (place in Dist.makeUnique()) {
-                val myGridRegion = gridDist.get(here) as RectRegion(3);
-                for ([i,j,k] in myGridRegion) {
-                    thetaRecConvQ(i,j,k) = BdotC(i,j,k) * Qinv(i,j,k);
-                }
-            }
+            val product = (a:Complex, b:Complex) => (a*b);
+            thetaRecConvQ = DistArray.make[Complex](gridDist, (p : Point(3)) => BdotC(p) * Qinv(p));
+
             // and do inverse FFT
             new Distributed3dFft(gridSize(0), thetaRecConvQ, thetaRecConvQ, temp).doFFT3d(true);
             timer.stop(TIMER_INDEX_THETARECCONVQ);
         }
 
-        val reciprocalEnergy = getReciprocalEnergy();
+        val reciprocalEnergy = getReciprocalEnergy(thetaRecConvQ);
         val selfEnergy = getSelfEnergy();
         val directEnergy = getDirectEnergy();
 
@@ -606,13 +598,13 @@ public class PME {
     /**
      * @return the approximation to the reciprocal energy ~E_rec as defined in Eq. 4.7
      */
-    private def getReciprocalEnergy() {
+    private def getReciprocalEnergy(thetaRecConvQ : DistArray[Complex]{self.dist==gridDist}) {
         timer.start(TIMER_INDEX_RECIPROCAL);
 
         val reciprocalEnergy = finish(SumReducer()) {
 			val gridDist = this.gridDist; // TODO shouldn't be necessary XTENLANG-1913
 			val Q = this.Q; // TODO shouldn't be necessary XTENLANG-1913
-			val thetaRecConvQ = this.thetaRecConvQ; // TODO shouldn't be necessary XTENLANG-1913
+			//val thetaRecConvQ = this.thetaRecConvQ; // TODO shouldn't be necessary XTENLANG-1913
             for (place1 in gridDist.places()) async at(place1) {
                 var myReciprocalEnergy : Double = 0.0;
                 for (p in gridDist | here) {
