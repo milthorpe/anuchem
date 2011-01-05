@@ -687,10 +687,10 @@ public class PME {
      * Gets the nth order B-spline M_n(u) as per Eq. 4.1
      */
     public final static def bSpline(n : Int, u : Double) : Double {
-        if (u < 0.0 || u > n) {
-            return 0.0;
-        } else if (n == 4) {
+        if (n == 4) {
             return bSpline4(u);
+        } else if (u < 0.0 || u > n) {
+            return 0.0;
         } else if (n == 2) {
             return 1.0 - Math.abs(u - 1.0);
         } else {
