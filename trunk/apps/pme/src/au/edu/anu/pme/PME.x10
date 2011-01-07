@@ -469,6 +469,7 @@ public class PME {
     /** 
      * Calculates the gridded charge array Q as defined in Eq. 4.6,
      * using Cardinal B-spline interpolation.
+     * Spline interpolation code inspired by GROMACS http://www.gromacs.org/
      */
     public def gridCharges() {
         timer.start(TIMER_INDEX_GRIDCHARGES);
