@@ -490,6 +490,7 @@ public class PME {
             if (!place1Region.isEmpty()) {
                 val place1HaloRegion = getGridRegionForSubcellAtoms(gridSize, numSubCells, splineOrder, place1Region);
                 val myQ = new Array[Double](place1HaloRegion);
+                val splines = new Array[Double](0..2 * 0..(splineOrder-1));
 
                 for (p in place1Region) {
                     val thisCell = subCells(p) as Array[MMAtom](1){rail};
@@ -497,18 +498,44 @@ public class PME {
                         val atom = thisCell(atomIndex);
                         val q = atom.charge;
                         val u = getScaledFractionalCoordinates(K1, K2, K3, edgeReciprocals, atom.centre); // TODO general non-cubic
-                        val u1c = Math.ceil(u.i) as Int;
-                        val u2c = Math.ceil(u.j) as Int;
-                        val u3c = Math.ceil(u.k) as Int;
-                        for ([i] in 1..splineOrder) {
-                            val k1 = (u1c - i);
-                            val iVal = q * bSpline(splineOrder, u.i - k1);
-                            for ([j] in 1..splineOrder) {
-                                val k2 = (u2c - j);
-                                val jVal = iVal * bSpline(splineOrder, u.j - k2);
-                                for ([k] in 1..splineOrder) {
-                                    val k3 = (u3c - k);
-                                    val kVal = jVal * bSpline(splineOrder, u.k - k3);
+                        val u1c = Math.ceil(u(0)) as Int;
+                        val u2c = Math.ceil(u(1)) as Int;
+                        val u3c = Math.ceil(u(2)) as Int;
+
+                        for([j] in 0..2) {
+                            val offset = Math.ceil(u(j)) - u(j);
+                        
+                            splines(j,splineOrder-1) = 0.0;
+                            splines(j,1) = offset;
+                            splines(j,0) = 1.0 - offset;
+                        
+                            for([k] in 3..(splineOrder-1)) {
+                                val div = 1.0 / (k-1.0);    
+                                splines(j,k-1) = div * offset * splines(j,k-2);
+                                for([l] in 1..(k-2)) {
+                                    splines(j,k-l-1) = div * ((offset+l) * splines(j,k-l-2) + (k-l-offset) * splines(j,k-l-1));
+                                }
+                                splines(j,0) = div * (1.0-offset) * splines(j,0);
+                            }
+                        
+                            val div = 1.0 / (splineOrder-1);
+                            splines(j,splineOrder-1) = div * offset * splines(j,splineOrder-2);
+                            for([l] in 1..(splineOrder-2)) {
+                                splines(j,splineOrder-l-1) = div * 
+                                    ((offset+l) * splines(j,splineOrder-l-2) + (splineOrder-l-offset) * splines(j,splineOrder-l-1));
+                            }
+                            splines(j,0) = div * (1.0-offset) * splines(j,0);
+                        } 
+
+                        for ([i] in 0..(splineOrder-1)) {
+                            val k1 = (u1c - i - 1);
+                            val iVal = q * splines(0, i);
+                            for ([j] in 0..(splineOrder-1)) {
+                                val k2 = (u2c - j - 1);
+                                val jVal = iVal * splines(1, j);
+                                for ([k] in 0..(splineOrder-1)) {
+                                    val k3 = (u3c - k - 1);
+                                    val kVal = jVal * splines(2, k);
                                     // because array is not divided in the z (k3) dimension, we can apply periodicity in that dimension 
                                     val wrapk3 = k3 < 0 ? (k3 + gridSize2) : (k3 >= gridSize2 ? (k3 - gridSize2) : k3);
                                     myQ(k1,k2,wrapk3) = myQ(k1,k2,wrapk3) + kVal;
@@ -747,8 +774,12 @@ public class PME {
 	 * Gets scaled fractional coordinate u as per Eq. 3.1 - cubic only 
 	 * TODO should use instance fields instead of all those parameters - XTENLANG-1913
 	 */
-    public static @Inline def getScaledFractionalCoordinates(K1 : Double, K2 : Double, K3 : Double, edgeReciprocals : Array[Vector3d](1){rail}, r : Point3d) : Vector3d {
-        return Vector3d(edgeReciprocals(0).i * K1 * r.i, edgeReciprocals(1).j * K2 * r.j, edgeReciprocals(2).k * K3 * r.k);
+    public static @Inline def getScaledFractionalCoordinates(K1 : Double, K2 : Double, K3 : Double, edgeReciprocals : Array[Vector3d](1){rail}, r : Point3d) : Array[Double](1){rail} {
+        val coords = new Array[Double](3);
+        coords(0) = edgeReciprocals(0).i * K1 * r.i;
+        coords(1) = edgeReciprocals(1).j * K2 * r.j;
+        coords(2) = edgeReciprocals(2).k * K3 * r.k;
+        return coords;
     }
     
     /** Gets scaled fractional coordinate u as per Eq. 3.1 - general rectangular */
