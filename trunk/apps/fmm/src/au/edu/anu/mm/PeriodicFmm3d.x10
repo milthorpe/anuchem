@@ -6,7 +6,7 @@
  *  You may obtain a copy of the License at
  *      http://www.opensource.org/licenses/eclipse-1.0.php
  *
- * (C) Copyright Josh Milthorpe 2010.
+ * (C) Copyright Josh Milthorpe 2010-2011.
  */
 package au.edu.anu.mm;
 
@@ -35,21 +35,13 @@ public class PeriodicFmm3d extends Fmm3d {
     /** The number of concentric shells of copies of the unit cell. */
     public val numShells : Int;
 
-    public static val TIMER_INDEX_MACROSCOPIC : Int = 9;
-    /** 
-     * A multi-timer for the several segments of a single getEnergy 
-     * invocation, indexed by the constants above and in the superclass. 
-     */
-    public val timer = new Timer(10);
+    public static val TIMER_INDEX_MACROSCOPIC : Int = 8;
 
     /** A region representing a cube of 3x3x3 boxes, used for constructing macroscopic multipoles. */
     static val threeCube : Region(3) = (-1..1)*(-1..1)*(-1..1);
 
     /** A region representing a cube of 9x9x9 boxes, used for interacting with macroscopic multipoles. */
     static val nineCube : Region(3) = (-4..4)*(-4..4)*(-4..4);
-
-    /** The net dipole moment of the unit cell. */
-    var dipole : Vector3d = Vector3d.NULL;
 
     /**
      * Initialises a periodic fast multipole method electrostatics 
@@ -69,17 +61,22 @@ public class PeriodicFmm3d extends Fmm3d {
                     numShells : Int) {
         // Periodic FMM always uses ws = 1
         // TODO is it possible to formulate for well-spaced > 1?
-        super(density, numTerms, 1, topLeftFront, size, numAtoms, atoms, 0);
+        super(density, numTerms, 1, topLeftFront, size, numAtoms, atoms, 0, true);
         this.numShells = numShells;
     }
     
     public def calculateEnergy() : Double {
+        timer.start(TIMER_INDEX_TREE);
+        assignAtomsToBoxes(atoms, boxes(numLevels), offset, lowestLevelDim, size);
+        timer.stop(TIMER_INDEX_TREE);
+
         timer.start(TIMER_INDEX_TOTAL);
         finish {
             async {
                 prefetchPackedAtoms();
             }
             multipoleLowestLevel();
+
             combineMultipoles();
             combineMacroscopicExpansions();
             transformToLocal();
@@ -153,7 +150,7 @@ public class PeriodicFmm3d extends Fmm3d {
         timer.stop(TIMER_INDEX_MACROSCOPIC);
     }
 
-    private def assignAtomsToBoxes(atoms: DistArray[Array[MMAtom](1){rail}](1), lowestLevelBoxes : DistArray[FmmBox]{rank==3}, offset : Vector3d, lowestLevelDim : Int, size : Double) {
+    protected def assignAtomsToBoxes(atoms: DistArray[Array[MMAtom](1){rail}](1), lowestLevelBoxes : DistArray[FmmBox]{rank==3}, offset : Vector3d, lowestLevelDim : Int, size : Double) {
         //Console.OUT.println("assignAtomsToBoxes");
         val dipole = finish(VectorSumReducer()) {
             ateach (p1 in atoms) {
@@ -176,7 +173,8 @@ public class PeriodicFmm3d extends Fmm3d {
                 offer myDipole;
             }
         };
-        this.dipole = dipole;
+
+        cancelDipole(dipole);
 
         // post-prune leaf boxes
         // TODO prune intermediate empty boxes as well
@@ -188,34 +186,6 @@ public class PeriodicFmm3d extends Fmm3d {
                 lowestLevelBoxes(boxIndex) = null;
             }
         }
-    }
-
-    /** 
-     * For each atom, creates the multipole expansion and adds it to the
-     * lowest level box that contains the atom.
-     */
-    def multipoleLowestLevel() {
-        //Console.OUT.println("multipole lowest level");
-        timer.start(TIMER_INDEX_MULTIPOLE);
-        val size = this.size; // TODO shouldn't be necessary XTENLANG-1913
-        val numTerms = this.numTerms; // TODO shouldn't be necessary XTENLANG-1913
-        val lowestLevelBoxes = this.lowestLevelBoxes; // TODO shouldn't be necessary XTENLANG-1913
-        finish ateach (boxIndex in lowestLevelBoxes) {
-            val leafBox = lowestLevelBoxes(boxIndex) as FmmLeafBox;
-            if (leafBox != null) {
-                val boxLocation = leafBox.getCentre(size);
-                for ([i] in 0..(leafBox.atoms.size()-1)) {
-                    val atom = leafBox.atoms(i);
-                    val atomLocation = leafBox.getCentre(size).vector(atom.centre);
-                    val atomExpansion = MultipoleExpansion.getOlm(atom.charge, atomLocation, numTerms);
-                    leafBox.multipoleExp.add(atomExpansion);
-                }
-            }
-        }
-
-        cancelDipole(dipole);
-
-        timer.stop(TIMER_INDEX_MULTIPOLE);
     }
 
     def addAtomToLowestLevelBoxAsync(boxIndex : Point(3), offsetCentre : Point3d, charge : Double) {
@@ -274,37 +244,6 @@ public class PeriodicFmm3d extends Fmm3d {
 
         //Console.OUT.println("after cancelling, dipole = " + newDipole);
         return newDipole; 
-    }
-
-    private def constructTree(numLevels : Int, topLevel : Int, numTerms : Int, ws : Int) 
-      : Array[DistArray[FmmBox](3)](1){rail} {
-        val boxArray = new Array[DistArray[FmmBox](3)](numLevels+1);
-        for ([thisLevel] in topLevel..numLevels) {
-            val levelDim = Math.pow2(thisLevel) as Int;
-            val thisLevelDist = new PeriodicDist(MortonDist.make(0..(levelDim-1) * 0..(levelDim-1) * 0..(levelDim-1)));
-            boxArray(thisLevel) = DistArray.make[FmmBox](thisLevelDist);
-            Console.OUT.println("level " + thisLevel + " dist: " + thisLevelDist);
-        }
-
-        for ([thisLevel] in topLevel..(numLevels-1)) {
-            val levelDim = Math.pow2(thisLevel) as Int;
-            val thisLevelBoxes = boxArray(thisLevel);
-            finish ateach ([x,y,z] in thisLevelBoxes) {
-                val box = new FmmBox(thisLevel, x, y, z, numTerms, Fmm3d.getParentForChild(boxArray, thisLevel, topLevel, x,y,z));
-                box.createVListPeriodic(ws);
-                thisLevelBoxes(x,y,z) = box;
-            }
-        }
-
-        val lowestLevelBoxes = boxArray(numLevels);
-        finish ateach ([x,y,z] in lowestLevelBoxes) {
-            val box = new FmmLeafBox(numLevels, x, y, z, numTerms, Fmm3d.getParentForChild(boxArray, numLevels, topLevel, x,y,z));
-            box.createUListPeriodic(ws);
-            box.createVListPeriodic(ws);
-            lowestLevelBoxes(x,y,z) = box;
-        }
-
-        return boxArray;
     }
 
     /**
