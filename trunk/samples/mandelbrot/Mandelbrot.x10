@@ -11,6 +11,8 @@
 
 /**
  * Computes the Mandelbrot set for the given range of complex numbers.
+ * For escaping points outside the set, computes a "fractional iteration count".
+ * @see http://linas.org/art-gallery/escape/escape.html
  * @author milthorpe 01/2011
  */
 public class Mandelbrot {
@@ -20,12 +22,12 @@ public class Mandelbrot {
 	public def compute(min : Complex, max : Complex, realPoints : Int) = {
         val gridSpacing = (max.re - min.re) / realPoints;
         val imaginaryPoints = ((max.im - min.im) / (max.re - min.re) * realPoints) as Int;
-        val result = DistArray.make[Int](Dist.makeBlock(0..realPoints * 0..imaginaryPoints));
+        val result = DistArray.make[Double](Dist.makeBlock(0..realPoints * 0..imaginaryPoints));
         finish ateach (place in Dist.makeUnique()) {
             val start = System.nanoTime();
             for ([gridRe,gridIm] in result.dist(here)) {
                 val c = Complex(min.re + gridRe * gridSpacing, min.im + gridIm * gridSpacing);
-                var zn : Complex = Complex.ZERO;
+                var zn : Complex = c;
                 var i : Int = 0;
                 while (zn.abs() <= LIMIT && i < MAX_ITERATIONS) {
                     zn = zn*zn + c;
@@ -33,9 +35,12 @@ public class Mandelbrot {
                 }
                 if (i == MAX_ITERATIONS) {
                     // series converges at this point, it is part of the Mandelbrot set
-                    i = 0;
+                    result(gridRe,gridIm) = 0.0;
+                } else {
+                    zn = zn*zn + c;
+                    zn = zn*zn + c;
+                    result(gridRe,gridIm) = (i+2) - (Math.log(Math.log(zn.abs())))/ Math.log(2.0);
                 }
-                result(gridRe,gridIm) = i;
             }
             val stop = System.nanoTime();
             Console.OUT.printf("# time at " + here + " : %g ms\n", ((stop-start) as Double) / 1e6);
