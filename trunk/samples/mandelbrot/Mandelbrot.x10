@@ -60,7 +60,7 @@ public class Mandelbrot {
 	public static def main(var args: Array[String](1)): void = {
         val min = Complex(-2.0, -1.0);
         val max = Complex(1.0, 1.0);
-        var realPoints : Int = 640;
+        var realPoints : Int = 1200;
         if (args.size > 0) {
             realPoints = Int.parseInt(args(0));
         }
