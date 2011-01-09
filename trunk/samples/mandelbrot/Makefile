@@ -1,5 +1,5 @@
 X10CPP := x10c++
-XFLAGS := -O -NO_CHECKS
+XFLAGS := -O -NO_CHECKS -x10rt mpi
 
 plot:	mandelbrot
 	./mandelbrot > mandelbrot.dat
