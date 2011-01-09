@@ -235,15 +235,17 @@ public class Fmm3d {
         val size = this.size; // TODO shouldn't be necessary XTENLANG-1913
         val numTerms = this.numTerms; // TODO shouldn't be necessary XTENLANG-1913
         val lowestLevelBoxes = this.lowestLevelBoxes; // TODO shouldn't be necessary XTENLANG-1913
-        finish ateach (boxIndex in lowestLevelBoxes) {
-            val leafBox = lowestLevelBoxes(boxIndex) as FmmLeafBox;
-            if (leafBox != null) {
-                val boxLocation = leafBox.getCentre(size);
-                for ([i] in 0..(leafBox.atoms.size()-1)) {
-                    val atom = leafBox.atoms(i);
-                    val atomLocation = leafBox.getCentre(size).vector(atom.centre);
-                    val atomExpansion = MultipoleExpansion.getOlm(atom.charge, atomLocation, numTerms);
-                    leafBox.multipoleExp.add(atomExpansion);
+        finish ateach (p1 in Dist.makeUnique()) {
+            for (boxIndex in lowestLevelBoxes.dist(here)) {
+                val leafBox = lowestLevelBoxes(boxIndex) as FmmLeafBox;
+                if (leafBox != null) {
+                    val boxLocation = leafBox.getCentre(size);
+                    for ([i] in 0..(leafBox.atoms.size()-1)) {
+                        val atom = leafBox.atoms(i);
+                        val atomLocation = leafBox.getCentre(size).vector(atom.centre);
+                        val atomExpansion = MultipoleExpansion.getOlm(atom.charge, atomLocation, numTerms);
+                        leafBox.multipoleExp.add(atomExpansion);
+                    }
                 }
             }
         }
@@ -261,14 +263,16 @@ public class Fmm3d {
             //Console.OUT.println("combine level " + level + " => " + (level-1));
             val thisLevelBoxes = boxes(thisLevel);
             val multipoleTranslations = this.multipoleTranslations; // TODO shouldn't be necessary XTENLANG-1913
-            finish ateach (boxIndex in thisLevelBoxes) {
-                val child = thisLevelBoxes(boxIndex);
-                if (child != null) {
-                    val childExp = child.multipoleExp;
-                    val parent = child.parent;
-                    at (parent) {
-                        val shift = multipoleTranslations(Point.make([here.id, thisLevel, (child.x+1)%2, (child.y+1)%2, (child.z+1)%2]));
-                        parent().multipoleExp.translateAndAddMultipole(shift, childExp);
+            finish ateach (p1 in Dist.makeUnique()) {
+                for (boxIndex in thisLevelBoxes.dist(here)) {
+                    val child = thisLevelBoxes(boxIndex);
+                    if (child != null) {
+                        val childExp = child.multipoleExp;
+                        val parent = child.parent;
+                        at (parent) {
+                            val shift = multipoleTranslations(Point.make([here.id, thisLevel, (child.x+1)%2, (child.y+1)%2, (child.z+1)%2]));
+                            parent().multipoleExp.translateAndAddMultipole(shift, childExp);
+                        }
                     }
                 }
             }
@@ -473,23 +477,25 @@ public class Fmm3d {
                 for ([x1,y1,z1] in lowestLevelBoxes.dist(here)) {
                     val box1 = lowestLevelBoxes(x1,y1,z1) as FmmLeafBox;
                     if (box1 != null) {
+                        // direct calculation with all atoms in same box
                         for ([atomIndex1] in 0..(box1.atoms.size()-1)) {
                             val atom1 = box1.atoms(atomIndex1);
-
-                            // direct calculation with all atoms in same box
                             for ([sameBoxAtomIndex] in 0..(atomIndex1-1)) {
                                 val sameBoxAtom = box1.atoms(sameBoxAtomIndex);
                                 val pairEnergy = atom1.charge * sameBoxAtom.charge / atom1.centre.distance(sameBoxAtom.centre);
                                 thisPlaceEnergy += pairEnergy;
                             }
+                        }
 
-                            // direct calculation with all atoms in non-well-separated boxes
-                            val uList = box1.getUList();
-                            for (p in uList) {
-                                val boxIndex2 = uList(p);
-                                val boxAtoms = packedAtoms(boxIndex2);
-                                if (boxAtoms != null) {
-                                    for ([otherBoxAtomIndex] in 0..(boxAtoms.size-1)) {
+                        // direct calculation with all atoms in non-well-separated boxes
+                        val uList = box1.getUList();
+                        for (p in uList) {
+                            val boxIndex2 = uList(p);
+                            val boxAtoms = packedAtoms(boxIndex2);
+                            if (boxAtoms != null) {
+                                for ([otherBoxAtomIndex] in 0..(boxAtoms.size-1)) {
+                                    for ([atomIndex1] in 0..(box1.atoms.size()-1)) {
+                                        val atom1 = box1.atoms(atomIndex1);
                                         val atom2Packed = boxAtoms(otherBoxAtomIndex);
                                         thisPlaceEnergy += atom1.charge * atom2Packed.charge / atom1.centre.distance(atom2Packed.centre);
                                     }
