@@ -12,6 +12,7 @@ package au.edu.anu.mm;
 
 import x10x.vector.Tuple3d;
 import x10x.polar.Polar3d;
+import x10x.vector.Point3d;
 
 /**
  * This class calculates local Taylor-type expansions, using the algorithms given in
@@ -24,6 +25,13 @@ public class LocalExpansion extends Expansion {
 
     public def this(p : Int) {
         super(p);
+    }
+
+    /**
+     * A constructor which makes a copy of an existing expansion
+     */
+    public def this(source : LocalExpansion) {
+    	super(source);
     }
 
     /**
@@ -44,13 +52,17 @@ public class LocalExpansion extends Expansion {
             var ilm : Double = il;
             var phifac : Complex = Complex.ONE;
             terms(l,0) = phifac * (rfac * pplm(l,0) * ilm);
+	        var m_sign : boolean = false;
             for ([m] in 1..l) {
                 ilm = ilm / (l+1-m);
                 phifac = phifac * phifac0;
-                terms(l,m) = phifac * (rfac * pplm(l,m) * ilm);
+        		val M_lm = phifac * (rfac * pplm(l,m) * ilm);
+                terms(l,m) = M_lm;
+		        //if (m != 0) { if (m_sign) terms(l, -m) = Complex(M_lm.re,-M_lm.im); else terms(l, -m) = Complex(-M_lm.re,M_lm.im); }
+        		m_sign = !m_sign;
             }
             for ([m] in -l..-1) {
-                terms(l,m) = terms(l,-m).conjugate() * ((2*((-m+1)%2)-1 as Double));
+                terms(l,m) = terms(l,-m).conjugate() * (1-2*(-m%2));
             }
             rfac = rfac * rfac0;
         }
@@ -77,11 +89,11 @@ public class LocalExpansion extends Expansion {
         val it_p = (terms.region as ExpansionRegion).p;
         var it_l:int = 0;
         var it_m:int = 0;
-	while ((it_l <= it_p && it_m <= it_l)) {
+	    while ((it_l <= it_p && it_m <= it_l)) {
             val l = it_l;
-	    val m = it_m;
-	    if (it_m<it_l) it_m++;
-	    else {
+	        val m = it_m;
+    	    if (it_m<it_l) it_m++;
+	        else {
                 it_l++;
                 it_m = -it_l;
             }
@@ -94,6 +106,60 @@ public class LocalExpansion extends Expansion {
                 }
             }
         }
+    }
+
+    /** 
+     * More efficient version of Operator C (translation and addition) with rotations
+     * @param v a Tuple representing the shift of the expansion
+     * @param wigner a collection of Wigner matrices precalculated to speed up the rotation
+     * @param complexK is the pre calculated values of exp(i*k*phi)
+     * @param source the source local expansion
+     * @see Dachsel 2006, eqn 18
+     */
+    public def translateAndAddLocal(v : Tuple3d, complexK : Array[Array[Complex](1)](1), source : LocalExpansion, wigner : Array[Array[Array[Double](2){rect}](1)](1) ) { 
+    	val p = terms.region.max(0);
+    	val v_pole = Polar3d.getPolar3d(v);
+	    val b = v_pole.r;
+
+	    val translated : LocalExpansion = new LocalExpansion( source );
+	    translated.rotate( complexK(1), wigner(0) );
+
+    	val targetTerms = translated.terms;
+	    val temp = new Array[Complex](-p..p);
+    	atomic { 
+	    	var m_sign : int = 1;
+	    	for ([m] in 0..p) {
+	    		for ([l] in m..p) temp(l) = targetTerms(l, m);
+
+	    		for ([l] in m..p) {
+	    			var M_lm : Complex = Complex.ZERO;
+	    			var F_lm : Double = 1.0;
+	    			for ([j] in l..p) {  
+	    				M_lm = M_lm + temp(j) * F_lm;
+	    				F_lm = F_lm * b / (j - l + 1);
+	    			}
+	    			targetTerms(l, m) = M_lm;
+	    			if (m != 0) targetTerms(l, -m) = targetTerms(l, m).conjugate() * m_sign;
+	    			//to avoid conjugate if (m != 0) { if (m_sign) targetTerms(l, -m) = Complex(M_lm.re,-M_lm.im); else targetTerms(l, -m) = Complex(-M_lm.re,M_lm.im); }
+	    		}
+		    	m_sign = -m_sign;
+    	   	}
+    	}
+
+	    translated.rotate( genComplexKZero(p), wigner(1) );
+        translated.phiRotate( complexK(0) );
+    	add( translated );
+    }
+
+    /**
+     * Different method call for Operator C which pre calculates matrices and exp(k*i*phi) for use in tests etc 
+     * @param v a Tuple representing the shift of the expansion
+     * @param source the source local expansion
+     */
+    public def translateAndAddLocal(v : Tuple3d, source : LocalExpansion) {
+	    val polar = Polar3d.getPolar3d(v);
+        val p = terms.region.max(0);
+	    translateAndAddLocal(v, genComplexK(polar.phi, p), source, WignerRotationMatrix.getCCollection(polar.theta, p) );
     }
 
    /** 
@@ -114,11 +180,11 @@ public class LocalExpansion extends Expansion {
         val it_p = (terms.region as ExpansionRegion).p;
         var it_l:int = 0;
         var it_m:int = 0;
-	while ((it_l <= it_p && it_m <= it_l)) {
+	    while ((it_l <= it_p && it_m <= it_l)) {
             val j = it_l;
-	    val k = it_m;
-	    if (it_m<it_l) it_m++;
-	    else {
+	        val k = it_m;
+            if (it_m<it_l) it_m++;
+	        else {
                 it_l++;
                 it_m = -it_l;
             }
@@ -134,6 +200,70 @@ public class LocalExpansion extends Expansion {
                 }
             }
         }
+    }
+
+    /** 
+     * More efficient version of Operator B with rotations
+     * @param v a Tuple representing the shift of the expansion
+     * @param wigner a collection of Wigner matrices precalculated to speed up the rotation
+     * @param complexK is the pre calculated values of exp(i*k*phi)
+     * @param source expansion
+     * @see Dachsel 2006, eqn 17
+     */
+    public def transformAndAddToLocal(v : Tuple3d, complexK : Array[Array[Complex](1)](1), source : MultipoleExpansion, wigner : Array[Array[Array[Double](2){rect}](1)](1) ) { 
+	    val p = terms.region.max(0);
+    	val v_pole = Polar3d.getPolar3d(v);
+    	val inv_b = 1 / v_pole.r;
+
+    	val translated = new MultipoleExpansion( source );
+    	translated.rotate( complexK(0), wigner(0) );
+
+	    val targetTerms = translated.terms;
+	    val temp = new Array[Complex](-p..p);
+	    atomic {  
+		    var m_sign : int = 1;
+		    for ([m] in 0..p) {
+			    for ([l] in m..p) temp(l) = targetTerms(l, -m);
+
+			    for ([l] in m..p) {
+				    var M_lm : Complex = Complex.ZERO;
+				    var F_lm : Double = Factorial.getFactorial(l + m) * Math.pow(inv_b, l + m + 1);
+				    for ([j] in m..(p-l)) {  	// upper bound here is not p but it seems j+l <= p
+					    M_lm = M_lm + temp(j) * F_lm;
+					    F_lm = F_lm * (j + l + 1) * inv_b;
+				    }
+				    targetTerms(l, m) = M_lm;
+				    if (m != 0) targetTerms(l, -m) = targetTerms(l, m).conjugate() * m_sign;
+				    //to avoid conjugate if (m != 0) { if (m_sign) targetTerms(l, -m) = Complex(M_lm.re,-M_lm.im); else targetTerms(l, -m) = Complex(-M_lm.re,M_lm.im); }
+			    }
+			    m_sign = -m_sign;
+		    }
+	    }
+
+	    translated.rotate( genComplexKZero(p), wigner(1) );
+        translated.phiRotate( complexK(0) );
+	    add( translated );
+    }
+
+    /**
+     * Different method call for Operator B which pre calculates matrices and exp(k*i*phi) for use in tests etc 
+     * @param v a Tuple representing the shift of the expansion
+     * @param source the source local expansion
+     */
+    public def transformAndAddToLocal(v : Tuple3d, source : MultipoleExpansion) {
+    	val polar = Polar3d.getPolar3d(v);
+        val p = terms.region.max(0);
+    	transformAndAddToLocal(v, genComplexK(polar.phi, p), source, WignerRotationMatrix.getBCollection(polar.theta, p) );
+    }
+    /**
+     * @param theta, phi are the angles to rotate the existing expansion by
+     * @return a new expansion, which is the current expansion rotated
+     */
+    public def rotate(theta : Double, phi : Double) {
+    	val p = terms.region.max(0);
+        val target = new LocalExpansion( this );
+    	target.rotate( genComplexK(phi, p)(0), WignerRotationMatrix.getCCollection(theta, p)(0) );
+    	return target;
     }
 
     /**
@@ -153,11 +283,11 @@ public class LocalExpansion extends Expansion {
         val it_p = (terms.region as ExpansionRegion).p;
         var it_l:int = 0;
         var it_m:int = 0;
-	while ((it_l <= it_p && it_m <= it_l)) {
+    	while ((it_l <= it_p && it_m <= it_l)) {
             val i = it_l;
-	    val j = it_m;
-	    if (it_m<it_l) it_m++;
-	    else {
+	        val j = it_m;
+	        if (it_m<it_l) it_m++;
+	        else {
                 it_l++;
                 it_m = -it_l;
             }

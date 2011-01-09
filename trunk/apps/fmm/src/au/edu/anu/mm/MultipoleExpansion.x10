@@ -27,6 +27,13 @@ public class MultipoleExpansion extends Expansion {
     }
 
     /**
+     * A constructor which makes a copy of an existing expansion
+     */
+    public def this(source : MultipoleExpansion) {
+	super(source);
+    }
+
+    /**
      * Calculate the multipole-like term O_{lm} (with m >= 0) for a point v.
      */
     public static def getOlm(q : Double, v : Tuple3d, p : Int) : MultipoleExpansion {
@@ -46,10 +53,12 @@ public class MultipoleExpansion extends Expansion {
             for ([m] in 1..l) {
                 ilm = ilm*(l+m);
                 phifac = phifac * phifac0;
-                exp.terms(l,m) = phifac / ilm * (q * rfac * pplm(l,m));
-            }
+		        val O_lm = phifac / ilm * (q * rfac * pplm(l,m));
+                exp.terms(l,m) = O_lm;
+        		//to avoid conjugate if (m != 0) { if (m_sign) exp.terms(l, -m) = Complex(O_lm.re,-O_lm.im); else exp.terms(l, -m) = Complex(-O_lm.re,O_lm.im); }
+    	    }
             for ([m] in -l..-1) {
-                exp.terms(l,m) = exp.terms(l,-m).conjugate() * (2*((-m+1)%2)-1);
+                exp.terms(l,m) = exp.terms(l,-m).conjugate() * (1-2*(-m%2));
             }
             rfac = rfac * v_pole.r;
         }
@@ -64,7 +73,7 @@ public class MultipoleExpansion extends Expansion {
         val exp = new MultipoleExpansion(p);
         var v_pole : Polar3d = Polar3d.getPolar3d(v);
         val pplm = AssociatedLegendrePolynomial.getPlk(v_pole.theta, p); 
-        
+
         val phifac0 = Complex(Math.cos(-v_pole.phi), Math.sin(-v_pole.phi));
 
         var rfac : Double = 1.0;
@@ -74,13 +83,17 @@ public class MultipoleExpansion extends Expansion {
             var ilm : Double = il;
             var phifac : Complex = Complex.ONE;
             exp.terms(l,0) = phifac / ilm * (rfac * pplm(l,0)); 
+	        var m_sign : boolean = false;
             for ([m] in 1..l) {
                 ilm = ilm*(l+m);
                 phifac = phifac * phifac0;
-                exp.terms(l,m) = phifac / ilm * (rfac * pplm(l,m));
+        		val O_lm = phifac / ilm * (rfac * pplm(l,m));
+                exp.terms(l,m) = O_lm;
+	        	//to avoid conjugate if (m != 0) { if (m_sign) exp.terms(l, -m) = Complex(O_lm.re,-O_lm.im); else exp.terms(l, -m) = Complex(-O_lm.re,O_lm.im); }
+	        	m_sign = !m_sign;
             }
             for ([m] in -l..-1) {
-                exp.terms(l,m) = exp.terms(l,-m).conjugate() * (2*((-m+1)%2)-1);
+                exp.terms(l,m) = exp.terms(l,-m).conjugate() * (1-2*(-m%2));
             }
             rfac = rfac * v_pole.r;
         }
@@ -117,41 +130,71 @@ public class MultipoleExpansion extends Expansion {
         }
     }
 
-    /** 
-     * Rotate a multipole expansion in three dimensions.
-     * @param theta the Euler angle theta
-     * @param phi the Euler angle phi
-     * @see Dachsel 2006
+    /**
+     * This is Operator A implementing rotations so that the actual translation occurs parallel with the z-axis
+     * @param v is the vector through which the source should be translated
+     * @param wigner is the pre calculated Wigner matrices for the rotation angle theta, indexed first by forwards (0) and backwards (1)
+     * @param complexK is the pre calculated values of exp(i*-k*phi)
+     * @param source is the multipole to add
+     * @see Dachsel 2006, eqn 9
+     */
+    public def translateAndAddMultipole(v : Tuple3d, complexK : Array[Array[Complex](1)](1), source : MultipoleExpansion, wigner : Array[Array[Array[Double](2){rect}](1)](1) ) { 
+	    val p : Int = terms.region.max(0);
+	    val v_pole = Polar3d.getPolar3d(v);
+	    val b = v_pole.r;
+	    val invB = 1 / b;
+
+	    val translated = new MultipoleExpansion( source );
+	    translated.rotate( complexK(0), wigner(0) );
+	    val targetTerms = translated.terms;
+
+	    val temp = new Array[Complex](-p..p);
+	    atomic { 
+		    var m_sign : int = 1;
+		    for ([m] in 0..p) {
+			    for ([l] in m..p) temp(l) = targetTerms(l, m);
+
+			    for ([l] in m..p) {
+				    var O_lm : Complex = Complex.ZERO;
+				    var F_lm : Double =  Math.pow(b, l - m) / Factorial.getFactorial(l - m); // Factorial are already computed
+				    for ([j] in m..l) {
+					    O_lm = O_lm + temp(j) * F_lm; // explicitly this would be * Math.pow(translationPolar.r, l - j) / fact(l - j);
+					    F_lm = F_lm * (l - j) * invB;
+				    }
+				    targetTerms(l, m) = O_lm;
+				    //to avoid conjugate if (m != 0) { if (m_sign) targetTerms(l, -m) = Complex(O_lm.re,-O_lm.im); else targetTerms(l, -m) = Complex(-O_lm.re,O_lm.im); }
+				    if (m != 0) targetTerms(l, -m) = O_lm.conjugate() * m_sign;
+			    }
+			    m_sign = -m_sign;
+		    }
+	    }
+
+	    translated.rotate( genComplexKZero(p), wigner(1) ); 
+    	translated.phiRotate( complexK(1) );
+    	add( translated );
+    }
+
+    /**
+     * This is Operator A implementing rotations used if values are not already precalculated (i.e. in one-off tests)
+     * Wigner matrices and values of exp(i*-k*phi) are calculated inside the method
+     * @param v is the vector through which the source should be translated
+     * @param source is the multipole to add
+     */
+    public def translateAndAddMultipole(v : Tuple3d, source : MultipoleExpansion) {
+    	val polar = Polar3d.getPolar3d(v);
+	    val p = terms.region.max(0);
+    	translateAndAddMultipole(v, genComplexK(polar.phi, p), source, WignerRotationMatrix.getACollection(polar.theta, p) );
+    }
+    /**
+     * Rotation of this expansion where Wigner matrices and exp(i*-k*phi) are not precalculated
+     * @param theta, phi are the angles to rotate by
+     * @return a new expansion which has been rotated
      */
     public def rotate(theta : Double, phi : Double) {
-        val p : Int = terms.region.max(0);
-        val target = new MultipoleExpansion(p);
-        val targetTerms = target.terms;
-        targetTerms(0,0) = terms(0,0);
-        for ([l] in 1..p) {
-            Console.OUT.println(l + " = " + l);
-            val Dl = WignerRotationMatrix.getDmk(theta, l);
-            /*
-            Console.OUT.println("D^" + l + " = ");
-            for ([m] in -l..l) {
-		        for ([k] in -l..l) {
-			        Console.OUT.print("" + Dl(k,m) + " ");
-                }
-                Console.OUT.println();
-		    }
-            */
-            var O_lm : Complex = Complex.ZERO;
-            for ([m] in -l..l) {
-                val lmFac = factorial(l-m)*factorial(l+m);
-                for ([k] in -l..l) {
-                    val lkFac = factorial(l-k)*factorial(l+k);
-                    Console.OUT.println("k = " + k + " m = " + m + " lkFac = " + lkFac + " lmFac = " + lmFac);
-                    O_lm = O_lm + Math.sqrt(lkFac as Double / lmFac ) * Dl(m,k) * Math.exp(-Complex.I * k * phi) * terms(l,k); // Eq. 4
-                }
-                targetTerms(l,m) = O_lm;
-            }
-        }
-        return target;
+    	val p = terms.region.max(0);
+    	val target = new MultipoleExpansion(this);
+    	target.rotate( genComplexK(phi, p)(1) , WignerRotationMatrix.getACollection(theta, p)(0) );
+    	return target;
     }
 
     /**
@@ -170,20 +213,4 @@ public class MultipoleExpansion extends Expansion {
         }
         return parentExpansion;
     }
-
-    /**
-     * Returns the factorial n!
-     */
-    static def factorial(n:Int) : Long {
-        var value:Long = 1;
-        var x : Int = n;
-        while(x > 1) {
-            value = value * x;
-            x--;
-        } // end while
-        
-        return value;
-    }
 }
-
-

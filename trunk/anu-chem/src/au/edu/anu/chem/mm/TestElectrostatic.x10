@@ -88,4 +88,3 @@ public class TestElectrostatic {
         return (R.nextDouble() - 0.5) * NOISE;
     }
 }
-
