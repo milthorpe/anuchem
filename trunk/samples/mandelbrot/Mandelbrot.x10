@@ -45,13 +45,15 @@ public class Mandelbrot {
             val stop = System.nanoTime();
             Console.OUT.printf("# time at " + here + " : %g ms\n", ((stop-start) as Double) / 1e6);
         }
-        for ([gridRe] in result.region.projection(0)) {
-            for ([gridIm] in result.region.projection(1)) {
-                at (result.dist(gridRe,gridIm)) {
+
+        for (place in Place.places()) at(place) {
+            val pointsHere = result.dist(here);
+            for ([gridRe] in pointsHere.projection(0)) {
+                for ([gridIm] in pointsHere.projection(1)) {
                     Console.OUT.print(result(gridRe,gridIm) + " ");
                 }
+                Console.OUT.println("");
             }
-            Console.OUT.println("");
         }
 	}
 
