@@ -311,6 +311,9 @@ public class Fmm3d {
             //Console.OUT.println("combine level " + level + " => " + (level-1));
             val thisLevelBoxes = boxes(thisLevel);
             val multipoleTranslations = this.multipoleTranslations; // TODO shouldn't be necessary XTENLANG-1913
+            val useOldOperators = this.useOldOperators; // TODO shouldn't be necessary XTENLANG-1913
+            val complexK = this.complexK; // TODO shouldn't be necessary XTENLANG-1913
+            val wignerA = this.wignerA; // TODO shouldn't be necessary XTENLANG-1913
             val sideLength = size / Math.pow2(thisLevel);
             finish ateach (p1 in Dist.makeUnique()) {
                 for (boxIndex in thisLevelBoxes.dist(here)) {
@@ -323,8 +326,8 @@ public class Fmm3d {
 				                /* New! Operation A */
 	                            val shift = Point.make([here.id, (child.x+1)%2, (child.y+1)%2, (child.z+1)%2]);
             	                parent().multipoleExp.translateAndAddMultipole(
-					                getChildBoxCentre(shift, sideLength),
-					                complexK( getChildBoxCentreWithPlace(here.id, shift) ), childExp, wignerA(shift)  );
+					                Fmm3d.getChildBoxCentre(shift, sideLength),
+					                complexK( Fmm3d.getChildBoxCentreWithPlace(here.id, shift) ), childExp, wignerA(shift)  );
 			                } else { 
 				                /* Old Operation A */
 				                val shift = multipoleTranslations(Point.make([here.id, thisLevel, (child.x+1)%2, (child.y+1)%2, (child.z+1)%2]));
@@ -354,6 +357,10 @@ public class Fmm3d {
         val multipoleTranslations = this.multipoleTranslations; // TODO shouldn't be necessary XTENLANG-1913
         val locallyEssentialTrees = this.locallyEssentialTrees; // TODO shouldn't be necessary XTENLANG-1913
         val boxes = this.boxes; // TODO shouldn't be necessary XTENLANG-1913
+        val useOldOperators = this.useOldOperators; // TODO shouldn't be necessary XTENLANG-1913
+        val complexK = this.complexK; // TODO shouldn't be necessary XTENLANG-1913
+        val wignerB = this.wignerB; // TODO shouldn't be necessary XTENLANG-1913
+        val wignerC = this.wignerC; // TODO shouldn't be necessary XTENLANG-1913
         for ([thisLevel] in topLevel..numLevels) {
             val thisLevelBoxes = boxes(thisLevel);
             val sideLength = size / Math.pow2(thisLevel);
@@ -426,10 +433,10 @@ public class Fmm3d {
         timer.stop(TIMER_INDEX_TRANSFORM);
     }
 
-    public def getChildBoxCentre(shift : Point, sideLength : Double) { 
+    public static def getChildBoxCentre(shift : Point, sideLength : Double) { 
         return Point3d((shift.apply(1) - 0.5) * sideLength, (shift.apply(2) - 0.5) * sideLength, (shift.apply(3) - 0.5) * sideLength);
     }
-    public def getChildBoxCentreWithPlace(id : int, shift : Point) { 
+    public static def getChildBoxCentreWithPlace(id : int, shift : Point) { 
         return Point.make([here.id, shift.apply(1)*2 - 1, shift.apply(2)*2 - 1, shift.apply(3)*2 - 1]);
     }
 
