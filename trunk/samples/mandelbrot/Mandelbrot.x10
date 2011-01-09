@@ -22,38 +22,33 @@ public class Mandelbrot {
 	public def compute(min : Complex, max : Complex, realPoints : Int) = {
         val gridSpacing = (max.re - min.re) / realPoints;
         val imaginaryPoints = ((max.im - min.im) / (max.re - min.re) * realPoints) as Int;
-        val result = DistArray.make[Double](Dist.makeBlock(0..realPoints * 0..imaginaryPoints));
-        finish ateach (place in Dist.makeUnique()) {
-            val start = System.nanoTime();
-            for ([gridRe,gridIm] in result.dist(here)) {
-                val c = Complex(min.re + gridRe * gridSpacing, min.im + gridIm * gridSpacing);
-                var zn : Complex = c;
-                var i : Int = 0;
-                while (zn.abs() <= LIMIT && i < MAX_ITERATIONS) {
-                    zn = zn*zn + c;
-                    i++;
-                }
-                if (i == MAX_ITERATIONS) {
-                    // series converges at this point, it is part of the Mandelbrot set
-                    result(gridRe,gridIm) = 0.0;
-                } else {
-                    zn = zn*zn + c;
-                    zn = zn*zn + c;
-                    result(gridRe,gridIm) = (i+2) - (Math.log(Math.log(zn.abs())))/ Math.log(2.0);
-                }
+        val result = new Array[Double](0..realPoints * 0..imaginaryPoints);
+        val start = System.nanoTime();
+        for ([gridRe,gridIm] in result) {
+            val c = Complex(min.re + gridRe * gridSpacing, min.im + gridIm * gridSpacing);
+            var zn : Complex = c;
+            var i : Int = 0;
+            while (zn.abs() <= LIMIT && i < MAX_ITERATIONS) {
+                zn = zn*zn + c;
+                i++;
             }
-            val stop = System.nanoTime();
-            Console.OUT.printf("# time at " + here + " : %g ms\n", ((stop-start) as Double) / 1e6);
+            if (i == MAX_ITERATIONS) {
+                // series converges at this point, it is part of the Mandelbrot set
+                result(gridRe,gridIm) = 0.0;
+            } else {
+                zn = zn*zn + c;
+                zn = zn*zn + c;
+                result(gridRe,gridIm) = (i+2) - (Math.log(Math.log(zn.abs())))/ Math.log(2.0);
+            }
         }
+        val stop = System.nanoTime();
+        Console.OUT.printf("# time : %g ms\n", ((stop-start) as Double) / 1e6);
 
-        for (place in Place.places()) at(place) {
-            val pointsHere = result.dist(here);
-            for ([gridRe] in pointsHere.projection(0)) {
-                for ([gridIm] in pointsHere.projection(1)) {
-                    Console.OUT.print(result(gridRe,gridIm) + " ");
-                }
-                Console.OUT.println("");
+        for ([gridRe] in result.region.projection(0)) {
+            for ([gridIm] in result.region.projection(1)) {
+                Console.OUT.print(result(gridRe,gridIm) + " ");
             }
+            Console.OUT.println("");
         }
 	}
 
