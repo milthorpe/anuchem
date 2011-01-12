@@ -148,7 +148,7 @@ public class MultipoleExpansion extends Expansion {
 	    translated.rotate( complexK(0), wigner(0) );
 
 	    val targetTerms = translated.terms;
-	    val temp = new Array[Complex](-p..p);
+	    val temp = new Array[Complex](0..p);
         var m_sign : int = 1;
 	    for ([m] in 0..p) {
 		    for ([l] in m..p) temp(l) = targetTerms(l, m);

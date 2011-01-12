@@ -125,7 +125,7 @@ public class LocalExpansion extends Expansion {
 	    translated.rotate( complexK(1), wigner(0) );
 
     	val targetTerms = translated.terms;
-	    val temp = new Array[Complex](-p..p);
+	    val temp = new Array[Complex](0..p);
     	var m_sign : int = 1;
     	for ([m] in 0..p) {
     		for ([l] in m..p) temp(l) = targetTerms(l, m);
@@ -217,7 +217,7 @@ public class LocalExpansion extends Expansion {
     	translated.rotate( complexK(0), wigner(0) );
 
 	    val targetTerms = translated.terms;
-	    val temp = new Array[Complex](-p..p);
+	    val temp = new Array[Complex](0..p);
 	    var m_sign : int = 1;
         var b_m_pow : double = 1.0;
 	    for ([m] in 0..p) {
@@ -236,6 +236,7 @@ public class LocalExpansion extends Expansion {
 			    //to avoid conjugate if (m != 0) { if (m_sign) targetTerms(l, -m) = Complex(M_lm.re,-M_lm.im); else targetTerms(l, -m) = Complex(-M_lm.re,M_lm.im); }
                 b_lm1_pow = b_lm1_pow * inv_b;
 		    }
+            
 		    m_sign = -m_sign;
             b_m_pow = b_m_pow * inv_b;
 	    }
