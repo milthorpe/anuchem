@@ -219,12 +219,14 @@ public class LocalExpansion extends Expansion {
 	    val targetTerms = translated.terms;
 	    val temp = new Array[Complex](-p..p);
 	    var m_sign : int = 1;
+        var b_m_pow : double = 1.0;
 	    for ([m] in 0..p) {
 		    for ([l] in m..p) temp(l) = targetTerms(l, -m);
 
+            var b_lm1_pow : double = inv_b * b_m_pow * b_m_pow;
 		    for ([l] in m..p) {
 			    var M_lm : Complex = Complex.ZERO;
-			    var F_lm : Double = Factorial.getFactorial(l + m) * Math.pow(inv_b, l + m + 1);
+			    var F_lm : Double = Factorial.getFactorial(l + m) * b_lm1_pow;
 			    for ([j] in m..(p-l)) {  	// upper bound here is not p but it seems j+l <= p
 				    M_lm = M_lm + temp(j) * F_lm;
 				    F_lm = F_lm * (j + l + 1) * inv_b;
@@ -232,8 +234,10 @@ public class LocalExpansion extends Expansion {
 			    targetTerms(l, m) = M_lm;
 			    if (m != 0) targetTerms(l, -m) = targetTerms(l, m).conjugate() * m_sign;
 			    //to avoid conjugate if (m != 0) { if (m_sign) targetTerms(l, -m) = Complex(M_lm.re,-M_lm.im); else targetTerms(l, -m) = Complex(-M_lm.re,M_lm.im); }
+                b_lm1_pow = b_lm1_pow * inv_b;
 		    }
 		    m_sign = -m_sign;
+            b_m_pow = b_m_pow * inv_b;
 	    }
 
 	    translated.backRotate( complexK(0), wigner(1) );
