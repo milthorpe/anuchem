@@ -17,7 +17,7 @@
     <property name="optimize" value="true"/>
     <property name="nochecks" value="true"/>
     <property name="profile"  value="false"/>
-    <property name="cpuprofile"  value="false"/>
+    <property name="cpuprofile"  value="true"/>
     <property name="perftoolsHome" location="/scratch/perftools"/>
     <property name="mpiPprofile"  value="false"/>
     <property name="mpiPHome" location="/scratch/mpiP"/>
@@ -28,7 +28,7 @@
 	<property name="target-test" location="${target}/test-classes"/>
     <property name="bin" location="${basedir}/bin"/>
 	<property name="exe" value="fmm3d"/>
-    <property name="testclass" value="test/au/edu/anu/mm/TestFmm3d.x10"/>
+    <property name="testclass" value="test/au/edu/anu/mm/TestPerformance.x10"/>
 
     <condition property="x10c.optimize" value="-O" else="">
         <istrue value="${optimize}"/>

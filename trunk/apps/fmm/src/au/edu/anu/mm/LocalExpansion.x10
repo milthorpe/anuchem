@@ -126,28 +126,25 @@ public class LocalExpansion extends Expansion {
 
     	val targetTerms = translated.terms;
 	    val temp = new Array[Complex](-p..p);
-    	atomic { 
-	    	var m_sign : int = 1;
-	    	for ([m] in 0..p) {
-	    		for ([l] in m..p) temp(l) = targetTerms(l, m);
+    	var m_sign : int = 1;
+    	for ([m] in 0..p) {
+    		for ([l] in m..p) temp(l) = targetTerms(l, m);
 
-	    		for ([l] in m..p) {
-	    			var M_lm : Complex = Complex.ZERO;
-	    			var F_lm : Double = 1.0;
-	    			for ([j] in l..p) {  
-	    				M_lm = M_lm + temp(j) * F_lm;
-	    				F_lm = F_lm * b / (j - l + 1);
-	    			}
-	    			targetTerms(l, m) = M_lm;
-	    			if (m != 0) targetTerms(l, -m) = targetTerms(l, m).conjugate() * m_sign;
-	    			//to avoid conjugate if (m != 0) { if (m_sign) targetTerms(l, -m) = Complex(M_lm.re,-M_lm.im); else targetTerms(l, -m) = Complex(-M_lm.re,M_lm.im); }
-	    		}
-		    	m_sign = -m_sign;
-    	   	}
-    	}
+    		for ([l] in m..p) {
+    			var M_lm : Complex = Complex.ZERO;
+    			var F_lm : Double = 1.0;
+    			for ([j] in l..p) {  
+    				M_lm = M_lm + temp(j) * F_lm;
+    				F_lm = F_lm * b / (j - l + 1);
+    			}
+    			targetTerms(l, m) = M_lm;
+    			if (m != 0) targetTerms(l, -m) = targetTerms(l, m).conjugate() * m_sign;
+    			//to avoid conjugate if (m != 0) { if (m_sign) targetTerms(l, -m) = Complex(M_lm.re,-M_lm.im); else targetTerms(l, -m) = Complex(-M_lm.re,M_lm.im); }
+    		}
+	    	m_sign = -m_sign;
+	   	}
 
-	    translated.rotate( genComplexKZero(p), wigner(1) );
-        translated.phiRotate( complexK(0) );
+	    translated.backRotate( complexK(0), wigner(1) );
     	add( translated );
     }
 
@@ -210,38 +207,36 @@ public class LocalExpansion extends Expansion {
      * @param source expansion
      * @see Dachsel 2006, eqn 17
      */
-    public def transformAndAddToLocal(v : Tuple3d, complexK : Array[Array[Complex](1)](1), source : MultipoleExpansion, wigner : Array[Array[Array[Double](2){rect}](1)](1) ) { 
+    public def transformAndAddToLocal(translated : MultipoleExpansion, v : Tuple3d, complexK : Array[Array[Complex](1)](1), source : MultipoleExpansion, wigner : Array[Array[Array[Double](2){rect}](1)](1) ) { 
 	    val p = terms.region.max(0);
     	val v_pole = Polar3d.getPolar3d(v);
     	val inv_b = 1 / v_pole.r;
 
-    	val translated = new MultipoleExpansion( source );
+    	//val translated = new MultipoleExpansion( source );
+        Array.copy(source.terms, translated.terms);
     	translated.rotate( complexK(0), wigner(0) );
 
 	    val targetTerms = translated.terms;
 	    val temp = new Array[Complex](-p..p);
-	    atomic {  
-		    var m_sign : int = 1;
-		    for ([m] in 0..p) {
-			    for ([l] in m..p) temp(l) = targetTerms(l, -m);
+	    var m_sign : int = 1;
+	    for ([m] in 0..p) {
+		    for ([l] in m..p) temp(l) = targetTerms(l, -m);
 
-			    for ([l] in m..p) {
-				    var M_lm : Complex = Complex.ZERO;
-				    var F_lm : Double = Factorial.getFactorial(l + m) * Math.pow(inv_b, l + m + 1);
-				    for ([j] in m..(p-l)) {  	// upper bound here is not p but it seems j+l <= p
-					    M_lm = M_lm + temp(j) * F_lm;
-					    F_lm = F_lm * (j + l + 1) * inv_b;
-				    }
-				    targetTerms(l, m) = M_lm;
-				    if (m != 0) targetTerms(l, -m) = targetTerms(l, m).conjugate() * m_sign;
-				    //to avoid conjugate if (m != 0) { if (m_sign) targetTerms(l, -m) = Complex(M_lm.re,-M_lm.im); else targetTerms(l, -m) = Complex(-M_lm.re,M_lm.im); }
+		    for ([l] in m..p) {
+			    var M_lm : Complex = Complex.ZERO;
+			    var F_lm : Double = Factorial.getFactorial(l + m) * Math.pow(inv_b, l + m + 1);
+			    for ([j] in m..(p-l)) {  	// upper bound here is not p but it seems j+l <= p
+				    M_lm = M_lm + temp(j) * F_lm;
+				    F_lm = F_lm * (j + l + 1) * inv_b;
 			    }
-			    m_sign = -m_sign;
+			    targetTerms(l, m) = M_lm;
+			    if (m != 0) targetTerms(l, -m) = targetTerms(l, m).conjugate() * m_sign;
+			    //to avoid conjugate if (m != 0) { if (m_sign) targetTerms(l, -m) = Complex(M_lm.re,-M_lm.im); else targetTerms(l, -m) = Complex(-M_lm.re,M_lm.im); }
 		    }
+		    m_sign = -m_sign;
 	    }
 
-	    translated.rotate( genComplexKZero(p), wigner(1) );
-        translated.phiRotate( complexK(0) );
+	    translated.backRotate( complexK(0), wigner(1) );
 	    add( translated );
     }
 
@@ -253,7 +248,8 @@ public class LocalExpansion extends Expansion {
     public def transformAndAddToLocal(v : Tuple3d, source : MultipoleExpansion) {
     	val polar = Polar3d.getPolar3d(v);
         val p = terms.region.max(0);
-    	transformAndAddToLocal(v, genComplexK(polar.phi, p), source, WignerRotationMatrix.getBCollection(polar.theta, p) );
+        val scratch = new MultipoleExpansion(p);
+    	transformAndAddToLocal(scratch, v, genComplexK(polar.phi, p), source, WignerRotationMatrix.getBCollection(polar.theta, p) );
     }
     /**
      * @param theta, phi are the angles to rotate the existing expansion by

@@ -146,31 +146,28 @@ public class MultipoleExpansion extends Expansion {
 
 	    val translated = new MultipoleExpansion( source );
 	    translated.rotate( complexK(0), wigner(0) );
+
 	    val targetTerms = translated.terms;
-
 	    val temp = new Array[Complex](-p..p);
-	    atomic { 
-		    var m_sign : int = 1;
-		    for ([m] in 0..p) {
-			    for ([l] in m..p) temp(l) = targetTerms(l, m);
+        var m_sign : int = 1;
+	    for ([m] in 0..p) {
+		    for ([l] in m..p) temp(l) = targetTerms(l, m);
 
-			    for ([l] in m..p) {
-				    var O_lm : Complex = Complex.ZERO;
-				    var F_lm : Double =  Math.pow(b, l - m) / Factorial.getFactorial(l - m); // Factorial are already computed
-				    for ([j] in m..l) {
-					    O_lm = O_lm + temp(j) * F_lm; // explicitly this would be * Math.pow(translationPolar.r, l - j) / fact(l - j);
-					    F_lm = F_lm * (l - j) * invB;
-				    }
-				    targetTerms(l, m) = O_lm;
-				    //to avoid conjugate if (m != 0) { if (m_sign) targetTerms(l, -m) = Complex(O_lm.re,-O_lm.im); else targetTerms(l, -m) = Complex(-O_lm.re,O_lm.im); }
-				    if (m != 0) targetTerms(l, -m) = O_lm.conjugate() * m_sign;
+		    for ([l] in m..p) {
+			    var O_lm : Complex = Complex.ZERO;
+			    var F_lm : Double =  Math.pow(b, l - m) / Factorial.getFactorial(l - m); // Factorial are already computed
+			    for ([j] in m..l) {
+				    O_lm = O_lm + temp(j) * F_lm; // explicitly this would be * Math.pow(translationPolar.r, l - j) / fact(l - j);
+				    F_lm = F_lm * (l - j) * invB;
 			    }
-			    m_sign = -m_sign;
+			    targetTerms(l, m) = O_lm;
+			    //to avoid conjugate if (m != 0) { if (m_sign) targetTerms(l, -m) = Complex(O_lm.re,-O_lm.im); else targetTerms(l, -m) = Complex(-O_lm.re,O_lm.im); }
+			    if (m != 0) targetTerms(l, -m) = O_lm.conjugate() * m_sign;
 		    }
+		    m_sign = -m_sign;
 	    }
 
-	    translated.rotate( genComplexKZero(p), wigner(1) ); 
-    	translated.phiRotate( complexK(1) );
+	    translated.backRotate( complexK(1), wigner(1) ); 
     	add( translated );
     }
 

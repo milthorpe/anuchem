@@ -10,7 +10,7 @@
  */
 package au.edu.anu.mm;
 
-import x10.compiler.NonEscaping;
+//import x10.compiler.NonEscaping;
 import x10.util.*;
 import x10x.vector.Point3d;
 import x10x.polar.Polar3d;
@@ -144,7 +144,7 @@ public class Fmm3d {
     /**
      * A flag which can be set to use the old translation operators (without rotations), probably preferable for small number of poles
      */
-    public var useOldOperators : boolean = true;
+    public var useOldOperators : boolean = false;
 
     /**
      * Initialises a fast multipole method electrostatics calculation
@@ -353,6 +353,7 @@ public class Fmm3d {
         val multipoleTransforms = this.multipoleTransforms; // TODO shouldn't be necessary XTENLANG-1913
         val multipoleTranslations = this.multipoleTranslations; // TODO shouldn't be necessary XTENLANG-1913
         val locallyEssentialTrees = this.locallyEssentialTrees; // TODO shouldn't be necessary XTENLANG-1913
+        val numTerms = this.numTerms; // TODO shouldn't be necessary XTENLANG-1913
         val boxes = this.boxes; // TODO shouldn't be necessary XTENLANG-1913
         for ([thisLevel] in topLevel..numLevels) {
             val thisLevelBoxes = boxes(thisLevel);
@@ -376,6 +377,7 @@ public class Fmm3d {
                     for ([x1,y1,z1] in thisLevelBoxes.dist(here)) async {
                         //Console.OUT.println("starting " + x1 + "," + y1 + "," + z1);
                         val box1 = thisLevelBoxes(x1,y1,z1);
+                        val scratch = new MultipoleExpansion(numTerms);
                         if (box1 != null) {
                             val vList = box1.getVList();
                             for (p in vList) {
@@ -385,40 +387,40 @@ public class Fmm3d {
                                 if (box2MultipoleExp != null) {
                                     val translation = box1.getTranslationIndex(boxIndex);
 
-				                if (!useOldOperators) { 
-                					/* New Operation B */
-        				        	val shift = Point.make([here.id, translation(0), translation(1), translation(2)]);
-		                			box1.localExp.transformAndAddToLocal(
-                						Point3d(translation(0) * sideLength, translation(1) * sideLength, translation(2) * sideLength) , 
-                						complexK(shift), box2MultipoleExp, wignerB(shift) );
-                				} else { 
-				                	/* Old Operation B */
-        	                        val translateP = Point.make([here.id, thisLevel, translation(0), translation(1), translation(2)]);
-        	                        val transform21 = multipoleTransforms(translateP);
-        	                        box1.localExp.transformAndAddToLocal(transform21, box2MultipoleExp);
-				                }
+				                    if (!useOldOperators) { 
+                    					/* New Operation B */
+            				        	val shift = Point.make([here.id, translation(0), translation(1), translation(2)]);
+		                    			box1.localExp.transformAndAddToLocal(scratch, 
+                    						Point3d(translation(0) * sideLength, translation(1) * sideLength, translation(2) * sideLength) , 
+                    						complexK(shift), box2MultipoleExp, wignerB(shift) );
+                    				} else { 
+				                    	/* Old Operation B */
+            	                        val translateP = Point.make([here.id, thisLevel, translation(0), translation(1), translation(2)]);
+            	                        val transform21 = multipoleTransforms(translateP);
+            	                        box1.localExp.transformAndAddToLocal(transform21, box2MultipoleExp);
+				                    }
+                                }
                             }
-                        }
-                        if (thisLevel > topLevel) {
-                            //Console.OUT.println("get parent for " + x1 + "," + y1 + "," + z1);
-                            val box1Parent = box1.parent;
-                            val box1ParentExp = at (box1Parent) {box1Parent().localExp};
+                            if (thisLevel > topLevel) {
+                                //Console.OUT.println("get parent for " + x1 + "," + y1 + "," + z1);
+                                val box1Parent = box1.parent;
+                                val box1ParentExp = at (box1Parent) {box1Parent().localExp};
 
-            			    if (!useOldOperators) { 
-            				    /* New Operation C */
-   	                            val shift = Point.make([here.id, box1.x%2, box1.y%2, box1.z%2]);
-	            			    box1.localExp.translateAndAddLocal(
-            						getChildBoxCentre(shift, sideLength),
-        						    complexK( getChildBoxCentreWithPlace(here.id, shift) ), box1ParentExp, wignerC(shift) );
-            			    } else { 
-            				    /* Old Operation C */
-	                            val shift = multipoleTranslations(Point.make([here.id, thisLevel, box1.x%2, box1.y%2, box1.z%2]));
-        	                    box1.localExp.translateAndAddLocal(shift, box1ParentExp);
-                                //Console.OUT.println("got parent for " + x1 + "," + y1 + "," + z1);
-            			    }
+                			    if (!useOldOperators) { 
+                				    /* New Operation C */
+       	                            val shift = Point.make([here.id, box1.x%2, box1.y%2, box1.z%2]);
+	                			    box1.localExp.translateAndAddLocal(
+                						getChildBoxCentre(shift, sideLength),
+            						    complexK( getChildBoxCentreWithPlace(here.id, shift) ), box1ParentExp, wignerC(shift) );
+                			    } else { 
+                				    /* Old Operation C */
+	                                val shift = multipoleTranslations(Point.make([here.id, thisLevel, box1.x%2, box1.y%2, box1.z%2]));
+            	                    box1.localExp.translateAndAddLocal(shift, box1ParentExp);
+                                    //Console.OUT.println("got parent for " + x1 + "," + y1 + "," + z1);
+                			    }
+                            }
+                            //Console.OUT.println("completed " + x1 + "," + y1 + "," + z1);
                         }
-                        //Console.OUT.println("completed " + x1 + "," + y1 + "," + z1);
-                    }
                     }
                 }
             }
