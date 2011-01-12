@@ -215,7 +215,6 @@ public class Fmm3d {
         this.multipoleTransforms = precomputeTransforms(numLevels, topLevel, numTerms, size);
         this.locallyEssentialTrees = createLocallyEssentialTrees(numLevels, topLevel, boxes);
 
-	    Factorial.calcFactorial(numTerms); // precompute the factorials
     	this.wignerB = precomputeWignerB(numTerms);
     	this.wignerA = precomputeWignerA(numTerms);
     	this.wignerC = precomputeWignerC(numTerms);

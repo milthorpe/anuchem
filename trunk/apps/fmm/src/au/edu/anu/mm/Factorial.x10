@@ -16,16 +16,14 @@ package au.edu.anu.mm;
  * @author haigh
  */
 public class Factorial { 
-	public static val fact : Array[Double](1) = new Array[Double](200);
+	public static val factorial : Array[Double](1) = Factorial.calcFact();
 
-        /**
-         * This function must be called first by every class that wants to
-         * do a translation using rotations or generate Wigner matrices pre-multiplied (i.e. with WignerRotationMatrix.getExpandedCollection)
-         */
-	public static def calcFactorial(numTerms : int) { 
+    private static final def calcFact() { 
+        val fact = new Array[Double](100);
 		fact(0) = 1.0;
-		for ([i] in 1..(2*numTerms)) fact(i) = i * fact(i-1);
+		for ([i] in 1..99) fact(i) = i * fact(i-1);
+        return fact;
 	}
 
-	public static def getFactorial(i : int) = fact(i); 
+	public static def getFactorial(i : int) = factorial(i); 
 }
