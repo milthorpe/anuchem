@@ -377,7 +377,10 @@ public class Fmm3d {
                     for ([x1,y1,z1] in thisLevelBoxes.dist(here)) async {
                         //Console.OUT.println("starting " + x1 + "," + y1 + "," + z1);
                         val box1 = thisLevelBoxes(x1,y1,z1);
-                        val scratch = new MultipoleExpansion(numTerms);
+                        // these two objects are to provide temporary space for the B operator which does not have to be reallocated and GCed for each call
+                        // ideally this would be replaced with a stack allocated array (TODO)
+                        val scratch = new MultipoleExpansion(numTerms);    
+                        val scratch_array = new Array[Complex](-numTerms..numTerms);
                         if (box1 != null) {
                             val vList = box1.getVList();
                             for (p in vList) {
@@ -390,7 +393,7 @@ public class Fmm3d {
 				                    if (!useOldOperators) { 
                     					/* New Operation B */
             				        	val shift = Point.make([here.id, translation(0), translation(1), translation(2)]);
-		                    			box1.localExp.transformAndAddToLocal(scratch, 
+		                    			box1.localExp.transformAndAddToLocal(scratch, scratch_array,
                     						Point3d(translation(0) * sideLength, translation(1) * sideLength, translation(2) * sideLength) , 
                     						complexK(shift), box2MultipoleExp, wignerB(shift) );
                     				} else { 

@@ -76,25 +76,27 @@ public class Expansion {
 
     /** 
      * Rotates this expansion (local and multipole are differentiated by different precalculated wigner matrices) in three dimensions.
+     * Performs rotation around z-axis first, THEN rotation around x-axis (for "forwards" rotation)
+     * @param temp an array of complex numbers of size at least (-p..p) to do temporary calculations in
      * @param wigner, precalculated wigner matrices, an array of WignerMatrices, indexed first by p from 0 to max terms in expansion
      * @param complexK, values of exp(i*k*phi)
      * @see Dachsel 2006 eqn 4 & 5
      */
-    public def rotate( complexK : Array[Complex](1), wigner : Array[Array[Double](2){rect}](1) ) {
+    public def rotate(temp : Array[Complex](1), complexK : Array[Complex](1), wigner : Array[Array[Double](2){rect}](1) ) {
         val p : Int = terms.region.max(0);
 
-    	val lkFac = new Array[Complex](-p..p);
+    	//val temp = new Array[Complex](-p..p);
     	var O_lm : Complex;
         for ([l] in 1..p) {
             val Dl = wigner(l); // avoids calculating matrices directly
 
-	        for ([k] in -l..l) lkFac(k) = terms(l, k) * complexK(k);
+	        for ([k] in -l..l) temp(k) = terms(l, k) * complexK(k);
            
 	        var m_sign : int = 1;
             for ([m] in 0..l) {
 	            O_lm = Complex.ZERO;
                 for ([k] in -l..l) {
-                    O_lm = O_lm + lkFac(k) * Dl(m, k); // Eq. 5
+                    O_lm = O_lm + temp(k) * Dl(m, k); // Eq. 5
                 }
                 terms(l,m) = O_lm;
 
@@ -104,21 +106,28 @@ public class Expansion {
         }
     }
 
-    //MAKE A COMMENT
-    public def backRotate( complexK : Array[Complex](1), wigner : Array[Array[Double](2){rect}](1) ) {
+    /** 
+     * Rotates this expansion (local and multipole are differentiated by different precalculated wigner matrices) in three dimensions.
+     * Performs rotation around x-axis first, THEN rotation around z-axis (for "backwards" rotation)
+     * @param temp an array of complex numbers of size at least (-p..p) to do temporary calculations in
+     * @param wigner, precalculated wigner matrices, an array of WignerMatrices, indexed first by p from 0 to max terms in expansion
+     * @param complexK, values of exp(i*k*phi)
+     * @see Dachsel 2006 eqn 4 & 5
+     */
+    public def backRotate(temp : Array[Complex](1), complexK : Array[Complex](1), wigner : Array[Array[Double](2){rect}](1) ) {
         val p : Int = terms.region.max(0);
 
-    	val lkFac = new Array[Complex](-p..p);
+    	//val temp = new Array[Complex](-p..p);
         for ([l] in 1..p) {
             val Dl = wigner(l); // avoids calculating matrices directly
 
-	        for ([k] in -l..l) lkFac(k) = terms(l, k);
+	        for ([k] in -l..l) temp(k) = terms(l, k);
            
 	        var m_sign : int = 1;
             for ([m] in 0..l) {
 	            var O_lm : Complex = Complex.ZERO;
                 for ([k] in -l..l) {
-                    O_lm = O_lm + lkFac(k) * Dl(m, k); // Eq. 5
+                    O_lm = O_lm + temp(k) * Dl(m, k); // Eq. 5
                 }
                 O_lm = O_lm * complexK(m);
                 terms(l,m) = O_lm;
