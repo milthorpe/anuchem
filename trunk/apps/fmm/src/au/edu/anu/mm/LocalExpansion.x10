@@ -120,35 +120,32 @@ public class LocalExpansion extends Expansion {
     	val p = terms.region.max(0);
     	val v_pole = Polar3d.getPolar3d(v);
 	    val b = v_pole.r;
-
-	    val translated : LocalExpansion = new LocalExpansion( source );
-	    translated.rotate( complexK(1), wigner(0) );
-
-    	val targetTerms = translated.terms;
 	    val temp = new Array[Complex](-p..p);
-    	atomic { 
-	    	var m_sign : int = 1;
-	    	for ([m] in 0..p) {
-	    		for ([l] in m..p) temp(l) = targetTerms(l, m);
 
-	    		for ([l] in m..p) {
-	    			var M_lm : Complex = Complex.ZERO;
-	    			var F_lm : Double = 1.0;
-	    			for ([j] in l..p) {  
-	    				M_lm = M_lm + temp(j) * F_lm;
-	    				F_lm = F_lm * b / (j - l + 1);
-	    			}
-	    			targetTerms(l, m) = M_lm;
-	    			if (m != 0) targetTerms(l, -m) = targetTerms(l, m).conjugate() * m_sign;
-	    			//to avoid conjugate if (m != 0) { if (m_sign) targetTerms(l, -m) = Complex(M_lm.re,-M_lm.im); else targetTerms(l, -m) = Complex(-M_lm.re,M_lm.im); }
-	    		}
-		    	m_sign = -m_sign;
-    	   	}
-    	}
+	    val scratch : LocalExpansion = new LocalExpansion( source );
+        scratch.rotate(temp, complexK(1), wigner(0) );
 
-	    translated.rotate( genComplexKZero(p), wigner(1) );
-        translated.phiRotate( complexK(0) );
-    	add( translated );
+    	val targetTerms = scratch.terms;
+    	var m_sign : int = 1;
+    	for ([m] in 0..p) {
+    		for ([l] in m..p) temp(l) = targetTerms(l, m);
+
+    		for ([l] in m..p) {
+    			var M_lm : Complex = Complex.ZERO;
+    			var F_lm : Double = 1.0;
+    			for ([j] in l..p) {  
+    				M_lm = M_lm + temp(j) * F_lm;
+    				F_lm = F_lm * b / (j - l + 1);
+    			}
+    			targetTerms(l, m) = M_lm;
+    			if (m != 0) targetTerms(l, -m) = targetTerms(l, m).conjugate() * m_sign;
+    			//to avoid conjugate if (m != 0) { if (m_sign) targetTerms(l, -m) = Complex(M_lm.re,-M_lm.im); else targetTerms(l, -m) = Complex(-M_lm.re,M_lm.im); }
+    		}
+	    	m_sign = -m_sign;
+	   	}
+
+	    scratch.backRotate(temp, complexK(0), wigner(1) );
+    	add(scratch);
     }
 
     /**
@@ -190,7 +187,7 @@ public class LocalExpansion extends Expansion {
             }
         // END HAND-INLINED ITERATOR
             val O_jk = source.terms(j,k);
-            for ([l] in 0..p-j) {
+            for ([l] in 0..(p-j)) {
                 for ([m] in -l..l) {
                     if (Math.abs(k+m) <= (j+l)) {
                         val B_lmjk = transform.terms(j+l, k+m);
@@ -204,65 +201,73 @@ public class LocalExpansion extends Expansion {
 
     /** 
      * More efficient version of Operator B with rotations
-     * @param v a Tuple representing the shift of the expansion
-     * @param wigner a collection of Wigner matrices precalculated to speed up the rotation
-     * @param complexK is the pre calculated values of exp(i*k*phi)
-     * @param source expansion
+     * @param scratch, a MultipoleExpansion which can be used to do temporary calculations in
+     * @param temp, a Complex array to do temporary calculations in
+     * @param v, a Tuple representing the shift of the expansion
+     * @param complexK, is the pre calculated values of exp(i*k*phi)
+     * @param source, the expansion which should be shifted and added to this one
+     * @param wigner, a collection of Wigner matrices precalculated to speed up the rotation
      * @see Dachsel 2006, eqn 17
      */
-    public def transformAndAddToLocal(v : Tuple3d, complexK : Array[Array[Complex](1)](1), source : MultipoleExpansion, wigner : Array[Array[Array[Double](2){rect}](1)](1) ) { 
+    public def transformAndAddToLocal(scratch : MultipoleExpansion, temp : Array[Complex](1), v : Tuple3d, complexK : Array[Array[Complex](1)](1), source : MultipoleExpansion, wigner : Array[Array[Array[Double](2){rect}](1)](1)) { 
 	    val p = terms.region.max(0);
     	val v_pole = Polar3d.getPolar3d(v);
     	val inv_b = 1 / v_pole.r;
 
-    	val translated = new MultipoleExpansion( source );
-    	translated.rotate( complexK(0), wigner(0) );
+        Array.copy(source.terms, scratch.terms);
+    	scratch.rotate(temp, complexK(0), wigner(0) );
 
-	    val targetTerms = translated.terms;
-	    val temp = new Array[Complex](-p..p);
-	    atomic {  
-		    var m_sign : int = 1;
-		    for ([m] in 0..p) {
-			    for ([l] in m..p) temp(l) = targetTerms(l, -m);
+	    val targetTerms = scratch.terms;
+	    //val temp = new Array[Complex](0..p);
+	    var m_sign : int = 1;
+        var b_m_pow : double = 1.0;
+	    for ([m] in 0..p) {
+		    for ([l] in m..p) temp(l) = targetTerms(l, -m);
 
-			    for ([l] in m..p) {
-				    var M_lm : Complex = Complex.ZERO;
-				    var F_lm : Double = Factorial.getFactorial(l + m) * Math.pow(inv_b, l + m + 1);
-				    for ([j] in m..(p-l)) {  	// upper bound here is not p but it seems j+l <= p
-					    M_lm = M_lm + temp(j) * F_lm;
-					    F_lm = F_lm * (j + l + 1) * inv_b;
-				    }
-				    targetTerms(l, m) = M_lm;
-				    if (m != 0) targetTerms(l, -m) = targetTerms(l, m).conjugate() * m_sign;
-				    //to avoid conjugate if (m != 0) { if (m_sign) targetTerms(l, -m) = Complex(M_lm.re,-M_lm.im); else targetTerms(l, -m) = Complex(-M_lm.re,M_lm.im); }
+            var b_lm1_pow : double = inv_b * b_m_pow * b_m_pow;
+		    for ([l] in m..p) {
+			    var M_lm : Complex = Complex.ZERO;
+			    var F_lm : Double = Factorial.getFactorial(l + m) * b_lm1_pow;
+			    for ([j] in m..(p-l)) {  	// upper bound here is not p but it seems j+l <= p
+				    M_lm = M_lm + temp(j) * F_lm;
+				    F_lm = F_lm * (j + l + 1) * inv_b;
 			    }
-			    m_sign = -m_sign;
+			    targetTerms(l, m) = M_lm;
+			    if (m != 0) targetTerms(l, -m) = targetTerms(l, m).conjugate() * m_sign;
+                b_lm1_pow = b_lm1_pow * inv_b;
 		    }
+            
+		    m_sign = -m_sign;
+            b_m_pow = b_m_pow * inv_b;
 	    }
 
-	    translated.rotate( genComplexKZero(p), wigner(1) );
-        translated.phiRotate( complexK(0) );
-	    add( translated );
+	    scratch.backRotate(temp, complexK(0), wigner(1) );
+	    add(scratch);
     }
 
     /**
      * Different method call for Operator B which pre calculates matrices and exp(k*i*phi) for use in tests etc 
-     * @param v a Tuple representing the shift of the expansion
-     * @param source the source local expansion
+     * @param v, a Tuple representing the shift of the expansion
+     * @param source, the source local expansion which will be added to this one
      */
     public def transformAndAddToLocal(v : Tuple3d, source : MultipoleExpansion) {
     	val polar = Polar3d.getPolar3d(v);
         val p = terms.region.max(0);
-    	transformAndAddToLocal(v, genComplexK(polar.phi, p), source, WignerRotationMatrix.getBCollection(polar.theta, p) );
+        val scratch = new MultipoleExpansion(p);
+        val temp = new Array[Complex](-p..p);
+    	transformAndAddToLocal(scratch, temp, v, genComplexK(polar.phi, p), source, WignerRotationMatrix.getBCollection(polar.theta, p) );
     }
     /**
-     * @param theta, phi are the angles to rotate the existing expansion by
-     * @return a new expansion, which is the current expansion rotated
+     * Different method call for rotate which does the precalculations for the user
+     * @param theta, rotation angle
+     * @param phi, rotation angle
+     * @return a new expansion, which is the current expansion after it is rotated
      */
     public def rotate(theta : Double, phi : Double) {
     	val p = terms.region.max(0);
         val target = new LocalExpansion( this );
-    	target.rotate( genComplexK(phi, p)(0), WignerRotationMatrix.getCCollection(theta, p)(0) );
+        val temp = new Array[Complex](-p..p);
+    	target.rotate(temp, genComplexK(phi, p)(0), WignerRotationMatrix.getCCollection(theta, p)(0) );
     	return target;
     }
 

@@ -25,7 +25,6 @@ import x10.util.StringBuilder;
 public class Expansion {
     /** The terms X_{lm} (with m >= 0) in this expansion */
     public val terms : Array[Complex](2);
-    public static val ones = new Array[Complex](-100..100, Complex.ONE);
 
     public def this(p : Int) {
         //var expRegion : Region(2) = [0..p,-p..p];
@@ -40,7 +39,7 @@ public class Expansion {
     }
 
     public atomic def add(e : Expansion) {
-	val p = terms.region.max(0);
+	    val p = terms.region.max(0);
 	    for ([l] in -p..p) {
 	        for ([m] in -l..l) { // this will now be inlined -- should be for ([l,m] in terms.region)
 	            this.terms(l,m) = this.terms(l,m) + e.terms(l,m);
@@ -74,29 +73,30 @@ public class Expansion {
 	    }
     	return complexK;
     }
-    public static def genComplexKZero(p : int) = ones; // quicker code for when angle is 0 
 
     /** 
      * Rotates this expansion (local and multipole are differentiated by different precalculated wigner matrices) in three dimensions.
+     * Performs rotation around z-axis first, THEN rotation around x-axis (for "forwards" rotation)
+     * @param temp an array of complex numbers of size at least (-p..p) to do temporary calculations in
      * @param wigner, precalculated wigner matrices, an array of WignerMatrices, indexed first by p from 0 to max terms in expansion
      * @param complexK, values of exp(i*k*phi)
      * @see Dachsel 2006 eqn 4 & 5
      */
-    public def rotate( complexK : Array[Complex](1), wigner : Array[Array[Double](2){rect}](1) ) {
+    public def rotate(temp : Array[Complex](1), complexK : Array[Complex](1), wigner : Array[Array[Double](2){rect}](1) ) {
         val p : Int = terms.region.max(0);
 
-    	val lkFac = new Array[Complex](-p..p);
+    	//val temp = new Array[Complex](-p..p);
     	var O_lm : Complex;
         for ([l] in 1..p) {
             val Dl = wigner(l); // avoids calculating matrices directly
 
-	        for ([k] in -l..l) lkFac(k) = terms(l, k) * complexK(k);
+	        for ([k] in -l..l) temp(k) = terms(l, k) * complexK(k);
            
 	        var m_sign : int = 1;
             for ([m] in 0..l) {
 	            O_lm = Complex.ZERO;
                 for ([k] in -l..l) {
-                    O_lm = O_lm + lkFac(k) * Dl(m, k); // Eq. 5
+                    O_lm = O_lm + temp(k) * Dl(m, k); // Eq. 5
                 }
                 terms(l,m) = O_lm;
 
@@ -106,15 +106,34 @@ public class Expansion {
         }
     }
 
-    /**
-     * Special case of expansion rotation when theta = 0, to use when unrotating an expansion after translation (also no return value)
-     * @param complexK, same meaning as above
+    /** 
+     * Rotates this expansion (local and multipole are differentiated by different precalculated wigner matrices) in three dimensions.
+     * Performs rotation around x-axis first, THEN rotation around z-axis (for "backwards" rotation)
+     * @param temp an array of complex numbers of size at least (-p..p) to do temporary calculations in
+     * @param wigner, precalculated wigner matrices, an array of WignerMatrices, indexed first by p from 0 to max terms in expansion
+     * @param complexK, values of exp(i*k*phi)
+     * @see Dachsel 2006 eqn 4 & 5
      */
-    public def phiRotate(complexK : Array[Complex](1) ) {
-	val p = terms.region.max(0);
-        for ([l] in -p..p) {
-            for ([m] in -l..l) {
-                terms(l, m) = complexK(m) * terms(l, m);
+    public def backRotate(temp : Array[Complex](1), complexK : Array[Complex](1), wigner : Array[Array[Double](2){rect}](1) ) {
+        val p : Int = terms.region.max(0);
+
+    	//val temp = new Array[Complex](-p..p);
+        for ([l] in 1..p) {
+            val Dl = wigner(l); // avoids calculating matrices directly
+
+	        for ([k] in -l..l) temp(k) = terms(l, k);
+           
+	        var m_sign : int = 1;
+            for ([m] in 0..l) {
+	            var O_lm : Complex = Complex.ZERO;
+                for ([k] in -l..l) {
+                    O_lm = O_lm + temp(k) * Dl(m, k); // Eq. 5
+                }
+                O_lm = O_lm * complexK(m);
+                terms(l,m) = O_lm;
+
+        	    if (m != 0) terms(l, -m) = O_lm.conjugate() * m_sign;
+            	m_sign = -m_sign; // instead of doing the conjugate
             }
         }
     }

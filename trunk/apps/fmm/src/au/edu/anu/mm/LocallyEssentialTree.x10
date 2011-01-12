@@ -33,7 +33,7 @@ public class LocallyEssentialTree {
      * The Array has one element for each level; each element
      * holds the portion of the combined V-list for that level.
      */
-    public val multipoleCopies : Array[PeriodicArray[MultipoleExpansion](3)](1){rail};
+    public val multipoleCopies : Array[DistArray[MultipoleExpansion](3)](1){rail};
 
     /**
      * A cache of packed for the combined U-list of all
@@ -42,7 +42,7 @@ public class LocallyEssentialTree {
      * with all atoms at a given place.
      * @see FmmLeafBox.getPackedAtoms()
      */
-    public val packedAtoms : PeriodicArray[Array[MMAtom.PackedRepresentation](1){rail}](3);
+    public val packedAtoms : DistArray[Array[MMAtom.PackedRepresentation](1){rail}](3);
     
     public def this(combinedUList : Array[Point(3)](1){rail},
                 combinedVList : Array[Array[Point(3)](1){rail}](1){rail},
@@ -56,16 +56,16 @@ public class LocallyEssentialTree {
         this.uListMax = uListMax;
         this.vListMin = vListMin;
         this.vListMax = vListMax;
-        val multipoleCopies = new Array[PeriodicArray[MultipoleExpansion](3)](combinedVList.size);
-        for ([i] in 0..combinedVList.size-1) {
+        val multipoleCopies = new Array[DistArray[MultipoleExpansion](3)](combinedVList.size);
+        for ([i] in 0..(combinedVList.size-1)) {
             if (combinedVList(i) != null) {
-                val multipoleCopiesLevelRegion : Region(3) = (vListMin(i)(0)..vListMax(i)(0)) * (vListMin(i)(1)..vListMax(i)(1)) * (vListMin(i)(2)..vListMax(i)(2));
-                multipoleCopies(i) = new PeriodicArray[MultipoleExpansion](multipoleCopiesLevelRegion);
+                val multipoleCopiesLevelRegion = vListMin(i)(0)..vListMax(i)(0) * vListMin(i)(1)..vListMax(i)(1) * vListMin(i)(2)..vListMax(i)(2);
+                multipoleCopies(i) = DistArray.make[MultipoleExpansion](new PeriodicDist(Dist.makeConstant(multipoleCopiesLevelRegion)));
             }
         }
         this.multipoleCopies = multipoleCopies;
 
-        val packedAtomsRegion : Region(3) = (uListMin(0)..uListMax(0)) * (uListMin(1)..uListMax(1)) * (uListMin(2)..uListMax(2));
-        this.packedAtoms = new PeriodicArray[Array[MMAtom.PackedRepresentation](1){rail}](packedAtomsRegion);
+        val packedAtomsRegion = uListMin(0)..uListMax(0) * uListMin(1)..uListMax(1) * uListMin(2)..uListMax(2);
+        this.packedAtoms = DistArray.make[Array[MMAtom.PackedRepresentation](1){rail}](new PeriodicDist(Dist.makeConstant(packedAtomsRegion)));
     }
 }

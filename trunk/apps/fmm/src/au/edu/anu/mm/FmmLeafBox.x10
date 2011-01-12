@@ -59,6 +59,27 @@ public class FmmLeafBox extends FmmBox {
         }
         this.uList = uList.toArray();
     }
+
+    /**
+     * Creates the U-list for this box for
+     * use with the periodic FMM.
+     * The U-list consists of all leaf boxes not well-separated from this box.
+     */
+    public def createUListPeriodic(ws : Int) {
+        val levelDim = Math.pow2(this.level);
+        // interact with "left half" of uList i.e. only boxes with x<=box.x
+        val uList = new ArrayList[Point(3)]();
+        for ([x] in (this.x-ws)..this.x) {
+            for ([y] in (this.y-ws)..(this.y+ws)) {
+                for ([z] in (this.z-ws)..(this.z+ws)) {
+                    if (x < this.x || (x == this.x && y < this.y) || (x == this.x && y == this.y && z < this.z)) {
+                        uList.add(Point.make(x,y,z));
+                    }
+                }
+            }
+        }
+        this.uList = uList.toArray();
+    }
     
     /*
      * Returns atom charges and coordinates in packed representation

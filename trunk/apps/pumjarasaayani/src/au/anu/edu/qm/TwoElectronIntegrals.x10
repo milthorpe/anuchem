@@ -6,7 +6,7 @@
  *  You may obtain a copy of the License at
  *      http://www.opensource.org/licenses/eclipse-1.0.php
  *
- * (C) Copyright Australian National University 2010.
+ * (C) Copyright Australian National University 2010-2011.
  */
 package au.anu.edu.qm;
 
@@ -18,17 +18,19 @@ import x10x.vector.Vector3d;
 import au.edu.anu.chem.Molecule;
 
 /**
- * TwoElectronIntegrals.x10
- *
- * Evaluate 2E integrals
+ * This class calculates two-electron integrals
  *
  * @author: V.Ganesh
  *
- * Old code based on original integral evaluation paper by:
- * H. Taketa, S. Huzinaga, and K. O-ohata. H. Phys. Soc. Japan, 21, 2313, 1966.
+ * Old code based on original integral evaluation paper:
+ *   H. Taketa, S. Huzinaga, and K. O-ohata. H. (1966).
+ *   "Gaussian-Expansion Methods for Molecular Integrals".
+ *   Phys. Soc. Japan, 21 (11) p. 2313.
  *
  * New Murchie-Davidson (MD) code based on:
- * McMurchie, L. E.; Davidson, E. R. J Comput Phys, 26, 218, 1978.
+ *   McMurchie, L. E.; Davidson, E. R. (1978).
+ *   "One- and two-electron integrals over cartesian gaussian functions".
+ *   J. Comp. Phys, 26 (2) pp. 218-231.
  */
 public class TwoElectronIntegrals {
     private static val SQ2PI = Math.pow((2.0/Math.PI), 0.5); 
@@ -41,12 +43,6 @@ public class TwoElectronIntegrals {
     private val pcdint:Array[Double](3){rect};
 
     private val maxam:Int, maxam2:Int, maxam4:Int, maxamN:Int, maxam2M:Int, maxam2N:Int, pqdim:Int;
-
-    private val iidx  = new Array[Int](8);
-    private val jjdx  = new Array[Int](8);
-    private val kkdx  = new Array[Int](8);
-    private val lldx  = new Array[Int](8);
-    private val validIdx = new Array[Boolean](8);
 
     /**
      * @param maxam maximum angular momentum (determines total number of integrals)
@@ -66,16 +62,16 @@ public class TwoElectronIntegrals {
         fmt    = new Array[Double](maxam4+1);
         zeroM  = new Array[Double](maxam4+1);
 
-        rM     = new Array[Double]((0..maxam4+1) * (0..((maxam4+1) * (maxam4+2)/2)));
-        pqInts = new Array[Double]((0..maxam2N) * (0..maxam2N));
-        npint  = new Array[Double]((0..maxam2+1) * (0..maxam2M+1));
-        pcdint = new Array[Double]((0..maxamN+1) * (0..maxamN+1) * (0..maxam2N));
+        rM     = new Array[Double](0..(maxam4+1) * 0..((maxam4+1) * (maxam4+2)/2));
+        pqInts = new Array[Double](0..(maxam2N)  * 0..(maxam2N));
+        npint  = new Array[Double](0..(maxam2+1) * 0..(maxam2M+1));
+        pcdint = new Array[Double](0..(maxamN+1) * 0..(maxamN+1) * 0..(maxam2N));
 
         // Console.OUT.println("alloc2: " + pcdint.region.size());
     }
 
     /* Note: M_D  routines mostly taken from Alistair's code, with a few changes. 
-       Uses MD recurrance relations to evaluate higher angular momentum integrals.
+       Uses MD recurrence relations to evaluate higher angular momentum integrals.
        Direct update to GMtarix is based on the code in GMatrix.compute..() */
     public def compute2EAndRecord(a:ContractedGaussian, b:ContractedGaussian, 
                                   c:ContractedGaussian, d:ContractedGaussian, 
@@ -182,7 +178,6 @@ public class TwoElectronIntegrals {
 
                  // compute FmT
                  computeFmt(angMomABCD, T, fmt);
-                 // computeFmtFGamma(angMomABCD, T, fmt);
         
                  // convert to GmT
                  computeGmt(angMomABCD);
@@ -327,7 +322,6 @@ public class TwoElectronIntegrals {
 
                  // compute FmT
                  computeFmt(angMomABCD, T, fmt);
-                 // computeFmtFGamma(angMomABCD, T, fmt);
         
                  // convert to GmT
                  computeGmt(angMomABCD);
@@ -384,24 +378,7 @@ public class TwoElectronIntegrals {
                        dMatrix);
     }
 
-
-    /** find unique elements and mark the ones that are not */
-    /** 8 => is the level of integral symmetry, given (i,j|k.l)
-        there are 8 combinations that are unique */
-    private def filterUniqueElements(idx:Array[Int](1){rail}, jdx:Array[Int](1){rail},
-                                     kdx:Array[Int](1){rail}, ldx:Array[Int](1){rail},
-                                     validIdx:Array[Boolean](1){rail}) : void {
-        validIdx.fill(true);
-        for(var m:Int=0; m<8; m++) {
-            val i = idx(m); val j = jdx(m); val k = kdx(m); val l = ldx(m);
-            for(var n:Int=m+1; n<8; n++) {
-                if (i==idx(n) && j==jdx(n) && k==kdx(n) && l==ldx(n))
-                    validIdx(n) = false;
-            } // end for
-        } // end for
-    }
-
-    /** MD recurrance relation steps in following two subroutines */
+    /** MD recurrence relation steps in following two subroutines */
 
     private def mdRecurse(r:Vector3d, i:Int, j:Int, k:Int, m:Int) : Double {
          var res:Double = 0.0;
@@ -493,11 +470,13 @@ public class TwoElectronIntegrals {
     }
 
     private def computeZeroM(angMomABCD:Int, Upq:Double, eta:Double) {
-         val twoEta = 2.0*eta;
-         for(var i:Int=0; i<=angMomABCD; i++) {
-             zeroM(i) = Upq * Math.pow(twoEta, i+0.5) * fmt(i);
-             // Console.OUT.println(Upq + " " + zeroM(i));
-         }
+        val twoEta = 2.0*eta;
+        var etaPow : Double = Math.sqrt(twoEta);
+        for([i] in 0..angMomABCD) {
+            zeroM(i) = Upq * etaPow * fmt(i);
+            etaPow *= twoEta; // etaPow = twoEta^(i+0.5)
+            // Console.OUT.println(Upq + " " + zeroM(i));
+        }
     }
 
     private def computeRm(angMomABCD:Int, shellList:ShellList, r:Vector3d) {
@@ -615,7 +594,6 @@ public class TwoElectronIntegrals {
                             shellList:ShellList, bAng:Int, aAng:Int, 
                             aCen:Point3d, bCen:Point3d, p:Point3d, gamma1:Double,
                             twoEInts:Array[Double](1){rect}) {
-         var dd:Int, cc:Int, bb:Int, aa:Int, k:Int, l:Int;
          val shellB = shellList.getPowers(bAng);
          val shellA = shellList.getPowers(aAng);
 
@@ -629,33 +607,34 @@ public class TwoElectronIntegrals {
 
          var intIndx:Int = 0;
 
-         for(dd=0; dd<dLim; dd++) {
+         for([dd] in 0..(dLim-1)) {
              val ll = dStrt + dd;
 
-             for(cc=0; cc<cLim; cc++) {
+             for([cc] in 0..(cLim-1)) {
                  val kk = cStrt + cc;
 
                  if (kk < ll) continue;
+                 val kkll_st = kk*(kk+1)/2 + ll;
 
-                 for (k=0; k<=maxam2; k++) {
+                 for ([k] in 0..maxam2) {
                     val kpq = k*pqdim;
-                    for (l=0; l<=maxam2M; l++)
+                    for ([l] in 0..maxam2M)
                         npint(k,l) = pcdint(dd, cc, kpq+l);
                  }
 
-                 for(bb = 0; bb<bLim; bb++) {
+                 for([bb] in 0..(bLim-1)) {
                      val jj = bStrt + bb;
                      val powersB = shellB(bb);
                      val lp = powersB.l;
                      val mp = powersB.m;
                      val np = powersB.n;
 
-                     for(aa = 0; aa<aLim; aa++) {
+                     for([aa] in 0..(aLim-1)) {
                          val ii = aStrt + aa;
 
                          if (ii >= jj) {
                              val iijj_st = ii*(ii+1)/2 + jj;
-                             val kkll_st = kk*(kk+1)/2 + ll;
+
 
                              if (iijj_st >= kkll_st) {                                   
                                  val powersA = shellA(aa);
@@ -681,78 +660,83 @@ public class TwoElectronIntegrals {
                                jMatrix:Array[Double](2){rect}, 
                                kMatrix:Array[Double](2){rect},
                                dMatrix:Array[Double](2){rect}) {
-         var dd:Int, cc:Int, bb:Int, aa:Int, k:Int, l:Int;
-         
-         var intIndx:Int = 0;
+        var intIndx:Int = 0;
 
-         for(dd=0; dd<dLim; dd++) {
-             val ll = dStrt + dd;
-             lldx(0) = ll; lldx(1) = ll; kkdx(2) = ll; kkdx(3) = ll;
-             iidx(4) = ll; iidx(5) = ll; jjdx(6) = ll; jjdx(7) = ll;
+        for([ll] in dStrt..(dStrt+dLim-1)) {
+            val kStrt = Math.max(cStrt, ll);
+            for([kk] in kStrt..(cStrt+cLim-1)) {
+                val kkll = kk*(kk+1)/2 + ll;
 
-             for(cc=0; cc<cLim; cc++) {
-                 val kk = cStrt + cc;
-                 kkdx(0) = kk; kkdx(1) = kk; lldx(2) = kk; lldx(3) = kk;
-                 jjdx(4) = kk; jjdx(5) = kk; iidx(6) = kk; iidx(7) = kk;
+                for([jj] in bStrt..(bStrt+bLim-1)) {
+                    val iStrt = Math.max(aStrt, jj);
+                    for([ii] in iStrt..(aStrt+aLim-1)) {
+                        val iijj = ii*(ii+1)/2 + jj;
 
-                 if (kk < ll) continue;
+                        if (iijj >= kkll) {
+                            val twoEIntVal = twoEInts(intIndx++); 
 
-                 for(bb = 0; bb<bLim; bb++) {
-                     val jj = bStrt + bb;
-
-                     jjdx(0) = jj; iidx(1) = jj; iidx(2) = jj; jjdx(3) = jj;
-                     lldx(4) = jj; kkdx(5) = jj; lldx(6) = jj; kkdx(7) = jj;
-
-                     for(aa = 0; aa<aLim; aa++) {
-                         val ii = aStrt + aa;
-                  
-                         if (ii >= jj) {
-                             val iijj = ii*(ii+1)/2 + jj;
-                             val kkll = kk*(kk+1)/2 + ll;
-
-                             if (iijj >= kkll) {
-                                    val twoEIntVal = twoEInts(intIndx++); 
-                            
-                                    val v1 = dMatrix(kk,ll) * twoEIntVal;
-                                    val v2 = dMatrix(ii,jj) * twoEIntVal;
-                                    val v3 = dMatrix(jj,ll) * twoEIntVal;
-                                    val v4 = dMatrix(jj,kk) * twoEIntVal;
-                                    val v5 = dMatrix(ii,ll) * twoEIntVal;
-                                    val v6 = dMatrix(ii,kk) * twoEIntVal;
-
-                                    jMatrix(ii,jj) += v1;
-                                    jMatrix(kk,ll) += v2;
-                                    kMatrix(ii,kk) += v3;
-                                    kMatrix(ii,ll) += v4;
-                                    kMatrix(jj,kk) += v5;
-                                    kMatrix(jj,ll) += v6;
-
-                                    // special case
-                                    if ((ii|jj|kk|ll) == 0) continue;
-                                    iidx(0) = ii; jjdx(1) = ii; jjdx(2) = ii; iidx(3) = ii;
-                                    kkdx(4) = ii; lldx(5) = ii; kkdx(6) = ii; lldx(7) = ii;
-
-                                    // else this is symmetry unique integral, so need to
-                                    // use this value for all 8 combinations (if unique)
-                                    filterUniqueElements(iidx, jjdx, kkdx, lldx, validIdx);
-
-                                    // and evaluate them
-                                    for(var m:Int=1; m<8; m++) {
-                                        if (validIdx(m)) {
-                                           val ii_l = iidx(m);
-                                           val jj_l = jjdx(m);
-                                           val kk_l = kkdx(m);
-                                           val ll_l = lldx(m);
-
-                                           jMatrix(ii_l,jj_l) += dMatrix(kk_l,ll_l) * twoEIntVal;
-                                           jMatrix(kk_l,ll_l) += dMatrix(ii_l,jj_l) * twoEIntVal;
-                                           kMatrix(ii_l,kk_l) += dMatrix(jj_l,ll_l) * twoEIntVal;
-                                           kMatrix(ii_l,ll_l) += dMatrix(jj_l,kk_l) * twoEIntVal;
-                                           kMatrix(jj_l,kk_l) += dMatrix(ii_l,ll_l) * twoEIntVal;
-                                           kMatrix(jj_l,ll_l) += dMatrix(ii_l,kk_l) * twoEIntVal;
-                                        } // end if
-                                    } // end m                    
-                             } // end if
+                            jMatrix(ii,jj) += dMatrix(kk,ll) * twoEIntVal;
+                            jMatrix(kk,ll) += dMatrix(ii,jj) * twoEIntVal;
+                            kMatrix(ii,kk) += dMatrix(jj,ll) * twoEIntVal;
+                            kMatrix(ii,ll) += dMatrix(jj,kk) * twoEIntVal;
+                            kMatrix(jj,kk) += dMatrix(ii,ll) * twoEIntVal;
+                            kMatrix(jj,ll) += dMatrix(ii,kk) * twoEIntVal;
+                            if (ii != jj) {
+                                jMatrix(jj,ii) += dMatrix(kk,ll) * twoEIntVal;
+                                jMatrix(kk,ll) += dMatrix(jj,ii) * twoEIntVal;
+                                kMatrix(jj,kk) += dMatrix(ii,ll) * twoEIntVal;
+                                kMatrix(jj,ll) += dMatrix(ii,kk) * twoEIntVal;
+                                kMatrix(ii,kk) += dMatrix(jj,ll) * twoEIntVal;
+                                kMatrix(ii,ll) += dMatrix(jj,kk) * twoEIntVal;
+                                if (kk != ll) {
+                                    jMatrix(jj,ii) += dMatrix(ll,kk) * twoEIntVal;
+                                    jMatrix(ll,kk) += dMatrix(jj,ii) * twoEIntVal;
+                                    kMatrix(jj,ll) += dMatrix(ii,kk) * twoEIntVal;
+                                    kMatrix(jj,kk) += dMatrix(ii,ll) * twoEIntVal;
+                                    kMatrix(ii,ll) += dMatrix(jj,kk) * twoEIntVal;
+                                    kMatrix(ii,kk) += dMatrix(jj,ll) * twoEIntVal;
+                                }
+                            }
+                            if (kk != ll) {
+                                jMatrix(ii,jj) += dMatrix(ll,kk) * twoEIntVal;
+                                jMatrix(ll,kk) += dMatrix(ii,jj) * twoEIntVal;
+                                kMatrix(ii,ll) += dMatrix(jj,kk) * twoEIntVal;
+                                kMatrix(ii,kk) += dMatrix(jj,ll) * twoEIntVal;
+                                kMatrix(jj,ll) += dMatrix(ii,kk) * twoEIntVal;
+                                kMatrix(jj,kk) += dMatrix(ii,ll) * twoEIntVal;
+                            }
+                            if (ii != kk || jj != ll) {
+                                jMatrix(kk,ll) += dMatrix(ii,jj) * twoEIntVal;
+                                jMatrix(ii,jj) += dMatrix(kk,ll) * twoEIntVal;
+                                kMatrix(kk,ii) += dMatrix(ll,jj) * twoEIntVal;
+                                kMatrix(kk,jj) += dMatrix(ll,ii) * twoEIntVal;
+                                kMatrix(ll,ii) += dMatrix(kk,jj) * twoEIntVal;
+                                kMatrix(ll,jj) += dMatrix(kk,ii) * twoEIntVal;
+                                if (ii != jj) {
+                                    jMatrix(kk,ll) += dMatrix(jj,ii) * twoEIntVal;
+                                    jMatrix(jj,ii) += dMatrix(kk,ll) * twoEIntVal;
+                                    kMatrix(kk,jj) += dMatrix(ll,ii) * twoEIntVal;
+                                    kMatrix(kk,ii) += dMatrix(ll,jj) * twoEIntVal;
+                                    kMatrix(ll,jj) += dMatrix(kk,ii) * twoEIntVal;
+                                    kMatrix(ll,ii) += dMatrix(kk,jj) * twoEIntVal;
+                                    if (kk != ll) {
+                                        jMatrix(ll,kk) += dMatrix(jj,ii) * twoEIntVal;
+                                        jMatrix(jj,ii) += dMatrix(ll,kk) * twoEIntVal;
+                                        kMatrix(ll,jj) += dMatrix(kk,ii) * twoEIntVal;
+                                        kMatrix(ll,ii) += dMatrix(kk,jj) * twoEIntVal;
+                                        kMatrix(kk,jj) += dMatrix(ll,ii) * twoEIntVal;
+                                        kMatrix(kk,ii) += dMatrix(ll,jj) * twoEIntVal;
+                                    }
+                                }
+                                if (kk != ll) {
+                                    jMatrix(ll,kk) += dMatrix(ii,jj) * twoEIntVal;
+                                    jMatrix(ii,jj) += dMatrix(ll,kk) * twoEIntVal;
+                                    kMatrix(ll,ii) += dMatrix(kk,jj) * twoEIntVal;
+                                    kMatrix(ll,jj) += dMatrix(kk,ii) * twoEIntVal;
+                                    kMatrix(kk,ii) += dMatrix(ll,jj) * twoEIntVal;
+                                    kMatrix(kk,jj) += dMatrix(ll,ii) * twoEIntVal;
+                                }
+                            }
                          } // end if
                      } // for aa
                  } // for bb
@@ -763,20 +747,13 @@ public class TwoElectronIntegrals {
     }
 
     /** Compute the base FmT() - for evaluating integrals */
-    protected def computeFmtFGamma(maxam:Int, T:Double, fmt:Array[Double](1){rail}) {
-        for(var m:Int=0; m<maxam; m++) { 
-            fmt(m) = IntegralsUtils.computeFGamma(m, T);
-        } // end for
-    }
-
-    /** Compute the base FmT() - for evaluating integrals */
     protected def computeFmt(maxam:Int, T:Double, fmt:Array[Double](1){rail}) {
         if (T > 30.0){
-            fmt(0) = Math.sqrt(Math.PI/T)*0.5;
+            val invT = 1/T;
+            fmt(0) = Math.sqrt(Math.PI*invT)*0.5;
            
-            // TODO: x10 parallel
-            for (var m:Int=1; m <= maxam; m++) {
-                fmt(m) = fmt(m-1) * (m-0.5) / T;
+            for ([m] in 1..maxam) {
+                fmt(m) = fmt(m-1) * (m-0.5) * invT;
             }
         } else {
             var denom : Double = maxam + 0.5;
@@ -798,7 +775,7 @@ public class TwoElectronIntegrals {
 
     /**
      * recursively form the columb repulsion term using HGP, stage one: form HRR 
-     * HRR (Horizontal Recurrance Relation)
+     * HRR (Horizontal Recurrence Relation)
      */
     protected def contrHrr(a:Point3d, aPower:Power, aCoeff:ArrayList[Double],
                            aExps:ArrayList[Double], aNorms:ArrayList[Double],
@@ -888,7 +865,7 @@ public class TwoElectronIntegrals {
     }
 
     /**
-     * VRR (Vertical Recurrance Relation) contribution
+     * VRR (Vertical Recurrence Relation) contribution
      */
     protected def contrVrr(a:Point3d, aPower:Power, aCoeff:ArrayList[Double],
                            aExps:ArrayList[Double], aNorms:ArrayList[Double],
@@ -937,7 +914,7 @@ public class TwoElectronIntegrals {
     private static val SQRT2PI = Math.sqrt(2.0) * Math.pow(Math.PI, 1.25);
 
     /**
-     * VRR (Vertical Recurrance Relation)
+     * VRR (Vertical Recurrence Relation)
      */
     protected def vrrWrapper(
                          a:Point3d, aNorm:Double, aPower:Power, aAlpha:Double,
@@ -949,7 +926,7 @@ public class TwoElectronIntegrals {
     }
 
     /**
-     * VRR (Vertical Recurrance Relation)
+     * VRR (Vertical Recurrence Relation)
      */
     protected def vrr(a:Point3d, aNorm:Double, aPower:Power, aAlpha:Double,
                       b:Point3d, bNorm:Double, bAlpha:Double,

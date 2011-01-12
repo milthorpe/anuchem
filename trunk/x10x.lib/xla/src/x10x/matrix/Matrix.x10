@@ -92,9 +92,10 @@ public class Matrix {
      * Make the current Matrix as Identity
      */
     public def makeIdentity() : void {
-        finish for([i,j] in mat) async
-           if (i == j) mat(i, j) = 1.0;
-           else        mat(i, j) = 0.0;
+        mat.fill(0.0);
+        for ([i] in 0..mat.region.max(0)) {
+            mat(i,i) = 1.0;
+        }
     }
 
     /**
@@ -142,39 +143,42 @@ public class Matrix {
      * Scale each element of this matrix by fac
      */
     public def mul(fac:Double) : Matrix {
-         val N   = getRowCount();
-         val M   = getColCount();
+        val N   = getRowCount();
+        val M   = getColCount();
 
-         val res = new Matrix(N, M);
-      
-         finish for([i,j] in res.mat) async
+        val res = new Matrix(N, M);
+
+        val mat = this.mat; // TODO this should not be required XTENLANG-1913
+        finish for([i,j] in res.mat) async
             res.mat(i, j) = mat(i, j) * fac;
 
-         return res;
+        return res;
     }
 
     /**
      * Add two matrices: this + X
      */
     public def add(x:Matrix) : Matrix {
-         val N   = getRowCount();
-         val M   = getColCount();
-         val res = new Matrix(N, M);
+        val N   = getRowCount();
+        val M   = getColCount();
+        val res = new Matrix(N, M);
 
-         finish for([i,j] in res.mat) async
+        val mat = this.mat; // TODO this should not be required XTENLANG-1913
+        finish for([i,j] in res.mat) async
             res.mat(i, j) = mat(i, j) + x.mat(i, j);
 
-         return res;
+        return res;
     }
 
     /**
      * this = this + X
      */
     public def addInPlace(x:Matrix)  {
-         val N   = getRowCount();
-         val M   = getColCount();
+        val N   = getRowCount();
+        val M   = getColCount();
 
-         finish for([i,j] in mat) async
+        val mat = this.mat; // TODO this should not be required XTENLANG-1913
+        finish for([i,j] in mat) async
             mat(i, j) = mat(i, j) + x.mat(i, j);
     }
 
@@ -182,46 +186,44 @@ public class Matrix {
      * Subtract two matrices: this - X
      */
     public def sub(x:Matrix) : Matrix {
-         val N   = getRowCount();
-         val M   = getColCount();
-         val res = new Matrix(N, M);
+        val N   = getRowCount();
+        val M   = getColCount();
+        val res = new Matrix(N, M);
 
-         finish for([i,j] in res.mat) async
+        val mat = this.mat; // TODO this should not be required XTENLANG-1913
+        finish for([i,j] in res.mat) async
             res.mat(i, j) = mat(i, j) - x.mat(i, j);
 
-         return res;
+        return res;
     }
 
     /**
      * Find transpose of this matrix
      */
     public def transpose() : Matrix {
-         val N   = getRowCount();
-         val M   = getColCount();
-         val res = new Matrix(M, N);
+        val N   = getRowCount();
+        val M   = getColCount();
+        val res = new Matrix(M, N);
 
-         finish for([i,j] in res.mat) async {
-             res.mat(i, j) = mat(j, i);
-         }
+        val mat = this.mat; // TODO this should not be required XTENLANG-1913
+        finish for([i,j] in res.mat) async {
+            res.mat(i, j) = mat(j, i);
+        }
  
-         return res;
+        return res;
     }
 
     /**
      * Find trace of this matrix.
      */
     public def trace() : Double {
-         val N = getRowCount();
-         val tr = new Array[Double](1);
-         
-         tr(0) = 0.0;
-         finish for([i,j] in mat) async {
-                 if (i==j) {
-                     atomic tr(0) += mat(i, i);
-                 }
-         }
-        
-         return tr(0);
+        var tr : Double = 0.0;
+
+        for ([i] in 0..mat.region.max(0)) {
+            tr += mat(i, i);
+        }
+
+        return tr;
     }
 
     /**
@@ -233,6 +235,7 @@ public class Matrix {
        val N = getRowCount();
 
        sum(0) = 0.0;
+        val mat = this.mat; // TODO this should not be required XTENLANG-1913
        finish for([i,j] in mat) async {
                 if (i!=j && j>i) {
                     atomic sum(0) += Math.abs(mat(i, j));

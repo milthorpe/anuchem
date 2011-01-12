@@ -30,7 +30,7 @@
     <property name="target-src" location="${target}/classes" />
     <property name="target-test" location="${target}/test-classes" />
     <property name="bin" location="${basedir}/bin" />
-    <property name="exe" value="pumjarasaayani.exe"/>
+    <property name="exe" value="pumjarasaayani"/>
     <property name="jar" value="pumjarasaayani.jar"/>
 
     <condition property="x10c.optimize" value="-O" else="">
@@ -85,11 +85,11 @@
 
     <target name="exe" depends="build-src">
         <mkdir dir="${bin}"/>
-        <copy file="${target}/classes/a.out" tofile="${bin}/pumjarasaayani.exe" />
+        <copy file="${target}/classes/a.out" tofile="${bin}/${exe}" />
 
         <exec executable="chmod" failonerror="true" dir="${bin}">
             <arg value="+x"/>
-            <arg value="pumjarasaayani.exe"/>
+            <arg value="${exe}"/>
         </exec>
     </target>
 

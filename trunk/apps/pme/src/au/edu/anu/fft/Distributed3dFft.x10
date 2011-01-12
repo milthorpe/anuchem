@@ -122,11 +122,11 @@ public class Distributed3dFft {
         val gridRegionWithoutZ = (mySource.region().eliminate(2)) as Region(2){rect};
         for ([i,j] in gridRegionWithoutZ) {
             // TODO need to copy into Array - can use raw()?
-            for ([k] in 0..dataSize-1) {
+            for ([k] in 0..(dataSize-1)) {
                 oneDSource(k) = source(i,j,k);
             }
             FFTW.fftwExecute(plan);
-            for ([k] in 0..dataSize-1) {
+            for ([k] in 0..(dataSize-1)) {
                 temp(i,j,k) = oneDTarget(k);
             }
         }
