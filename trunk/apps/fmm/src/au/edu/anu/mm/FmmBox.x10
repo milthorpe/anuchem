@@ -124,7 +124,6 @@ public class FmmBox {
      * well-separated from the parent.
      */
     public def createVListPeriodic(ws : Int) {
-        val levelDim = Math.pow2(this.level);
         val xOffset = this.x%2 == 1 ? -1 : 0;
         val yOffset = this.y%2 == 1 ? -1 : 0;
         val zOffset = this.z%2 == 1 ? -1 : 0;

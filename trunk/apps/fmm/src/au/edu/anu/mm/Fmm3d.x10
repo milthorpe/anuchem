@@ -117,6 +117,7 @@ public class Fmm3d {
      * Are boundary conditions periodic?
      */
     val periodic : boolean;
+
     /** 
      * A cache of wigner matrices for translating between box centres of children to parent
      * Dimensions are:
@@ -213,7 +214,7 @@ public class Fmm3d {
         this.lowestLevelBoxes = boxes(numLevels);
         this.multipoleTranslations = precomputeTranslations(numLevels, topLevel, numTerms, size);
         this.multipoleTransforms = precomputeTransforms(numLevels, topLevel, numTerms, size);
-        this.locallyEssentialTrees = createLocallyEssentialTrees(numLevels, topLevel, boxes);
+        this.locallyEssentialTrees = createLocallyEssentialTrees(numLevels, topLevel, boxes, periodic);
 
     	this.wignerB = precomputeWignerB(numTerms);
     	this.wignerA = precomputeWignerA(numTerms);
@@ -361,7 +362,9 @@ public class Fmm3d {
         val complexK = this.complexK; // TODO shouldn't be necessary XTENLANG-1913
         val wignerB = this.wignerB; // TODO shouldn't be necessary XTENLANG-1913
         val wignerC = this.wignerC; // TODO shouldn't be necessary XTENLANG-1913
-        for ([thisLevel] in topLevel..numLevels) {
+        val startingLevel = periodic ? topLevel+1 : topLevel;
+        for ([thisLevel] in startingLevel..numLevels) {
+            //Console.OUT.println("transform level " + thisLevel);
             val thisLevelBoxes = boxes(thisLevel);
             val sideLength = size / Math.pow2(thisLevel);
             finish ateach (p1 in Dist.makeUnique()) {
@@ -369,11 +372,11 @@ public class Fmm3d {
                     val myLET = locallyEssentialTrees(p1);
 
                     val thisLevelMultipoleCopies = myLET.multipoleCopies(thisLevel);
-                    if (thisLevel == topLevel) {
+                    if (thisLevel == startingLevel) {
                         // must fetch top level multipoles synchronously before starting
                         prefetchMultipoles(thisLevel);
                     }
-
+    
                     // can fetch next level multipoles asynchronously while computing this level
                     val lowerLevel = thisLevel+1;
                     if (lowerLevel <= numLevels) {
@@ -381,17 +384,16 @@ public class Fmm3d {
                     }
 
                     for ([x1,y1,z1] in thisLevelBoxes.dist(here)) async {
-                        Console.OUT.println("starting " + x1 + "," + y1 + "," + z1);
+                        //Console.OUT.println("starting " + x1 + "," + y1 + "," + z1);
                         val box1 = thisLevelBoxes(x1,y1,z1);
                         // these two objects are to provide temporary space for the B operator which does not have to be reallocated and GCed for each call
-                        // ideally this would be replaced with a stack allocated array (TODO)
-                        val scratch = new MultipoleExpansion(numTerms);    
-                        val scratch_array = new Array[Complex](-numTerms..numTerms);
                         if (box1 != null) {
+                            // ideally this would be replaced with a stack allocated array (TODO)
+                            val scratch = new MultipoleExpansion(numTerms);    
+                            val scratch_array = new Array[Complex](-numTerms..numTerms);
                             val vList = box1.getVList();
                             for (p in vList) {
                                 val boxIndex = vList(p);
-                                Console.OUT.println("with " + boxIndex);
                                 // force on the multipole value
                                 val box2MultipoleExp = thisLevelMultipoleCopies(boxIndex);
                                 if (box2MultipoleExp != null) {
@@ -426,10 +428,8 @@ public class Fmm3d {
                 				    /* Old Operation C */
 	                                val shift = multipoleTranslations(Point.make([here.id, thisLevel, box1.x%2, box1.y%2, box1.z%2]));
             	                    box1.localExp.translateAndAddLocal(shift, box1ParentExp);
-                                    //Console.OUT.println("got parent for " + x1 + "," + y1 + "," + z1);
                 			    }
                             }
-                            //Console.OUT.println("completed " + x1 + "," + y1 + "," + z1);
                         }
                     }
                 }
@@ -456,7 +456,7 @@ public class Fmm3d {
         val thisLevelBoxes = boxes(level);
 
         val vListPlaces = new HashMap[Int,ArrayList[Point(3)]](26); // a place may have up to 26 immediate neighbours
-        
+
         // separate the vList into partial lists stored at each nearby place
         for (p in combinedVList) {
             val boxIndex = combinedVList(p);
@@ -574,8 +574,8 @@ public class Fmm3d {
                 for ([x1,y1,z1] in lowestLevelBoxes.dist(here)) {
                     val box1 = lowestLevelBoxes(x1,y1,z1) as FmmLeafBox;
                     if (box1 != null) {
-                        // direct calculation with all atoms in same box
                         for ([atomIndex1] in 0..(box1.atoms.size()-1)) {
+                            // direct calculation with all atoms in same box
                             val atom1 = box1.atoms(atomIndex1);
                             for ([sameBoxAtomIndex] in 0..(atomIndex1-1)) {
                                 val sameBoxAtom = box1.atoms(sameBoxAtomIndex);
@@ -591,9 +591,9 @@ public class Fmm3d {
                             val boxAtoms = packedAtoms(boxIndex2);
                             if (boxAtoms != null) {
                                 for ([otherBoxAtomIndex] in 0..(boxAtoms.size-1)) {
+                                    val atom2Packed = boxAtoms(otherBoxAtomIndex);
                                     for ([atomIndex1] in 0..(box1.atoms.size()-1)) {
                                         val atom1 = box1.atoms(atomIndex1);
-                                        val atom2Packed = boxAtoms(otherBoxAtomIndex);
                                         thisPlaceEnergy += atom1.charge * atom2Packed.charge / atom1.centre.distance(atom2Packed.centre);
                                     }
                                 }
@@ -744,8 +744,12 @@ public class Fmm3d {
         for ([thisLevel] in topLevel..numLevels) {
             val levelDim = Math.pow2(thisLevel) as Int;
             val thisLevelDist = MortonDist.make(0..(levelDim-1) * 0..(levelDim-1) * 0..(levelDim-1));
-            boxArray(thisLevel) = DistArray.make[FmmBox](thisLevelDist);
-            Console.OUT.println("level " + thisLevel + " dist: " + thisLevelDist);
+            if (periodic) {
+                boxArray(thisLevel) = DistArray.make[FmmBox](new PeriodicDist(thisLevelDist));
+            } else {
+                boxArray(thisLevel) = DistArray.make[FmmBox](thisLevelDist);
+            }
+            Console.OUT.println("level " + thisLevel + " dist: " + boxArray(thisLevel).dist);
         }
 
         for ([thisLevel] in topLevel..(numLevels-1)) {
@@ -785,7 +789,7 @@ public class Fmm3d {
      * later used to overlap remote retrieval of multipole expansion and
      * particle data with other computation.
      */
-    private def createLocallyEssentialTrees(numLevels : Int, topLevel : Int, boxes : Array[DistArray[FmmBox](3)](1){rail}) : DistArray[LocallyEssentialTree]{rank==1} {
+    private def createLocallyEssentialTrees(numLevels : Int, topLevel : Int, boxes : Array[DistArray[FmmBox](3)](1){rail}, periodic : Boolean) : DistArray[LocallyEssentialTree]{rank==1} {
         val locallyEssentialTrees = DistArray.make[LocallyEssentialTree](Dist.makeUnique());
         finish ateach ([p1] in locallyEssentialTrees) {
             val lowestLevelBoxes = boxes(numLevels);
@@ -817,35 +821,36 @@ public class Fmm3d {
             val vListMin = new Array[Array[Int](1){rail}](numLevels+1);
             val vListMax = new Array[Array[Int](1){rail}](numLevels+1);
             for ([thisLevel] in topLevel..numLevels) {
-                val vMin = new Array[Int](3, Int.MAX_VALUE);
-                val vMax = new Array[Int](3, Int.MIN_VALUE);
-                //Console.OUT.println("create combined V-list for level " + thisLevel + " at " + here);
-                val combinedVSet = new HashSet[Point(3)]();
-                val thisLevelBoxes = boxes(thisLevel);
-                for ([x,y,z] in thisLevelBoxes.dist(here)) {
-                    val box1 = thisLevelBoxes(x,y,z);
-                    if (box1 != null) {
-                        val vList = box1.getVList();
-                        if (vList != null) {
-                            for (p in vList) {
-                                val boxIndex2 = vList(p);
-                                if (combinedVSet.add(boxIndex2)) {
-                                    for ([i] in 0..2) {
-                                        vMin(i) = Math.min(vMin(i), boxIndex2(i));
-                                        vMax(i) = Math.max(vMax(i), boxIndex2(i));        
+                if (!(periodic && thisLevel == topLevel)) {
+                    val vMin = new Array[Int](3, Int.MAX_VALUE);
+                    val vMax = new Array[Int](3, Int.MIN_VALUE);
+                    val combinedVSet = new HashSet[Point(3)]();
+                    val thisLevelBoxes = boxes(thisLevel);
+                    for ([x,y,z] in thisLevelBoxes.dist(here)) {
+                        val box1 = thisLevelBoxes(x,y,z);
+                        if (box1 != null) {
+                            val vList = box1.getVList();
+                            if (vList != null) {
+                                for (p in vList) {
+                                    val boxIndex2 = vList(p);
+                                    if (combinedVSet.add(boxIndex2)) {
+                                        for ([i] in 0..2) {
+                                            vMin(i) = Math.min(vMin(i), boxIndex2(i));
+                                            vMax(i) = Math.max(vMax(i), boxIndex2(i));        
+                                        }
                                     }
                                 }
                             }
                         }
                     }
-                }
-                //Console.OUT.println("done " + combinedVSet.size());
-                vListMin(thisLevel) = vMin;
-                vListMax(thisLevel) = vMax;
-                combinedVList(thisLevel) = new Array[Point(3)](combinedVSet.size());
-                var i : Int = 0;
-                for (boxIndex in combinedVSet) {
-                    combinedVList(thisLevel)(i++) = boxIndex;
+                    //Console.OUT.println("done " + combinedVSet.size());
+                    vListMin(thisLevel) = vMin;
+                    vListMax(thisLevel) = vMax;
+                    combinedVList(thisLevel) = new Array[Point(3)](combinedVSet.size());
+                    var i : Int = 0;
+                    for (boxIndex in combinedVSet) {
+                        combinedVList(thisLevel)(i++) = boxIndex;
+                    }
                 }
             }
             locallyEssentialTrees(p1) = new LocallyEssentialTree(combinedUList,
