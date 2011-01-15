@@ -330,7 +330,7 @@ public class PeriodicFmm3d extends Fmm3d {
 
     static struct VectorSumReducer implements Reducible[Vector3d] {
         public def zero() = Vector3d.NULL;
-        public def apply(a:Vector3d, b:Vector3d) = (a + b);
+        public operator this(a:Vector3d, b:Vector3d) = (a + b);
     }
 
 }

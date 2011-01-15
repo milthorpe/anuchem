@@ -55,7 +55,7 @@ public class Matrix {
     public def getRowCount() = mat.region.max(0)+1;
     public def getColCount() = mat.region.max(1)+1;
 
-    public @Inline def apply(i0:int, i1:int) : Double {
+    public @Inline operator this(i0:int, i1:int) : Double {
         return mat(i0,i1);
     }
 

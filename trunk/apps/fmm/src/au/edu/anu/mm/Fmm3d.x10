@@ -381,7 +381,7 @@ public class Fmm3d {
                     }
 
                     for ([x1,y1,z1] in thisLevelBoxes.dist(here)) async {
-                        //Console.OUT.println("starting " + x1 + "," + y1 + "," + z1);
+                        Console.OUT.println("starting " + x1 + "," + y1 + "," + z1);
                         val box1 = thisLevelBoxes(x1,y1,z1);
                         // these two objects are to provide temporary space for the B operator which does not have to be reallocated and GCed for each call
                         // ideally this would be replaced with a stack allocated array (TODO)
@@ -391,6 +391,7 @@ public class Fmm3d {
                             val vList = box1.getVList();
                             for (p in vList) {
                                 val boxIndex = vList(p);
+                                Console.OUT.println("with " + boxIndex);
                                 // force on the multipole value
                                 val box2MultipoleExp = thisLevelMultipoleCopies(boxIndex);
                                 if (box2MultipoleExp != null) {
@@ -438,10 +439,10 @@ public class Fmm3d {
     }
 
     public static def getChildBoxCentre(shift : Point, sideLength : Double) { 
-        return Point3d((shift.apply(1) - 0.5) * sideLength, (shift.apply(2) - 0.5) * sideLength, (shift.apply(3) - 0.5) * sideLength);
+        return Point3d((shift(1) - 0.5) * sideLength, (shift(2) - 0.5) * sideLength, (shift(3) - 0.5) * sideLength);
     }
     public static def getChildBoxCentreWithPlace(id : int, shift : Point) { 
-        return Point.make([here.id, shift.apply(1)*2 - 1, shift.apply(2)*2 - 1, shift.apply(3)*2 - 1]);
+        return Point.make([here.id, shift(1)*2 - 1, shift(2)*2 - 1, shift(3)*2 - 1]);
     }
 
     /**
@@ -641,7 +642,7 @@ public class Fmm3d {
 
     static struct SumReducer implements Reducible[Double] {
         public def zero() = 0.0;
-        public def apply(a:Double, b:Double) = (a + b);
+        public operator this(a:Double, b:Double) = (a + b);
     }
 
     /**
