@@ -287,10 +287,10 @@ public class Fmm3d {
             for (boxIndex in lowestLevelBoxes.dist(here)) {
                 val leafBox = lowestLevelBoxes(boxIndex) as FmmLeafBox;
                 if (leafBox != null) {
-                    val boxLocation = leafBox.getCentre(size);
+                    val boxCentre = leafBox.getCentre(size);
                     for ([i] in 0..(leafBox.atoms.size()-1)) {
                         val atom = leafBox.atoms(i);
-                        val atomLocation = leafBox.getCentre(size).vector(atom.centre);
+                        val atomLocation = boxCentre.vector(atom.centre);
                         val atomExpansion = MultipoleExpansion.getOlm(atom.charge, atomLocation, numTerms);
                         leafBox.multipoleExp.add(atomExpansion);
                     }
@@ -621,14 +621,15 @@ public class Fmm3d {
         val size = this.size; // TODO shouldn't be necessary XTENLANG-1913
         val lowestLevelBoxes = this.lowestLevelBoxes; // TODO shouldn't be necessary XTENLANG-1913
         val farFieldEnergy = finish(SumReducer()) {
-            ateach (boxIndex1 in lowestLevelBoxes) {
-                val box1 = lowestLevelBoxes(boxIndex1) as FmmLeafBox;
-                if (box1 != null) {
+            ateach (boxIndex in lowestLevelBoxes) {
+                val box = lowestLevelBoxes(boxIndex) as FmmLeafBox;
+                if (box != null) {
+                    val boxCentre = box.getCentre(size);
                     var thisBoxEnergy : Double = 0.0;
-                    for ([atomIndex1] in 0..(box1.atoms.size()-1)) {
-                        val atom1 = box1.atoms(atomIndex1);
-                        val box1Centre = atom1.centre.vector(box1.getCentre(size));
-                        val farFieldEnergy = box1.localExp.getPotential(atom1.charge, box1Centre);
+                    for ([atomIndex] in 0..(box.atoms.size()-1)) {
+                        val atom = box.atoms(atomIndex);
+                        val locationWithinBox = atom.centre.vector(boxCentre);
+                        val farFieldEnergy = box.localExp.getPotential(atom.charge, locationWithinBox);
                         thisBoxEnergy += farFieldEnergy;
                     }
                     offer thisBoxEnergy;
