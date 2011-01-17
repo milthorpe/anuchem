@@ -59,7 +59,7 @@ public class Matrix {
         return mat(i0,i1);
     }
 
-    public @Inline def set(v:Double, i0:int, i1:int) : Double {
+    public @Inline operator this(i0:int, i1:int)=(v:Double) : Double {
         mat(i0,i1) = v;
         return v;
     }
