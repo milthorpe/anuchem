@@ -267,25 +267,31 @@ public class PeriodicFmm3d extends Fmm3d {
                     val box1 = lowestLevelBoxes(x1,y1,z1) as FmmLeafBox;
                     if (box1 != null) {
                         for ([atomIndex1] in 0..(box1.atoms.size()-1)) {
-                            val atom1 = box1.atoms(atomIndex1);
-
                             // direct calculation with all atoms in same box
+                            val atom1 = box1.atoms(atomIndex1);
                             for ([sameBoxAtomIndex] in 0..(atomIndex1-1)) {
                                 val sameBoxAtom = box1.atoms(sameBoxAtomIndex);
                                 val pairEnergy = atom1.charge * sameBoxAtom.charge / atom1.centre.distance(sameBoxAtom.centre);
                                 thisPlaceEnergy += pairEnergy;
                             }
+                        }
 
-                            // direct calculation with all atoms in non-well-separated boxes
-                            val uList = box1.getUList();
-                            for (p in uList) {
-                                val boxIndex2 = uList(p);
-                                val boxAtoms = packedAtoms(boxIndex2);
-                                if (boxAtoms != null) {
-                                    val translation = getTranslation(boxIndex2(0), boxIndex2(1), boxIndex2(2));
-                                    for ([otherBoxAtomIndex] in 0..(boxAtoms.size-1)) {
-                                        val atom2Packed = boxAtoms(otherBoxAtomIndex);
-                                        thisPlaceEnergy += atom1.charge * atom2Packed.charge / atom1.centre.distance(atom2Packed.centre + translation);
+                        // direct calculation with all atoms in non-well-separated boxes
+                        val uList = box1.getUList();
+                        for (p in uList) {
+                            val boxIndex2 = uList(p);
+                            val boxAtoms = packedAtoms(boxIndex2);
+                            if (boxAtoms != null) {
+                                val translation = getTranslation(boxIndex2(0), boxIndex2(1), boxIndex2(2));
+                                for ([otherBoxAtomIndex] in 0..(boxAtoms.size-1)) {
+                                    val atom2Packed = boxAtoms(otherBoxAtomIndex);
+                                    val translatedCentre = atom2Packed.centre + translation;
+                                    for ([atomIndex1] in 0..(box1.atoms.size()-1)) {
+                                        val atom1 = box1.atoms(atomIndex1);
+                                        val distance = atom1.centre.distance(translatedCentre);
+                                        if (distance != 0) { // don't include dipole-balancing charges at same point
+                                            thisPlaceEnergy += atom1.charge * atom2Packed.charge / atom1.centre.distance(translatedCentre);
+                                        }
                                     }
                                 }
                             }
