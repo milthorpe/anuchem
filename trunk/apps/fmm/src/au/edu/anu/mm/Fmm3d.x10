@@ -283,7 +283,7 @@ public class Fmm3d {
         val size = this.size; // TODO shouldn't be necessary XTENLANG-1913
         val numTerms = this.numTerms; // TODO shouldn't be necessary XTENLANG-1913
         val lowestLevelBoxes = this.lowestLevelBoxes; // TODO shouldn't be necessary XTENLANG-1913
-        finish ateach (p1 in Dist.makeUnique()) {
+        finish for (p1 in lowestLevelBoxes.dist.places()) async at(p1) {
             for (boxIndex in lowestLevelBoxes.dist(here)) {
                 val leafBox = lowestLevelBoxes(boxIndex) as FmmLeafBox;
                 if (leafBox != null) {
@@ -315,7 +315,7 @@ public class Fmm3d {
             val complexK = this.complexK; // TODO shouldn't be necessary XTENLANG-1913
             val wignerA = this.wignerA; // TODO shouldn't be necessary XTENLANG-1913
             val sideLength = size / Math.pow2(thisLevel);
-            finish ateach (p1 in Dist.makeUnique()) {
+            finish for (p1 in thisLevelBoxes.dist.places()) async at(p1) {
                 for (boxIndex in thisLevelBoxes.dist(here)) {
                     val child = thisLevelBoxes(boxIndex);
                     if (child != null) {
@@ -621,19 +621,21 @@ public class Fmm3d {
         val size = this.size; // TODO shouldn't be necessary XTENLANG-1913
         val lowestLevelBoxes = this.lowestLevelBoxes; // TODO shouldn't be necessary XTENLANG-1913
         val farFieldEnergy = finish(SumReducer()) {
-            ateach (boxIndex in lowestLevelBoxes) {
-                val box = lowestLevelBoxes(boxIndex) as FmmLeafBox;
-                if (box != null) {
-                    val boxCentre = box.getCentre(size);
-                    var thisBoxEnergy : Double = 0.0;
-                    for ([atomIndex] in 0..(box.atoms.size()-1)) {
-                        val atom = box.atoms(atomIndex);
-                        val locationWithinBox = atom.centre.vector(boxCentre);
-                        val farFieldEnergy = box.localExp.getPotential(atom.charge, locationWithinBox);
-                        thisBoxEnergy += farFieldEnergy;
+            for (p1 in lowestLevelBoxes.dist.places()) async at(p1) {
+                var thisPlaceEnergy : Double = 0.0;
+                for (boxIndex in lowestLevelBoxes.dist(here)) {
+                    val box = lowestLevelBoxes(boxIndex) as FmmLeafBox;
+                    if (box != null) {
+                        val boxCentre = box.getCentre(size);
+                        for ([atomIndex] in 0..(box.atoms.size()-1)) {
+                            val atom = box.atoms(atomIndex);
+                            val locationWithinBox = atom.centre.vector(boxCentre);
+                            val farFieldEnergy = box.localExp.getPotential(atom.charge, locationWithinBox);
+                            thisPlaceEnergy += farFieldEnergy;
+                        }
                     }
-                    offer thisBoxEnergy;
                 }
+                offer thisPlaceEnergy;
             }
         };
         timer.stop(TIMER_INDEX_FARFIELD);
