@@ -6,7 +6,7 @@
  *  You may obtain a copy of the License at
  *      http://www.opensource.org/licenses/eclipse-1.0.php
  *
- * (C) Copyright Josh Milthorpe 2010.
+ * (C) Copyright Josh Milthorpe 2010-2011.
  */
 package au.edu.anu.fft;
 
@@ -155,12 +155,12 @@ public class Distributed3dFft {
                 val startZ = targetDist.region.min(0);
                 val endZ = targetDist.region.max(0);
 
-                val transferRegion : Region(3) = (startX..endX) * (startY..endY) * (startZ..endZ);
+                val transferRegion = (startX..endX) * (startY..endY) * (startZ..endZ);
                 if (transferRegion.size() > 0) {
                     val elementsToTransfer = new Array[Complex](transferRegion.size());
                     var i : Int = 0;
-                    for (p in transferRegion) {
-                        elementsToTransfer(i++) = temp(p);
+                    for ([x,y,z] in transferRegion) {
+                        elementsToTransfer(i++) = temp(x,y,z);
                     }
                     async at (p2) {
                         var i : Int = 0;
