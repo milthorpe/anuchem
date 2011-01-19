@@ -157,7 +157,7 @@ public class PME {
         val numSubCells = Math.ceil(edgeLengths(0) / (cutoff/2.0)) as Int;
         val subCellRegion = 0..(numSubCells-1) * 0..(numSubCells-1) * 0..(numSubCells-1);
         val subCells = DistArray.make[Array[MMAtom](1){rail}](new PeriodicDist(Dist.makeBlockBlock(subCellRegion, 0, 1)));
-        Console.OUT.println("subCells dist = " + subCells.dist);
+        //Console.OUT.println("subCells dist = " + subCells.dist);
         this.subCells = subCells;
         this.numSubCells = numSubCells;
 
@@ -173,7 +173,7 @@ public class PME {
         }
         this.packedAtomsCache = packedAtomsCache;
 
-        Console.OUT.println("gridDist = " + gridDist);
+        //Console.OUT.println("gridDist = " + gridDist);
 
         Q = DistArray.make[Complex](gridDist);
         BdotC = DistArray.make[Double](gridDist);
@@ -239,11 +239,11 @@ public class PME {
         val selfEnergy = getSelfEnergy();
         val directEnergy = getDirectEnergy();
 
-        Console.OUT.println("directEnergy = " + directEnergy);
-        Console.OUT.println("selfEnergy = " + selfEnergy);
+        //Console.OUT.println("directEnergy = " + directEnergy);
+        //Console.OUT.println("selfEnergy = " + selfEnergy);
         //Console.OUT.println("correctionEnergy = " + correctionEnergy);
         val correctionEnergy = 0.0;
-        Console.OUT.println("reciprocalEnergy = " + reciprocalEnergy);
+        //Console.OUT.println("reciprocalEnergy = " + reciprocalEnergy);
         val totalEnergy = directEnergy + reciprocalEnergy + (correctionEnergy + selfEnergy);
 
         timer.stop(TIMER_INDEX_TOTAL);

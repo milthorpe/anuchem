@@ -752,7 +752,7 @@ public class Fmm3d {
             } else {
                 boxArray(thisLevel) = DistArray.make[FmmBox](thisLevelDist);
             }
-            Console.OUT.println("level " + thisLevel + " dist: " + boxArray(thisLevel).dist);
+            //Console.OUT.println("level " + thisLevel + " dist: " + boxArray(thisLevel).dist);
         }
 
         for ([thisLevel] in topLevel..(numLevels-1)) {

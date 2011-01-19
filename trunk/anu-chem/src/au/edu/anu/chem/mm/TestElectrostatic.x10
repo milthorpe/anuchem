@@ -46,7 +46,7 @@ public class TestElectrostatic {
      * a cbrt(N)-SIZE grid.
      */
     public def generateAtoms(numAtoms : Int) : DistArray[Array[MMAtom](1){rail}](1) {
-        Console.OUT.println("size of cluster =  " + sizeOfCentralCluster());
+        //Console.OUT.println("size of cluster =  " + sizeOfCentralCluster());
         val tempAtoms = DistArray.make[ArrayList[MMAtom]](Dist.makeUnique(), (Point) => new ArrayList[MMAtom]());
         val gridSize = (Math.ceil(Math.cbrt(numAtoms)) as Int);
         // assign atoms to a central cluster of size "sizeOfCentralCluster()"

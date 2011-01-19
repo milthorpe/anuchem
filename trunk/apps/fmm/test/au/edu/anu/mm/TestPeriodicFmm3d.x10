@@ -70,12 +70,13 @@ public class TestPeriodicFmm3d extends TestElectrostatic {
         logTime("Far field", Fmm3d.TIMER_INDEX_FARFIELD,  fmm3d.timer);
         logTime("Total",     Fmm3d.TIMER_INDEX_TOTAL,     fmm3d.timer);
         Console.OUT.printf("Tree construction: %g seconds\n", (fmm3d.timer.total(Fmm3d.TIMER_INDEX_TREE) as Double) / 1e9);
-
+/*
         val direct = new ElectrostaticDirectMethod(atoms);
         val directEnergy = direct.getEnergy();
         logTime("cf. Direct calculation", ElectrostaticDirectMethod.TIMER_INDEX_TOTAL, direct.timer);
         val error = directEnergy - energy;
         Console.OUT.println("direct = " + directEnergy + " error = " + error + " relative error = " + Math.abs(error) / Math.abs(energy));
+*/
     }
 }
 

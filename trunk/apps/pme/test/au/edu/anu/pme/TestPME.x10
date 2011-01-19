@@ -63,9 +63,11 @@ public class TestPME extends TestElectrostatic {
         val gridSizes = new Array[Int](3, g);
 
         Console.OUT.println("Testing PME for " + numAtoms + " particles."
-            + "\nBox edges: " + edges(0) + "," + edges(1) + "," + edges(2)
+            //+ "\nBox edges: " + edges(0) + "," + edges(1) + "," + edges(2)
             + "\nGrid size: " + gridSize
-            + "\nspline order: " + splineOrder + " Beta: " + ewaldCoefficient + " Cutoff: " + cutoff);
+            + " spline order: " + splineOrder 
+            + " Beta: " + ewaldCoefficient 
+            + " Cutoff: " + cutoff);
 
         val atoms = generateAtoms(numAtoms);
         val pme = new PME(edges, gridSizes, atoms, splineOrder, ewaldCoefficient, cutoff);
