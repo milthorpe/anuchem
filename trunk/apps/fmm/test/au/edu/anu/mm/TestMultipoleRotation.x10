@@ -24,8 +24,6 @@ public class TestMultipoleRotation {
     static val R = new Random(RANDOM_SEED);
 
     public static def main(args : Array[String](1)) {
-	    Factorial.calcFactorial(30);
-
 	    val args_doub = new Array[Double](0..7, 0);
 	    if (args.size() == 2) { 
 		    // Rotate multipole and back
@@ -98,7 +96,7 @@ public class TestMultipoleRotation {
      * @param 6 doubles representing the vector to construct multipole at and destination vector
      * @return whether the resultant multipoles were equal
      */
-    public def rotationTest(args : Array[Double](1)) : boolean { 
+    public def rotationTest(args : Array[Double](1)) { 
 	    val p = 5;
 	    val oldCenter = Point3d(args(0), args(1), args(2)); val newCenter = Point3d(args(3), args(4), args(5));
 	    val translationTuple = (newCenter - oldCenter) as Tuple3d;

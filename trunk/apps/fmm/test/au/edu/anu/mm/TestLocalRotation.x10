@@ -24,8 +24,6 @@ public class TestLocalRotation {
     static val R = new Random(RANDOM_SEED);
 
     public static def main(args : Array[String](1)) {
-	    Factorial.calcFactorial(30);
-
 	    val args_doub = new Array[Double](0..7, 0);
 	    if (args.size() == 6) { 
 		    // Test operation B

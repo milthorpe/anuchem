@@ -19,28 +19,31 @@ import harness.x10Test;
  */
 class TestMortonDist extends x10Test {
     public def run(): boolean {
-        var boxRegion : Region(3) = (0..7) * (0..7) * (0..7);
-        val boxDistribution = MortonDist.make(boxRegion);
-        Console.OUT.println("boxDistribution: " + boxDistribution);
+        val smallDist = MortonDist.make(0..3 * 0..3 * 0..3);
+        Console.OUT.println("smallDist: " + smallDist);
 
         val p = Point.make(0, 2, 1);
-        val pm = MortonDist.getMortonIndex(p, 64);
+        val pm = smallDist.getMortonIndex(p);
         Console.OUT.println(pm.toBinaryString());
-        Console.OUT.println(MortonDist.getPoint(pm, 64));
+        Console.OUT.println(smallDist.getPoint(pm));
 
-        Console.OUT.println(boxDistribution(p));
+        Console.OUT.println(smallDist(p));
 
         val q = Point.make(1, 1, 0);
-        val qm = MortonDist.getMortonIndex(q, 64);
+        val qm = smallDist.getMortonIndex(q);
         Console.OUT.println(qm.toBinaryString());
-        Console.OUT.println(MortonDist.getPoint(qm, 64));
-        Console.OUT.println(boxDistribution(q));
+        Console.OUT.println(smallDist.getPoint(qm));
+        Console.OUT.println(smallDist(q));
 
+        val mediumDist = MortonDist.make(0..7 * 0..7 * 0..7);
         val r = Point.make(5, 3, 7);
-        val rm = MortonDist.getMortonIndex(r, 512);
+        val rm = mediumDist.getMortonIndex(r);
         Console.OUT.println(rm.toBinaryString());
-        Console.OUT.println(MortonDist.getPoint(rm, 512));
-        Console.OUT.println(boxDistribution(r));
+        Console.OUT.println(mediumDist.getPoint(rm));
+        Console.OUT.println(mediumDist(r));
+
+        val bigDist = MortonDist.make(0..31 * 0..31 * 0..31);
+        Console.OUT.println(bigDist(0,1,4));
 
         return true;
     }
