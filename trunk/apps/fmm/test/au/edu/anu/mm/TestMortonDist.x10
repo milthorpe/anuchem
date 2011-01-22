@@ -43,7 +43,26 @@ class TestMortonDist extends x10Test {
         Console.OUT.println(mediumDist(r));
 
         val bigDist = MortonDist.make(0..31 * 0..31 * 0..31);
-        Console.OUT.println(bigDist(0,1,4));
+        val s = Point.make(31, 30, 29);
+        val sm = bigDist.getMortonIndex(s);
+        Console.OUT.println(sm.toBinaryString());
+        Console.OUT.println(bigDist.getPoint(sm));
+        Console.OUT.println(bigDist(s));
+
+        for (pt in bigDist | here) {
+            if (!(pt.equals(bigDist.getPoint(bigDist.getMortonIndex(pt))))) {
+                Console.OUT.println(pt + " => " + bigDist.getMortonIndex(pt) + " => " + bigDist.getPoint(bigDist.getMortonIndex(pt)));
+            }
+        }
+
+        val hugeDist = MortonDist.make(0..63 * 0..63 * 0..63);
+        val t = Point.make(61, 48, 63);
+        val tm = hugeDist.getMortonIndex(t);
+        Console.OUT.println(tm.toBinaryString());
+        Console.OUT.println(hugeDist.getPoint(tm));
+        Console.OUT.println(hugeDist(t));
+
+        chk(hugeDist.getPoint(tm).equals(t));
 
         return true;
     }

@@ -56,7 +56,7 @@ public final class MortonDist extends Dist(3) {
         public def boundingBox(): Region(rank) {throw new UnsupportedOperationException("boundingBox()");}
         protected  def computeBoundingBox(): Region(rank) {throw new UnsupportedOperationException("computeBoundingBox()");}
         public def min():(Int)=>Int = (i:Int)=> 0;
-        public def max():(Int)=>Int = (i:Int)=> MortonDist.this.dimDigits;
+        public def max():(Int)=>Int = (i:Int)=> Math.pow2(MortonDist.this.dimDigits);
 
         public def contains(that: Region(rank)): boolean {
             if (that instanceof MortonSubregion) {
@@ -131,7 +131,7 @@ public final class MortonDist extends Dist(3) {
 
     def this(r:Region, pg:PlaceGroup) {
         super(r);
-        dimDigits = Math.cbrt(r.size()) as Int;
+        dimDigits = Math.log2(Math.cbrt(r.size()) as Int) as Int;
         this.pg = pg;
     }
 
@@ -186,6 +186,7 @@ public final class MortonDist extends Dist(3) {
         //Console.OUT.println("getMortonIndex for " + p + " dimDigits = " + dimDigits);
         var index : Int = 0;
         var digitMask : Int = Math.pow2(dimDigits-1);
+        //Console.OUT.println("digitMask = " + digitMask.toBinaryString());
         for (var digit : Int = dimDigits; digit > 0; digit--) {
             for (var dim : Int = 0; dim < 3; dim++) {
                 val thisDim = digitMask & p(dim);
@@ -202,11 +203,10 @@ public final class MortonDist extends Dist(3) {
      * @param index the Morton index into the 3D array
      */
     public def getPoint(index:Int) : Point(3) {
-        val digitsPerSide = Math.log2(Math.cbrt(region.size()) as Int);
-        //Console.OUT.println("getPoint for " + index + " region.size() = " + region.size() + " digitsPerSide = " + digitsPerSide);
+        //Console.OUT.println("getPoint for " + index + " region.size() = " + region.size() + " dimDigits = " + dimDigits);
         val p = new Array[Int](3);
         var digitMask : Int = region.size() / 2; 
-        for (var digit : Int = digitsPerSide; digit > 0; digit--) {
+        for (var digit : Int = dimDigits; digit > 0; digit--) {
             for (var dim : Int = 0; dim < 3; dim++) {
                 val thisDim = digitMask & index;
                 p(dim) = p(dim) | (thisDim >> (digit*2 -dim));
