@@ -15,7 +15,7 @@
     <property name="perftoolsHome" location="/scratch/perftools"/>
     <property name="heapprofile" value="false" />
 
-    <property name="mainClass" value="src/au/anu/edu/qm/PumjaRasaayani.x10" />
+    <property name="testclass" value="src/au/anu/edu/qm/PumjaRasaayani.x10" />
 
     <property name="gsl.include" location="/scratch/gsl/include" />
     <property name="gsl.lib" location="/scratch/gsl/lib" />
@@ -73,7 +73,7 @@
     <target name="dist-java" depends="jar">
     </target>
 
-    <target name="jar" depends="build-src-java">
+    <target name="jar" depends="exe-java">
         <mkdir dir="${bin}"/>
         <jar jarfile="${bin}/${jar}">
             <manifest>
@@ -93,7 +93,7 @@
         </exec>
     </target>
 
-    <target name="build-src-java" depends="check-src" unless="src.uptodate">
+    <target name="exe-java" depends="check-src" unless="src.uptodate">
         <echo message="Building source tree"/>
 
         <fileset id="changed.src.files" dir="${basedir}/src" includes="**/*.x10">
@@ -109,7 +109,7 @@
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/src">
             <arg value="-c"/>
-            <arg value="'x10c' ${x10c.nochecks} ${x10c.optimize} -sourcepath .:${x10x.xlalib}:${anuchem.src} -d ${target-src} ${src.list}"/>
+            <arg value="'x10c' ${x10c.nochecks} ${x10c.optimize} -sourcepath .:${x10x.xlalib}:${anuchem.src} -d ${target-src} '${basedir}/${testclass}'"/>
         </exec>
     </target>
 
@@ -125,11 +125,11 @@
         <pathconvert property="src.list" refid="changed.src.files" dirsep="/" pathsep=" ">
             <map from="${basedir}${file.separator}src${file.separator}" to=""/>
         </pathconvert>
-        <echo message="x10c++ -x10rt ${x10rt} -sourcepath .:${x10x.xlalib}:${anuchem.src} ${basedir}/${mainClass}"/>
+        <echo message="x10c++ -x10rt ${x10rt} -sourcepath .:${x10x.xlalib}:${anuchem.src} ${basedir}/${testclass}"/>
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/src">
             <arg value="-c"/> 
-            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.nochecks} ${x10c.optimize} ${x10c.inlineopt} -report postcompile=1 -post '# ${post.profile} ${post.cpuprofile} ${post.heapprofile} ${post.usenativegsl}' -sourcepath .:${x10x.xlalib}:${anuchem.src} -d ${target-src} ${basedir}/${mainClass}"/>
+            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.nochecks} ${x10c.optimize} ${x10c.inlineopt} -report postcompile=1 -post '# ${post.profile} ${post.cpuprofile} ${post.heapprofile} ${post.usenativegsl}' -sourcepath .:${x10x.xlalib}:${anuchem.src} -d ${target-src} ${basedir}/${testclass}"/>
         </exec>
     </target>
 
