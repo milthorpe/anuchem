@@ -258,6 +258,8 @@ public class PeriodicFmm3d extends Fmm3d {
 
         val locallyEssentialTrees = this.locallyEssentialTrees; // TODO shouldn't be necessary XTENLANG-1913
         val lowestLevelBoxes = this.lowestLevelBoxes; // TODO shouldn't be necessary XTENLANG-1913
+        val lowestLevelDim = this.lowestLevelDim; // TODO shouldn't be necessary XTENLANG-1913
+        val size = this.size; // TODO shouldn't be necessary XTENLANG-1913
         val directEnergy = finish (SumReducer()) {
             ateach (p1 in locallyEssentialTrees) {
                 val myLET = locallyEssentialTrees(p1);
@@ -282,7 +284,7 @@ public class PeriodicFmm3d extends Fmm3d {
                             val boxIndex2 = uList(p);
                             val boxAtoms = packedAtoms(boxIndex2);
                             if (boxAtoms != null) {
-                                val translation = getTranslation(boxIndex2(0), boxIndex2(1), boxIndex2(2));
+                                val translation = getTranslation(lowestLevelDim, size, boxIndex2(0), boxIndex2(1), boxIndex2(2));
                                 for ([otherBoxAtomIndex] in 0..(boxAtoms.size-1)) {
                                     val atom2Packed = boxAtoms(otherBoxAtomIndex);
                                     val translatedCentre = atom2Packed.centre + translation;
@@ -310,7 +312,7 @@ public class PeriodicFmm3d extends Fmm3d {
      * Gets the atom centre translation vector due to a lowest-level box 
      * being in a neighbouring image, rather than the central unit cell.
      */
-    def getTranslation(x:  Int, y : Int, z : Int) : Vector3d {
+    private static def getTranslation(lowestLevelDim : Int, size : Double, x:  Int, y : Int, z : Int) : Vector3d {
         var translationX : Double = 0.0;
         if (x >= lowestLevelDim) {
             translationX = size;

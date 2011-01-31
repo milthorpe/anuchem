@@ -374,13 +374,14 @@ public class Fmm3d {
                     val thisLevelMultipoleCopies = myLET.multipoleCopies(thisLevel);
                     if (thisLevel == startingLevel) {
                         // must fetch top level multipoles synchronously before starting
-                        prefetchMultipoles(thisLevel);
+                        Fmm3d.prefetchMultipoles(thisLevel, thisLevelBoxes, myLET);
                     }
     
                     // can fetch next level multipoles asynchronously while computing this level
                     val lowerLevel = thisLevel+1;
                     if (lowerLevel <= numLevels) {
-                        async prefetchMultipoles(lowerLevel);
+                        val lowestLevelBoxes = boxes(lowerLevel);
+                        async Fmm3d.prefetchMultipoles(lowerLevel, lowestLevelBoxes, myLET);
                     }
 
                     for ([x1,y1,z1] in thisLevelBoxes.dist(here)) async {
@@ -449,11 +450,9 @@ public class Fmm3d {
      * Fetch all multipole expansions required for transform to local at this place.
      * This is communication-intensive, so can be overlapped with computation.
      */
-    def prefetchMultipoles(level : Int) : void {
-        val myLET = locallyEssentialTrees(here.id);
+    private static def prefetchMultipoles(level : Int, thisLevelBoxes : DistArray[FmmBox](3), myLET : LocallyEssentialTree) : void {
         val combinedVList = myLET.combinedVList(level);
         val thisLevelCopies = myLET.multipoleCopies(level);
-        val thisLevelBoxes = boxes(level);
 
         val vListPlaces = new HashMap[Int,ArrayList[Point(3)]](26); // a place may have up to 26 immediate neighbours
 
@@ -529,7 +528,7 @@ public class Fmm3d {
                 val placeId = placeEntry.getKey();
                 val uListForPlace = placeEntry.getValue();
                 val uListArray = uListForPlace.toArray();
-                val packedForPlace = at (Place.place(placeId)) { getPackedAtomsForBoxList(uListArray)};
+                val packedForPlace = at (Place.place(placeId)) { getPackedAtomsForBoxList(lowestLevelBoxes, uListArray)};
                 for ([i] in 0..(uListArray.size-1)) {
                     myLET.packedAtoms(uListArray(i)) = packedForPlace(i);
                 }
@@ -544,10 +543,11 @@ public class Fmm3d {
      * a Array of MMAtom.PackedRepresentation containing the 
      * packed atoms for each box.
      */
-    private def getPackedAtomsForBoxList(boxList : Array[Point(3)](1){rail}) {
+    private static def getPackedAtomsForBoxList(lowestLevelBoxes : DistArray[FmmBox](3), boxList : Array[Point(3)](1){rail}) {
         val packedAtomList = new Array[Array[MMAtom.PackedRepresentation](1){rail}](boxList.size, 
                                                             (i : Int) => 
-                                                                getPackedAtomsForBox(boxList(i)(0), 
+                                                                getPackedAtomsForBox(lowestLevelBoxes,
+                                                                                     boxList(i)(0), 
                                                                                      boxList(i)(1),
                                                                                      boxList(i)(2))
                                                             );
@@ -876,7 +876,7 @@ public class Fmm3d {
         return (at (boxes(level-1).dist(x/2, y/2, z/2)) {GlobalRef[FmmBox](boxes(level-1)(x/2, y/2, z/2))});
     }
 
-    private def getPackedAtomsForBox(x : Int, y : Int, z : Int) {
+    private static def getPackedAtomsForBox(lowestLevelBoxes : DistArray[FmmBox](3), x : Int, y : Int, z : Int) {
         val box = lowestLevelBoxes(x, y, z) as FmmLeafBox;
         if (box != null) {
             return box.getPackedAtoms();
