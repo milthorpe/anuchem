@@ -112,10 +112,6 @@ public final class MortonDist extends Dist(3) {
             } 
         }
 
-        public def scanners():Iterator[Region.Scanner] {
-            throw new UnsupportedOperationException("TODO: scanners not defined for MortonSubregion");
-        }
-
         public def toString(): String {
             return "Z[" + start + ".." + end + "]";
         }

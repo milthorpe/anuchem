@@ -164,10 +164,6 @@ public class TriangularRegion extends Region {
         } 
     }
 
-    public def scanners():Iterator[Region.Scanner] {
-        throw new UnsupportedOperationException("TODO: scanners not defined for TriangularRegion");
-    }
-
     public def toString(): String {
         val triangleString = "triangular region " + colMin + ".." + (colMin + dim) + "," + rowMin + ".." + (rowMin + dim);
         if (lower) {
