@@ -473,9 +473,8 @@ public class PME {
      */
     public def gridCharges() {
         timer.start(TIMER_INDEX_GRIDCHARGES);
-        val gridSize0 = gridSize(0);
-        val gridSize2 = gridSize(2);
 
+        val gridSize = this.gridSize; // TODO shouldn't be necessary XTENLANG-1913
 		val numSubCells = this.numSubCells; // TODO shouldn't be necessary XTENLANG-1913
 		val splineOrder = this.splineOrder; // TODO shouldn't be necessary XTENLANG-1913
 		val gridDist = this.gridDist; // TODO shouldn't be necessary XTENLANG-1913
@@ -486,6 +485,8 @@ public class PME {
 		val Q = this.Q; // TODO shouldn't be necessary XTENLANG-1913;
 		val edgeReciprocals = this.edgeReciprocals; // TODO shouldn't be necessary XTENLANG-1913
         finish ateach (place1 in Dist.makeUnique()) {
+            val gridSize0 = gridSize(0);
+            val gridSize2 = gridSize(2);
 			val gridRegion = gridDist.region;
             val place1Region = subCells.dist.get(here) as Region(3){rect};
             if (!place1Region.isEmpty()) {
