@@ -17,9 +17,9 @@
     <property name="bash.exe" value="bash"/>    
     <property name="optimize" value="true"/>
     <property name="nochecks" value="true"/>
-    <property name="inline-optimizations" value="false"/>
+    <property name="inline-methods" value="true"/>
     <property name="profile"  value="false"/>
-    <property name="cpuprofile"  value="false"/>
+    <property name="cpuprofile"  value="true"/>
     <property name="perftoolsHome" location="/scratch/perftools"/>
     <property name="mpiPprofile"  value="false"/>
     <property name="mpiPHome" location="/scratch/mpiP"/>
@@ -40,8 +40,8 @@
         <istrue value="${nochecks}"/>
     </condition>
 
-    <condition property="x10c.inline-optimizations" value="-INLINE_OPTIMIZATIONS" else="">
-        <istrue value="${inline-optimizations}"/>
+    <condition property="x10c.inline-methods" value="-INLINE_METHODS_IMPLICIT" else="">
+        <istrue value="${inline-methods}"/>
     </condition>
 
     <condition property="post.profile" value="-pg" else="">
@@ -108,7 +108,7 @@
         <pathconvert property="src.list" refid="changed.src.files" dirsep="/" pathsep=" ">
             <map from="${basedir}${file.separator}src${file.separator}" to=""/>
         </pathconvert>
-        <echo message="x10c++ -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} ${x10c.inline-optimizations} -sourcepath '.${path.separator}${xre.src}${path.separator}${xla.src}${path.separator}${anuchem.src}' '${basedir}/${testclass}'"/>
+        <echo message="x10c++ -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} ${x10c.inline-methods} -sourcepath '.${path.separator}${xre.src}${path.separator}${xla.src}${path.separator}${anuchem.src}' '${basedir}/${testclass}'"/>
 
         <copy todir="${target}/classes">
             <fileset id="cpp.files" dir="${basedir}/src" includes="**/*.h,**/*.struct_h,**/*.cc"/>

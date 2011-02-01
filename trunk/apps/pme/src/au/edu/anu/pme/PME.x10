@@ -645,7 +645,8 @@ public class PME {
 			//val thetaRecConvQ = this.thetaRecConvQ; // TODO shouldn't be necessary XTENLANG-1913
             for (place1 in gridDist.places()) async at(place1) {
                 var myReciprocalEnergy : Double = 0.0;
-                for (p in gridDist | here) {
+                val gridDistHere = gridDist.get(here) as Region(3){rect};
+                for (p in gridDistHere) {
                     val gridPointContribution = Q(p) * thetaRecConvQ(p);
                     myReciprocalEnergy += gridPointContribution.re;
                 }
@@ -668,25 +669,30 @@ public class PME {
 		val K2 = this.K2; // TODO shouldn't be necessary XTENLANG-1913;
 		val K3 = this.K3; // TODO shouldn't be necessary XTENLANG-1913;
         finish ateach (place1 in Dist.makeUnique()) {
-            for ([m1,m2,m3] in B.dist(here)) {
+            val splines = new Array[Double](1..(splineOrder-1));
+            for ([k] in splines) {
+                splines(k) = bSpline(splineOrder, k);
+            }
+            val regionHere = B.dist(here) as Region(3){rect};
+            for ([m1,m2,m3] in regionHere) {
                 val m1D = m1 as Double;
                 var sumK1 : Complex = Complex.ZERO;
                 for ([k] in 0..(splineOrder-2)) {
-                    sumK1 = sumK1 + bSpline(splineOrder, k+1) * Math.exp(2.0 * Math.PI * m1D * k / K1 * Complex.I);
+                    sumK1 = sumK1 + splines(k+1) * Math.exp(2.0 * Math.PI * m1D * k / K1 * Complex.I);
                 }
                 val b1 = (Math.exp(2.0 * Math.PI * (splineOrder-1) * m1D / K1 * Complex.I) / sumK1).abs();
 
                 val m2D = m2 as Double;
                 var sumK2 : Complex = Complex.ZERO;
                 for ([k] in 0..(splineOrder-2)) {
-                    sumK2 = sumK2 + bSpline(splineOrder, k+1) * Math.exp(2.0 * Math.PI * m2D * k / K2 * Complex.I);
+                    sumK2 = sumK2 + splines(k+1) * Math.exp(2.0 * Math.PI * m2D * k / K2 * Complex.I);
                 }
                 val b2 = (Math.exp(2.0 * Math.PI * (splineOrder-1) * m2D / K2 * Complex.I) / sumK2).abs();
                     
                 val m3D = m3 as Double;
                 var sumK3 : Complex = Complex.ZERO;
                 for ([k] in 0..(splineOrder-2)) {
-                    sumK3 = sumK3 + bSpline(splineOrder, k+1) * Math.exp(2.0 * Math.PI * m3D * k / K3 * Complex.I);
+                    sumK3 = sumK3 + splines(k+1) * Math.exp(2.0 * Math.PI * m3D * k / K3 * Complex.I);
                 }
                 val b3 = (Math.exp(2.0 * Math.PI * (splineOrder-1) * m3D / K3 * Complex.I) / sumK3).abs();
 
@@ -710,7 +716,8 @@ public class PME {
         val edgeReciprocals = this.edgeReciprocals; // TODO shouldn't be necessary XTENLANG-1913
         val beta = this.beta; // TODO shouldn't be necessary XTENLANG-1913
         finish ateach (place1 in Dist.makeUnique()) {
-            for ([m1,m2,m3] in C.dist(here)) {
+            val regionHere = C.dist(here) as Region(3){rect};
+            for ([m1,m2,m3] in regionHere) {
                 val m1prime = m1 <= K1/2 ? m1 : m1 - K1;
                 val m2prime = m2 <= K2/2 ? m2 : m2 - K2;
                 val m3prime = m3 <= K3/2 ? m3 : m3 - K3;
