@@ -15,13 +15,13 @@ import x10x.vector.Vector3d;
 import au.edu.anu.chem.mm.MMAtom;
 
 public class DiatomicForceField implements ForceField {
-    val diatomicPotentials : Array[DiatomicPotential](1){rail};
+    val diatomicPotentials : Array[DiatomicPotential](1){rect,rail};
 
-    public def this(diatomicPotentials : Array[DiatomicPotential](1){rail}) {
+    public def this(diatomicPotentials : Array[DiatomicPotential](1){rect,rail}) {
         this.diatomicPotentials = diatomicPotentials;
     }
     
-    public def getPotentialAndForces(atoms: DistArray[Array[MMAtom](1){rail}](1)) : Double {
+    public def getPotentialAndForces(atoms: DistArray[Array[MMAtom](1){rect,rail}](1)) : Double {
         var V : Double = 0.0;        
         for([p] in 0..diatomicPotentials.length-1) {
             val potential = diatomicPotentials(p);

@@ -275,7 +275,7 @@ public class Matrix {
         return true;
     }
 
-    public def isSingular(p:Int, row:Array[Int](1){rail}) : Boolean {
+    public def isSingular(p:Int, row:Array[Int](1){rect,rail}) : Boolean {
         val N = getColCount();
         var i:Int;
 

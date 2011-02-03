@@ -101,7 +101,7 @@ public class TestPMEWaterBox extends TestElectrostatic {
                 Console.ERR.println("could not map atom to place: " + atom.centre);
             }
         }
-        val atoms = DistArray.make[Array[MMAtom](1){rail}](Dist.makeUnique(), ([p] : Point) => tempAtoms(p).toArray());
+        val atoms = DistArray.make[Array[MMAtom](1){rect,rail}](Dist.makeUnique(), ([p] : Point) => tempAtoms(p).toArray());
 
         val pme = new PME(edges, gridSizes, atoms, splineOrder, ewaldCoefficient, cutoff);
         pme.setup();

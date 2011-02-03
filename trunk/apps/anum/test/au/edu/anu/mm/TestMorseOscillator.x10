@@ -33,7 +33,7 @@ public class TestMorseOscillator {
         val atoms = new Array[MMAtom](2);
         atoms(0) = hydrogen;
         atoms(1) = fluorine;
-        val distAtoms = DistArray.make[Array[MMAtom](1){rail}](Dist.makeBlock(0..0, 0));
+        val distAtoms = DistArray.make[Array[MMAtom](1){rect,rail}](Dist.makeBlock(0..0, 0));
         distAtoms(0) = atoms;
 
         val diatomicPotentials = new Array[DiatomicPotential](1, 
