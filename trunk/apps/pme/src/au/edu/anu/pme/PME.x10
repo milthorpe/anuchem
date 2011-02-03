@@ -195,15 +195,7 @@ public class PME {
         timer.start(TIMER_INDEX_SETUP);
         initBArray();
         initCArray();
-        val gridDist = this.gridDist; // TODO shouldn't be necessary XTENLANG-1913
-        val B = this.B; // TODO shouldn't be necessary XTENLANG-1913
-        val C = this.C; // TODO shouldn't be necessary XTENLANG-1913
-        val BdotC = this.BdotC; // TODO shouldn't be necessary XTENLANG-1913
-        finish for (place1 in gridDist.places()) async at(place1) {
-            for (p in gridDist.get(here)) {
-                BdotC(p) = B(p) * C(p);
-            }
-        }
+        B.map(BdotC, C, (a:Double, b:Double) => (a*b));
         divideAtomsIntoSubCells();
         timer.stop(TIMER_INDEX_SETUP);
     }
@@ -224,11 +216,7 @@ public class PME {
 
             timer.start(TIMER_INDEX_THETARECCONVQ);
             // create F^-1(thetaRecConvQ)
-			val gridDist = this.gridDist; // TODO shouldn't be necessary XTENLANG-1913
-			val BdotC = this.BdotC; // TODO shouldn't be necessary XTENLANG-1913
-			val Qinv = this.Qinv; // TODO shouldn't be necessary XTENLANG-1913
-            val product = (a:Complex, b:Complex) => (a*b);
-            thetaRecConvQ = DistArray.make[Complex](gridDist, (p : Point(3)) => BdotC(p) * Qinv(p));
+            thetaRecConvQ = BdotC.map(Qinv, (a:Double, b:Complex) => (a*b));
 
             // and do inverse FFT
             new Distributed3dFft(gridSize(0), thetaRecConvQ, thetaRecConvQ, temp).doFFT3d(true);
