@@ -238,42 +238,32 @@ public class PME {
         return totalEnergy;
     }
 
+    /**
+     * Divide the atoms into a grid of sub-cells for direct sum calculation.
+     * Each sub-cell is half the cutoff distance on every side.
+     */
     private def divideAtomsIntoSubCells() {
+        val halfCutoff = (cutoff / 2.0);
         val subCellsTemp = DistArray.make[ArrayList[MMAtom]](subCells.dist, (Point) => new ArrayList[MMAtom]());
         val atoms = this.atoms; // TODO shouldn't be necessary XTENLANG-1913
-        val cutoff = this.cutoff; // TODO shouldn't be necessary XTENLANG-1913
-        finish ateach (p1 in atoms) {
-            val localAtoms = atoms(p1);
-            finish for ([i] in 0..(localAtoms.size()-1)) async {
-                val atom = localAtoms(i);
-                val charge = atom.charge;
+        finish ateach (p in atoms) {
+            val localAtoms = atoms(p);
+            for ([l] in 0..(localAtoms.size()-1)) {
+                val atom = localAtoms(l);
                 val centre = atom.centre;
-                val index = getSubCellIndex(atom, cutoff);
-                at (subCellsTemp.dist(index)) {
-                    val remoteAtom = new MMAtom(centre, charge);
-                    atomic{subCellsTemp(index).add(remoteAtom);}
+                // get subcell i,j,k
+                val i = (centre.i / halfCutoff) as Int;
+                val j = (centre.j / halfCutoff) as Int;
+                val k = (centre.k / halfCutoff) as Int;
+                at (subCellsTemp.dist(i,j,k)) {
+                    atomic subCellsTemp(i,j,k).add(atom);
                 }
             }
         }
         val subCells = this.subCells; // TODO shouldn't be necessary XTENLANG-1913
-        finish ateach (p in subCells.dist) {
-            subCells(p) = subCellsTemp(p).toArray();
+        finish ateach ([i,j,k] in subCells) {
+            subCells(i,j,k) = subCellsTemp(i,j,k).toArray();
         }
-    }
-
-    /**
-     * Gets the index of the sub-cell for this atom within
-     * the grid of sub-cells for direct sum calculation.
-     * Each sub-cell is half the cutoff distance on every side.
-     */
-    private static @Inline def getSubCellIndex(atom : MMAtom, cutoff : Double) : Point(3) {
-        // TODO assumes cubic unit cell
-        val halfCutoff = (cutoff / 2.0);
-        val r = Vector3d(atom.centre);
-        val i = (r.i / halfCutoff) as Int;
-        val j = (r.j / halfCutoff) as Int;
-        val k = (r.k / halfCutoff) as Int;
-        return Point.make(i, j, k);
     }
 
     /**
