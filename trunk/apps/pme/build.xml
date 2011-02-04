@@ -19,7 +19,7 @@
     <property name="nochecks" value="true"/>
     <property name="inline-methods" value="true"/>
     <property name="profile"  value="false"/>
-    <property name="cpuprofile"  value="false"/>
+    <property name="cpuprofile"  value="true"/>
     <property name="perftoolsHome" location="/scratch/perftools"/>
     <property name="mpiPprofile"  value="false"/>
     <property name="mpiPHome" location="/scratch/mpiP"/>

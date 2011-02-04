@@ -431,8 +431,8 @@ public class PME {
         val selfEnergy = finish(SumReducer()) {
             for (place1 in gridDist.places()) async at(place1) {
                 var mySelfEnergy : Double = 0.0;
-                for (p in subCells.dist(here)) {
-                    val thisCell = subCells(p);
+                for ([i,j,k] in subCells.dist(here)) {
+                    val thisCell = subCells(i,j,k);
                     for ([thisAtom] in 0..(thisCell.size-1)) {
                         mySelfEnergy += thisCell(thisAtom).charge * thisCell(thisAtom).charge;
                     }
@@ -624,8 +624,8 @@ public class PME {
             for (place1 in gridDist.places()) async at(place1) {
                 var myReciprocalEnergy : Double = 0.0;
                 val gridDistHere = gridDist.get(here) as Region(3){rect};
-                for (p in gridDistHere) {
-                    val gridPointContribution = Q(p) * thetaRecConvQ(p);
+                for ([i,j,k] in gridDistHere) {
+                    val gridPointContribution = Q(i,j,k) * thetaRecConvQ(i,j,k);
                     myReciprocalEnergy += gridPointContribution.re;
                 }
                 offer myReciprocalEnergy;
