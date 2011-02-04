@@ -71,15 +71,14 @@ public class PME {
 
     /** 
      * Translation vectors for neighbouring unit cells 
-     * (the 26 cells surrounding the origin cell)
-     * Dimensions are:
-     * 0: a "virtual" dimension used to replicate the data across all places
-     *   // TODO should be done as a global array XTENLANG-787
-     * 1: x translation (difference between x-coordinate of sub-cells
-     * 2: y translation
-     * 3: z translation
+     * (the 26 cells surrounding the origin cell).
+     * These are replicated across all places in a DistArray with a unique dist.
+     * Dimensions of the enclosed array are:
+     * 0: x translation (difference between x-coordinate of sub-cells
+     * 1: y translation
+     * 2: z translation
      */
-    private val imageTranslations : DistArray[Vector3d](4);
+    private val imageTranslations : DistArray[Array[Vector3d](3){rect}](1);
 
     /** The atoms in the simulation, divided up into a distributed array of Arrays, one for each place. */
     private val atoms : DistArray[Array[MMAtom](1){rect,rail}](1);
@@ -148,8 +147,11 @@ public class PME {
         this.splineOrder = splineOrder;
         this.beta = beta;
         this.cutoff = cutoff;
-        val imageTranslationRegion = 0..(Place.MAX_PLACES-1) * -1..1 * -1..1 * -1..1;
-        this.imageTranslations = DistArray.make[Vector3d](Dist.makeBlock(imageTranslationRegion, 0), ([place,i,j,k] : Point(4)) => (edges(0).mul(i)).add(edges(1).mul(j)).add(edges(2).mul(k)));
+        this.imageTranslations = DistArray.make[Array[Vector3d](3){rect}](
+            Dist.makeUnique(), 
+            new Array[Vector3d](-1..1 * -1..1 * -1..1, 
+                ([i,j,k] : Point(3)) => (edges(0).mul(i)).add(edges(1).mul(j)).add(edges(2).mul(k))) 
+        );
 
         if (edgeLengths(0) % (cutoff/2.0) != 0.0) {
             Console.ERR.println("warning: edge length " + edgeLengths(0) + " is not an exact multiple of (cutoff/2.0) " + (cutoff/2.0));
@@ -333,6 +335,7 @@ public class PME {
                 var myDirectEnergy : Double = 0.0;
                 val thisCell = subCells(p);
                 val packedAtoms = packedAtomsCache(here.id);
+                val translations = imageTranslations(here.id);
                 for (var i : Int = p(0)-2; i<=p(0); i++) {
                     var n1 : Int = 0;
                     if (i < 0) {
@@ -354,7 +357,7 @@ public class PME {
                             }
                             // interact with "left half" of other boxes i.e. only boxes with i<=p(0)
                             if (i < p(0) || (i == p(0) && j < p(1)) || (i == p(0) && j == p(1) && k < p(2))) {
-                                val translation = imageTranslations(here.id,n1,n2,n3);
+                                val translation = translations(n1,n2,n3);
                                 val otherSubCellLocation = subCells.dist(i,j,k);
                                 if (otherSubCellLocation == here) {
                                     val otherCell = subCells(i,j,k);
