@@ -4,15 +4,13 @@ import x10x.xla.*;
 import x10x.vector.Vector;
 
 import x10.array.Array;
-import x10.compiler.Header;
 import x10.compiler.Inline;
 
 /**
  * This class represents an (NxM)  Matrix.
- * (Initial DRAFT)
- * TODO distribute Matrix
+ * TODO distributed matrices
  *
- * @author V.Ganesh
+ * @author V.Ganesh, milthorpe
  */
 public class Matrix { 
     protected val mat:Array[Double]{rect,rank==2};
@@ -44,7 +42,7 @@ public class Matrix {
     public def this(source : Matrix) {
         val sourceMat = source.getMatrix();
         mat = sourceMat;
-        region       = sourceMat.region;
+        region = sourceMat.region;
         //mat          = new Array[Double](sourceMat.region);
         //finish {mat.asyncCopy(sourceMat);}
     }
@@ -69,7 +67,6 @@ public class Matrix {
      */
     public def symmetricOrthogonalization() : Matrix { 
         val diag = new JacobiDiagonalizer();
-       
         diag.diagonalize(this);
         
         val rowCount      = getRowCount(); 
@@ -79,10 +76,8 @@ public class Matrix {
         
         sHalf.makeIdentity();
 
-        finish for([i,j] in sHalf.mat.region) async {
-             if (i==j) {
-                sHalf.mat(i,i) /= Math.sqrt(eigenValues(i));
-             }
+        for ([i] in 0..mat.region.max(0)) {
+            sHalf.mat(i,i) /= Math.sqrt(eigenValues(i));
         }
 
         return (sHalf.similarityTransformT(eigenVectors)); 
@@ -147,11 +142,7 @@ public class Matrix {
         val M   = getColCount();
 
         val res = new Matrix(N, M);
-
-        val mat = this.mat; // TODO this should not be required XTENLANG-1913
-        finish for([i,j] in res.mat) async
-            res.mat(i, j) = mat(i, j) * fac;
-
+        mat.map[Double](mat, (a : Double) => a * fac);
         return res;
     }
 
@@ -162,11 +153,7 @@ public class Matrix {
         val N   = getRowCount();
         val M   = getColCount();
         val res = new Matrix(N, M);
-
-        val mat = this.mat; // TODO this should not be required XTENLANG-1913
-        finish for([i,j] in res.mat) async
-            res.mat(i, j) = mat(i, j) + x.mat(i, j);
-
+        mat.map[Double,Double](res.mat, x.mat, (a : Double, b : Double) => a + b);
         return res;
     }
 
@@ -174,12 +161,7 @@ public class Matrix {
      * this = this + X
      */
     public def addInPlace(x:Matrix)  {
-        val N   = getRowCount();
-        val M   = getColCount();
-
-        val mat = this.mat; // TODO this should not be required XTENLANG-1913
-        finish for([i,j] in mat) async
-            mat(i, j) = mat(i, j) + x.mat(i, j);
+        mat.map[Double,Double](mat, x.mat, (a : Double, b : Double) => a + b);
     }
 
     /**
@@ -189,11 +171,7 @@ public class Matrix {
         val N   = getRowCount();
         val M   = getColCount();
         val res = new Matrix(N, M);
-
-        val mat = this.mat; // TODO this should not be required XTENLANG-1913
-        finish for([i,j] in res.mat) async
-            res.mat(i, j) = mat(i, j) - x.mat(i, j);
-
+        mat.map[Double,Double](res.mat, x.mat, (a : Double, b : Double) => a - b);
         return res;
     }
 
@@ -205,8 +183,7 @@ public class Matrix {
         val M   = getColCount();
         val res = new Matrix(M, N);
 
-        val mat = this.mat; // TODO this should not be required XTENLANG-1913
-        finish for([i,j] in res.mat) async {
+        for([i,j] in res.mat) {
             res.mat(i, j) = mat(j, i);
         }
  
@@ -230,19 +207,16 @@ public class Matrix {
      * absolute sum of off-diagonal elements
      */
     public def sumOffDiagonal() : Double {
-       // sum off diagonal elements of A
-       val sum = new Array[Double](1);
-       val N = getRowCount();
+        var sum : Double = 0.0;
+        val N = getRowCount();
 
-       sum(0) = 0.0;
-        val mat = this.mat; // TODO this should not be required XTENLANG-1913
-       finish for([i,j] in mat) async {
-                if (i!=j && j>i) {
-                    atomic sum(0) += Math.abs(mat(i, j));
-                }
-       }
+        for ([i] in 0..mat.region.max(0)) {
+            for ([j] in (i+1)..mat.region.max(1)) {
+                sum += Math.abs(mat(i, j));
+            }
+        }
 
-       return sum(0); 
+        return sum; 
     }
 
     public def getRowVector(rowIdx:Int) : Vector {
@@ -251,7 +225,6 @@ public class Matrix {
        val vec = new Vector(N);
        val vecVal = vec.getVector();
 
-       // TODO:
        for(var i:Int=0; i<N; i++)
            vecVal(i) = mat(rowIdx, i);
 
@@ -262,31 +235,25 @@ public class Matrix {
         if (getRowCount() != getColCount()) return false;
 
         val N = getRowCount();
-        var i:Int, j:Int;
 
-        for(i=0; i<N; i++) {
-            for(j=0; j<i; j++) {
-                if (mat(i, j) != 0) {
+        for(var i:Int=0; i<N; i++) {
+            for(var j:Int=0; j<i; j++) {
+                if (mat(i, j) != 0.0) {
                     return false;
-                } // end if
-            } // end for
-        } // end for
+                }
+            }
+        }
 
         return true;
     }
 
     public def isSingular(p:Int, row:Array[Int](1){rect,rail}) : Boolean {
         val N = getColCount();
-        var i:Int;
-
-        Console.OUT.println("isSingular: " + p + " " + row(p) + ", " + N);
-        Console.OUT.println("isSingular: " + this);
-
-        for(i=p; i<=N; i++) {
+        for([i] in p..N) {
             if (mat(row(p), i) != 0.0 && Math.abs(mat(row(p),i))>1e-15) {
                 return false;
-            } // end if
-        } // end for
+            }
+        }
 
         return true;
     }
@@ -296,13 +263,11 @@ public class Matrix {
          val N = getRowCount();
          val M = getColCount();
         
-         // TODO: 
          for(var i:Int=0; i<N; i++) {
             for(var j:Int=0; j<M; j++)  
                str += "" + mat(i, j) + " ";
             str += "\n";
-         } // end for
-
+         }
 
          return str;
     }
