@@ -7,15 +7,15 @@
  *      http://www.opensource.org/licenses/eclipse-1.0.php
  *
  * (C) Copyright Australian National University 2010.
+ * (C) Copyright Josh Milthorpe 2011.
  */
 package au.anu.edu.qm;
 
 import x10x.vector.Point3d;
+import x10.compiler.Inline;
 
 /**
- * PrimitiveGaussian.x10
- *
- * Represents a primitiv gaussian function
+ * Represents a primitive gaussian function
  *
  * @author: V.Ganesh
  */
@@ -157,22 +157,24 @@ public class PrimitiveGaussian {
         val prod = mul(pg); 
         val rABSquared = origin.distanceSquared(pg.origin);
         val rCPSquared = center.distanceSquared(prod.origin);
-        var nterm:Double = 0.0;
 
-        val ax = constructAArray(power.l, pg.power.l,
-                                 prod.origin.i - origin.i,
-                                 prod.origin.i - pg.origin.i,
-                                 prod.origin.i - center.i, prod.exponent);
+        val ax = new Array[Double](power.l + pg.power.l + 1);
+        fillAArray(ax, power.l, pg.power.l,
+                     prod.origin.i - origin.i,
+                     prod.origin.i - pg.origin.i,
+                     prod.origin.i - center.i, prod.exponent);
 
-        val ay = constructAArray(power.m, pg.power.m,
-                                 prod.origin.j - origin.j,
-                                 prod.origin.j - pg.origin.j,
-                                 prod.origin.j - center.j, prod.exponent);
+        val ay = new Array[Double](power.m + pg.power.m + 1);
+        fillAArray(ay, power.m, pg.power.m,
+                     prod.origin.j - origin.j,
+                     prod.origin.j - pg.origin.j,
+                     prod.origin.j - center.j, prod.exponent);
 
-        val az = constructAArray(power.n, pg.power.n,
-                                 prod.origin.k - origin.k,
-                                 prod.origin.k - pg.origin.k,
-                                 prod.origin.k - center.k, prod.exponent);
+        val az = new Array[Double](power.n + pg.power.n + 1);
+        fillAArray(az, power.n, pg.power.n,
+                     prod.origin.k - origin.k,
+                     prod.origin.k - pg.origin.k,
+                     prod.origin.k - center.k, prod.exponent);
 
         var sum:Double = 0.0;
 
@@ -193,45 +195,27 @@ public class PrimitiveGaussian {
 
     /**
      * <i> "THO eq. 2.18 and 3.1 <i>
+     * note: assumes array a is already filled with zeros
      */
-    private def constructAArray(l1:Int, l2:Int, pa:Double, pb:Double,
-                                cp:Double, gamma:Double) {
-        val iMax    = l1 + l2 + 1;
-        val a = new Array[Double](iMax);
-
-        var i:Int, r:Int, u:Int, index:Int;
-
-        for(i=0; i<iMax; i++) a(i) = 0.0;
+    private @Inline def fillAArray(a : Array[Double](1){rect,rail}, 
+                            l1:Int, l2:Int, pa:Double, pb:Double,
+                            cp:Double, gamma:Double) {
 
         // TODO : x10 - parallel
-        for(i=0; i<iMax; i++) {
-            for(r=0; r<((Math.floor(i/2.0)+1.0) as Int); r++) {
-                for(u=0; u<((Math.floor((i-2.0 * r) / 2.0)+1.0) as Int); u++) {
-                    index = i-2 * r-u;
-
-                    a(index) += constructATerm(i, r, u, l1, l2,
-                                               pa, pb, cp, gamma);
-                } // end for
-            } // end for
-        } // end for
-
-        return a;
-    }
-
-    /**
-     * the A term <br>
-     * <i> "THO eq. 2.18 <i>
-     */
-    private def constructATerm(i:Int, r:Int, u:Int, l1:Int, l2:Int,
-                               pax:Double, pbx:Double, cpx:Double,
-                               gamma:Double) : Double {
-        return (Math.pow(-1.0, i) * MathUtil.binomialPrefactor(i, l1, l2, pax, pbx)
-                 * Math.pow(-1.0, u) * MathUtil.factorial(i)
-                 * Math.pow(cpx, i-2 * r-2 * u)
-                 * Math.pow(0.25 / gamma, r + u)
-                 / MathUtil.factorial(r)
-                 / MathUtil.factorial(u)
-                 / MathUtil.factorial(i-2 * r-2 * u));
+        for(var i:Int=0; i<a.size(); i++) {
+            for(var r:Int=0; r<((Math.floor(i/2.0)+1.0) as Int); r++) {
+                for(var u:Int=0; u<((Math.floor((i-2.0 * r) / 2.0)+1.0) as Int); u++) {
+                    a(i-2 * r-u) += Math.pow(-1.0, i) 
+                         * MathUtil.binomialPrefactor(i, l1, l2, pa, pb)
+                         * Math.pow(-1.0, u) * MathUtil.factorial(i)
+                         * Math.pow(cp, i-2 * r-2 * u)
+                         * Math.pow(0.25 / gamma, r + u)
+                         / MathUtil.factorial(r)
+                         / MathUtil.factorial(u)
+                         / MathUtil.factorial(i-2 * r-2 * u);
+                }
+            }
+        }
     }
 }
 
