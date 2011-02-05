@@ -697,7 +697,7 @@ public class Fmm3d {
     }
 
     private def precomputeWignerB(numTerms : Int) {
-        val region = 0..(Place.MAX_PLACES-1) * (-(ws+3))..(ws+3) * (-(ws+3))..(ws+3) * (-(ws+3))..(ws+3);
+        val region = 0..(Place.MAX_PLACES-1) * (-(2*ws+1))..(2*ws+1) * (-(2*ws+1))..(2*ws+1) * (-(2*ws+1))..(2*ws+1);
         val wignerMatrices = DistArray.make[ Array[Array[Array[Double](2){rect}](1)](1) ](Dist.makeBlock(region,0));
         finish ateach ([placeId,i,j,k] in wignerMatrices) {
             val theta = Polar3d.getPolar3d ( Point3d(i, j, k) ).theta;
@@ -711,7 +711,7 @@ public class Fmm3d {
      * and distributes across all places by replicating the first index in a block dist across Place.PLACES
      */
     private def precomputeComplex(numTerms : Int) {
-        val region = 0..(Place.MAX_PLACES-1) * (-(ws+3))..(ws+3) * (-(ws+3))..(ws+3) * (-(ws+3))..(ws+3);
+        val region = 0..(Place.MAX_PLACES-1) * (-(2*ws+1))..(2*ws+1) * (-(2*ws+1))..(2*ws+1) * (-(2*ws+1))..(2*ws+1);
         val complexK = DistArray.make[ Array[Array[Complex](1)](1) ](Dist.makeBlock(region,0));
         finish ateach ([placeId,i,j,k] in complexK) {
             val phi = Polar3d.getPolar3d ( Point3d(i, j, k) ).phi;
@@ -728,7 +728,7 @@ public class Fmm3d {
      * TODO workaround due to lack of global immutable arrays - XTENLANG-787
      */
     private def precomputeTransforms(numLevels : Int, topLevel : Int, numTerms : Int, size : Double) : DistArray[LocalExpansion](5) {
-        val multipoleTransformRegion  = 0..(Place.MAX_PLACES-1) * topLevel..numLevels * (-(ws+3))..(ws+3) * (-(ws+3))..(ws+3) * (-(ws+3))..(ws+3);
+        val multipoleTransformRegion  = 0..(Place.MAX_PLACES-1) * topLevel..numLevels * (-(2*ws+1))..(2*ws+1) * (-(2*ws+1))..(2*ws+1) * (-(2*ws+1))..(2*ws+1);
         val multipoleTransforms = DistArray.make[LocalExpansion](Dist.makeBlock(multipoleTransformRegion,0));
         finish ateach ([placeId,level,i,j,k] in multipoleTransforms) {
             val dim = Math.pow2(level);
