@@ -1,3 +1,14 @@
+/*
+ * This file is part of ANUChem.
+ *
+ *  This file is licensed to You under the Eclipse Public License (EPL);
+ *  You may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *      http://www.opensource.org/licenses/eclipse-1.0.php
+ *
+ * (C) Copyright Australian National University 2010.
+ * (C) Copyright Josh Milthorpe 2011.
+ */
 package x10x.matrix;
 
 import x10x.xla.*;
@@ -14,7 +25,7 @@ import x10.compiler.Inline;
  */
 public class Matrix { 
     protected val mat:Array[Double]{rect,rank==2};
-    val region:Region{rect,rank==2};
+    property region = mat.region;
 
     /**
      * Make instance of Matrix class 
@@ -22,8 +33,7 @@ public class Matrix {
      * @param siz the size of this matrix
      */
     public def this(siz:Int) {
-        region       = (0..(siz-1)) * (0..(siz-1));
-        mat          = new Array[Double](region);
+        mat          = new Array[Double]((0..(siz-1)) * (0..(siz-1)));
     }
 
     /**
@@ -32,8 +42,7 @@ public class Matrix {
      * @param siz the size of this matrix
      */
     public def this(row:Int, col:Int) {
-        region       = (0..(row-1)) * (0..(col-1));
-        mat          = new Array[Double](region);
+        mat          = new Array[Double]((0..(row-1)) * (0..(col-1)));
     }
 
     /**
@@ -41,17 +50,13 @@ public class Matrix {
      */
     public def this(source : Matrix) {
         val sourceMat = source.getMatrix();
-        mat = sourceMat;
-        region = sourceMat.region;
-        //mat          = new Array[Double](sourceMat.region);
-        //finish {mat.asyncCopy(sourceMat);}
+        mat = new Array[Double](sourceMat.region);
+        Array.copy[Double](sourceMat, mat);
     }
 
-    public def region() = region;
-
     public def getMatrix() = mat;
-    public def getRowCount() = mat.region.max(0)+1;
-    public def getColCount() = mat.region.max(1)+1;
+    public def getRowCount() = region.max(0)+1;
+    public def getColCount() = region.max(1)+1;
 
     public @Inline operator this(i0:int, i1:int) : Double {
         return mat(i0,i1);
@@ -74,7 +79,7 @@ public class Matrix {
         val eigenVectors  = diag.getEigenVectors();
         val sHalf         = new Matrix(rowCount);
 
-        for ([i] in 0..mat.region.max(0)) {
+        for ([i] in 0..region.max(0)) {
             sHalf.mat(i,i) = 1.0 / Math.sqrt(eigenValues(i));
         }
 
@@ -86,7 +91,7 @@ public class Matrix {
      */
     public def makeIdentity() : void {
         mat.fill(0.0);
-        for ([i] in 0..mat.region.max(0)) {
+        for ([i] in 0..region.max(0)) {
             mat(i,i) = 1.0;
         }
     }
@@ -194,7 +199,7 @@ public class Matrix {
     public def trace() : Double {
         var tr : Double = 0.0;
 
-        for ([i] in 0..mat.region.max(0)) {
+        for ([i] in 0..region.max(0)) {
             tr += mat(i, i);
         }
 
@@ -208,8 +213,8 @@ public class Matrix {
         var sum : Double = 0.0;
         val N = getRowCount();
 
-        for ([i] in 0..mat.region.max(0)) {
-            for ([j] in (i+1)..mat.region.max(1)) {
+        for ([i] in 0..region.max(0)) {
+            for ([j] in (i+1)..region.max(1)) {
                 sum += Math.abs(mat(i, j));
             }
         }

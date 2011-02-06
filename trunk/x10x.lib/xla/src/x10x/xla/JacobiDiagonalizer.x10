@@ -1,3 +1,13 @@
+/*
+ * This file is part of ANUChem.
+ *
+ *  This file is licensed to You under the Eclipse Public License (EPL);
+ *  You may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *      http://www.opensource.org/licenses/eclipse-1.0.php
+ *
+ * (C) Copyright Australian National University 2010-2011.
+ */
 package x10x.xla;
 
 import x10x.vector.Vector;
@@ -12,13 +22,10 @@ import x10x.matrix.Matrix;
 public class JacobiDiagonalizer {
     var eigenValuesVec:Vector; 
     var eigenVectorsMat:Matrix;
-    var eigenValues:Array[Double](1);
-    var eigenVectors:Array[Double](2);
-    var cos:Double, sin:Double, tau:Double;
+    var eigenValues:Array[Double](1){rect,rail};
+    var eigenVectors:Array[Double](2){rect};
 
     val maxIterations : Int = 100;
-
-    public def this() { }
 
     public def diagonalize(mat:Matrix) : void {
        val matrix = mat.getMatrix();
@@ -29,13 +36,9 @@ public class JacobiDiagonalizer {
 
        eigenVectors = eigenVectorsMat.getMatrix();
 
-       // clone the matrix (make it single place), do not tamper the actual matrix
-       val aMat = new Matrix(n);
+       // operate on a clone of the matrix
+       val aMat = new Matrix(mat);
        val a = aMat.getMatrix();
-
-       finish for([i,j] in matrix) async{ 
-            a(i, j) = matrix(i, j); 
-       }
 
        eigenValuesVec = new Vector(n); 
        eigenValues = eigenValuesVec.getVector();
@@ -45,20 +48,15 @@ public class JacobiDiagonalizer {
        val b = bVec.getVector();
        val z = zVec.getVector();
 
-       // do diagonalization at Place.FIRST_PLACE
-       finish for([i,j] in a) async {
-           if (i == j) { 
-               eigenValues(i) = b(i) = a(i,i);
-               z(i) = 0.0;
-           } // end if
-       } // end ateach
+        for ([i] in 0..a.region.max(0)) {
+            eigenValues(i) = b(i) = a(i,i);
+            z(i) = 0.0;
+        }
 
        var zeroTolerance:Double = 0.0;
 
        for(var sweepsIdx:Int = 0; sweepsIdx<maxIterations; sweepsIdx++) {
-          // sum off diagonal elements of A
           val sum = aMat.sumOffDiagonal();
-          
           if (sum == 0.0) break;  // if off diagonal elements are zero, we stop
 
           if (sweepsIdx < 3) zeroTolerance = 0.2 * sum / (n*n);
@@ -68,11 +66,6 @@ public class JacobiDiagonalizer {
           val zeroTol = zeroTolerance;
 
           for(var ip:Int = 0; ip<n-1; ip++) { for(var iq:Int = ip+1; iq<n; iq++) {
-
-          // finish for(plc in a.dist.places()) { at(plc) { for([ip, iq] in a.dist.get(plc)) async {
-             // x10.io.Console.OUT.println(ip + " , " + iq);
-             // x10.io.Console.OUT.println(a.dist.contains(Point.make(ip, iq)));
-
              if ((iq >= ip+1) && (ip < n-1)) { 
 
                 val g:Double = 100.0 * Math.abs(a(ip,iq));
@@ -93,26 +86,15 @@ public class JacobiDiagonalizer {
                      
                      if (theta < 0.0) t = -t;
 
-                     cos = 1.0 / Math.sqrt(1.0 + t*t);
-                     sin = t * cos;
-                     tau = sin / (1.0 + cos);
+                     val cos = 1.0 / Math.sqrt(1.0 + t*t);
+                     val sin = t * cos;
+                     val tau = sin / (1.0 + cos);
                      h   = t * a(ip, iq);
 
                      z(ip) -= h; z(iq) += h;
                      eigenValues(ip) -= h; eigenValues(iq) += h;
 
                      a(ip,iq) = 0.0;
-
-                     /**
-                     for([i,j] in a.dist) if (i==j && j<ip)             
-                         doRotate(a, j, ip, j, iq, sin, tau);
-                     for([i,j] in a.dist) if (i==j && j>=ip+1 && j<iq)  
-                         doRotate(a, ip, j, j, iq, sin, tau);
-                     for([i,j] in a.dist) if (i==j && j>=iq+1 && j<n)   
-                         doRotate(a, ip, j, iq, j, sin, tau);
-                     for([i,j] in eigenVectors.dist) if (i==j)          
-                         doRotate(eigenVectors, j, ip, j, iq, sin, tau);
-                     **/
 
                      for(var j:Int = 0; j<ip; j++)    doRotate(a, j, ip, j, iq, sin, tau);
                      for(var j:Int = ip+1; j<iq; j++) doRotate(a, ip, j, j, iq, sin, tau);
@@ -121,25 +103,23 @@ public class JacobiDiagonalizer {
                    } // end if
                 } // end if
              } // end if
-           // }}} // end for async
            }} // end for
 
-          finish for([ip] in b) async {
+          for([ip] in b) {
              b(ip) += z(ip);
              eigenValues(ip) = b(ip);
              z(ip) = 0.0;
-          } // end ateach
+          }
        } // end for
 
        sortEigenValues(); 
        eigenVectorsMat = eigenVectorsMat.transpose();
     }
 
-    private static def doRotate(a:Array[Double](2), i:Int, j:Int, k:Int, l:Int,
+    private static def doRotate(a:Array[Double](2){rect}, i:Int, j:Int, k:Int, l:Int,
                                 sin:Double, tau:Double) : void {
-       var g:Double = a(i,j);
-       var h:Double = a(k,l);
-
+       val g = a(i,j);
+       val h = a(k,l);
        a(i,j) = g - sin * (h + g*tau);
        a(k,l) = h + sin * (g - h*tau);
     }
