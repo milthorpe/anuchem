@@ -60,13 +60,9 @@ public class BasisFunctions {
                for(var l:Int=0; l<pList.size; l++) {
                   val center = atom.centre;
                   val power = pList(l);
-                  val cg = new ContractedGaussian(center, power);
+                  val cg = new ContractedGaussian(center, power, coeff, exps);
                   cg.setIndex(indx++);
                   cg.setIntIndex(intIndx);
-              
-                  for(var i:Int=0; i<coeff.size(); i++) {
-                     cg.addPrimitive(exps.get(i), coeff.get(i));
-                  } // end for
 
                   cg.normalize();
 
@@ -74,13 +70,8 @@ public class BasisFunctions {
                } // end for
 
                val am = orb.getAngularMomentum();
-               val acg = new ContractedGaussian(atom.centre, 
-                                                                                  Power(am, 0, 0));
+               val acg = new ContractedGaussian(atom.centre, Power(am, 0, 0), coeff, exps);
                acg.setIntIndex(intIndx);
-
-               for(var i:Int=0; i<coeff.size(); i++) {
-                   acg.addPrimitive(exps.get(i), coeff.get(i));
-               } // end for
 
                atombfs.add(acg);
                intIndx += ((am+1)*(am+2)/2);
@@ -109,7 +100,7 @@ public class BasisFunctions {
               
                 val prms  = bfi.getPrimitives(); 
                 for(var j:Int=0; j<prms.size(); j++) {
-                    val prmj = prms.get(j); 
+                    val prmj = prms(j); 
                     val fact3 = Math.pow(prmj.getExponent(), (2.0*lmn+3.0)/4.0);
                     prmj.setCoefficient(prmj.getCoefficient()*fact1*fact2*fact3);
                 } // end for
@@ -120,9 +111,9 @@ public class BasisFunctions {
                 var coefExpoSum:Double = 0.0;
 
                 for(var k:Int=0; k<prms.size(); k++) {
-                   val prmk = prms.get(k);
+                   val prmk = prms(k);
                    for(var l:Int=0; l<prms.size(); l++) {
-                       val prml = prms.get(l);
+                       val prml = prms(l);
 
                        factA = prmk.getCoefficient() * prml.getCoefficient();
                        factB = Math.pow(prmk.getExponent() + prml.getExponent(), lmn+1.5);
@@ -132,7 +123,7 @@ public class BasisFunctions {
 
                 val norm = Math.pow(coefExpoSum*factC, -0.5);
                 for(var j:Int=0; j<prms.size(); j++) {
-                    val prmj = prms.get(j); 
+                    val prmj = prms(j); 
                     prmj.setCoefficient(prmj.getCoefficient()*norm);
                 } // end for 
             } // end for

@@ -118,12 +118,13 @@ public class TwoElectronIntegrals {
          val twoEInts = new Array[Double](nTot);
 
          // Console.OUT.println("New block - Allocated size: " + nInt);
-         for(aPrim in aPrims) {
+         for([ap] in aPrims) {
+            val aPrim = aPrims(ap);
            val aAlpha = aPrim.getExponent();
            val aCoeff = aPrim.getCoefficient();
 
-           for(bPrim in bPrims) {
-
+           for([bp] in bPrims) {
+                val bPrim = bPrims(bp);
              pcdint.fill(0.0);
 
              val bAlpha = bPrim.getExponent();
@@ -144,11 +145,13 @@ public class TwoElectronIntegrals {
              // Console.OUT.println("Coeff: " + aCoeff + " " + bCoeff);
              // Console.OUT.println("Zeta, Gab, Up: " + gamma1 + " " + Gab + " " + Up);
 
-             for(cPrim in cPrims) {
+             for([cp] in cPrims) {
+                val cPrim = cPrims(cp);
                val cAlpha = cPrim.getExponent();
                val cCoeff = cPrim.getCoefficient();
 
-               for(dPrim in dPrims) {
+               for([dp] in dPrims) {
+                    val dPrim = dPrims(dp);
                  val dAlpha = dPrim.getExponent();
                  val dCoeff = dPrim.getCoefficient();
 
@@ -262,11 +265,13 @@ public class TwoElectronIntegrals {
          val twoEInts = new Array[Double](nTot);
 
          // Console.OUT.println("New block - Allocated size: " + nInt);
-         for(aPrim in aPrims) {
+         for([ap] in aPrims) {
+            val aPrim = aPrims(ap);
            val aAlpha = aPrim.getExponent();
            val aCoeff = aPrim.getCoefficient();
 
-           for(bPrim in bPrims) {
+           for([bp] in bPrims) {
+            val bPrim = bPrims(bp);
 
              pcdint.fill(0.0);
 
@@ -288,11 +293,13 @@ public class TwoElectronIntegrals {
              // Console.OUT.println("Coeff: " + aCoeff + " " + bCoeff);
              // Console.OUT.println("Zeta, Gab, Up: " + gamma1 + " " + Gab + " " + Up);
 
-             for(cPrim in cPrims) {
+             for([cp] in cPrims) {
+                val cPrim = cPrims(cp);
                val cAlpha = cPrim.getExponent();
                val cCoeff = cPrim.getCoefficient();
 
-               for(dPrim in dPrims) {
+               for([dp] in dPrims) {
+                    val dPrim = dPrims(dp);
                  val dAlpha = dPrim.getExponent();
                  val dCoeff = dPrim.getCoefficient();
 

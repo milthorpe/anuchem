@@ -6,7 +6,7 @@
  *  You may obtain a copy of the License at
  *      http://www.opensource.org/licenses/eclipse-1.0.php
  *
- * (C) Copyright Australian National University 2010.
+ * (C) Copyright Australian National University 2010-2011.
  */
 package au.anu.edu.qm;
 
@@ -14,37 +14,31 @@ import x10.util.ArrayList;
 import x10x.vector.Point3d;
 
 /**
- * ContractedGaussian.x10
- *
  * Represents a contracted gaussian function (made up of PrimitiveGaussian)
  *
- * @author: V.Ganesh
+ * @author: V.Ganesh, milthorpe
  */
 public class ContractedGaussian { 
     val center : Point3d;
     val power : Power;
-    val primitives : ArrayList[PrimitiveGaussian];
-    val exponents:ArrayList[Double];
-    val coefficients:ArrayList[Double];
-    val primNorms:ArrayList[Double];
-
-    val maxam:Int, minam:Int, totam:Int;
+    val primitives : Array[PrimitiveGaussian](1){rect,rail};
 
     var normalization : Double;
 
-    public def this(center:Point3d, pwr:Power) { 
+    /**
+     * Creates a new ContractedGaussian.
+     * @param coeff the coefficients of the contracted Gaussian
+     * @param exps the exponents of the contracted Gaussian.  Must be the same length as the coefficients array.
+     */
+    public def this(center:Point3d, pwr:Power, coeff:ArrayList[Double], exps:ArrayList[Double]) { 
         this.center = center;
         this.power = pwr;
         normalization = 1.0; 
-        primitives = new ArrayList[PrimitiveGaussian]();
 
-        exponents = new ArrayList[Double]();
-        coefficients = new ArrayList[Double]();
-        primNorms = new ArrayList[Double]();
-
-        maxam = power.getMaximumAngularMomentum();
-        minam = power.getMinimumAngularMomentum();
-        totam = power.getTotalAngularMomentum();
+        primitives = new Array[PrimitiveGaussian](coeff.size());
+        for(var i:Int=0; i<coeff.size(); i++) {
+            primitives(i) = new PrimitiveGaussian(center, power, exps(i), coeff(i));
+        }
     } 
 
     public def getOrigin() = center;
@@ -52,15 +46,11 @@ public class ContractedGaussian {
     public def getPower() = power;
     public def getNormalization() = normalization;
     public def setNormalization(n:Double) : void { normalization = n; }
-    public def getPrimitives() : ArrayList[PrimitiveGaussian] = primitives;
-    public def getPrimitive(i:Int) : PrimitiveGaussian = primitives.get(i);
-    public def getExponents() : ArrayList[Double] = exponents;
-    public def getCoefficients() : ArrayList[Double] = coefficients;
-    public def getPrimNorms() : ArrayList[Double] = primNorms;
-    public def getPrimNorm(i:Int) = primNorms(i);
-    public def getTotalAngularMomentum() = totam;
-    public def getMaximumAngularMomentum() = maxam;
-    public def getMinimumAngularMomentum() = minam;
+    public def getPrimitives() : Array[PrimitiveGaussian](1){rect,rail} = primitives;
+    public def getPrimitive(i:Int) : PrimitiveGaussian = primitives(i);
+    public def getTotalAngularMomentum() = power.getTotalAngularMomentum();
+    public def getMaximumAngularMomentum() = power.getMaximumAngularMomentum();
+    public def getMinimumAngularMomentum() = power.getMinimumAngularMomentum();
 
     var index:Int;
     public def getIndex() = index;
@@ -79,14 +69,6 @@ public class ContractedGaussian {
     public def distanceFrom(cg:ContractedGaussian) : Double = center.distance(cg.center);
     public def distanceSquaredFrom(cg:ContractedGaussian) : Double = center.distanceSquared(cg.center);
 
-    public def addPrimitive(exp:Double, coeff:Double) {
-        val pg = new PrimitiveGaussian(center, power, exp, coeff);
-        primitives.add(pg);
-
-        exponents.add(exp);
-        coefficients.add(coeff);
-    }
-
     public def overlap(cg:ContractedGaussian) : Double {
         val cgPrimitives = cg.getPrimitives();
         var i:Int, j:Int;
@@ -94,9 +76,9 @@ public class ContractedGaussian {
 
         // TODO: x10 - parallel 
         for(i=0; i<primitives.size(); i++) {
-            var iPG:PrimitiveGaussian = primitives.get(i);            
+            val iPG = primitives(i);            
             for(j=0; j<cgPrimitives.size(); j++) {
-                var jPG:PrimitiveGaussian = cgPrimitives.get(j);                
+                val jPG = cgPrimitives(j);                
                 
                 sij += iPG.getCoefficient() * jPG.getCoefficient() * iPG.overlap(jPG);
             } // end for
@@ -112,9 +94,9 @@ public class ContractedGaussian {
         
         // TODO: x10 - parallel 
         for(i=0; i<primitives.size(); i++) {
-            var iPG:PrimitiveGaussian = primitives.get(i);            
+            val iPG = primitives(i);            
             for(j=0; j<cgPrimitives.size(); j++) {
-                var jPG:PrimitiveGaussian = cgPrimitives.get(j);                
+                val jPG = cgPrimitives(j);                
                 
                 tij += iPG.getCoefficient() * jPG.getCoefficient() * iPG.kinetic(jPG);
             } // end for
@@ -130,9 +112,9 @@ public class ContractedGaussian {
 
         // TODO: x10 - parallel        
         for(i=0; i<primitives.size(); i++) {
-            val iPG = primitives.get(i);            
+            val iPG = primitives(i);            
             for(j=0; j<cgPrimitives.size(); j++) {
-                val jPG = cgPrimitives.get(j);                
+                val jPG = cgPrimitives(j);                
                 
                 vij += iPG.getCoefficient() * jPG.getCoefficient() 
                        * iPG.nuclear(jPG, center);                                
@@ -144,8 +126,7 @@ public class ContractedGaussian {
 
     public def normalize() {        
         for(var i:Int=0; i<primitives.size(); i++) {
-           primitives.get(i).normalize();
-           primNorms.add(primitives.get(i).getNormalization());
+           primitives(i).normalize();
         }
 
         normalization = 1.0 / Math.sqrt(this.overlap(this));
