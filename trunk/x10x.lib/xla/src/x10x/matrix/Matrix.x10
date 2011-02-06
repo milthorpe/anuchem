@@ -73,11 +73,9 @@ public class Matrix {
         val eigenValues   = diag.getEigenValues().getVector();
         val eigenVectors  = diag.getEigenVectors();
         val sHalf         = new Matrix(rowCount);
-        
-        sHalf.makeIdentity();
 
         for ([i] in 0..mat.region.max(0)) {
-            sHalf.mat(i,i) /= Math.sqrt(eigenValues(i));
+            sHalf.mat(i,i) = 1.0 / Math.sqrt(eigenValues(i));
         }
 
         return (sHalf.similarityTransformT(eigenVectors)); 

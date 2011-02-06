@@ -29,16 +29,21 @@ public class BenchmarkMatrix extends x10Test {
         val stop2 = System.nanoTime();
         Console.OUT.printf("scale: %g ms\n", ((stop2-start2) as Double) / 1e6);
 
-        val b = randomMatrix();
         val start3 = System.nanoTime();
-        val c = a.mul(b);
+        val c = a.transpose();
         val stop3 = System.nanoTime();
-        Console.OUT.printf("gemm: %g ms\n", ((stop3-start3) as Double) / 1e6);
+        Console.OUT.printf("transpose: %g ms\n", ((stop3-start3) as Double) / 1e6);
 
+        val b = randomMatrix();
         val start4 = System.nanoTime();
-        val d = a.transpose();
+        val d = a.mul(b);
         val stop4 = System.nanoTime();
-        Console.OUT.printf("transpose: %g ms\n", ((stop4-start4) as Double) / 1e6);
+        Console.OUT.printf("gemm: %g ms\n", ((stop4-start4) as Double) / 1e6);
+
+        val start5 = System.nanoTime();
+        val e = a.symmetricOrthogonalization();
+        val stop5 = System.nanoTime();
+        Console.OUT.printf("orthog: %g ms\n", ((stop5-start5) as Double) / 1e6);
 
         return true;
     }
