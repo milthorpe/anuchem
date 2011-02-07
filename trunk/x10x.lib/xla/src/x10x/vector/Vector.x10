@@ -1,29 +1,38 @@
+/*
+ * This file is part of ANUChem.
+ *
+ *  This file is licensed to You under the Eclipse Public License (EPL);
+ *  You may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *      http://www.opensource.org/licenses/eclipse-1.0.php
+ *
+ * (C) Copyright Australian National University 2010.
+ * (C) Copyright Josh Milthorpe 2011.
+ */
 package x10x.vector;
 
+import x10.compiler.Inline;
 import x10x.matrix.Matrix;
 
 /**
- * This class represents a N-dimentional Vector
- * (Initial DRAFT)
- * TODO distribute Vector
+ * This class represents a N-dimensional vector
+ * TODO distributed Vector
  * 
- * @author V.Ganesh
+ * @author V.Ganesh, milthorpe
  */
 public class Vector { 
-    val vec:Array[Double](1);
-    val region:Region(1){rect};
+    val vec:Array[Double](1){rect,rail};
+    property region = vec.region;
 
     /**
      * Construct a Vector of dimention N
      */
     public def this(siz:Int) { 
-        region       = (0..(siz-1));
-        // distribution = Dist.makeBlock(region, 0);
-        vec          = new Array[Double](region);
+        vec = new Array[Double](0..(siz-1));
     }
 
     /**
-     * Construct a Vector from a Matrix
+     * Construct a Vector row-packed from a Matrix
      */
     public def this(mat:Matrix) {
         this(mat.getRowCount()*mat.getColCount());
@@ -36,19 +45,23 @@ public class Vector {
     }
  
     /**
-     * The size of this matrix
+     * The size of this vector
      */
-    public def getSize() = vec.region.max(0)+1;
+    public def getSize() = region.size();
  
     /**
      * Actual data stored
      */
     public def getVector() = vec;
 
-    /**
-     * Get associated region
-     */ 
-    public def region() = region;
+    public @Inline operator this(i0:int) : Double {
+        return vec(i0);
+    }
+
+    public @Inline operator this(i0:int)=(v:Double) : Double {
+        vec(i0) = v;
+        return v;
+    }
 
     /**
      * make this Vector a null vector
@@ -72,11 +85,10 @@ public class Vector {
      * add two vectors: this + b 
      */
     public def add(b:Vector) : Vector {
-        val N   = getSize();
-        val res = new Vector(N);
+        val res = new Vector(region.size());
 
-        val vec = this.vec; // TODO this should not be required XTENLANG-1913;
-        finish for([i] in vec) async res.vec(i) = vec(i) + b.vec(i);
+        val plus = ((a : Double, b : Double) => a + b);
+        vec.map[Double,Double](res.vec, b.vec, plus);
 
         return res;
     }
@@ -85,11 +97,9 @@ public class Vector {
      * subtract two vectors: this - b
      */
     public def sub(b:Vector) : Vector {
-        val N   = getSize();
-        val res = new Vector(N);
-
-        val vec = this.vec; // TODO this should not be required XTENLANG-1913;
-        finish for([i] in vec) async res.vec(i) = vec(i) - b.vec(i);
+        val res = new Vector(region.size());
+        val minus = ((a : Double, b : Double) => a - b);
+        vec.map[Double,Double](res.vec, b.vec, minus);
 
         return res;
     }
@@ -98,13 +108,8 @@ public class Vector {
      * magnitude of this vector
      */
     public def magnitude() : Double {
-        var magSquared: Double = 0.0;
-        val N = getSize();
-
-        for (var i:Int=0; i<N; i++) 
-            magSquared += vec(i)*vec(i);
-       
-        return Math.sqrt(magSquared);
+        val magSquared = ((res : Double, a : Double) => res + a*a);
+        return Math.sqrt(vec.reduce(magSquared, 0.0));
     }
 
     /**
@@ -112,39 +117,29 @@ public class Vector {
      */
     public def normalize() : Vector {
         val mag = magnitude();
-        val N   = getSize();
-        
-        val n = new Vector(N);
-
-        val vec = this.vec; // TODO this should not be required XTENLANG-1913;
-        finish for([i] in vec) async n.vec(i) = vec(i) / mag;
-        
-        return n;
+        val res = new Vector(region.size());
+        val norm = ((a : Double) => a / mag);
+        vec.map[Double](res.vec, norm);
+        return res;
     }
 
     /**
      * return (-1) . V
      */
     public def negate() : Vector {
-        val N = getSize();
-        val n = new Vector(N);
-
-        val vec = this.vec; // TODO this should not be required XTENLANG-1913;
-        finish for([i] in vec) async n.vec(i) = -vec(i);
-        
+        val n = new Vector(region.size());
+        val neg = ((a : Double) => -a);
+        vec.map[Double](n.vec, neg);
         return n;
     }
 
     /**
      * Multiply this vector by a constant k
      */
-    public def mul(k:Double) : Vector {        
-        val N   = getSize();
-        val res = new Vector(N);
-
-        val vec = this.vec; // TODO this should not be required XTENLANG-1913;
-        finish for([i] in vec) async res.vec(i) = vec(i) * k;
-        
+    public def mul(k:Double) : Vector {
+        val res = new Vector(region.size());
+        val mulK = ((a : Double) => a * k);
+        vec.map[Double](res.vec, mulK);
         return res;
     }
 
@@ -152,24 +147,18 @@ public class Vector {
      * max norm of this vector
      */
     public def maxNorm() : Double {
-        val N   = getSize();
-        var res : Double = 0.0;
-
-        for([i] in vec) res = Math.max(Math.abs(vec(i)), res);
-        
-        return res;       
+        val max = ((res : Double, a : Double) => Math.max(Math.abs(a), res));
+        return vec.reduce(max, -1.0); 
     }
 
     public def toString() : String {
-         var str : String = "";
-         val N = getSize();
+        var str : String = "";
 
-         for(var i:Int=0; i<N; i++) {
+        for([i] in region) {
             str += "" + vec(i) + " ";
-         } // end for
+        }
 
-         return str;
+        return str;
     }
-
 }
 
