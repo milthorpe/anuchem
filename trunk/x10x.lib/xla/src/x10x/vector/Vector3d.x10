@@ -1,6 +1,6 @@
 package x10x.vector;
 
-import x10.compiler.Inline
+import x10.compiler.Inline;
 
 /** 
  * This class represents a vector in 3D cartesian space.
