@@ -31,24 +31,24 @@ public class ElectrostaticDirectMethod {
 
     /**
      * Creates a new electrostatic direct method.
-     * @param atoms the atoms in the unit cell
+     * @param atoms the atoms in the unit cell, divided into separate Arrays for each place
      */
     public def this(atoms : DistArray[Array[MMAtom](1){rect,rail}](1)) {
         this.atoms = atoms;
-        // distribute all atoms to all places
     }
 	
     public def getEnergy() : Double {
         timer.start(TIMER_INDEX_TOTAL);
 
         val directEnergy = finish(SumReducer()) {
+			val atoms = this.atoms; // TODO shouldn't be necessary XTENLANG-1913
             ateach ([p1] in atoms) {
                 val myAtoms = atoms(p1);
                 // energy for all interactions with other atoms at other places
                 for ([p2] in atoms) async {
                     if (p2 != p1) { // TODO region difference
                         var energyWithOther : Double = 0.0;
-                        val otherAtomsPacked = at(atoms.dist(p2)) {getPackedAtomsForPlace(p2)};
+                        val otherAtomsPacked = at(atoms.dist(p2)) {ElectrostaticDirectMethod.getPackedAtomsForPlace(p2, atoms)};
                         for ([j] in 0..(otherAtomsPacked.size-1)) {
                             for ([i] in 0..(myAtoms.size-1)) {
                                 val myAtom = myAtoms(i);
@@ -60,13 +60,15 @@ public class ElectrostaticDirectMethod {
                 }
 
                 // energy for all interactions within this place
-                for ([i] in 0..(myAtoms.size-1)) async {
-                    var energyThisPlace : Double = 0.0;
+                var energyThisPlace : Double = 0.0;
+                for ([i] in 0..(myAtoms.size-1)) {
+					val atomI = myAtoms(i);
                     for ([j] in 0..(i-1)) {
-                        energyThisPlace += 2.0 * myAtoms(i).charge * myAtoms(j).charge / myAtoms(j).centre.distance(myAtoms(i).centre);
+						val atomJ = myAtoms(j);
+                        energyThisPlace += 2.0 * atomI.charge * atomJ.charge / atomJ.centre.distance(atomI.centre);
                     }
-                    offer energyThisPlace;
                 }
+                offer energyThisPlace;
             }
         };
        
@@ -82,7 +84,7 @@ public class ElectrostaticDirectMethod {
     /*
      * Returns all atom charges and coordinates for a place, in packed representation
      */
-    private def getPackedAtomsForPlace(placeId : Int) : Array[MMAtom.PackedRepresentation](1){rect,rail} {
+    private static def getPackedAtomsForPlace(placeId : Int, atoms : DistArray[Array[MMAtom](1){rect,rail}](1)) : Array[MMAtom.PackedRepresentation](1){rect,rail} {
         val myAtoms = atoms(placeId);
         return new Array[MMAtom.PackedRepresentation](myAtoms.size, (i : Int) => myAtoms(i).getPackedRepresentation());
     }

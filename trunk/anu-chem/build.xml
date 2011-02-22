@@ -10,11 +10,17 @@
     <property name="bash.exe" value="bash"/>    
     <property name="optimize" value="true" />
     <property name="nochecks" value="true" />
+    <property name="cpuprofile"  value="false"/>
+    <property name="perftoolsHome" location="/scratch/perftools"/>
+    <property name="x10rt" value="mpi"/>
 	<property name="target" location="${basedir}/target" />
 	<property name="target-src" location="${target}/classes" />
 	<property name="target-test" location="${target}/test-classes" />
 	<property name="lib" location="${basedir}/lib" />
 	<property name="jar" value="anu-chem.jar"/>
+    <property name="bin" location="${basedir}/bin"/>
+	<property name="exe" value="direct"/>
+    <property name="testclass" value="test/au/edu/anu/chem/mm/TestDirectElectrostatic.x10"/>
 
     <condition property="x10c.optimize" value="-O" else="">
         <istrue value="${optimize}" />
@@ -24,11 +30,25 @@
         <istrue value="${nochecks}" />
     </condition>
 
+    <condition property="post.cpuprofile" value="-L${perftoolsHome}/lib -lprofiler" else="">
+        <istrue value="${cpuprofile}"/>
+    </condition>
+
 	<target name="init">
         <mkdir dir="${target}"/>
 	</target>
 
     <target name="build" depends="dist"/>
+
+    <target name="exe" depends="build-src-cpp">
+        <mkdir dir="${bin}"/>
+        <copy file="${target}/classes/a.out" tofile="${bin}/${exe}"/>
+
+        <exec executable="chmod" failonerror="true" dir="${bin}">
+            <arg value="+x"/>
+            <arg value="${exe}"/>
+        </exec>
+    </target>
 
 	<target name="dist" depends="jar">
         <mkdir dir="${lib}"/>
@@ -72,6 +92,38 @@
         <uptodate property="src.uptodate.java">
             <srcfiles refid="src.files"/>
             <globmapper from="*.x10" to="${target-src}/*.java" handledirsep="true"/>
+        </uptodate>
+    </target>
+
+    <target name="build-src-cpp" depends="check-src-cpp" unless="src.uptodate.cpp">
+        <echo message="Building source tree"/>
+
+        <fileset id="changed.src.files" dir="${basedir}/src" includes="**/*.x10">
+            <depend targetdir="${target}/classes">
+                <mapper type="glob" from="*.x10" to="*.cc"/>
+            </depend>
+        </fileset>
+
+        <pathconvert property="src.list" refid="changed.src.files" dirsep="/" pathsep=" ">
+            <map from="${basedir}${file.separator}src${file.separator}" to=""/>
+        </pathconvert>
+        <echo message="x10c++ -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} -sourcepath '.${path.separator}${xla.src}' '${basedir}/${testclass}'"/>
+
+        <copy todir="${target}/classes">
+            <fileset id="cpp.files" dir="${basedir}/src" includes="**/*.h,**/*.struct_h,**/*.cc"/>
+        </copy>
+
+        <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/src">
+            <arg value="-c"/>
+            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} -report postcompile=1 -post '# ${x10c.optimize} -Wall # ${post.cpuprofile} #' -sourcepath '.${path.separator}${xla.src}' -d '${target-src}' '${basedir}/${testclass}'"/>
+        </exec>
+    </target>
+
+    <target name="check-src-cpp" depends="init-src">
+        <fileset id="src.files" dir="${basedir}/src" includes="**/*.x10"/>
+        <uptodate property="src.uptodate.cpp">
+            <srcfiles refid="src.files"/>
+            <globmapper from="*.x10" to="${target-src}/*.cc" handledirsep="true"/>
         </uptodate>
     </target>
     
