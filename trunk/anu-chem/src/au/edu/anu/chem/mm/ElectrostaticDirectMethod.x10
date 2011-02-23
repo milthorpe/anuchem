@@ -6,7 +6,7 @@
  *  You may obtain a copy of the License at
  *      http://www.opensource.org/licenses/eclipse-1.0.php
  *
- * (C) Copyright Josh Milthorpe 2010.
+ * (C) Copyright Josh Milthorpe 2010-2011.
  */
 package au.edu.anu.chem.mm;
 
@@ -14,6 +14,7 @@ import x10x.vector.Point3d;
 import x10x.vector.Vector3d;
 import x10x.vector.Tuple3d;
 import au.edu.anu.util.Timer;
+import au.edu.anu.chem.PointCharge;
 
 /**
  * This class calculates electrostatic interactions between
@@ -26,15 +27,17 @@ public class ElectrostaticDirectMethod {
     /** A multi-timer for the several segments of a single getEnergy invocation, indexed by the constants above. */
     public val timer = new Timer(6);
 
-    /** The atoms in the simulation, divided up into an array of ValRails, one for each place. */
-    private val atoms : DistArray[Array[MMAtom](1){rect,rail}](1);
+    /** The charges in the simulation, divided up into an array of ValRails, one for each place. */
+    private val atoms : DistArray[Array[PointCharge](1){rect,rail}](1);
 
     /**
      * Creates a new electrostatic direct method.
      * @param atoms the atoms in the unit cell, divided into separate Arrays for each place
      */
     public def this(atoms : DistArray[Array[MMAtom](1){rect,rail}](1)) {
-        this.atoms = atoms;
+		this.atoms = DistArray.make[Array[PointCharge](1){rect,rail}](Dist.makeUnique(), 
+			([i] : Point) => new Array[PointCharge](atoms(i).size(),
+												(j : Int) => new PointCharge(atoms(i)(j).centre, atoms(i)(j).charge)));
     }
 	
     public def getEnergy() : Double {
@@ -84,8 +87,8 @@ public class ElectrostaticDirectMethod {
     /*
      * Returns all atom charges and coordinates for a place, in packed representation
      */
-    private static def getPackedAtomsForPlace(placeId : Int, atoms : DistArray[Array[MMAtom](1){rect,rail}](1)) : Array[MMAtom.PackedRepresentation](1){rect,rail} {
+    private static def getPackedAtomsForPlace(placeId : Int, atoms : DistArray[Array[PointCharge](1){rect,rail}](1)) : Array[PointCharge](1){rect,rail} {
         val myAtoms = atoms(placeId);
-        return new Array[MMAtom.PackedRepresentation](myAtoms.size, (i : Int) => myAtoms(i).getPackedRepresentation());
+        return new Array[PointCharge](myAtoms.size, (i : Int) => myAtoms(i));
     }
 }
