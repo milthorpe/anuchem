@@ -1,4 +1,4 @@
-CPP := g++
+CPP := mpicxx
 CFLAGS := -O
 
 run:	directcpp

@@ -6,19 +6,25 @@
 
 using namespace std;
 
-class ElectrostaticDirect {
-    static const double SIZE = 80.0;
-    long numAtoms;
-    Atom *atoms;
-    long microTime();
-	double randomNoise();
+static const double SIZE = 80.0;
 
-    public:
-		ElectrostaticDirect(long);
-		~ElectrostaticDirect();
-		void run();
-		double getEnergy();
-};
+int numAtoms;
+Atom* atoms;
+
+int myRank;
+int nTasks;
+
+int atomsPerPlace;
+int leftOver;
+int myNumAtoms;
+int myStart;
+int myEnd;
+
+static long microTime();
+static double randomNoise();
+
+static double getEnergy(Atom* atoms);
+
 #endif // ELECTROSTATIC_DIRECT_H
 
 
