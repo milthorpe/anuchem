@@ -51,11 +51,12 @@ public class ElectrostaticDirectMethod {
                 for ([p2] in atoms) async {
                     if (p2 != p1) { // TODO region difference
                         var energyWithOther : Double = 0.0;
-                        val otherAtomsPacked = at(atoms.dist(p2)) {ElectrostaticDirectMethod.getPackedAtomsForPlace(p2, atoms)};
-                        for ([j] in 0..(otherAtomsPacked.size-1)) {
+                        val otherAtoms = at(atoms.dist(p2)) {atoms(p2)};
+                        for ([j] in 0..(otherAtoms.size-1)) {
+                            val atomJ = otherAtoms(j);
                             for ([i] in 0..(myAtoms.size-1)) {
-                                val myAtom = myAtoms(i);
-                                energyWithOther += myAtom.charge * otherAtomsPacked(j).charge / otherAtomsPacked(j).centre.distance(myAtom.centre);
+                                val atomI = myAtoms(i);
+                                energyWithOther += atomI.charge * atomJ.charge / atomJ.centre.distance(atomI.centre);
                             }
                         }
                         offer energyWithOther;
@@ -82,13 +83,5 @@ public class ElectrostaticDirectMethod {
     static struct SumReducer implements Reducible[Double] {
         public def zero() = 0.0;
         public operator this(a:Double, b:Double) = (a + b);
-    }
-
-    /*
-     * Returns all atom charges and coordinates for a place, in packed representation
-     */
-    private static def getPackedAtomsForPlace(placeId : Int, atoms : DistArray[Array[PointCharge](1){rect,rail}](1)) : Array[PointCharge](1){rect,rail} {
-        val myAtoms = atoms(placeId);
-        return new Array[PointCharge](myAtoms.size, (i : Int) => myAtoms(i));
     }
 }
