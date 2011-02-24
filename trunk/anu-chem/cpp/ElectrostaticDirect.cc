@@ -43,6 +43,72 @@ static double getEnergy() {
     double energy = 0.0;
 
     Atom* otherAtoms = new Atom[atomsPerPlace+1];
+    Atom* nextAtoms = new Atom[atomsPerPlace+1];
+
+    MPI_Request sendAtoms;
+    int firstTarget = (myRank+1)%nTasks;
+    MPI_Request recvAtoms;
+    int firstSource = (myRank+nTasks-1)%nTasks;
+    if (nTasks > 1) {
+        // asynchronously send first set of atoms to next task
+        MPI_Isend(atoms, (atomsPerPlace+1)*4, MPI_DOUBLE, firstTarget, 1, MPI_COMM_WORLD, &sendAtoms);
+
+        // asynchronously receive first set of atoms from previous task
+        MPI_Irecv(otherAtoms, (atomsPerPlace+1)*4, MPI_DOUBLE, firstSource, 1, MPI_COMM_WORLD, &recvAtoms);
+    }
+
+    // energy for all interactions within this place
+    for (int i = 0; i < myNumAtoms; i++) {
+        for (int j = 0; j < i; j++) {
+            double xDist = atoms[i].centre.i -atoms[j].centre.i;
+            double yDist = atoms[i].centre.j -atoms[j].centre.j;
+            double zDist = atoms[i].centre.k -atoms[j].centre.k;
+
+            double distance = sqrt(xDist * xDist + yDist * yDist + zDist * zDist);
+
+            energy += 2.0 * (atoms[i].charge * atoms[j].charge) / distance;
+        }
+    }
+
+    MPI_Status ignore;
+    if (nTasks > 1) {
+        MPI_Wait(&sendAtoms, &ignore);
+        MPI_Wait(&recvAtoms, &ignore);
+    }
+
+    int p = firstSource;
+
+    for (int jump = 2; jump < nTasks; jump++) {
+        int target = (myRank+jump)%nTasks;
+        cout << myRank << " sending to " << target << '\n';
+        MPI_Isend(atoms, (atomsPerPlace+1)*4, MPI_DOUBLE, target, 2, MPI_COMM_WORLD, &sendAtoms);
+        int source = (myRank+nTasks-jump)%nTasks;
+        cout << myRank << " receiving from " << source << '\n';
+        MPI_Irecv(nextAtoms, (atomsPerPlace+1)*4, MPI_DOUBLE, source, 2, MPI_COMM_WORLD, &recvAtoms);
+
+        // energy for all interactions with other atoms at other place
+        int otherNumAtoms = p < leftOver ? atomsPerPlace+1 : atomsPerPlace;
+        for (int i = 0; i < otherNumAtoms; i++) {
+            for (int j = 0; j < myNumAtoms; j++) {
+                double xDist = otherAtoms[i].centre.i - atoms[j].centre.i;
+                double yDist = otherAtoms[i].centre.j - atoms[j].centre.j;
+                double zDist = otherAtoms[i].centre.k - atoms[j].centre.k;
+
+                double distance = sqrt(xDist * xDist + yDist * yDist + zDist * zDist);
+
+                energy += (otherAtoms[i].charge * atoms[j].charge) / distance;
+            }
+        }
+
+        // finish receive of next set of atoms and swap working sets
+        MPI_Wait(&recvAtoms, &ignore);
+        MPI_Wait(&sendAtoms, &ignore);
+        Atom* tmp = otherAtoms;
+        otherAtoms = nextAtoms;
+        nextAtoms = tmp;
+        p = source;
+    }
+/*        
     for (int p = 0; p < nTasks; p++) {
         // broadcast atoms from place p to other places
         if (p == myRank) {
@@ -79,6 +145,8 @@ static double getEnergy() {
             }
         }
     }
+*/
+
     energy /= 2.0;
 
     MPI_Reduce(&energy, &energy, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
@@ -106,7 +174,6 @@ int main(int argc, char* argv[]) {
     myNumAtoms = myRank < leftOver ? atomsPerPlace+1 : atomsPerPlace;
     myStart = myRank < leftOver ? (atomsPerPlace+1) * myRank : leftOver + atomsPerPlace*myRank;
     myEnd = myStart + myNumAtoms - 1;
-    //cout << myRank << " has " << myStart << ".." << myEnd << '\n';
 
     Atom* atoms = setup();
     long start = microTime();
