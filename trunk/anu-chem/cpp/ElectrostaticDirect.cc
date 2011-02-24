@@ -81,10 +81,11 @@ static double getEnergy() {
     }
     energy /= 2.0;
 
-    MPI_Reduce(&energy, &energy, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+    double totalEnergy;
+    MPI_Reduce(&energy, &totalEnergy, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
     
     if (myRank == 0) {
-        printf("energy = %.5f\n", energy);
+        printf("energy = %.5f\n", totalEnergy);
     }
 
     return energy;
@@ -115,5 +116,7 @@ int main(int argc, char* argv[]) {
     if (myRank == 0) {
         printf("%.3g s\n", (stop-start) / 1.0e6);
     }
+
+    MPI_Finalize();
     return 0;
 }
