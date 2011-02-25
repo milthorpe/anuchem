@@ -78,13 +78,13 @@ static double getEnergy() {
 
     int p = firstSource;
 
-    for (int jump = 2; jump < nTasks; jump++) {
-        int target = (myRank+jump)%nTasks;
-        cout << myRank << " sending to " << target << '\n';
-        MPI_Isend(atoms, (atomsPerPlace+1)*4, MPI_DOUBLE, target, 2, MPI_COMM_WORLD, &sendAtoms);
+    for (int jump = 2; jump <= nTasks; jump++) {
         int source = (myRank+nTasks-jump)%nTasks;
-        cout << myRank << " receiving from " << source << '\n';
-        MPI_Irecv(nextAtoms, (atomsPerPlace+1)*4, MPI_DOUBLE, source, 2, MPI_COMM_WORLD, &recvAtoms);
+        if (jump < nTasks) {
+            int target = (myRank+jump)%nTasks;
+            MPI_Isend(atoms, (atomsPerPlace+1)*4, MPI_DOUBLE, target, 2, MPI_COMM_WORLD, &sendAtoms);
+            MPI_Irecv(nextAtoms, (atomsPerPlace+1)*4, MPI_DOUBLE, source, 2, MPI_COMM_WORLD, &recvAtoms);
+        }
 
         // energy for all interactions with other atoms at other place
         int otherNumAtoms = p < leftOver ? atomsPerPlace+1 : atomsPerPlace;
@@ -93,20 +93,21 @@ static double getEnergy() {
                 double xDist = otherAtoms[i].centre.i - atoms[j].centre.i;
                 double yDist = otherAtoms[i].centre.j - atoms[j].centre.j;
                 double zDist = otherAtoms[i].centre.k - atoms[j].centre.k;
-
                 double distance = sqrt(xDist * xDist + yDist * yDist + zDist * zDist);
 
                 energy += (otherAtoms[i].charge * atoms[j].charge) / distance;
             }
         }
 
-        // finish receive of next set of atoms and swap working sets
-        MPI_Wait(&recvAtoms, &ignore);
-        MPI_Wait(&sendAtoms, &ignore);
-        Atom* tmp = otherAtoms;
-        otherAtoms = nextAtoms;
-        nextAtoms = tmp;
-        p = source;
+        if (jump < nTasks) {
+            // finish receive of next set of atoms and swap working sets
+            MPI_Wait(&recvAtoms, &ignore);
+            MPI_Wait(&sendAtoms, &ignore);
+            Atom* tmp = otherAtoms;
+            otherAtoms = nextAtoms;
+            nextAtoms = tmp;
+            p = source;
+        }
     }
 /*        
     for (int p = 0; p < nTasks; p++) {
