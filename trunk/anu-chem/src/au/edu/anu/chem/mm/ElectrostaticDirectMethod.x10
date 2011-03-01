@@ -56,7 +56,10 @@ public class ElectrostaticDirectMethod {
         timer.start(TIMER_INDEX_TOTAL);
 
         val directEnergy = finish(SumReducer()) {
-			val atoms = this.atoms; // TODO shouldn't be necessary XTENLANG-1913
+            val atoms = this.atoms; // TODO shouldn't be necessary XTENLANG-1913
+            val otherAtoms = this.otherAtoms;
+            val nextAtoms = this.nextAtoms;
+            val nextReady = this.nextReady;
 
             if (asyncComms) {
                 ateach ([p1] in atoms) {
@@ -72,7 +75,7 @@ public class ElectrostaticDirectMethod {
                                 nextReady(nextPlace.id) = true;
                             }
                         }
-                    
+                    }
 
                     // energy for all interactions within this place
                     for ([i] in 0..(myAtoms.size-1)) {
