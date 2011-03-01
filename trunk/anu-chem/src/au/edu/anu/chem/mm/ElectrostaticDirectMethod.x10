@@ -55,17 +55,6 @@ public class ElectrostaticDirectMethod {
     public def getEnergy() : Double {
         timer.start(TIMER_INDEX_TOTAL);
 
-        if (asyncComms) {
-            // before starting computation, initiate send of place 0 atoms to other places
-            val atoms0 = atoms(0);
-            for (place in Place.places()) async at(place) {
-                when (!(nextReady(place.id))) {
-                    nextAtoms(place.id) = atoms0;
-                    nextReady(place.id) = true;
-                }
-            }
-        }
-
         val directEnergy = finish(SumReducer()) {
 			val atoms = this.atoms; // TODO shouldn't be necessary XTENLANG-1913
 
@@ -73,6 +62,17 @@ public class ElectrostaticDirectMethod {
                 ateach ([p1] in atoms) {
                     val myAtoms = atoms(p1);
                     var energyThisPlace : Double = 0.0;
+
+                    // before starting computation, send my atoms to next place
+                    val nextPlace = here.next();
+                    if (nextPlace != here) {
+                        async at (nextPlace) {
+                            atomic {
+                                nextAtoms(nextPlace.id) = myAtoms;
+                                nextReady(nextPlace.id) = true;
+                            }
+                        }
+                    
 
                     // energy for all interactions within this place
                     for ([i] in 0..(myAtoms.size-1)) {
@@ -83,32 +83,33 @@ public class ElectrostaticDirectMethod {
                         }
                     }
 
-                    for (place2 in Place.places()) {
-                        // wait on receipt of previous place2 atoms
+                    var target : Place = nextPlace;
+                    while (target != here) {
+                        // wait on receipt of a set of atoms from other place
                         when (nextReady(here.id)) {
                             otherAtoms(here.id) = nextAtoms(here.id);
                             nextReady(here.id) = false;
                         }
 
-                        if (place2.next() == here && here.id != 0) {                        
-                            // send place2 atoms to other places
-                            for (place3 in Place.places()) async at(place3) {
-                                when (!(nextReady(place3.id))) {
-                                    nextAtoms(place3.id) = myAtoms;
-                                    nextReady(place3.id) = true;
+                        target = target.next();
+                        if (target != here) {
+                            // send a set of atoms to next target place
+                            val targetPlace = target;
+                            async at (targetPlace) {
+                                when (!nextReady(targetPlace.id)) {
+                                    nextAtoms(targetPlace.id) = myAtoms;
+                                    nextReady(targetPlace.id) = true;
                                 }
                             }
                         }
-
-                        if (p1 != place2.id) {
-                            // energy for all interactions with other atoms at other place
-                            val other = otherAtoms(here.id);
-                            for ([j] in 0..(other.size-1)) {
-                                val atomJ = other(j);
-                                for ([i] in 0..(myAtoms.size-1)) {
-                                    val atomI = myAtoms(i);
-                                    energyThisPlace += atomI.charge * atomJ.charge / atomJ.centre.distance(atomI.centre);
-                                }
+                        
+                        // energy for all interactions with other atoms at other place
+                        val other = otherAtoms(here.id);
+                        for ([j] in 0..(other.size-1)) {
+                            val atomJ = other(j);
+                            for ([i] in 0..(myAtoms.size-1)) {
+                                val atomI = myAtoms(i);
+                                energyThisPlace += atomI.charge * atomJ.charge / atomJ.centre.distance(atomI.centre);
                             }
                         }
                     }
