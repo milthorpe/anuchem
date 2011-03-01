@@ -27,8 +27,13 @@ public class ElectrostaticDirectMethod {
     /** A multi-timer for the several segments of a single getEnergy invocation, indexed by the constants above. */
     public val timer = new Timer(1);
 
+    private val asyncComms = true;
+
     /** The charges in the simulation, divided up into an array of ValRails, one for each place. */
     private val atoms : DistArray[Array[PointCharge](1){rect,rail}](1);
+    private val otherAtoms : DistArray[Array[PointCharge](1){rect,rail}](1);
+    private val nextAtoms : DistArray[Array[PointCharge](1){rect,rail}](1);
+    private val nextReady : DistArray[Boolean](1);
 
     /**
      * Creates a new electrostatic direct method.
@@ -38,41 +43,108 @@ public class ElectrostaticDirectMethod {
 		this.atoms = DistArray.make[Array[PointCharge](1){rect,rail}](Dist.makeUnique(), 
 			([i] : Point) => new Array[PointCharge](atoms(i).size(),
 												(j : Int) => new PointCharge(atoms(i)(j).centre, atoms(i)(j).charge)));
+        this.otherAtoms = DistArray.make[Array[PointCharge](1){rect,rail}](Dist.makeUnique(), 
+			([i] : Point) => new Array[PointCharge](atoms(i).size(),
+												(j : Int) => new PointCharge(atoms(i)(j).centre, atoms(i)(j).charge)));
+        this.nextAtoms = DistArray.make[Array[PointCharge](1){rect,rail}](Dist.makeUnique(), 
+			([i] : Point) => new Array[PointCharge](atoms(i).size(),
+												(j : Int) => new PointCharge(atoms(i)(j).centre, atoms(i)(j).charge)));
+        this.nextReady = DistArray.make[Boolean](Dist.makeUnique(), (Point) => false);
     }
 	
     public def getEnergy() : Double {
         timer.start(TIMER_INDEX_TOTAL);
 
+        if (asyncComms) {
+            // before starting computation, initiate send of place 0 atoms to other places
+            val atoms0 = atoms(0);
+            for (place in Place.places()) async at(place) {
+                when (!(nextReady(place.id))) {
+                    nextAtoms(place.id) = atoms0;
+                    nextReady(place.id) = true;
+                }
+            }
+        }
+
         val directEnergy = finish(SumReducer()) {
 			val atoms = this.atoms; // TODO shouldn't be necessary XTENLANG-1913
-            ateach ([p1] in atoms) {
-                val myAtoms = atoms(p1);
-                // energy for all interactions with other atoms at other places
-                for ([p2] in atoms) async {
-                    if (p2 != p1) { // TODO region difference
-                        var energyWithOther : Double = 0.0;
-                        val otherAtoms = at(atoms.dist(p2)) {atoms(p2)};
-                        for ([j] in 0..(otherAtoms.size-1)) {
-                            val atomJ = otherAtoms(j);
-                            for ([i] in 0..(myAtoms.size-1)) {
-                                val atomI = myAtoms(i);
-                                energyWithOther += atomI.charge * atomJ.charge / atomJ.centre.distance(atomI.centre);
+
+            if (asyncComms) {
+                ateach ([p1] in atoms) {
+                    val myAtoms = atoms(p1);
+                    var energyThisPlace : Double = 0.0;
+
+                    // energy for all interactions within this place
+                    for ([i] in 0..(myAtoms.size-1)) {
+			            val atomI = myAtoms(i);
+                        for ([j] in 0..(i-1)) {
+				            val atomJ = myAtoms(j);
+                            energyThisPlace += 2.0 * atomI.charge * atomJ.charge / atomJ.centre.distance(atomI.centre);
+                        }
+                    }
+
+                    for (place2 in Place.places()) {
+                        // wait on receipt of previous place2 atoms
+                        when (nextReady(here.id)) {
+                            otherAtoms(here.id) = nextAtoms(here.id);
+                            nextReady(here.id) = false;
+                        }
+
+                        if (place2.next() == here && here.id != 0) {                        
+                            // send place2 atoms to other places
+                            for (place3 in Place.places()) async at(place3) {
+                                when (!(nextReady(place3.id))) {
+                                    nextAtoms(place3.id) = myAtoms;
+                                    nextReady(place3.id) = true;
+                                }
                             }
                         }
-                        offer energyWithOther;
-                    }
-                }
 
-                // energy for all interactions within this place
-                var energyThisPlace : Double = 0.0;
-                for ([i] in 0..(myAtoms.size-1)) {
-					val atomI = myAtoms(i);
-                    for ([j] in 0..(i-1)) {
-						val atomJ = myAtoms(j);
-                        energyThisPlace += 2.0 * atomI.charge * atomJ.charge / atomJ.centre.distance(atomI.centre);
+                        if (p1 != place2.id) {
+                            // energy for all interactions with other atoms at other place
+                            val other = otherAtoms(here.id);
+                            for ([j] in 0..(other.size-1)) {
+                                val atomJ = other(j);
+                                for ([i] in 0..(myAtoms.size-1)) {
+                                    val atomI = myAtoms(i);
+                                    energyThisPlace += atomI.charge * atomJ.charge / atomJ.centre.distance(atomI.centre);
+                                }
+                            }
+                        }
                     }
+                    
+                    offer energyThisPlace;
                 }
-                offer energyThisPlace;
+            } else {
+                ateach ([p1] in atoms) {
+                    val myAtoms = atoms(p1);
+                    // energy for all interactions with other atoms at other places
+                    for ([p2] in atoms) async {
+                        if (p2 != p1) { // TODO region difference
+                            var energyWithOther : Double = 0.0;
+                            val otherAtoms = at(atoms.dist(p2)) {atoms(p2)};
+                            for ([j] in 0..(otherAtoms.size-1)) {
+                                val atomJ = otherAtoms(j);
+                                for ([i] in 0..(myAtoms.size-1)) {
+                                    val atomI = myAtoms(i);
+                                    energyWithOther += atomI.charge * atomJ.charge / atomJ.centre.distance(atomI.centre);
+                                }
+                            }
+                            offer energyWithOther;
+                        }
+                    }
+
+                    // energy for all interactions within this place
+                    var energyThisPlace : Double = 0.0;
+                    for ([i] in 0..(myAtoms.size-1)) {
+					    val atomI = myAtoms(i);
+                        for ([j] in 0..(i-1)) {
+						    val atomJ = myAtoms(j);
+                            energyThisPlace += 2.0 * atomI.charge * atomJ.charge / atomJ.centre.distance(atomI.centre);
+                        }
+                    }
+                    offer energyThisPlace;
+                }
             }
         };
        
