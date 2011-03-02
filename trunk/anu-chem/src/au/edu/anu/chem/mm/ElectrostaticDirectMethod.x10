@@ -10,6 +10,8 @@
  */
 package au.edu.anu.chem.mm;
 
+import x10.util.Team;
+
 import x10x.vector.Point3d;
 import x10x.vector.Vector3d;
 import x10x.vector.Tuple3d;
@@ -31,9 +33,7 @@ public class ElectrostaticDirectMethod {
 
     /** The charges in the simulation, divided up into an array of ValRails, one for each place. */
     private val atoms : DistArray[Array[PointCharge](1){rect,rail}](1);
-    private val otherAtoms : DistArray[Array[PointCharge](1){rect,rail}](1);
-    private val nextAtoms : DistArray[Array[PointCharge](1){rect,rail}](1);
-    private val nextReady : DistArray[Boolean](1);
+    private val otherAtoms : DistArray[Array[Array[PointCharge](1){rect,rail}](1){rect,rail}](1);
 
     /**
      * Creates a new electrostatic direct method.
@@ -43,13 +43,8 @@ public class ElectrostaticDirectMethod {
 		this.atoms = DistArray.make[Array[PointCharge](1){rect,rail}](Dist.makeUnique(), 
 			([i] : Point) => new Array[PointCharge](atoms(i).size(),
 												(j : Int) => new PointCharge(atoms(i)(j).centre, atoms(i)(j).charge)));
-        this.otherAtoms = DistArray.make[Array[PointCharge](1){rect,rail}](Dist.makeUnique(), 
-			([i] : Point) => new Array[PointCharge](atoms(i).size(),
-												(j : Int) => new PointCharge(atoms(i)(j).centre, atoms(i)(j).charge)));
-        this.nextAtoms = DistArray.make[Array[PointCharge](1){rect,rail}](Dist.makeUnique(), 
-			([i] : Point) => new Array[PointCharge](atoms(i).size(),
-												(j : Int) => new PointCharge(atoms(i)(j).centre, atoms(i)(j).charge)));
-        this.nextReady = DistArray.make[Boolean](Dist.makeUnique(), (Point) => false);
+        this.otherAtoms = DistArray.make[Array[Array[PointCharge](1){rect,rail}](1){rect,rail}](Dist.makeUnique(), 
+            ([p] : Point) => new Array[Array[PointCharge](1){rect,rail}](Place.MAX_PLACES));
     }
 	
     public def getEnergy() : Double {
@@ -57,9 +52,7 @@ public class ElectrostaticDirectMethod {
 
         val directEnergy = finish(SumReducer()) {
             val atoms = this.atoms; // TODO shouldn't be necessary XTENLANG-1913
-            val otherAtoms = this.otherAtoms;
-            val nextAtoms = this.nextAtoms;
-            val nextReady = this.nextReady;
+            val otherAtoms = this.otherAtoms; // TODO shouldn't be necessary XTENLANG-1913
 
             if (asyncComms) {
                 ateach ([p1] in atoms) {
@@ -71,8 +64,7 @@ public class ElectrostaticDirectMethod {
                     if (nextPlace != here) {
                         async at (nextPlace) {
                             atomic {
-                                nextAtoms(nextPlace.id) = myAtoms;
-                                nextReady(nextPlace.id) = true;
+                                otherAtoms(nextPlace.id)(p1) = myAtoms;
                             }
                         }
                     }
@@ -86,28 +78,24 @@ public class ElectrostaticDirectMethod {
                         }
                     }
 
-                    var target : Place = nextPlace;
-                    while (target != here) {
-                        // wait on receipt of a set of atoms from other place
-                        when (nextReady(here.id)) {
-                            otherAtoms(here.id) = nextAtoms(here.id);
-                            nextReady(here.id) = false;
-                        }
-
-                        target = target.next();
+                    var target : Place = nextPlace.next();
+                    var source : Place = here.prev();
+                    while (source != here) {
                         if (target != here) {
                             // send a set of atoms to next target place
                             val targetPlace = target;
                             async at (targetPlace) {
-                                when (!nextReady(targetPlace.id)) {
-                                    nextAtoms(targetPlace.id) = myAtoms;
-                                    nextReady(targetPlace.id) = true;
+                                atomic {
+                                    otherAtoms(targetPlace.id)(p1) = myAtoms;
                                 }
                             }
                         }
                         
+                        // wait on receipt of a set of atoms from other place
+                        when(otherAtoms(here.id)(source.id) != null);
+
                         // energy for all interactions with other atoms at other place
-                        val other = otherAtoms(here.id);
+                        val other = otherAtoms(here.id)(source.id);
                         for ([j] in 0..(other.size-1)) {
                             val atomJ = other(j);
                             for ([i] in 0..(myAtoms.size-1)) {
@@ -115,6 +103,8 @@ public class ElectrostaticDirectMethod {
                                 energyThisPlace += atomI.charge * atomJ.charge / atomJ.centre.distance(atomI.centre);
                             }
                         }
+                        target = target.next();
+                        source = source.prev();
                     }
                     
                     offer energyThisPlace;
