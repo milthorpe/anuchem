@@ -6,7 +6,7 @@
  *  You may obtain a copy of the License at
  *      http://www.opensource.org/licenses/eclipse-1.0.php
  *
- * (C) Copyright Australian National University 2010.
+ * (C) Copyright Australian National University 2010-2011.
  */
 package au.anu.edu.qm;
 
@@ -14,8 +14,6 @@ import x10x.matrix.Matrix;
 import x10x.xla.JacobiDiagonalizer;
 
 /**
- * MolecularOrbitals.x10
- *
  * Represents MOs in a HF-SCF
  *
  * @author: V.Ganesh
@@ -32,16 +30,12 @@ public class MolecularOrbitals extends Matrix {
     public def compute(theMat:Matrix, overlap:Overlap) : void {
         val x = overlap.getSHalf();
         val a = theMat.similarityTransform(x);
-        // val diag = new JacobiDiagonalizer();
         val diag = new NativeDiagonalizer();
 
         diag.diagonalize(a);
         orbitalEnergies = diag.getEigenValues().getVector();
-        val res = diag.getEigenVectors().mul(x).getMatrix(); 
-        val thisMat = getMatrix();
 
-        for([i, j] in res.region)
-           thisMat(i, j) = res(i, j);
+        this.mulInPlace(diag.getEigenVectors(), x);
     }
 }
 

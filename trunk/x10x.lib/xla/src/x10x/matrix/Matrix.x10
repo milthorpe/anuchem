@@ -117,24 +117,41 @@ public class Matrix {
         return x.mul(this).mul(x.transpose());
     }
 
-    /**
-     * Multiply two matrices: this . X
-     */
-    public def mul(x:Matrix) : Matrix {
-         val N   = getRowCount();
-         val N1  = x.getRowCount();
-         val M   = x.getColCount();
-         val res = new Matrix(N, M);
+   /**
+    * Multiply two matrices
+    * @return C = this . B
+    */
+    public def mul(b:Matrix) : Matrix {
+        val N   = getRowCount();
+        val N1  = b.getRowCount();
+        val M   = b.getColCount();
+        val res = new Matrix(N, M);
 
-         for([i,j] in res.mat) {
+        for([i,j] in res.mat) {
             var cij:Double = 0.0;
             for(var k:Int=0; k<N1; k++) {
-               cij += mat(i, k) * x.mat(k, j);
+               cij += mat(i, k) * b.mat(k, j);
             }
             res.mat(i, j) = cij;
-         } // end for  
+        }
 
-         return res;
+        return res;
+    }
+
+   /**
+    * Multiply two matrices
+    * sets this = A . B
+    */
+    public def mulInPlace(a:Matrix, b:Matrix) {
+        val N1  = b.getRowCount();
+
+        for([i,j] in mat) {
+            var cij:Double = 0.0;
+            for(var k:Int=0; k<N1; k++) {
+               cij += a.mat(i, k) * b.mat(k, j);
+            }
+            mat(i, j) = cij;
+        }
     }
 
     /**
@@ -150,7 +167,8 @@ public class Matrix {
     }
 
     /**
-     * Add two matrices: this + X
+     * Add two matrices
+     * @return this + X
      */
     public def add(x:Matrix) : Matrix {
         val N   = getRowCount();
@@ -161,10 +179,17 @@ public class Matrix {
     }
 
     /**
-     * this = this + X
+     * set this = this + X
      */
     public def addInPlace(x:Matrix)  {
         mat.map[Double,Double](mat, x.mat, (a : Double, b : Double) => a + b);
+    }
+
+    /**
+     * set this = X + Y
+     */
+    public def addInPlace(x:Matrix, y:Matrix)  {
+        x.mat.map[Double,Double](mat, y.mat, (a : Double, b : Double) => a + b);
     }
 
     /**
