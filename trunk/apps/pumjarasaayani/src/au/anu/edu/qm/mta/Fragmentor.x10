@@ -147,7 +147,7 @@ public class Fragmentor {
    }
 
    /** merge fragments along the connectivity path */
-   def mergeAlongConnectivity(mol:Molecule[QMAtom], sortedAtomIndices:Array[Int](1){rect,rail}, fragList:ArrayList[Fragment]) {
+   def mergeAlongConnectivity(mol:Molecule[QMAtom], sortedAtomIndices:Array[Int](1){rect,zeroBased}, fragList:ArrayList[Fragment]) {
        val noOfAtoms = mol.getNumberOfAtoms(); 
        val visited = new Array[Boolean](noOfAtoms, (Int)=>false);        
         
@@ -165,7 +165,7 @@ public class Fragmentor {
    }
 
    /** simple traversal and merge */
-   def traverseAndMergeFragments(v:Int, sortedAtomIndices:Array[Int](1){rect,rail}, mol:Molecule[QMAtom], visited:Array[Boolean](1){rect,rail}, fragList:ArrayList[Fragment]) {
+   def traverseAndMergeFragments(v:Int, sortedAtomIndices:Array[Int](1){rect,zeroBased}, mol:Molecule[QMAtom], visited:Array[Boolean](1){rect,zeroBased}, fragList:ArrayList[Fragment]) {
        val bonds = mol.getAtom(v).getBonds();
  
        Console.OUT.println("Number of bonds for atom " + v + " is " + bonds.size());

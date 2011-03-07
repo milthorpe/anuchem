@@ -22,7 +22,7 @@ import x10.util.*;
 public class ShellList { 
     val shellList:HashMap[Int, Shell];
     
-    var powerList:Array[Array[Power](1){rect,rail}](1){rect,rail};
+    var powerList:Array[Array[Power](1){rect,zeroBased}](1){rect,zeroBased};
 
     var maxam:Int;
 
@@ -34,7 +34,7 @@ public class ShellList {
     public def initPowerList() : void {
         val maxam4 = (maxam*4)+2;
  
-        powerList = new Array[Array[Power](1){rect,rail}](maxam4); 
+        powerList = new Array[Array[Power](1){rect,zeroBased}](maxam4); 
         val pList = PowerList.getInstance();
         for(var i:Int=0; i<=maxam4; i++)
            powerList(i) = pList.generatePowerList(i); 

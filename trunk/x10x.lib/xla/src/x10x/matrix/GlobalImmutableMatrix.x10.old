@@ -59,7 +59,7 @@ public class GlobalImmutableMatrix extends Matrix {
 
     val size:Int;
 
-    val muted:Array[Boolean]{rail};
+    val muted:Array[Boolean]{zeroBased};
 
     /** Create a new instance of matrix which is square */
     public def this(size:Int) {

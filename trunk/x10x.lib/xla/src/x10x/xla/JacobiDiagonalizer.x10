@@ -22,7 +22,7 @@ import x10x.matrix.Matrix;
 public class JacobiDiagonalizer {
     var eigenValuesVec:Vector; 
     var eigenVectorsMat:Matrix;
-    var eigenValues:Array[Double](1){rect,rail};
+    var eigenValues:Array[Double](1){rect,zeroBased};
     var eigenVectors:Array[Double](2){rect};
 
     val maxIterations : Int = 100;

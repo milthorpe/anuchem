@@ -58,7 +58,7 @@ public class Distributed3dFft {
         } else {
             finish {
                 for (p1 in source.dist.places()) async at(p1) {
-                    // 'scratch' rails, for use in the 1D FFTs
+                    // 'scratch' arrays, for use in the 1D FFTs
                     val oneDSource = new Array[Complex](dataSize);
                     val oneDTarget = new Array[Complex](dataSize);
                     do1DFftToTemp(source, oneDSource, oneDTarget, forward);
@@ -76,8 +76,8 @@ public class Distributed3dFft {
 /*
  *  Formerly, the above was:
  *
-            val oneDSource = DistArray.make[Array[Complex](1){rect,rail}](Dist.makeUnique(), (Point) => new Array[Complex](dataSize));
-            val oneDTarget = DistArray.make[Array[Complex](1){rect,rail}](oneDSource.dist, (Point) => new Array[Complex](dataSize));
+            val oneDSource = DistArray.make[Array[Complex](1){rect,zeroBased}](Dist.makeUnique(), (Point) => new Array[Complex](dataSize));
+            val oneDTarget = DistArray.make[Array[Complex](1){rect,zeroBased}](oneDSource.dist, (Point) => new Array[Complex](dataSize));
             finish ateach(p1 in oneDSource) do1DFftToTemp(source, oneDSource(p1), oneDTarget(p1), forward);
             finish ateach(p1 in oneDSource) transposeTempToTarget();
             finish ateach(p1 in oneDSource) do1DFftToTemp(target, oneDSource(p1), oneDTarget(p1), forward);
@@ -114,8 +114,8 @@ public class Distributed3dFft {
      * and store the result in the temp array.
      */
     private def do1DFftToTemp(source : DistArray[Complex](3),
-                                     oneDSource : Array[Complex](1){rect,rail},
-                                     oneDTarget : Array[Complex](1){rect,rail},
+                                     oneDSource : Array[Complex](1){rect,zeroBased},
+                                     oneDTarget : Array[Complex](1){rect,zeroBased},
                                      forward : Boolean) {
         val plan : FFTW.FFTWPlan = FFTW.fftwPlan1d(dataSize, oneDSource, oneDTarget, forward);
         val mySource = source.dist | here;

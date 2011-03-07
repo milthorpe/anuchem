@@ -35,7 +35,7 @@ import au.edu.anu.chem.Molecule;
 public class TwoElectronIntegrals {
     private static val SQ2PI = Math.pow((2.0/Math.PI), 0.5); 
 
-    private val fmt:Array[Double](1){rect,rail}, zeroM:Array[Double](1){rect,rail};
+    private val fmt:Array[Double](1){rect,zeroBased}, zeroM:Array[Double](1){rect,zeroBased};
 
     private val rM:Array[Double](2){rect};
     private val pqInts:Array[Double](2){rect};
@@ -754,7 +754,7 @@ public class TwoElectronIntegrals {
     }
 
     /** Compute the base FmT() - for evaluating integrals */
-    protected def computeFmt(maxam:Int, T:Double, fmt:Array[Double](1){rect,rail}) {
+    protected def computeFmt(maxam:Int, T:Double, fmt:Array[Double](1){rect,zeroBased}) {
         if (T > 30.0){
             val invT = 1/T;
             fmt(0) = Math.sqrt(Math.PI*invT)*0.5;

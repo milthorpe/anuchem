@@ -37,7 +37,7 @@ public class AmberForceField implements ForceField {
         angleParameters.put(waterAngle.description, waterAngle);
     }
     
-    public def getPotentialAndForces(atoms: DistArray[Array[MMAtom](1){rect,rail}](1)) : Double {
+    public def getPotentialAndForces(atoms: DistArray[Array[MMAtom](1){rect,zeroBased}](1)) : Double {
         energy = 0.0;
         finish ateach(p in atoms) { 
             var myEnergy : Double = 0.0;

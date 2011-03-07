@@ -13,7 +13,7 @@ import x10x.matrix.Matrix;
 
 public class GaussianElimination extends LinearEquationSolver {
 
-    private var row:Array[Int](1){rect,rail};
+    private var row:Array[Int](1){rect,zeroBased};
     private var a:Array[Double]{rank==2};
     private var x:Array[Double]{rank==1};
 

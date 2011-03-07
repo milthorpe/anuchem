@@ -19,7 +19,7 @@ import x10.compiler.Inline;
  *
  * @author: V.Ganesh
  */
-public class PrimitiveGaussian { 
+public class PrimitiveGaussian {
     val origin:Point3d;
     val power:Power;
     val exponent:Double;
@@ -197,7 +197,7 @@ public class PrimitiveGaussian {
      * <i> "THO eq. 2.18 and 3.1 <i>
      * note: assumes array a is already filled with zeros
      */
-    private @Inline def fillAArray(a : Array[Double](1){rect,rail}, 
+    private @Inline def fillAArray(a : Array[Double](1){rect,zeroBased}, 
                             l1:Int, l2:Int, pa:Double, pb:Double,
                             cp:Double, gamma:Double) {
 

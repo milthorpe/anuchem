@@ -22,7 +22,7 @@ import x10.util.*;
  */
 public class PowerList { 
 
-    val powerList = new HashMap[String,Array[Power](1){rect,rail}](); 
+    val powerList = new HashMap[String,Array[Power](1){rect,zeroBased}](); 
 
     private def this() {
        powerList.put("S", generatePowerList(0));
@@ -32,7 +32,7 @@ public class PowerList {
     }
 
     @NonEscaping 
-    public final def generatePowerList(maxAngularMomentum:Int) : Array[Power](1){rect,rail} {
+    public final def generatePowerList(maxAngularMomentum:Int) : Array[Power](1){rect,zeroBased} {
         var n:Int = ((maxAngularMomentum+1)*(maxAngularMomentum+2)/2);
 
         val pList = new Array[Power](n);

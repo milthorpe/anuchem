@@ -89,7 +89,7 @@ public class CardinalityExpression {
        else           return 1;
    }
 
-   private def computeIntersections(fragList:ArrayList[Fragment], cfList:ArrayList[Fragment], combs:Array[Int](1){rect,rail}, nTerms:Int, sign:Int) : Boolean {
+   private def computeIntersections(fragList:ArrayList[Fragment], cfList:ArrayList[Fragment], combs:Array[Int](1){rect,zeroBased}, nTerms:Int, sign:Int) : Boolean {
        var fInter:Fragment = fragList.get(combs(0));       
 
        for(var i:Int=1; i<=nTerms; i++) {

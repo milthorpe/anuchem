@@ -45,7 +45,7 @@ public class TestElectrostatic {
      * Locate all particles within a small displacement from points on 
      * a cbrt(N)-SIZE grid.
      */
-    public def generateAtoms(numAtoms : Int) : DistArray[Array[MMAtom](1){rect,rail}](1) {
+    public def generateAtoms(numAtoms : Int) : DistArray[Array[MMAtom](1){rect,zeroBased}](1) {
         //Console.OUT.println("size of cluster =  " + sizeOfCentralCluster());
         val tempAtoms = DistArray.make[ArrayList[MMAtom]](Dist.makeUnique(), (Point) => new ArrayList[MMAtom]());
         val gridSize = (Math.ceil(Math.cbrt(numAtoms)) as Int);
@@ -68,7 +68,7 @@ public class TestElectrostatic {
             }
             gridPoint++;
         }
-        val atoms = DistArray.make[Array[MMAtom](1){rect,rail}](Dist.makeUnique(), ([p] : Point) => (tempAtoms(p) as ArrayList[MMAtom]).toArray() as Array[MMAtom](1){rect,rail});
+        val atoms = DistArray.make[Array[MMAtom](1){rect,zeroBased}](Dist.makeUnique(), ([p] : Point) => (tempAtoms(p) as ArrayList[MMAtom]).toArray() as Array[MMAtom](1){rect,zeroBased});
         return atoms;
     }
 
