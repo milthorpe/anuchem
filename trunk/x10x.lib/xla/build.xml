@@ -36,7 +36,7 @@
 
     <target name="build" depends="dist"/>
 
-	<target name="dist" depends="jar,ar">
+	<target name="dist" depends="jar">
         <mkdir dir="${lib}"/>
         <copy todir="${lib}">
             <fileset dir="${target}" includes="${jar}"/>

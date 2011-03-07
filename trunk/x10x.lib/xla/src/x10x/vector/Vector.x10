@@ -21,7 +21,7 @@ import x10x.matrix.Matrix;
  * @author V.Ganesh, milthorpe
  */
 public class Vector { 
-    val vec:Array[Double](1){rect,rail};
+    val vec:Array[Double](1){rect,zeroBased};
     property region = vec.region;
 
     /**
@@ -29,6 +29,13 @@ public class Vector {
      */
     public def this(siz:Int) { 
         vec = new Array[Double](0..(siz-1));
+    }
+
+    /**
+     * Construct a Vector of dimention N
+     */
+    public def this(region:Region(1){rect,zeroBased}) { 
+        vec = new Array[Double](region);
     }
 
     /**
@@ -47,7 +54,7 @@ public class Vector {
     /**
      * The size of this vector
      */
-    public def getSize() = region.size();
+    public def getSize() = vec.size();
  
     /**
      * Actual data stored
@@ -85,7 +92,7 @@ public class Vector {
      * add two vectors: this + b 
      */
     public def add(b:Vector) : Vector {
-        val res = new Vector(region.size());
+        val res = new Vector(this.region);
 
         val plus = ((a : Double, b : Double) => a + b);
         vec.map[Double,Double](res.vec, b.vec, plus);
@@ -97,7 +104,7 @@ public class Vector {
      * subtract two vectors: this - b
      */
     public def sub(b:Vector) : Vector {
-        val res = new Vector(region.size());
+        val res = new Vector(this.region);
         val minus = ((a : Double, b : Double) => a - b);
         vec.map[Double,Double](res.vec, b.vec, minus);
 
@@ -117,7 +124,7 @@ public class Vector {
      */
     public def normalize() : Vector {
         val mag = magnitude();
-        val res = new Vector(region.size());
+        val res = new Vector(this.region);
         val norm = ((a : Double) => a / mag);
         vec.map[Double](res.vec, norm);
         return res;
@@ -127,7 +134,7 @@ public class Vector {
      * return (-1) . V
      */
     public def negate() : Vector {
-        val n = new Vector(region.size());
+        val n = new Vector(this.region);
         val neg = ((a : Double) => -a);
         vec.map[Double](n.vec, neg);
         return n;
@@ -137,7 +144,7 @@ public class Vector {
      * Multiply this vector by a constant k
      */
     public def mul(k:Double) : Vector {
-        val res = new Vector(region.size());
+        val res = new Vector(this.region);
         val mulK = ((a : Double) => a * k);
         vec.map[Double](res.vec, mulK);
         return res;
@@ -154,7 +161,7 @@ public class Vector {
     public def toString() : String {
         var str : String = "";
 
-        for([i] in region) {
+        for([i] in vec.region) {
             str += "" + vec(i) + " ";
         }
 
