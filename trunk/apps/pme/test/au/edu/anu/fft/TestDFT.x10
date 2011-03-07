@@ -47,7 +47,7 @@ public class TestDFT {
 
         val twoPlusI = 2.0 + Complex.I;
         val r = Region.make(0, N-1);
-        val r3 = (r * r * r) as Region(3){rect,zeroBased};
+        val r3 = (r * r * r) as Region(3){rect,zeroBased,rail};
         val input = new Array[Complex](r3, (p[i,j,k] : Point(3)) => twoPlusI * (1.0 / (i + j + k + 1)));
         Console.OUT.println("input");
         for (p in input) {

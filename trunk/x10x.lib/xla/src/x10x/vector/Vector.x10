@@ -21,7 +21,7 @@ import x10x.matrix.Matrix;
  * @author V.Ganesh, milthorpe
  */
 public class Vector { 
-    val vec:Array[Double](1){rect,zeroBased};
+    val vec:Array[Double](1){rect,zeroBased,rail};
     property region = vec.region;
 
     /**
@@ -34,7 +34,7 @@ public class Vector {
     /**
      * Construct a Vector of dimention N
      */
-    public def this(region:Region(1){rect,zeroBased}) { 
+    public def this(region:Region(1){rect,zeroBased,rail}) { 
         vec = new Array[Double](region);
     }
 
