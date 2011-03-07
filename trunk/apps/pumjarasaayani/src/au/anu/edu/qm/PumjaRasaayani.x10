@@ -86,7 +86,7 @@ public class PumjaRasaayani {
         Console.OUT.println("PumjaRasaayani shunya.tri, Quantum Chemisty program in x10, v0.3");
 
         Console.OUT.println("No. of places: " + Place.MAX_PLACES);
-        Console.OUT.println("No. of threads per place: " + Runtime.NTHREADS);
+        Console.OUT.println("No. of threads per place: " + Runtime.INIT_THREADS);
 
         Console.OUT.println("\nInput deck:");
         Console.OUT.println(mol);
