@@ -31,7 +31,7 @@ public class FmmBox {
      * The V-list consists of the children of those boxes 
      * not well-separated from this box's parent.
      */
-    private var vList : Array[Point(3)](1){rect,zeroBased};
+    private var vList : Array[Point(3)](1){rect,zeroBased,rail};
 
     /** The multipole expansion of the charges within this box. */
     public val multipoleExp : MultipoleExpansion;
@@ -90,7 +90,7 @@ public class FmmBox {
 
     public def getVList() = this.vList;
 
-    public def setVList(vList : Array[Point(3)](1){rect,zeroBased}) {
+    public def setVList(vList : Array[Point(3)](1){rect,zeroBased,rail}) {
         this.vList = vList;
     }
 

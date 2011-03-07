@@ -9,7 +9,7 @@ import x10.compiler.NativeCPPCompilationUnit;
 public class FFTW {
     @Native("c++", "::edu::mit::fftw::FFTWWrapper::fftwPlanDft1d(#1, reinterpret_cast<fftw_complex*>(#2._val->raw().data), reinterpret_cast<fftw_complex*>(#3._val->raw().data), #4)")
     @Native("java", "null")
-    public native static def fftwPlan1d(n : Int, input : Array[Complex](1){rect,zeroBased}, output : Array[Complex](1){rect,zeroBased}, forward : Boolean) : FFTWPlan;
+    public native static def fftwPlan1d(n : Int, input : Array[Complex](1){rect,zeroBased,rail}, output : Array[Complex](1){rect,zeroBased,rail}, forward : Boolean) : FFTWPlan;
 
     @Native("c++", "::edu::mit::fftw::FFTWWrapper::fftwPlanDft3d(#1, #2, #3, reinterpret_cast<fftw_complex*>(#4._val->raw().data), reinterpret_cast<fftw_complex*>(#5._val->raw().data), #6)")
     @Native("java", "null")
