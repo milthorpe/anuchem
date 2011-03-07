@@ -156,9 +156,9 @@ public class GMatrix extends Matrix {
 
         val shellList = bfs.getShellList();
 
-        val computeThreads = new Array[ComputeThread](Runtime.INIT_THREADS);
+        val computeThreads = new Array[ComputeThread](Runtime.NTHREADS);
 
-        for(var i:Int=0; i<Runtime.INIT_THREADS; i++) {
+        for(var i:Int=0; i<Runtime.NTHREADS; i++) {
             computeThreads(i) = new ComputeThread(N, shellList);
         } // end for
 
@@ -199,7 +199,7 @@ public class GMatrix extends Matrix {
                                        var setIt:Boolean = false;
                                        
                                        outer: while(!setIt) {
-                                           for(var idx:Int=0; idx<Runtime.INIT_THREADS; idx++) { 
+                                           for(var idx:Int=0; idx<Runtime.NTHREADS; idx++) { 
                                                setIt = computeThreads(idx).setValue(iaFunc, jbFunc, kcFunc, ldFunc);                                               
                                                if (setIt) {
                                                   val idx_loc = idx;
@@ -220,7 +220,7 @@ public class GMatrix extends Matrix {
         
         // form the G matrix
         val gMatrix = getMatrix();
-        for(var idx:Int=0; idx<Runtime.INIT_THREADS; idx++) { 
+        for(var idx:Int=0; idx<Runtime.NTHREADS; idx++) { 
              val jMatrix = computeThreads(idx).getJMat().getMatrix();
              val kMatrix = computeThreads(idx).getKMat().getMatrix();
              
@@ -451,7 +451,7 @@ public class GMatrix extends Matrix {
         val jMatrixContribution : Matrix;
         val kMatrixContribution : Matrix;
 
-        public val computeThreads = new Array[ComputeThread](Runtime.INIT_THREADS);
+        public val computeThreads = new Array[ComputeThread](Runtime.NTHREADS);
 
         public def this(N : Int, mol:Molecule[QMAtom], basisName:String) {
             this.mol_loc = mol;
@@ -468,7 +468,7 @@ public class GMatrix extends Matrix {
             density = new Density(N, noOfOccupancies);
 
             val shellList = bas.getShellList();
-            for(var i:Int=0; i<Runtime.INIT_THREADS; i++) {
+            for(var i:Int=0; i<Runtime.NTHREADS; i++) {
                 computeThreads(i) = new ComputeThread(gMatrixContribution.getRowCount(), shellList);
             }
         }
@@ -483,7 +483,7 @@ public class GMatrix extends Matrix {
             gMatrixContribution.makeZero();
             jMatrixContribution.makeZero();
             kMatrixContribution.makeZero();
-            for(var i:Int=0; i<Runtime.INIT_THREADS; i++) {
+            for(var i:Int=0; i<Runtime.NTHREADS; i++) {
                 computeThreads(i).reset();
             }
         }
@@ -500,7 +500,7 @@ public class GMatrix extends Matrix {
             gMatrixContribution.makeZero();
             jMatrixContribution.makeZero();
             kMatrixContribution.makeZero();
-            for(var i:Int=0; i<Runtime.INIT_THREADS; i++) {
+            for(var i:Int=0; i<Runtime.NTHREADS; i++) {
                 computeThreads(i).reset();
             }
         }
@@ -553,6 +553,10 @@ public class GMatrix extends Matrix {
                 val cc = cStrt + cAng;
 
                 if (aa >= cc) {
+                    // check for incoming messages (e.g. shared counter updates)
+                    // TODO instead, split work into smaller activities
+                    Runtime.probe();
+
                     for([d] in 0..(nPrimitives-1)) {
                         val dFunc = bfs(d);
                         val dStrt = dFunc.getIntIndex();
@@ -567,9 +571,6 @@ public class GMatrix extends Matrix {
                         }
                     }
                 }
-                // check for incoming messages (e.g. shared counter updates)
-                // TODO instead, split work into smaller activities
-                Runtime.probe();
             }
         }
 
@@ -579,7 +580,7 @@ public class GMatrix extends Matrix {
             val kFunc = mol_loc.getAtom(c).getBasisFunctions().get(k);
             val lFunc = mol_loc.getAtom(d).getBasisFunctions().get(l);
 
-            for(var ix:Int=0; ix<Runtime.INIT_THREADS; ix++) {
+            for(var ix:Int=0; ix<Runtime.NTHREADS; ix++) {
                val setIt = computeThreads(ix).setValue(iFunc, jFunc, kFunc, lFunc);
 
                if (setIt) {
@@ -649,7 +650,7 @@ public class GMatrix extends Matrix {
         }
 
         private def computeJMatContribution() : Matrix {
-            for(var i:Int=0; i<Runtime.INIT_THREADS; i++) {
+            for(var i:Int=0; i<Runtime.NTHREADS; i++) {
                jMatrixContribution.addInPlace(computeThreads(i).getJMat());
             }
 
@@ -657,7 +658,7 @@ public class GMatrix extends Matrix {
         }
 
         private def computeKMatContribution() : Matrix {
-            for(var i:Int=0; i<Runtime.INIT_THREADS; i++) {
+            for(var i:Int=0; i<Runtime.NTHREADS; i++) {
                kMatrixContribution.addInPlace(computeThreads(i).getKMat());
             }
 
