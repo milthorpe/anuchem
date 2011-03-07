@@ -546,32 +546,30 @@ public class GMatrix extends Matrix {
 
             val radiusABSquared = aFunc.distanceSquaredFrom(bFunc);
 
-            for(var c:Int=0; c<nPrimitives; c++) {
+            for([c] in 0..(nPrimitives-1)) {
                 val cFunc = bfs(c);
                 val cStrt = cFunc.getIntIndex();
                 val cAng  = cFunc.getMaximumAngularMomentum();
                 val cc = cStrt + cAng;
 
-                if (aa < cc) continue;
+                if (aa >= cc) {
+                    for([d] in 0..(nPrimitives-1)) {
+                        val dFunc = bfs(d);
+                        val dStrt = dFunc.getIntIndex();
+                        val dAng  = dFunc.getMaximumAngularMomentum();
+                        val dd = dStrt + dAng;
 
-                for(var d:Int=0; d<nPrimitives; d++) {
-                    val dFunc = bfs(d);
-                    val dStrt = dFunc.getIntIndex();
-                    val dAng  = dFunc.getMaximumAngularMomentum();
-                    val dd = dStrt + dAng;
-
-                    if (cc < dd) continue;
-
-                    // if (bb < cc && bb < dd) continue;
-                    // val skp = (bb < cc && bb < dd && aa == cc);
-
-                    // Console.OUT.println(aa + ", " + bb + ", " + cc + ", " + dd + " : (" + a + "," + b + "," + c + "," + d + ") " + skp);
-                    // twoE.compute2EAndRecord(aFunc, bFunc, cFunc, dFunc, shellList, jMat, kMat, density);
-                    computeThreads(0).computeSingle2(aFunc, bFunc, cFunc, dFunc,
-                                radiusABSquared, aAng, bAng, cAng, dAng, angMomAB,
-                                aStrt, bStrt, cStrt, dStrt, aLim, bLim, abLim,
-                                density);
+                        if (dd >= cc) {
+                            computeThreads(0).computeSingle2(aFunc, bFunc, cFunc, dFunc,
+                                        radiusABSquared, aAng, bAng, cAng, dAng, angMomAB,
+                                        aStrt, bStrt, cStrt, dStrt, aLim, bLim, abLim,
+                                        density);
+                        }
+                    }
                 }
+                // check for incoming messages (e.g. shared counter updates)
+                // TODO instead, split work into smaller activities
+                Runtime.probe();
             }
         }
 
