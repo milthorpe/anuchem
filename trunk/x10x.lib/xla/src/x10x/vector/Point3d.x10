@@ -15,6 +15,10 @@ public struct Point3d(i : Double, j : Double, k : Double) implements Tuple3d {
         this(t.i(), t.j(), t.k());
     }
 
+    property i() = i;
+    property j() = j;
+    property k() = k;
+
     public def toString() = ("(" + i + "i + " + j + "j + " + k + "k)");
 
     /**
