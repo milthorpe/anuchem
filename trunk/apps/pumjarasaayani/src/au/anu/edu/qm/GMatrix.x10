@@ -244,35 +244,35 @@ public class GMatrix extends Matrix {
 
         finish {
             // center a
-            for ([a] in 0..(noOfAtoms-1)) {
+            for (a in 0..(noOfAtoms-1)) {
                 val aFunc = mol.getAtom(a).getBasisFunctions();
                 val naFunc = aFunc.size();
                 // basis functions on a
-                for ([i] in 0..(naFunc-1)) {
+                for (i in 0..(naFunc-1)) {
                     val iaFunc = aFunc.get(i);
 
                     // center b
-                    for ([b] in 0..a) {
+                    for (b in 0..a) {
                         val bFunc = mol.getAtom(b).getBasisFunctions();
                         val nbFunc = (b<a) ? bFunc.size() : i+1;
                         // basis functions on b
-                        for ([j] in 0..(nbFunc-1)) {
+                        for (j in 0..(nbFunc-1)) {
                             val jbFunc = bFunc.get(j);
 
                             // center c
-                            for ([c] in 0..(noOfAtoms-1)) {
+                            for (c in 0..(noOfAtoms-1)) {
                                 val cFunc = mol.getAtom(c).getBasisFunctions();
                                 val ncFunc = cFunc.size();
                                 // basis functions on c
-                                for ([k] in 0..(ncFunc-1)) {
+                                for (k in 0..(ncFunc-1)) {
                                     val kcFunc = cFunc.get(k);
 
                                     // center d
-                                    for ([d] in 0..c) {
+                                    for (d in 0..c) {
                                        val dFunc = mol.getAtom(d).getBasisFunctions();
                                        val ndFunc = (d<c) ? dFunc.size() : k+1;
                                         // basis functions on d
-                                        for ([l] in 0..(ndFunc-1)) {
+                                        for (l in 0..(ndFunc-1)) {
                                             val ldFunc = dFunc.get(l);
                                             var setIt:Boolean = false;
 
@@ -546,7 +546,7 @@ public class GMatrix extends Matrix {
 
             val radiusABSquared = aFunc.distanceSquaredFrom(bFunc);
 
-            for([c] in 0..(nPrimitives-1)) {
+            for (c in 0..(nPrimitives-1)) {
                 val cFunc = bfs(c);
                 val cStrt = cFunc.getIntIndex();
                 val cAng  = cFunc.getMaximumAngularMomentum();
@@ -557,7 +557,7 @@ public class GMatrix extends Matrix {
                     // TODO instead, split work into smaller activities
                     Runtime.probe();
 
-                    for([d] in 0..(nPrimitives-1)) {
+                    for (d in 0..(nPrimitives-1)) {
                         val dFunc = bfs(d);
                         val dStrt = dFunc.getIntIndex();
                         val dAng  = dFunc.getMaximumAngularMomentum();

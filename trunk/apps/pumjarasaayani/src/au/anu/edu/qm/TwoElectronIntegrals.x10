@@ -479,7 +479,7 @@ public class TwoElectronIntegrals {
     private def computeZeroM(angMomABCD:Int, Upq:Double, eta:Double) {
         val twoEta = 2.0*eta;
         var etaPow : Double = Math.sqrt(twoEta);
-        for([i] in 0..angMomABCD) {
+        for(i in 0..angMomABCD) {
             zeroM(i) = Upq * etaPow * fmt(i);
             etaPow *= twoEta; // etaPow = twoEta^(i+0.5)
             // Console.OUT.println(Upq + " " + zeroM(i));
@@ -614,29 +614,29 @@ public class TwoElectronIntegrals {
 
          var intIndx:Int = 0;
 
-         for([dd] in 0..(dLim-1)) {
+         for (dd in 0..(dLim-1)) {
              val ll = dStrt + dd;
 
-             for([cc] in 0..(cLim-1)) {
+             for (cc in 0..(cLim-1)) {
                  val kk = cStrt + cc;
 
                  if (kk < ll) continue;
                  val kkll_st = kk*(kk+1)/2 + ll;
 
-                 for ([k] in 0..maxam2) {
+                 for (k in 0..maxam2) {
                     val kpq = k*pqdim;
-                    for ([l] in 0..maxam2M)
+                    for (l in 0..maxam2M)
                         npint(k,l) = pcdint(dd, cc, kpq+l);
                  }
 
-                 for([bb] in 0..(bLim-1)) {
+                 for (bb in 0..(bLim-1)) {
                      val jj = bStrt + bb;
                      val powersB = shellB(bb);
                      val lp = powersB.l;
                      val mp = powersB.m;
                      val np = powersB.n;
 
-                     for([aa] in 0..(aLim-1)) {
+                     for (aa in 0..(aLim-1)) {
                          val ii = aStrt + aa;
 
                          if (ii >= jj) {
@@ -669,14 +669,14 @@ public class TwoElectronIntegrals {
                                dMatrix:Array[Double](2){rect}) {
         var intIndx:Int = 0;
 
-        for([ll] in dStrt..(dStrt+dLim-1)) {
+        for (ll in dStrt..(dStrt+dLim-1)) {
             val kStrt = Math.max(cStrt, ll);
-            for([kk] in kStrt..(cStrt+cLim-1)) {
+            for (kk in kStrt..(cStrt+cLim-1)) {
                 val kkll = kk*(kk+1)/2 + ll;
 
-                for([jj] in bStrt..(bStrt+bLim-1)) {
+                for (jj in bStrt..(bStrt+bLim-1)) {
                     val iStrt = Math.max(aStrt, jj);
-                    for([ii] in iStrt..(aStrt+aLim-1)) {
+                    for (ii in iStrt..(aStrt+aLim-1)) {
                         val iijj = ii*(ii+1)/2 + jj;
 
                         if (iijj >= kkll) {
@@ -759,7 +759,7 @@ public class TwoElectronIntegrals {
             val invT = 1/T;
             fmt(0) = Math.sqrt(Math.PI*invT)*0.5;
            
-            for ([m] in 1..maxam) {
+            for (m in 1..maxam) {
                 fmt(m) = fmt(m-1) * (m-0.5) * invT;
             }
         } else {
