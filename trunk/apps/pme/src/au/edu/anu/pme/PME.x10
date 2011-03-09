@@ -250,7 +250,7 @@ public class PME {
         val atoms = this.atoms; // TODO shouldn't be necessary XTENLANG-1913
         finish ateach (p in atoms) {
             val localAtoms = atoms(p);
-            for ([l] in 0..(localAtoms.size()-1)) {
+            for (l in 0..(localAtoms.size()-1)) {
                 val atom = localAtoms(l);
                 val centre = atom.centre;
                 // get subcell i,j,k
@@ -299,7 +299,7 @@ public class PME {
                 val haloForPlace = placeEntry.getValue();
                 val haloListArray = haloForPlace.toArray();
                 val packedForPlace = at (Place.place(placeId)) { getPackedAtomsForSubcellList(subCells, haloListArray)};
-                for ([i] in 0..(haloListArray.size-1)) {
+                for (i in 0..(haloListArray.size-1)) {
                     myPackedAtoms(haloListArray(i)) = packedForPlace(i);
                 }
             }
@@ -361,9 +361,9 @@ public class PME {
                                 val otherSubCellLocation = subCells.dist(i,j,k);
                                 if (otherSubCellLocation == here) {
                                     val otherCell = subCells(i,j,k);
-                                    for ([otherAtom] in 0..(otherCell.size-1)) {
+                                    for (otherAtom in 0..(otherCell.size-1)) {
                                         val imageLoc = otherCell(otherAtom).centre + translation;
-                                        for ([thisAtom] in 0..(thisCell.size-1)) {
+                                        for (thisAtom in 0..(thisCell.size-1)) {
                                             val rSquared = thisCell(thisAtom).centre.distanceSquared(imageLoc);
                                             if (rSquared < cutoffSquared) {
                                                 val r = Math.sqrt(rSquared);
@@ -376,9 +376,9 @@ public class PME {
                                 } else {
                                     // other subcell is remote; use cached packed atoms
                                     val otherCellPacked = packedAtoms(i,j,k);
-                                    for ([otherAtom] in 0..(otherCellPacked.size-1)) {
+                                    for (otherAtom in 0..(otherCellPacked.size-1)) {
                                         val imageLoc = otherCellPacked(otherAtom).centre + translation;
-                                        for ([thisAtom] in 0..(thisCell.size-1)) {
+                                        for (thisAtom in 0..(thisCell.size-1)) {
                                             val rSquared = thisCell(thisAtom).centre.distanceSquared(imageLoc);
                                             if (rSquared < cutoffSquared) {
                                                 val r = Math.sqrt(rSquared);
@@ -395,8 +395,8 @@ public class PME {
                 }
 
                 // atoms in same cell
-                for ([i] in 0..(thisCell.size-1)) {
-                    for ([j] in 0..(i-1)) {
+                for (i in 0..(thisCell.size-1)) {
+                    for (j in 0..(i-1)) {
                         val rjri = thisCell(j).centre - thisCell(i).centre;
                         val rSquared = rjri.lengthSquared();
                         if (rSquared < cutoffSquared) {
@@ -436,7 +436,7 @@ public class PME {
                 var mySelfEnergy : Double = 0.0;
                 for ([i,j,k] in subCells.dist(here)) {
                     val thisCell = subCells(i,j,k);
-                    for ([thisAtom] in 0..(thisCell.size-1)) {
+                    for (thisAtom in 0..(thisCell.size-1)) {
                         mySelfEnergy += thisCell(thisAtom).charge * thisCell(thisAtom).charge;
                     }
                 }
@@ -477,7 +477,7 @@ public class PME {
 
                 for (p in place1Region) {
                     val thisCell = subCells(p) as Array[MMAtom](1){rect,zeroBased,rail};
-                    for ([atomIndex] in 0..(thisCell.size-1)) {
+                    for (atomIndex in 0..(thisCell.size-1)) {
                         val atom = thisCell(atomIndex);
                         val q = atom.charge;
                         val u = getScaledFractionalCoordinates(K1, K2, K3, edgeReciprocals, atom.centre); // TODO general non-cubic
@@ -485,17 +485,17 @@ public class PME {
                         val u2c = Math.ceil(u(1)) as Int;
                         val u3c = Math.ceil(u(2)) as Int;
 
-                        for([j] in 0..2) {
+                        for(j in 0..2) {
                             val offset = Math.ceil(u(j)) - u(j);
                         
                             splines(j,splineOrder-1) = 0.0;
                             splines(j,1) = offset;
                             splines(j,0) = 1.0 - offset;
                         
-                            for([k] in 3..(splineOrder-1)) {
+                            for(k in 3..(splineOrder-1)) {
                                 val div = 1.0 / (k-1.0);    
                                 splines(j,k-1) = div * offset * splines(j,k-2);
-                                for([l] in 1..(k-2)) {
+                                for(l in 1..(k-2)) {
                                     splines(j,k-l-1) = div * ((offset+l) * splines(j,k-l-2) + (k-l-offset) * splines(j,k-l-1));
                                 }
                                 splines(j,0) = div * (1.0-offset) * splines(j,0);
@@ -503,20 +503,20 @@ public class PME {
                         
                             val div = 1.0 / (splineOrder-1);
                             splines(j,splineOrder-1) = div * offset * splines(j,splineOrder-2);
-                            for([l] in 1..(splineOrder-2)) {
+                            for(l in 1..(splineOrder-2)) {
                                 splines(j,splineOrder-l-1) = div * 
                                     ((offset+l) * splines(j,splineOrder-l-2) + (splineOrder-l-offset) * splines(j,splineOrder-l-1));
                             }
                             splines(j,0) = div * (1.0-offset) * splines(j,0);
                         } 
 
-                        for ([i] in 0..(splineOrder-1)) {
+                        for (i in 0..(splineOrder-1)) {
                             val k1 = (u1c - i - 1);
                             val iVal = q * splines(0, i);
-                            for ([j] in 0..(splineOrder-1)) {
+                            for (j in 0..(splineOrder-1)) {
                                 val k2 = (u2c - j - 1);
                                 val jVal = iVal * splines(1, j);
-                                for ([k] in 0..(splineOrder-1)) {
+                                for (k in 0..(splineOrder-1)) {
                                     val k3 = (u3c - k - 1);
                                     val kVal = jVal * splines(2, k);
                                     // because array is not divided in the z (k3) dimension, we can apply periodicity in that dimension 
@@ -658,21 +658,21 @@ public class PME {
             for ([m1,m2,m3] in regionHere) {
                 val m1D = m1 as Double;
                 var sumK1 : Complex = Complex.ZERO;
-                for ([k] in 0..(splineOrder-2)) {
+                for (k in 0..(splineOrder-2)) {
                     sumK1 = sumK1 + splines(k+1) * Math.exp(2.0 * Math.PI * m1D * k / K1 * Complex.I);
                 }
                 val b1 = (Math.exp(2.0 * Math.PI * (splineOrder-1) * m1D / K1 * Complex.I) / sumK1).abs();
 
                 val m2D = m2 as Double;
                 var sumK2 : Complex = Complex.ZERO;
-                for ([k] in 0..(splineOrder-2)) {
+                for (k in 0..(splineOrder-2)) {
                     sumK2 = sumK2 + splines(k+1) * Math.exp(2.0 * Math.PI * m2D * k / K2 * Complex.I);
                 }
                 val b2 = (Math.exp(2.0 * Math.PI * (splineOrder-1) * m2D / K2 * Complex.I) / sumK2).abs();
                     
                 val m3D = m3 as Double;
                 var sumK3 : Complex = Complex.ZERO;
-                for ([k] in 0..(splineOrder-2)) {
+                for (k in 0..(splineOrder-2)) {
                     sumK3 = sumK3 + splines(k+1) * Math.exp(2.0 * Math.PI * m3D * k / K3 * Complex.I);
                 }
                 val b3 = (Math.exp(2.0 * Math.PI * (splineOrder-1) * m3D / K3 * Complex.I) / sumK3).abs();
