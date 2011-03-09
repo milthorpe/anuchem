@@ -4,9 +4,6 @@
 	<property name="x10x.lib" location="../../x10x.lib"/>
 	<property name="xla.src" location="${x10x.lib}/xla/src"/>
 	<property name="xla.lib" location="${x10x.lib}/xla/lib/xla.jar"/>
-	<property name="x10.runtime.extensions" location="../../x10.runtime"/>
-	<property name="xre.src" location="${x10.runtime.extensions}/src"/>
-	<property name="xre.lib" location="${x10.runtime.extensions}/lib/x10re.jar"/>
     <property name="anuchem" location="../../anu-chem"/>
 	<property name="anuchem.src" location="${anuchem}/src"/>
 	<property name="anuchem.lib" location="${anuchem}/lib/anu-chem.jar"/>
@@ -92,7 +89,7 @@
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/src">
             <arg value="-c"/>
-            <arg value="'x10c' ${x10c.optimize} -sourcepath '.${path.separator}${xre.src}${path.separator}${xla.src}${path.separator}${anuchem.src}' -classpath '${xre.lib}${path.separator}${xla.lib}${path.separator}${anuchem.lib}' -d '${target-src}' ${src.list}"/>
+            <arg value="'x10c' ${x10c.optimize} -sourcepath '.${path.separator}${path.separator}${xla.src}${path.separator}${anuchem.src}' -classpath '${path.separator}${xla.lib}${path.separator}${anuchem.lib}' -d '${target-src}' ${src.list}"/>
         </exec>
     </target>
 
@@ -108,7 +105,7 @@
         <pathconvert property="src.list" refid="changed.src.files" dirsep="/" pathsep=" ">
             <map from="${basedir}${file.separator}src${file.separator}" to=""/>
         </pathconvert>
-        <echo message="x10c++ -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} ${x10c.inline-methods} -sourcepath '.${path.separator}${xre.src}${path.separator}${xla.src}${path.separator}${anuchem.src}' '${basedir}/${testclass}'"/>
+        <echo message="x10c++ -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} ${x10c.inline-methods} -sourcepath '.${path.separator}${xla.src}${path.separator}${anuchem.src}' '${basedir}/${testclass}'"/>
 
         <copy todir="${target}/classes">
             <fileset id="cpp.files" dir="${basedir}/src" includes="**/*.h,**/*.struct_h,**/*.cc"/>
@@ -116,7 +113,7 @@
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/src">
             <arg value="-c"/>
-            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} -report postcompile=1 -post '# ${x10c.optimize} ${post.profile} -Wall &quot;-I${fftw3.include}&quot; # &quot;-L${fftw3.lib}&quot; ${link.mpiPprofile} ${post.cpuprofile} # -lfftw3' -sourcepath '.${path.separator}${xre.src}${path.separator}${xla.src}${path.separator}${anuchem.src}' -d '${target-src}' '${basedir}/${testclass}'"/>
+            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} -report postcompile=1 -post '# ${x10c.optimize} ${post.profile} -Wall &quot;-I${fftw3.include}&quot; # &quot;-L${fftw3.lib}&quot; ${link.mpiPprofile} ${post.cpuprofile} # -lfftw3' -sourcepath '.${path.separator}${xla.src}${path.separator}${anuchem.src}' -d '${target-src}' '${basedir}/${testclass}'"/>
         </exec>
     </target>
 
@@ -177,13 +174,13 @@
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/test">
             <arg value="-c"/>
-            <arg value="'x10c' ${x10c.optimize} -sourcepath '.${path.separator}${basedir}/src${path.separator}${xre.src}${path.separator}${xla.src}${path.separator}${anuchem.src}${path.separator}${x10.testlib}' -classpath '${xre.lib}${path.separator}${xla.lib}${path.separator}${anuchem.lib}${path.separator}${target-src}' -commandlineonly -d '${target-test}' ${test.list}"/>
+            <arg value="'x10c' ${x10c.optimize} -sourcepath '.${path.separator}${basedir}/src${path.separator}${xla.src}${path.separator}${anuchem.src}${path.separator}${x10.testlib}' -classpath '${xla.lib}${path.separator}${anuchem.lib}${path.separator}${target-src}' -commandlineonly -d '${target-test}' ${test.list}"/>
         </exec>
     </target>
 
     <target name="test" depends="build-src-java,build-test">
         <apply executable="x10" failonerror="true" dir="${target-test}" relative="true" addsourcefile="false">
-            <arg line="-t -v -mx 128M -classpath ${xre.lib}:${xla.lib}:${anuchem.lib}:${target-src}:${target-test}"/>
+            <arg line="-t -v -mx 128M -classpath ${xla.lib}:${anuchem.lib}:${target-src}:${target-test}"/>
             <targetfile/>
 
             <fileset dir="${target-test}" includes="**/Test*.java"/>
