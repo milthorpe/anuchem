@@ -13,7 +13,7 @@ package au.edu.anu.fft;
 /**
  * Tests distributed Fast Fourier Transform.
  */
-public class TestDistributedFFT {
+public class TestDistributed3dFft {
     public static def main(args : Array[String](1)) {
         testFft3d();
     }
@@ -31,7 +31,7 @@ public class TestDistributedFFT {
         Console.OUT.println("input");
         for (p1 in input.dist.places()) at (p1) {
             for (p in input.dist | here) {
-                Console.OUT.println(input(p));
+                //Console.OUT.println(input(p));
             }
         }
 
@@ -51,7 +51,11 @@ public class TestDistributedFFT {
         roundtrip.doFFT3d(true);
         for (p1 in output.dist.places()) at (p1) {
             for (p in output.dist | here) {
-                Console.OUT.println((output(p) / (N*N*N)));
+                //Console.OUT.println((output(p) / (N*N*N)));
+                if (Math.abs((output(p)/(N*N*N)).re - input(p).re) > 1.0e-10) {
+                    Console.OUT.println("input was " + input(p));
+                    Console.OUT.println((output(p)/(N*N*N)).re - input(p).re);
+                }
             }
         }
     }

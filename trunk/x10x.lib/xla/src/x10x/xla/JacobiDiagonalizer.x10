@@ -48,7 +48,7 @@ public class JacobiDiagonalizer {
        val b = bVec.getVector();
        val z = zVec.getVector();
 
-        for ([i] in 0..a.region.max(0)) {
+        for (i in 0..a.region.max(0)) {
             eigenValues(i) = b(i) = a(i,i);
             z(i) = 0.0;
         }

@@ -31,13 +31,13 @@ public class TestMultipoleRotation {
 		    new TestMultipoleRotation().rotation(theta, phi);
 	    } else if (args.size() == 6) { 
 		    // Test operation A
-		    for ([i] in 0..5) args_doub(i) = Double.parseDouble(args(i));
+		    for (i in 0..5) args_doub(i) = Double.parseDouble(args(i));
 		    new TestMultipoleRotation().rotationTest(args_doub);
 	    } else { 
-		    for ([j] in 0..5) args_doub(j) = R.nextDouble() * 0.5;
+		    for (j in 0..5) args_doub(j) = R.nextDouble() * 0.5;
 		    // The purpose of this code is to try all 64 cases of the points in all quadrants
-		    for ([i] in 0..63) {
-			    for ([k] in 0..5) Console.OUT.print(args_doub(k) + " ");
+		    for (i in 0..63) {
+			    for (k in 0..5) Console.OUT.print(args_doub(k) + " ");
 			    new TestMultipoleRotation().rotationTest(args_doub);
 
 			    var j : int = 0; while (args_doub(j) < 0) { args_doub(j) = args_doub(j) * -1; j++; }
@@ -52,8 +52,8 @@ public class TestMultipoleRotation {
      */
     public def compare(first : Expansion, second : Expansion) { 
 	    val p = first.terms.region.max(0);
-	    for ([i] in 0..p) {
-	        for ([j] in -i..i) Console.OUT.print( (first.terms(i, j) - second.terms(i, j)).abs() + " ");
+	    for (i in 0..p) {
+	        for (j in -i..i) Console.OUT.print( (first.terms(i, j) - second.terms(i, j)).abs() + " ");
 	        Console.OUT.print("\n");
 	    }
     }
@@ -65,8 +65,8 @@ public class TestMultipoleRotation {
      */
     public def ok(first : Expansion, second : Expansion) : boolean { 
 	    val p = first.terms.region.max(0);
-	    for ([i] in 0..p) {
-            for ([j] in -i..i) {
+	    for (i in 0..p) {
+            for (j in -i..i) {
                 if ((first.terms(i, j) - second.terms(i, j)).abs() > 10e-8) return false;
             }
         }

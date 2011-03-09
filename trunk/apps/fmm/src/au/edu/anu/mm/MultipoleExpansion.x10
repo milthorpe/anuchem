@@ -45,19 +45,19 @@ public class MultipoleExpansion extends Expansion {
 
         var rfac : Double = 1.0;
         var il : Double = 1.0;
-        for ([l] in 0..p) {
+        for (l in 0..p) {
             il = il * Math.max(l,1);
             var ilm : Double = il;
             var phifac : Complex = Complex.ONE;
             exp.terms(l,0) = phifac / ilm * (q * rfac * pplm(l,0)); 
-            for ([m] in 1..l) {
+            for (m in 1..l) {
                 ilm = ilm*(l+m);
                 phifac = phifac * phifac0;
 		        val O_lm = phifac / ilm * (q * rfac * pplm(l,m));
                 exp.terms(l,m) = O_lm;
         		//to avoid conjugate if (m != 0) { if (m_sign) exp.terms(l, -m) = Complex(O_lm.re,-O_lm.im); else exp.terms(l, -m) = Complex(-O_lm.re,O_lm.im); }
     	    }
-            for ([m] in -l..-1) {
+            for (m in -l..-1) {
                 exp.terms(l,m) = exp.terms(l,-m).conjugate() * (1-2*(-m%2));
             }
             rfac = rfac * v_pole.r;
@@ -78,13 +78,13 @@ public class MultipoleExpansion extends Expansion {
 
         var rfac : Double = 1.0;
         var il : Double = 1.0;
-        for ([l] in 0..p) {
+        for (l in 0..p) {
             il = il * Math.max(l,1);
             var ilm : Double = il;
             var phifac : Complex = Complex.ONE;
             exp.terms(l,0) = phifac / ilm * (rfac * pplm(l,0)); 
 	        var m_sign : boolean = false;
-            for ([m] in 1..l) {
+            for (m in 1..l) {
                 ilm = ilm*(l+m);
                 phifac = phifac * phifac0;
         		val O_lm = phifac / ilm * (rfac * pplm(l,m));
@@ -92,7 +92,7 @@ public class MultipoleExpansion extends Expansion {
 	        	//to avoid conjugate if (m != 0) { if (m_sign) exp.terms(l, -m) = Complex(O_lm.re,-O_lm.im); else exp.terms(l, -m) = Complex(-O_lm.re,O_lm.im); }
 	        	m_sign = !m_sign;
             }
-            for ([m] in -l..-1) {
+            for (m in -l..-1) {
                 exp.terms(l,m) = exp.terms(l,-m).conjugate() * (1-2*(-m%2));
             }
             rfac = rfac * v_pole.r;
@@ -118,8 +118,8 @@ public class MultipoleExpansion extends Expansion {
         atomic {
             for ([j,k] in terms.region) {
                 val O_jk = source.terms(j,k);
-                for ([l] in j..p) {
-                    for ([m] in -l..l) {
+                for (l in j..p) {
+                    for (m in -l..l) {
                         if (Math.abs(m-k) <= (l-j)) {
                             val A_lmjk = shift.terms(l-j, m-k);
                             this.terms(l,m) = this.terms(l,m) + A_lmjk * O_jk;
@@ -150,14 +150,14 @@ public class MultipoleExpansion extends Expansion {
 
 	    val targetTerms = scratch.terms;
         var m_sign : int = 1;
-	    for ([m] in 0..p) {
-		    for ([l] in m..p) temp(l) = targetTerms(l, m);
+	    for (m in 0..p) {
+		    for (l in m..p) temp(l) = targetTerms(l, m);
 
             var b_lm_pow : double = 1.0;
-		    for ([l] in m..p) {
+		    for (l in m..p) {
 			    var O_lm : Complex = Complex.ZERO;
 			    var F_lm : Double = b_lm_pow / Factorial.getFactorial(l - m); // Factorial are already computed
-			    for ([j] in m..l) {
+			    for (j in m..l) {
 				    O_lm = O_lm + temp(j) * F_lm; // explicitly this would be * Math.pow(translationPolar.r, l - j) / fact(l - j);
 				    F_lm = F_lm * (l - j) * invB;
 			    }

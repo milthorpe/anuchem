@@ -10,6 +10,7 @@
  */
 package au.edu.anu.chem.mm;
 
+import x10.compiler.Uncounted;
 import x10.util.Team;
 
 import x10x.vector.Point3d;
@@ -62,7 +63,7 @@ public class ElectrostaticDirectMethod {
                     // before starting computation, send my atoms to next place
                     val nextPlace = here.next();
                     if (nextPlace != here) {
-                        async at (nextPlace) {
+                        @Uncounted async at (nextPlace) {
                             atomic {
                                 otherAtoms(nextPlace.id)(p1) = myAtoms;
                             }
@@ -70,9 +71,9 @@ public class ElectrostaticDirectMethod {
                     }
 
                     // energy for all interactions within this place
-                    for ([i] in 0..(myAtoms.size-1)) {
+                    for (i in 0..(myAtoms.size-1)) {
 			            val atomI = myAtoms(i);
-                        for ([j] in 0..(i-1)) {
+                        for (j in 0..(i-1)) {
 				            val atomJ = myAtoms(j);
                             energyThisPlace += 2.0 * atomI.charge * atomJ.charge / atomJ.centre.distance(atomI.centre);
                         }
@@ -84,7 +85,7 @@ public class ElectrostaticDirectMethod {
                         if (target != here) {
                             // send a set of atoms to next target place
                             val targetPlace = target;
-                            async at (targetPlace) {
+                            @Uncounted async at (targetPlace) {
                                 atomic {
                                     otherAtoms(targetPlace.id)(p1) = myAtoms;
                                 }
@@ -96,9 +97,9 @@ public class ElectrostaticDirectMethod {
 
                         // energy for all interactions with other atoms at other place
                         val other = otherAtoms(here.id)(source.id);
-                        for ([j] in 0..(other.size-1)) {
+                        for (j in 0..(other.size-1)) {
                             val atomJ = other(j);
-                            for ([i] in 0..(myAtoms.size-1)) {
+                            for (i in 0..(myAtoms.size-1)) {
                                 val atomI = myAtoms(i);
                                 energyThisPlace += atomI.charge * atomJ.charge / atomJ.centre.distance(atomI.centre);
                             }
@@ -117,9 +118,9 @@ public class ElectrostaticDirectMethod {
                         if (p2 != p1) { // TODO region difference
                             var energyWithOther : Double = 0.0;
                             val otherAtoms = at(atoms.dist(p2)) {atoms(p2)};
-                            for ([j] in 0..(otherAtoms.size-1)) {
+                            for (j in 0..(otherAtoms.size-1)) {
                                 val atomJ = otherAtoms(j);
-                                for ([i] in 0..(myAtoms.size-1)) {
+                                for (i in 0..(myAtoms.size-1)) {
                                     val atomI = myAtoms(i);
                                     energyWithOther += atomI.charge * atomJ.charge / atomJ.centre.distance(atomI.centre);
                                 }
@@ -130,9 +131,9 @@ public class ElectrostaticDirectMethod {
 
                     // energy for all interactions within this place
                     var energyThisPlace : Double = 0.0;
-                    for ([i] in 0..(myAtoms.size-1)) {
+                    for (i in 0..(myAtoms.size-1)) {
 					    val atomI = myAtoms(i);
-                        for ([j] in 0..(i-1)) {
+                        for (j in 0..(i-1)) {
 						    val atomJ = myAtoms(j);
                             energyThisPlace += 2.0 * atomI.charge * atomJ.charge / atomJ.centre.distance(atomI.centre);
                         }

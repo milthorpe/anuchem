@@ -66,7 +66,7 @@ public class Anumm {
         val t = timestep * 0.001;
         finish ateach([p] in atoms) {
             val myAtoms = atoms(p);
-            for([i] in 0..myAtoms.size-1) {
+            for (i in 0..myAtoms.size-1) {
                 val atom = myAtoms(i);
                 val invMass = 1.0 / forceField.getAtomMass(atom.symbol);
                 atom.velocity = atom.velocity + 0.5 * t * invMass * atom.force;
@@ -76,7 +76,7 @@ public class Anumm {
         forceField.getPotentialAndForces(atoms);
         finish ateach([p] in atoms) {
             val myAtoms = atoms(p);
-            for([i] in 0..myAtoms.size-1) {
+            for (i in 0..myAtoms.size-1) {
                 val atom = myAtoms(i);
                 val invMass = 1.0 / forceField.getAtomMass(atom.symbol);
                 atom.velocity = atom.velocity + 0.5 * t * invMass * atom.force;

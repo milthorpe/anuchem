@@ -57,7 +57,7 @@ public class LocallyEssentialTree {
         this.vListMin = vListMin;
         this.vListMax = vListMax;
         val multipoleCopies = new Array[DistArray[MultipoleExpansion](3)](combinedVList.size);
-        for ([i] in 0..(combinedVList.size-1)) {
+        for (i in 0..(combinedVList.size-1)) {
             if (combinedVList(i) != null) {
                 val multipoleCopiesLevelRegion = vListMin(i)(0)..vListMax(i)(0) * vListMin(i)(1)..vListMax(i)(1) * vListMin(i)(2)..vListMax(i)(2);
                 multipoleCopies(i) = DistArray.make[MultipoleExpansion](new PeriodicDist(Dist.makeConstant(multipoleCopiesLevelRegion)));

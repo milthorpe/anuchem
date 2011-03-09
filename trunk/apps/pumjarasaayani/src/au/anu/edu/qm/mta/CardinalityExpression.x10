@@ -50,7 +50,7 @@ public class CardinalityExpression {
              l=1; pos=1; m=pos+1;
 
              while(true) {
-                 for([k] in (combs(pos)+1)..(noOfFragments-1)) {
+                 for (k in (combs(pos)+1)..(noOfFragments-1)) {
                      combs(m) = k;
                         
                      if (m > 0) {

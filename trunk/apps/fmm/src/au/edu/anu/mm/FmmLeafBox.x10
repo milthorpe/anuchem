@@ -48,9 +48,9 @@ public class FmmLeafBox extends FmmBox {
         val levelDim = Math.pow2(this.level);
         // interact with "left half" of uList i.e. only boxes with x<=box.x
         val uList = new ArrayList[Point(3)]();
-        for ([x] in Math.max(0,this.x-ws)..this.x) {
-            for ([y] in Math.max(0,this.y-ws)..Math.min(levelDim-1,this.y+ws)) {
-                for ([z] in Math.max(0,this.z-ws)..Math.min(levelDim-1,this.z+ws)) {
+        for (x in Math.max(0,this.x-ws)..this.x) {
+            for (y in Math.max(0,this.y-ws)..Math.min(levelDim-1,this.y+ws)) {
+                for (z in Math.max(0,this.z-ws)..Math.min(levelDim-1,this.z+ws)) {
                     if (x < this.x || (x == this.x && y < this.y) || (x == this.x && y == this.y && z < this.z)) {
                         uList.add(Point.make(x,y,z));
                     }
@@ -69,9 +69,9 @@ public class FmmLeafBox extends FmmBox {
         val levelDim = Math.pow2(this.level);
         // interact with "left half" of uList i.e. only boxes with x<=box.x
         val uList = new ArrayList[Point(3)]();
-        for ([x] in (this.x-ws)..this.x) {
-            for ([y] in (this.y-ws)..(this.y+ws)) {
-                for ([z] in (this.z-ws)..(this.z+ws)) {
+        for (x in (this.x-ws)..this.x) {
+            for (y in (this.y-ws)..(this.y+ws)) {
+                for (z in (this.z-ws)..(this.z+ws)) {
                     if (x < this.x || (x == this.x && y < this.y) || (x == this.x && y == this.y && z < this.z)) {
                         uList.add(Point.make(x,y,z));
                     }

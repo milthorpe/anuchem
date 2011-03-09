@@ -28,6 +28,8 @@ public class Distributed3dFft {
     private val target : DistArray[Complex](3){self.dist==source.dist};
     private val temp : DistArray[Complex](3){self.dist==source.dist};
 
+    public val dribble = true;
+
     public def this(dataSize : Int,
                     source : DistArray[Complex](3), 
                     target : DistArray[Complex](3){self.dist==source.dist},
@@ -61,16 +63,24 @@ public class Distributed3dFft {
                     // 'scratch' arrays, for use in the 1D FFTs
                     val oneDSource = new Array[Complex](dataSize);
                     val oneDTarget = new Array[Complex](dataSize);
-                    do1DFftToTemp(source, oneDSource, oneDTarget, forward);
-                    transposeTempToTarget();
-                    Team.WORLD.barrier(here.id);
-                    do1DFftToTemp(target, oneDSource, oneDTarget, forward);
-                    Team.WORLD.barrier(here.id);
-                    transposeTempToTarget();
-                    Team.WORLD.barrier(here.id);
-                    do1DFftToTemp(target, oneDSource, oneDTarget, forward);
-                    Team.WORLD.barrier(here.id);
-                    transposeTempToTarget();
+                    if (dribble) {
+                        do1DFftAndTranspose(source, target, oneDSource, oneDTarget, forward);
+                        Team.WORLD.barrier(here.id);
+                        do1DFftAndTranspose(target, temp, oneDSource, oneDTarget, forward);
+                        Team.WORLD.barrier(here.id);
+                        do1DFftAndTranspose(temp, target, oneDSource, oneDTarget, forward);
+                    } else {
+                        do1DFftToTemp(source, oneDSource, oneDTarget, forward);
+                        transposeTempToTarget();
+                        Team.WORLD.barrier(here.id);
+                        do1DFftToTemp(target, oneDSource, oneDTarget, forward);
+                        Team.WORLD.barrier(here.id);
+                        transposeTempToTarget();
+                        Team.WORLD.barrier(here.id);
+                        do1DFftToTemp(target, oneDSource, oneDTarget, forward);
+                        Team.WORLD.barrier(here.id);
+                        transposeTempToTarget();
+                    }
                 }
             }
 /*
@@ -119,14 +129,14 @@ public class Distributed3dFft {
                                      forward : Boolean) {
         val plan : FFTW.FFTWPlan = FFTW.fftwPlan1d(dataSize, oneDSource, oneDTarget, forward);
         val mySource = source.dist | here;
-        val gridRegionWithoutZ = (mySource.region().eliminate(2)) as Region(2){rect};
+        val gridRegionWithoutZ = (mySource.region.eliminate(2)) as Region(2){rect};
         for ([i,j] in gridRegionWithoutZ) {
             // TODO need to copy into Array - can use raw()?
-            for ([k] in 0..(dataSize-1)) {
+            for (k in 0..(dataSize-1)) {
                 oneDSource(k) = source(i,j,k);
             }
             FFTW.fftwExecute(plan);
-            for ([k] in 0..(dataSize-1)) {
+            for (k in 0..(dataSize-1)) {
                 temp(i,j,k) = oneDTarget(k);
             }
         }
@@ -137,7 +147,7 @@ public class Distributed3dFft {
      * Shuffles array around all places by transposing the zeroth dimension
      * to the first, the first to the second and the second to the zeroth.
      * Assumes NxNxN arrays, and that source and target arrays contain complete
-     * slabs or lines in the second dimension.
+     * pencils in the second dimension.
      */
     private def transposeTempToTarget() {
         val sourceDist = temp.dist | here;
@@ -172,6 +182,53 @@ public class Distributed3dFft {
                 }
             }
         }
+    }
+
+    /**
+     * Performs a 1D FFT for each 1D pencil along the Z dimension,
+     * and dribbles the results to be transposed in the target array.
+     * Assumes block,block distributed data, that is, each place
+     * holds a rectangular block of data over some portion of the zeroth
+     * and first dimensions, that is complete in the second dimension.
+     */
+    private def do1DFftAndTranspose(source : DistArray[Complex](3),
+                                    target : DistArray[Complex](3){self.dist==source.dist},
+                                    oneDSource : Array[Complex](1){rect,zeroBased,rail},
+                                    oneDTarget : Array[Complex](1){rect,zeroBased,rail},
+                                    forward : Boolean) {
+        val plan : FFTW.FFTWPlan = FFTW.fftwPlan1d(dataSize, oneDSource, oneDTarget, forward);
+        val myRegion = source.dist(here);
+        val gridRegionWithoutZ = (myRegion.eliminate(2)) as Region(2){rect};
+        finish for ([i,j] in gridRegionWithoutZ) {
+            // TODO need to copy into Array - can use raw()?
+            for (k in 0..(dataSize-1)) {
+                oneDSource(k) = source(i,j,k);
+            }
+            FFTW.fftwExecute(plan);
+            // "Dribble" this pencil to appropriate target places
+            for (p2 in target.dist.places()) {
+                val targetRegion = target.dist(p2);
+                if (i >= targetRegion.min(1) && i <= targetRegion.max(1)) {
+                    val startX = targetRegion.min(0);
+                    val endX = targetRegion.max(0);
+                    val numToTransfer = endX-startX+1;
+                    if (numToTransfer > 0) {
+                        val elementsToTransfer = new Array[Complex](numToTransfer);
+                        var k:Int = 0;
+                        for (x in startX..endX) {
+                            elementsToTransfer(k++) = oneDTarget(x);
+                        }
+                        async at (p2) {
+                            var x:Int = 0;
+                            for (k in startX..endX) { 
+                                target(k,i,j) = elementsToTransfer(x++); 
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        FFTW.fftwDestroyPlan(plan);
     }
 }
 

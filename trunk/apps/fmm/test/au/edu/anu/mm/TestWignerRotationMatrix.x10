@@ -22,8 +22,8 @@ class TestWignerRotationMatrix extends x10Test {
         val l = 3;
         val Dmk = WignerRotationMatrix.getDmk(5.0*Math.PI/4, l);
         Console.OUT.println("Dkm(5PI/4):");
-        for ([m] in -l..l) {
-		    for ([k] in -l..l) {
+        for (m in -l..l) {
+		    for (k in -l..l) {
 			    Console.OUT.print("" + Dmk(k,m) + " ");
             }
             Console.OUT.println();

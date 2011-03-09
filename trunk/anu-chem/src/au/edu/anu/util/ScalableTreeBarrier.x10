@@ -34,7 +34,7 @@ final public class ScalableTreeBarrier {
         public def this(numPlaces : Int) {
             this.parent = parent;
             val i = here.id;
-            for ([j] in 0..3) {
+            for (j in 0..3) {
                 haveChild(j) = (4*i+j+1 < numPlaces);
                 childNotReady(j) = haveChild(j);
             }

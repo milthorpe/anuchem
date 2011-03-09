@@ -23,9 +23,9 @@ class TestAssociatedLegendrePolynomial extends x10Test {
 
         Console.OUT.println("Associated Legendre Polynomials, calculated on theta:");
         val Plk = AssociatedLegendrePolynomial.getPlk(Math.PI/3.0, p);
-		for ([l] in 0..p) {
+		for (l in 0..p) {
 		var fa : Double = 1.0;
-            for ([k] in 0..l) {
+            for (k in 0..l) {
 			    Console.OUT.print("" + Plk(l,k) + " ");
 		fa /= Math.sqrt((l-k+2.0)*(l+k+1.0));
             }
@@ -34,8 +34,8 @@ class TestAssociatedLegendrePolynomial extends x10Test {
 
         Console.OUT.println("Associated Legendre Polynomials, calculated on cos(theta):");
         val Plm = AssociatedLegendrePolynomial.getPlm(Math.cos(Math.PI/3.0), p);
-		for ([i] in 0..p) {
-            for ([j] in 0..i) {
+		for (i in 0..p) {
+            for (j in 0..i) {
 			    Console.OUT.print("" + Plm(i,j) + " ");
             }
             Console.OUT.println();
