@@ -651,7 +651,7 @@ public class PME {
 		val K3 = this.K3; // TODO shouldn't be necessary XTENLANG-1913;
         finish ateach (place1 in Dist.makeUnique()) {
             val splines = new Array[Double](1..(splineOrder-1));
-            for ([k] in splines) {
+            for (k in 1..(splineOrder-1)) {
                 splines(k) = bSpline(splineOrder, k);
             }
             val regionHere = B.dist(here) as Region(3){rect};
