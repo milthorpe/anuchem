@@ -79,7 +79,7 @@ public class Matrix {
         val eigenVectors  = diag.getEigenVectors();
         val sHalf         = new Matrix(rowCount);
 
-        for ([i] in 0..region.max(0)) {
+        for (i in 0..region.max(0)) {
             sHalf.mat(i,i) = 1.0 / Math.sqrt(eigenValues(i));
         }
 
@@ -91,7 +91,7 @@ public class Matrix {
      */
     public def makeIdentity() : void {
         mat.fill(0.0);
-        for ([i] in 0..region.max(0)) {
+        for (i in 0..region.max(0)) {
             mat(i,i) = 1.0;
         }
     }
@@ -224,7 +224,7 @@ public class Matrix {
     public def trace() : Double {
         var tr : Double = 0.0;
 
-        for ([i] in 0..region.max(0)) {
+        for (i in 0..region.max(0)) {
             tr += mat(i, i);
         }
 
@@ -238,8 +238,8 @@ public class Matrix {
         var sum : Double = 0.0;
         val N = getRowCount();
 
-        for ([i] in 0..region.max(0)) {
-            for ([j] in (i+1)..region.max(1)) {
+        for (i in 0..region.max(0)) {
+            for (j in (i+1)..region.max(1)) {
                 sum += Math.abs(mat(i, j));
             }
         }
@@ -277,7 +277,7 @@ public class Matrix {
 
     public def isSingular(p:Int, row:Array[Int](1){rect,zeroBased,rail}) : Boolean {
         val N = getColCount();
-        for([i] in p..N) {
+        for(i in p..N) {
             if (mat(row(p), i) != 0.0 && Math.abs(mat(row(p),i))>1e-15) {
                 return false;
             }

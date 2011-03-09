@@ -31,27 +31,18 @@ public class WignerRotationMatrix {
 		    throw new IllegalArgumentException("abs(x) > 2*PI: Wigner rotation matrix is only defined on [0..2*PI].");
 		}
 
-		val Plm = AssociatedLegendrePolynomial.getPlm(Math.cos(theta), l);
-		/* Console.OUT.println("Plm:");
-		for ([i] in 0..l) {
-		    for ([j] in 0..i) {
-                        Console.OUT.print("" + Plm(i,j) + " ");
-		    }
-		    Console.OUT.println();
-                } */
-
 		val D = new Array[Double]((-l..l) * (-l..l));
 
 		if (theta == 0) {
 		    // Eq. 30
-		    for ([k] in -l..l) {
+		    for (k in -l..l) {
 		        D(k,k) = 1.0;
 		    }
 		    return D;
 		} else if (theta == Math.PI) {
 		    // Console.OUT.println("this means it has recognized the angle as pi");
 		    // Eq. 30
-		    for ([k] in -l..l) {
+		    for (k in -l..l) {
 		        D(k,-k) = Math.pow(-1, l+k);
 		    }
 		    return D;
@@ -77,7 +68,7 @@ public class WignerRotationMatrix {
 
 		// gl0 starting point, Eq. 29
 		var gk0 : Double = 1.0;
-		for ([k] in 1..l) {
+		for (k in 1..l) {
 		    gk0 = Math.sqrt((2.0*k-1) / (2.0*k)) * gk0;
 		}
 
@@ -86,7 +77,7 @@ public class WignerRotationMatrix {
 		D(0,l) = Math.pow(-1.0, l) * gl0 * Math.pow(sinTheta, l);
 		var glm : Double = gl0;
 		var sign : Double = Math.pow(-1, l);
-		for ([m] in 1..l) {
+		for (m in 1..l) {
 		    glm = Math.sqrt((l-m+1) as Double / (l+m)) * glm; // Eq. 29
 		    sign *= -1.0;
 		    //Console.OUT.println("g_{" + l + " " + m + "} = " + glm + " // (-1)^(l+m) = " + sign + 
@@ -110,9 +101,9 @@ public class WignerRotationMatrix {
 		}
 
 		// Eq. 27
-		for ([m] in -l..-1) { // Changed upper bound here from 0 to -1
+		for (m in -l..-1) { // Changed upper bound here from 0 to -1
 		    sign = Math.pow(-1, m-l);
-		    for ([k] in -l..l) {
+		    for (k in -l..l) {
 		        D(m,k) = sign * D(-m,-k);
 		        sign *= -1;
 		    }
@@ -123,9 +114,9 @@ public class WignerRotationMatrix {
 		    if (theta < Math.PI) {
 			// Console.OUT.println("in the 2nd quadrant");
 		        sign = -1.0;
-		        for ([m] in -l..l) { // Previous upper bound was -1, changed to l
+		        for (m in -l..l) { // Previous upper bound was -1, changed to l
 		            sign *= -1.0;
-		            for ([k] in -l..0) { // Previous upper bound was -1, changed to 0
+		            for (k in -l..0) { // Previous upper bound was -1, changed to 0
 		                val tmp = D(m,k);
 		                D(m,k) = sign * D(m,-k);
 		                D(m,-k) = sign * tmp;
@@ -134,9 +125,9 @@ public class WignerRotationMatrix {
 		    } else if (theta > Math.PI && theta < 3.0*Math.PI/2.0) {
 			// Console.OUT.println("in the 3rd quadrant");
 		        sign = -1.0;
-		        for ([m] in -l..0) { // Previous upper bound was -1, changed to 0
+		        for (m in -l..0) { // Previous upper bound was -1, changed to 0
 		            sign *= -1.0;
-		            for ([k] in -l..l) { // Previous upper bound was -1, changed to l
+		            for (k in -l..l) { // Previous upper bound was -1, changed to l
 		                val tmp = D(m,k);
 		                D(m,k) = sign * D(-m,k);
 		                D(-m,k) = sign * tmp;
@@ -156,9 +147,9 @@ public class WignerRotationMatrix {
 	 */
 	public static def getCollection(theta : double, numTerms : int) {
 		val collection = new Array [ Array[Array[Double](2){rect}](1) ](0..1);
-		for ([r] in 0..1) { 
+		for (r in 0..1) { 
 			val R = new Array[ Array[Double](2){rect} ](0..numTerms);
-			for ([l] in 0..numTerms) { 
+			for (l in 0..numTerms) { 
 				R(l) = WignerRotationMatrix.getDmk( (r==0)?theta:(2*Math.PI - theta) , l);
 			}
         		collection(r) = R;

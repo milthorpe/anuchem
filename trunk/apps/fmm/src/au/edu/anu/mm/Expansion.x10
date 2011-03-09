@@ -40,8 +40,8 @@ public class Expansion {
 
     public atomic def add(e : Expansion) {
 	    val p = terms.region.max(0);
-	    for ([l] in -p..p) {
-	        for ([m] in -l..l) { // this will now be inlined -- should be for ([l,m] in terms.region)
+	    for (l in -p..p) {
+	        for (m in -l..l) { // this will now be inlined -- should be for ([l,m] in terms.region)
 	            this.terms(l,m) = this.terms(l,m) + e.terms(l,m);
     	    }
         }
@@ -50,8 +50,8 @@ public class Expansion {
     public def toString() : String {
         val p : Int = terms.region.max(0);
         val s = new StringBuilder();
-        for ([i] in 0..p) {
-            for ([j] in -i..i) {
+        for (i in 0..p) {
+            for (j in -i..i) {
 		        s.add("" + terms(i,j) + " ");
             }
             s.add("\n");
@@ -67,9 +67,9 @@ public class Expansion {
      */
     public static def genComplexK(phi : Double, p : int) { 
     	val complexK = new Array[Array[Complex](1)](0..1);
-    	for ([r] in 0..1) { 
+    	for (r in 0..1) { 
 	    	complexK(r) = new Array[Complex](-p..p); 
-    		for ([k] in -p..p) complexK(r)(k) = Math.exp(Complex.I * k * phi * ((r==0)?1:-1) );
+    		for (k in -p..p) complexK(r)(k) = Math.exp(Complex.I * k * phi * ((r==0)?1:-1) );
 	    }
     	return complexK;
     }
@@ -87,15 +87,15 @@ public class Expansion {
 
     	//val temp = new Array[Complex](-p..p);
     	var O_lm : Complex;
-        for ([l] in 1..p) {
+        for (l in 1..p) {
             val Dl = wigner(l); // avoids calculating matrices directly
 
-	        for ([k] in -l..l) temp(k) = terms(l, k) * complexK(k);
+	        for (k in -l..l) temp(k) = terms(l, k) * complexK(k);
            
 	        var m_sign : int = 1;
-            for ([m] in 0..l) {
+            for (m in 0..l) {
 	            O_lm = Complex.ZERO;
-                for ([k] in -l..l) {
+                for (k in -l..l) {
                     O_lm = O_lm + temp(k) * Dl(m, k); // Eq. 5
                 }
                 terms(l,m) = O_lm;
@@ -118,15 +118,15 @@ public class Expansion {
         val p : Int = terms.region.max(0);
 
     	//val temp = new Array[Complex](-p..p);
-        for ([l] in 1..p) {
+        for (l in 1..p) {
             val Dl = wigner(l); // avoids calculating matrices directly
 
-	        for ([k] in -l..l) temp(k) = terms(l, k);
+	        for (k in -l..l) temp(k) = terms(l, k);
            
 	        var m_sign : int = 1;
-            for ([m] in 0..l) {
+            for (m in 0..l) {
 	            var O_lm : Complex = Complex.ZERO;
-                for ([k] in -l..l) {
+                for (k in -l..l) {
                     O_lm = O_lm + temp(k) * Dl(m, k); // Eq. 5
                 }
                 O_lm = O_lm * complexK(m);

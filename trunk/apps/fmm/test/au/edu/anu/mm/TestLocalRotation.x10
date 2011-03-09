@@ -27,13 +27,13 @@ public class TestLocalRotation {
 	    val args_doub = new Array[Double](0..7, 0);
 	    if (args.size() == 6) { 
 		    // Test operation B
-		    for ([i] in 0..5) args_doub(i) = Double.parseDouble(args(i));
+		    for (i in 0..5) args_doub(i) = Double.parseDouble(args(i));
 		    Console.OUT.println(new TestLocalRotation().operatorC(args_doub, true));
 	    } else if (args.size() == 1) { 
-		    for ([j] in 0..5) args_doub(j) = R.nextDouble() * 0.5;
+		    for (j in 0..5) args_doub(j) = R.nextDouble() * 0.5;
 		    // The purpose of this code is to try all 64 cases of the points in all quadrants
-		    for ([i] in 0..63) {
-			    for ([k] in 0..5) Console.OUT.print(args_doub(k) + " ");
+		    for (i in 0..63) {
+			    for (k in 0..5) Console.OUT.print(args_doub(k) + " ");
 			    Console.OUT.print( (new TestLocalRotation().operatorC(args_doub, false)) + "\n");
 
 			    var j : int = 0; while (args_doub(j) < 0) { args_doub(j) = args_doub(j) * -1; j++; }
@@ -43,7 +43,7 @@ public class TestLocalRotation {
 		    // Reads in an entire expansion, term-by-term, and then performs a rotation on it, and compares the result
 		    val p = Int.parse(args(0)); var k : Int = 0;
 		    val exp = new MultipoleExpansion(p);
-		    for ([l] in 0..p) for ([m] in -l..l) exp.terms(l, m) = Complex( Double.parseDouble(args(k++)), Double.parseDouble(args(k++)) );
+		    for (l in 0..p) for (m in -l..l) exp.terms(l, m) = Complex( Double.parseDouble(args(k++)), Double.parseDouble(args(k++)) );
 		    new TestLocalRotation().arbitraryExpansionShift(exp, Point3d(-3, -3, -3) );
 	    }
     }
@@ -54,8 +54,8 @@ public class TestLocalRotation {
      */
     public def compare(first : Expansion, second : Expansion) { 
 	    val p = first.terms.region.max(0);
-	    for ([i] in 0..p) {
-	        for ([j] in -i..i) { Console.OUT.print( (first.terms(i, j) - second.terms(i, j)).abs() + " ");
+	    for (i in 0..p) {
+	        for (j in -i..i) { Console.OUT.print( (first.terms(i, j) - second.terms(i, j)).abs() + " ");
 		    if ( (first.terms(i, j) - second.terms(i, j)).abs() > 0.1 ) Console.OUT.print("*" + i + " " + j + "*"); }
 	        Console.OUT.print("\n");
 	    }	
@@ -68,7 +68,7 @@ public class TestLocalRotation {
     public def ok(first : Expansion, second : Expansion) { 
 	    val p = first.terms.region.max(0);
 	    var m : double = 0.0;
-	    for ([i] in 0..p) for ([j] in -i..i) m = Math.max(m, (first.terms(i, j) - second.terms(i, j)).abs() );
+	    for (i in 0..p) for (j in -i..i) m = Math.max(m, (first.terms(i, j) - second.terms(i, j)).abs() );
 	    return m; // < 10e-8;
     }
 

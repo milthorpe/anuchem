@@ -36,8 +36,8 @@ class TestLocalExpansion extends MathTest {
         val reverseTranslation = MultipoleExpansion.getOlm(z as Tuple3d, p);
         roundtrip.translateAndAddLocal(reverseTranslation, target);
         Console.OUT.println("translated local - roundtrip:\n" + roundtrip.toString());
-		for ([i] in 0..p) {
-            for ([j] in -i..i) {
+		for (i in 0..p) {
+            for (j in -i..i) {
                 chk(nearlyEqual(roundtrip.terms(i,j), Mlm.terms(i,j), 1.0e-6, 1.0e-12));
 		    }
         }

@@ -31,7 +31,7 @@ public class MandelbrotDist {
         val times = DistArray.make[Double](Dist.makeUnique());
         val result = DistArray.make[Array[Double](2)](Dist.makeUnique());
 
-        for ([i] in 0..15) {
+        for (i in 0..15) {
             Console.OUT.println(offsets);
             finish ateach (place in Dist.makeUnique()) {
                 val myResult = new Array[Double](offsets(here.id)..offsets(here.id+1) * 0..(imaginaryPoints-1));

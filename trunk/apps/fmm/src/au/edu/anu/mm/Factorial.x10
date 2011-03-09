@@ -21,7 +21,7 @@ public class Factorial {
     private static final def calcFact() { 
         val fact = new Array[Double](100);
 		fact(0) = 1.0;
-		for ([i] in 1..99) fact(i) = i * fact(i-1);
+		for (i in 1..99) fact(i) = i * fact(i-1);
         return fact;
 	}
 

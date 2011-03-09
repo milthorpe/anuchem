@@ -47,13 +47,13 @@ public class LocalExpansion extends Expansion {
         val phifac0 = Complex(Math.cos(v_pole.phi), Math.sin(v_pole.phi));
         var rfac : Double = rfac0;
         var il : Double = 1.0;
-        for ([l] in 0..p) {
+        for (l in 0..p) {
             il = il * Math.max(l,1);
             var ilm : Double = il;
             var phifac : Complex = Complex.ONE;
             terms(l,0) = phifac * (rfac * pplm(l,0) * ilm);
 	        var m_sign : boolean = false;
-            for ([m] in 1..l) {
+            for (m in 1..l) {
                 ilm = ilm / (l+1-m);
                 phifac = phifac * phifac0;
         		val M_lm = phifac * (rfac * pplm(l,m) * ilm);
@@ -61,7 +61,7 @@ public class LocalExpansion extends Expansion {
 		        //if (m != 0) { if (m_sign) terms(l, -m) = Complex(M_lm.re,-M_lm.im); else terms(l, -m) = Complex(-M_lm.re,M_lm.im); }
         		m_sign = !m_sign;
             }
-            for ([m] in -l..-1) {
+            for (m in -l..-1) {
                 terms(l,m) = terms(l,-m).conjugate() * (1-2*(-m%2));
             }
             rfac = rfac * rfac0;
@@ -98,8 +98,8 @@ public class LocalExpansion extends Expansion {
                 it_m = -it_l;
             }
         // END HAND-INLINED ITERATOR
-            for ([j] in l..p) {
-                for ([k] in (l-j+m)..(-l+j+m)) {
+            for (j in l..p) {
+                for (k in (l-j+m)..(-l+j+m)) {
                     val C_lmjk = shift.terms(j-l, k-m);
                     val O_jk = source.terms(j,k);
                     this.terms(l,m) = this.terms(l,m) + C_lmjk * O_jk;
@@ -127,13 +127,13 @@ public class LocalExpansion extends Expansion {
 
     	val targetTerms = scratch.terms;
     	var m_sign : int = 1;
-    	for ([m] in 0..p) {
-    		for ([l] in m..p) temp(l) = targetTerms(l, m);
+    	for (m in 0..p) {
+    		for (l in m..p) temp(l) = targetTerms(l, m);
 
-    		for ([l] in m..p) {
+    		for (l in m..p) {
     			var M_lm : Complex = Complex.ZERO;
     			var F_lm : Double = 1.0;
-    			for ([j] in l..p) {  
+    			for (j in l..p) {  
     				M_lm = M_lm + temp(j) * F_lm;
     				F_lm = F_lm * b / (j - l + 1);
     			}
@@ -187,8 +187,8 @@ public class LocalExpansion extends Expansion {
             }
         // END HAND-INLINED ITERATOR
             val O_jk = source.terms(j,k);
-            for ([l] in 0..(p-j)) {
-                for ([m] in -l..l) {
+            for (l in 0..(p-j)) {
+                for (m in -l..l) {
                     if (Math.abs(k+m) <= (j+l)) {
                         val B_lmjk = transform.terms(j+l, k+m);
                         //Console.OUT.println("source.terms.dist(" + j + "," + k + ") = " + source.terms.dist(j,k));
@@ -221,14 +221,14 @@ public class LocalExpansion extends Expansion {
 	    //val temp = new Array[Complex](0..p);
 	    var m_sign : int = 1;
         var b_m_pow : double = 1.0;
-	    for ([m] in 0..p) {
-		    for ([l] in m..p) temp(l) = targetTerms(l, -m);
+	    for (m in 0..p) {
+		    for (l in m..p) temp(l) = targetTerms(l, -m);
 
             var b_lm1_pow : double = inv_b * b_m_pow * b_m_pow;
-		    for ([l] in m..p) {
+		    for (l in m..p) {
 			    var M_lm : Complex = Complex.ZERO;
 			    var F_lm : Double = Factorial.getFactorial(l + m) * b_lm1_pow;
-			    for ([j] in m..(p-l)) {  	// upper bound here is not p but it seems j+l <= p
+			    for (j in m..(p-l)) {  	// upper bound here is not p but it seems j+l <= p
 				    M_lm = M_lm + temp(j) * F_lm;
 				    F_lm = F_lm * (j + l + 1) * inv_b;
 			    }
