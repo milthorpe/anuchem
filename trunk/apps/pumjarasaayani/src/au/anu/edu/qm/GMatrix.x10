@@ -563,7 +563,7 @@ public class GMatrix extends Matrix {
                         val dAng  = dFunc.getMaximumAngularMomentum();
                         val dd = dStrt + dAng;
 
-                        if (dd >= cc) {
+                        if (cc >= dd) {
                             computeThreads(0).computeSingle2(aFunc, bFunc, cFunc, dFunc,
                                         radiusABSquared, aAng, bAng, cAng, dAng, angMomAB,
                                         aStrt, bStrt, cStrt, dStrt, aLim, bLim, abLim,
