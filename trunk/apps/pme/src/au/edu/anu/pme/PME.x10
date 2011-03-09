@@ -699,9 +699,9 @@ public class PME {
         finish ateach (place1 in Dist.makeUnique()) {
             val regionHere = C.dist(here) as Region(3){rect};
             for ([m1,m2,m3] in regionHere) {
-                val m1prime = m1 <= K1/2 ? m1 : m1 - K1;
-                val m2prime = m2 <= K2/2 ? m2 : m2 - K2;
-                val m3prime = m3 <= K3/2 ? m3 : m3 - K3;
+                val m1prime = m1 <= K1/2 ? m1 as Double : m1 - K1;
+                val m2prime = m2 <= K2/2 ? m2 as Double : m2 - K2;
+                val m3prime = m3 <= K3/2 ? m3 as Double : m3 - K3;
                 val mVec = edgeReciprocals(0).mul(m1prime).add(edgeReciprocals(1).mul(m2prime)).add(edgeReciprocals(2).mul(m3prime));
                 val mSquared = mVec.dot(mVec);
                 C(m1,m2,m3) = Math.exp(-(Math.PI*Math.PI) * mSquared / (beta * beta)) / (mSquared * Math.PI * V);
