@@ -10,6 +10,7 @@
  */
 package au.edu.anu.chem.mm;
 
+import x10.compiler.Uncounted;
 import x10.util.Team;
 
 import x10x.vector.Point3d;
@@ -62,7 +63,7 @@ public class ElectrostaticDirectMethod {
                     // before starting computation, send my atoms to next place
                     val nextPlace = here.next();
                     if (nextPlace != here) {
-                        async at (nextPlace) {
+                        @Uncounted async at (nextPlace) {
                             atomic {
                                 otherAtoms(nextPlace.id)(p1) = myAtoms;
                             }
@@ -84,7 +85,7 @@ public class ElectrostaticDirectMethod {
                         if (target != here) {
                             // send a set of atoms to next target place
                             val targetPlace = target;
-                            async at (targetPlace) {
+                            @Uncounted async at (targetPlace) {
                                 atomic {
                                     otherAtoms(targetPlace.id)(p1) = myAtoms;
                                 }
