@@ -42,7 +42,7 @@ public class ElectrostaticDirectMethod {
      */
     public def this(atoms : DistArray[Array[MMAtom](1){rect,zeroBased,rail}](1)) {
 		this.atoms = DistArray.make[Array[PointCharge](1){rect,zeroBased,rail}](Dist.makeUnique(), 
-			([i] : Point) => new Array[PointCharge](atoms(i).size(),
+			([i] : Point) => new Array[PointCharge](atoms(i).size,
 												(j : Int) => new PointCharge(atoms(i)(j).centre, atoms(i)(j).charge)));
         this.otherAtoms = DistArray.make[Array[Array[PointCharge](1){rect,zeroBased,rail}](1){rect,zeroBased,rail}](Dist.makeUnique(), 
             ([p] : Point) => new Array[Array[PointCharge](1){rect,zeroBased,rail}](Place.MAX_PLACES));
