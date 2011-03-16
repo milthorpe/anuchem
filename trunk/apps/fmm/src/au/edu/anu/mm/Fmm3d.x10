@@ -321,7 +321,7 @@ public class Fmm3d {
                     if (child != null) {
                         val childExp = child.multipoleExp;
                         val parent = child.parent;
-                        at (parent) {
+                        at(parent) {
 			                if (!useOldOperators) { 
 				                /* New! Operation A */
 	                            val shift = Point.make([here.id, (child.x+1)%2, (child.y+1)%2, (child.z+1)%2]);
@@ -417,7 +417,9 @@ public class Fmm3d {
                             if (thisLevel > topLevel) {
                                 //Console.OUT.println("get parent for " + x1 + "," + y1 + "," + z1);
                                 val box1Parent = box1.parent;
-                                val box1ParentExp = at (box1Parent) {box1Parent().localExp};
+                                val box1ParentExp = (box1Parent.home == here) ?
+                                    box1Parent().localExp :
+                                    at(box1Parent) {box1Parent().localExp};
 
                 			    if (!useOldOperators) { 
                 				    /* New Operation C */
@@ -473,7 +475,9 @@ public class Fmm3d {
             val placeId = placeEntry.getKey();
             val vListForPlace = placeEntry.getValue();
             val vListArray = vListForPlace.toArray();
-            val multipolesForPlace = at (Place.place(placeId)) { getMultipolesForBoxList(thisLevelBoxes, vListArray)};
+            val multipolesForPlace = (placeId == here.id) ?
+                getMultipolesForBoxList(thisLevelBoxes, vListArray) :
+                at(Place.place(placeId)) { getMultipolesForBoxList(thisLevelBoxes, vListArray)};
             for (i in 0..(vListArray.size-1)) {
                 thisLevelCopies(vListArray(i)) = multipolesForPlace(i);
             }
@@ -528,7 +532,9 @@ public class Fmm3d {
                 val placeId = placeEntry.getKey();
                 val uListForPlace = placeEntry.getValue();
                 val uListArray = uListForPlace.toArray();
-                val packedForPlace = at (Place.place(placeId)) { getPackedAtomsForBoxList(lowestLevelBoxes, uListArray)};
+                val packedForPlace = (placeId == here.id) ?
+                    getPackedAtomsForBoxList(lowestLevelBoxes, uListArray) :
+                    at(Place.place(placeId)) { getPackedAtomsForBoxList(lowestLevelBoxes, uListArray)};
                 for (i in 0..(uListArray.size-1)) {
                     myLET.packedAtoms(uListArray(i)) = packedForPlace(i);
                 }
@@ -874,7 +880,7 @@ public class Fmm3d {
     protected static def getParentForChild(boxes : Array[DistArray[FmmBox](3)](1){rect,zeroBased,rail}, level : Int, topLevel : Int, x : Int, y : Int, z : Int) : GlobalRef[FmmBox] {
         if (level == topLevel)
             return GlobalRef[FmmBox](null);
-        return (at (boxes(level-1).dist(x/2, y/2, z/2)) {GlobalRef[FmmBox](boxes(level-1)(x/2, y/2, z/2))});
+        return (at(boxes(level-1).dist(x/2, y/2, z/2)) {GlobalRef[FmmBox](boxes(level-1)(x/2, y/2, z/2))});
     }
 
     private static def getPackedAtomsForBox(lowestLevelBoxes : DistArray[FmmBox](3), x : Int, y : Int, z : Int) {
@@ -890,7 +896,12 @@ public class Fmm3d {
      * @return a local copy at the current place of a box's multipole expansion
      */
     private static def getMultipoleExpansionLocalCopy(thisLevelBoxes : DistArray[FmmBox](3), x : Int, y : Int, z : Int) : MultipoleExpansion {
-        return at (thisLevelBoxes.dist(x,y,z)) {thisLevelBoxes(x,y,z) != null ? (thisLevelBoxes(x,y,z)).multipoleExp : null};
+        val boxHome = thisLevelBoxes.dist(x,y,z);
+        if (boxHome == here) {
+            return thisLevelBoxes(x,y,z) != null ? (thisLevelBoxes(x,y,z)).multipoleExp : null;
+        } else {
+            return at(boxHome) {thisLevelBoxes(x,y,z) != null ? (thisLevelBoxes(x,y,z)).multipoleExp : null};
+        }
     }
 }
 
