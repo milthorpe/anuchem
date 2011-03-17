@@ -66,7 +66,7 @@ public class Expansion {
      * @see Dachsel 2006, eqn 4 & 5
      */
     public static def genComplexK(phi : Double, p : int) { 
-    	val complexK = new Array[Array[Complex](1)](0..1);
+    	val complexK = new Array[Array[Complex](1){rect}](0..1);
     	for (r in 0..1) { 
 	    	complexK(r) = new Array[Complex](-p..p); 
     		for (k in -p..p) complexK(r)(k) = Math.exp(Complex.I * k * phi * ((r==0)?1:-1) );

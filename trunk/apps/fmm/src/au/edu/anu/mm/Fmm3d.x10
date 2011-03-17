@@ -6,12 +6,14 @@
  *  You may obtain a copy of the License at
  *      http://www.opensource.org/licenses/eclipse-1.0.php
  *
- * (C) Copyright Josh Milthorpe 2010.
+ * (C) Copyright Josh Milthorpe 2010-2011.
  */
 package au.edu.anu.mm;
 
-//import x10.compiler.NonEscaping;
-import x10.util.*;
+import x10.compiler.Inline;
+import x10.util.ArrayList;
+import x10.util.HashMap;
+import x10.util.HashSet;
 import x10x.vector.Point3d;
 import x10x.polar.Polar3d;
 import x10x.vector.Vector3d;
@@ -120,32 +122,34 @@ public class Fmm3d {
 
     /** 
      * A cache of wigner matrices for translating between box centres of children to parent
-     * Dimensions are:
-     * 0: virtual dimension as above
-     * 1, 2, 3: x, y, z translation respectively
-     * Each element of this is an Array[Array[Array[Double](2){rect}](1)](1) which is indexed by
-     * 0: forward; 1: backwards (rotations)
-     * Each element of this is an Array[Array[Double](2){rect}](1) which is indexed by 
-     * 0: l-value
-     * Each element of this is a Wigner rotation matrix d^l for a particular theta (for the translation with vector <x,y,z>)
+     * The DistArray is a unique dist, duplicating all data to each place.
+     * Dimensions of the internal Array are:
+     *   0, 1, 2: x, y, z translation values
+     * which in turn contains an Array indexed by:
+     *   0 for forward, 1 for backward (rotations)
+     * Each element of this is an Array[Array[Double](2){rect}](1)  
+     *   which is indexed by l-value
+     * Each element of this is a Wigner rotation matrix d^l for a particular  
+     *   theta (for the translation with vector <x,y,z>)
      */
-    val wignerA : DistArray[ Array[Array[Array[Double](2){rect}](1)](1)](4);
-    val wignerB : DistArray[ Array[Array[Array[Double](2){rect}](1)](1)](4);
-    val wignerC : DistArray[ Array[Array[Array[Double](2){rect}](1)](1)](4);
+    val wignerA : DistArray[Array[Array[Array[Array[Double](2){rect}](1){rect,zeroBased,rail}](1){rect,zeroBased,rail}](3){rect,zeroBased}](1);
+    val wignerB : DistArray[Array[Array[Array[Array[Double](2){rect}](1){rect,zeroBased,rail}](1){rect,zeroBased,rail}](3){rect}](1); // B is not zero-based
+    val wignerC : DistArray[Array[Array[Array[Array[Double](2){rect}](1){rect,zeroBased,rail}](1){rect,zeroBased,rail}](3){rect,zeroBased}](1);
 
     /**
      * A cache of exp(k * phi * i) values for all phi that could be needed in a rotation and -p < k < p
-     * Dimensions are:
-     * 0: virtual dimension as above
-     * 1, 2, 3: x, y, z translation values
-     * Array[Array[Complex](1)](1) is indexed first by 0 for +phi and 1 for -phi (for forward, back rotations)
+     * The DistArray is a unique dist, duplicating all data to each place.
+     * Dimensions of the internal Array are:
+     *   0, 1, 2: x, y, z translation values
+     * which in turn contains an Array indexed by:
+     *   0 for +phi and 1 for -phi (for forward, back rotations)
      */
-    val complexK : DistArray[ Array[Array[Complex](1)](1)](4);
+    val complexK : DistArray[Array[Array[Array[Complex](1){rect}](1){rect,zeroBased,rail}](3){rect}](1);
 
     /**
      * A flag which can be set to use the old translation operators (without rotations), probably preferable for small number of poles
      */
-    public var useOldOperators : boolean = false;
+    public static val useOldOperators = false;
 
     /**
      * Initialises a fast multipole method electrostatics calculation
@@ -216,17 +220,16 @@ public class Fmm3d {
         this.multipoleTransforms = precomputeTransforms(numLevels, topLevel, numTerms, size);
         this.locallyEssentialTrees = createLocallyEssentialTrees(numLevels, topLevel, boxes, periodic);
 
-    	this.wignerB = precomputeWignerB(numTerms);
     	this.wignerA = precomputeWignerA(numTerms);
+    	this.wignerB = precomputeWignerB(numTerms, ws);
     	this.wignerC = precomputeWignerC(numTerms);
-    	this.complexK = precomputeComplex(numTerms);
+    	this.complexK = precomputeComplex(numTerms, ws);
 
         timer.stop(TIMER_INDEX_TREE);
     }
     
     public def calculateEnergy() : Double {
         timer.start(TIMER_INDEX_TREE);
-        Console.OUT.println("Using " + ((useOldOperators)?"old":"new") + " operators");
         assignAtomsToBoxes(atoms, boxes(numLevels), offset, lowestLevelDim, size);
         timer.stop(TIMER_INDEX_TREE);
 
@@ -249,6 +252,7 @@ public class Fmm3d {
         //Console.OUT.println("assignAtomsToBoxes");
         finish ateach (p1 in atoms) {
             val localAtoms = atoms(p1);
+            // TODO single activity for all atoms
             finish for (i in 0..(localAtoms.size-1)) async {
                 val atom = localAtoms(i);
                 val charge = atom.charge;
@@ -311,7 +315,6 @@ public class Fmm3d {
             //Console.OUT.println("combine level " + level + " => " + (level-1));
             val thisLevelBoxes = boxes(thisLevel);
             val multipoleTranslations = this.multipoleTranslations; // TODO shouldn't be necessary XTENLANG-1913
-            val useOldOperators = this.useOldOperators; // TODO shouldn't be necessary XTENLANG-1913
             val complexK = this.complexK; // TODO shouldn't be necessary XTENLANG-1913
             val wignerA = this.wignerA; // TODO shouldn't be necessary XTENLANG-1913
             val sideLength = size / Math.pow2(thisLevel);
@@ -320,15 +323,15 @@ public class Fmm3d {
                     val child = thisLevelBoxes(boxIndex);
                     if (child != null) {
                         val childExp = child.multipoleExp;
+                        val shift = Point.make((child.x+1)%2, (child.y+1)%2, (child.z+1)%2);
                         val parent = child.parent;
                         at(parent) {
 			                if (!useOldOperators) { 
 				                /* New! Operation A */
-	                            val shift = Point.make([here.id, (child.x+1)%2, (child.y+1)%2, (child.z+1)%2]);
             	                parent().multipoleExp.translateAndAddMultipole(
 					                Fmm3d.getChildBoxCentre(shift, sideLength),
-					                complexK( Fmm3d.getChildBoxCentreWithPlace(here.id, shift) ), childExp, wignerA(shift)  );
-			                } else { 
+					                complexK(here.id)(getChildBoxCentreIndex(shift)), childExp, wignerA(here.id)(shift));
+			                } else {
 				                /* Old Operation A */
 				                val shift = multipoleTranslations(Point.make([here.id, thisLevel, (child.x+1)%2, (child.y+1)%2, (child.z+1)%2]));
 				                parent().multipoleExp.translateAndAddMultipole(shift, childExp);
@@ -358,7 +361,6 @@ public class Fmm3d {
         val locallyEssentialTrees = this.locallyEssentialTrees; // TODO shouldn't be necessary XTENLANG-1913
         val numTerms = this.numTerms; // TODO shouldn't be necessary XTENLANG-1913
         val boxes = this.boxes; // TODO shouldn't be necessary XTENLANG-1913
-        val useOldOperators = this.useOldOperators; // TODO shouldn't be necessary XTENLANG-1913
         val complexK = this.complexK; // TODO shouldn't be necessary XTENLANG-1913
         val wignerB = this.wignerB; // TODO shouldn't be necessary XTENLANG-1913
         val wignerC = this.wignerC; // TODO shouldn't be necessary XTENLANG-1913
@@ -369,22 +371,24 @@ public class Fmm3d {
             val sideLength = size / Math.pow2(thisLevel);
             finish ateach (p1 in Dist.makeUnique()) {
                 finish {
-                    val myLET = locallyEssentialTrees(p1);
-
-                    val thisLevelMultipoleCopies = myLET.multipoleCopies(thisLevel);
                     if (thisLevel == startingLevel) {
                         // must fetch top level multipoles synchronously before starting
-                        Fmm3d.prefetchMultipoles(thisLevel, thisLevelBoxes, myLET);
+                        Fmm3d.prefetchMultipoles(thisLevel, thisLevelBoxes, locallyEssentialTrees);
                     }
     
                     // can fetch next level multipoles asynchronously while computing this level
                     val lowerLevel = thisLevel+1;
                     if (lowerLevel <= numLevels) {
                         val lowestLevelBoxes = boxes(lowerLevel);
-                        async Fmm3d.prefetchMultipoles(lowerLevel, lowestLevelBoxes, myLET);
+                        async Fmm3d.prefetchMultipoles(lowerLevel, lowestLevelBoxes, locallyEssentialTrees);
                     }
 
                     for ([x1,y1,z1] in thisLevelBoxes.dist(here)) async {
+                        val myLET = locallyEssentialTrees(here.id);
+                        val thisLevelMultipoleCopies = myLET.multipoleCopies(thisLevel);
+                        val myComplexK = complexK(here.id);
+                        val myWignerB = wignerB(here.id);
+                        val myWignerC = wignerC(here.id);
                         //Console.OUT.println("starting " + x1 + "," + y1 + "," + z1);
                         val box1 = thisLevelBoxes(x1,y1,z1);
                         // these two objects are to provide temporary space for the B operator which does not have to be reallocated and GCed for each call
@@ -395,17 +399,14 @@ public class Fmm3d {
                             val vList = box1.getVList();
                             for ([p] in vList) {
                                 val boxIndex = vList(p);
-                                // force on the multipole value
                                 val box2MultipoleExp = thisLevelMultipoleCopies(boxIndex);
                                 if (box2MultipoleExp != null) {
                                     val translation = box1.getTranslationIndex(boxIndex);
-
 				                    if (!useOldOperators) { 
                     					/* New Operation B */
-            				        	val shift = Point.make([here.id, translation(0), translation(1), translation(2)]);
 		                    			box1.localExp.transformAndAddToLocal(scratch, scratch_array,
-                    						Point3d(translation(0) * sideLength, translation(1) * sideLength, translation(2) * sideLength) , 
-                    						complexK(shift), box2MultipoleExp, wignerB(shift) );
+                    						Point3d(translation(0) * sideLength, translation(1) * sideLength, translation(2) * sideLength), 
+                    						myComplexK(translation), box2MultipoleExp, myWignerB(translation) );
                     				} else { 
 				                    	/* Old Operation B */
             	                        val translateP = Point.make([here.id, thisLevel, translation(0), translation(1), translation(2)]);
@@ -423,10 +424,10 @@ public class Fmm3d {
 
                 			    if (!useOldOperators) { 
                 				    /* New Operation C */
-       	                            val shift = Point.make([here.id, box1.x%2, box1.y%2, box1.z%2]);
+       	                            val shift = Point.make(box1.x%2, box1.y%2, box1.z%2);
 	                			    box1.localExp.translateAndAddLocal(
                 						getChildBoxCentre(shift, sideLength),
-            						    complexK( getChildBoxCentreWithPlace(here.id, shift) ), box1ParentExp, wignerC(shift) );
+            						    myComplexK(getChildBoxCentreIndex(shift)), box1ParentExp, myWignerC(shift) );
                 			    } else { 
                 				    /* Old Operation C */
 	                                val shift = multipoleTranslations(Point.make([here.id, thisLevel, box1.x%2, box1.y%2, box1.z%2]));
@@ -441,18 +442,19 @@ public class Fmm3d {
         timer.stop(TIMER_INDEX_TRANSFORM);
     }
 
-    public static def getChildBoxCentre(shift : Point, sideLength : Double) { 
-        return Point3d((shift(1) - 0.5) * sideLength, (shift(2) - 0.5) * sideLength, (shift(3) - 0.5) * sideLength);
+    public @Inline static def getChildBoxCentre(shift : Point(3), sideLength : Double) { 
+        return Point3d((shift(0) - 0.5) * sideLength, (shift(1) - 0.5) * sideLength, (shift(2) - 0.5) * sideLength);
     }
-    public static def getChildBoxCentreWithPlace(id : int, shift : Point) { 
-        return Point.make([here.id, shift(1)*2 - 1, shift(2)*2 - 1, shift(3)*2 - 1]);
+    public @Inline static def getChildBoxCentreIndex(shift : Point(3)) { 
+        return Point.make(shift(0)*2 - 1, shift(1)*2 - 1, shift(2)*2 - 1);
     }
 
     /**
      * Fetch all multipole expansions required for transform to local at this place.
      * This is communication-intensive, so can be overlapped with computation.
      */
-    private static def prefetchMultipoles(level : Int, thisLevelBoxes : DistArray[FmmBox](3), myLET : LocallyEssentialTree) : void {
+    private static def prefetchMultipoles(level : Int, thisLevelBoxes : DistArray[FmmBox](3), locallyEssentialTrees : DistArray[LocallyEssentialTree](1)) : void {
+        val myLET = locallyEssentialTrees(here.id);
         val combinedVList = myLET.combinedVList(level);
         val thisLevelCopies = myLET.multipoleCopies(level);
 
@@ -681,47 +683,60 @@ public class Fmm3d {
 
     /** 
      * Precomputes wigner rotation matrices premultiplied by appropriate factors for use 
-     * in applying operators A, B, C. This is distributed to all places by replicating 
-     * the first index in a block dist across Place.PLACES
+     * in applying operator A. This is replicated in a unique dist across all places.
      */
     private def precomputeWignerA(numTerms : Int) {
-        val wignerMatrices = DistArray.make[ Array[Array[Array[Double](2){rect}](1)](1) ](Dist.makeBlock(0..(Place.MAX_PLACES-1)*(0..1)*(0..1)*(0..1),0));
-        finish ateach ([placeId,i,j,k] in wignerMatrices) {
-    		val theta = Polar3d.getPolar3d( Point3d(i*2-1,j*2-1,k*2-1) ).theta;
-		    wignerMatrices(placeId, i, j, k) = WignerRotationMatrix.getACollection(theta, numTerms);
+        val wignerMatrices = DistArray.make[Array[Array[Array[Array[Double](2){rect}](1){rect,zeroBased,rail}](1){rect,zeroBased,rail}](3){rect,zeroBased}](Dist.makeUnique());
+        finish ateach (place in wignerMatrices) {
+            val placeWigner = new Array[Array[Array[Array[Double](2){rect}](1){rect,zeroBased,rail}](1){rect,zeroBased,rail}]((0..1)*(0..1)*(0..1));
+            for ([i,j,k] in placeWigner) {
+        		val theta = Polar3d.getPolar3d( Point3d(i*2-1,j*2-1,k*2-1) ).theta;
+		        placeWigner(i, j, k) = WignerRotationMatrix.getACollection(theta, numTerms);
+            }
+            wignerMatrices(place) = placeWigner;
         }
         return wignerMatrices;
     }
 
     private def precomputeWignerC(numTerms : Int) {
-	    val wignerMatrices = DistArray.make[ Array[Array[Array[Double](2){rect}](1)](1) ](Dist.makeBlock(0..(Place.MAX_PLACES-1)*(0..1)*(0..1)*(0..1),0));
-        finish ateach ([placeId,i,j,k] in wignerMatrices) {
-		    val theta = Polar3d.getPolar3d( Point3d(i*2-1,j*2-1,k*2-1) ).theta;
-		    wignerMatrices(placeId, i, j, k) = WignerRotationMatrix.getCCollection(theta, numTerms);
+        val wignerMatrices = DistArray.make[Array[Array[Array[Array[Double](2){rect}](1){rect,zeroBased,rail}](1){rect,zeroBased,rail}](3){rect,zeroBased}](Dist.makeUnique());
+        finish ateach (place in wignerMatrices) {
+            val placeWigner = new Array[Array[Array[Array[Double](2){rect}](1){rect,zeroBased,rail}](1){rect,zeroBased,rail}]((0..1)*(0..1)*(0..1));
+            for ([i,j,k] in placeWigner) {
+    		    val theta = Polar3d.getPolar3d( Point3d(i*2-1,j*2-1,k*2-1) ).theta;
+		        placeWigner(i, j, k) = WignerRotationMatrix.getCCollection(theta, numTerms);
+            }
+            wignerMatrices(place) = placeWigner;
         }
         return wignerMatrices;
     }
 
-    private def precomputeWignerB(numTerms : Int) {
-        val region = 0..(Place.MAX_PLACES-1) * (-(2*ws+1))..(2*ws+1) * (-(2*ws+1))..(2*ws+1) * (-(2*ws+1))..(2*ws+1);
-        val wignerMatrices = DistArray.make[ Array[Array[Array[Double](2){rect}](1)](1) ](Dist.makeBlock(region,0));
-        finish ateach ([placeId,i,j,k] in wignerMatrices) {
-            val theta = Polar3d.getPolar3d ( Point3d(i, j, k) ).theta;
-            wignerMatrices(placeId, i, j, k) = WignerRotationMatrix.getBCollection(theta, numTerms);
+    private def precomputeWignerB(numTerms : Int, ws : Int) {
+        val wignerMatrices = DistArray.make[Array[Array[Array[Array[Double](2){rect}](1){rect,zeroBased,rail}](1){rect,zeroBased,rail}](3){rect}](Dist.makeUnique());
+        finish ateach (place in wignerMatrices) {
+            val placeWigner = new Array[Array[Array[Array[Double](2){rect}](1){rect,zeroBased,rail}](1){rect,zeroBased,rail}]((-(2*ws+1))..(2*ws+1) * (-(2*ws+1))..(2*ws+1) * (-(2*ws+1))..(2*ws+1));
+            for ([i,j,k] in placeWigner) {
+                val theta = Polar3d.getPolar3d ( Point3d(i, j, k) ).theta;
+		        placeWigner(i, j, k) = WignerRotationMatrix.getBCollection(theta, numTerms);
+            }
+            wignerMatrices(place) = placeWigner;
         }
         return wignerMatrices;
     }
 
     /**
      * Precomputes the values of exp(phi * k * i) needed for every possible translation operation
-     * and distributes across all places by replicating the first index in a block dist across Place.PLACES
+     * and replicates to all places using a unique dist
      */
-    private def precomputeComplex(numTerms : Int) {
-        val region = 0..(Place.MAX_PLACES-1) * (-(2*ws+1))..(2*ws+1) * (-(2*ws+1))..(2*ws+1) * (-(2*ws+1))..(2*ws+1);
-        val complexK = DistArray.make[ Array[Array[Complex](1)](1) ](Dist.makeBlock(region,0));
-        finish ateach ([placeId,i,j,k] in complexK) {
-            val phi = Polar3d.getPolar3d ( Point3d(i, j, k) ).phi;
-	        complexK(placeId, i, j, k) = Expansion.genComplexK(phi, numTerms);
+    private def precomputeComplex(numTerms : Int, ws : Int) {
+        val complexK = DistArray.make[Array[Array[Array[Complex](1){rect}](1){rect,zeroBased,rail}](3){rect}](Dist.makeUnique());
+        finish ateach (place in complexK) {
+            val placeComplexK = new Array[Array[Array[Complex](1){rect}](1){rect,zeroBased,rail}]((-(2*ws+1))..(2*ws+1) * (-(2*ws+1))..(2*ws+1) * (-(2*ws+1))..(2*ws+1));
+            for ([i,j,k] in placeComplexK) {
+                val phi = Polar3d.getPolar3d ( Point3d(i, j, k) ).phi;
+	            placeComplexK(i, j, k) = Expansion.genComplexK(phi, numTerms);
+            }
+            complexK(place) = placeComplexK;
         }
         return complexK;
     }

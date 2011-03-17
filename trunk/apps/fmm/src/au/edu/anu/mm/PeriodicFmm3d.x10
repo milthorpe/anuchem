@@ -10,7 +10,6 @@
  */
 package au.edu.anu.mm;
 
-import x10.util.*;
 import x10x.vector.Point3d;
 import x10x.vector.Vector3d;
 import au.edu.anu.chem.mm.MMAtom;
