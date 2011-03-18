@@ -767,7 +767,7 @@ public class Fmm3d {
         val boxArray = new Array[DistArray[FmmBox](3)](numLevels+1);
         for (thisLevel in topLevel..numLevels) {
             val levelDim = Math.pow2(thisLevel) as Int;
-            val thisLevelDist = MortonDist.make(0..(levelDim-1) * 0..(levelDim-1) * 0..(levelDim-1));
+            val thisLevelDist = MortonDist.makeMorton(0..(levelDim-1) * 0..(levelDim-1) * 0..(levelDim-1));
             if (periodic) {
                 boxArray(thisLevel) = DistArray.make[FmmBox](new PeriodicDist(thisLevelDist));
             } else {

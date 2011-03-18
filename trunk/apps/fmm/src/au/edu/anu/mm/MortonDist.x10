@@ -117,15 +117,15 @@ public final class MortonDist extends Dist(3) {
         }
     }
 
-    public static def make(r:Region(3)) : MortonDist{self.region==r} {
+    public static def makeMorton(r:Region(3)) : MortonDist{self.region==r} {
         return new MortonDist(r, PlaceGroup.WORLD);
     }
 
-    public static def make(r:Region(3), pg:PlaceGroup) : MortonDist{self.region==r} {
+    public static def makeMorton(r:Region(3), pg:PlaceGroup) : MortonDist{self.region==r} {
         return new MortonDist(r, pg);
     }
 
-    def this(r:Region, pg:PlaceGroup) {
+    def this(r:Region(3), pg:PlaceGroup) {
         super(r);
         dimDigits = Math.log2(Math.cbrt(r.size()) as Int) as Int;
         this.pg = pg;
