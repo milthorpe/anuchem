@@ -51,6 +51,9 @@ public final class MortonDist extends Dist(3) {
 	        if (pt.rank != 3) return -1;
             return MortonDist.this.getMortonIndex(pt) - start;
         }
+        public def indexOf(i0:Int, i1:Int, i2:Int):Int {
+            return MortonDist.this.getMortonIndex(i0,i1,i2) - start;
+        }
 
         // TODO I hope these aren't used
         public def boundingBox(): Region(rank) {throw new UnsupportedOperationException("boundingBox()");}
@@ -195,6 +198,30 @@ public final class MortonDist extends Dist(3) {
     }
 
     /**
+     * Gets the Morton- or Z-index of a 3-dimensional point,
+     * optimised for access by raw integer indices.
+     * The Morton index is calculated by interleaving binary digits
+     * of each dimension.  E.g. 
+     * (0, 2, 1) = (00, 10, 01)    = 010001
+     * (1, 1, 2) = (01, 01, 10)    = 001110
+     * (1, 1, 0) = (01, 01, 00)    = 000110
+     */
+    public def getMortonIndex(i0:Int, i1:Int, i2:Int):Int {
+        var index : Int = 0;
+        var digitMask : Int = Math.pow2(dimDigits-1);
+        for (var digit : Int = dimDigits; digit > 0; digit--) {
+            val dim0 = digitMask & i0;
+            index = index | (dim0 << (digit*2));
+            val dim1 = digitMask & i1;
+            index = index | (dim1 << (digit*2 - 1));
+            val dim2 = digitMask & i2;
+            index = index | (dim2 << (digit*2 - 2));
+            digitMask = digitMask >> 1;
+        }
+        return index;
+    }
+
+    /**
      * Returns a Point(3) corresponding to the given Morton index.
      * @param index the Morton index into the 3D array
      */
@@ -258,6 +285,16 @@ public final class MortonDist extends Dist(3) {
         if (offset == -1) {
             if (CompilerFlags.checkBounds() && !region.contains(pt)) raiseBoundsError(pt);
                 if (CompilerFlags.checkPlace()) raisePlaceError(pt);
+        }
+        return offset;
+    }
+
+    public def offset(i0:Int, i1:Int, i2:Int){rank==3}:Int {
+        // assumes regionForHere is already initialised
+        val offset = get(here).indexOf(i0,i1,i2);
+        if (offset == -1) {
+            if (CompilerFlags.checkBounds() && !region.contains(i0,i1,i2)) raiseBoundsError(i0,i1,i2);
+                if (CompilerFlags.checkPlace()) raisePlaceError(i0,i1,i2);
         }
         return offset;
     }

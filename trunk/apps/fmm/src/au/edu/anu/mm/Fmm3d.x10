@@ -288,8 +288,8 @@ public class Fmm3d {
         val numTerms = this.numTerms; // TODO shouldn't be necessary XTENLANG-1913
         val lowestLevelBoxes = this.lowestLevelBoxes; // TODO shouldn't be necessary XTENLANG-1913
         finish for (p1 in lowestLevelBoxes.dist.places()) async at(p1) {
-            for (boxIndex in lowestLevelBoxes.dist(here)) {
-                val leafBox = lowestLevelBoxes(boxIndex) as FmmLeafBox;
+            for ([x,y,z] in lowestLevelBoxes.dist(here)) {
+                val leafBox = lowestLevelBoxes(x,y,z) as FmmLeafBox;
                 if (leafBox != null) {
                     val boxCentre = leafBox.getCentre(size);
                     for (i in 0..(leafBox.atoms.size()-1)) {
@@ -319,8 +319,8 @@ public class Fmm3d {
             val wignerA = this.wignerA; // TODO shouldn't be necessary XTENLANG-1913
             val sideLength = size / Math.pow2(thisLevel);
             finish for (p1 in thisLevelBoxes.dist.places()) async at(p1) {
-                for (boxIndex in thisLevelBoxes.dist(here)) {
-                    val child = thisLevelBoxes(boxIndex);
+                for ([x,y,z] in thisLevelBoxes.dist(here)) {
+                    val child = thisLevelBoxes(x,y,z);
                     if (child != null) {
                         val childExp = child.multipoleExp;
                         val shift = Point.make((child.x+1)%2, (child.y+1)%2, (child.z+1)%2);
@@ -399,7 +399,7 @@ public class Fmm3d {
                             val vList = box1.getVList();
                             for ([p] in vList) {
                                 val boxIndex = vList(p);
-                                val box2MultipoleExp = thisLevelMultipoleCopies(boxIndex);
+                                val box2MultipoleExp = thisLevelMultipoleCopies(boxIndex(0), boxIndex(1), boxIndex(2));
                                 if (box2MultipoleExp != null) {
                                     val translation = box1.getTranslationIndex(boxIndex);
 				                    if (!useOldOperators) { 
@@ -631,8 +631,8 @@ public class Fmm3d {
         val farFieldEnergy = finish(SumReducer()) {
             for (p1 in lowestLevelBoxes.dist.places()) async at(p1) {
                 var thisPlaceEnergy : Double = 0.0;
-                for (boxIndex in lowestLevelBoxes.dist(here)) {
-                    val box = lowestLevelBoxes(boxIndex) as FmmLeafBox;
+                for ([x,y,z] in lowestLevelBoxes.dist(here)) {
+                    val box = lowestLevelBoxes(x,y,z) as FmmLeafBox;
                     if (box != null) {
                         val boxCentre = box.getCentre(size);
                         for (atomIndex in 0..(box.atoms.size()-1)) {
