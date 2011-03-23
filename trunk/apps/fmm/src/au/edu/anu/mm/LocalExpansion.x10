@@ -145,7 +145,7 @@ public class LocalExpansion extends Expansion {
 	   	}
 
 	    scratch.backRotate(temp, complexK(0), wigner(1) );
-    	add(scratch);
+    	unsafeAdd(scratch);
     }
 
     /**
@@ -242,7 +242,7 @@ public class LocalExpansion extends Expansion {
 	    }
 
 	    scratch.backRotate(temp, complexK(0), wigner(1) );
-	    add(scratch);
+	    unsafeAdd(scratch);
     }
 
     /**

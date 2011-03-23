@@ -38,7 +38,24 @@ public class Expansion {
 	    this.terms = new Array[Complex](e.terms);
     }
 
+    /**
+     * Add each term of e to this expansion. 
+     * This operation is atomic and therefore thread-safe.
+     */
     public atomic def add(e : Expansion) {
+	    val p = terms.region.max(0);
+	    for (l in -p..p) {
+	        for (m in -l..l) { // this will now be inlined -- should be for ([l,m] in terms.region)
+	            this.terms(l,m) = this.terms(l,m) + e.terms(l,m);
+    	    }
+        }
+    }
+
+    /**
+     * Add each term of e to this expansion. 
+     * This operation is not atomic, therefore not thread-safe.
+     */
+    protected def unsafeAdd(e : Expansion) {
 	    val p = terms.region.max(0);
 	    for (l in -p..p) {
 	        for (m in -l..l) { // this will now be inlined -- should be for ([l,m] in terms.region)
