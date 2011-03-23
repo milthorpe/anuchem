@@ -99,11 +99,10 @@ public class Expansion {
      * @param complexK, values of exp(i*k*phi)
      * @see Dachsel 2006 eqn 4 & 5
      */
-    public def rotate(temp : Array[Complex](1), complexK : Array[Complex](1), wigner : Array[Array[Double](2){rect}](1) ) {
+    public def rotate(temp : Array[Complex](1){rect}, complexK : Array[Complex](1){rect}, wigner : Array[Array[Double](2){rect}](1){rect,zeroBased,rail}) {
         val p : Int = terms.region.max(0);
 
     	//val temp = new Array[Complex](-p..p);
-    	var O_lm : Complex;
         for (l in 1..p) {
             val Dl = wigner(l); // avoids calculating matrices directly
 
@@ -111,7 +110,7 @@ public class Expansion {
            
 	        var m_sign : int = 1;
             for (m in 0..l) {
-	            O_lm = Complex.ZERO;
+	            var O_lm : Complex = Complex.ZERO;
                 for (k in -l..l) {
                     O_lm = O_lm + temp(k) * Dl(m, k); // Eq. 5
                 }
@@ -131,7 +130,7 @@ public class Expansion {
      * @param complexK, values of exp(i*k*phi)
      * @see Dachsel 2006 eqn 4 & 5
      */
-    public def backRotate(temp : Array[Complex](1), complexK : Array[Complex](1), wigner : Array[Array[Double](2){rect}](1) ) {
+    public def backRotate(temp : Array[Complex](1){rect}, complexK : Array[Complex](1){rect}, wigner : Array[Array[Double](2){rect}](1){rect,zeroBased,rail}) {
         val p : Int = terms.region.max(0);
 
     	//val temp = new Array[Complex](-p..p);
