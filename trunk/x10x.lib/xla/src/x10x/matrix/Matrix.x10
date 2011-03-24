@@ -25,7 +25,7 @@ import x10.compiler.Inline;
  */
 public class Matrix { 
     protected val mat:Array[Double]{rect,rank==2};
-    property region = mat.region;
+    property region() = mat.region;
 
     /**
      * Make instance of Matrix class 

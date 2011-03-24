@@ -22,7 +22,7 @@ import x10x.matrix.Matrix;
  */
 public class Vector { 
     val vec:Array[Double](1){rect,zeroBased,rail};
-    property region = vec.region;
+    property region() = vec.region;
 
     /**
      * Construct a Vector of dimention N
@@ -54,7 +54,7 @@ public class Vector {
     /**
      * The size of this vector
      */
-    public def getSize() = vec.size();
+    public def getSize() = vec.size;
  
     /**
      * Actual data stored
