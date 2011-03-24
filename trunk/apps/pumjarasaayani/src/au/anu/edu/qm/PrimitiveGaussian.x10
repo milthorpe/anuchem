@@ -202,7 +202,7 @@ public class PrimitiveGaussian {
                             cp:Double, gamma:Double) {
 
         // TODO : x10 - parallel
-        for(var i:Int=0; i<a.size(); i++) {
+        for(var i:Int=0; i<a.size; i++) {
             for(var r:Int=0; r<((Math.floor(i/2.0)+1.0) as Int); r++) {
                 for(var u:Int=0; u<((Math.floor((i-2.0 * r) / 2.0)+1.0) as Int); u++) {
                     a(i-2 * r-u) += Math.pow(-1.0, i) 

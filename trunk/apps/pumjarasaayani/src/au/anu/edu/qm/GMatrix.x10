@@ -496,7 +496,7 @@ public class GMatrix extends Matrix {
         public def reset() {
             // TODO should use ateach broadcast - XTENLANG-1725
             val densityMatrix = density.getMatrix();
-            Team.WORLD.bcast[Double](here.id, 0, densityMatrix, 0, densityMatrix, 0, densityMatrix.size());
+            Team.WORLD.bcast[Double](here.id, 0, densityMatrix, 0, densityMatrix, 0, densityMatrix.size);
             gMatrixContribution.makeZero();
             jMatrixContribution.makeZero();
             kMatrixContribution.makeZero();

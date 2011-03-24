@@ -75,9 +75,9 @@ public class ContractedGaussian {
         var sij:Double = 0.0;
 
         // TODO: x10 - parallel 
-        for(i=0; i<primitives.size(); i++) {
+        for(i=0; i<primitives.size; i++) {
             val iPG = primitives(i);            
-            for(j=0; j<cgPrimitives.size(); j++) {
+            for(j=0; j<cgPrimitives.size; j++) {
                 val jPG = cgPrimitives(j);                
                 
                 sij += iPG.getCoefficient() * jPG.getCoefficient() * iPG.overlap(jPG);
@@ -93,9 +93,9 @@ public class ContractedGaussian {
         val cgPrimitives = cg.getPrimitives();
         
         // TODO: x10 - parallel 
-        for(i=0; i<primitives.size(); i++) {
+        for(i=0; i<primitives.size; i++) {
             val iPG = primitives(i);            
-            for(j=0; j<cgPrimitives.size(); j++) {
+            for(j=0; j<cgPrimitives.size; j++) {
                 val jPG = cgPrimitives(j);                
                 
                 tij += iPG.getCoefficient() * jPG.getCoefficient() * iPG.kinetic(jPG);
@@ -111,9 +111,9 @@ public class ContractedGaussian {
         val cgPrimitives = cg.getPrimitives();
 
         // TODO: x10 - parallel        
-        for(i=0; i<primitives.size(); i++) {
+        for(i=0; i<primitives.size; i++) {
             val iPG = primitives(i);            
-            for(j=0; j<cgPrimitives.size(); j++) {
+            for(j=0; j<cgPrimitives.size; j++) {
                 val jPG = cgPrimitives(j);                
                 
                 vij += iPG.getCoefficient() * jPG.getCoefficient() 
@@ -125,7 +125,7 @@ public class ContractedGaussian {
     }
 
     public def normalize() {        
-        for(var i:Int=0; i<primitives.size(); i++) {
+        for(var i:Int=0; i<primitives.size; i++) {
            primitives(i).normalize();
         }
 

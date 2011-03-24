@@ -99,7 +99,7 @@ public class BasisFunctions {
                 val fact2 = Math.pow(2.0, lmn) / Math.pow(denom, 0.5);
               
                 val prms  = bfi.getPrimitives(); 
-                for(var j:Int=0; j<prms.size(); j++) {
+                for(var j:Int=0; j<prms.size; j++) {
                     val prmj = prms(j); 
                     val fact3 = Math.pow(prmj.getExponent(), (2.0*lmn+3.0)/4.0);
                     prmj.setCoefficient(prmj.getCoefficient()*fact1*fact2*fact3);
@@ -110,9 +110,9 @@ public class BasisFunctions {
                 var factA:Double = 0.0, factB:Double = 0.0;
                 var coefExpoSum:Double = 0.0;
 
-                for(var k:Int=0; k<prms.size(); k++) {
+                for(var k:Int=0; k<prms.size; k++) {
                    val prmk = prms(k);
-                   for(var l:Int=0; l<prms.size(); l++) {
+                   for(var l:Int=0; l<prms.size; l++) {
                        val prml = prms(l);
 
                        factA = prmk.getCoefficient() * prml.getCoefficient();
@@ -122,7 +122,7 @@ public class BasisFunctions {
                 } // end for 
 
                 val norm = Math.pow(coefExpoSum*factC, -0.5);
-                for(var j:Int=0; j<prms.size(); j++) {
+                for(var j:Int=0; j<prms.size; j++) {
                     val prmj = prms(j); 
                     prmj.setCoefficient(prmj.getCoefficient()*norm);
                 } // end for 

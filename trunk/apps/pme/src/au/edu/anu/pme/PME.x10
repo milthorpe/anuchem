@@ -250,7 +250,7 @@ public class PME {
         val atoms = this.atoms; // TODO shouldn't be necessary XTENLANG-1913
         finish ateach (p in atoms) {
             val localAtoms = atoms(p);
-            for (l in 0..(localAtoms.size()-1)) {
+            for (l in 0..(localAtoms.size-1)) {
                 val atom = localAtoms(l);
                 val centre = atom.centre;
                 // get subcell i,j,k
