@@ -331,60 +331,62 @@ public class PME {
 		val imageTranslations = this.imageTranslations; // TODO shouldn't be necessary XTENLANG-1913
 		val beta = this.beta; // TODO shouldn't be necessary XTENLANG-1913
         val directEnergy = finish(SumReducer()) {
-            ateach (p in subCells) {
+            ateach (place in Dist.makeUnique()) {
                 var myDirectEnergy : Double = 0.0;
-                val thisCell = subCells(p);
-                val packedAtoms = packedAtomsCache(here.id);
-                val translations = imageTranslations(here.id);
-                for (var i : Int = p(0)-2; i<=p(0); i++) {
-                    var n1 : Int = 0;
-                    if (i < 0) {
-                        n1 = -1;
-                    } // can't have (i > numSubCells+1)
-                    for (var j : Int = p(1)-2; j<=p(1)+2; j++) {
-                        var n2 : Int = 0;
-                        if (j < 0) {
-                            n2 = -1;
-                        } else if (j > numSubCells-1) {
-                            n2 = 1;
-                        }
-                        for (var k : Int = p(2)-2; k<=p(2)+2; k++) {
-                            var n3 : Int = 0;
-                            if (k < 0) {
-                                n3 = -1;
-                            } else if (k > numSubCells-1) {
-                                n3 = 1;
+                for (p in subCells.dist(here)) {
+                    val thisCell = subCells(p);
+                    val packedAtoms = packedAtomsCache(here.id);
+                    val translations = imageTranslations(here.id);
+                    for (var i : Int = p(0)-2; i<=p(0); i++) {
+                        var n1 : Int = 0;
+                        if (i < 0) {
+                            n1 = -1;
+                        } // can't have (i > numSubCells+1)
+                        for (var j : Int = p(1)-2; j<=p(1)+2; j++) {
+                            var n2 : Int = 0;
+                            if (j < 0) {
+                                n2 = -1;
+                            } else if (j > numSubCells-1) {
+                                n2 = 1;
                             }
-                            // interact with "left half" of other boxes i.e. only boxes with i<=p(0)
-                            if (i < p(0) || (i == p(0) && j < p(1)) || (i == p(0) && j == p(1) && k < p(2))) {
-                                val translation = translations(n1,n2,n3);
-                                val otherSubCellLocation = subCells.dist(i,j,k);
-                                if (otherSubCellLocation == here) {
-                                    val otherCell = subCells(i,j,k);
-                                    for (otherAtom in 0..(otherCell.size-1)) {
-                                        val imageLoc = otherCell(otherAtom).centre + translation;
-                                        for (thisAtom in 0..(thisCell.size-1)) {
-                                            val rSquared = thisCell(thisAtom).centre.distanceSquared(imageLoc);
-                                            if (rSquared < cutoffSquared) {
-                                                val r = Math.sqrt(rSquared);
-                                                val chargeProduct = thisCell(thisAtom).charge * otherCell(otherAtom).charge;
-                                                val imageDirectComponent = chargeProduct * Math.erfc(beta * r) / r;
-                                                myDirectEnergy += imageDirectComponent;
+                            for (var k : Int = p(2)-2; k<=p(2)+2; k++) {
+                                var n3 : Int = 0;
+                                if (k < 0) {
+                                    n3 = -1;
+                                } else if (k > numSubCells-1) {
+                                    n3 = 1;
+                                }
+                                // interact with "left half" of other boxes i.e. only boxes with i<=p(0)
+                                if (i < p(0) || (i == p(0) && j < p(1)) || (i == p(0) && j == p(1) && k < p(2))) {
+                                    val translation = translations(n1,n2,n3);
+                                    val otherSubCellLocation = subCells.dist(i,j,k);
+                                    if (otherSubCellLocation == here) {
+                                        val otherCell = subCells(i,j,k);
+                                        for (otherAtom in 0..(otherCell.size-1)) {
+                                            val imageLoc = otherCell(otherAtom).centre + translation;
+                                            for (thisAtom in 0..(thisCell.size-1)) {
+                                                val rSquared = thisCell(thisAtom).centre.distanceSquared(imageLoc);
+                                                if (rSquared < cutoffSquared) {
+                                                    val r = Math.sqrt(rSquared);
+                                                    val chargeProduct = thisCell(thisAtom).charge * otherCell(otherAtom).charge;
+                                                    val imageDirectComponent = chargeProduct * Math.erfc(beta * r) / r;
+                                                    myDirectEnergy += imageDirectComponent;
+                                                }
                                             }
                                         }
-                                    }
-                                } else {
-                                    // other subcell is remote; use cached packed atoms
-                                    val otherCellPacked = packedAtoms(i,j,k);
-                                    for (otherAtom in 0..(otherCellPacked.size-1)) {
-                                        val imageLoc = otherCellPacked(otherAtom).centre + translation;
-                                        for (thisAtom in 0..(thisCell.size-1)) {
-                                            val rSquared = thisCell(thisAtom).centre.distanceSquared(imageLoc);
-                                            if (rSquared < cutoffSquared) {
-                                                val r = Math.sqrt(rSquared);
-                                                val chargeProduct = thisCell(thisAtom).charge * otherCellPacked(otherAtom).charge;
-                                                val imageDirectComponent = chargeProduct * Math.erfc(beta * r) / r;
-                                                myDirectEnergy += imageDirectComponent;
+                                    } else {
+                                        // other subcell is remote; use cached packed atoms
+                                        val otherCellPacked = packedAtoms(i,j,k);
+                                        for (otherAtom in 0..(otherCellPacked.size-1)) {
+                                            val imageLoc = otherCellPacked(otherAtom).centre + translation;
+                                            for (thisAtom in 0..(thisCell.size-1)) {
+                                                val rSquared = thisCell(thisAtom).centre.distanceSquared(imageLoc);
+                                                if (rSquared < cutoffSquared) {
+                                                    val r = Math.sqrt(rSquared);
+                                                    val chargeProduct = thisCell(thisAtom).charge * otherCellPacked(otherAtom).charge;
+                                                    val imageDirectComponent = chargeProduct * Math.erfc(beta * r) / r;
+                                                    myDirectEnergy += imageDirectComponent;
+                                                }
                                             }
                                         }
                                     }
@@ -392,17 +394,17 @@ public class PME {
                             }
                         }
                     }
-                }
 
-                // atoms in same cell
-                for (i in 0..(thisCell.size-1)) {
-                    for (j in 0..(i-1)) {
-                        val rjri = thisCell(j).centre - thisCell(i).centre;
-                        val rSquared = rjri.lengthSquared();
-                        if (rSquared < cutoffSquared) {
-                            val r = Math.sqrt(rSquared);
-                            val directComponent = thisCell(i).charge * thisCell(j).charge * Math.erfc(beta * r) / r;
-                            myDirectEnergy += directComponent;
+                    // atoms in same cell
+                    for (i in 0..(thisCell.size-1)) {
+                        for (j in 0..(i-1)) {
+                            val rjri = thisCell(j).centre - thisCell(i).centre;
+                            val rSquared = rjri.lengthSquared();
+                            if (rSquared < cutoffSquared) {
+                                val r = Math.sqrt(rSquared);
+                                val directComponent = thisCell(i).charge * thisCell(j).charge * Math.erfc(beta * r) / r;
+                                myDirectEnergy += directComponent;
+                            }
                         }
                     }
                 }
