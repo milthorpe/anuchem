@@ -594,7 +594,7 @@ public class Fmm3d {
 
                         // direct calculation with all atoms in non-well-separated boxes
                         val uList = box1.getUList();
-                        for (p in uList) {
+                        for (p in 0..(uList.size-1)) {
                             val boxIndex2 = uList(p);
                             val boxAtoms = packedAtoms(boxIndex2);
                             if (boxAtoms != null) {
