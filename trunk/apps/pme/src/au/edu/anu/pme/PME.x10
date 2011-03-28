@@ -537,14 +537,14 @@ public class PME {
                     // as the region is periodic and divided along two dimensions.
                     val shiftX = (place1HaloRegion.max(0) < place2Region.min(0) || place1HaloRegion.min(0) < gridRegion.min(0)) ? gridSize0 : ((place1HaloRegion.min(0) > place2Region.max(0) || place1HaloRegion.max(0) > gridRegion.max(0)) ? -gridSize0 : 0);
                     val shiftY = (place1HaloRegion.max(1) < place2Region.min(1) || place1HaloRegion.min(1) < gridRegion.min(1)) ? gridSize0 : ((place1HaloRegion.min(1) > place2Region.max(1) || place1HaloRegion.max(1) > gridRegion.max(1)) ? -gridSize0 : 0);
-                    scatterAndReduceShiftedGridContribution(myQ, Point.make(0,0,0), gridDist, Q, place2);
+                    scatterAndReduceShiftedGridContribution(myQ, Point.make(0,0,0), place2Region, Q, place2);
                     if (shiftX != 0) {
-                        scatterAndReduceShiftedGridContribution(myQ, Point.make(shiftX,0,0), gridDist, Q, place2);
+                        scatterAndReduceShiftedGridContribution(myQ, Point.make(shiftX,0,0), place2Region, Q, place2);
                     }
                     if (shiftY != 0) {
-                        scatterAndReduceShiftedGridContribution(myQ, Point.make(0,shiftY,0), gridDist, Q, place2);
+                        scatterAndReduceShiftedGridContribution(myQ, Point.make(0,shiftY,0), place2Region, Q, place2);
                         if (shiftX != 0) {
-                           scatterAndReduceShiftedGridContribution(myQ, Point.make(shiftX,shiftY,0), gridDist, Q, place2);  
+                           scatterAndReduceShiftedGridContribution(myQ, Point.make(shiftX,shiftY,0), place2Region, Q, place2);  
                         }
                     }
                   
@@ -573,13 +573,12 @@ public class PME {
      */
     private static def scatterAndReduceShiftedGridContribution(sourceGrid : Array[Double]{self.rect,self.rank==3},
                                              shift : Point(3),
-										     gridDist : Dist(3),
-											 Q : DistArray[Complex]{self.dist==gridDist},
+										     targetRegion : Region(3){rect},
+											 Q : DistArray[Complex](3),
                                              targetPlace : Place) {
-        val targetRegion = (gridDist | targetPlace).region;
         val overlapRegion = (sourceGrid.region + shift && targetRegion) as Region(3){rect};
-        val sourceRegion = (overlapRegion - shift) as Region(3){rect};
         if (! overlapRegion.isEmpty()) {
+            val sourceRegion = (overlapRegion - shift) as Region(3){rect};
             val overlap = new Array[Double](overlapRegion.size());
 
             var l : Int = 0;
