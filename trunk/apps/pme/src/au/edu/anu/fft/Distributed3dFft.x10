@@ -28,7 +28,7 @@ public class Distributed3dFft {
     private val target : DistArray[Complex](3){self.dist==source.dist};
     private val temp : DistArray[Complex](3){self.dist==source.dist};
 
-    public val dribble = true;
+    public val dribble = false;
 
     public def this(dataSize : Int,
                     source : DistArray[Complex](3), 
