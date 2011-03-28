@@ -257,7 +257,7 @@ public class PME {
                 val i = (centre.i / halfCutoff) as Int;
                 val j = (centre.j / halfCutoff) as Int;
                 val k = (centre.k / halfCutoff) as Int;
-                at (subCellsTemp.dist(i,j,k)) {
+                async at (subCellsTemp.dist(i,j,k)) {
                     atomic subCellsTemp(i,j,k).add(atom);
                 }
             }
