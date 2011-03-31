@@ -155,6 +155,7 @@ public class Distributed3dFft {
         val sourceEndX = sourceDist.region.max(0);
         val sourceStartY = sourceDist.region.min(1);
         val sourceEndY = sourceDist.region.max(1);
+        val target = this.target; // TODO shouldn't be necessary XTENLANG-1913;
         finish {
             for (p2 in temp.dist.places()) {
                 val targetDist = temp.dist | p2;
