@@ -532,7 +532,7 @@ public class PME {
 
                 // scatter myQ and accumulate to distributed Q
                 finish for (place2 in gridDist.places()) {
-                    val place2Region = gridDist.get(place2);
+                    val place2Region = gridDist.get(place2) as Region(3){rect};
                     // each halo region could be scattered to other regions in up to four chunks,
                     // as the region is periodic and divided along two dimensions.
                     val shiftX = (place1HaloRegion.max(0) < place2Region.min(0) || place1HaloRegion.min(0) < gridRegion.min(0)) ? gridSize0 : ((place1HaloRegion.min(0) > place2Region.max(0) || place1HaloRegion.max(0) > gridRegion.max(0)) ? -gridSize0 : 0);
