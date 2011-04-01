@@ -253,12 +253,12 @@ public class Fmm3d {
         finish ateach (p1 in atoms) {
             val localAtoms = atoms(p1);
             // TODO single activity for all atoms
-            finish for (i in 0..(localAtoms.size-1)) async {
+            finish for (i in 0..(localAtoms.size-1)) {
                 val atom = localAtoms(i);
                 val charge = atom.charge;
                 val offsetCentre = atom.centre + offset;
                 val boxIndex = Fmm3d.getLowestLevelBoxIndex(offsetCentre, lowestLevelDim, size);
-                at(lowestLevelBoxes.dist(boxIndex)) {
+                async at(lowestLevelBoxes.dist(boxIndex)) {
                     val remoteAtom = new MMAtom(offsetCentre, charge);
                     val leafBox = lowestLevelBoxes(boxIndex) as FmmLeafBox;
                     atomic {
@@ -370,12 +370,11 @@ public class Fmm3d {
             val thisLevelBoxes = boxes(thisLevel);
             val sideLength = size / Math.pow2(thisLevel);
             finish ateach (p1 in Dist.makeUnique()) {
+                if (thisLevel == startingLevel) {
+                    // must fetch top level multipoles synchronously before starting
+                    Fmm3d.prefetchMultipoles(thisLevel, thisLevelBoxes, locallyEssentialTrees);
+                }
                 finish {
-                    if (thisLevel == startingLevel) {
-                        // must fetch top level multipoles synchronously before starting
-                        Fmm3d.prefetchMultipoles(thisLevel, thisLevelBoxes, locallyEssentialTrees);
-                    }
-    
                     // can fetch next level multipoles asynchronously while computing this level
                     val lowerLevel = thisLevel+1;
                     if (lowerLevel <= numLevels) {
@@ -383,7 +382,7 @@ public class Fmm3d {
                         async Fmm3d.prefetchMultipoles(lowerLevel, lowestLevelBoxes, locallyEssentialTrees);
                     }
 
-                    for ([x1,y1,z1] in thisLevelBoxes.dist(here)) async {
+                    for ([x1,y1,z1] in thisLevelBoxes.dist(here)) {
                         val myLET = locallyEssentialTrees(here.id);
                         val thisLevelMultipoleCopies = myLET.multipoleCopies(thisLevel);
                         val myComplexK = complexK(here.id);
