@@ -33,8 +33,7 @@ public class BasisFunctions {
         basisFunctions = new ArrayList[ContractedGaussian](); 
         initBasisFunctions(basisDir);
 
-        shellList = new ShellList();
-        initShellList();
+        shellList = new ShellList(mol);
     } 
 
     private def initBasisFunctions(basisDir:String) {
@@ -128,19 +127,6 @@ public class BasisFunctions {
                 } // end for 
             } // end for
         } // end for
-    }
-
-    private def initShellList() {
-        for(var atmno:Int=0; atmno<molecule.getNumberOfAtoms(); atmno++) {
-            val atom = molecule.getAtom(atmno);
-            val bfs  = atom.getBasisFunctions();
-            val nbf  = bfs.size();
-
-            for(var i:Int=0; i<nbf; i++) {
-                shellList.addShellPrimitive(bfs.get(i));
-            } // end for
-        } // end for
-        shellList.initPowerList();
     }
 
     public def getBasisName() = this.basisName;

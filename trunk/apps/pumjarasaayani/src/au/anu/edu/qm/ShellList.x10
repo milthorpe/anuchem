@@ -10,51 +10,58 @@
  */
 package au.anu.edu.qm;
 
-import x10.util.*;
+import x10.compiler.Inline;
+import x10.util.ArrayList;
+import x10.util.HashMap;
+import au.edu.anu.chem.Molecule;
 
 /**
  * ShellList.x10
  *
  * Structure storing Shell list
  *
- * @author: V.Ganesh
+ * @author: V.Ganesh, milthorpe
  */
 public class ShellList { 
     val shellList:HashMap[Int, Shell];
-    
-    var powerList:Array[Array[Power](1){rect,zeroBased,rail}](1){rect,zeroBased,rail};
+    val powerList:Array[Array[Power](1){rect,zeroBased,rail}](1){rect,zeroBased,rail};
+    val maxam:Int;
 
-    var maxam:Int;
+    public def this(molecule:Molecule[QMAtom]) {
+        // init shell list
+        val shellList = new HashMap[Int, Shell]();
+        var maxam : Int = 0;
+        for(var atmno:Int=0; atmno<molecule.getNumberOfAtoms(); atmno++) {
+            val atom = molecule.getAtom(atmno);
+            val bfs  = atom.getBasisFunctions();
+            val nbf  = bfs.size();
 
-    public def this() { 
-        shellList = new HashMap[Int, Shell]();
-        maxam = 0;
-    }
+            for(var i:Int=0; i<nbf; i++) {
+                val cg = bfs.get(i);
+                val am = cg.getMaximumAngularMomentum();
+                maxam  = Math.max(am, maxam);
 
-    public def initPowerList() : void {
+                var shell:Shell = shellList.getOrElse(am, null);
+                if (shell == null) {
+                   shell = new Shell(am);
+                   shellList.put(am, shell);
+                }
+                shell.addShellPrimitive(cg);
+            } // end for
+        } // end for
+
+        // init power list
         val maxam4 = (maxam*4)+2;
- 
-        powerList = new Array[Array[Power](1){rect,zeroBased,rail}](maxam4); 
+        val powerList = new Array[Array[Power](1){rect,zeroBased,rail}](maxam4); 
         val pList = PowerList.getInstance();
-        for(var i:Int=0; i<=maxam4; i++)
-           powerList(i) = pList.generatePowerList(i); 
+        for(i in 0..maxam4) powerList(i) = pList.generatePowerList(i); 
 
+        this.maxam = maxam;
+        this.shellList = shellList;
+        this.powerList = powerList;
     }
 
-    public def addShellPrimitive(cg:ContractedGaussian) : void {
-        val am = cg.getMaximumAngularMomentum();
-        maxam  = Math.max(am, maxam);
-
-        var shell:Shell = getShell(am);
-        if (shell == null) {
-           shell = new Shell(am);
-           shellList.put(am, shell);
-        }
-        shell.addShellPrimitive(cg);
-    }
-
-    public def getMaximumAngularMomentum() = maxam;
-    //public def getNumberOfShells() = shellList.size();
+    public @Inline def getMaximumAngularMomentum() = maxam;
 
     public def getNumberOfShellPrimitives() : Int { 
          var n:Int = 0;
@@ -80,7 +87,7 @@ public class ShellList {
         return nPrimitives * nPrimitives;
     }
 
-    public def getShell(am:Int) = shellList.getOrElse(am, null);
-    public def getPowers(am:Int) = powerList(am);
+    public @Inline def getShell(am:Int) = shellList.getOrElse(am, null);
+    public @Inline def getPowers(am:Int) = powerList(am);
 }
 
