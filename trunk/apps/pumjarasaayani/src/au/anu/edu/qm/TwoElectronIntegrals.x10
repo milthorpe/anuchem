@@ -124,9 +124,7 @@ public class TwoElectronIntegrals {
            val aCoeff = aPrim.getCoefficient();
 
            for([bp] in bPrims) {
-                val bPrim = bPrims(bp);
-             pcdint.fill(0.0);
-
+             val bPrim = bPrims(bp);
              val bAlpha = bPrim.getExponent();
              val gamma1 = aAlpha + bAlpha;
              val bCoeff = bPrim.getCoefficient();
@@ -272,9 +270,6 @@ public class TwoElectronIntegrals {
 
            for([bp] in bPrims) {
             val bPrim = bPrims(bp);
-
-             pcdint.fill(0.0);
-
              val bAlpha = bPrim.getExponent();
              val gamma1 = aAlpha + bAlpha;
              val bCoeff = bPrim.getCoefficient();
@@ -560,6 +555,7 @@ public class TwoElectronIntegrals {
 
          val twoGamma = 2.0*gamma2;
 
+         pcdint.fill(0.0);
          for(i=0; i<=angMomAB; i++) {
              val pLim = ((i+1)*(i+2)/2);
              for(pp=0; pp < pLim; pp++) {
