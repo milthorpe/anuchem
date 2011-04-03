@@ -1,9 +1,0 @@
-package edu.mit.fftw;
-
-public class TestFFTW {
-    public static def main(args : Rail[String]!) {
-        val input = ValRail.make[Complex](50, (i : Int) => Complex.ZERO);
-        val output = Rail.make[Complex](50, (i : Int) => Complex.ZERO);
-        FFTW.fftwEstimate1D();//50, input, output, true);
-    }
-}
