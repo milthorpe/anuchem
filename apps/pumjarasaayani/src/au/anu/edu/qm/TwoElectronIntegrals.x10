@@ -103,10 +103,6 @@ public class TwoElectronIntegrals {
          val bStrt = b.getIntIndex();
          val aStrt = a.getIntIndex();
 
-         val jMatrix = jMat.getMatrix();
-         val kMatrix = kMat.getMatrix();
-         val dMatrix = dMat.getMatrix();
-
          val angMomAB = aAng + bAng;
          val angMomCD = cAng + dAng;
          val angMomABCD = angMomAB+angMomCD;
@@ -117,7 +113,6 @@ public class TwoElectronIntegrals {
          val nTot = aLim*bLim*cLim*dLim;
          val twoEInts = new Array[Double](nTot);
 
-         // Console.OUT.println("New block - Allocated size: " + nInt);
          for([ap] in aPrims) {
             val aPrim = aPrims(ap);
            val aAlpha = aPrim.getExponent();
@@ -125,6 +120,7 @@ public class TwoElectronIntegrals {
 
            for([bp] in bPrims) {
              val bPrim = bPrims(bp);
+             pcdint.fill(0.0);
              val bAlpha = bPrim.getExponent();
              val gamma1 = aAlpha + bAlpha;
              val bCoeff = bPrim.getCoefficient();
@@ -221,7 +217,9 @@ public class TwoElectronIntegrals {
            }
         }
 
-        // Console.OUT.println("Filling in JK matrix");
+        val jMatrix = jMat.getMatrix();
+        val kMatrix = kMat.getMatrix();
+        val dMatrix = dMat.getMatrix();
 
         fillJKMatrices(dLim, cLim, bLim, aLim,
                        dStrt, cStrt, bStrt, aStrt,
@@ -241,35 +239,35 @@ public class TwoElectronIntegrals {
                                   aAng:Int, bAng:Int, cAng:Int, dAng:Int, angMomAB:Int,
                                   aStrt:Int, bStrt:Int, cStrt:Int, dStrt:Int,
                                   aLim:Int, bLim:Int, abLim:Int) : void {
-         val aPrims = a.getPrimitives();
-         val bPrims = b.getPrimitives();
-         val cPrims = c.getPrimitives();
-         val dPrims = d.getPrimitives();
+        val aPrims = a.getPrimitives();
+        val bPrims = b.getPrimitives();
+        val cPrims = c.getPrimitives();
+        val dPrims = d.getPrimitives();
 
-         val aCen  = a.getCenter();
-         val bCen  = b.getCenter();
-         val cCen  = c.getCenter();
-         val dCen  = d.getCenter();
-         
-         val dLim = ((dAng+1)*(dAng+2)/2);
-         val cLim = ((cAng+1)*(cAng+2)/2);
-         
-         val angMomCD = cAng + dAng;
-         val angMomABCD = angMomAB+angMomCD;
-          
-         val radiusCDSquared = c.distanceSquaredFrom(d);
+        val aCen  = a.getCenter();
+        val bCen  = b.getCenter();
+        val cCen  = c.getCenter();
+        val dCen  = d.getCenter();
 
-         val nTot = abLim*cLim*dLim;
-         val twoEInts = new Array[Double](nTot);
+        val dLim = ((dAng+1)*(dAng+2)/2);
+        val cLim = ((cAng+1)*(cAng+2)/2);
 
-         // Console.OUT.println("New block - Allocated size: " + nInt);
-         for([ap] in aPrims) {
-            val aPrim = aPrims(ap);
-           val aAlpha = aPrim.getExponent();
-           val aCoeff = aPrim.getCoefficient();
+        val angMomCD = cAng + dAng;
+        val angMomABCD = angMomAB+angMomCD;
 
-           for([bp] in bPrims) {
-            val bPrim = bPrims(bp);
+        val radiusCDSquared = c.distanceSquaredFrom(d);
+
+        val nTot = abLim*cLim*dLim;
+        val twoEInts = new Array[Double](nTot);
+
+        for([ap] in aPrims) {
+          val aPrim = aPrims(ap);
+          val aAlpha = aPrim.getExponent();
+          val aCoeff = aPrim.getCoefficient();
+
+          for([bp] in bPrims) {
+             val bPrim = bPrims(bp);
+             pcdint.fill(0.0);
              val bAlpha = bPrim.getExponent();
              val gamma1 = aAlpha + bAlpha;
              val bCoeff = bPrim.getCoefficient();
@@ -365,8 +363,6 @@ public class TwoElectronIntegrals {
                           twoEInts); 
            }
         }
-
-        // Console.OUT.println("Filling in JK matrix");
 
         val jMatrix = jMat.getMatrix();
         val kMatrix = kMat.getMatrix();
@@ -555,7 +551,6 @@ public class TwoElectronIntegrals {
 
          val twoGamma = 2.0*gamma2;
 
-         pcdint.fill(0.0);
          for(i=0; i<=angMomAB; i++) {
              val pLim = ((i+1)*(i+2)/2);
              for(pp=0; pp < pLim; pp++) {
@@ -663,6 +658,7 @@ public class TwoElectronIntegrals {
                                jMatrix:Array[Double](2){rect}, 
                                kMatrix:Array[Double](2){rect},
                                dMatrix:Array[Double](2){rect}) {
+        // Console.OUT.println("Filling in JK matrix");
         var intIndx:Int = 0;
 
         for (ll in dStrt..(dStrt+dLim-1)) {
