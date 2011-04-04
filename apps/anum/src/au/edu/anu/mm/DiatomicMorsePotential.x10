@@ -39,7 +39,7 @@ public class DiatomicMorsePotential extends DiatomicPotential {
     public def getPotentialAndForces() : Double {
         val r = atom2.centre - atom1.centre;
         val displacement = r.length() - bondLength;
-        Console.OUT.println(r.length());
+        Console.OUT.print(r.length() + " ");
         val a = 2.0 / bondLength;
         val expTerm = Math.exp(-a * displacement);
         // dV/dr = 2D(a*e^(-a(r-b)) (1 - e^(-a(r-b)))

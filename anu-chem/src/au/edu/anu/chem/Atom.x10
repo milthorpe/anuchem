@@ -49,7 +49,9 @@ public class Atom {
     public def this(atom : Atom) {
         this.symbol = atom.symbol;
         this.centre = atom.centre;
-        this.bonds = ArrayList.make(atom.bonds);
+        if (atom.bonds != null) {
+            this.bonds = ArrayList.make(atom.bonds);
+        }
     }
 
     public def getBonds() = bonds;

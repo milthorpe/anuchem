@@ -6,22 +6,20 @@
  *  You may obtain a copy of the License at
  *      http://www.opensource.org/licenses/eclipse-1.0.php
  *
- * (C) Copyright Josh Milthorpe 2010.
+ * (C) Copyright Josh Milthorpe 2010-2011.
  */
 package au.edu.anu.mm;
 
 import au.edu.anu.chem.mm.MMAtom;
 
 /**
- * This class represents a Morse potential between two atoms
- * of the form V(r) = D(1 - e^(-a(r-b)))^2 where:
- * D is the dissociation energy;
- * a is a constant related to the steepness of the curve (here a = 2/b); and
+ * This class represents an Harmonic potential between two atoms
+ * of the form V(r) = 1/2 k (r-b)^2 where:
+ * r is the bond length;
+ * k is the force constant; and
  * b is the equilibrium bond length
- * "The Morse curve is only a convenient analytical expression that has some
- * essential features of a diatomic potential, ... but there is no theoretical
- * justification for this particular form." - Berendsen, "Simulating the Physical World", p.6 (2007)
- * @see P. M. Morse "Diatomic molecules according to the wave mechanics.", Phys. Rev. 34, 57-64 (1929)
+ * "In the simplest approximation the potential function is a parabola..." 
+ * - Berendsen, "Simulating the Physical World", p.6 (2007)
  */
 public class DiatomicHarmonicPotential extends DiatomicPotential {
     /** The force constant in kJ mol^-1 nm^-2. */
@@ -39,7 +37,7 @@ public class DiatomicHarmonicPotential extends DiatomicPotential {
     public def getPotentialAndForces() : Double {
         val r = atom2.centre - atom1.centre;
         val displacement = r.length() - bondLength;
-        Console.OUT.println(r.length());
+        Console.OUT.print(r.length() + " ");
         atom1.force = forceConstant * displacement * r.normalize();
         atom2.force = -atom1.force;
         return 0.5 * forceConstant * displacement * displacement;

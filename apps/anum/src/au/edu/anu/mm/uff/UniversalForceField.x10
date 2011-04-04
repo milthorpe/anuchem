@@ -47,14 +47,12 @@ public class UniversalForceField implements ForceField {
             ateach(p in atoms) { 
                 var myEnergy : Double = 0.0;
                 val myAtoms = atoms(p);
-                for (i in 0..myAtoms.size-1) {
+                for (i in 0..(myAtoms.size-1)) {
                     val atomI = myAtoms(i);
                     atomI.force = Vector3d.NULL;
                     // bond stretching
-                    //Console.OUT.println("atom " + atomI);
                     for (bond in atomI.getBonds()) {
                         if (bond.first.isStrongBond()) {
-                            //Console.OUT.println("found bond: " + bond);
                             val atomJ = bond.second as MMAtom;
                             val paramsI = atomParameters.getOrElse(atomI.symbol, defaultParams);
                             val paramsJ = atomParameters.getOrElse(atomJ.symbol, defaultParams);

@@ -6,7 +6,7 @@
  *  You may obtain a copy of the License at
  *      http://www.opensource.org/licenses/eclipse-1.0.php
  *
- * (C) Copyright Josh Milthorpe 2010.
+ * (C) Copyright Josh Milthorpe 2010-2011.
  */
 package au.edu.anu.mm;
 
@@ -23,10 +23,21 @@ public class DiatomicForceField implements ForceField {
     
     public def getPotentialAndForces(atoms: DistArray[Array[MMAtom](1){rect,zeroBased,rail}](1)) : Double {
         var V : Double = 0.0;        
-        for (p in 0..diatomicPotentials.length-1) {
+        for (p in 0..(diatomicPotentials.size-1)) {
             val potential = diatomicPotentials(p);
             V += potential.getPotentialAndForces();
         }
         return V;
+    }
+
+    public def getAtomMass(symbol : String) : Double {
+        if (symbol.equals("H")) {
+            return 1.0079;
+        } else if (symbol.equals("F")) {
+            return 18.9984;
+        } else {
+            // TODO
+            return 10000.0;
+        }
     }
 }

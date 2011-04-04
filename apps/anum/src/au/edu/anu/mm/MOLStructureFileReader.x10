@@ -20,10 +20,13 @@ import x10x.vector.Point3d;
 
 /**
  * This class reads Symyx molfiles with the following format:
- *  <number of atoms>
  *  <title>
- *  species x y z // repeated for number of atoms
- *  <bondType>  <atomIndex1> <atomIndex2>
+ *  <comments>
+ *  <comments>
+ *  numAtoms [3] ...
+ *  x[10] y[10] z[10] species // repeated for number of atoms
+ *  <bondType>  <atomIndex1> <atomIndex2> // repeated for number of bonds
+ * M  END
  * @see http://www.symyx.com/downloads/public/ctfile/ctfile.jsp
  */
 public class MOLStructureFileReader { 
@@ -38,7 +41,8 @@ public class MOLStructureFileReader {
         val title = file.readLine();
         file.readLine(); // line 2 contains file meta-info
         file.readLine(); // line 3 contains comment
-        val numAtoms = Int.parseInt(file.readLine()); // line 4 contains numAtoms etc.
+        val numAtomsLine = file.readLine();
+        val numAtoms = Int.parseInt(numAtomsLine.substring(0,3));
         var molecule : Molecule[MMAtom] = new Molecule[MMAtom](title);
         // following lines up to numAtoms contain atom data
         for(var i:Int=0; i<numAtoms; i++) {
