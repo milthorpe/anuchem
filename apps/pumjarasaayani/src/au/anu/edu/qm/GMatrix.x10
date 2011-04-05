@@ -566,9 +566,12 @@ public class GMatrix extends Matrix {
                                         density);
                         }
                     }
-                    // check for incoming messages (e.g. shared counter updates)
-                    // TODO instead, split work into smaller activities
-                    Runtime.probe();
+                    if (here == Place.FIRST_PLACE) {
+                        // hack - first place holds shared counter
+                        // check for incoming messages (e.g. shared counter updates)
+                        // TODO instead, split work into smaller activities
+                        Runtime.probe();
+                    }
                 }
             }
         }
