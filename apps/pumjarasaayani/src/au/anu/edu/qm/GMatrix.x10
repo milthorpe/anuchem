@@ -553,10 +553,6 @@ public class GMatrix extends Matrix {
                 val cc = cStrt + cAng;
 
                 if (aa >= cc) {
-                    // check for incoming messages (e.g. shared counter updates)
-                    // TODO instead, split work into smaller activities
-                    Runtime.probe();
-
                     for (d in 0..(nPrimitives-1)) {
                         val dFunc = bfs(d);
                         val dStrt = dFunc.getIntIndex();
@@ -570,6 +566,9 @@ public class GMatrix extends Matrix {
                                         density);
                         }
                     }
+                    // check for incoming messages (e.g. shared counter updates)
+                    // TODO instead, split work into smaller activities
+                    Runtime.probe();
                 }
             }
         }
