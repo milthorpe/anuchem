@@ -417,45 +417,38 @@ public class TwoElectronIntegrals {
 
     private def mdHrr(xa:Int, ya:Int, za:Int, xb:Int, yb:Int, zb:Int, xp:Int, yp:Int, zp:Int,
                       pai:Double, paj:Double, pak:Double, pbi:Double, pbj:Double, pbk:Double, zeta2:Double) : Double {
-        var res:Double = 0.0;
-
-        if (xa != 0 ) {
-            val xa1 = xa-1;
-            res = mdHrr(xa1, ya, za, xb, yb, zb, xp-1, yp, zp, pai, paj, pak, pbi, pbj, pbk, zeta2)*xp
-                + mdHrr(xa1, ya, za, xb, yb, zb, xp  , yp, zp, pai, paj, pak, pbi, pbj, pbk, zeta2)*(pai)
-                + mdHrr(xa1, ya, za, xb, yb, zb, xp+1, yp, zp, pai, paj, pak, pbi, pbj, pbk, zeta2)/(zeta2);
-        } else if (ya != 0) {
-            val ya1 = ya-1;
-            res = mdHrr(xa, ya1, za, xb, yb, zb, xp, yp-1, zp, pai, paj, pak, pbi, pbj, pbk, zeta2)*yp
-                + mdHrr(xa, ya1, za, xb, yb, zb, xp, yp  , zp, pai, paj, pak, pbi, pbj, pbk, zeta2)*(paj)
-                + mdHrr(xa, ya1, za, xb, yb, zb, xp, yp+1, zp, pai, paj, pak, pbi, pbj, pbk, zeta2)/(zeta2);
-        } else if (za != 0) {
-            val za1 = za-1;
-            res = mdHrr(xa, ya, za1, xb, yb, zb, xp, yp, zp-1, pai, paj, pak, pbi, pbj, pbk, zeta2)*zp
-                + mdHrr(xa, ya, za1, xb, yb, zb, xp, yp, zp  , pai, paj, pak, pbi, pbj, pbk, zeta2)*(pak)
-                + mdHrr(xa, ya, za1, xb, yb, zb, xp, yp, zp+1, pai, paj, pak, pbi, pbj, pbk, zeta2)/(zeta2);
-        } else if (xb != 0 ) {
-            val xb1 = xb-1;
-            res = mdHrr(xa, ya, za, xb1, yb, zb, xp-1, yp, zp, pai, paj, pak, pbi, pbj, pbk, zeta2)*xp
-                + mdHrr(xa, ya, za, xb1, yb, zb, xp  , yp, zp, pai, paj, pak, pbi, pbj, pbk, zeta2)*(pbi)
-                + mdHrr(xa, ya, za, xb1, yb, zb, xp+1, yp, zp, pai, paj, pak, pbi, pbj, pbk, zeta2)/(zeta2);
-        } else if (yb != 0) {
-            val yb1 = yb-1;
-            res = mdHrr(xa, ya, za, xb, yb1, zb, xp, yp-1, zp, pai, paj, pak, pbi, pbj, pbk, zeta2)*yp
-                + mdHrr(xa, ya, za, xb, yb1, zb, xp, yp  , zp, pai, paj, pak, pbi, pbj, pbk, zeta2)*(pbj)
-                + mdHrr(xa, ya, za, xb, yb1, zb, xp, yp+1, zp, pai, paj, pak, pbi, pbj, pbk, zeta2)/(zeta2);
-        } else if (zb != 0) {
-            val zb1 = zb-1;
-            res = mdHrr(xa, ya, za, xb, yb, zb1, xp, yp, zp-1, pai, paj, pak, pbi, pbj, pbk, zeta2)*zp
-                + mdHrr(xa, ya, za, xb, yb, zb1, xp, yp, zp  , pai, paj, pak, pbi, pbj, pbk, zeta2)*(pbk)
-                + mdHrr(xa, ya, za, xb, yb, zb1, xp, yp, zp+1, pai, paj, pak, pbi, pbj, pbk, zeta2)/(zeta2);
-        } else if ( xp < 0 || yp < 0 || zp < 0) {
-            res = 0.0; 
+        var res:Double;
+        if (xp < 0 || yp < 0 || zp < 0) {
+            res = 0.0;
+        } else if (xa > 0) {
+            res = mdHrr(xa-1, ya, za, xb, yb, zb, xp-1, yp, zp, pai, paj, pak, pbi, pbj, pbk, zeta2)*xp
+                + mdHrr(xa-1, ya, za, xb, yb, zb, xp  , yp, zp, pai, paj, pak, pbi, pbj, pbk, zeta2)*(pai)
+                + mdHrr(xa-1, ya, za, xb, yb, zb, xp+1, yp, zp, pai, paj, pak, pbi, pbj, pbk, zeta2)/(zeta2);
+        } else if (ya > 0) {
+            res = mdHrr(xa, ya-1, za, xb, yb, zb, xp, yp-1, zp, pai, paj, pak, pbi, pbj, pbk, zeta2)*yp
+                + mdHrr(xa, ya-1, za, xb, yb, zb, xp, yp  , zp, pai, paj, pak, pbi, pbj, pbk, zeta2)*(paj)
+                + mdHrr(xa, ya-1, za, xb, yb, zb, xp, yp+1, zp, pai, paj, pak, pbi, pbj, pbk, zeta2)/(zeta2);
+        } else if (za > 0) {
+            res = mdHrr(xa, ya, za-1, xb, yb, zb, xp, yp, zp-1, pai, paj, pak, pbi, pbj, pbk, zeta2)*zp
+                + mdHrr(xa, ya, za-1, xb, yb, zb, xp, yp, zp  , pai, paj, pak, pbi, pbj, pbk, zeta2)*(pak)
+                + mdHrr(xa, ya, za-1, xb, yb, zb, xp, yp, zp+1, pai, paj, pak, pbi, pbj, pbk, zeta2)/(zeta2);
+        } else if (xb > 0 ) {
+            res = mdHrr(xa, ya, za, xb-1, yb, zb, xp-1, yp, zp, pai, paj, pak, pbi, pbj, pbk, zeta2)*xp
+                + mdHrr(xa, ya, za, xb-1, yb, zb, xp  , yp, zp, pai, paj, pak, pbi, pbj, pbk, zeta2)*(pbi)
+                + mdHrr(xa, ya, za, xb-1, yb, zb, xp+1, yp, zp, pai, paj, pak, pbi, pbj, pbk, zeta2)/(zeta2);
+        } else if (yb > 0) {
+            res = mdHrr(xa, ya, za, xb, yb-1, zb, xp, yp-1, zp, pai, paj, pak, pbi, pbj, pbk, zeta2)*yp
+                + mdHrr(xa, ya, za, xb, yb-1, zb, xp, yp  , zp, pai, paj, pak, pbi, pbj, pbk, zeta2)*(pbj)
+                + mdHrr(xa, ya, za, xb, yb-1, zb, xp, yp+1, zp, pai, paj, pak, pbi, pbj, pbk, zeta2)/(zeta2);
+        } else if (zb > 0) {
+            res = mdHrr(xa, ya, za, xb, yb, zb-1, xp, yp, zp-1, pai, paj, pak, pbi, pbj, pbk, zeta2)*zp
+                + mdHrr(xa, ya, za, xb, yb, zb-1, xp, yp, zp  , pai, paj, pak, pbi, pbj, pbk, zeta2)*(pbk)
+                + mdHrr(xa, ya, za, xb, yb, zb-1, xp, yp, zp+1, pai, paj, pak, pbi, pbj, pbk, zeta2)/(zeta2);
         } else {
             val ptot = xp+yp+zp;
             val idx  = xp*(2*(ptot)-xp+3)/2+yp;
-            res  = npint(ptot, idx);
-        } // end if
+            res = npint(ptot, idx);
+        }
 
          return res;
     }
@@ -493,12 +486,11 @@ public class TwoElectronIntegrals {
     }
 
     private def computePq(angMomAB:Int, angMomCD:Int, shellList:ShellList) {
-         var i:Int, j:Int, pp:Int, qq:Int;
-         
-         for(i=0; i<=angMomAB; i++) {
+         var pLim : Int = 0;
+         for(i in 0..angMomAB) {
              val shellAB = shellList.getPowers(i);
-             val pLim = ((i+1)*(i+2)/2);
-             for (pp = 0; pp<pLim; pp++) {
+             pLim += (i+1);
+             for (var pp:Int = 0; pp<pLim; pp++) {
                  val powersAB = shellAB(pp);
                  val lp = powersAB.l;
                  val mp = powersAB.m;
@@ -506,10 +498,11 @@ public class TwoElectronIntegrals {
 
                  val ipp = i*pqdim+pp;
 
-                 for(j=0; j<=angMomCD; j++) {
+                 var qLim : Int = 0;
+                 for(j in 0..angMomCD) {
                      val shellCD = shellList.getPowers(j);
-                     val qLim = ((j+1)*(j+2)/2);
-                     for (qq = 0; qq<qLim; qq++) {
+                     qLim += (j+1);
+                     for (var qq:Int = 0; qq<qLim; qq++) {
                          val powersCD = shellCD(qq);
                          val lq = powersCD.l;
                          val mq = powersCD.m;
