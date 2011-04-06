@@ -86,8 +86,8 @@ public class Distributed3dFft {
 /*
  *  Formerly, the above was:
  *
-            val oneDSource = DistArray.make[Array[Complex](1){rect,zeroBased,rail}](Dist.makeUnique(), (Point) => new Array[Complex](dataSize));
-            val oneDTarget = DistArray.make[Array[Complex](1){rect,zeroBased,rail}](oneDSource.dist, (Point) => new Array[Complex](dataSize));
+            val oneDSource = DistArray.make[Rail[Complex]](Dist.makeUnique(), (Point) => new Array[Complex](dataSize));
+            val oneDTarget = DistArray.make[Rail[Complex]](oneDSource.dist, (Point) => new Array[Complex](dataSize));
             finish ateach(p1 in oneDSource) do1DFftToTemp(source, oneDSource(p1), oneDTarget(p1), forward);
             finish ateach(p1 in oneDSource) transposeTempToTarget();
             finish ateach(p1 in oneDSource) do1DFftToTemp(target, oneDSource(p1), oneDTarget(p1), forward);
@@ -124,8 +124,8 @@ public class Distributed3dFft {
      * and store the result in the temp array.
      */
     private def do1DFftToTemp(source : DistArray[Complex](3),
-                                     oneDSource : Array[Complex](1){rect,zeroBased,rail},
-                                     oneDTarget : Array[Complex](1){rect,zeroBased,rail},
+                                     oneDSource : Rail[Complex],
+                                     oneDTarget : Rail[Complex],
                                      forward : Boolean) {
         val plan : FFTW.FFTWPlan = FFTW.fftwPlan1d(dataSize, oneDSource, oneDTarget, forward);
         val mySource = source.dist | here;
@@ -194,8 +194,8 @@ public class Distributed3dFft {
      */
     private def do1DFftAndTranspose(source : DistArray[Complex](3),
                                     target : DistArray[Complex](3){self.dist==source.dist},
-                                    oneDSource : Array[Complex](1){rect,zeroBased,rail},
-                                    oneDTarget : Array[Complex](1){rect,zeroBased,rail},
+                                    oneDSource : Rail[Complex],
+                                    oneDTarget : Rail[Complex],
                                     forward : Boolean) {
         val plan : FFTW.FFTWPlan = FFTW.fftwPlan1d(dataSize, oneDSource, oneDTarget, forward);
         val myRegion = source.dist(here);

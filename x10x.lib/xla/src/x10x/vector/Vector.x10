@@ -21,7 +21,7 @@ import x10x.matrix.Matrix;
  * @author V.Ganesh, milthorpe
  */
 public class Vector { 
-    val vec:Array[Double](1){rect,zeroBased,rail};
+    val vec:Rail[Double];
     property region() = vec.region;
 
     /**

@@ -85,12 +85,12 @@ public class Fmm3d {
      * 1: y coordinate
      * 2: z coordinate
      */
-    val boxes : Array[DistArray[FmmBox](3)](1){rect,zeroBased,rail};
+    val boxes : Rail[DistArray[FmmBox](3)];
 
     val lowestLevelBoxes : DistArray[FmmBox](3);
 
     /** The atoms in the simulation, divided up into an local Arrays, one for each place. */
-    protected val atoms : DistArray[Array[MMAtom](1){rect,zeroBased,rail}](1);
+    protected val atoms : DistArray[Rail[MMAtom]](1);
 
     /** 
      * A cache of transformations from multipole to local at the same level.
@@ -132,9 +132,9 @@ public class Fmm3d {
      * Each element of this is a Wigner rotation matrix d^l for a particular  
      *   theta (for the translation with vector <x,y,z>)
      */
-    val wignerA : DistArray[Array[Array[Array[Array[Double](2){rect}](1){rect,zeroBased,rail}](1){rect,zeroBased,rail}](3){rect,zeroBased}](1);
-    val wignerB : DistArray[Array[Array[Array[Array[Double](2){rect}](1){rect,zeroBased,rail}](1){rect,zeroBased,rail}](3){rect}](1); // B is not zero-based
-    val wignerC : DistArray[Array[Array[Array[Array[Double](2){rect}](1){rect,zeroBased,rail}](1){rect,zeroBased,rail}](3){rect,zeroBased}](1);
+    val wignerA : DistArray[Array[Rail[Rail[Array[Double](2){rect}]]](3){rect,zeroBased}](1);
+    val wignerB : DistArray[Array[Rail[Rail[Array[Double](2){rect}]]](3){rect}](1); // B is not zero-based
+    val wignerC : DistArray[Array[Rail[Rail[Array[Double](2){rect}]]](3){rect,zeroBased}](1);
 
     /**
      * A cache of exp(k * phi * i) values for all phi that could be needed in a rotation and -p < k < p
@@ -144,7 +144,7 @@ public class Fmm3d {
      * which in turn contains an Array indexed by:
      *   0 for +phi and 1 for -phi (for forward, back rotations)
      */
-    val complexK : DistArray[Array[Array[Array[Complex](1){rect}](1){rect,zeroBased,rail}](3){rect}](1);
+    val complexK : DistArray[Array[Rail[Array[Complex](1){rect}]](3){rect}](1);
 
     /**
      * A flag which can be set to use the old translation operators (without rotations), probably preferable for small number of poles
@@ -166,7 +166,7 @@ public class Fmm3d {
                     topLeftFront : Point3d,
                     size : Double,  
                     numAtoms : Int,
-                    atoms: DistArray[Array[MMAtom](1){rect,zeroBased,rail}](1)) {
+                    atoms: DistArray[Rail[MMAtom]](1)) {
         // topLevel in regular FMM is 2 (boxes higher than this cannot be well-spaced)
         this(density, numTerms, ws, topLeftFront, size, numAtoms, atoms, 2, false);
     }
@@ -187,7 +187,7 @@ public class Fmm3d {
                     topLeftFront : Point3d,
                     size : Double,  
                     numAtoms : Int,
-                    atoms: DistArray[Array[MMAtom](1){rect,zeroBased,rail}](1),
+                    atoms: DistArray[Rail[MMAtom]](1),
                     topLevel : Int,
                     periodic : boolean) {
         this.topLevel = topLevel;
@@ -248,7 +248,7 @@ public class Fmm3d {
     }
 
 
-    protected def assignAtomsToBoxes(atoms: DistArray[Array[MMAtom](1){rect,zeroBased,rail}](1), lowestLevelBoxes : DistArray[FmmBox]{rank==3}, offset : Vector3d, lowestLevelDim : Int, size : Double) {
+    protected def assignAtomsToBoxes(atoms: DistArray[Rail[MMAtom]](1), lowestLevelBoxes : DistArray[FmmBox]{rank==3}, offset : Vector3d, lowestLevelDim : Int, size : Double) {
         //Console.OUT.println("assignAtomsToBoxes");
         finish ateach (p1 in atoms) {
             val localAtoms = atoms(p1);
@@ -490,7 +490,7 @@ public class Fmm3d {
      * at a single place, returns an Array, each element of which 
      * is in turn a MultipoleExpansion for the box.
      */
-    private static def getMultipolesForBoxList(thisLevelBoxes : DistArray[FmmBox](3), boxList : Array[Point(3)](1){rect,zeroBased,rail}) {
+    private static def getMultipolesForBoxList(thisLevelBoxes : DistArray[FmmBox](3), boxList : Rail[Point(3)]) {
         val multipoleList = new Array[MultipoleExpansion](boxList.size, 
                                                             (i : Int) => 
                                                                 getMultipoleExpansionLocalCopy(thisLevelBoxes,
@@ -550,8 +550,8 @@ public class Fmm3d {
      * a Array of MMAtom.PackedRepresentation containing the 
      * packed atoms for each box.
      */
-    private static def getPackedAtomsForBoxList(lowestLevelBoxes : DistArray[FmmBox](3), boxList : Array[Point(3)](1){rect,zeroBased,rail}) {
-        val packedAtomList = new Array[Array[MMAtom.PackedRepresentation](1){rect,zeroBased,rail}](boxList.size, 
+    private static def getPackedAtomsForBoxList(lowestLevelBoxes : DistArray[FmmBox](3), boxList : Rail[Point(3)]) {
+        val packedAtomList = new Rail[Rail[MMAtom.PackedRepresentation]](boxList.size, 
                                                             (i : Int) => 
                                                                 getPackedAtomsForBox(lowestLevelBoxes,
                                                                                      boxList(i)(0), 
@@ -685,9 +685,9 @@ public class Fmm3d {
      * in applying operator A. This is replicated in a unique dist across all places.
      */
     private def precomputeWignerA(numTerms : Int) {
-        val wignerMatrices = DistArray.make[Array[Array[Array[Array[Double](2){rect}](1){rect,zeroBased,rail}](1){rect,zeroBased,rail}](3){rect,zeroBased}](Dist.makeUnique());
+        val wignerMatrices = DistArray.make[Array[Rail[Rail[Array[Double](2){rect}]]](3){rect,zeroBased}](Dist.makeUnique());
         finish ateach (place in wignerMatrices) {
-            val placeWigner = new Array[Array[Array[Array[Double](2){rect}](1){rect,zeroBased,rail}](1){rect,zeroBased,rail}]((0..1)*(0..1)*(0..1));
+            val placeWigner = new Array[Rail[Rail[Array[Double](2){rect}]]]((0..1)*(0..1)*(0..1));
             for ([i,j,k] in placeWigner) {
         		val theta = Polar3d.getPolar3d( Point3d(i*2-1,j*2-1,k*2-1) ).theta;
 		        placeWigner(i, j, k) = WignerRotationMatrix.getACollection(theta, numTerms);
@@ -698,9 +698,9 @@ public class Fmm3d {
     }
 
     private def precomputeWignerC(numTerms : Int) {
-        val wignerMatrices = DistArray.make[Array[Array[Array[Array[Double](2){rect}](1){rect,zeroBased,rail}](1){rect,zeroBased,rail}](3){rect,zeroBased}](Dist.makeUnique());
+        val wignerMatrices = DistArray.make[Array[Rail[Rail[Array[Double](2){rect}]]](3){rect,zeroBased}](Dist.makeUnique());
         finish ateach (place in wignerMatrices) {
-            val placeWigner = new Array[Array[Array[Array[Double](2){rect}](1){rect,zeroBased,rail}](1){rect,zeroBased,rail}]((0..1)*(0..1)*(0..1));
+            val placeWigner = new Array[Rail[Rail[Array[Double](2){rect}]]]((0..1)*(0..1)*(0..1));
             for ([i,j,k] in placeWigner) {
     		    val theta = Polar3d.getPolar3d( Point3d(i*2-1,j*2-1,k*2-1) ).theta;
 		        placeWigner(i, j, k) = WignerRotationMatrix.getCCollection(theta, numTerms);
@@ -711,9 +711,9 @@ public class Fmm3d {
     }
 
     private def precomputeWignerB(numTerms : Int, ws : Int) {
-        val wignerMatrices = DistArray.make[Array[Array[Array[Array[Double](2){rect}](1){rect,zeroBased,rail}](1){rect,zeroBased,rail}](3){rect}](Dist.makeUnique());
+        val wignerMatrices = DistArray.make[Array[Rail[Rail[Array[Double](2){rect}]]](3){rect}](Dist.makeUnique());
         finish ateach (place in wignerMatrices) {
-            val placeWigner = new Array[Array[Array[Array[Double](2){rect}](1){rect,zeroBased,rail}](1){rect,zeroBased,rail}]((-(2*ws+1))..(2*ws+1) * (-(2*ws+1))..(2*ws+1) * (-(2*ws+1))..(2*ws+1));
+            val placeWigner = new Array[Rail[Rail[Array[Double](2){rect}]]]((-(2*ws+1))..(2*ws+1) * (-(2*ws+1))..(2*ws+1) * (-(2*ws+1))..(2*ws+1));
             for ([i,j,k] in placeWigner) {
                 val theta = Polar3d.getPolar3d ( Point3d(i, j, k) ).theta;
 		        placeWigner(i, j, k) = WignerRotationMatrix.getBCollection(theta, numTerms);
@@ -728,9 +728,9 @@ public class Fmm3d {
      * and replicates to all places using a unique dist
      */
     private def precomputeComplex(numTerms : Int, ws : Int) {
-        val complexK = DistArray.make[Array[Array[Array[Complex](1){rect}](1){rect,zeroBased,rail}](3){rect}](Dist.makeUnique());
+        val complexK = DistArray.make[Array[Rail[Array[Complex](1){rect}]](3){rect}](Dist.makeUnique());
         finish ateach (place in complexK) {
-            val placeComplexK = new Array[Array[Array[Complex](1){rect}](1){rect,zeroBased,rail}]((-(2*ws+1))..(2*ws+1) * (-(2*ws+1))..(2*ws+1) * (-(2*ws+1))..(2*ws+1));
+            val placeComplexK = new Array[Rail[Array[Complex](1){rect}]]((-(2*ws+1))..(2*ws+1) * (-(2*ws+1))..(2*ws+1) * (-(2*ws+1))..(2*ws+1));
             for ([i,j,k] in placeComplexK) {
                 val phi = Polar3d.getPolar3d ( Point3d(i, j, k) ).phi;
 	            placeComplexK(i, j, k) = Expansion.genComplexK(phi, numTerms);
@@ -762,7 +762,7 @@ public class Fmm3d {
     }
 
     private def constructTree(numLevels : Int, topLevel : Int, numTerms : Int, ws : Int, periodic : boolean) 
-      : Array[DistArray[FmmBox](3)](1){rect,zeroBased,rail} {
+      : Rail[DistArray[FmmBox](3)] {
         val boxArray = new Array[DistArray[FmmBox](3)](numLevels+1);
         for (thisLevel in topLevel..numLevels) {
             val levelDim = Math.pow2(thisLevel) as Int;
@@ -812,7 +812,7 @@ public class Fmm3d {
      * later used to overlap remote retrieval of multipole expansion and
      * particle data with other computation.
      */
-    private def createLocallyEssentialTrees(numLevels : Int, topLevel : Int, boxes : Array[DistArray[FmmBox](3)](1){rect,zeroBased,rail}, periodic : Boolean) : DistArray[LocallyEssentialTree]{rank==1} {
+    private def createLocallyEssentialTrees(numLevels : Int, topLevel : Int, boxes : Rail[DistArray[FmmBox](3)], periodic : Boolean) : DistArray[LocallyEssentialTree]{rank==1} {
         val locallyEssentialTrees = DistArray.make[LocallyEssentialTree](Dist.makeUnique());
         finish ateach ([p1] in locallyEssentialTrees) {
             val lowestLevelBoxes = boxes(numLevels);
@@ -840,9 +840,9 @@ public class Fmm3d {
                 combinedUList(j++) = boxIndex;
             }
 
-            val combinedVList = new Array[Array[Point(3)](1){rect,zeroBased,rail}](numLevels+1);
-            val vListMin = new Array[Array[Int](1){rect,zeroBased,rail}](numLevels+1);
-            val vListMax = new Array[Array[Int](1){rect,zeroBased,rail}](numLevels+1);
+            val combinedVList = new Rail[Rail[Point(3)]](numLevels+1);
+            val vListMin = new Rail[Rail[Int]](numLevels+1);
+            val vListMax = new Rail[Rail[Int]](numLevels+1);
             for (thisLevel in topLevel..numLevels) {
                 if (!(periodic && thisLevel == topLevel)) {
                     val vMin = new Array[Int](3, Int.MAX_VALUE);
@@ -891,7 +891,7 @@ public class Fmm3d {
         return  Point.make((offsetCentre.i / size * lowestLevelDim + lowestLevelDim / 2) as Int, (offsetCentre.j / size * lowestLevelDim + lowestLevelDim / 2) as Int, (offsetCentre.k / size * lowestLevelDim + lowestLevelDim / 2) as Int);
     }
 
-    protected static def getParentForChild(boxes : Array[DistArray[FmmBox](3)](1){rect,zeroBased,rail}, level : Int, topLevel : Int, x : Int, y : Int, z : Int) : GlobalRef[FmmBox] {
+    protected static def getParentForChild(boxes : Rail[DistArray[FmmBox](3)], level : Int, topLevel : Int, x : Int, y : Int, z : Int) : GlobalRef[FmmBox] {
         if (level == topLevel)
             return GlobalRef[FmmBox](null);
         return (at(boxes(level-1).dist(x/2, y/2, z/2)) {GlobalRef[FmmBox](boxes(level-1)(x/2, y/2, z/2))});

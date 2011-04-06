@@ -69,7 +69,7 @@ public class Molecule[T]{T <: Atom} {
 
     public def getMaxExtent() = maxExtent;
 
-    public def getCoords() : Array[Pair[String,Point3d]](1){rect,zeroBased,rail} {
+    public def getCoords() : Rail[Pair[String,Point3d]] {
         val coords = new ArrayList[Pair[String,Point3d]](atomList.size());
         for(atom in atomList) {
             coords.add(Pair[String,Point3d](atom.symbol, atom.centre));

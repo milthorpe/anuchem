@@ -21,7 +21,7 @@ import x10x.vector.Point3d;
 public class ContractedGaussian { 
     val center : Point3d;
     val power : Power;
-    val primitives : Array[PrimitiveGaussian](1){rect,zeroBased,rail};
+    val primitives : Rail[PrimitiveGaussian];
 
     var normalization : Double;
 
@@ -46,7 +46,7 @@ public class ContractedGaussian {
     public def getPower() = power;
     public def getNormalization() = normalization;
     public def setNormalization(n:Double) : void { normalization = n; }
-    public def getPrimitives() : Array[PrimitiveGaussian](1){rect,zeroBased,rail} = primitives;
+    public def getPrimitives() : Rail[PrimitiveGaussian] = primitives;
     public def getPrimitive(i:Int) : PrimitiveGaussian = primitives(i);
     public def getTotalAngularMomentum() = power.getTotalAngularMomentum();
     public def getMaximumAngularMomentum() = power.getMaximumAngularMomentum();

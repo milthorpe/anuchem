@@ -42,7 +42,7 @@ public class UniversalForceField implements ForceField {
         return atomParameters.getOrElse(symbol, defaultParams).mass;
     }
     
-    public def getPotentialAndForces(atoms: DistArray[Array[MMAtom](1){rect,zeroBased,rail}](1)) : Double {
+    public def getPotentialAndForces(atoms: DistArray[Rail[MMAtom]](1)) : Double {
         val energy = finish(SumReducer()) {
             ateach(p in atoms) { 
                 var myEnergy : Double = 0.0;

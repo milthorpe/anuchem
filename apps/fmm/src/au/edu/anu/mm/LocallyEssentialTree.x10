@@ -19,12 +19,12 @@ import au.edu.anu.chem.mm.MMAtom;
  * @author milthorpe
  */
 public class LocallyEssentialTree {
-    public val combinedUList : Array[Point(3)](1){rect,zeroBased,rail};
-    public val combinedVList : Array[Array[Point(3)](1){rect,zeroBased,rail}](1){rect,zeroBased,rail};
-    public val uListMin : Array[Int](1){rect,zeroBased,rail};
-    public val uListMax : Array[Int](1){rect,zeroBased,rail};
-    public val vListMin : Array[Array[Int](1){rect,zeroBased,rail}](1){rect,zeroBased,rail};
-    public val vListMax : Array[Array[Int](1){rect,zeroBased,rail}](1){rect,zeroBased,rail};
+    public val combinedUList : Rail[Point(3)];
+    public val combinedVList : Rail[Rail[Point(3)]];
+    public val uListMin : Rail[Int];
+    public val uListMax : Rail[Int];
+    public val vListMin : Rail[Rail[Int]];
+    public val vListMax : Rail[Rail[Int]];
 
     /**
      * A cache of multipole copies for the combined V-list of all
@@ -33,7 +33,7 @@ public class LocallyEssentialTree {
      * The Array has one element for each level; each element
      * holds the portion of the combined V-list for that level.
      */
-    public val multipoleCopies : Array[DistArray[MultipoleExpansion](3)](1){rect,zeroBased,rail};
+    public val multipoleCopies : Rail[DistArray[MultipoleExpansion](3)];
 
     /**
      * A cache of packed for the combined U-list of all
@@ -42,14 +42,14 @@ public class LocallyEssentialTree {
      * with all atoms at a given place.
      * @see FmmLeafBox.getPackedAtoms()
      */
-    public val packedAtoms : DistArray[Array[MMAtom.PackedRepresentation](1){rect,zeroBased,rail}](3);
+    public val packedAtoms : DistArray[Rail[MMAtom.PackedRepresentation]](3);
     
-    public def this(combinedUList : Array[Point(3)](1){rect,zeroBased,rail},
-                combinedVList : Array[Array[Point(3)](1){rect,zeroBased,rail}](1){rect,zeroBased,rail},
-                uListMin : Array[Int](1){rect,zeroBased,rail},
-                uListMax : Array[Int](1){rect,zeroBased,rail},
-                vListMin : Array[Array[Int](1){rect,zeroBased,rail}](1){rect,zeroBased,rail},
-                vListMax : Array[Array[Int](1){rect,zeroBased,rail}](1){rect,zeroBased,rail}) {
+    public def this(combinedUList : Rail[Point(3)],
+                combinedVList : Rail[Rail[Point(3)]],
+                uListMin : Rail[Int],
+                uListMax : Rail[Int],
+                vListMin : Rail[Rail[Int]],
+                vListMax : Rail[Rail[Int]]) {
         this.combinedUList = combinedUList;
         this.combinedVList = combinedVList;
         this.uListMin = uListMin;
@@ -66,6 +66,6 @@ public class LocallyEssentialTree {
         this.multipoleCopies = multipoleCopies;
 
         val packedAtomsRegion = uListMin(0)..uListMax(0) * uListMin(1)..uListMax(1) * uListMin(2)..uListMax(2);
-        this.packedAtoms = DistArray.make[Array[MMAtom.PackedRepresentation](1){rect,zeroBased,rail}](new PeriodicDist(Dist.makeConstant(packedAtomsRegion)));
+        this.packedAtoms = DistArray.make[Rail[MMAtom.PackedRepresentation]](new PeriodicDist(Dist.makeConstant(packedAtomsRegion)));
     }
 }

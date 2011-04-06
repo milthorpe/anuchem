@@ -99,7 +99,7 @@ public class Expansion {
      * @param complexK, values of exp(i*k*phi)
      * @see Dachsel 2006 eqn 4 & 5
      */
-    public def rotate(temp : Array[Complex](1){rect}, complexK : Array[Complex](1){rect}, wigner : Array[Array[Double](2){rect}](1){rect,zeroBased,rail}) {
+    public def rotate(temp : Array[Complex](1){rect}, complexK : Array[Complex](1){rect}, wigner : Rail[Array[Double](2){rect}]) {
         val p : Int = terms.region.max(0);
 
     	//val temp = new Array[Complex](-p..p);
@@ -130,7 +130,7 @@ public class Expansion {
      * @param complexK, values of exp(i*k*phi)
      * @see Dachsel 2006 eqn 4 & 5
      */
-    public def backRotate(temp : Array[Complex](1){rect}, complexK : Array[Complex](1){rect}, wigner : Array[Array[Double](2){rect}](1){rect,zeroBased,rail}) {
+    public def backRotate(temp : Array[Complex](1){rect}, complexK : Array[Complex](1){rect}, wigner : Rail[Array[Double](2){rect}]) {
         val p : Int = terms.region.max(0);
 
     	//val temp = new Array[Complex](-p..p);

@@ -197,7 +197,7 @@ public class PrimitiveGaussian {
      * <i> "THO eq. 2.18 and 3.1 <i>
      * note: assumes array a is already filled with zeros
      */
-    private @Inline def fillAArray(a : Array[Double](1){rect,zeroBased,rail}, 
+    private @Inline def fillAArray(a:Rail[Double], 
                             l1:Int, l2:Int, pa:Double, pb:Double,
                             cp:Double, gamma:Double) {
 
