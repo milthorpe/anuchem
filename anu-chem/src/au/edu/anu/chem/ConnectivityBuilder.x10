@@ -137,8 +137,8 @@ public class ConnectivityBuilder[T]{T <: Atom} {
    public def identifyRings(mol:Molecule[T]) {
        val noOfAtoms = mol.getNumberOfAtoms();
        
-       val color  = Rail.make[Int](noOfAtoms, (Int)=>WHITE);
-       val parent = Rail.make[Int](noOfAtoms, (Int)=>-1);
+       val color  = new Array[Int](noOfAtoms, (Int)=>WHITE);
+       val parent = new Array[Int](noOfAtoms, (Int)=>-1);
 
        // detect rings
        for(var i:Int=0; i<noOfAtoms; i++) {
@@ -158,7 +158,7 @@ public class ConnectivityBuilder[T]{T <: Atom} {
              continue;
           } // end if
 
-          val points = Rail.make[Point3d](n);
+          val points = new Array[Point3d](n);
           
           for(var i:Int=0; i<n; i++) {
              points(i) = ring.getAtom(i).centre; 
