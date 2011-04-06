@@ -56,7 +56,7 @@ public class PeriodicFmm3d extends Fmm3d {
                     topLeftFront : Point3d,
                     size : Double,  
                     numAtoms : Int,
-                    atoms: DistArray[Array[MMAtom](1){rect,zeroBased,rail}](1),
+                    atoms: DistArray[Rail[MMAtom]](1),
                     numShells : Int) {
         // Periodic FMM always uses ws = 1
         // TODO is it possible to formulate for well-spaced > 1?
@@ -149,7 +149,7 @@ public class PeriodicFmm3d extends Fmm3d {
         timer.stop(TIMER_INDEX_MACROSCOPIC);
     }
 
-    protected def assignAtomsToBoxes(atoms: DistArray[Array[MMAtom](1){rect,zeroBased,rail}](1), lowestLevelBoxes : DistArray[FmmBox]{rank==3}, offset : Vector3d, lowestLevelDim : Int, size : Double) {
+    protected def assignAtomsToBoxes(atoms: DistArray[Rail[MMAtom]](1), lowestLevelBoxes : DistArray[FmmBox](3), offset : Vector3d, lowestLevelDim : Int, size : Double) {
         //Console.OUT.println("assignAtomsToBoxes");
         val dipole = finish(VectorSumReducer()) {
             ateach (p1 in atoms) {

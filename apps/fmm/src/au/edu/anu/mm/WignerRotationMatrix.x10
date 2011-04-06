@@ -146,7 +146,7 @@ public class WignerRotationMatrix {
          * @return all wigner matrices needed to rotate an expansion of length numTerms by angle theta
 	 */
 	public static def getCollection(theta : double, numTerms : int) {
-		val collection = new Array[Array[Array[Double](2){rect}](1){rect,zeroBased,rail}](0..1);
+		val collection = new Array[Rail[Array[Double](2){rect}]](0..1);
 		for (r in 0..1) { 
 			val R = new Array[Array[Double](2){rect}](0..numTerms);
 			for (l in 0..numTerms) { 

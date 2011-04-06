@@ -26,12 +26,12 @@ import au.edu.anu.mm.uff.UniversalForceField;
  */
 public class Anumm {
     /** The atoms in the simulation, divided up into a distributed array of Arrays, one for each place. */
-    private val atoms : DistArray[Array[MMAtom](1){rect,zeroBased,rail}](1);
+    private val atoms : DistArray[Rail[MMAtom]](1);
 
     /** The force field applied to the atoms in this simulation. */
     private val forceField : ForceField;
 
-    public def this(atoms: DistArray[Array[MMAtom](1){rect,zeroBased,rail}](1),
+    public def this(atoms: DistArray[Rail[MMAtom]](1),
                     forceField: ForceField) {
         this.atoms = atoms;
         this.forceField = forceField;
@@ -135,7 +135,7 @@ public class Anumm {
      * array of Array[MMAtom], one Array for each place.  
      * MD requires that the atoms have already been distributed. 
      */
-    public static def assignAtoms(molecule : Molecule[MMAtom]) : DistArray[Array[MMAtom](1){rect,zeroBased,rail}](1) {
+    public static def assignAtoms(molecule : Molecule[MMAtom]) : DistArray[Rail[MMAtom]](1) {
         val tempAtoms = DistArray.make[ArrayList[MMAtom]](Dist.makeUnique(), (Point) => new ArrayList[MMAtom]());
         val atomList = molecule.getAtoms();
         val maxExtent = molecule.getMaxExtent();
@@ -148,7 +148,7 @@ public class Anumm {
                 atomic { tempAtoms(p).add(remoteAtom); }
             }
         }
-        val atoms = DistArray.make[Array[MMAtom](1){rect,zeroBased,rail}](Dist.makeUnique(), ([p] : Point) => tempAtoms(p).toArray());
+        val atoms = DistArray.make[Rail[MMAtom]](Dist.makeUnique(), ([p] : Point) => tempAtoms(p).toArray());
         return atoms;
     }
 

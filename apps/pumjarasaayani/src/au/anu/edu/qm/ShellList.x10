@@ -24,7 +24,7 @@ import au.edu.anu.chem.Molecule;
  */
 public class ShellList { 
     val shellList:HashMap[Int, Shell];
-    val powerList:Array[Array[Power](1){rect,zeroBased,rail}](1){rect,zeroBased,rail};
+    val powerList:Rail[Rail[Power]];
     val maxam:Int;
 
     public def this(molecule:Molecule[QMAtom]) {
@@ -52,7 +52,7 @@ public class ShellList {
 
         // init power list
         val maxam4 = (maxam*4)+2;
-        val powerList = new Array[Array[Power](1){rect,zeroBased,rail}](maxam4); 
+        val powerList = new Rail[Rail[Power]](maxam4); 
         val pList = PowerList.getInstance();
         for(i in 0..maxam4) powerList(i) = pList.generatePowerList(i); 
 

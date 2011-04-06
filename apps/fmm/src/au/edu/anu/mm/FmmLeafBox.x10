@@ -24,7 +24,7 @@ public class FmmLeafBox extends FmmBox {
     public val atoms : ArrayList[MMAtom] = new ArrayList[MMAtom]();
 
     /** The U-list consists of all leaf boxes not well-separated to this box. */
-    private var uList : Array[Point(3)](1){rect,zeroBased,rail};
+    private var uList : Rail[Point(3)];
 
     public def this(level : Int, x : Int, y : Int, z : Int, numTerms : Int, parent : GlobalRef[FmmBox]) { 
         super(level, x, y, z, numTerms, parent);
@@ -36,7 +36,7 @@ public class FmmLeafBox extends FmmBox {
 
     public def getUList() = this.uList;
 
-    public def setUList(uList : Array[Point(3)](1){rect,zeroBased,rail}) {
+    public def setUList(uList : Rail[Point(3)]) {
         this.uList = uList;
     }
 
@@ -84,7 +84,7 @@ public class FmmLeafBox extends FmmBox {
     /*
      * Returns atom charges and coordinates in packed representation
      */
-    public def getPackedAtoms() : Array[MMAtom.PackedRepresentation](1){rect,zeroBased,rail} {
+    public def getPackedAtoms() : Rail[MMAtom.PackedRepresentation] {
         if (atoms.size() > 0) {
             return new Array[MMAtom.PackedRepresentation](atoms.size(), (i : Int) => atoms(i).getPackedRepresentation());
         } else {

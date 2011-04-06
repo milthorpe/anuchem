@@ -33,19 +33,19 @@ public class ElectrostaticDirectMethod {
     private val asyncComms = true;
 
     /** The charges in the simulation, divided up into an array of ValRails, one for each place. */
-    private val atoms : DistArray[Array[PointCharge](1){rect,zeroBased,rail}](1);
-    private val otherAtoms : DistArray[Array[Array[PointCharge](1){rect,zeroBased,rail}](1){rect,zeroBased,rail}](1);
+    private val atoms : DistArray[Rail[PointCharge]](1);
+    private val otherAtoms : DistArray[Rail[Rail[PointCharge]]](1);
 
     /**
      * Creates a new electrostatic direct method.
      * @param atoms the atoms in the unit cell, divided into separate Arrays for each place
      */
-    public def this(atoms : DistArray[Array[MMAtom](1){rect,zeroBased,rail}](1)) {
-		this.atoms = DistArray.make[Array[PointCharge](1){rect,zeroBased,rail}](Dist.makeUnique(), 
-			([i] : Point) => new Array[PointCharge](atoms(i).size,
+    public def this(atoms : DistArray[Rail[MMAtom]](1)) {
+		this.atoms = DistArray.make[Rail[PointCharge]](Dist.makeUnique(), 
+			([i] : Point) => new Rail[PointCharge](atoms(i).size,
 												(j : Int) => new PointCharge(atoms(i)(j).centre, atoms(i)(j).charge)));
-        this.otherAtoms = DistArray.make[Array[Array[PointCharge](1){rect,zeroBased,rail}](1){rect,zeroBased,rail}](Dist.makeUnique(), 
-            ([p] : Point) => new Array[Array[PointCharge](1){rect,zeroBased,rail}](Place.MAX_PLACES));
+        this.otherAtoms = DistArray.make[Rail[Rail[PointCharge]]](Dist.makeUnique(), 
+            ([p] : Point) => new Rail[Rail[PointCharge]](Place.MAX_PLACES));
     }
 	
     public def getEnergy() : Double {
