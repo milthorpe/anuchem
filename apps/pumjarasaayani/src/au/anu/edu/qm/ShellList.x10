@@ -61,25 +61,24 @@ public class ShellList {
         this.powerList = powerList;
     }
 
-    public @Inline def getMaximumAngularMomentum() = maxam;
+    public def getMaximumAngularMomentum() = maxam;
 
     public def getNumberOfShellPrimitives() : Int { 
-         var n:Int = 0;
-         for(shell in shellList.keySet()) 
-             n += shellList.getOrElse(shell, null).getNumberOfShellPrimitives();
-         return n;
+        var n:Int = 0;
+        for(shell in shellList.keySet()) 
+            n += shellList.getOrElse(shell, null).getNumberOfShellPrimitives();
+        return n;
     }
 
     public def getShellPrimitives() : ArrayList[ContractedGaussian] {
-         val shellPrimitives = new ArrayList[ContractedGaussian]();
+        val shellPrimitives = new ArrayList[ContractedGaussian]();
 
-         for(shell in shellList.keySet()) { 
+        for(shell in shellList.keySet()) { 
             val sp = shellList.getOrElse(shell, null).getShellPrimitives();
-            
             for(var i:Int=0; i<sp.size(); i++) shellPrimitives.add(sp(i));
-         } // end for
+        }
 
-         return shellPrimitives;
+        return shellPrimitives;
     }
 
     public def getNumberOfShellPairs() : Int {

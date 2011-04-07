@@ -37,10 +37,10 @@ public class TwoElectronIntegrals {
 
     private val fmt:Rail[Double], zeroM:Rail[Double];
 
-    private val rM:Array[Double](2){rect};
-    private val pqInts:Array[Double](2){rect};
-    private val npint:Array[Double](2){rect};
-    private val pcdint:Array[Double](3){rect};
+    private val rM:Array[Double](2){rect,zeroBased};
+    private val pqInts:Array[Double](2){rect,zeroBased};
+    private val npint:Array[Double](2){rect,zeroBased};
+    private val pcdint:Array[Double](3){rect,zeroBased};
 
     private val maxam:Int, maxam2:Int, maxam4:Int, maxamN:Int, maxam2M:Int, maxam2N:Int, pqdim:Int;
 
@@ -92,6 +92,11 @@ public class TwoElectronIntegrals {
          val cAng  = c.getMaximumAngularMomentum();
          val bAng  = b.getMaximumAngularMomentum();
          val aAng  = a.getMaximumAngularMomentum();
+
+        val shellA = shellList.getPowers(aAng);
+        val shellB = shellList.getPowers(bAng);
+        val shellC = shellList.getPowers(cAng);
+        val shellD = shellList.getPowers(dAng);
 
          val dLim = ((dAng+1)*(dAng+2)/2);
          val cLim = ((cAng+1)*(cAng+2)/2);
@@ -202,7 +207,7 @@ public class TwoElectronIntegrals {
 
                  // form [p|cd]
                  computePcd(angMomAB, gamma2, q, dLim, cLim,
-                            dAng, cAng, dCen, cCen, shellList);
+                            shellD, shellC, dCen, cCen, shellList);
                } // dPrim
               } // cPrim
 
@@ -211,7 +216,7 @@ public class TwoElectronIntegrals {
 
               computeAbcd(dLim, cLim, bLim, aLim,
                           dStrt, cStrt, bStrt, aStrt,
-                          shellList, bAng, aAng,
+                          shellList, shellB, shellA,
                           aCen, bCen, p, 2.0*gamma1,
                           twoEInts); 
            }
@@ -248,6 +253,11 @@ public class TwoElectronIntegrals {
         val bCen  = b.getCenter();
         val cCen  = c.getCenter();
         val dCen  = d.getCenter();
+
+        val shellA = shellList.getPowers(aAng);
+        val shellB = shellList.getPowers(bAng);
+        val shellC = shellList.getPowers(cAng);
+        val shellD = shellList.getPowers(dAng);
 
         val dLim = ((dAng+1)*(dAng+2)/2);
         val cLim = ((cAng+1)*(cAng+2)/2);
@@ -292,7 +302,7 @@ public class TwoElectronIntegrals {
                val cCoeff = cPrim.getCoefficient();
 
                for([dp] in dPrims) {
-                    val dPrim = dPrims(dp);
+                val dPrim = dPrims(dp);
                  val dAlpha = dPrim.getExponent();
                  val dCoeff = dPrim.getCoefficient();
 
@@ -349,7 +359,7 @@ public class TwoElectronIntegrals {
 
                  // form [p|cd]
                  computePcd(angMomAB, gamma2, q, dLim, cLim,
-                            dAng, cAng, dCen, cCen, shellList);
+                            shellD, shellC, dCen, cCen, shellList);
                } // dPrim
               } // cPrim
 
@@ -358,7 +368,7 @@ public class TwoElectronIntegrals {
 
               computeAbcd(dLim, cLim, bLim, aLim,
                           dStrt, cStrt, bStrt, aStrt,
-                          shellList, bAng, aAng,
+                          shellList, shellB, shellA,
                           aCen, bCen, p, 2.0*gamma1,
                           twoEInts); 
            }
@@ -471,25 +481,26 @@ public class TwoElectronIntegrals {
     }
 
     private def computeRm(angMomABCD:Int, shellList:ShellList, r:Vector3d) {
-         for(var i:Int=0; i<=angMomABCD; i++) {
-             val shell = shellList.getPowers(i);
-             val iLim  = ((i+1)*(i+2)/2);
-             for(var j:Int=0; j<iLim; j++) {
-                 val powers = shell(j);
-                 val lp = powers.l;
-                 val mp = powers.m;
-                 val np = powers.n;
-                 rM(i,j) = mdRecurse(r, lp, mp, np, 0);  // can use vrr() instead
-                 // Console.OUT.println(rM(i,j));
-             }
-         }
+        var iLim:Int = 0;
+        for(i in 0..angMomABCD) {
+            val shell = shellList.getPowers(i);
+            iLim += (i+1); // iLim = (i+1)*(i+2)/2
+            for(var j:Int=0; j<iLim; j++) {
+                val powers = shell(j);
+                val lp = powers.l;
+                val mp = powers.m;
+                val np = powers.n;
+                rM(i,j) = mdRecurse(r, lp, mp, np, 0);  // can use vrr() instead
+                // Console.OUT.println(rM(i,j));
+            }
+        }
     }
 
     private def computePq(angMomAB:Int, angMomCD:Int, shellList:ShellList) {
          var pLim : Int = 0;
          for(i in 0..angMomAB) {
              val shellAB = shellList.getPowers(i);
-             pLim += (i+1);
+             pLim += (i+1); // pLim = (p+1)*(p+2)/2
              for (var pp:Int = 0; pp<pLim; pp++) {
                  val powersAB = shellAB(pp);
                  val lp = powersAB.l;
@@ -501,7 +512,7 @@ public class TwoElectronIntegrals {
                  var qLim : Int = 0;
                  for(j in 0..angMomCD) {
                      val shellCD = shellList.getPowers(j);
-                     qLim += (j+1);
+                     qLim += (j+1); // qLim = (q+1)*(q+2)/2
                      for (var qq:Int = 0; qq<qLim; qq++) {
                          val powersCD = shellCD(qq);
                          val lq = powersCD.l;
@@ -530,11 +541,7 @@ public class TwoElectronIntegrals {
     }
 
     private def computePcd(angMomAB:Int, gamma2:Double, q:Point3d, dLim:Int, cLim:Int, 
-                           dAng:Int, cAng:Int, dCen:Point3d, cCen:Point3d, shellList:ShellList) {
-         var i:Int, j:Int, pp:Int, k:Int, l:Int, dd:Int, cc:Int;
-         val shellD = shellList.getPowers(dAng);
-         val shellC = shellList.getPowers(cAng);
-
+                           shellD:Rail[Power], shellC:Rail[Power], dCen:Point3d, cCen:Point3d, shellList:ShellList) {
          val qdi = q.i-dCen.i;
          val qdj = q.j-dCen.j;
          val qdk = q.k-dCen.k;
@@ -544,25 +551,26 @@ public class TwoElectronIntegrals {
 
          val twoGamma = 2.0*gamma2;
 
-         for(i=0; i<=angMomAB; i++) {
-             val pLim = ((i+1)*(i+2)/2);
-             for(pp=0; pp < pLim; pp++) {
-
+         var pLim : Int = 0;
+         for(i in 0..angMomAB) {
+             pLim += (i+1); // pLim = (p+1)*(p+2)/2
+             for(pp in 0..(pLim-1)) {
                  val ipp = i*pqdim+pp;
 
-                 for (k=0; k<=maxam2; k++) {
-                     val kpq = k*pqdim;
-                     for (l=0; l<=maxam2M; l++) 
-                         npint(k,l) = pqInts(ipp, kpq+l);
+                 for (k in 0..maxam2) {
+                    val kpq = k*pqdim;
+                    for (l in 0..maxam2M) {
+                        npint(k,l) = pqInts(ipp, kpq+l);
+                    }
                  }
 
-                 for(dd = 0; dd<dLim; dd++) {
+                 for(dd in 0..(dLim-1)) {
                      val powersD = shellD(dd);
                      val lp = powersD.l;
                      val mp = powersD.m;
                      val np = powersD.n;
 
-                     for(cc = 0; cc<cLim; cc++) {
+                     for(cc in 0..(cLim-1)) {
                          val powersC = shellC(cc);
                          val lq = powersC.l;
                          val mq = powersC.m;
@@ -582,12 +590,9 @@ public class TwoElectronIntegrals {
  
     private def computeAbcd(dLim:Int, cLim:Int, bLim:Int, aLim:Int,
                             dStrt:Int, cStrt:Int, bStrt:Int, aStrt:Int,
-                            shellList:ShellList, bAng:Int, aAng:Int, 
+                            shellList:ShellList, shellB:Rail[Power], shellA:Rail[Power], 
                             aCen:Point3d, bCen:Point3d, p:Point3d, gamma1:Double,
-                            twoEInts:Array[Double](1){rect}) {
-         val shellB = shellList.getPowers(bAng);
-         val shellA = shellList.getPowers(aAng);
-
+                            twoEInts:Rail[Double]) {
          val pbi = p.i-bCen.i;
          val pbj = p.j-bCen.j;
          val pbk = p.k-bCen.k;
@@ -647,10 +652,10 @@ public class TwoElectronIntegrals {
     private def fillJKMatrices(dLim:Int, cLim:Int, bLim:Int, aLim:Int,
                                dStrt:Int, cStrt:Int, bStrt:Int, aStrt:Int,
                                shellList:ShellList, bAng:Int, aAng:Int,
-                               twoEInts:Array[Double](1){rect},
-                               jMatrix:Array[Double](2){rect}, 
-                               kMatrix:Array[Double](2){rect},
-                               dMatrix:Array[Double](2){rect}) {
+                               twoEInts:Rail[Double],
+                               jMatrix:Array[Double](2){rect,zeroBased}, 
+                               kMatrix:Array[Double](2){rect,zeroBased},
+                               dMatrix:Array[Double](2){rect,zeroBased}) {
         // Console.OUT.println("Filling in JK matrix");
         var intIndx:Int = 0;
 
