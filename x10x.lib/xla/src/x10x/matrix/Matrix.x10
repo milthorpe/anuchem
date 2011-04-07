@@ -24,7 +24,7 @@ import x10.compiler.Inline;
  * @author V.Ganesh, milthorpe
  */
 public class Matrix { 
-    protected val mat:Array[Double]{rect,rank==2};
+    protected val mat:Array[Double](2){rect,zeroBased};
     property region() = mat.region;
 
     /**
@@ -33,7 +33,7 @@ public class Matrix {
      * @param siz the size of this matrix
      */
     public def this(siz:Int) {
-        mat          = new Array[Double]((0..(siz-1)) * (0..(siz-1)));
+        mat = new Array[Double]((0..(siz-1)) * (0..(siz-1)));
     }
 
     /**
@@ -42,7 +42,7 @@ public class Matrix {
      * @param siz the size of this matrix
      */
     public def this(row:Int, col:Int) {
-        mat          = new Array[Double]((0..(row-1)) * (0..(col-1)));
+        mat = new Array[Double]((0..(row-1)) * (0..(col-1)));
     }
 
     /**
