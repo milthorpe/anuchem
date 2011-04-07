@@ -9,6 +9,7 @@
     <property name="optimize" value="true" />
     <property name="nochecks" value="true" />
     <property name="cpuprofile"  value="true"/>
+    <property name="perftoolsHome" location="/scratch/perftools"/>
     <property name="x10rt" value="mpi"/>
 	<property name="target" location="${basedir}/target" />
 	<property name="target-src" location="${target}/classes" />
