@@ -6,7 +6,7 @@
  *  You may obtain a copy of the License at
  *      http://www.opensource.org/licenses/eclipse-1.0.php
  *
- * (C) Copyright Josh Milthorpe 2010.
+ * (C) Copyright Josh Milthorpe 2010-2011.
  */
 package au.edu.anu.mm;
 
@@ -82,8 +82,8 @@ public class Expansion {
      * @return array of Complex first indexed by forward (0), backward (1) then by k
      * @see Dachsel 2006, eqn 4 & 5
      */
-    public static def genComplexK(phi : Double, p : int) { 
-    	val complexK = new Array[Array[Complex](1){rect}](0..1);
+    public static def genComplexK(phi : Double, p : int) : Rail[Array[Complex](1){rect}] { 
+    	val complexK = new Array[Array[Complex](1){rect}](2);
     	for (r in 0..1) { 
 	    	complexK(r) = new Array[Complex](-p..p); 
     		for (k in -p..p) complexK(r)(k) = Math.exp(Complex.I * k * phi * ((r==0)?1:-1) );

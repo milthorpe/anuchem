@@ -6,7 +6,7 @@
  *  You may obtain a copy of the License at
  *      http://www.opensource.org/licenses/eclipse-1.0.php
  *
- * (C) Copyright Josh Milthorpe 2010.
+ * (C) Copyright Josh Milthorpe 2010-2011.
  */
 package au.edu.anu.mm;
 
@@ -145,10 +145,10 @@ public class WignerRotationMatrix {
          * @param numTerms, maximum size of matrix required
          * @return all wigner matrices needed to rotate an expansion of length numTerms by angle theta
 	 */
-	public static def getCollection(theta : double, numTerms : int) {
-		val collection = new Array[Rail[Array[Double](2){rect}]](0..1);
+	public static def getCollection(theta : double, numTerms : int) : Rail[Rail[Array[Double](2){rect}]] {
+		val collection = new Array[Rail[Array[Double](2){rect}]](2);
 		for (r in 0..1) { 
-			val R = new Array[Array[Double](2){rect}](0..numTerms);
+			val R = new Array[Array[Double](2){rect}](numTerms+1);
 			for (l in 0..numTerms) { 
 				R(l) = WignerRotationMatrix.getDmk( (r==0)?theta:(2*Math.PI - theta) , l);
 			}
