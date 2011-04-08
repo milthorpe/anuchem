@@ -128,7 +128,7 @@ public final class MortonDist extends Dist(3) {
         return new MortonDist(r, pg);
     }
 
-    def this(r:Region(3), pg:PlaceGroup) {
+    def this(r:Region(3), pg:PlaceGroup):MortonDist{self.region==r} {
         super(r);
         dimDigits = Math.log2(Math.cbrt(r.size()) as Int) as Int;
         this.pg = pg;
