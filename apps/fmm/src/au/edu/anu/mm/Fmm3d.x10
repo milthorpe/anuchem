@@ -417,9 +417,7 @@ public class Fmm3d {
                             if (thisLevel > topLevel) {
                                 //Console.OUT.println("get parent for " + x1 + "," + y1 + "," + z1);
                                 val box1Parent = box1.parent;
-                                val box1ParentExp = (box1Parent.home == here) ?
-                                    box1Parent().localExp :
-                                    at(box1Parent) {box1Parent().localExp};
+                                val box1ParentExp = box1Parent.evalAtHome[LocalExpansion]((parent:FmmBox) => parent.localExp);
 
                 			    if (!useOldOperators) { 
                 				    /* New Operation C */
