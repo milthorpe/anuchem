@@ -40,7 +40,6 @@ public class WignerRotationMatrix {
 		    }
 		    return D;
 		} else if (theta == Math.PI) {
-		    // Console.OUT.println("this means it has recognized the angle as pi");
 		    // Eq. 30
 		    for (k in -l..l) {
 		        D(k,-k) = Math.pow(-1, l+k);
@@ -88,20 +87,20 @@ public class WignerRotationMatrix {
 		}
 
 		// Eq. 26
-		for (var k:Int=l; k>-l; k--) { // Changed k>-1 to k>-l
+		for (var k:Int=l; k> -l; k--) {
 		    D(l,k-1) = (l+k) / Math.sqrt(l*(l+1.0) - k*(k-1.0)) * sinTheta / (1.0 + cosTheta) * D(l,k);
 		}
 
 		// Eq. 25
 		for (var m:Int=l-1; m>=0; m--) {
-		    for (var k:Int=l; k>-l; k--) {
+		    for (var k:Int=l; k> -l; k--) {
 		        D(m,k-1) = Math.sqrt(((l*(l+1) - m*(m+1)) as Double) / (l*(l+1) - k*(k-1))) * D(m+1,k)
 		                 + (m+k) / Math.sqrt((l*(l+1) - k*(k-1)) as Double) * sinTheta / (1.0 + cosTheta) * D(m,k);
 		    }
 		}
 
 		// Eq. 27
-		for (m in -l..-1) { // Changed upper bound here from 0 to -1
+		for (m in -l..-1) {
 		    sign = Math.pow(-1, m-l);
 		    for (k in -l..l) {
 		        D(m,k) = sign * D(-m,-k);
@@ -114,9 +113,9 @@ public class WignerRotationMatrix {
 		    if (theta < Math.PI) {
 			// Console.OUT.println("in the 2nd quadrant");
 		        sign = -1.0;
-		        for (m in -l..l) { // Previous upper bound was -1, changed to l
+		        for (m in -l..l) {
 		            sign *= -1.0;
-		            for (k in -l..0) { // Previous upper bound was -1, changed to 0
+		            for (k in -l..0) {
 		                val tmp = D(m,k);
 		                D(m,k) = sign * D(m,-k);
 		                D(m,-k) = sign * tmp;
@@ -125,9 +124,9 @@ public class WignerRotationMatrix {
 		    } else if (theta > Math.PI && theta < 3.0*Math.PI/2.0) {
 			// Console.OUT.println("in the 3rd quadrant");
 		        sign = -1.0;
-		        for (m in -l..0) { // Previous upper bound was -1, changed to 0
+		        for (m in -l..0) {
 		            sign *= -1.0;
-		            for (k in -l..l) { // Previous upper bound was -1, changed to l
+		            for (k in -l..l) {
 		                val tmp = D(m,k);
 		                D(m,k) = sign * D(-m,k);
 		                D(-m,k) = sign * tmp;
@@ -139,11 +138,11 @@ public class WignerRotationMatrix {
 	}
 
 	/** 
-         * Generates all of the matrices that are needed to transform a multipole of length numTerms and returns them together,
-         * indexed first by forward (0) and backward (1) rotations, then by l value
-         * @param theta, angle for matrix
-         * @param numTerms, maximum size of matrix required
-         * @return all wigner matrices needed to rotate an expansion of length numTerms by angle theta
+     * Generates all of the matrices that are needed to transform a multipole of length numTerms and returns them together,
+     * indexed first by forward (0) and backward (1) rotations, then by l value
+     * @param theta, angle for matrix
+     * @param numTerms, maximum size of matrix required
+     * @return all wigner matrices needed to rotate an expansion of length numTerms by angle theta
 	 */
 	public static def getCollection(theta : double, numTerms : int) : Rail[Rail[Array[Double](2){rect}]] {
 		val collection = new Array[Rail[Array[Double](2){rect}]](2);
@@ -157,11 +156,11 @@ public class WignerRotationMatrix {
 		return collection;
         }
 
-        /**
-         * Takes the matrices generated in the above function and premultiplies each term by the appropriate factor so that they can be used
-         * directly to transform expansions, saving later calculations.
-         * @see Dachsel 2006, eqn 4 & 5
-         */
+    /**
+     * Takes the matrices generated in the above function and premultiplies each term by the appropriate factor so that they can be used
+     * directly to transform expansions, saving later calculations.
+     * @see Dachsel 2006, eqn 4 & 5
+     */
 	public static def getExpandedCollection(theta : double, numTerms : int, op : int) {
 		val collection = getCollection(theta, numTerms);
 		var F_mk : Double;
@@ -179,10 +178,10 @@ public class WignerRotationMatrix {
 		return collection;
 	}
 
-	/** 
-         * More convenient function calls to the above function
-         * Operator A needs multipole factors both before and after, Operator C needs local factors before and after, Operator B needs multipole before and local after
-         */
+    /** 
+     * More convenient function calls to the above function
+     * Operator A needs multipole factors both before and after, Operator C needs local factors before and after, Operator B needs multipole before and local after
+     */
 	public static def getACollection(theta : double, numTerms : int) { return getExpandedCollection(theta, numTerms, OPERATOR_A); }
 	public static def getBCollection(theta : double, numTerms : int) { return getExpandedCollection(theta, numTerms, OPERATOR_B); }
 	public static def getCCollection(theta : double, numTerms : int) { return getExpandedCollection(theta, numTerms, OPERATOR_C); }
