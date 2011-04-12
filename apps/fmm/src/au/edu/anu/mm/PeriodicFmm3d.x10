@@ -155,13 +155,13 @@ public class PeriodicFmm3d extends Fmm3d {
             ateach (p1 in atoms) {
                 var myDipole : Vector3d = Vector3d.NULL;
                 val localAtoms = atoms(p1);
-                for (i in 0..(localAtoms.size-1)) {
+                finish for (i in 0..(localAtoms.size-1)) {
                     val atom = localAtoms(i);
                     val charge = atom.charge;
                     val offsetCentre = atom.centre + offset;
                     myDipole = myDipole + Vector3d(offsetCentre) * charge;
                     val boxIndex = Fmm3d.getLowestLevelBoxIndex(offsetCentre, lowestLevelDim, size);
-                    at(lowestLevelBoxes.dist(boxIndex)) {
+                    async at(lowestLevelBoxes.dist(boxIndex)) {
                         val remoteAtom = new MMAtom(offsetCentre, charge);
                         val leafBox = lowestLevelBoxes(boxIndex) as FmmLeafBox;
                         atomic {
