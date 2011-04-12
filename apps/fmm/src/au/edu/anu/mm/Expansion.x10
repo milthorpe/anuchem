@@ -44,8 +44,9 @@ public class Expansion {
      */
     public atomic def add(e : Expansion) {
 	    val p = terms.region.max(0);
-	    for (l in -p..p) {
-	        for (m in -l..l) { // this will now be inlined -- should be for ([l,m] in terms.region)
+        // TODO should be just:  for ([l,m] in terms.region) {
+	    for (l in 0..p) {
+	        for (m in -l..l) {
 	            this.terms(l,m) = this.terms(l,m) + e.terms(l,m);
     	    }
         }
@@ -57,8 +58,9 @@ public class Expansion {
      */
     protected def unsafeAdd(e : Expansion) {
 	    val p = terms.region.max(0);
-	    for (l in -p..p) {
-	        for (m in -l..l) { // this will now be inlined -- should be for ([l,m] in terms.region)
+        // TODO should be just:  for ([l,m] in terms.region) {
+	    for (l in 0..p) {
+	        for (m in -l..l) {
 	            this.terms(l,m) = this.terms(l,m) + e.terms(l,m);
     	    }
         }
@@ -116,7 +118,7 @@ public class Expansion {
                 }
                 terms(l,m) = O_lm;
 
-        	    if (m != 0) terms(l, -m) = O_lm.conjugate() * m_sign;
+        	    terms(l, -m) = O_lm.conjugate() * m_sign;
             	m_sign = -m_sign; // instead of doing the conjugate
             }
         }
@@ -148,7 +150,7 @@ public class Expansion {
                 O_lm = O_lm * complexK(m);
                 terms(l,m) = O_lm;
 
-        	    if (m != 0) terms(l, -m) = O_lm.conjugate() * m_sign;
+        	    terms(l, -m) = O_lm.conjugate() * m_sign;
             	m_sign = -m_sign; // instead of doing the conjugate
             }
         }

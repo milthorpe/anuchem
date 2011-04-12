@@ -116,13 +116,16 @@ public class MultipoleExpansion extends Expansion {
         // TODO this atomic should be around inner loop update.
         // however as it's "stop the world" it's more efficient to do it out here
         atomic {
-            for ([j,k] in terms.region) {
-                val O_jk = source.terms(j,k);
-                for (l in j..p) {
-                    for (m in -l..l) {
-                        if (Math.abs(m-k) <= (l-j)) {
-                            val A_lmjk = shift.terms(l-j, m-k);
-                            this.terms(l,m) = this.terms(l,m) + A_lmjk * O_jk;
+            // TODO should be just:  for ([j,k] in terms.region) {
+            for (j in 0..p) {
+                for (k in -j..j) {
+                    val O_jk = source.terms(j,k);
+                    for (l in j..p) {
+                        for (m in -l..l) {
+                            if (Math.abs(m-k) <= (l-j)) {
+                                val A_lmjk = shift.terms(l-j, m-k);
+                                this.terms(l,m) = this.terms(l,m) + A_lmjk * O_jk;
+                            }
                         }
                     }
                 }

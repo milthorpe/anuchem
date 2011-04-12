@@ -84,25 +84,15 @@ public class LocalExpansion extends Expansion {
                                          source : LocalExpansion) {
         val p = terms.region.max(0);
 
-        // BEGIN HAND-INLINED ITERATOR
-        // should be just:  for ([l,m] in terms) {
-        val it_p = (terms.region as ExpansionRegion).p;
-        var it_l:int = 0;
-        var it_m:int = 0;
-	    while ((it_l <= it_p && it_m <= it_l)) {
-            val l = it_l;
-	        val m = it_m;
-    	    if (it_m<it_l) it_m++;
-	        else {
-                it_l++;
-                it_m = -it_l;
-            }
-        // END HAND-INLINED ITERATOR
-            for (j in l..p) {
-                for (k in (l-j+m)..(-l+j+m)) {
-                    val C_lmjk = shift.terms(j-l, k-m);
-                    val O_jk = source.terms(j,k);
-                    this.terms(l,m) = this.terms(l,m) + C_lmjk * O_jk;
+        // TODO should be just:  for ([l,m] in terms.region) {
+        for (l in 0..p) {
+            for (m in -l..l) {
+                for (j in l..p) {
+                    for (k in (l-j+m)..(-l+j+m)) {
+                        val C_lmjk = shift.terms(j-l, k-m);
+                        val O_jk = source.terms(j,k);
+                        this.terms(l,m) = this.terms(l,m) + C_lmjk * O_jk;
+                    }
                 }
             }
         }
@@ -172,27 +162,17 @@ public class LocalExpansion extends Expansion {
                                          source : MultipoleExpansion) {
         val p : Int = terms.region.max(0);
 
-        // BEGIN HAND-INLINED ITERATOR
-        // should be just:  for ([j,k] in terms) {
-        val it_p = (terms.region as ExpansionRegion).p;
-        var it_l:int = 0;
-        var it_m:int = 0;
-	    while ((it_l <= it_p && it_m <= it_l)) {
-            val j = it_l;
-	        val k = it_m;
-            if (it_m<it_l) it_m++;
-	        else {
-                it_l++;
-                it_m = -it_l;
-            }
-        // END HAND-INLINED ITERATOR
-            val O_jk = source.terms(j,k);
-            for (l in 0..(p-j)) {
-                for (m in -l..l) {
-                    if (Math.abs(k+m) <= (j+l)) {
-                        val B_lmjk = transform.terms(j+l, k+m);
-                        //Console.OUT.println("source.terms.dist(" + j + "," + k + ") = " + source.terms.dist(j,k));
-                        this.terms(l,m) = this.terms(l,m) + B_lmjk * O_jk;
+        // TODO should be just:  for ([j,k] in terms.region) {
+        for (j in 0..p) {
+            for (k in -j..j) {
+                val O_jk = source.terms(j,k);
+                for (l in 0..(p-j)) {
+                    for (m in -l..l) {
+                        if (Math.abs(k+m) <= (j+l)) {
+                            val B_lmjk = transform.terms(j+l, k+m);
+                            //Console.OUT.println("source.terms.dist(" + j + "," + k + ") = " + source.terms.dist(j,k));
+                            this.terms(l,m) = this.terms(l,m) + B_lmjk * O_jk;
+                        }
                     }
                 }
             }
@@ -279,25 +259,15 @@ public class LocalExpansion extends Expansion {
      */
     public def getPotential(q : Double,
                                 v : Tuple3d) : Double {
-        val numTerms = terms.region.max(0);
-        val transform = MultipoleExpansion.getOlm(q, v, numTerms);
+        val p = terms.region.max(0);
+        val transform = MultipoleExpansion.getOlm(q, v, p);
         var potential : Double = 0.0;
         // TODO use lift/reduction?
-        // BEGIN HAND-INLINED ITERATOR
-        // should be just:  for ([i,j] in terms.region) {
-        val it_p = (terms.region as ExpansionRegion).p;
-        var it_l:int = 0;
-        var it_m:int = 0;
-    	while ((it_l <= it_p && it_m <= it_l)) {
-            val i = it_l;
-	        val j = it_m;
-	        if (it_m<it_l) it_m++;
-	        else {
-                it_l++;
-                it_m = -it_l;
+        // TODO should be just:  for ([j,k] in terms.region) {
+        for (j in 0..p) {
+            for (k in -j..j) {
+                potential += (terms(j,k) * transform.terms(j,k)).re;
             }
-        // END HAND-INLINED ITERATOR
-            potential += (terms(i,j) * transform.terms(i,j)).re;
         }
         return potential;
     }
@@ -313,8 +283,10 @@ public class LocalExpansion extends Expansion {
     public def getMacroscopicParent() : LocalExpansion {
         val p : Int = terms.region.max(0);
         val parentExpansion = new LocalExpansion(p);
-        for ([l,m] in terms.region) {
-            parentExpansion.terms(l,m) = terms(l,m) / Math.pow(3.0, l+1);
+        for (l in 0..p) {
+            for (m in -l..l) {
+                parentExpansion.terms(l,m) = terms(l,m) / Math.pow(3.0, l+1);
+            }
         }
         return parentExpansion;
     }
