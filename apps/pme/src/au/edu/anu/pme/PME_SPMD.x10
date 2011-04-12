@@ -209,6 +209,7 @@ public class PME_SPMD {
     public def getEnergy() : Double {
         timer.start(TIMER_INDEX_TOTAL);
 
+        timer.start(TIMER_INDEX_GRIDCHARGES);
         finish for (place in Place.places()) async at (place) {
             val myPackedAtoms = packedAtomsCache(here.id);
             val gridDistHere = gridDist.get(here) as Region(3){rect};
@@ -241,6 +242,7 @@ public class PME_SPMD {
                 Console.OUT.printf("thetaRecConvQ: %g seconds\n", (timer.total(TIMER_INDEX_THETARECCONVQ) as Double) / 1e9);
             }
         }
+        timer.stop(TIMER_INDEX_GRIDCHARGES);
 
         val reciprocalEnergy = getReciprocalEnergy();
         val selfEnergy = getSelfEnergy();
