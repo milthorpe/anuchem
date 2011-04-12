@@ -366,9 +366,9 @@ public class Fmm3d {
         val startingLevel = periodic ? topLevel+1 : topLevel;
         for (thisLevel in startingLevel..numLevels) {
             //Console.OUT.println("transform level " + thisLevel);
-            val thisLevelBoxes = boxes(thisLevel);
             val sideLength = size / Math.pow2(thisLevel);
             finish ateach (p1 in Dist.makeUnique()) {
+                val thisLevelBoxes = boxes(thisLevel);
                 if (thisLevel == startingLevel) {
                     // must fetch top level multipoles synchronously before starting
                     Fmm3d.prefetchMultipoles(thisLevel, thisLevelBoxes, locallyEssentialTrees);
@@ -514,7 +514,7 @@ public class Fmm3d {
             val uListPlaces = new HashMap[Int,ArrayList[Point(3)]](26); // a place may have up to 26 immediate neighbours
             
             // separate the uList into partial lists stored at each nearby place
-            for (p in myCombinedUList) {
+            for ([p] in myCombinedUList) {
                 val boxIndex = myCombinedUList(p);
                 val placeId = lowestLevelBoxes.dist(boxIndex).id;
                 var uListForPlace : ArrayList[Point(3)] = uListPlaces.getOrElse(placeId, null);
@@ -820,7 +820,7 @@ public class Fmm3d {
                 val box1 = lowestLevelBoxes(x,y,z) as FmmLeafBox;
                 if (box1 != null) {
                     val uList = box1.getUList();
-                    for (p in uList) {
+                    for ([p] in uList) {
                         val boxIndex2 = uList(p);
                         if (combinedUSet.add(boxIndex2)) {
                             for (i in 0..2) {
@@ -851,7 +851,7 @@ public class Fmm3d {
                         if (box1 != null) {
                             val vList = box1.getVList();
                             if (vList != null) {
-                                for (p in vList) {
+                                for ([p] in vList) {
                                     val boxIndex2 = vList(p);
                                     if (combinedVSet.add(boxIndex2)) {
                                         for (i in 0..2) {
