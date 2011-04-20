@@ -10,7 +10,9 @@
  */
 package au.anu.edu.qm;
 
-import x10.util.*;
+import x10.util.ArrayList;
+import x10.util.Team;
+import x10.util.concurrent.Future;
 
 import x10x.matrix.Matrix;
 import x10x.vector.Vector;
