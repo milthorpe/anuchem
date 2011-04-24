@@ -28,7 +28,7 @@ public class Vector {
      * Construct a Vector of dimention N
      */
     public def this(siz:Int) { 
-        vec = new Array[Double](0..(siz-1));
+        vec = new Array[Double](siz);
     }
 
     /**
