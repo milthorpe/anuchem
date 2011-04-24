@@ -6,11 +6,11 @@
  *  You may obtain a copy of the License at
  *      http://www.opensource.org/licenses/eclipse-1.0.php
  *
- * (C) Copyright Australian National University 2010.
+ * (C) Copyright Australian National University 2010-2011.
  */
 package au.anu.edu.qm;
 
-import x10.io.Console;
+import x10.io.File;
 import au.edu.anu.chem.Molecule;
 import au.edu.anu.util.Timer;
 import x10x.vector.Point3d;
@@ -28,27 +28,32 @@ import au.anu.edu.qm.mta.Fragmentor;
  */
 public class PumjaRasaayani { 
     var mol:Molecule[QMAtom];
+    val inputFileName:String;
     var basisName:String;
     var gMatType:Int;
     var isMTA:Boolean;
+    var energy:Double = 0.0;
+    var time:Double = 0.0;
 
     public def this() {
+        this.inputFileName = "dummy";
         initDefault();
     } 
 
-    public def this(inpFile:String) {     
+    public def this(inpFile:String) {   
+        this.inputFileName = inpFile;  
         try {
-          val inp = new JobInput();
-          inp.make(inpFile);
-        
-          mol = inp.getMolecule();
-          basisName = inp.getBasisName();
+            val inp = new JobInput();
+            inp.make(inpFile);
 
-          gMatType = 0;
+            mol = inp.getMolecule();
+            basisName = inp.getBasisName();
+
+            gMatType = 0;
         } catch(e:Exception) {
-          Console.OUT.println("Unable to read input file: " + inpFile); 
-          Console.OUT.println("Using defaults!");
-          initDefault();
+            Console.OUT.println("Unable to read input file: " + inpFile); 
+            Console.OUT.println("Using defaults!");
+            initDefault();
         } // end of try .. catch block
     }
 
@@ -72,12 +77,8 @@ public class PumjaRasaayani {
         mol.addAtom(new QMAtom("H", Point3d(0.0, 0.0, 0.0)));
         mol.addAtom(new QMAtom("H", Point3d(1.0, 0.0, 0.0)));
 
-        // default basis is sto3g
         basisName = "sto3g";
     }
-
-    var energy:Double = 0.0;
-    var time:Double = 0.0;
 
     public def getEnergy() = energy;
     public def getTime() = time;
@@ -100,7 +101,7 @@ public class PumjaRasaayani {
         Console.OUT.println("\nSetting up basis set: " + basisName);
 
         timer.start(1);
-        val bsf = new BasisFunctions(mol, basisName, "basis");
+        val bsf = new BasisFunctions(mol, basisName, getBasisDirName(inputFileName));
         Console.OUT.println("\nUsing " + bsf.getBasisFunctions().size() + " basis functions.");
         timer.stop(1);
         Console.OUT.println ("\tTime for setting up basis functions: " + (timer.total(1) as Double) / 1e9 + " seconds\n");
@@ -134,7 +135,7 @@ public class PumjaRasaayani {
         Console.OUT.println("\nSetting up basis set: " + basisName);
 
         timer.start(1);
-        val bsf = new BasisFunctions(fragment, basisName, "basis");
+        val bsf = new BasisFunctions(fragment, basisName, getBasisDirName(inputFileName));
         Console.OUT.println("\nUsing " + bsf.getBasisFunctions().size() + " basis functions.");
         timer.stop(1);
         Console.OUT.println ("\tTime for setting up basis functions: " + (timer.total(1) as Double) / 1e9 + " seconds\n");
@@ -182,6 +183,12 @@ public class PumjaRasaayani {
 
         Console.OUT.println("Final MTA energy : " + ene);
         Console.OUT.println ("\n-End of MTA run-\n\nTotal time since start: " + (timer.total(0) as Double) / 1e9 + " seconds\n");
+    }
+
+    private static def getBasisDirName(inpFile : String) {
+        val inputFile = new File(inpFile);
+        val parent = inputFile.getParentFile();
+        return parent.getPath() + File.SEPARATOR + "basis";
     }
 
     public static def main(args : Array[String](1)) {

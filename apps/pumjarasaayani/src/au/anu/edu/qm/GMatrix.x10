@@ -43,7 +43,7 @@ public class GMatrix extends Matrix {
 
         val basisName = bfs.getBasisName();
 
-        computeInst = DistArray.make[ComputePlace](Dist.makeUnique(), (Point) => new ComputePlace(N, molecule, basisName));
+        computeInst = DistArray.make[ComputePlace](Dist.makeUnique(), (Point) => new ComputePlace(N, molecule, bfs));
     }
 
     /** top level method to form the G Matrix, depending on gMatType appropriate functions are called */
@@ -455,10 +455,8 @@ public class GMatrix extends Matrix {
 
         public val computeThreads = new Array[ComputeThread](Runtime.NTHREADS);
 
-        public def this(N : Int, mol:Molecule[QMAtom], basisName:String) {
+        public def this(N : Int, mol:Molecule[QMAtom], bfs:BasisFunctions) {
             this.mol_loc = mol;
-
-            val bas = new BasisFunctions(mol_loc, basisName, "basis");
 
             gMatrixContribution = new Matrix(N);
             jMatrixContribution = new Matrix(N);
@@ -469,7 +467,7 @@ public class GMatrix extends Matrix {
             val noOfOccupancies = noOfElectrons / 2;
             density = new Density(N, noOfOccupancies);
 
-            val shellList = bas.getShellList();
+            val shellList = bfs.getShellList();
             for(var i:Int=0; i<Runtime.NTHREADS; i++) {
                 computeThreads(i) = new ComputeThread(gMatrixContribution.getRowCount(), shellList);
             }

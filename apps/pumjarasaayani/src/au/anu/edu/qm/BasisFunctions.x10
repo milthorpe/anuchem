@@ -34,7 +34,7 @@ public class BasisFunctions {
         initBasisFunctions(basisDir);
 
         shellList = new ShellList(mol);
-    } 
+    }
 
     private def initBasisFunctions(basisDir:String) {
         val basisSet:BasisSet = new BasisSet(basisName, basisDir);

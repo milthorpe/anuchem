@@ -6,11 +6,12 @@
  *  You may obtain a copy of the License at
  *      http://www.opensource.org/licenses/eclipse-1.0.php
  *
- * (C) Copyright Australian National University 2010.
+ * (C) Copyright Australian National University 2010-2011.
  */
 package au.anu.edu.qm;
 
-import x10.io.*;
+import x10.io.File;
+import x10.io.FileReader;
 import x10.util.HashMap;
 import au.edu.anu.chem.Atom;
 
@@ -33,7 +34,7 @@ public class BasisSet {
     } 
 
     public def this(name:String, basisDir:String) {
-       // x10.io.Console.OUT.println("\tReading in basis info. for " + name + " from " + basisDir);
+       Console.OUT.println("\tReading in basis info. for " + name + " from " + basisDir);
 
        basisInfo = new HashMap[String, AtomicBasis]();
        this.name = name;
@@ -41,47 +42,46 @@ public class BasisSet {
        try {
          init(name, basisDir);
        } catch(e:Exception) {
-         x10.io.Console.OUT.println("Unable to read basis from : " + basisDir + ".");
-         x10.io.Console.OUT.println("Will use sto3g basis.");
+         Console.OUT.println("Unable to read basis from : " + basisDir + ".");
+         Console.OUT.println("Will use sto3g basis.");
 
          init("sto3g");
        } // end of try .. catch block
     }
 
     private def init(name:String, basisDir:String) {
-       // TODO: use file separator in the following line!
-       val fil = new FileReader(new File(basisDir + "/" + name));       
-       val noOfAtoms = Int.parseInt(fil.readLine());
+        val fileName = basisDir + File.SEPARATOR + name;
+        val fil = new FileReader(new File(fileName));       
+        val noOfAtoms = Int.parseInt(fil.readLine());
 
-       for(var i:Int=0; i<noOfAtoms; i++) {
-          // var words:ArrayList[String] = Utility.split(fil.readLine(), ' ');
-          val words = fil.readLine().split(" ");
-          val symbol = words(0);
-          val noOfContractions = Int.parseInt(words(1));
+        for(var i:Int=0; i<noOfAtoms; i++) {
+            val words = fil.readLine().split(" ");
+            val symbol = words(0);
+            val noOfContractions = Int.parseInt(words(1));
 
-          val atomBasis = new AtomicBasis();
+            val atomBasis = new AtomicBasis();
 
-          for(var j:Int=0; j<noOfContractions; j++) {
-             val words1 = fil.readLine().split(" ");
-             var orbitalType:String = words1(0);
-             var noOfPrimitives:Int = Int.parseInt(words1(1));
+            for(var j:Int=0; j<noOfContractions; j++) {
+                val words1 = fil.readLine().split(" ");
+                var orbitalType:String = words1(0);
+                var noOfPrimitives:Int = Int.parseInt(words1(1));
 
-             val orbital = new Orbital(orbitalType);
+                val orbital = new Orbital(orbitalType);
 
-             for(var k:Int=0; k<noOfPrimitives; k++) { 
-                val words2 = fil.readLine().split(" ");
-                
-                orbital.add(Double.parseDouble(words2(0)),
-                            Double.parseDouble(words2(1)));
-             } // end for
+                for(var k:Int=0; k<noOfPrimitives; k++) { 
+                    val words2 = fil.readLine().split(" ");
+
+                    orbital.add(Double.parseDouble(words2(0)),
+                                Double.parseDouble(words2(1)));
+                } // end for
 
              atomBasis.addOrbital(orbital); 
-          } // end for
+            } // end for
 
-          basisInfo.put(symbol, atomBasis);
-       } // end for
+            basisInfo.put(symbol, atomBasis);
+        } // end for
 
-       fil.close();
+        fil.close();
     }
  
     private def init(name:String) {
