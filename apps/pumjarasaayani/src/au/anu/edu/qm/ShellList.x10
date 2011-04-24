@@ -86,7 +86,7 @@ public class ShellList {
         return nPrimitives * nPrimitives;
     }
 
-    public @Inline def getShell(am:Int) = shellList.getOrElse(am, null);
-    public @Inline def getPowers(am:Int) = powerList(am);
+    public @Inline final def getShell(am:Int) = shellList.getOrElse(am, null);
+    public @Inline final def getPowers(am:Int) = powerList(am);
 }
 
