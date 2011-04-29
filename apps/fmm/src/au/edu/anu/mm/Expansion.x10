@@ -27,9 +27,6 @@ public class Expansion {
     public val terms : Array[Complex](2);
 
     public def this(p : Int) {
-        //var expRegion : Region(2) = [0..p,-p..p];
-        //expRegion = expRegion - Region.makeHalfspace([1,1],1);
-        //expRegion = expRegion - Region.makeHalfspace([1,-1],1);
         val expRegion = new ExpansionRegion(p);
         this.terms = new Array[Complex](expRegion);
     }

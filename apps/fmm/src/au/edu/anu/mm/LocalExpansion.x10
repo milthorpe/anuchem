@@ -58,7 +58,6 @@ public class LocalExpansion extends Expansion {
                 phifac = phifac * phifac0;
         		val M_lm = phifac * (rfac * pplm(l,m) * ilm);
                 terms(l,m) = M_lm;
-		        //if (m != 0) { if (m_sign) terms(l, -m) = Complex(M_lm.re,-M_lm.im); else terms(l, -m) = Complex(-M_lm.re,M_lm.im); }
         		m_sign = !m_sign;
             }
             for (m in -l..-1) {
@@ -129,7 +128,6 @@ public class LocalExpansion extends Expansion {
     			}
     			targetTerms(l, m) = M_lm;
     			if (m != 0) targetTerms(l, -m) = targetTerms(l, m).conjugate() * m_sign;
-    			//to avoid conjugate if (m != 0) { if (m_sign) targetTerms(l, -m) = Complex(M_lm.re,-M_lm.im); else targetTerms(l, -m) = Complex(-M_lm.re,M_lm.im); }
     		}
 	    	m_sign = -m_sign;
 	   	}
@@ -208,7 +206,7 @@ public class LocalExpansion extends Expansion {
 		    for (l in m..p) {
 			    var M_lm : Complex = Complex.ZERO;
 			    var F_lm : Double = Factorial.getFactorial(l + m) * b_lm1_pow;
-			    for (j in m..(p-l)) {  	// upper bound here is not p but it seems j+l <= p
+			    for (j in m..(p-l)) {
 				    M_lm = M_lm + temp(j) * F_lm;
 				    F_lm = F_lm * (j + l + 1) * inv_b;
 			    }
@@ -245,7 +243,7 @@ public class LocalExpansion extends Expansion {
      */
     public def rotate(theta : Double, phi : Double) {
     	val p = terms.region.max(0);
-        val target = new LocalExpansion( this );
+        val target = new LocalExpansion(this);
         val temp = new Array[Complex](-p..p);
     	target.rotate(temp, genComplexK(phi, p)(0), WignerRotationMatrix.getCCollection(theta, p)(0) );
     	return target;
