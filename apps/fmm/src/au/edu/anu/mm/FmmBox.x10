@@ -10,6 +10,7 @@
  */
 package au.edu.anu.mm;
 
+import x10.compiler.Inline;
 import x10.util.ArrayList;
 
 import x10x.vector.Point3d;
@@ -84,7 +85,7 @@ public class FmmBox {
             || Math.abs(z - box2.z) > ws;
     }
 
-    public def getTranslationIndex(boxIndex2 : Point(3)) : Point(3) {
+    public @Inline final def getTranslationIndex(boxIndex2 : Point(3)) : Point(3) {
         return Point.make(boxIndex2(0)-x, boxIndex2(1)-y, boxIndex2(2)-z);
     }
 

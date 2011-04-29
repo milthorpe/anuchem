@@ -112,7 +112,6 @@ public class MultipoleExpansion extends Expansion {
      */
     public def translateAndAddMultipole(shift : MultipoleExpansion,
                                          source : MultipoleExpansion) {
-        val p : Int = terms.region.max(0);
         // TODO this atomic should be around inner loop update.
         // however as it's "stop the world" it's more efficient to do it out here
         atomic {
@@ -142,7 +141,6 @@ public class MultipoleExpansion extends Expansion {
      * @see Dachsel 2006, eqn 9
      */
     public def translateAndAddMultipole(v : Tuple3d, complexK : Rail[Array[Complex](1){rect}], source : MultipoleExpansion, wigner : Rail[Rail[Array[Double](2){rect}]]) { 
-	    val p : Int = terms.region.max(0);
 	    val v_pole = Polar3d.getPolar3d(v);
 	    val b = v_pole.r;
 	    val invB = 1 / b;
@@ -184,7 +182,6 @@ public class MultipoleExpansion extends Expansion {
      */
     public def translateAndAddMultipole(v : Tuple3d, source : MultipoleExpansion) {
     	val polar = Polar3d.getPolar3d(v);
-	    val p = terms.region.max(0);
     	translateAndAddMultipole(v, genComplexK(polar.phi, p), source, WignerRotationMatrix.getACollection(polar.theta, p) );
     }
     /**
@@ -195,7 +192,6 @@ public class MultipoleExpansion extends Expansion {
      * @return a new expansion which has been rotated
      */
     public def rotate(theta : Double, phi : Double) {
-    	val p = terms.region.max(0);
     	val target = new MultipoleExpansion(this);
         val temp = new Array[Complex](-p..p);
     	target.rotate(temp, genComplexK(phi, p)(1) , WignerRotationMatrix.getACollection(theta, p)(0) );
@@ -211,7 +207,6 @@ public class MultipoleExpansion extends Expansion {
      * @see Kudin & Scuseria (1998) eq. 2.5
      */ 
     public def getMacroscopicParent() : MultipoleExpansion {
-        val p : Int = terms.region.max(0);
         val parentExpansion = new MultipoleExpansion(p);
         for ([l,m] in terms.region) {
             parentExpansion.terms(l,m) = terms(l,m) * Math.pow(3.0, l);

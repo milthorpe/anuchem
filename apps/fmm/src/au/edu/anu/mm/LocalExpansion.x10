@@ -81,8 +81,6 @@ public class LocalExpansion extends Expansion {
      */
     public def translateAndAddLocal(shift : MultipoleExpansion,
                                          source : LocalExpansion) {
-        val p = terms.region.max(0);
-
         // TODO should be just:  for ([l,m] in terms.region) {
         for (l in 0..p) {
             for (m in -l..l) {
@@ -106,7 +104,6 @@ public class LocalExpansion extends Expansion {
      * @see Dachsel 2006, eqn 18
      */
     public def translateAndAddLocal(v : Tuple3d, complexK : Rail[Array[Complex](1){rect}], source : LocalExpansion, wigner : Rail[Rail[Array[Double](2){rect}]]) { 
-    	val p = terms.region.max(0);
     	val v_pole = Polar3d.getPolar3d(v);
 	    val b = v_pole.r;
 	    val temp = new Array[Complex](-p..p);
@@ -143,7 +140,6 @@ public class LocalExpansion extends Expansion {
      */
     public def translateAndAddLocal(v : Tuple3d, source : LocalExpansion) {
 	    val polar = Polar3d.getPolar3d(v);
-        val p = terms.region.max(0);
 	    translateAndAddLocal(v, genComplexK(polar.phi, p), source, WignerRotationMatrix.getCCollection(polar.theta, p) );
     }
 
@@ -158,8 +154,6 @@ public class LocalExpansion extends Expansion {
      */
     public def transformAndAddToLocal(transform : LocalExpansion,
                                          source : MultipoleExpansion) {
-        val p : Int = terms.region.max(0);
-
         // TODO should be just:  for ([j,k] in terms.region) {
         for (j in 0..p) {
             for (k in -j..j) {
@@ -188,7 +182,6 @@ public class LocalExpansion extends Expansion {
      * @see Dachsel 2006, eqn 17
      */
     public def transformAndAddToLocal(scratch : MultipoleExpansion, temp : Array[Complex](1){rect}, v : Tuple3d, complexK : Rail[Array[Complex](1){rect}], source : MultipoleExpansion, wigner : Rail[Rail[Array[Double](2){rect}]]) { 
-	    val p = terms.region.max(0);
     	val v_pole = Polar3d.getPolar3d(v);
     	val inv_b = 1 / v_pole.r;
 
@@ -230,7 +223,6 @@ public class LocalExpansion extends Expansion {
      */
     public def transformAndAddToLocal(v : Tuple3d, source : MultipoleExpansion) {
     	val polar = Polar3d.getPolar3d(v);
-        val p = terms.region.max(0);
         val scratch = new MultipoleExpansion(p);
         val temp = new Array[Complex](-p..p);
     	transformAndAddToLocal(scratch, temp, v, genComplexK(polar.phi, p), source, WignerRotationMatrix.getBCollection(polar.theta, p) );
@@ -242,7 +234,6 @@ public class LocalExpansion extends Expansion {
      * @return a new expansion, which is the current expansion after it is rotated
      */
     public def rotate(theta : Double, phi : Double) {
-    	val p = terms.region.max(0);
         val target = new LocalExpansion(this);
         val temp = new Array[Complex](-p..p);
     	target.rotate(temp, genComplexK(phi, p)(0), WignerRotationMatrix.getCCollection(theta, p)(0) );
@@ -257,7 +248,6 @@ public class LocalExpansion extends Expansion {
      */
     public def getPotential(q : Double,
                                 v : Tuple3d) : Double {
-        val p = terms.region.max(0);
         val transform = MultipoleExpansion.getOlm(q, v, p);
         var potential : Double = 0.0;
         // TODO use lift/reduction?
@@ -279,7 +269,6 @@ public class LocalExpansion extends Expansion {
      * @see Kudin & Scuseria (1998) eq. 2.5
      */ 
     public def getMacroscopicParent() : LocalExpansion {
-        val p : Int = terms.region.max(0);
         val parentExpansion = new LocalExpansion(p);
         for (l in 0..p) {
             for (m in -l..l) {

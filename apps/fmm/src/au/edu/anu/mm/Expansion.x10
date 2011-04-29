@@ -26,13 +26,18 @@ public class Expansion {
     /** The terms X_{lm} (with m >= 0) in this expansion */
     public val terms : Array[Complex](2);
 
+    /** The number of terms in the expansion. */
+    public val p : Int;
+
     public def this(p : Int) {
         val expRegion = new ExpansionRegion(p);
         this.terms = new Array[Complex](expRegion);
+        this.p = p;
     }
 
     public def this(e : Expansion) { 
 	    this.terms = new Array[Complex](e.terms);
+        this.p = e.p;
     }
 
     /**
@@ -40,7 +45,6 @@ public class Expansion {
      * This operation is atomic and therefore thread-safe.
      */
     public atomic def add(e : Expansion) {
-	    val p = terms.region.max(0);
         // TODO should be just:  for ([l,m] in terms.region) {
 	    for (l in 0..p) {
 	        for (m in -l..l) {
@@ -54,7 +58,6 @@ public class Expansion {
      * This operation is not atomic, therefore not thread-safe.
      */
     protected def unsafeAdd(e : Expansion) {
-	    val p = terms.region.max(0);
         // TODO should be just:  for ([l,m] in terms.region) {
 	    for (l in 0..p) {
 	        for (m in -l..l) {
@@ -64,7 +67,6 @@ public class Expansion {
     }
 
     public def toString() : String {
-        val p : Int = terms.region.max(0);
         val s = new StringBuilder();
         for (i in 0..p) {
             for (j in -i..i) {
@@ -99,8 +101,6 @@ public class Expansion {
      * @see Dachsel 2006 eqn 4 & 5
      */
     public def rotate(temp : Array[Complex](1){rect}, complexK : Array[Complex](1){rect}, wigner : Rail[Array[Double](2){rect}]) {
-        val p : Int = terms.region.max(0);
-
     	//val temp = new Array[Complex](-p..p);
         for (l in 1..p) {
             val Dl = wigner(l); // avoids calculating matrices directly
@@ -130,8 +130,6 @@ public class Expansion {
      * @see Dachsel 2006 eqn 4 & 5
      */
     public def backRotate(temp : Array[Complex](1){rect}, complexK : Array[Complex](1){rect}, wigner : Rail[Array[Double](2){rect}]) {
-        val p : Int = terms.region.max(0);
-
     	//val temp = new Array[Complex](-p..p);
         for (l in 1..p) {
             val Dl = wigner(l); // avoids calculating matrices directly
