@@ -103,7 +103,7 @@ public class LocalExpansion extends Expansion {
      * @param source the source local expansion
      * @see Dachsel 2006, eqn 18
      */
-    public def translateAndAddLocal(v : Tuple3d, complexK : Rail[Array[Complex](1){rect}], source : LocalExpansion, wigner : Rail[Rail[Array[Double](2){rect}]]) { 
+    public def translateAndAddLocal(v : Tuple3d, complexK : Rail[Array[Complex](1){rect,rail==false}], source : LocalExpansion, wigner : Rail[Rail[Array[Double](2){rect}]]) { 
     	val v_pole = Polar3d.getPolar3d(v);
 	    val b = v_pole.r;
 	    val temp = new Array[Complex](-p..p);
@@ -181,7 +181,7 @@ public class LocalExpansion extends Expansion {
      * @param wigner, a collection of Wigner matrices precalculated to speed up the rotation
      * @see Dachsel 2006, eqn 17
      */
-    public def transformAndAddToLocal(scratch : MultipoleExpansion, temp : Array[Complex](1){rect}, v : Tuple3d, complexK : Rail[Array[Complex](1){rect}], source : MultipoleExpansion, wigner : Rail[Rail[Array[Double](2){rect}]]) { 
+    public def transformAndAddToLocal(scratch : MultipoleExpansion, temp : Array[Complex](1){rect,rail==false}, v : Tuple3d, complexK : Rail[Array[Complex](1){rect,rail==false}], source : MultipoleExpansion, wigner : Rail[Rail[Array[Double](2){rect}]]) { 
     	val v_pole = Polar3d.getPolar3d(v);
     	val inv_b = 1 / v_pole.r;
 

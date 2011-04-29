@@ -144,7 +144,7 @@ public class Fmm3d {
      * which in turn contains an Array indexed by:
      *   0 for +phi and 1 for -phi (for forward, back rotations)
      */
-    val complexK : DistArray[Array[Rail[Array[Complex](1){rect}]](3){rect}](1);
+    val complexK : DistArray[Array[Rail[Array[Complex](1){rect,rail==false}]](3){rect}](1);
 
     /**
      * A flag which can be set to use the old translation operators (without rotations), probably preferable for small number of poles
@@ -396,10 +396,14 @@ public class Fmm3d {
                             val scratch_array = new Array[Complex](-numTerms..numTerms);
                             val vList = box1.getVList();
                             for ([p] in vList) {
-                                val boxIndex = vList(p);
-                                val box2MultipoleExp = thisLevelMultipoleCopies(boxIndex(0), boxIndex(1), boxIndex(2));
+                                val boxIndex2 = vList(p);
+                                // TODO - should be able to detect Point rank and inline
+                                val x2 = boxIndex2(0);
+                                val y2 = boxIndex2(1);
+                                val z2 = boxIndex2(2);
+                                val box2MultipoleExp = thisLevelMultipoleCopies(x2, y2, z2);
                                 if (box2MultipoleExp != null) {
-                                    val translation = box1.getTranslationIndex(boxIndex);
+                                    val translation = box1.getTranslationIndex(boxIndex2);
 				                    if (!useOldOperators) { 
                     					/* New Operation B */
 		                    			box1.localExp.transformAndAddToLocal(scratch, scratch_array,
@@ -592,7 +596,11 @@ public class Fmm3d {
                         val uList = box1.getUList();
                         for (p in 0..(uList.size-1)) {
                             val boxIndex2 = uList(p);
-                            val boxAtoms = packedAtoms(boxIndex2);
+                            // TODO - should be able to detect Point rank and inline
+                            val x2 = boxIndex2(0);
+                            val y2 = boxIndex2(1);
+                            val z2 = boxIndex2(2);
+                            val boxAtoms = packedAtoms(x2, y2, z2);
                             if (boxAtoms != null) {
                                 for (otherBoxAtomIndex in 0..(boxAtoms.size-1)) {
                                     val atom2Packed = boxAtoms(otherBoxAtomIndex);
@@ -725,9 +733,9 @@ public class Fmm3d {
      * and replicates to all places using a unique dist
      */
     private def precomputeComplex(numTerms : Int, ws : Int) {
-        val complexK = DistArray.make[Array[Rail[Array[Complex](1){rect}]](3){rect}](Dist.makeUnique());
+        val complexK = DistArray.make[Array[Rail[Array[Complex](1){rect,rail==false}]](3){rect}](Dist.makeUnique());
         finish ateach (place in complexK) {
-            val placeComplexK = new Array[Rail[Array[Complex](1){rect}]]((-(2*ws+1))..(2*ws+1) * (-(2*ws+1))..(2*ws+1) * (-(2*ws+1))..(2*ws+1));
+            val placeComplexK = new Array[Rail[Array[Complex](1){rect,rail==false}]]((-(2*ws+1))..(2*ws+1) * (-(2*ws+1))..(2*ws+1) * (-(2*ws+1))..(2*ws+1));
             for ([i,j,k] in placeComplexK) {
                 val phi = Polar3d.getPolar3d ( Point3d(i, j, k) ).phi;
 	            placeComplexK(i, j, k) = Expansion.genComplexK(phi, numTerms);

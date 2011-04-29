@@ -281,9 +281,13 @@ public class PeriodicFmm3d extends Fmm3d {
                         val uList = box1.getUList();
                         for (p in 0..(uList.size-1)) {
                             val boxIndex2 = uList(p);
-                            val boxAtoms = packedAtoms(boxIndex2);
+                            // TODO - should be able to detect Point rank and inline
+                            val x2 = boxIndex2(0);
+                            val y2 = boxIndex2(1);
+                            val z2 = boxIndex2(2);
+                            val boxAtoms = packedAtoms(x2, y2, z2);
                             if (boxAtoms != null) {
-                                val translation = getTranslation(lowestLevelDim, size, boxIndex2(0), boxIndex2(1), boxIndex2(2));
+                                val translation = getTranslation(lowestLevelDim, size, x2, y2, z2);
                                 for (otherBoxAtomIndex in 0..(boxAtoms.size-1)) {
                                     val atom2Packed = boxAtoms(otherBoxAtomIndex);
                                     val translatedCentre = atom2Packed.centre + translation;

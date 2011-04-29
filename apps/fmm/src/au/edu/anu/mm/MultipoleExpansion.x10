@@ -140,7 +140,7 @@ public class MultipoleExpansion extends Expansion {
      * @param wigner is the pre calculated Wigner matrices for the rotation angle theta, indexed first by forwards (0) and backwards (1)
      * @see Dachsel 2006, eqn 9
      */
-    public def translateAndAddMultipole(v : Tuple3d, complexK : Rail[Array[Complex](1){rect}], source : MultipoleExpansion, wigner : Rail[Rail[Array[Double](2){rect}]]) { 
+    public def translateAndAddMultipole(v : Tuple3d, complexK : Rail[Array[Complex](1){rect,rail==false}], source : MultipoleExpansion, wigner : Rail[Rail[Array[Double](2){rect}]]) { 
 	    val v_pole = Polar3d.getPolar3d(v);
 	    val b = v_pole.r;
 	    val invB = 1 / b;
