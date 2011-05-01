@@ -33,7 +33,7 @@ public class WignerRotationMatrix {
 
 		val D = new Array[Double]((-l..l) * (-l..l));
 
-		if (theta == 0) {
+		if (theta == 0.0) {
 		    // Eq. 30
 		    for (k in -l..l) {
 		        D(k,k) = 1.0;

@@ -26,16 +26,18 @@ public class Expansion {
     /** The terms X_{lm} (with m >= 0) in this expansion */
     public val terms : Array[Complex](2);
 
+    /** The number of terms in the expansion. */
+    public val p : Int;
+
     public def this(p : Int) {
-        //var expRegion : Region(2) = [0..p,-p..p];
-        //expRegion = expRegion - Region.makeHalfspace([1,1],1);
-        //expRegion = expRegion - Region.makeHalfspace([1,-1],1);
         val expRegion = new ExpansionRegion(p);
         this.terms = new Array[Complex](expRegion);
+        this.p = p;
     }
 
     public def this(e : Expansion) { 
 	    this.terms = new Array[Complex](e.terms);
+        this.p = e.p;
     }
 
     /**
@@ -43,7 +45,6 @@ public class Expansion {
      * This operation is atomic and therefore thread-safe.
      */
     public atomic def add(e : Expansion) {
-	    val p = terms.region.max(0);
         // TODO should be just:  for ([l,m] in terms.region) {
 	    for (l in 0..p) {
 	        for (m in -l..l) {
@@ -57,7 +58,6 @@ public class Expansion {
      * This operation is not atomic, therefore not thread-safe.
      */
     protected def unsafeAdd(e : Expansion) {
-	    val p = terms.region.max(0);
         // TODO should be just:  for ([l,m] in terms.region) {
 	    for (l in 0..p) {
 	        for (m in -l..l) {
@@ -67,7 +67,6 @@ public class Expansion {
     }
 
     public def toString() : String {
-        val p : Int = terms.region.max(0);
         val s = new StringBuilder();
         for (i in 0..p) {
             for (j in -i..i) {
@@ -84,8 +83,8 @@ public class Expansion {
      * @return array of Complex first indexed by forward (0), backward (1) then by k
      * @see Dachsel 2006, eqn 4 & 5
      */
-    public static def genComplexK(phi : Double, p : int) : Rail[Array[Complex](1){rect}] { 
-    	val complexK = new Array[Array[Complex](1){rect}](2);
+    public static def genComplexK(phi : Double, p : int) : Rail[Array[Complex](1){rect,rail==false}] { 
+    	val complexK = new Array[Array[Complex](1){rect,rail==false}](2);
     	for (r in 0..1) { 
 	    	complexK(r) = new Array[Complex](-p..p); 
     		for (k in -p..p) complexK(r)(k) = Math.exp(Complex.I * k * phi * ((r==0)?1:-1) );
@@ -101,9 +100,7 @@ public class Expansion {
      * @param complexK, values of exp(i*k*phi)
      * @see Dachsel 2006 eqn 4 & 5
      */
-    public def rotate(temp : Array[Complex](1){rect}, complexK : Array[Complex](1){rect}, wigner : Rail[Array[Double](2){rect}]) {
-        val p : Int = terms.region.max(0);
-
+    public def rotate(temp : Array[Complex](1){rail==false,rect}, complexK : Array[Complex](1){rail==false,rect}, wigner : Rail[Array[Double](2){rect}]) {
     	//val temp = new Array[Complex](-p..p);
         for (l in 1..p) {
             val Dl = wigner(l); // avoids calculating matrices directly
@@ -132,9 +129,7 @@ public class Expansion {
      * @param complexK, values of exp(i*k*phi)
      * @see Dachsel 2006 eqn 4 & 5
      */
-    public def backRotate(temp : Array[Complex](1){rect}, complexK : Array[Complex](1){rect}, wigner : Rail[Array[Double](2){rect}]) {
-        val p : Int = terms.region.max(0);
-
+    public def backRotate(temp : Array[Complex](1){rect,rail==false}, complexK : Array[Complex](1){rect,rail==false}, wigner : Rail[Array[Double](2){rect}]) {
     	//val temp = new Array[Complex](-p..p);
         for (l in 1..p) {
             val Dl = wigner(l); // avoids calculating matrices directly
