@@ -393,7 +393,7 @@ public class Fmm3d {
                         if (box1 != null) {
                             // ideally this would be replaced with a stack allocated array (TODO)
                             val scratch = new MultipoleExpansion(numTerms);    
-                            val scratch_array = new Array[Complex](-numTerms..numTerms);
+                            val scratch_array = new Array[Complex](-numTerms..numTerms) as Array[Complex](1){rect,rail==false};
                             val vList = box1.getVList();
                             for ([p] in vList) {
                                 val boxIndex2 = vList(p);

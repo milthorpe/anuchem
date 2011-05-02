@@ -86,7 +86,7 @@ public class Expansion {
     public static def genComplexK(phi : Double, p : int) : Rail[Array[Complex](1){rect,rail==false}] { 
     	val complexK = new Array[Array[Complex](1){rect,rail==false}](2);
     	for (r in 0..1) { 
-	    	complexK(r) = new Array[Complex](-p..p); 
+	    	complexK(r) = new Array[Complex](-p..p) as Array[Complex](1){rect,rail==false}; 
     		for (k in -p..p) complexK(r)(k) = Math.exp(Complex.I * k * phi * ((r==0)?1:-1) );
 	    }
     	return complexK;
@@ -100,7 +100,7 @@ public class Expansion {
      * @param complexK, values of exp(i*k*phi)
      * @see Dachsel 2006 eqn 4 & 5
      */
-    public def rotate(temp : Array[Complex](1){rail==false,rect}, complexK : Array[Complex](1){rail==false,rect}, wigner : Rail[Array[Double](2){rect}]) {
+    public def rotate(temp : Array[Complex](1){rect,rail==false}, complexK : Array[Complex](1){rect,rail==false}, wigner : Rail[Array[Double](2){rect}]) {
     	//val temp = new Array[Complex](-p..p);
         for (l in 1..p) {
             val Dl = wigner(l); // avoids calculating matrices directly

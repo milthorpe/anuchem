@@ -144,7 +144,7 @@ public class MultipoleExpansion extends Expansion {
 	    val v_pole = Polar3d.getPolar3d(v);
 	    val b = v_pole.r;
 	    val invB = 1 / b;
-	    val temp = new Array[Complex](-p..p); // temporary space to do calculations in
+	    val temp = new Array[Complex](-p..p) as Array[Complex](1){rect,rail==false}; // temporary space to do calculations in
 
 	    val scratch = new MultipoleExpansion( source );
 	    scratch.rotate(temp, complexK(0), wigner(0) );
@@ -193,7 +193,7 @@ public class MultipoleExpansion extends Expansion {
      */
     public def rotate(theta : Double, phi : Double) {
     	val target = new MultipoleExpansion(this);
-        val temp = new Array[Complex](-p..p);
+        val temp = new Array[Complex](-p..p) as Array[Complex](1){rect,rail==false};
     	target.rotate(temp, genComplexK(phi, p)(1) , WignerRotationMatrix.getACollection(theta, p)(0) );
     	return target;
     }
