@@ -10,7 +10,7 @@
  */
 package au.edu.anu.mm;
 
-import x10x.vector.Tuple3d;
+import x10x.vector.*;
 import x10x.polar.Polar3d;
 
 /**
@@ -140,9 +140,8 @@ public class MultipoleExpansion extends Expansion {
      * @param wigner is the pre calculated Wigner matrices for the rotation angle theta, indexed first by forwards (0) and backwards (1)
      * @see Dachsel 2006, eqn 9
      */
-    public def translateAndAddMultipole(v : Tuple3d, complexK : Rail[Array[Complex](1){rect,rail==false}], source : MultipoleExpansion, wigner : Rail[Rail[Array[Double](2){rect}]]) { 
-	    val v_pole = Polar3d.getPolar3d(v);
-	    val b = v_pole.r;
+    public def translateAndAddMultipole(v : Vector3d, complexK : Rail[Array[Complex](1){rect,rail==false}], source : MultipoleExpansion, wigner : Rail[Rail[Array[Double](2){rect}]]) { 
+	    val b = v.length();
 	    val invB = 1 / b;
 	    val temp = new Array[Complex](-p..p) as Array[Complex](1){rect,rail==false}; // temporary space to do calculations in
 
@@ -180,7 +179,7 @@ public class MultipoleExpansion extends Expansion {
      * @param v is the vector through which the source should be translated
      * @param source is the multipole to add
      */
-    public def translateAndAddMultipole(v : Tuple3d, source : MultipoleExpansion) {
+    public def translateAndAddMultipole(v : Vector3d, source : MultipoleExpansion) {
     	val polar = Polar3d.getPolar3d(v);
     	translateAndAddMultipole(v, genComplexK(polar.phi, p), source, WignerRotationMatrix.getACollection(polar.theta, p) );
     }

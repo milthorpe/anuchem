@@ -328,7 +328,7 @@ public class Fmm3d {
 			                if (!useOldOperators) { 
 				                /* New! Operation A */
             	                parent().multipoleExp.translateAndAddMultipole(
-					                Fmm3d.getChildBoxCentre(shift, sideLength),
+					                Fmm3d.getChildBoxVector(shift, sideLength),
 					                complexK(here.id)(getChildBoxCentreIndex(shift)), childExp, wignerA(here.id)(shift));
 			                } else {
 				                /* Old Operation A */
@@ -407,7 +407,7 @@ public class Fmm3d {
 				                    if (!useOldOperators) { 
                     					/* New Operation B */
 		                    			box1.localExp.transformAndAddToLocal(scratch, scratch_array,
-                    						Point3d(translation(0) * sideLength, translation(1) * sideLength, translation(2) * sideLength), 
+                    						Vector3d(translation(0) * sideLength, translation(1) * sideLength, translation(2) * sideLength), 
                     						myComplexK(translation), box2MultipoleExp, myWignerB(translation) );
                     				} else { 
 				                    	/* Old Operation B */
@@ -426,7 +426,7 @@ public class Fmm3d {
                 				    /* New Operation C */
        	                            val shift = Point.make(box1.x%2, box1.y%2, box1.z%2);
 	                			    box1.localExp.translateAndAddLocal(
-                						getChildBoxCentre(shift, sideLength),
+                						getChildBoxVector(shift, sideLength),
             						    myComplexK(getChildBoxCentreIndex(shift)), box1ParentExp, myWignerC(shift) );
                 			    } else { 
                 				    /* Old Operation C */
@@ -442,8 +442,8 @@ public class Fmm3d {
         timer.stop(TIMER_INDEX_TRANSFORM);
     }
 
-    public @Inline static def getChildBoxCentre(shift : Point(3), sideLength : Double) { 
-        return Point3d((shift(0) - 0.5) * sideLength, (shift(1) - 0.5) * sideLength, (shift(2) - 0.5) * sideLength);
+    public @Inline static def getChildBoxVector(shift : Point(3), sideLength : Double) { 
+        return Vector3d((shift(0) - 0.5) * sideLength, (shift(1) - 0.5) * sideLength, (shift(2) - 0.5) * sideLength);
     }
     public @Inline static def getChildBoxCentreIndex(shift : Point(3)) { 
         return Point.make(shift(0)*2 - 1, shift(1)*2 - 1, shift(2)*2 - 1);

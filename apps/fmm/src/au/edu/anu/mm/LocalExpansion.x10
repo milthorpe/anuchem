@@ -10,9 +10,8 @@
  */
 package au.edu.anu.mm;
 
-import x10x.vector.Tuple3d;
+import x10x.vector.*;
 import x10x.polar.Polar3d;
-import x10x.vector.Point3d;
 
 /**
  * This class calculates local Taylor-type expansions, using the algorithms given in
@@ -103,9 +102,8 @@ public class LocalExpansion extends Expansion {
      * @param source the source local expansion
      * @see Dachsel 2006, eqn 18
      */
-    public def translateAndAddLocal(v : Tuple3d, complexK : Rail[Array[Complex](1){rect,rail==false}], source : LocalExpansion, wigner : Rail[Rail[Array[Double](2){rect}]]) { 
-    	val v_pole = Polar3d.getPolar3d(v);
-	    val b = v_pole.r;
+    public def translateAndAddLocal(v : Vector3d, complexK : Rail[Array[Complex](1){rect,rail==false}], source : LocalExpansion, wigner : Rail[Rail[Array[Double](2){rect}]]) { 
+	    val b = v.length();
 	    val temp = new Array[Complex](-p..p) as Array[Complex](1){rect,rail==false};
 
 	    val scratch : LocalExpansion = new LocalExpansion( source );
@@ -138,7 +136,7 @@ public class LocalExpansion extends Expansion {
      * @param v a Tuple representing the shift of the expansion
      * @param source the source local expansion
      */
-    public def translateAndAddLocal(v : Tuple3d, source : LocalExpansion) {
+    public def translateAndAddLocal(v : Vector3d, source : LocalExpansion) {
 	    val polar = Polar3d.getPolar3d(v);
 	    translateAndAddLocal(v, genComplexK(polar.phi, p), source, WignerRotationMatrix.getCCollection(polar.theta, p) );
     }
@@ -181,9 +179,8 @@ public class LocalExpansion extends Expansion {
      * @param wigner, a collection of Wigner matrices precalculated to speed up the rotation
      * @see Dachsel 2006, eqn 17
      */
-    public def transformAndAddToLocal(scratch : MultipoleExpansion, temp : Array[Complex](1){rect,rail==false}, v : Tuple3d, complexK : Rail[Array[Complex](1){rect,rail==false}], source : MultipoleExpansion, wigner : Rail[Rail[Array[Double](2){rect}]]) { 
-    	val v_pole = Polar3d.getPolar3d(v);
-    	val inv_b = 1 / v_pole.r;
+    public def transformAndAddToLocal(scratch : MultipoleExpansion, temp : Array[Complex](1){rect,rail==false}, v : Vector3d, complexK : Rail[Array[Complex](1){rect,rail==false}], source : MultipoleExpansion, wigner : Rail[Rail[Array[Double](2){rect}]]) { 
+    	val inv_b = 1 / v.length();
 
         Array.copy(source.terms, scratch.terms);
     	scratch.rotate(temp, complexK(0), wigner(0) );
@@ -221,7 +218,7 @@ public class LocalExpansion extends Expansion {
      * @param v, a Tuple representing the shift of the expansion
      * @param source, the source local expansion which will be added to this one
      */
-    public def transformAndAddToLocal(v : Tuple3d, source : MultipoleExpansion) {
+    public def transformAndAddToLocal(v : Vector3d, source : MultipoleExpansion) {
     	val polar = Polar3d.getPolar3d(v);
         val scratch = new MultipoleExpansion(p);
         val temp = new Array[Complex](-p..p) as Array[Complex](1){rect,rail==false};
