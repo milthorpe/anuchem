@@ -381,7 +381,7 @@ public class Fmm3d {
                         async Fmm3d.prefetchMultipoles(lowerLevel, lowestLevelBoxes, locallyEssentialTrees);
                     }
 
-                    for ([x1,y1,z1] in thisLevelBoxes.dist(here)) {
+                    for ([x1,y1,z1] in thisLevelBoxes.dist(here)) async {
                         val myLET = locallyEssentialTrees(here.id);
                         val thisLevelMultipoleCopies = myLET.multipoleCopies(thisLevel);
                         val myComplexK = complexK(here.id);
