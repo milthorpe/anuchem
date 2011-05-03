@@ -332,8 +332,8 @@ public class Fmm3d {
 					                complexK(here.id)(getChildBoxCentreIndex(shift)), childExp, wignerA(here.id)(shift));
 			                } else {
 				                /* Old Operation A */
-				                val shift = multipoleTranslations(Point.make([here.id, thisLevel, (child.x+1)%2, (child.y+1)%2, (child.z+1)%2]));
-				                parent().multipoleExp.translateAndAddMultipole(shift, childExp);
+				                val translationIndex = multipoleTranslations(Point.make([here.id, thisLevel, (child.x+1)%2, (child.y+1)%2, (child.z+1)%2]));
+				                parent().multipoleExp.translateAndAddMultipole(translationIndex, childExp);
 			                }
                         }
                     }

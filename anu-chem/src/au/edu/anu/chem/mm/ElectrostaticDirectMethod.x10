@@ -117,9 +117,9 @@ public class ElectrostaticDirectMethod {
                     for ([p2] in atoms) async {
                         if (p2 != p1) { // TODO region difference
                             var energyWithOther : Double = 0.0;
-                            val otherAtoms = at(atoms.dist(p2)) {atoms(p2)};
-                            for (j in 0..(otherAtoms.size-1)) {
-                                val atomJ = otherAtoms(j);
+                            val otherPlaceAtoms = at(atoms.dist(p2)) {atoms(p2)};
+                            for (j in 0..(otherPlaceAtoms.size-1)) {
+                                val atomJ = otherPlaceAtoms(j);
                                 for (i in 0..(myAtoms.size-1)) {
                                     val atomI = myAtoms(i);
                                     energyWithOther += atomI.charge * atomJ.charge / atomJ.centre.distance(atomI.centre);
