@@ -174,10 +174,10 @@ public class Distributed3dFft {
                         elementsToTransfer(i++) = temp(x,y,z);
                     }
                     async at (p2) {
-                        var i : Int = 0;
+                        var i2 : Int = 0;
                         for ([x,y,z] in transferRegion) {
                             // transpose dimensions
-                            target(z,x,y) = elementsToTransfer(i++);
+                            target(z,x,y) = elementsToTransfer(i2++);
                         }
                     }
                 }
@@ -221,8 +221,8 @@ public class Distributed3dFft {
                         }
                         async at (p2) {
                             var x:Int = 0;
-                            for (k in startX..endX) { 
-                                target(k,i,j) = elementsToTransfer(x++); 
+                            for (k2 in startX..endX) {
+                                target(k2,i,j) = elementsToTransfer(x++);
                             }
                         }
                     }
