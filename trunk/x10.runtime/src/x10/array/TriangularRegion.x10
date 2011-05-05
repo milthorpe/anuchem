@@ -84,7 +84,7 @@ public class TriangularRegion extends Region {
         throw new UnsupportedOperationException("intersection()");
     }
 
-    public def product(r: Region): Region {
+    public def product(r: Region): Region{self!=null} {
         // TODO
         throw new UnsupportedOperationException("product()");
     }

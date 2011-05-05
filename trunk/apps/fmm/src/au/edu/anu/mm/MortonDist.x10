@@ -80,7 +80,7 @@ public final class MortonDist extends Dist(3) {
         }
 
         public def complement(): Region(rank) {throw new UnsupportedOperationException("complement()");}
-        public def product(that:Region): Region {throw new UnsupportedOperationException("product(Region)");}
+        public def product(that:Region): Region{self!=null} {throw new UnsupportedOperationException("product(Region)");}
         public def projection(axis:Int): Region(1) {throw new UnsupportedOperationException("projection(axis : Int)");}
         public def translate(v:Point(rank)): Region(rank){throw new UnsupportedOperationException("translate(Point)");}
         public def eliminate(axis:Int): Region /*(rank-1)*/{throw new UnsupportedOperationException("eliminate(axis : Int)");}
