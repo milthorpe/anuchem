@@ -346,7 +346,7 @@ public class GMatrix extends Matrix {
                 //placeTimer.stop(0);
                 //Console.OUT.println("\tcompute at " + here + " " + (placeTimer.total(0) as Double) / 1e9 + " seconds");
 
-                return comp_loc.getGMatContributionArray();
+                comp_loc.getGMatContributionArray()
             };
 
             // gather and reduce my gMatrix contribution
@@ -395,7 +395,7 @@ public class GMatrix extends Matrix {
                 placeTimer.stop(0);
                 Console.OUT.println("\tcompute at " + here + " completed " + completedHere + " " + (placeTimer.total(0) as Double) / 1e9 + " seconds");
 
-                return comp_loc.getGMatContributionArray();
+                comp_loc.getGMatContributionArray()
             };
 
             // gather and reduce my gMatrix contribution
@@ -431,7 +431,7 @@ public class GMatrix extends Matrix {
                 comp_loc.computeShells(nPairs);
                 //placeTimer.stop(0);
                 //Console.OUT.println("\tcompute at " + here + " " + (placeTimer.total(0) as Double) / 1e9 + " seconds");
-                return comp_loc.getGMatContributionArray();
+                comp_loc.getGMatContributionArray()
             };
 
             // gather and reduce my gMatrix contribution
