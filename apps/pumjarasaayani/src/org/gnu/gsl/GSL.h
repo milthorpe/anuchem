@@ -12,6 +12,8 @@
 #ifndef ORG_GNU_GSL_H
 #define ORG_GNU_GSL_H
 
+#include <x10/array/Array.h>
+
 #include "gsl/gsl_math.h"  
 #include "gsl/gsl_blas.h"  
 #include "gsl/gsl_eigen.h" 
