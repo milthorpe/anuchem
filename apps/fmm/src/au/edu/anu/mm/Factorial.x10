@@ -11,12 +11,14 @@
 
 package au.edu.anu.mm;
 
+import x10.compiler.Inline;
+
 /**
  * This class calculates factorials (up to a given limit) and stores them to avoid having to calculate in time-crucial operations
  * @author haigh
  */
 public class Factorial { 
-	public static val factorial : Array[Double](1) = Factorial.calcFact();
+	public static val factorial : Rail[Double] = Factorial.calcFact();
 
     private static final def calcFact() { 
         val fact = new Array[Double](100);
@@ -25,5 +27,5 @@ public class Factorial {
         return fact;
 	}
 
-	public static def getFactorial(i : int) = factorial(i); 
+	@Inline public static def getFactorial(i : int) = factorial(i); 
 }
