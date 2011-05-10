@@ -19,13 +19,13 @@ import x10x.xla.JacobiDiagonalizer;
  * @author: V.Ganesh
  */
 public class MolecularOrbitals extends Matrix {
-    var orbitalEnergies:Array[Double](1);
+    private var orbitalEnergies:Rail[Double];
 
     public def this(n:Int) {
         super(n);
     }
 
-    public def getOrbitalEnergies() : Array[Double]{rank==1} = orbitalEnergies;
+    public def getOrbitalEnergies() : Rail[Double] = orbitalEnergies;
  
     public def compute(theMat:Matrix, overlap:Overlap) : void {
         val x = overlap.getSHalf();
