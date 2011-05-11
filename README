@@ -1,0 +1,32 @@
+ANUChem computational chemistry suite
+
+This program is controlled by the Eclipse Public Licence v1.0 http://www.eclipse.org/legal/epl-v10.html
+
+Overview:
+------------
+
+ANUChem is a suite of codes written in the X10 programming language.
+http://x10.codehaus.org/
+
+It is intended to test the expressiveness, performance and scalability of X10 for use in developing scientific application codes.
+
+ANUChem currently comprises three codes:
+
+pumjarasaayani (Quantum Chemistry): solves the molecular electronic structure problem using the Hartree-Fock/self-consistent field method.
+fmm (Fast Multipole Method): calculates the electrostatic potential of a system of charged particles using the Fast Multipole Method.
+pme (Particle Mesh Ewald): calculates electrostatic potential using the Smooth Particle Mesh Ewald method.
+
+The individual codes are described in ${appname}/doc/README including the build process and test inputs.
+
+
+Working with ANUChem:
+-----------------------------
+
+The codes are under continuous revision and the current source is available at http://squirrel.anu.edu.au/hg/public/x10-apps/
+
+In addition, there are tagged "release" versions of the source that compile against each released version of X10.  See http://squirrel.anu.edu.au/hg/public/x10-apps/tags
+
+For any questions about building, testing or extending ANUChem, please email josh.milthorpe@anu.edu.au
+
+ANUChem is free software under the Eclipse Public License.
+
