@@ -3,12 +3,12 @@
 package au.edu.anu.util;
 
 final public class Timer {
-    public val total:Array[Long](1);
-    public val count:Array[Long](1);
+    public val total:Rail[Long];
+    public val count:Rail[Long];
 
     public def this(n:Int) {
-        total = new Array[Long](n);
-        count = new Array[Long](n);
+        total = new Rail[Long](n);
+        count = new Rail[Long](n);
     }
 
     public def start(id:Int) { total(id) -= System.nanoTime(); }
