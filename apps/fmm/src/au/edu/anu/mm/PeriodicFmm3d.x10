@@ -161,7 +161,8 @@ public class PeriodicFmm3d extends Fmm3d {
                     val offsetCentre = atom.centre + offset;
                     myDipole = myDipole + Vector3d(offsetCentre) * charge;
                     val boxIndex = Fmm3d.getLowestLevelBoxIndex(offsetCentre, lowestLevelDim, size);
-                    async at(lowestLevelBoxes.dist(boxIndex)) {
+                    // TODO should be able to call PeriodicDist.dist with Point(3) inlined
+                    async at(lowestLevelBoxes.dist(boxIndex(0), boxIndex(1), boxIndex(2))) {
                         val remoteAtom = new MMAtom(offsetCentre, charge);
                         val leafBox = lowestLevelBoxes(boxIndex) as FmmLeafBox;
                         atomic {
