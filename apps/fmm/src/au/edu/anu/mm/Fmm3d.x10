@@ -316,6 +316,7 @@ public class Fmm3d {
             val multipoleTranslations = this.multipoleTranslations; // TODO shouldn't be necessary XTENLANG-1913
             val complexK = this.complexK; // TODO shouldn't be necessary XTENLANG-1913
             val wignerA = this.wignerA; // TODO shouldn't be necessary XTENLANG-1913
+            val halfSideLength = size / Math.pow2(thisLevel+1);
             finish for (p1 in thisLevelBoxes.dist.places()) async at(p1) {
                 for ([x,y,z] in thisLevelBoxes.dist(here)) {
                     val child = thisLevelBoxes(x,y,z);
@@ -326,7 +327,6 @@ public class Fmm3d {
                         val dx = ((child.x+1)%2)*2-1;
                         val dy = ((child.y+1)%2)*2-1;
                         val dz = ((child.z+1)%2)*2-1;
-                        val halfSideLength = size / Math.pow2(thisLevel+1);
                         at(parent) {
 			                if (!useOldOperators) { 
 				                /* New! Operation A */
