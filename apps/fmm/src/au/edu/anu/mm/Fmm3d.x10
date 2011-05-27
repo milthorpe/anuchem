@@ -201,7 +201,7 @@ public class Fmm3d {
         }
         val lowestLevelDim = Math.pow2(numLevels);
         this.lowestLevelDim = lowestLevelDim;
-        Console.OUT.println("numLevels = " + numLevels + " maxBoxes = " + nBox);
+        //Console.OUT.println("numLevels = " + numLevels + " maxBoxes = " + nBox);
 
         this.numTerms = numTerms;
         this.ws = ws;
