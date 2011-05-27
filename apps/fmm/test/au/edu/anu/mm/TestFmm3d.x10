@@ -85,14 +85,16 @@ public class TestFmm3d extends TestElectrostatic {
             logTime("Far field", Fmm3d.TIMER_INDEX_FARFIELD,  fmm3d.timer);
         }
 
-        logTime("Total",     Fmm3d.TIMER_INDEX_TOTAL,     fmm3d.timer);
+        logTime("Total",     Fmm3d.TIMER_INDEX_TOTAL,     fmm3d.timer, verbose);
 
         if (compare) {
             val direct = new ElectrostaticDirectMethod(atoms);
             val directEnergy = direct.getEnergy();
-            logTime("cf. Direct calculation", ElectrostaticDirectMethod.TIMER_INDEX_TOTAL, direct.timer);
-            val error = directEnergy - energy;
-            Console.OUT.println("direct = " + directEnergy + " error = " + error + " relative error = " + Math.abs(error) / Math.abs(energy));
+            logTime(" Direct", ElectrostaticDirectMethod.TIMER_INDEX_TOTAL, direct.timer);
+            if (verbose) {
+                val error = directEnergy - energy;
+                Console.OUT.println("direct = " + directEnergy + " error = " + error + " relative error = " + Math.abs(error) / Math.abs(energy));
+            }
         }
     }
 }

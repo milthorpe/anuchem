@@ -35,8 +35,16 @@ public class TestElectrostatic {
      */
     public def sizeOfCentralCluster() : Double = SIZE;
 
+    public def logTime(desc : String, timerIndex : Int, timer : Timer, printNewline : Boolean) {
+        if (printNewline) {
+            Console.OUT.printf(desc + ": %g seconds\n", (timer.total(timerIndex) as Double) / 1e9);
+        } else {
+            Console.OUT.printf(desc + ": %g seconds", (timer.total(timerIndex) as Double) / 1e9);
+        }
+    }
+
     public def logTime(desc : String, timerIndex : Int, timer : Timer) {
-        Console.OUT.printf(desc + " (one cycle): %g seconds\n", (timer.total(timerIndex) as Double) / 1e9);
+        logTime(desc, timerIndex, timer, true);
     }
 
     /**
