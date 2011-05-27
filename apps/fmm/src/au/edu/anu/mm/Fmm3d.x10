@@ -201,7 +201,7 @@ public class Fmm3d {
         }
         val lowestLevelDim = Math.pow2(numLevels);
         this.lowestLevelDim = lowestLevelDim;
-        Console.OUT.println("numLevels = " + numLevels + " maxBoxes = " + nBox);
+        //Console.OUT.println("numLevels = " + numLevels + " maxBoxes = " + nBox);
 
         this.numTerms = numTerms;
         this.ws = ws;
@@ -316,20 +316,23 @@ public class Fmm3d {
             val multipoleTranslations = this.multipoleTranslations; // TODO shouldn't be necessary XTENLANG-1913
             val complexK = this.complexK; // TODO shouldn't be necessary XTENLANG-1913
             val wignerA = this.wignerA; // TODO shouldn't be necessary XTENLANG-1913
-            val sideLength = size / Math.pow2(thisLevel);
+            val halfSideLength = size / Math.pow2(thisLevel+1);
             finish for (p1 in thisLevelBoxes.dist.places()) async at(p1) {
                 for ([x,y,z] in thisLevelBoxes.dist(here)) {
                     val child = thisLevelBoxes(x,y,z);
                     if (child != null) {
                         val childExp = child.multipoleExp;
-                        val shift = Point.make((child.x+1)%2, (child.y+1)%2, (child.z+1)%2);
                         val parent = child.parent;
+                        // TODO should be able to inline Point(3)
+                        val dx = ((child.x+1)%2)*2-1;
+                        val dy = ((child.y+1)%2)*2-1;
+                        val dz = ((child.z+1)%2)*2-1;
                         at(parent) {
 			                if (!useOldOperators) { 
 				                /* New! Operation A */
             	                parent().multipoleExp.translateAndAddMultipole(
-					                Fmm3d.getChildBoxVector(shift, sideLength),
-					                complexK(here.id)(getChildBoxCentreIndex(shift)), childExp, wignerA(here.id)(shift));
+					                Vector3d(dx*halfSideLength, dy*halfSideLength, dz*halfSideLength),
+					                complexK(here.id)(dx,dy,dz), childExp, wignerA(here.id)((dx+1)/2, (dy+1)/2, (dz+1)/2));
 			                } else {
 				                /* Old Operation A */
 				                val translationIndex = multipoleTranslations(Point.make([here.id, thisLevel, (child.x+1)%2, (child.y+1)%2, (child.z+1)%2]));
@@ -403,15 +406,19 @@ public class Fmm3d {
                                 val z2 = boxIndex2(2);
                                 val box2MultipoleExp = thisLevelMultipoleCopies(x2, y2, z2);
                                 if (box2MultipoleExp != null) {
-                                    val translation = box1.getTranslationIndex(boxIndex2);
+                                    // TODO should be able to inline Point
+                                    val dx = x2-x1;
+                                    val dy = y2-y1;
+                                    val dz = z2-z1;
+                                    //val translation = box1.getTranslationIndex(boxIndex2);
 				                    if (!useOldOperators) { 
                     					/* New Operation B */
 		                    			box1.localExp.transformAndAddToLocal(scratch, scratch_array,
-                    						Vector3d(translation(0) * sideLength, translation(1) * sideLength, translation(2) * sideLength), 
-                    						myComplexK(translation), box2MultipoleExp, myWignerB(translation) );
+                    						Vector3d(dx*sideLength, dy*sideLength, dz*sideLength), 
+                    						myComplexK(dx,dy,dz), box2MultipoleExp, myWignerB(dx,dy,dz) );
                     				} else { 
 				                    	/* Old Operation B */
-            	                        val translateP = Point.make([here.id, thisLevel, translation(0), translation(1), translation(2)]);
+            	                        val translateP = Point.make([here.id, thisLevel, dx, dy, dz]);
             	                        val transform21 = multipoleTransforms(translateP);
             	                        box1.localExp.transformAndAddToLocal(transform21, box2MultipoleExp);
 				                    }
@@ -424,10 +431,13 @@ public class Fmm3d {
 
                 			    if (!useOldOperators) { 
                 				    /* New Operation C */
-       	                            val shift = Point.make(box1.x%2, box1.y%2, box1.z%2);
+                                    // TODO should be able to inline Point(3)
+                                    val dx = (x1%2)*2-1;
+                                    val dy = (y1%2)*2-1;
+                                    val dz = (z1%2)*2-1;
 	                			    box1.localExp.translateAndAddLocal(
-                						getChildBoxVector(shift, sideLength),
-            						    myComplexK(getChildBoxCentreIndex(shift)), box1ParentExp, myWignerC(shift) );
+                						Vector3d(dx*0.5*sideLength, dy*0.5*sideLength, dz*0.5*sideLength),
+					                    myComplexK(dx,dy,dz), box1ParentExp, myWignerC((dx+1)/2, (dy+1)/2, (dz+1)/2));
                 			    } else { 
                 				    /* Old Operation C */
 	                                val shift = multipoleTranslations(Point.make([here.id, thisLevel, box1.x%2, box1.y%2, box1.z%2]));
