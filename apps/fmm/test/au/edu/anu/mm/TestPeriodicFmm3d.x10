@@ -56,10 +56,12 @@ public class TestPeriodicFmm3d extends TestElectrostatic {
 
     public def test(numAtoms : Int, density : Double, numTerms : Int, numShells : Int, verbose : Boolean) {
         if (verbose) {
+            val numLevels = Math.max(2, (Math.log(numAtoms / density) / Math.log(8.0) + 1.0) as Int);
             Console.OUT.println("Testing Periodic FMM for " + numAtoms 
                               + " atoms, target density = " + density
                               + " numTerms = " + numTerms
-                              + " numShells = " + numShells);
+                              + " numShells = " + numShells
+                              + " numLevels = " + numLevels);
         } else {
             Console.OUT.print(numAtoms + " atoms: ");
         }

@@ -61,10 +61,12 @@ public class TestFmm3d extends TestElectrostatic {
 
     public def test(numAtoms : Int, density : Double, numTerms : Int, wellSpaced : Int, verbose : Boolean, compare : Boolean) {
         if (verbose) {
+            val numLevels = Math.max(2, (Math.log(numAtoms / density) / Math.log(8.0) + 1.0) as Int);
             Console.OUT.println("Testing FMM for " + numAtoms 
                       + " atoms, target density = " + density
                       + " numTerms = " + numTerms
-                      + " wellSpaced param = " + wellSpaced);
+                      + " wellSpaced param = " + wellSpaced
+                      + " numLevels = " + numLevels);
         } else {
             Console.OUT.print(numAtoms + " atoms: ");
         }
