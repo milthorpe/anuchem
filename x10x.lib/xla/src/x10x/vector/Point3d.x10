@@ -36,7 +36,7 @@ public struct Point3d(i : Double, j : Double, k : Double) implements Tuple3d {
      * @return the vector from that point to this point
      */
     public @Inline def vector(b: Point3d) : Vector3d {
-        return Vector3d(i - b.i(), j - b.j(), k - b.k());
+        return Vector3d(i - b.i, j - b.j, k - b.k);
     }   
 
     public @Inline operator this - (that:Point3d):Vector3d {
@@ -44,15 +44,16 @@ public struct Point3d(i : Double, j : Double, k : Double) implements Tuple3d {
     }
 
     public @Inline def distanceSquared(b : Point3d) {
-        return (i - b.i) * (i - b.i)
-             + (j - b.j) * (j - b.j)
-             + (k - b.k) * (k - b.k);
+        val di = i - b.i;
+        val dj = j - b.j;
+        val dk = k - b.k;
+        return di*di
+             + dj*dj
+             + dk*dk;
     }  
 
     public @Inline def distance(b : Point3d) {
-        return Math.sqrt((i - b.i) * (i - b.i)
-                       + (j - b.j) * (j - b.j)
-                       + (k - b.k) * (k - b.k));
+        return Math.sqrt(distanceSquared(b));
     }
 }
 
