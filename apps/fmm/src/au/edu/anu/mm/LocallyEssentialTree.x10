@@ -6,11 +6,11 @@
  *  You may obtain a copy of the License at
  *      http://www.opensource.org/licenses/eclipse-1.0.php
  *
- * (C) Copyright Josh Milthorpe 2010.
+ * (C) Copyright Josh Milthorpe 2010-2011.
  */
 package au.edu.anu.mm;
 
-import au.edu.anu.chem.mm.MMAtom;
+import au.edu.anu.chem.PointCharge;
 
 /**
  * This class represents the Locally Essential Tree (LET) of
@@ -36,13 +36,12 @@ public class LocallyEssentialTree {
     public val multipoleCopies : Rail[DistArray[MultipoleExpansion](3)];
 
     /**
-     * A cache of packed for the combined U-list of all
-     * boxes at this place.  Used to store fetched packed atoms
-     * from non-well-separated boxes for use in direct evaluations 
+     * A cache of PointCharge for the combined U-list of all
+     * boxes at this place.  Used to store fetched atoms from 
+     * non-well-separated boxes for use in direct evaluations 
      * with all atoms at a given place.
-     * @see FmmLeafBox.getPackedAtoms()
      */
-    public val packedAtoms : DistArray[Rail[MMAtom.PackedRepresentation]](3);
+    public val cachedAtoms : DistArray[Rail[PointCharge]](3);
     
     public def this(combinedUList : Rail[Point(3)],
                 combinedVList : Rail[Rail[Point(3)]],
@@ -65,7 +64,7 @@ public class LocallyEssentialTree {
         }
         this.multipoleCopies = multipoleCopies;
 
-        val packedAtomsRegion = uListMin(0)..uListMax(0) * uListMin(1)..uListMax(1) * uListMin(2)..uListMax(2);
-        this.packedAtoms = DistArray.make[Rail[MMAtom.PackedRepresentation]](new PeriodicDist(Dist.makeConstant(packedAtomsRegion)));
+        val cachedAtomsRegion = uListMin(0)..uListMax(0) * uListMin(1)..uListMax(1) * uListMin(2)..uListMax(2);
+        this.cachedAtoms = DistArray.make[Rail[PointCharge]](new PeriodicDist(Dist.makeConstant(cachedAtomsRegion)));
     }
 }

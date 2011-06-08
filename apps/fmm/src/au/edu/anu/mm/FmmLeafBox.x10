@@ -6,14 +6,14 @@
  *  You may obtain a copy of the License at
  *      http://www.opensource.org/licenses/eclipse-1.0.php
  *
- * (C) Copyright Josh Milthorpe 2010.
+ * (C) Copyright Josh Milthorpe 2010-2011.
  */
 package au.edu.anu.mm;
 
 import x10.util.ArrayList;
 
 import x10x.vector.Point3d;
-import au.edu.anu.chem.mm.MMAtom;
+import au.edu.anu.chem.PointCharge;
 
 /**
  * This class represents a leaf node (with no children)
@@ -21,7 +21,7 @@ import au.edu.anu.chem.mm.MMAtom;
  * @author milthorpe
  */
 public class FmmLeafBox extends FmmBox {
-    public val atoms : ArrayList[MMAtom] = new ArrayList[MMAtom]();
+    public val atoms : ArrayList[PointCharge] = new ArrayList[PointCharge]();
 
     /** The U-list consists of all leaf boxes not well-separated to this box. */
     private var uList : Rail[Point(3)];
@@ -30,7 +30,7 @@ public class FmmLeafBox extends FmmBox {
         super(level, x, y, z, numTerms, parent);
     }
 
-    public atomic def addAtom(atom : MMAtom) {
+    public atomic def addAtom(atom : PointCharge) {
         atoms.add(atom);
     }
 
@@ -79,17 +79,6 @@ public class FmmLeafBox extends FmmBox {
             }
         }
         this.uList = uList.toArray();
-    }
-    
-    /*
-     * Returns atom charges and coordinates in packed representation
-     */
-    public def getPackedAtoms() : Rail[MMAtom.PackedRepresentation] {
-        if (atoms.size() > 0) {
-            return new Array[MMAtom.PackedRepresentation](atoms.size(), (i : Int) => atoms(i).getPackedRepresentation());
-        } else {
-            return null;
-        }
     }
 }
 

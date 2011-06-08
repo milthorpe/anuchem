@@ -17,6 +17,7 @@ import x10.util.HashSet;
 import x10x.vector.Point3d;
 import x10x.polar.Polar3d;
 import x10x.vector.Vector3d;
+import au.edu.anu.chem.PointCharge;
 import au.edu.anu.chem.mm.MMAtom;
 import au.edu.anu.util.Timer;
 
@@ -236,7 +237,7 @@ public class Fmm3d {
         timer.start(TIMER_INDEX_TOTAL);
         finish {
             async {
-                prefetchPackedAtoms();
+                prefetchRemoteAtoms();
             }
             multipoleLowestLevel();
             combineMultipoles();
@@ -258,7 +259,7 @@ public class Fmm3d {
                 val offsetCentre = atom.centre + offset;
                 val boxIndex = Fmm3d.getLowestLevelBoxIndex(offsetCentre, lowestLevelDim, size);
                 async at(lowestLevelBoxes.dist(boxIndex)) {
-                    val remoteAtom = new MMAtom(offsetCentre, charge);
+                    val remoteAtom = new PointCharge(offsetCentre, charge);
                     val leafBox = lowestLevelBoxes(boxIndex) as FmmLeafBox;
                     atomic {
                         leafBox.atoms.add(remoteAtom);
@@ -516,14 +517,14 @@ public class Fmm3d {
      * Fetch all atoms required for direct calculations at each place.
      * This is communication-intensive, so can be overlapped with computation.
      */
-    def prefetchPackedAtoms() : void {
+    def prefetchRemoteAtoms() : void {
         timer.start(TIMER_INDEX_PREFETCH);
         val locallyEssentialTrees = this.locallyEssentialTrees; // TODO shouldn't be necessary XTENLANG-1913
         val lowestLevelBoxes = this.lowestLevelBoxes; // TODO shouldn't be necessary XTENLANG-1913
         finish ateach (p1 in locallyEssentialTrees) {
             val myLET = locallyEssentialTrees(p1);
             val myCombinedUList = myLET.combinedUList;
-            val packedAtoms = myLET.packedAtoms;
+            val cachedAtoms = myLET.cachedAtoms;
 
             val uListPlaces = new HashMap[Int,ArrayList[Point(3)]](26); // a place may have up to 26 immediate neighbours
             
@@ -544,11 +545,11 @@ public class Fmm3d {
                 val placeId = placeEntry.getKey();
                 val uListForPlace = placeEntry.getValue();
                 val uListArray = uListForPlace.toArray();
-                val packedForPlace = (placeId == here.id) ?
-                    getPackedAtomsForBoxList(lowestLevelBoxes, uListArray) :
-                    at(Place.place(placeId)) { getPackedAtomsForBoxList(lowestLevelBoxes, uListArray)};
+                val atomsForPlace = (placeId == here.id) ?
+                    getAtomsForBoxList(lowestLevelBoxes, uListArray) :
+                    at(Place.place(placeId)) { getAtomsForBoxList(lowestLevelBoxes, uListArray)};
                 for (i in 0..(uListArray.size-1)) {
-                    myLET.packedAtoms(uListArray(i)) = packedForPlace(i);
+                    myLET.cachedAtoms(uListArray(i)) = atomsForPlace(i);
                 }
             }
         }
@@ -557,19 +558,18 @@ public class Fmm3d {
 
     /**
      * Given a list of box indices as Point(3) stored at a single
-     * place, returns an Array, each element of which is in turn
-     * a Array of MMAtom.PackedRepresentation containing the 
-     * packed atoms for each box.
+     * place, returns an Rail, each element of which is in turn
+     * a Rail[PointCharge] containing the atoms for each box.
      */
-    private static def getPackedAtomsForBoxList(lowestLevelBoxes : DistArray[FmmBox](3), boxList : Rail[Point(3)]) {
-        val packedAtomList = new Rail[Rail[MMAtom.PackedRepresentation]](boxList.size, 
-                                                            (i : Int) => 
-                                                                getPackedAtomsForBox(lowestLevelBoxes,
-                                                                                     boxList(i)(0), 
-                                                                                     boxList(i)(1),
-                                                                                     boxList(i)(2))
-                                                            );
-        return packedAtomList;
+    private static def getAtomsForBoxList(lowestLevelBoxes : DistArray[FmmBox](3), boxList : Rail[Point(3)]) {
+        val atomList = new Rail[Rail[PointCharge]](boxList.size, 
+                                                    (i : Int) => 
+                                                        getAtomsForBox(lowestLevelBoxes,
+                                                                             boxList(i)(0), 
+                                                                             boxList(i)(1),
+                                                                             boxList(i)(2))
+                                                    );
+        return atomList;
     }
 
     /**
@@ -587,7 +587,7 @@ public class Fmm3d {
         val directEnergy = finish (SumReducer()) {
             ateach (p1 in locallyEssentialTrees) {
                 val myLET = locallyEssentialTrees(p1);
-                val packedAtoms = myLET.packedAtoms;
+                val cachedAtoms = myLET.cachedAtoms;
                 var thisPlaceEnergy : Double = 0.0;
                 for ([x1,y1,z1] in lowestLevelBoxes.dist(here)) {
                     val box1 = lowestLevelBoxes(x1,y1,z1) as FmmLeafBox;
@@ -610,13 +610,13 @@ public class Fmm3d {
                             val x2 = boxIndex2(0);
                             val y2 = boxIndex2(1);
                             val z2 = boxIndex2(2);
-                            val boxAtoms = packedAtoms(x2, y2, z2);
+                            val boxAtoms = cachedAtoms(x2, y2, z2);
                             if (boxAtoms != null) {
                                 for (otherBoxAtomIndex in 0..(boxAtoms.size-1)) {
-                                    val atom2Packed = boxAtoms(otherBoxAtomIndex);
+                                    val atom2 = boxAtoms(otherBoxAtomIndex);
                                     for (atomIndex1 in 0..(box1.atoms.size()-1)) {
                                         val atom1 = box1.atoms(atomIndex1);
-                                        thisPlaceEnergy += atom1.charge * atom2Packed.charge / atom1.centre.distance(atom2Packed.centre);
+                                        thisPlaceEnergy += atom1.charge * atom2.charge / atom1.centre.distance(atom2.centre);
                                     }
                                 }
                             }
@@ -912,10 +912,10 @@ public class Fmm3d {
         return (at(boxes(level-1).dist(x/2, y/2, z/2)) {GlobalRef[FmmBox](boxes(level-1)(x/2, y/2, z/2))});
     }
 
-    private static def getPackedAtomsForBox(lowestLevelBoxes : DistArray[FmmBox](3), x : Int, y : Int, z : Int) {
+    private static def getAtomsForBox(lowestLevelBoxes : DistArray[FmmBox](3), x : Int, y : Int, z : Int) {
         val box = lowestLevelBoxes(x, y, z) as FmmLeafBox;
         if (box != null) {
-            return box.getPackedAtoms();
+            return box.atoms.toArray();
         } else {
             return null;
         }

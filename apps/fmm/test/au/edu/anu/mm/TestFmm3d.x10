@@ -92,7 +92,7 @@ public class TestFmm3d extends TestElectrostatic {
         if (compare) {
             val direct = new ElectrostaticDirectMethod(atoms);
             val directEnergy = direct.getEnergy();
-            logTime(" Direct", ElectrostaticDirectMethod.TIMER_INDEX_TOTAL, direct.timer);
+            logTime(" cf. Direct electrostatic ", ElectrostaticDirectMethod.TIMER_INDEX_TOTAL, direct.timer);
             if (verbose) {
                 val error = directEnergy - energy;
                 Console.OUT.println("direct = " + directEnergy + " error = " + error + " relative error = " + Math.abs(error) / Math.abs(energy));
