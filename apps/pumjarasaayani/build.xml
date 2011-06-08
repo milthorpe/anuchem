@@ -129,7 +129,7 @@
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/src">
             <arg value="-c"/> 
-            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.nochecks} ${x10c.optimize} ${x10c.inlineopt} -report postcompile=1 -post '# ${post.profile} ${post.cpuprofile} ${post.heapprofile} ${post.usenativegsl}' -sourcepath .:${x10x.xlalib}:${anuchem.src} -d ${target-src} ${basedir}/${testclass}"/>
+            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.nochecks} ${x10c.optimize} ${x10c.inlineopt} -report postcompile=1 -post '# -g ${post.profile} ${post.cpuprofile} ${post.heapprofile} ${post.usenativegsl}' -sourcepath .:${x10x.xlalib}:${anuchem.src} -d ${target-src} ${basedir}/${testclass}"/>
         </exec>
     </target>
 
