@@ -37,13 +37,17 @@ public class JobInput {
        val fil = new FileReader(new File(inpFile));
 
        val noOfAtoms = Int.parseInt(fil.readLine());
-       val words = fil.readLine().split(" ");
+        /*
+         * TODO does not handle multiple spaces between words.  
+         * Should split on whitespace regex (currently not supported by x10.lang.String).
+         */
+       val words = fil.readLine().trim().split(" ");
  
        molecule = new Molecule[QMAtom](words(0));
        basisName = words(1);
 
        for(var i:Int=0; i<noOfAtoms; i++) { 
-         val wrd = fil.readLine().split(" ");         
+         val wrd = fil.readLine().trim().split(" ");
 
          molecule.addAtom(new QMAtom(wrd(0), 
                                        Point3d(Double.parseDouble(wrd(1)),
