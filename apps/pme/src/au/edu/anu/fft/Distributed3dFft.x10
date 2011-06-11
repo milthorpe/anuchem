@@ -168,16 +168,24 @@ public class Distributed3dFft {
 
                 val transferRegion = (startX..endX) * (startY..endY) * (startZ..endZ);
                 if (transferRegion.size() > 0) {
-                    val elementsToTransfer = new Array[Complex](transferRegion.size());
-                    var i : Int = 0;
-                    for ([x,y,z] in transferRegion) {
-                        elementsToTransfer(i++) = temp(x,y,z);
-                    }
-                    async at (p2) {
-                        var i2 : Int = 0;
+                    if (p2 == here) {
+                        // do a synchronous in-place transpose from temp to target
                         for ([x,y,z] in transferRegion) {
-                            // transpose dimensions
-                            target(z,x,y) = elementsToTransfer(i2++);
+                            target(z,x,y) = temp(x,y,z);
+                        }
+                    } else {
+                        // collect elements to transfer to remote place
+                        val elementsToTransfer = new Array[Complex](transferRegion.size());
+                        var i : Int = 0;
+                        for ([x,y,z] in transferRegion) {
+                            elementsToTransfer(i++) = temp(x,y,z);
+                        }
+                        async at (p2) {
+                            var i2 : Int = 0;
+                            for ([x,y,z] in transferRegion) {
+                                // transpose dimensions
+                                target(z,x,y) = elementsToTransfer(i2++);
+                            }
                         }
                     }
                 }
