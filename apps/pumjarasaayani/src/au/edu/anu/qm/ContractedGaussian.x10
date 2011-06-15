@@ -52,13 +52,6 @@ public class ContractedGaussian {
     public def getMaximumAngularMomentum() = power.getMaximumAngularMomentum();
     public def getMinimumAngularMomentum() = power.getMinimumAngularMomentum();
 
-    var index:Int;
-    public def getIndex() = index;
-    
-    public def setIndex(idx:Int) {
-       index = idx;
-    }
-
     var intIndex:Int;
     public def getIntIndex() = intIndex;
 

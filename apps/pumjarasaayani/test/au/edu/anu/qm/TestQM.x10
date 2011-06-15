@@ -10,7 +10,7 @@ public class TestQM {
     public def this() {
     }
 
-    private def runInput(inp:String, int:gMatMethod) : Double {
+    private def runInput(inp:String, gMatMethod:int) : Double {
         val pm = new PumjaRasaayani(inp, gMatMethod);
 
         pm.runIt();
@@ -25,7 +25,7 @@ public class TestQM {
     public def run() {
         // iterate only once
         val jd = JobDefaults.getInstance();
-        at(jd) { jd.setMaxIterations(1) };
+        jd.setMaxIterations(1);
 
         val path = "tests/";
 

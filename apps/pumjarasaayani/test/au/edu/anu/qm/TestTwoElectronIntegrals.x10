@@ -10,7 +10,7 @@
  */
 package au.edu.anu.qm;
 
-import au.anu.edu.qm.TwoElectronIntegrals;
+import au.edu.anu.qm.TwoElectronIntegrals;
 
 /**
  * Tests of base operations in the calculation of two-electron integrals
@@ -19,7 +19,11 @@ import au.anu.edu.qm.TwoElectronIntegrals;
 public class TestTwoElectronIntegrals {
 
     public static def main(args : Rail[String]) {
-	    
+	    val twoE = new TwoElectronIntegrals(3);
+        val zeroM = twoE.computeZeroM(1, 2.5, 2.0, 0.5);
+        for (i in 0..(zeroM.size-1)) {
+            Console.OUT.println(i + " " + zeroM(i));
+        }
     }
 }
 

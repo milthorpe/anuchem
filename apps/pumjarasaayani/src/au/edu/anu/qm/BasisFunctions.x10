@@ -38,7 +38,6 @@ public class BasisFunctions {
 
     private def initBasisFunctions(basisDir:String) {
         val basisSet:BasisSet = new BasisSet(basisName, basisDir);
-        var indx:Int = 0;
         var intIndx:Int = 0;
         val plInst = PowerList.getInstance();
 
@@ -60,7 +59,6 @@ public class BasisFunctions {
                   val center = atom.centre;
                   val power = pList(l);
                   val cg = new ContractedGaussian(center, power, coeff, exps);
-                  cg.setIndex(indx++);
                   cg.setIntIndex(intIndx);
 
                   cg.normalize();

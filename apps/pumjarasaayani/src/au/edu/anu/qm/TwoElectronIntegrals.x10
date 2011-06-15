@@ -35,7 +35,7 @@ import au.edu.anu.chem.Molecule;
 public class TwoElectronIntegrals {
     private static val SQ2PI = Math.pow((2.0/Math.PI), 0.5); 
 
-    private val fmt:Rail[Double], zeroM:Rail[Double];
+    private val gmt:Rail[Double], zeroM:Rail[Double];
 
     private val rM:Array[Double](2){rect,zeroBased};
     private val pqInts:Array[Double](2){rect,zeroBased};
@@ -59,7 +59,7 @@ public class TwoElectronIntegrals {
 
         // Console.OUT.println("alloc: " + maxam + " " + maxam2N);
 
-        fmt    = new Array[Double](maxam4+1);
+        gmt    = new Array[Double](maxam4+1);
         zeroM  = new Array[Double](maxam4+1);
 
         rM     = new Array[Double](0..(maxam4+1) * 0..((maxam4+1) * (maxam4+2)/2));
@@ -174,23 +174,12 @@ public class TwoElectronIntegrals {
                  val radiusPQSquared = r.lengthSquared();
                  val T = radiusPQSquared * eta;
 
-                 // Console.OUT.println("Computing FmT");
-                 // Console.OUT.println("T value: " + T);
-                 // Console.OUT.println("maxam: " + maxam);
-
-                 // compute FmT
-                 computeFmt(angMomABCD, T, fmt);
-        
-                 // convert to GmT
-                 computeGmt(angMomABCD);
-
                  // Console.OUT.println("Computing [0]m");
-
-                 // Console.OUT.println("Up, Uq, Upq: " + Up + " " + Uq + " " + Upq);
+                 // Console.OUT.println("T: " + T + "Up, Uq, Upq: " + Up + " " + Uq + " " + Upq);
 
                  // compute [0]m
                  val Upq = Up*Uq;
-                 computeZeroM(angMomABCD, Upq, eta);
+                 computeZeroM(angMomABCD, T, Upq, eta);
 
                  // Console.OUT.println("Computing [r]m");
                  // Console.OUT.println("abcd_ang: " + angMomABCD);
@@ -326,23 +315,12 @@ public class TwoElectronIntegrals {
                  val radiusPQSquared = r.lengthSquared();  
                  val T = radiusPQSquared * eta;
 
-                 // Console.OUT.println("Computing FmT");
-                 // Console.OUT.println("T value: " + T);
-                 // Console.OUT.println("maxam: " + maxam);
-
-                 // compute FmT
-                 computeFmt(angMomABCD, T, fmt);
-        
-                 // convert to GmT
-                 computeGmt(angMomABCD);
-
                  // Console.OUT.println("Computing [0]m");
-
-                 // Console.OUT.println("Up, Uq, Upq: " + Up + " " + Uq + " " + Upq);
+                 // Console.OUT.println("T: " + T + "Up, Uq, Upq: " + Up + " " + Uq + " " + Upq);
 
                  // compute [0]m
                  val Upq = Up*Uq;
-                 computeZeroM(angMomABCD, Upq, eta);
+                 computeZeroM(angMomABCD, T, Upq, eta);
 
                  // Console.OUT.println("Computing [r]m");
                  // Console.OUT.println("abcd_ang: " + angMomABCD);
@@ -463,20 +441,44 @@ public class TwoElectronIntegrals {
          return res;
     }
 
-    private def computeGmt(angMomABCD:Int) {
-         for(var i:Int=0; i<=angMomABCD; i++) {
-             fmt(i) *= SQ2PI;
-             // Console.OUT.println(fmt(i));
-         }
-    }
-
-    private def computeZeroM(angMomABCD:Int, Upq:Double, eta:Double) {
+    def computeZeroM(angMomABCD:Int, T:Double, Upq:Double, eta:Double) {
+        computeGmt(angMomABCD, T);
         val twoEta = 2.0*eta;
         var etaPow : Double = Math.sqrt(twoEta);
         for(i in 0..angMomABCD) {
-            zeroM(i) = Upq * etaPow * fmt(i);
+            zeroM(i) = Upq * etaPow * gmt(i);
             etaPow *= twoEta; // etaPow = twoEta^(i+0.5)
             // Console.OUT.println(Upq + " " + zeroM(i));
+        }
+        return zeroM;
+    }
+
+    private def computeGmt(angMomABCD:Int, T:Double) {
+        if (T > 30.0){
+            val invT = 1/T;
+            gmt(0) = Math.sqrt(Math.PI*invT)*0.5;
+           
+            for (m in 1..angMomABCD) {
+                gmt(m) = gmt(m-1) * (m-0.5) * invT;
+            }
+        } else {
+            var denom : Double = angMomABCD + 0.5;
+            var term : Double = 0.5 / denom;
+            var sum : Double = term;
+            while (term > 1.0e-15)  {
+                denom = (denom + 1.0);
+                term  = term * T / denom;
+                sum   = sum + term;
+            }
+
+            val expNegT = Math.exp(-T);
+            gmt(angMomABCD) = expNegT * sum;
+            for (var m:Int=angMomABCD-1; m >= 0; m--) {
+                gmt(m) = (2.0 * T * gmt(m+1) + expNegT) / (2*m + 1);
+            }
+        }
+        for(var i:Int=0; i<=angMomABCD; i++) {
+            gmt(i) *= SQ2PI;
         }
     }
 
@@ -741,33 +743,6 @@ public class TwoElectronIntegrals {
          } // for dd
 
          // Console.OUT.println("\tNumber of actual integrals used in block: " + intIndx);
-    }
-
-    /** Compute the base FmT() - for evaluating integrals */
-    protected def computeFmt(maxam:Int, T:Double, fmt:Rail[Double]) {
-        if (T > 30.0){
-            val invT = 1/T;
-            fmt(0) = Math.sqrt(Math.PI*invT)*0.5;
-           
-            for (m in 1..maxam) {
-                fmt(m) = fmt(m-1) * (m-0.5) * invT;
-            }
-        } else {
-            var denom : Double = maxam + 0.5;
-            var term : Double = 0.5 / denom;
-            var sum : Double = term;
-            while (term > 1.0e-15)  {
-                denom = (denom + 1.0);
-                term  = term * T / denom;
-                sum   = sum + term;
-            }
-
-            val expNegT = Math.exp(-T);
-            fmt(maxam) = expNegT * sum;
-            for (var m:Int=maxam-1; m >= 0; m--) {
-                fmt(m) = (2.0 * T * fmt(m+1) + expNegT) / (2*m + 1);
-            }
-        } // end if
     }
 
     /**
