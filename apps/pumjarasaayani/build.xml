@@ -15,7 +15,7 @@
     <property name="perftoolsHome" location="/scratch/perftools"/>
     <property name="heapprofile" value="false" />
 
-    <property name="testclass" value="src/au/anu/edu/qm/PumjaRasaayani.x10" />
+    <property name="testclass" value="src/au/edu/anu/qm/PumjaRasaayani.x10" />
 
     <property name="gsl.include" location="/scratch/gsl/include" />
     <property name="gsl.lib" location="/scratch/gsl/lib" />
@@ -77,7 +77,7 @@
         <mkdir dir="${bin}"/>
         <jar jarfile="${bin}/${jar}">
             <manifest>
-                <attribute name="Main-Class" value="au.anu.edu.qm.PumjaRasaayani"/>
+                <attribute name="Main-Class" value="au.edu.anu.qm.PumjaRasaayani"/>
             </manifest>
             <fileset dir="${target-src}" includes="**/*.class" excludes="${jar}"/>          
         </jar>
