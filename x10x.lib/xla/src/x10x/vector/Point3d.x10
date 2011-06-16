@@ -33,6 +33,17 @@ public struct Point3d(i : Double, j : Double, k : Double) implements Tuple3d {
     }
 
     /**
+     * @return this point scaled by the given factor
+     */
+    public @Inline operator this * (that:Double):Point3d {
+        return this.scale(that);
+    }
+
+    public @Inline def scale(c : Double) : Point3d {
+        return Point3d(this.i * c, this.j * c, this.k * c);
+    }
+
+    /**
      * @return the vector from that point to this point
      */
     public @Inline def vector(b: Point3d) : Vector3d {
