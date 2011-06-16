@@ -22,8 +22,8 @@ import x10x.vector.Point3d;
 public struct ContractedGaussian { 
     public val centre : Point3d;
     public val power : Power;
-    public val primitives : Rail[PrimitiveGaussian];
     public val normalization : Double;
+    public val primitives : Rail[PrimitiveGaussian];
     public val intIndex : Int;
 
     /**

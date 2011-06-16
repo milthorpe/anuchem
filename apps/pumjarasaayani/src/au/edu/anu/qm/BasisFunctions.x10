@@ -6,7 +6,7 @@
  *  You may obtain a copy of the License at
  *      http://www.opensource.org/licenses/eclipse-1.0.php
  *
- * (C) Copyright Australian National University 2010.
+ * (C) Copyright Australian National University 2010-2011.
  */
 package au.edu.anu.qm;
 
@@ -44,32 +44,32 @@ public class BasisFunctions {
         for(var atmno:Int=0; atmno<molecule.getNumberOfAtoms(); atmno++) {
             val atom      = molecule.getAtom(atmno);
             val atomBasis = basisSet.getBasis(atom);
-            val orbitals  = atomBasis.getOrbitals();
+            val orbitals  = atomBasis.orbitals;
             val atombfs   = new ArrayList[ContractedGaussian]();
 
-            for(var orbno:Int=0; orbno<orbitals.size(); orbno++) { 
-                val orb = orbitals.get(orbno);
-                val typ = orb.getType();
-                val pList = plInst.getPowers(typ);
+            for(var orbno:Int=0; orbno<orbitals.size; orbno++) { 
+                val orb = orbitals(orbno);
+                val shape = orb.shape;
+                val pList = plInst.getPowers(shape);
 
-                val coeff:ArrayList[Double] = orb.getCoefficients();
-                val exps:ArrayList[Double]  = orb.getExponents();
+                val coeffs = orb.coefficients;
+                val exps = orb.exponents;
                 val centre = atom.centre;
 
                 for(var l:Int=0; l<pList.size; l++) {
                     val power = pList(l);
-                    val primitives = new Array[PrimitiveGaussian](coeff.size());
-                    for(var i:Int=0; i<coeff.size(); i++) {
-                        primitives(i) = new PrimitiveGaussian(centre, power, exps(i), coeff(i), true);
+                    val primitives = new Array[PrimitiveGaussian](coeffs.size);
+                    for(var i:Int=0; i<coeffs.size; i++) {
+                        primitives(i) = new PrimitiveGaussian(centre, power, exps(i), coeffs(i), true);
                     }
                     val cg = new ContractedGaussian(centre, power, primitives, intIndx, true);
                     basisFunctions.add(cg);
                 } // end for
 
-                val am = orb.getAngularMomentum();
-                val atomPrimitives = new Array[PrimitiveGaussian](coeff.size());
-                for(var i:Int=0; i<coeff.size(); i++) {
-                    atomPrimitives(i) = new PrimitiveGaussian(centre, Power(am, 0, 0), exps(i), coeff(i), false);
+                val am = orb.angularMomentum;
+                val atomPrimitives = new Array[PrimitiveGaussian](coeffs.size);
+                for(var i:Int=0; i<coeffs.size; i++) {
+                    atomPrimitives(i) = new PrimitiveGaussian(centre, Power(am, 0, 0), exps(i), coeffs(i), false);
                 }
                 val acg = new ContractedGaussian(centre, Power(am, 0, 0), atomPrimitives, intIndx, false);
                 atombfs.add(acg);

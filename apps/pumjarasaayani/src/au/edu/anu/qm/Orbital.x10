@@ -6,7 +6,7 @@
  *  You may obtain a copy of the License at
  *      http://www.opensource.org/licenses/eclipse-1.0.php
  *
- * (C) Copyright Australian National University 2010.
+ * (C) Copyright Australian National University 2010-2011.
  */
 package au.edu.anu.qm;
 
@@ -17,17 +17,17 @@ import x10.util.*;
  *
  * Represents an Orbital (used for basis function formation)
  *
- * @author: V.Ganesh
+ * @author: V.Ganesh, milthorpe
  */
-public class Orbital { 
-    val exps:ArrayList[Double];
-    val coeff:ArrayList[Double];
-    val shape:String;
-    val angularMomentum:Int;
+public struct Orbital { 
+    public val exponents:Rail[Double];
+    public val coefficients:Rail[Double];
+    public val shape:String;
+    public val angularMomentum:Int;
 
-    public def this(shape:String) { 
-       exps      = new ArrayList[Double]();
-       coeff     = new ArrayList[Double]();
+    public def this(shape:String, exps:Rail[Double], coeffs:Rail[Double]) { 
+       this.exponents = exps;
+       this.coefficients = coeffs;
        this.shape = shape;
 
        if (shape.equals("S")) angularMomentum = 0;
@@ -35,24 +35,6 @@ public class Orbital {
        else if (shape.equals("D")) angularMomentum = 2;
        else if (shape.equals("F")) angularMomentum = 3;
        else angularMomentum = 0;
-    } 
-
-    public def addExponent(ex:Double) {
-       exps.add(ex);
     }
-
-    public def addCoefficient(co:Double) {
-       coeff.add(co);
-    }
-
-    public def add(ex:Double, co:Double) {
-       exps.add(ex);
-       coeff.add(co);
-    }
-
-    public def getType() : String = this.shape;
-    public def getAngularMomentum() = this.angularMomentum;
-    public def getExponents() : ArrayList[Double] = this.exps;
-    public def getCoefficients() : ArrayList[Double] = this.coeff;
 }
 

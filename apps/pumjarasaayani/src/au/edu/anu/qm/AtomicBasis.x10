@@ -6,7 +6,7 @@
  *  You may obtain a copy of the License at
  *      http://www.opensource.org/licenses/eclipse-1.0.php
  *
- * (C) Copyright Australian National University 2010.
+ * (C) Copyright Australian National University 2010-2011.
  */
 package au.edu.anu.qm;
 
@@ -20,16 +20,10 @@ import x10.util.*;
  * @author: V.Ganesh
  */
 public class AtomicBasis { 
-    val orbitals:ArrayList[Orbital];
+    public val orbitals:Rail[Orbital];
 
-    public def this() { 
-       orbitals = new ArrayList[Orbital]();
+    public def this(orbitals:Rail[Orbital]) { 
+       this.orbitals = orbitals;
     } 
-
-    public def addOrbital(orb:Orbital) {
-       orbitals.add(orb);
-    }
-
-    public def getOrbitals() : ArrayList[Orbital] = this.orbitals;
 }
 
