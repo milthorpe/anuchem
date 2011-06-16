@@ -58,7 +58,7 @@ public class Fragmentor {
        val noOfAtoms = mol.getNumberOfAtoms();
 
        // TODO: reorder the atom indices, depending on nearness to the 
-       // center of mass of the molecule so as to ensure a more 
+       // centre of mass of the molecule so as to ensure a more 
        // consistant ordering that is indipendent of the input order
        val sortedAtomIndices = new Array[Int](noOfAtoms);
        for(var i:Int=0; i<noOfAtoms; i++) { 
@@ -81,8 +81,8 @@ public class Fragmentor {
 
        // next start fragmentation, to generate the main fragments
 
-       // step1: atom centered fragments
-       generateAtomCenteredFragments(mol, fragList); 
+       // step1: atom centreed fragments
+       generateAtomcentreedFragments(mol, fragList); 
       
        // step2: merge along connectivity path
        mergeAlongConnectivity(mol, sortedAtomIndices, fragList);
@@ -120,13 +120,13 @@ public class Fragmentor {
        return fragList;
    }
 
-   /** generate atom centered fragments with minimum r-goodness as requeated */
-   def generateAtomCenteredFragments(mol:Molecule[QMAtom], fragList:ArrayList[Fragment]) {
+   /** generate atom centreed fragments with minimum r-goodness as requeated */
+   def generateAtomcentreedFragments(mol:Molecule[QMAtom], fragList:ArrayList[Fragment]) {
        val noOfAtoms = mol.getNumberOfAtoms();
 
        finish for (atom1 in mol.getAtoms()) async {
            val aFragment = new Fragment();
-           aFragment.centeredOn = atom1.getIndex();
+           aFragment.centreedOn = atom1.getIndex();
            aFragment.addAtom(atom1);
 
            for(var i:Int=0; i<noOfAtoms; i++) {
@@ -174,17 +174,17 @@ public class Fragmentor {
           Console.OUT.println("Processing " + i);
           val bondedAtom = sortedAtomIndices((bonds.get(i).second as QMAtom).getIndex());
 
-          mergeFragmentsCenteredOn(v, bondedAtom, fragList);
+          mergeFragmentscentreedOn(v, bondedAtom, fragList);
           visited(bondedAtom) = true;
           Console.OUT.println("Done processing " + i);
        } //  end for
    }
 
-   /** merge fragments centerd on the given atom indices */
-   def mergeFragmentsCenteredOn(a:Int, b:Int, fragList:ArrayList[Fragment]) {
+   /** merge fragments centred on the given atom indices */
+   def mergeFragmentscentreedOn(a:Int, b:Int, fragList:ArrayList[Fragment]) {
        Console.OUT.println("Merging " + a + " and " + b + " ...");
-       val f1 = findFragmentCenteredOn(a, fragList);
-       val f2 = findFragmentCenteredOn(b, fragList);
+       val f1 = findFragmentcentreedOn(a, fragList);
+       val f2 = findFragmentcentreedOn(b, fragList);
 
        if (f1 == null || f2 == null) return;
 
@@ -196,14 +196,14 @@ public class Fragmentor {
        fragList.remove(f1);
        fragList.remove(f2);
 
-       f1f2.centeredOn = f1.centeredOn;
+       f1f2.centreedOn = f1.centreedOn;
        fragList.add(f1f2);
    } 
 
-   /** return the atom centered fragment */
-   def findFragmentCenteredOn(idx:Int, fragList:ArrayList[Fragment]) : Fragment {
+   /** return the atom centreed fragment */
+   def findFragmentcentreedOn(idx:Int, fragList:ArrayList[Fragment]) : Fragment {
        for(frag in fragList) {
-           if (frag.centeredOn == idx) return (frag);
+           if (frag.centreedOn == idx) return (frag);
        } // end for
 
        return null;  // should never come here!
@@ -320,11 +320,11 @@ public class Fragmentor {
 
               if (!fragment.contains(bondedAtom)) {
                  val vec = (bondedAtom.centre - atom.centre).normalize();
-                 val newCenter = Point3d(vec.i*bondDistance + atom.centre.i,
+                 val newcentre = Point3d(vec.i*bondDistance + atom.centre.i,
                                          vec.j*bondDistance + atom.centre.j, 
                                          vec.k*bondDistance + atom.centre.k);
 
-                 fragment.addAtom(new QMAtom("H", newCenter, true));
+                 fragment.addAtom(new QMAtom("H", newcentre, true));
               } // end if
            } // end for
        } // end for

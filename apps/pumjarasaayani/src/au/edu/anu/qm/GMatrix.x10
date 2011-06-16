@@ -98,7 +98,7 @@ public class GMatrix extends Matrix {
         val twoE = new TwoElectronIntegrals(maxam);
 
         val noOfAtoms = mol.getNumberOfAtoms();
-        // center a
+        // centre a
         for(var a:Int=0; a<noOfAtoms; a++) {
             val aFunc = mol.getAtom(a).getBasisFunctions();
             val naFunc = aFunc.size();
@@ -106,7 +106,7 @@ public class GMatrix extends Matrix {
             for(var i:Int=0; i<naFunc; i++) {
                 val iaFunc = aFunc.get(i);
 
-                // center b
+                // centre b
                 for(var b:Int=0; b<=a; b++) {
                     val bFunc = mol.getAtom(b).getBasisFunctions();
                     val nbFunc = (b<a) ? bFunc.size() : i+1;
@@ -114,7 +114,7 @@ public class GMatrix extends Matrix {
                     for(var j:Int=0; j<nbFunc; j++) {
                         val jbFunc = bFunc.get(j);
 
-                        // center c
+                        // centre c
                         for(var c:Int=0; c<noOfAtoms; c++) {
                             val cFunc = mol.getAtom(c).getBasisFunctions();
                             val ncFunc = cFunc.size();
@@ -122,7 +122,7 @@ public class GMatrix extends Matrix {
                             for(var k:Int=0; k<ncFunc; k++) {
                                 val kcFunc = cFunc.get(k);
 
-                                // center d
+                                // centre d
                                 for(var d:Int=0; d<=c; d++) {
                                     val dFunc = mol.getAtom(d).getBasisFunctions();
                                     val ndFunc = (d<c) ? dFunc.size() : k+1;
@@ -135,13 +135,13 @@ public class GMatrix extends Matrix {
             	                        twoE.compute2EAndRecord(iaFunc, jbFunc, kcFunc, ldFunc, 
                                                                 shellList, jMat, kMat, density);
                                     } // end l
-                                } // center d
+                                } // centre d
                             } // end k
-                        } // center c
+                        } // centre c
                     } // end j
-                } // center b
+                } // centre b
             } // end i
-        } // center a
+        } // centre a
      
         // form the G matrix
         val gMatrix = getMatrix();
@@ -166,7 +166,7 @@ public class GMatrix extends Matrix {
 
         val noOfAtoms = mol.getNumberOfAtoms();
         finish {
-          // center a
+          // centre a
           for(var a:Int=0; a<noOfAtoms; a++) {
             val aFunc = mol.getAtom(a).getBasisFunctions();
             val naFunc = aFunc.size();
@@ -174,7 +174,7 @@ public class GMatrix extends Matrix {
             for(var i:Int=0; i<naFunc; i++) {
                val iaFunc = aFunc.get(i);
 
-               // center b
+               // centre b
                for(var b:Int=0; b<=a; b++) {
                    val bFunc = mol.getAtom(b).getBasisFunctions();
                    val nbFunc = (b<a) ? bFunc.size() : i+1;
@@ -182,7 +182,7 @@ public class GMatrix extends Matrix {
                    for(var j:Int=0; j<nbFunc; j++) {
                        val jbFunc = bFunc.get(j);
 
-                       // center c
+                       // centre c
                        for(var c:Int=0; c<noOfAtoms; c++) {
                            val cFunc = mol.getAtom(c).getBasisFunctions();
                            val ncFunc = cFunc.size();
@@ -190,7 +190,7 @@ public class GMatrix extends Matrix {
                            for(var k:Int=0; k<ncFunc; k++) {
                                val kcFunc = cFunc.get(k);
 
-                               // center d
+                               // centre d
                                for(var d:Int=0; d<=c; d++) {
                                    val dFunc = mol.getAtom(d).getBasisFunctions();
                                    val ndFunc = (d<c) ? dFunc.size() : k+1;
@@ -211,13 +211,13 @@ public class GMatrix extends Matrix {
                                            } // end for
                                        } // end while
 				   } // end l
-			       } // center d
+			       } // centre d
                            } // end k
-                       } // center c
+                       } // centre c
                    } // end j
-               } // center b
+               } // centre b
             } // end i
-          } // center a
+          } // centre a
         } // finish
         
         // form the G matrix
@@ -245,7 +245,7 @@ public class GMatrix extends Matrix {
         }
 
         finish {
-            // center a
+            // centre a
             for (a in 0..(noOfAtoms-1)) {
                 val aFunc = mol.getAtom(a).getBasisFunctions();
                 val naFunc = aFunc.size();
@@ -253,7 +253,7 @@ public class GMatrix extends Matrix {
                 for (i in 0..(naFunc-1)) {
                     val iaFunc = aFunc.get(i);
 
-                    // center b
+                    // centre b
                     for (b in 0..a) {
                         val bFunc = mol.getAtom(b).getBasisFunctions();
                         val nbFunc = (b<a) ? bFunc.size() : i+1;
@@ -261,7 +261,7 @@ public class GMatrix extends Matrix {
                         for (j in 0..(nbFunc-1)) {
                             val jbFunc = bFunc.get(j);
 
-                            // center c
+                            // centre c
                             for (c in 0..(noOfAtoms-1)) {
                                 val cFunc = mol.getAtom(c).getBasisFunctions();
                                 val ncFunc = cFunc.size();
@@ -269,7 +269,7 @@ public class GMatrix extends Matrix {
                                 for (k in 0..(ncFunc-1)) {
                                     val kcFunc = cFunc.get(k);
 
-                                    // center d
+                                    // centre d
                                     for (d in 0..c) {
                                        val dFunc = mol.getAtom(d).getBasisFunctions();
                                        val ndFunc = (d<c) ? dFunc.size() : k+1;
@@ -286,13 +286,13 @@ public class GMatrix extends Matrix {
                                                 } // end for
                                             } // end while                               
                                         } // end l
-                                    } // center d
+                                    } // centre d
                                 } // end k
-                            } // center c
+                            } // centre c
                         } // end j
-                    } // center b
+                    } // centre b
                 } // end i
-            } // center a
+            } // centre a
         } // finish
 
         timer.stop(0);
@@ -529,8 +529,8 @@ public class GMatrix extends Matrix {
             val aFunc = bfs(a);
             val bFunc = bfs(b);
 
-            val aStrt = aFunc.getIntIndex();
-            val bStrt = bFunc.getIntIndex();
+            val aStrt = aFunc.intIndex;
+            val bStrt = bFunc.intIndex;
             val aAng  = aFunc.getMaximumAngularMomentum();
             val bAng  = bFunc.getMaximumAngularMomentum();
 
@@ -548,14 +548,14 @@ public class GMatrix extends Matrix {
 
             for (c in 0..(nPrimitives-1)) {
                 val cFunc = bfs(c);
-                val cStrt = cFunc.getIntIndex();
+                val cStrt = cFunc.intIndex;
                 val cAng  = cFunc.getMaximumAngularMomentum();
                 val cc = cStrt + cAng;
 
                 if (aa >= cc) {
                     for (d in 0..(nPrimitives-1)) {
                         val dFunc = bfs(d);
-                        val dStrt = dFunc.getIntIndex();
+                        val dStrt = dFunc.intIndex;
                         val dAng  = dFunc.getMaximumAngularMomentum();
                         val dd = dStrt + dAng;
 
@@ -605,7 +605,7 @@ public class GMatrix extends Matrix {
              for(var i:Int=0; i<naFunc; i++) {
                val iaFunc = aFunc.get(i);
 
-               // center b
+               // centre b
                for(var b:Int=0; b<=a; b++) {
                    val bFunc = mol_loc.getAtom(b).getBasisFunctions();
                    val nbFunc = (b<a) ? bFunc.size() : i+1;
@@ -613,7 +613,7 @@ public class GMatrix extends Matrix {
                    for(var j:Int=0; j<nbFunc; j++) {
                        val jbFunc = bFunc.get(j);
 
-                       // center c
+                       // centre c
                        for(var c:Int=0; c<noOfAtoms; c++) {
                            val cFunc = mol_loc.getAtom(c).getBasisFunctions();
                            val ncFunc = cFunc.size();
@@ -621,7 +621,7 @@ public class GMatrix extends Matrix {
                            for(var k:Int=0; k<ncFunc; k++) {
                                val kcFunc = cFunc.get(k);
 
-                               // center d
+                               // centre d
                                for(var d:Int=0; d<=c; d++) {
                                    val dFunc = mol_loc.getAtom(d).getBasisFunctions();
                                    val ndFunc = (d<c) ? dFunc.size() : k+1;
@@ -633,13 +633,13 @@ public class GMatrix extends Matrix {
                                        // Console.OUT.println(a + ", " + b + ", " + c + ", " + d + " | " + i + ", " + j + ", " + k + ", " + l);
                                        computeThreads(0).computeSingle(iaFunc, jbFunc, kcFunc, ldFunc, density);
                                    } // end l
-                               } // center d
+                               } // centre d
                            } // end k
-                       } // center c
+                       } // centre c
                    } // end j
-               } // center b
+               } // centre b
              } // end i
-          } // center a
+          } // centre a
         }
 
         public def computeShells(nPairs:Int) {

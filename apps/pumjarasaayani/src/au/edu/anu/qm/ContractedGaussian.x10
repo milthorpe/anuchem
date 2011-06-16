@@ -10,57 +10,47 @@
  */
 package au.edu.anu.qm;
 
+import x10.compiler.NonEscaping;
 import x10.util.ArrayList;
 import x10x.vector.Point3d;
 
 /**
- * Represents a contracted gaussian function (made up of PrimitiveGaussian)
+ * Represents a contracted Gaussian function (made up of PrimitiveGaussian)
  *
  * @author: V.Ganesh, milthorpe
  */
-public class ContractedGaussian { 
-    val center : Point3d;
-    val power : Power;
-    val primitives : Rail[PrimitiveGaussian];
-
-    var normalization : Double;
+public struct ContractedGaussian { 
+    public val centre : Point3d;
+    public val power : Power;
+    public val primitives : Rail[PrimitiveGaussian];
+    public val normalization : Double;
+    public val intIndex : Int;
 
     /**
      * Creates a new ContractedGaussian.
      * @param coeff the coefficients of the contracted Gaussian
      * @param exps the exponents of the contracted Gaussian.  Must be the same length as the coefficients array.
      */
-    public def this(center:Point3d, pwr:Power, coeff:ArrayList[Double], exps:ArrayList[Double]) { 
-        this.center = center;
+    public def this(centre:Point3d, pwr:Power, primitives:Rail[PrimitiveGaussian], intIndex:Int, normalize:Boolean) { 
+        this.centre = centre;
         this.power = pwr;
-        normalization = 1.0; 
-
-        primitives = new Array[PrimitiveGaussian](coeff.size());
-        for(var i:Int=0; i<coeff.size(); i++) {
-            primitives(i) = new PrimitiveGaussian(center, power, exps(i), coeff(i));
+        this.primitives = primitives;
+        this.intIndex = intIndex;
+        if (normalize) {
+            normalization = 1.0 / Math.sqrt(selfOverlap());
+        } else {
+            normalization = 1.0; 
         }
     } 
 
-    public def getOrigin() = center;
-    public def getCenter() = center;
-    public def getPower() = power;
-    public def getNormalization() = normalization;
-    public def setNormalization(n:Double) : void { normalization = n; }
     public def getPrimitives() : Rail[PrimitiveGaussian] = primitives;
     public def getPrimitive(i:Int) : PrimitiveGaussian = primitives(i);
     public def getTotalAngularMomentum() = power.getTotalAngularMomentum();
     public def getMaximumAngularMomentum() = power.getMaximumAngularMomentum();
     public def getMinimumAngularMomentum() = power.getMinimumAngularMomentum();
 
-    var intIndex:Int;
-    public def getIntIndex() = intIndex;
-
-    public def setIntIndex(idx:Int) {
-       intIndex = idx;
-    }
-
-    public def distanceFrom(cg:ContractedGaussian) : Double = center.distance(cg.center);
-    public def distanceSquaredFrom(cg:ContractedGaussian) : Double = center.distanceSquared(cg.center);
+    public def distanceFrom(cg:ContractedGaussian) : Double = centre.distance(cg.centre);
+    public def distanceSquaredFrom(cg:ContractedGaussian) : Double = centre.distanceSquared(cg.centre);
 
     public def overlap(cg:ContractedGaussian) : Double {
         val cgPrimitives = cg.getPrimitives();
@@ -73,11 +63,26 @@ public class ContractedGaussian {
             for(j=0; j<cgPrimitives.size; j++) {
                 val jPG = cgPrimitives(j);                
                 
-                sij += iPG.getCoefficient() * jPG.getCoefficient() * iPG.overlap(jPG);
+                sij += iPG.coefficient * jPG.coefficient * iPG.overlap(jPG);
             } // end for
         } // end for
         
         return normalization * cg.normalization * sij;
+    }
+
+    private @NonEscaping def selfOverlap() : Double {
+        var sij:Double = 0.0;
+
+        for(i in 0..(primitives.size-1)) {
+            val iPG = primitives(i);            
+            for(j in 0..(primitives.size-1)) {
+                val jPG = primitives(j);                
+                
+                sij += iPG.coefficient * jPG.coefficient * iPG.overlap(jPG);
+            }
+        }
+        
+        return sij;
     }
 
     public def kinetic(cg:ContractedGaussian) : Double {
@@ -91,14 +96,14 @@ public class ContractedGaussian {
             for(j=0; j<cgPrimitives.size; j++) {
                 val jPG = cgPrimitives(j);                
                 
-                tij += iPG.getCoefficient() * jPG.getCoefficient() * iPG.kinetic(jPG);
+                tij += iPG.coefficient * jPG.coefficient * iPG.kinetic(jPG);
             } // end for
         } // end for
         
         return normalization * cg.normalization * tij;
     }
 
-    public def nuclear(cg:ContractedGaussian, center : Point3d) : Double {
+    public def nuclear(cg:ContractedGaussian, centre:Point3d) : Double {
         var vij:Double = 0.0;
         var i:Int, j:Int;
         val cgPrimitives = cg.getPrimitives();
@@ -109,20 +114,12 @@ public class ContractedGaussian {
             for(j=0; j<cgPrimitives.size; j++) {
                 val jPG = cgPrimitives(j);                
                 
-                vij += iPG.getCoefficient() * jPG.getCoefficient() 
-                       * iPG.nuclear(jPG, center);                                
+                vij += iPG.coefficient * jPG.coefficient 
+                       * iPG.nuclear(jPG, centre);                                
             } // end for
         } // end for
         
         return normalization * cg.normalization * vij;
-    }
-
-    public def normalize() {        
-        for(var i:Int=0; i<primitives.size; i++) {
-           primitives(i).normalize();
-        }
-
-        normalization = 1.0 / Math.sqrt(this.overlap(this));
     }
 }
 
