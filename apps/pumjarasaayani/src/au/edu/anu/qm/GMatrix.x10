@@ -147,8 +147,7 @@ public class GMatrix extends Matrix {
         val gMatrix = getMatrix();
         val jMatrix = jMat.getMatrix();
         val kMatrix = kMat.getMatrix();
-        finish for([x,y] in gMatrix.region) async
-                  gMatrix(x,y) = jMatrix(x,y) - (0.25*kMatrix(x,y));     
+        for([x,y] in gMatrix.region) gMatrix(x,y) = jMatrix(x,y) - (0.25*kMatrix(x,y));     
     }
 
     private def computeDirectLowMemNoAtomic(density:Density) : void {
@@ -226,9 +225,9 @@ public class GMatrix extends Matrix {
              val jMatrix = computeThreads(idx).getJMat().getMatrix();
              val kMatrix = computeThreads(idx).getKMat().getMatrix();
              
-             finish for([x,y] in gMatrix) async {
+             for([x,y] in gMatrix) {
                    gMatrix(x,y) += jMatrix(x,y) - (0.25*kMatrix(x,y));     
-             } // finish
+             }
         } // end for
     }
 
@@ -582,6 +581,7 @@ public class GMatrix extends Matrix {
             val kFunc = mol_loc.getAtom(c).getBasisFunctions().get(k);
             val lFunc = mol_loc.getAtom(d).getBasisFunctions().get(l);
 
+            val computeThreads = this.computeThreads; // TODO this should not be required XTENLANG-1913
             for(var ix:Int=0; ix<Runtime.NTHREADS; ix++) {
                val setIt = computeThreads(ix).setValue(iFunc, jFunc, kFunc, lFunc);
 

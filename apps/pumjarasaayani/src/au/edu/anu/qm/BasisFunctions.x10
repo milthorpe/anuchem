@@ -20,11 +20,11 @@ import au.edu.anu.chem.Molecule;
  *
  * @author: V.Ganesh
  */
-public class BasisFunctions { 
-    val molecule:Molecule[QMAtom];
-    val basisName:String;
-    val basisFunctions:ArrayList[ContractedGaussian];
-    val shellList:ShellList;
+public struct BasisFunctions { 
+    public val molecule:Molecule[QMAtom];
+    public val basisName:String;
+    public val basisFunctions:ArrayList[ContractedGaussian];
+    public val shellList:ShellList;
 
     public def this(mol:Molecule[QMAtom], basNam:String, basisDir:String) { 
         this.molecule  = mol;

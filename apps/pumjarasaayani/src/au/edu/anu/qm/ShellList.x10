@@ -22,10 +22,10 @@ import au.edu.anu.chem.Molecule;
  *
  * @author: V.Ganesh, milthorpe
  */
-public class ShellList { 
-    val shellList:HashMap[Int, Shell];
-    val powerList:Rail[Rail[Power]];
-    val maxam:Int;
+public struct ShellList { 
+    private val shellList:HashMap[Int, Shell];
+    private val powerList:Rail[Rail[Power]];
+    private val maxam:Int;
 
     public def this(molecule:Molecule[QMAtom]) {
         // init shell list
@@ -61,8 +61,6 @@ public class ShellList {
         this.powerList = powerList;
     }
 
-    public def getMaximumAngularMomentum() = maxam;
-
     public def getNumberOfShellPrimitives() : Int { 
         var n:Int = 0;
         for(shell in shellList.keySet()) 
@@ -86,7 +84,8 @@ public class ShellList {
         return nPrimitives * nPrimitives;
     }
 
-    public @Inline final def getShell(am:Int) = shellList.getOrElse(am, null);
-    public @Inline final def getPowers(am:Int) = powerList(am);
+    public @Inline def getMaximumAngularMomentum() = maxam;
+    public @Inline def getShell(am:Int) = shellList.getOrElse(am, null);
+    public @Inline def getPowers(am:Int) = powerList(am);
 }
 
