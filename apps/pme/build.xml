@@ -113,7 +113,7 @@
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/src">
             <arg value="-c"/>
-            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} -report postcompile=1 -post '# -g ${x10c.optimize} ${post.profile} -Wall &quot;-I${fftw3.include}&quot; # &quot;-L${fftw3.lib}&quot; ${link.mpiPprofile} ${post.cpuprofile} # -lfftw3' -sourcepath '.${path.separator}${xla.src}${path.separator}${anuchem.src}' -d '${target-src}' '${basedir}/${testclass}'"/>
+            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} -report postcompile=1 -post '# -g ${x10c.optimize} ${post.profile} &quot;-I${fftw3.include}&quot; # &quot;-L${fftw3.lib}&quot; ${link.mpiPprofile} ${post.cpuprofile} # -lfftw3' -sourcepath '.${path.separator}${xla.src}${path.separator}${anuchem.src}' -d '${target-src}' '${basedir}/${testclass}'"/>
         </exec>
     </target>
 

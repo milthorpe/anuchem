@@ -10,8 +10,6 @@
  */
 package au.edu.anu.mm;
 
-import x10.compiler.TempNoInline_1;
-
 public class ExpansionRegion extends Region  {
     // XTENLANG-49
     static type ExpansionRegion(rank:Int) = ExpansionRegion{self.rank==rank};
