@@ -57,7 +57,7 @@ public class Expansion {
      * Add each term of e to this expansion. 
      * This operation is not atomic, therefore not thread-safe.
      */
-    protected def unsafeAdd(e : Expansion) {
+    def unsafeAdd(e : Expansion) {
         // TODO should be just:  for ([l,m] in terms.region) {
 	    for (l in 0..p) {
 	        for (m in -l..l) {
