@@ -303,40 +303,48 @@ public class Fmm3d {
     }
 
     /** 
-     * Starting at the bottom level, combines multipole expansions for <= 8 child
+     * For each level above the bottom level, combines multipole expansions for <= 8 child
      * boxes into a single multipole expansion for the parent box.
      */
     def combineMultipoles() {
         timer.start(TIMER_INDEX_COMBINE);
-        for (var level: Int = numLevels; level > topLevel; level--) {
+        for (var level: Int = numLevels-1; level >= topLevel; level--) {
             val thisLevel = level;
             //Console.OUT.println("combine level " + level + " => " + (level-1));
             val thisLevelBoxes = boxes(thisLevel);
+            val lowerLevelBoxes = boxes(thisLevel+1);
             val multipoleTranslations = this.multipoleTranslations; // TODO shouldn't be necessary XTENLANG-1913
             val complexK = this.complexK; // TODO shouldn't be necessary XTENLANG-1913
             val wignerA = this.wignerA; // TODO shouldn't be necessary XTENLANG-1913
-            val halfSideLength = size / Math.pow2(thisLevel+1);
+            val halfSideLength = size / Math.pow2(thisLevel+2);
             finish for (p1 in thisLevelBoxes.dist.places()) async at(p1) {
+                val childMultipoles = new Array[MultipoleExpansion](8);
                 for ([x,y,z] in thisLevelBoxes.dist(here)) {
-                    val child = thisLevelBoxes(x,y,z);
-                    if (child != null) {
-                        val childExp = child.multipoleExp;
-                        val parent = child.parent;
-                        // TODO should be able to inline Point(3)
-                        val dx = ((child.x+1)%2)*2-1;
-                        val dy = ((child.y+1)%2)*2-1;
-                        val dz = ((child.z+1)%2)*2-1;
-                        at(parent) {
-			                if (!useOldOperators) { 
-				                /* New! Operation A */
-            	                parent().multipoleExp.translateAndAddMultipole(
-					                Vector3d(dx*halfSideLength, dy*halfSideLength, dz*halfSideLength),
-					                complexK(here.id)(dx,dy,dz), childExp, wignerA(here.id)((dx+1)/2, (dy+1)/2, (dz+1)/2));
-			                } else {
-				                /* Old Operation A */
-				                val translationIndex = multipoleTranslations(Point.make([here.id, thisLevel, (child.x+1)%2, (child.y+1)%2, (child.z+1)%2]));
-				                parent().multipoleExp.translateAndAddMultipole(translationIndex, childExp);
-			                }
+                    val parent = thisLevelBoxes(x,y,z);
+                    val childRegion = (2*x)..(2*x+1) * (2*y)..(2*y+1) * (2*z)..(2*z+1);
+                    // asynchronously fetch all child multipole expansions
+                    finish {
+                        for ([x2,y2,z2] in childRegion) async {
+                            childMultipoles(childRegion.indexOf(x2, y2, z2)) = getMultipoleExpansionLocalCopy(lowerLevelBoxes, x2, y2, z2);
+                        }
+                    }
+                    // and then sequentially sum them together
+                    for ([x2,y2,z2] in childRegion) {
+                        val dx = ((x2+1)%2)*2-1;
+                        val dy = ((y2+1)%2)*2-1;
+                        val dz = ((z2+1)%2)*2-1;
+                        val childExp = childMultipoles(childRegion.indexOf(x2, y2, z2));
+                        if (childExp != null) {
+		                    if (!useOldOperators) { 
+			                    /* New! Operation A */
+            	                parent.multipoleExp.translateAndAddMultipole(
+				                    Vector3d(dx*halfSideLength, dy*halfSideLength, dz*halfSideLength),
+				                    complexK(here.id)(dx,dy,dz), childExp, wignerA(here.id)((dx+1)/2, (dy+1)/2, (dz+1)/2));
+		                    } else {
+			                    /* Old Operation A */
+			                    val translationIndex = multipoleTranslations(Point.make([here.id, thisLevel+1, (x2+1)%2, (y2+1)%2, (z2+1)%2]));
+			                    parent.multipoleExp.translateAndAddMultipole(translationIndex, childExp);
+		                    }
                         }
                     }
                 }

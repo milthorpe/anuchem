@@ -170,7 +170,7 @@ public class MultipoleExpansion extends Expansion {
 	    }
 
 	    scratch.backRotate(temp, complexK(1), wigner(1) ); 
-    	add(scratch);
+    	unsafeAdd(scratch);
     }
 
     /**
