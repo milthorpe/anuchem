@@ -111,7 +111,7 @@ public class PeriodicFmm3d extends Fmm3d {
                                                  j * size,
                                                  k * size);
                 val translation = MultipoleExpansion.getOlm(translationVector, numTerms);
-                macroTranslation.add(translation);
+                macroTranslation.unsafeAdd(translation); // only one thread for macro, so this is OK
             }
             macroMultipoles(1) = new MultipoleExpansion(numTerms);
             macroMultipoles(1).translateAndAddMultipole(macroTranslation, macroMultipoles(0));
@@ -126,7 +126,7 @@ public class PeriodicFmm3d extends Fmm3d {
                                                      j * size,
                                                      k * size);
                     val transform = LocalExpansion.getMlm(translationVector, numTerms);
-                    macroLocalTranslations(0).add(transform);
+                    macroLocalTranslations(0).unsafeAdd(transform); // only one thread for macro, so this is OK
                 }
             }
             macroLocalTranslations(1) = macroLocalTranslations(0).getMacroscopicParent();
@@ -166,9 +166,7 @@ public class PeriodicFmm3d extends Fmm3d {
                     async at(lowestLevelBoxes.dist(boxIndex(0), boxIndex(1), boxIndex(2))) {
                         val remoteAtom = new PointCharge(offsetCentre, charge);
                         val leafBox = lowestLevelBoxes(boxIndex) as FmmLeafBox;
-                        atomic {
-                            leafBox.atoms.add(remoteAtom);
-                        }
+                        leafBox.addAtom(remoteAtom);
                     }
                 }
                 offer myDipole;
@@ -198,10 +196,9 @@ public class PeriodicFmm3d extends Fmm3d {
             val leafBox = lowestLevelBoxes(boxIndex) as FmmLeafBox;
             val boxLocation = leafBox.getCentre(size).vector(offsetCentre);
             val atomExpansion = MultipoleExpansion.getOlm(charge, boxLocation, numTerms);
-            atomic {
-                leafBox.atoms.add(remoteAtom);
-                leafBox.multipoleExp.add(atomExpansion);
-            }
+            // both the following operations are atomic.  however they don't need to be completed together
+            leafBox.addAtom(remoteAtom);
+            leafBox.multipoleExp.add(atomExpansion);
         }
     }
 

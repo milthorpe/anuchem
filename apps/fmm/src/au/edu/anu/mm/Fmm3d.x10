@@ -261,9 +261,7 @@ public class Fmm3d {
                 async at(lowestLevelBoxes.dist(boxIndex)) {
                     val remoteAtom = new PointCharge(offsetCentre, charge);
                     val leafBox = lowestLevelBoxes(boxIndex) as FmmLeafBox;
-                    atomic {
-                        leafBox.atoms.add(remoteAtom);
-                    }
+                    leafBox.addAtom(remoteAtom);
                 }
             }
         }
@@ -296,7 +294,7 @@ public class Fmm3d {
                         val atom = leafBox.atoms(i);
                         val atomLocation = boxCentre.vector(atom.centre);
                         val atomExpansion = MultipoleExpansion.getOlm(atom.charge, atomLocation, numTerms);
-                        leafBox.multipoleExp.add(atomExpansion);
+                        leafBox.multipoleExp.unsafeAdd(atomExpansion); // only one thread per box, so unsafeAdd is OK
                     }
                 }
             }
