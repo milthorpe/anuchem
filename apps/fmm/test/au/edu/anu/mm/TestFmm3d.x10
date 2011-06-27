@@ -73,6 +73,7 @@ public class TestFmm3d extends TestElectrostatic {
 
         val atoms = generateAtoms(numAtoms);
         val fmm3d = new Fmm3d(density, numTerms, wellSpaced, Point3d(0.0, 0.0, 0.0), SIZE, numAtoms, atoms);
+        fmm3d.assignAtomsToBoxes();
         val energy = fmm3d.calculateEnergy();
         
         if (verbose) {

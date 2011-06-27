@@ -66,10 +66,6 @@ public class PeriodicFmm3d extends Fmm3d {
     }
     
     public def calculateEnergy() : Double {
-        timer.start(TIMER_INDEX_TREE);
-        assignAtomsToBoxes(atoms, boxes(numLevels), offset, lowestLevelDim, size);
-        timer.stop(TIMER_INDEX_TREE);
-
         timer.start(TIMER_INDEX_TOTAL);
         finish {
             async {
@@ -150,8 +146,13 @@ public class PeriodicFmm3d extends Fmm3d {
         timer.stop(TIMER_INDEX_MACROSCOPIC);
     }
 
-    protected def assignAtomsToBoxes(atoms: DistArray[Rail[MMAtom]](1), lowestLevelBoxes : DistArray[FmmBox](3), offset : Vector3d, lowestLevelDim : Int, size : Double) {
-        //Console.OUT.println("assignAtomsToBoxes");
+    public def assignAtomsToBoxes() {
+        timer.start(TIMER_INDEX_TREE);
+        val offset = this.offset; // TODO shouldn't be necessary XTENLANG-1913
+        val lowestLevelBoxes = this.lowestLevelBoxes; // TODO shouldn't be necessary XTENLANG-1913
+        val atoms = this.atoms; // TODO shouldn't be necessary XTENLANG-1913
+        val lowestLevelDim = this.lowestLevelDim; // TODO shouldn't be necessary XTENLANG-1913
+        val size = this.size; // TODO shouldn't be necessary XTENLANG-1913
         val dipole = finish(VectorSumReducer()) {
             ateach (p1 in atoms) {
                 var myDipole : Vector3d = Vector3d.NULL;
@@ -185,6 +186,7 @@ public class PeriodicFmm3d extends Fmm3d {
                 lowestLevelBoxes(boxIndex) = null;
             }
         }
+        timer.stop(TIMER_INDEX_TREE);
     }
 
     def addAtomToLowestLevelBoxAsync(boxIndex : Point(3), offsetCentre : Point3d, charge : Double) {

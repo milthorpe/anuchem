@@ -69,6 +69,7 @@ public class TestPeriodicFmm3d extends TestElectrostatic {
 
         val atoms = generateAtoms(numAtoms);
         val fmm3d = new PeriodicFmm3d(density, numTerms, Point3d(0.0, 0.0, 0.0), SIZE, numAtoms, atoms, numShells);
+        fmm3d.assignAtomsToBoxes();
         val energy = fmm3d.calculateEnergy();
         
         if (verbose) {

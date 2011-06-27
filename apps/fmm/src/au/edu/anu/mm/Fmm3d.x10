@@ -230,10 +230,6 @@ public class Fmm3d {
     }
     
     public def calculateEnergy() : Double {
-        timer.start(TIMER_INDEX_TREE);
-        assignAtomsToBoxes(atoms, boxes(numLevels), offset, lowestLevelDim, size);
-        timer.stop(TIMER_INDEX_TREE);
-
         timer.start(TIMER_INDEX_TOTAL);
         finish {
             async {
@@ -249,7 +245,13 @@ public class Fmm3d {
     }
 
 
-    protected def assignAtomsToBoxes(atoms: DistArray[Rail[MMAtom]](1), lowestLevelBoxes : DistArray[FmmBox](3), offset : Vector3d, lowestLevelDim : Int, size : Double) {
+    public def assignAtomsToBoxes() {
+        timer.start(TIMER_INDEX_TREE);
+        val offset = this.offset; // TODO shouldn't be necessary XTENLANG-1913
+        val lowestLevelBoxes = this.lowestLevelBoxes; // TODO shouldn't be necessary XTENLANG-1913
+        val atoms = this.atoms; // TODO shouldn't be necessary XTENLANG-1913
+        val lowestLevelDim = this.lowestLevelDim; // TODO shouldn't be necessary XTENLANG-1913
+        val size = this.size; // TODO shouldn't be necessary XTENLANG-1913
         //Console.OUT.println("assignAtomsToBoxes");
         finish ateach (p1 in atoms) {
             val localAtoms = atoms(p1);
@@ -273,6 +275,7 @@ public class Fmm3d {
                 lowestLevelBoxes(boxIndex) = null;
             }
         }
+        timer.stop(TIMER_INDEX_TREE);
     }
 
     /** 
