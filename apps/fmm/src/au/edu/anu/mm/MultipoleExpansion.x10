@@ -38,15 +38,16 @@ public class MultipoleExpansion extends Expansion {
      */
     public static def getOlm(q : Double, v : Tuple3d, p : Int) : MultipoleExpansion {
         val exp = new MultipoleExpansion(p);
-        var v_pole : Polar3d = Polar3d.getPolar3d(v);
+        val v_pole = Polar3d.getPolar3d(v);
         val pplm = AssociatedLegendrePolynomial.getPlk(v_pole.theta, p); 
-        
-        val phifac0 = Complex(Math.cos(-v_pole.phi), Math.sin(-v_pole.phi));
 
-        var rfac : Double = 1.0;
+        exp.terms(0,0) = Complex(q * pplm(0,0), 0.0);
+
+        val phifac0 = Complex(Math.cos(-v_pole.phi), Math.sin(-v_pole.phi));
+        var rfac : Double = v_pole.r;
         var il : Double = 1.0;
-        for (l in 0..p) {
-            il = il * Math.max(l,1);
+        for (l in 1..p) {
+            il = il * l;
             var ilm : Double = il;
             var phifac : Complex = Complex.ONE;
             exp.terms(l,0) = phifac / ilm * (q * rfac * pplm(l,0)); 
@@ -71,15 +72,16 @@ public class MultipoleExpansion extends Expansion {
      */
     public static def getOlm(v : Tuple3d, p : Int) : MultipoleExpansion {
         val exp = new MultipoleExpansion(p);
-        var v_pole : Polar3d = Polar3d.getPolar3d(v);
+        val v_pole = Polar3d.getPolar3d(v);
         val pplm = AssociatedLegendrePolynomial.getPlk(v_pole.theta, p); 
 
-        val phifac0 = Complex(Math.cos(-v_pole.phi), Math.sin(-v_pole.phi));
+        exp.terms(0,0) = Complex(pplm(0,0), 0.0);
 
-        var rfac : Double = 1.0;
+        val phifac0 = Complex(Math.cos(-v_pole.phi), Math.sin(-v_pole.phi));
+        var rfac : Double = v_pole.r;
         var il : Double = 1.0;
-        for (l in 0..p) {
-            il = il * Math.max(l,1);
+        for (l in 1..p) {
+            il = il * l;
             var ilm : Double = il;
             var phifac : Complex = Complex.ONE;
             exp.terms(l,0) = phifac / ilm * (rfac * pplm(l,0)); 
