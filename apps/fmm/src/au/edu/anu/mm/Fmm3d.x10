@@ -73,10 +73,9 @@ public class Fmm3d {
     public static val TIMER_INDEX_TRANSFORM : Int = 5;
     public static val TIMER_INDEX_FARFIELD : Int = 6;
     public static val TIMER_INDEX_TREE : Int = 7;
-    public static val TIMER_INDEX_SETUP : Int = 8;
-    public static val TIMER_INDEX_PLACEHOLDER : Int = 9;
+    public static val TIMER_INDEX_PLACEHOLDER : Int = 8;
     /** A multi-timer for the several segments of a single getEnergy invocation, indexed by the constants above. */
-    public val timer = new Timer(10);
+    public val timer = new Timer(9);
 
     /** All boxes in the octree division of space. 
      * Array has numLevels elements, for levels [1..numLevels]
