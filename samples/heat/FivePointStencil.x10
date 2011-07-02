@@ -118,7 +118,6 @@ public class FivePointStencil(N : Int) {
     }
 
 	public def run(): Boolean = {
-/*
         initialise();
         val start = System.nanoTime();
         for ([t] in 1..TIME_STEPS) {
@@ -131,7 +130,7 @@ public class FivePointStencil(N : Int) {
         val stop = System.nanoTime();
         //printGrid();
         Console.OUT.printf("sequential five-point stencil avg: %g ms\n", ((stop-start) as Double) / 1e06 / TIME_STEPS);
-*/
+
         initialise();
         val start2 = System.nanoTime();
         for ([t] in 1..TIME_STEPS) {
@@ -143,7 +142,7 @@ public class FivePointStencil(N : Int) {
         }
         val stop2 = System.nanoTime();
         Console.OUT.printf("parallel five-point stencil avg: %g ms\n", ((stop2-start2) as Double) / 1e06 / TIME_STEPS);
-/*
+
         initialise();
         val start3 = System.nanoTime();
         for ([t] in 1..TIME_STEPS) {
@@ -155,12 +154,12 @@ public class FivePointStencil(N : Int) {
         }
         val stop3 = System.nanoTime();
         Console.OUT.printf("parallel five-point stencil with collecting finish avg: %g ms\n", ((stop3-start3) as Double) / 1e06 / TIME_STEPS);
-*/
+
         return true;
 	}
 
 	public static def main(var args: Array[String](1)): void = {
-        var elementsPerPlace : Int = 50;
+        var elementsPerPlace : Int = 512;
         if (args.size > 0) {
             elementsPerPlace = Int.parse(args(0));
         }
