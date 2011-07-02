@@ -16,7 +16,8 @@
  * @author milthorpe 05/2011
  */
 public class FivePointStencil(N : Int) {
-    static val epsilon = 1.0e-5;
+    static val EPSILON = 1.0e-5;
+    static val TIME_STEPS = 1000;
     val innerRegion : Region(2){rect};
     var current : Array[Double](2){rect,zeroBased};
     var previous : Array[Double](2){rect,zeroBased};
@@ -95,7 +96,7 @@ public class FivePointStencil(N : Int) {
 
     static struct MaxReducer implements Reducible[Double] {
         public def zero() = 0.0;
-        public operator this(a:Double, b:Double) = Math.max(a,b);
+        public operator this(a:Double, b:Double) = Math.max(Math.abs(a),Math.abs(b));
     }
 
     def initialise() {
@@ -117,45 +118,49 @@ public class FivePointStencil(N : Int) {
     }
 
 	public def run(): Boolean = {
+/*
         initialise();
         val start = System.nanoTime();
-        for ([t] in 1..1000) {
+        for ([t] in 1..TIME_STEPS) {
             val maxDelta = stencil();
-            if (maxDelta < epsilon) {
+            if (maxDelta < EPSILON) {
+                Console.OUT.println("converged after " + t + " time steps");
                 break;
             }
         }
         val stop = System.nanoTime();
         //printGrid();
-        Console.OUT.printf("sequential five-point stencil avg: %g ms\n", ((stop-start) as Double) / 1e08);
-
+        Console.OUT.printf("sequential five-point stencil avg: %g ms\n", ((stop-start) as Double) / 1e06 / TIME_STEPS);
+*/
         initialise();
         val start2 = System.nanoTime();
-        for ([t] in 1..1000) {
+        for ([t] in 1..TIME_STEPS) {
             val maxDelta = parallelStencil();
-            if (maxDelta < epsilon) {
+            if (maxDelta < EPSILON) {
+                Console.OUT.println("converged after " + t + " time steps");
                 break;
             }
         }
         val stop2 = System.nanoTime();
-        Console.OUT.printf("parallel five-point stencil avg: %g ms\n", ((stop2-start2) as Double) / 1e08);
-
+        Console.OUT.printf("parallel five-point stencil avg: %g ms\n", ((stop2-start2) as Double) / 1e06 / TIME_STEPS);
+/*
         initialise();
         val start3 = System.nanoTime();
-        for ([t] in 1..1000) {
+        for ([t] in 1..TIME_STEPS) {
             val maxDelta = parallelCollectingStencil();
-            if (maxDelta < epsilon) {
+            if (maxDelta < EPSILON) {
+                Console.OUT.println("converged after " + t + " time steps");
                 break;
             }
         }
         val stop3 = System.nanoTime();
-        Console.OUT.printf("parallel five-point stencil with collecting finish avg: %g ms\n", ((stop3-start3) as Double) / 1e08);
-
+        Console.OUT.printf("parallel five-point stencil with collecting finish avg: %g ms\n", ((stop3-start3) as Double) / 1e06 / TIME_STEPS);
+*/
         return true;
 	}
 
 	public static def main(var args: Array[String](1)): void = {
-        var elementsPerPlace : Int = 10;
+        var elementsPerPlace : Int = 50;
         if (args.size > 0) {
             elementsPerPlace = Int.parse(args(0));
         }
