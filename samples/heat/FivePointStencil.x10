@@ -105,6 +105,9 @@ public class FivePointStencil(N : Int) {
             current(p) = 1.0;
             previous(p) = 1.0;
         }
+        for (p in innerRegion) {
+            current(p) = 0.0;
+        }
     }
 
     def printGrid() {
