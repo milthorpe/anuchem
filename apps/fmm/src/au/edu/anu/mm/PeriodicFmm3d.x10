@@ -10,6 +10,7 @@
  */
 package au.edu.anu.mm;
 
+import x10.util.ArrayList;
 import x10x.vector.Point3d;
 import x10x.vector.Vector3d;
 import au.edu.anu.chem.PointCharge;
@@ -153,6 +154,7 @@ public class PeriodicFmm3d extends Fmm3d {
         val atoms = this.atoms; // TODO shouldn't be necessary XTENLANG-1913
         val lowestLevelDim = this.lowestLevelDim; // TODO shouldn't be necessary XTENLANG-1913
         val size = this.size; // TODO shouldn't be necessary XTENLANG-1913
+        val boxAtomsTemp = DistArray.make[ArrayList[PointCharge]](lowestLevelBoxes.dist, (Point) => new ArrayList[PointCharge]());
         val dipole = finish(VectorSumReducer()) {
             ateach (p1 in atoms) {
                 var myDipole : Vector3d = Vector3d.NULL;
@@ -166,30 +168,32 @@ public class PeriodicFmm3d extends Fmm3d {
                     // TODO should be able to call PeriodicDist.dist with Point(3) inlined
                     async at(lowestLevelBoxes.dist(boxIndex(0), boxIndex(1), boxIndex(2))) {
                         val remoteAtom = new PointCharge(offsetCentre, charge);
-                        val leafBox = lowestLevelBoxes(boxIndex) as FmmLeafBox;
-                        leafBox.addAtom(remoteAtom);
+                        atomic boxAtomsTemp(boxIndex).add(remoteAtom);
                     }
                 }
                 offer myDipole;
             }
         };
 
-        cancelDipole(dipole);
+        cancelDipole(dipole, boxAtomsTemp);
 
-        // post-prune leaf boxes
-        // TODO prune intermediate empty boxes as well
         // TODO pruning before cancel dipole causes NPE on corner 
         //      boxes for small or non-uniform distributions
         finish ateach (boxIndex in lowestLevelBoxes) {
-            val box = lowestLevelBoxes(boxIndex) as FmmLeafBox;
-            if (box.atoms.size() == 0) {
+            val boxAtoms = boxAtomsTemp(boxIndex);
+            if (boxAtoms.size() == 0) {
+                // post-prune leaf boxes
+                // TODO prune intermediate empty boxes as well
                 lowestLevelBoxes(boxIndex) = null;
+            } else {
+                val box = lowestLevelBoxes(boxIndex) as FmmLeafBox;
+                box.setAtoms(boxAtoms.toArray());
             }
         }
         timer.stop(TIMER_INDEX_TREE);
     }
 
-    def addAtomToLowestLevelBoxAsync(boxIndex : Point(3), offsetCentre : Point3d, charge : Double) {
+    def addAtomToLowestLevelBoxAsync(boxAtoms : DistArray[ArrayList[PointCharge]](3), boxIndex : Point(3), offsetCentre : Point3d, charge : Double) {
         val size = this.size; // TODO shouldn't be necessary XTENLANG-1913
         val numTerms = this.numTerms; // TODO shouldn't be necessary XTENLANG-1913
         val lowestLevelBoxes = this.lowestLevelBoxes; // TODO shouldn't be necessary XTENLANG-1913
@@ -199,7 +203,7 @@ public class PeriodicFmm3d extends Fmm3d {
             val boxLocation = leafBox.getCentre(size).vector(offsetCentre);
             val atomExpansion = MultipoleExpansion.getOlm(charge, boxLocation, numTerms);
             // both the following operations are atomic.  however they don't need to be completed together
-            leafBox.addAtom(remoteAtom);
+            atomic boxAtoms(boxIndex).add(remoteAtom);
             leafBox.multipoleExp.add(atomExpansion);
         }
     }
@@ -209,30 +213,30 @@ public class PeriodicFmm3d extends Fmm3d {
      * to cancel the dipole moment.
      * @see Kudin & Scuseria, section 2.3
      */
-    def cancelDipole(dipole : Vector3d) : Vector3d {
+    def cancelDipole(dipole : Vector3d, boxAtoms : DistArray[ArrayList[PointCharge]](3)) : Vector3d {
         //Console.OUT.println("dipole = " + dipole);
         var newDipole : Vector3d = dipole;
         finish {
             val p1 = Point3d(size, 0.0, 0.0) + offset;
             val q1 = - dipole.i / size;
-            addAtomToLowestLevelBoxAsync(Point.make(lowestLevelDim-1, 0, 0), p1, q1);
+            addAtomToLowestLevelBoxAsync(boxAtoms, Point.make(lowestLevelDim-1, 0, 0), p1, q1);
             newDipole = newDipole + Vector3d(p1) * q1;
 
             val p2 = Point3d(0.0, size, 0.0) + offset;
             val q2 = - dipole.j / size;
-            addAtomToLowestLevelBoxAsync(Point.make(0, lowestLevelDim-1, 0), p2, q2);
+            addAtomToLowestLevelBoxAsync(boxAtoms, Point.make(0, lowestLevelDim-1, 0), p2, q2);
             newDipole = newDipole + Vector3d(p2) * q2;
 
 
             val p3 = Point3d(0.0, 0.0, size) + offset;
             val q3 = - dipole.k / size;
-            addAtomToLowestLevelBoxAsync(Point.make(0, 0, lowestLevelDim-1), p3, q3);
+            addAtomToLowestLevelBoxAsync(boxAtoms, Point.make(0, 0, lowestLevelDim-1), p3, q3);
             newDipole = newDipole + Vector3d(p3) * q3;
 
 
             val p0 = Point3d(0.0, 0.0, 0.0)  + offset;
             val q0 = -(q1 + q2 + q3);
-            addAtomToLowestLevelBoxAsync(Point.make(0, 0, 0),                p0, q0);
+            addAtomToLowestLevelBoxAsync(boxAtoms, Point.make(0, 0, 0),                p0, q0);
             newDipole = newDipole + Vector3d(p0) * q0;
 /*
             Console.OUT.println(q1 + " at " + p1);
@@ -268,11 +272,12 @@ public class PeriodicFmm3d extends Fmm3d {
                 for ([x1,y1,z1] in lowestLevelBoxes.dist(here)) {
                     val box1 = lowestLevelBoxes(x1,y1,z1) as FmmLeafBox;
                     if (box1 != null) {
-                        for (atomIndex1 in 0..(box1.atoms.size()-1)) {
+                        val box1Atoms = box1.getAtoms();
+                        for (atomIndex1 in 0..(box1Atoms.size-1)) {
                             // direct calculation with all atoms in same box
-                            val atom1 = box1.atoms(atomIndex1);
+                            val atom1 = box1Atoms(atomIndex1);
                             for (sameBoxAtomIndex in 0..(atomIndex1-1)) {
-                                val sameBoxAtom = box1.atoms(sameBoxAtomIndex);
+                                val sameBoxAtom = box1Atoms(sameBoxAtomIndex);
                                 val pairEnergy = atom1.charge * sameBoxAtom.charge / atom1.centre.distance(sameBoxAtom.centre);
                                 thisPlaceEnergy += pairEnergy;
                             }
@@ -286,14 +291,14 @@ public class PeriodicFmm3d extends Fmm3d {
                             val x2 = boxIndex2(0);
                             val y2 = boxIndex2(1);
                             val z2 = boxIndex2(2);
-                            val boxAtoms = cachedAtoms(x2, y2, z2);
-                            if (boxAtoms != null) {
+                            val box2Atoms = cachedAtoms(x2, y2, z2);
+                            if (box2Atoms != null) {
                                 val translation = getTranslation(lowestLevelDim, size, x2, y2, z2);
-                                for (otherBoxAtomIndex in 0..(boxAtoms.size-1)) {
-                                    val atom2 = boxAtoms(otherBoxAtomIndex);
+                                for (otherBoxAtomIndex in 0..(box2Atoms.size-1)) {
+                                    val atom2 = box2Atoms(otherBoxAtomIndex);
                                     val translatedCentre = atom2.centre + translation;
-                                    for (atomIndex1 in 0..(box1.atoms.size()-1)) {
-                                        val atom1 = box1.atoms(atomIndex1);
+                                    for (atomIndex1 in 0..(box1Atoms.size-1)) {
+                                        val atom1 = box1Atoms(atomIndex1);
                                         val distance = atom1.centre.distance(translatedCentre);
                                         if (distance != 0.0) { // don't include dipole-balancing charges at same point
                                             thisPlaceEnergy += atom1.charge * atom2.charge / atom1.centre.distance(translatedCentre);

@@ -21,7 +21,7 @@ import au.edu.anu.chem.PointCharge;
  * @author milthorpe
  */
 public class FmmLeafBox extends FmmBox {
-    public val atoms : ArrayList[PointCharge] = new ArrayList[PointCharge]();
+    private var atoms : Rail[PointCharge];
 
     /** The U-list consists of all leaf boxes not well-separated to this box. */
     private var uList : Rail[Point(3)];
@@ -30,8 +30,10 @@ public class FmmLeafBox extends FmmBox {
         super(level, x, y, z, numTerms, parent);
     }
 
-    public atomic def addAtom(atom : PointCharge) {
-        atoms.add(atom);
+    public def getAtoms() = atoms;
+
+    public def setAtoms(atoms : Rail[PointCharge]) {
+        this.atoms = atoms;
     }
 
     public def getUList() = this.uList;

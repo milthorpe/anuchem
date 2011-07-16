@@ -252,6 +252,7 @@ public class Fmm3d {
         val lowestLevelDim = this.lowestLevelDim; // TODO shouldn't be necessary XTENLANG-1913
         val size = this.size; // TODO shouldn't be necessary XTENLANG-1913
         //Console.OUT.println("assignAtomsToBoxes");
+        val boxAtomsTemp = DistArray.make[ArrayList[PointCharge]](lowestLevelBoxes.dist, (Point) => new ArrayList[PointCharge]());
         finish ateach (p1 in atoms) {
             val localAtoms = atoms(p1);
             finish for (i in 0..(localAtoms.size-1)) {
@@ -261,17 +262,20 @@ public class Fmm3d {
                 val boxIndex = Fmm3d.getLowestLevelBoxIndex(offsetCentre, lowestLevelDim, size);
                 async at(lowestLevelBoxes.dist(boxIndex)) {
                     val remoteAtom = new PointCharge(offsetCentre, charge);
-                    val leafBox = lowestLevelBoxes(boxIndex) as FmmLeafBox;
-                    leafBox.addAtom(remoteAtom);
+                    atomic boxAtomsTemp(boxIndex).add(remoteAtom);
                 }
             }
         }
-        // post-prune leaf boxes
-        // TODO prune intermediate empty boxes as well
+
         finish ateach (boxIndex in lowestLevelBoxes) {
-            val box = lowestLevelBoxes(boxIndex) as FmmLeafBox;
-            if (box.atoms.size() == 0) {
+            val boxAtoms = boxAtomsTemp(boxIndex);
+            if (boxAtoms.size() == 0) {
+                // post-prune leaf boxes
+                // TODO prune intermediate empty boxes as well
                 lowestLevelBoxes(boxIndex) = null;
+            } else {
+                val box = lowestLevelBoxes(boxIndex) as FmmLeafBox;
+                box.setAtoms(boxAtoms.toArray());
             }
         }
         timer.stop(TIMER_INDEX_TREE);
@@ -292,8 +296,9 @@ public class Fmm3d {
                 val leafBox = lowestLevelBoxes(x,y,z) as FmmLeafBox;
                 if (leafBox != null) {
                     val boxCentre = leafBox.getCentre(size);
-                    for (i in 0..(leafBox.atoms.size()-1)) {
-                        val atom = leafBox.atoms(i);
+                    val boxAtoms = leafBox.getAtoms();
+                    for (i in 0..(boxAtoms.size-1)) {
+                        val atom = boxAtoms(i);
                         val atomLocation = boxCentre.vector(atom.centre);
                         val atomExpansion = MultipoleExpansion.getOlm(atom.charge, atomLocation, numTerms);
                         leafBox.multipoleExp.unsafeAdd(atomExpansion); // only one thread per box, so unsafeAdd is OK
@@ -600,11 +605,12 @@ public class Fmm3d {
                 for ([x1,y1,z1] in lowestLevelBoxes.dist(here)) {
                     val box1 = lowestLevelBoxes(x1,y1,z1) as FmmLeafBox;
                     if (box1 != null) {
-                        for (atomIndex1 in 0..(box1.atoms.size()-1)) {
+                        val box1Atoms = box1.getAtoms();
+                        for (atomIndex1 in 0..(box1Atoms.size-1)) {
                             // direct calculation with all atoms in same box
-                            val atom1 = box1.atoms(atomIndex1);
+                            val atom1 = box1Atoms(atomIndex1);
                             for (sameBoxAtomIndex in 0..(atomIndex1-1)) {
-                                val sameBoxAtom = box1.atoms(sameBoxAtomIndex);
+                                val sameBoxAtom = box1Atoms(sameBoxAtomIndex);
                                 val pairEnergy = atom1.charge * sameBoxAtom.charge / atom1.centre.distance(sameBoxAtom.centre);
                                 thisPlaceEnergy += pairEnergy;
                             }
@@ -618,12 +624,12 @@ public class Fmm3d {
                             val x2 = boxIndex2(0);
                             val y2 = boxIndex2(1);
                             val z2 = boxIndex2(2);
-                            val boxAtoms = cachedAtoms(x2, y2, z2);
-                            if (boxAtoms != null) {
-                                for (otherBoxAtomIndex in 0..(boxAtoms.size-1)) {
-                                    val atom2 = boxAtoms(otherBoxAtomIndex);
-                                    for (atomIndex1 in 0..(box1.atoms.size()-1)) {
-                                        val atom1 = box1.atoms(atomIndex1);
+                            val box2Atoms = cachedAtoms(x2, y2, z2);
+                            if (box2Atoms != null) {
+                                for (otherBoxAtomIndex in 0..(box2Atoms.size-1)) {
+                                    val atom2 = box2Atoms(otherBoxAtomIndex);
+                                    for (atomIndex1 in 0..(box1Atoms.size-1)) {
+                                        val atom1 = box1Atoms(atomIndex1);
                                         thisPlaceEnergy += atom1.charge * atom2.charge / atom1.centre.distance(atom2.centre);
                                     }
                                 }
@@ -656,9 +662,10 @@ public class Fmm3d {
                 for ([x,y,z] in lowestLevelBoxes.dist(here)) {
                     val box = lowestLevelBoxes(x,y,z) as FmmLeafBox;
                     if (box != null) {
+                        val boxAtoms = box.getAtoms();
                         val boxCentre = box.getCentre(size);
-                        for (atomIndex in 0..(box.atoms.size()-1)) {
-                            val atom = box.atoms(atomIndex);
+                        for (atomIndex in 0..(boxAtoms.size-1)) {
+                            val atom = boxAtoms(atomIndex);
                             val locationWithinBox = atom.centre.vector(boxCentre);
                             val farFieldEnergy = box.localExp.getPotential(atom.charge, locationWithinBox);
                             thisPlaceEnergy += farFieldEnergy;
@@ -923,7 +930,7 @@ public class Fmm3d {
     private static def getAtomsForBox(lowestLevelBoxes : DistArray[FmmBox](3), x : Int, y : Int, z : Int) {
         val box = lowestLevelBoxes(x, y, z) as FmmLeafBox;
         if (box != null) {
-            return box.atoms.toArray();
+            return box.getAtoms();
         } else {
             return null;
         }
