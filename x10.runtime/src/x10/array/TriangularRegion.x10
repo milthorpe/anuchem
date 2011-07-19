@@ -116,11 +116,13 @@ public class TriangularRegion extends Region {
     }
 
     public def boundingBox(): Region(rank) {
-        return rowMin..(rowMin+dim) * colMin..(colMin+dim);
+        val r = (rowMin..(rowMin+dim) * colMin..(colMin+dim)) as Region(2);
+        return r;
     }
 
     protected def computeBoundingBox(): Region(rank) {
-        return rowMin..(rowMin+dim) * colMin..(colMin+dim);
+        val r = (rowMin..(rowMin+dim) * colMin..(colMin+dim)) as Region(2);
+        return r;
     }
 
     public def iterator(): Iterator[Point(rank)] {
@@ -146,7 +148,7 @@ public class TriangularRegion extends Region {
         }
 
         final public def next(): Point(2) {
-            nextPoint : Point(2) = [i,j];
+            nextPoint : Point(2) = Point.make(i,j);
             if (lower) {
                 if (j < (colMin + dim)) j++;
                 else {
