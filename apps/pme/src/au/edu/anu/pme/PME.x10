@@ -277,31 +277,33 @@ public class PME {
         timer.start(TIMER_INDEX_PREFETCH);
 		val subCells = this.subCells; // TODO shouldn't be necessary XTENLANG-1913
 		val atomsCache = this.atomsCache; // TODO shouldn't be necessary XTENLANG-1913
-        finish for (place in subCells.dist.places()) async at (place) {
+        finish ateach (p in atomsCache) {
             val myAtomsCache = atomsCache(here.id);
-            val haloPlaces = new HashMap[Int,ArrayList[Point(3)]](8); // a place may have up to 8 immediate neighbours in the two block-divided dimensions
-            
-            // separate the halo subcells into partial lists stored at each nearby place
-            for (boxIndex in myAtomsCache.region) {
-                val placeId = subCells.dist(boxIndex).id;
-                if (placeId != here.id) {
-                    var haloForPlace : ArrayList[Point(3)] = haloPlaces.getOrElse(placeId, null);
-                    if (haloForPlace == null) {
-                        haloForPlace = new ArrayList[Point(3)]();
-                        haloPlaces.put(placeId, haloForPlace);
+            if (myAtomsCache != null) {
+                val haloPlaces = new HashMap[Int,ArrayList[Point(3)]](8); // a place may have up to 8 immediate neighbours in the two block-divided dimensions
+                
+                // separate the halo subcells into partial lists stored at each nearby place
+                for (boxIndex in myAtomsCache.region) {
+                    val placeId = subCells.dist(boxIndex).id;
+                    if (placeId != here.id) {
+                        var haloForPlace : ArrayList[Point(3)] = haloPlaces.getOrElse(placeId, null);
+                        if (haloForPlace == null) {
+                            haloForPlace = new ArrayList[Point(3)]();
+                            haloPlaces.put(placeId, haloForPlace);
+                        }
+                        haloForPlace.add(boxIndex);
                     }
-                    haloForPlace.add(boxIndex);
                 }
-            }
 
-            // retrieve the partial list for each place and store into my LET
-            finish for (placeEntry in haloPlaces.entries()) async {
-                val placeId = placeEntry.getKey();
-                val haloForPlace = placeEntry.getValue();
-                val haloListArray = haloForPlace.toArray();
-                val atomsForPlace = at (Place.place(placeId)) { getAtomsForSubcellList(subCells, haloListArray)};
-                for (i in 0..(haloListArray.size-1)) {
-                    myAtomsCache(haloListArray(i)) = atomsForPlace(i);
+                // retrieve the partial list for each place and store into my LET
+                finish for (placeEntry in haloPlaces.entries()) async {
+                    val placeId = placeEntry.getKey();
+                    val haloForPlace = placeEntry.getValue();
+                    val haloListArray = haloForPlace.toArray();
+                    val atomsForPlace = at (Place.place(placeId)) { getAtomsForSubcellList(subCells, haloListArray)};
+                    for (i in 0..(haloListArray.size-1)) {
+                        myAtomsCache(haloListArray(i)) = atomsForPlace(i);
+                    }
                 }
             }
         }
@@ -417,7 +419,7 @@ public class PME {
         timer.start(TIMER_INDEX_SELF);
 		val subCells = this.subCells; // TODO shouldn't be necessary XTENLANG-1913
         val selfEnergy = finish(SumReducer()) {
-            for (place1 in gridDist.places()) async at(place1) {
+            ateach (place in Dist.makeUnique()) {
                 var mySelfEnergy : Double = 0.0;
                 for ([i,j,k] in subCells.dist(here)) {
                     val thisCell = subCells(i,j,k);
@@ -608,7 +610,7 @@ public class PME {
 			val gridDist = this.gridDist; // TODO shouldn't be necessary XTENLANG-1913
 			val Q = this.Q; // TODO shouldn't be necessary XTENLANG-1913
 			//val thetaRecConvQ = this.thetaRecConvQ; // TODO shouldn't be necessary XTENLANG-1913
-            for (place1 in gridDist.places()) async at(place1) {
+            ateach (place in Dist.makeUnique()) {
                 var myReciprocalEnergy : Double = 0.0;
                 val gridDistHere = gridDist.get(here) as Region(3){rect};
                 for ([i,j,k] in gridDistHere) {

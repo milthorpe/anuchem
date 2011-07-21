@@ -58,29 +58,27 @@ public class Distributed3dFft {
             FFTW.fftwExecute(plan);
             FFTW.fftwDestroyPlan(plan); 
         } else {
-            finish {
-                for (p1 in source.dist.places()) async at(p1) {
-                    // 'scratch' arrays, for use in the 1D FFTs
-                    val oneDSource = new Array[Complex](dataSize);
-                    val oneDTarget = new Array[Complex](dataSize);
-                    if (dribble) {
-                        do1DFftAndTranspose(source, target, oneDSource, oneDTarget, forward);
-                        Team.WORLD.barrier(here.id);
-                        do1DFftAndTranspose(target, temp, oneDSource, oneDTarget, forward);
-                        Team.WORLD.barrier(here.id);
-                        do1DFftAndTranspose(temp, target, oneDSource, oneDTarget, forward);
-                    } else {
-                        do1DFftToTemp(source, oneDSource, oneDTarget, forward);
-                        transposeTempToTarget();
-                        Team.WORLD.barrier(here.id);
-                        do1DFftToTemp(target, oneDSource, oneDTarget, forward);
-                        Team.WORLD.barrier(here.id);
-                        transposeTempToTarget();
-                        Team.WORLD.barrier(here.id);
-                        do1DFftToTemp(target, oneDSource, oneDTarget, forward);
-                        Team.WORLD.barrier(here.id);
-                        transposeTempToTarget();
-                    }
+            finish ateach(p in Dist.makeUnique(source.dist.places())) {
+                // 'scratch' arrays, for use in the 1D FFTs
+                val oneDSource = new Array[Complex](dataSize);
+                val oneDTarget = new Array[Complex](dataSize);
+                if (dribble) {
+                    do1DFftAndTranspose(source, target, oneDSource, oneDTarget, forward);
+                    Team.WORLD.barrier(here.id);
+                    do1DFftAndTranspose(target, temp, oneDSource, oneDTarget, forward);
+                    Team.WORLD.barrier(here.id);
+                    do1DFftAndTranspose(temp, target, oneDSource, oneDTarget, forward);
+                } else {
+                    do1DFftToTemp(source, oneDSource, oneDTarget, forward);
+                    transposeTempToTarget();
+                    Team.WORLD.barrier(here.id);
+                    do1DFftToTemp(target, oneDSource, oneDTarget, forward);
+                    Team.WORLD.barrier(here.id);
+                    transposeTempToTarget();
+                    Team.WORLD.barrier(here.id);
+                    do1DFftToTemp(target, oneDSource, oneDTarget, forward);
+                    Team.WORLD.barrier(here.id);
+                    transposeTempToTarget();
                 }
             }
 /*
