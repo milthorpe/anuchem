@@ -291,7 +291,7 @@ public class Fmm3d {
         val size = this.size; // TODO shouldn't be necessary XTENLANG-1913
         val numTerms = this.numTerms; // TODO shouldn't be necessary XTENLANG-1913
         val lowestLevelBoxes = this.lowestLevelBoxes; // TODO shouldn't be necessary XTENLANG-1913
-        finish for (p1 in lowestLevelBoxes.dist.places()) async at(p1) {
+        finish ateach(p1 in Dist.makeUnique(lowestLevelBoxes.dist.places())) {
             for ([x,y,z] in lowestLevelBoxes.dist(here)) {
                 val leafBox = lowestLevelBoxes(x,y,z) as FmmLeafBox;
                 if (leafBox != null) {
@@ -324,7 +324,7 @@ public class Fmm3d {
             val complexK = this.complexK; // TODO shouldn't be necessary XTENLANG-1913
             val wignerA = this.wignerA; // TODO shouldn't be necessary XTENLANG-1913
             val halfSideLength = size / Math.pow2(thisLevel+2);
-            finish for (p1 in thisLevelBoxes.dist.places()) async at(p1) {
+            finish ateach(p1 in Dist.makeUnique(thisLevelBoxes.dist.places())) {
                 val childMultipoles = new Array[MultipoleExpansion](8);
                 for ([x,y,z] in thisLevelBoxes.dist(here)) {
                     val parent = thisLevelBoxes(x,y,z);
@@ -657,7 +657,7 @@ public class Fmm3d {
         val size = this.size; // TODO shouldn't be necessary XTENLANG-1913
         val lowestLevelBoxes = this.lowestLevelBoxes; // TODO shouldn't be necessary XTENLANG-1913
         val farFieldEnergy = finish(SumReducer()) {
-            for (p1 in lowestLevelBoxes.dist.places()) async at(p1) {
+            ateach (p1 in Dist.makeUnique(lowestLevelBoxes.dist.places())) {
                 var thisPlaceEnergy : Double = 0.0;
                 for ([x,y,z] in lowestLevelBoxes.dist(here)) {
                     val box = lowestLevelBoxes(x,y,z) as FmmLeafBox;
