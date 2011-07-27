@@ -72,20 +72,21 @@ public class TestFmm3d extends TestElectrostatic {
         }
 
         val atoms = generateAtoms(numAtoms);
-        val fmm3d = new Fmm3d(density, numTerms, wellSpaced, Point3d(0.0, 0.0, 0.0), SIZE, numAtoms, atoms);
-        fmm3d.assignAtomsToBoxes();
+        val fmm3d = new Fmm3d(density, numTerms, wellSpaced, Point3d(0.0, 0.0, 0.0), SIZE, numAtoms);
+        fmm3d.assignAtomsToBoxes(atoms);
         val energy = fmm3d.calculateEnergy();
         
         if (verbose) {
             Console.OUT.println("energy = " + energy);
 
-            logTime("Tree construction", Fmm3d.TIMER_INDEX_TREE, fmm3d.timer);
-            logTime("Prefetch",  Fmm3d.TIMER_INDEX_PREFETCH,  fmm3d.timer);
-            logTime("Direct",    Fmm3d.TIMER_INDEX_DIRECT,    fmm3d.timer);
-            logTime("Multipole", Fmm3d.TIMER_INDEX_MULTIPOLE, fmm3d.timer);
-            logTime("Combine",   Fmm3d.TIMER_INDEX_COMBINE,   fmm3d.timer);
-            logTime("Transform", Fmm3d.TIMER_INDEX_TRANSFORM, fmm3d.timer);
-            logTime("Far field", Fmm3d.TIMER_INDEX_FARFIELD,  fmm3d.timer);
+            logTime("(Tree construction)", Fmm3d.TIMER_INDEX_TREE, fmm3d.timer);
+
+            logTime("Prefetch",   Fmm3d.TIMER_INDEX_PREFETCH,  fmm3d.timer);
+            logTime("Direct",     Fmm3d.TIMER_INDEX_DIRECT,    fmm3d.timer);
+            logTime("Multipole",  Fmm3d.TIMER_INDEX_MULTIPOLE, fmm3d.timer);
+            logTime("Combine",    Fmm3d.TIMER_INDEX_COMBINE,   fmm3d.timer);
+            logTime("Prefetch m", Fmm3d.TIMER_INDEX_FETCHM,    fmm3d.timer);
+            logTime("Downward",   Fmm3d.TIMER_INDEX_DOWNWARD,  fmm3d.timer);
         }
 
         logTime("Total",     Fmm3d.TIMER_INDEX_TOTAL,     fmm3d.timer, verbose);

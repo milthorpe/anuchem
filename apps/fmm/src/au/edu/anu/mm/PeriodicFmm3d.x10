@@ -58,27 +58,26 @@ public class PeriodicFmm3d extends Fmm3d {
                     topLeftFront : Point3d,
                     size : Double,  
                     numAtoms : Int,
-                    atoms: DistArray[Rail[MMAtom]](1),
                     numShells : Int) {
         // Periodic FMM always uses ws = 1
         // TODO is it possible to formulate for well-spaced > 1?
-        super(density, numTerms, 1, topLeftFront, size, numAtoms, atoms, 0, true);
+        super(density, numTerms, 1, topLeftFront, size, numAtoms, 0, true);
         this.numShells = numShells;
     }
     
     public def calculateEnergy() : Double {
         timer.start(TIMER_INDEX_TOTAL);
+        val farFieldEnergy:Double;
         finish {
             async {
                 prefetchRemoteAtoms();
             }
-            multipoleLowestLevel();
-
-            combineMultipoles();
+            upwardPass();
             combineMacroscopicExpansions();
-            transformToLocal();
+            prefetchMultipoles();
+            farFieldEnergy = downwardPass();
         }
-        val totalEnergy = getDirectEnergy() + getFarFieldEnergy();
+        val totalEnergy = getDirectEnergy() + farFieldEnergy;
         timer.stop(TIMER_INDEX_TOTAL);
         return totalEnergy;
     }
@@ -147,11 +146,10 @@ public class PeriodicFmm3d extends Fmm3d {
         timer.stop(TIMER_INDEX_MACROSCOPIC);
     }
 
-    public def assignAtomsToBoxes() {
+    public def assignAtomsToBoxes(atoms:DistArray[Rail[MMAtom]](1)) {
         timer.start(TIMER_INDEX_TREE);
+        val lowestLevelBoxes = boxes(numLevels);
         val offset = this.offset; // TODO shouldn't be necessary XTENLANG-1913
-        val lowestLevelBoxes = this.lowestLevelBoxes; // TODO shouldn't be necessary XTENLANG-1913
-        val atoms = this.atoms; // TODO shouldn't be necessary XTENLANG-1913
         val lowestLevelDim = this.lowestLevelDim; // TODO shouldn't be necessary XTENLANG-1913
         val size = this.size; // TODO shouldn't be necessary XTENLANG-1913
         val boxAtomsTemp = DistArray.make[ArrayList[PointCharge]](lowestLevelBoxes.dist, (Point) => new ArrayList[PointCharge]());
@@ -196,7 +194,7 @@ public class PeriodicFmm3d extends Fmm3d {
     def addAtomToLowestLevelBoxAsync(boxAtoms : DistArray[ArrayList[PointCharge]](3), boxIndex : Point(3), offsetCentre : Point3d, charge : Double) {
         val size = this.size; // TODO shouldn't be necessary XTENLANG-1913
         val numTerms = this.numTerms; // TODO shouldn't be necessary XTENLANG-1913
-        val lowestLevelBoxes = this.lowestLevelBoxes; // TODO shouldn't be necessary XTENLANG-1913
+        val lowestLevelBoxes = boxes(numLevels);
         async at(lowestLevelBoxes.dist(boxIndex)) {
             val remoteAtom = new PointCharge(offsetCentre, charge);
             val leafBox = lowestLevelBoxes(boxIndex) as FmmLeafBox;
@@ -260,8 +258,8 @@ public class PeriodicFmm3d extends Fmm3d {
         //Console.OUT.println("direct");
         timer.start(TIMER_INDEX_DIRECT);
 
+        val lowestLevelBoxes = boxes(numLevels);
         val locallyEssentialTrees = this.locallyEssentialTrees; // TODO shouldn't be necessary XTENLANG-1913
-        val lowestLevelBoxes = this.lowestLevelBoxes; // TODO shouldn't be necessary XTENLANG-1913
         val lowestLevelDim = this.lowestLevelDim; // TODO shouldn't be necessary XTENLANG-1913
         val size = this.size; // TODO shouldn't be necessary XTENLANG-1913
         val directEnergy = finish (SumReducer()) {
