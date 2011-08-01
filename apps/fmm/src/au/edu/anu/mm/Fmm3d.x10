@@ -216,7 +216,7 @@ public class Fmm3d {
         val lowestLevelDim = this.lowestLevelDim; // TODO shouldn't be necessary XTENLANG-1913
         val size = this.size; // TODO shouldn't be necessary XTENLANG-1913
         val boxAtomsTemp = DistArray.make[ArrayList[PointCharge]](lowestLevelBoxes.dist, (Point) => new ArrayList[PointCharge]());
-        finish ateach (p1 in atoms) {
+        finish ateach(p1 in atoms) {
             val localAtoms = atoms(p1);
             finish for (i in 0..(localAtoms.size-1)) {
                 val atom = localAtoms(i);
@@ -230,7 +230,7 @@ public class Fmm3d {
             }
         }
 
-        finish ateach (boxIndex in lowestLevelBoxes) {
+        finish ateach(boxIndex in lowestLevelBoxes) {
             val boxAtoms = boxAtomsTemp(boxIndex);
             if (boxAtoms.size() == 0) {
                 // post-prune leaf boxes
@@ -330,7 +330,7 @@ public class Fmm3d {
         val startingLevel = periodic ? topLevel+1 : topLevel;
         val topLevelExp = periodic ? boxes(0)(0,0,0).localExp : null;
         val farField = finish(SumReducer()) {
-            ateach ([x,y,z] in boxes(startingLevel)) {
+            ateach([x,y,z] in boxes(startingLevel)) {
                 if (!periodic) {
                     // top level boxes won't yet have been fetched
                     Fmm3d.prefetchMultipoles(startingLevel, locallyEssentialTrees(here.id), boxes(startingLevel));
@@ -484,7 +484,7 @@ public class Fmm3d {
         timer.start(TIMER_INDEX_PREFETCH);
         val lowestLevelBoxes = boxes(numLevels);
         val locallyEssentialTrees = this.locallyEssentialTrees; // TODO shouldn't be necessary XTENLANG-1913
-        finish ateach (p1 in locallyEssentialTrees) {
+        finish ateach(p1 in locallyEssentialTrees) {
             val myLET = locallyEssentialTrees(p1);
             val myCombinedUList = myLET.combinedUList;
             val cachedAtoms = myLET.cachedAtoms;
@@ -550,7 +550,7 @@ public class Fmm3d {
         val lowestLevelDim = this.lowestLevelDim; // TODO shouldn't be necessary XTENLANG-1913
         val size = this.size; // TODO shouldn't be necessary XTENLANG-1913
         val directEnergy = finish (SumReducer()) {
-            ateach (p1 in locallyEssentialTrees) {
+            ateach(p1 in locallyEssentialTrees) {
                 val myLET = locallyEssentialTrees(p1);
                 val cachedAtoms = myLET.cachedAtoms;
                 var thisPlaceEnergy : Double = 0.0;
@@ -608,7 +608,7 @@ public class Fmm3d {
      */
     private def precomputeWignerA(numTerms : Int) {
         val wignerMatrices = DistArray.make[Array[Rail[Rail[Array[Double](2){rect}]]](3){rect,zeroBased}](Dist.makeUnique());
-        finish ateach (place in wignerMatrices) {
+        finish ateach(place in wignerMatrices) {
             val placeWigner = new Array[Rail[Rail[Array[Double](2){rect}]]]((0..1)*(0..1)*(0..1));
             for ([i,j,k] in placeWigner) {
         		val theta = Polar3d.getPolar3d( Point3d(i*2-1,j*2-1,k*2-1) ).theta;
@@ -621,7 +621,7 @@ public class Fmm3d {
 
     private def precomputeWignerC(numTerms : Int) {
         val wignerMatrices = DistArray.make[Array[Rail[Rail[Array[Double](2){rect}]]](3){rect,zeroBased}](Dist.makeUnique());
-        finish ateach (place in wignerMatrices) {
+        finish ateach(place in wignerMatrices) {
             val placeWigner = new Array[Rail[Rail[Array[Double](2){rect}]]]((0..1)*(0..1)*(0..1));
             for ([i,j,k] in placeWigner) {
     		    val theta = Polar3d.getPolar3d( Point3d(i*2-1,j*2-1,k*2-1) ).theta;
@@ -634,7 +634,7 @@ public class Fmm3d {
 
     private def precomputeWignerB(numTerms : Int, ws : Int) {
         val wignerMatrices = DistArray.make[Array[Rail[Rail[Array[Double](2){rect}]]](3){rect}](Dist.makeUnique());
-        finish ateach (place in wignerMatrices) {
+        finish ateach(place in wignerMatrices) {
             val placeWigner = new Array[Rail[Rail[Array[Double](2){rect}]]]((-(2*ws+1))..(2*ws+1) * (-(2*ws+1))..(2*ws+1) * (-(2*ws+1))..(2*ws+1));
             for ([i,j,k] in placeWigner) {
                 val theta = Polar3d.getPolar3d ( Point3d(i, j, k) ).theta;
@@ -651,7 +651,7 @@ public class Fmm3d {
      */
     private def precomputeComplex(numTerms : Int, ws : Int) {
         val complexK = DistArray.make[Array[Rail[Array[Complex](1){rect,rail==false}]](3){rect}](Dist.makeUnique());
-        finish ateach (place in complexK) {
+        finish ateach(place in complexK) {
             val placeComplexK = new Array[Rail[Array[Complex](1){rect,rail==false}]]((-(2*ws+1))..(2*ws+1) * (-(2*ws+1))..(2*ws+1) * (-(2*ws+1))..(2*ws+1));
             for ([i,j,k] in placeComplexK) {
                 val phi = Polar3d.getPolar3d ( Point3d(i, j, k) ).phi;
@@ -679,7 +679,7 @@ public class Fmm3d {
         for (thisLevel in topLevel..(numLevels-1)) {
             val levelDim = Math.pow2(thisLevel) as Int;
             val thisLevelBoxes = boxArray(thisLevel);
-            finish ateach ([x,y,z] in thisLevelBoxes) {
+            finish ateach([x,y,z] in thisLevelBoxes) {
                 val box = new FmmBox(thisLevel, x, y, z, numTerms, Fmm3d.getParentForChild(boxArray, thisLevel, topLevel, x,y,z));
                 if (periodic) {
                     if (thisLevel > topLevel) {
@@ -693,7 +693,7 @@ public class Fmm3d {
         }
 
         val lowestLevelBoxes = boxArray(numLevels);
-        finish ateach ([x,y,z] in lowestLevelBoxes) {
+        finish ateach([x,y,z] in lowestLevelBoxes) {
             val box = new FmmLeafBox(numLevels, x, y, z, numTerms, Fmm3d.getParentForChild(boxArray, numLevels, topLevel, x,y,z));
             if (periodic) {
                 box.createUListPeriodic(ws);
@@ -715,7 +715,7 @@ public class Fmm3d {
      */
     private def createLocallyEssentialTrees(numLevels : Int, topLevel : Int, boxes : Rail[DistArray[FmmBox](3)], periodic : Boolean) : DistArray[LocallyEssentialTree]{rank==1} {
         val locallyEssentialTrees = DistArray.make[LocallyEssentialTree](Dist.makeUnique());
-        finish ateach ([p1] in locallyEssentialTrees) {
+        finish ateach([p1] in locallyEssentialTrees) {
             val lowestLevelBoxes = boxes(numLevels);
             val uMin = new Array[Int](3, Int.MAX_VALUE);
             val uMax = new Array[Int](3, Int.MIN_VALUE);

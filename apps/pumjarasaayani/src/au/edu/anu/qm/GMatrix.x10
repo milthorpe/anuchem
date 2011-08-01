@@ -239,7 +239,7 @@ public class GMatrix extends Matrix {
         timer.start(0);
 
         val computeInst = this.computeInst; // TODO this should not be required XTENLANG-1913
-        finish ateach (p in computeInst) {
+        finish ateach(p in computeInst) {
             computeInst(p).reset(density);
         }
 

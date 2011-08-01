@@ -164,7 +164,7 @@ public class PME {
         this.numSubCells = numSubCells;
 
         val atomsCache = DistArray.make[Array[Rail[PointCharge]]{rank==3,rect}](Dist.makeUnique());
-        finish ateach (p in atomsCache) {
+        finish ateach(p in atomsCache) {
             val mySubCellRegion = (subCells.dist | here).region;
             if (! mySubCellRegion.isEmpty()) {
                 val directRequiredRegion = ((mySubCellRegion.min(0) - 2)..(mySubCellRegion.max(0) + 2))
@@ -248,7 +248,7 @@ public class PME {
         val halfCutoff = (cutoff / 2.0);
         val subCellsTemp = DistArray.make[ArrayList[PointCharge]](subCells.dist, (Point) => new ArrayList[PointCharge]());
         val atoms = this.atoms; // TODO shouldn't be necessary XTENLANG-1913
-        finish ateach (p in atoms) {
+        finish ateach(p in atoms) {
             val localAtoms = atoms(p);
             for (l in 0..(localAtoms.size-1)) {
                 val atom = localAtoms(l);
@@ -264,7 +264,7 @@ public class PME {
             }
         }
         val subCells = this.subCells; // TODO shouldn't be necessary XTENLANG-1913
-        finish ateach ([i,j,k] in subCells) {
+        finish ateach([i,j,k] in subCells) {
             subCells(i,j,k) = subCellsTemp(i,j,k).toArray();
         }
     }
@@ -277,7 +277,7 @@ public class PME {
         timer.start(TIMER_INDEX_PREFETCH);
 		val subCells = this.subCells; // TODO shouldn't be necessary XTENLANG-1913
 		val atomsCache = this.atomsCache; // TODO shouldn't be necessary XTENLANG-1913
-        finish ateach (p in atomsCache) {
+        finish ateach(p in atomsCache) {
             val myAtomsCache = atomsCache(here.id);
             if (myAtomsCache != null) {
                 val haloPlaces = new HashMap[Int,ArrayList[Point(3)]](8); // a place may have up to 8 immediate neighbours in the two block-divided dimensions
@@ -331,7 +331,7 @@ public class PME {
 		val imageTranslations = this.imageTranslations; // TODO shouldn't be necessary XTENLANG-1913
 		val beta = this.beta; // TODO shouldn't be necessary XTENLANG-1913
         val directEnergy = finish(SumReducer()) {
-            ateach (place in Dist.makeUnique()) {
+            ateach(place in Dist.makeUnique()) {
                 var myDirectEnergy : Double = 0.0;
                 for (p in subCells.dist(here)) {
                     val thisCell = subCells(p);
@@ -419,7 +419,7 @@ public class PME {
         timer.start(TIMER_INDEX_SELF);
 		val subCells = this.subCells; // TODO shouldn't be necessary XTENLANG-1913
         val selfEnergy = finish(SumReducer()) {
-            ateach (place in Dist.makeUnique()) {
+            ateach(place in Dist.makeUnique()) {
                 var mySelfEnergy : Double = 0.0;
                 for ([i,j,k] in subCells.dist(here)) {
                     val thisCell = subCells(i,j,k);
@@ -452,7 +452,7 @@ public class PME {
 		val K3 = this.K3; // TODO shouldn't be necessary XTENLANG-1913;
 		val Q = this.Q; // TODO shouldn't be necessary XTENLANG-1913;
 		val edgeReciprocals = this.edgeReciprocals; // TODO shouldn't be necessary XTENLANG-1913
-        finish ateach (place1 in Dist.makeUnique()) {
+        finish ateach(place1 in Dist.makeUnique()) {
             val gridSize0 = gridSize(0);
             val gridSize2 = gridSize(2);
 			val gridRegion = gridDist.region;
@@ -610,7 +610,7 @@ public class PME {
 			val gridDist = this.gridDist; // TODO shouldn't be necessary XTENLANG-1913
 			val Q = this.Q; // TODO shouldn't be necessary XTENLANG-1913
 			//val thetaRecConvQ = this.thetaRecConvQ; // TODO shouldn't be necessary XTENLANG-1913
-            ateach (place in Dist.makeUnique()) {
+            ateach(place in Dist.makeUnique()) {
                 var myReciprocalEnergy : Double = 0.0;
                 val gridDistHere = gridDist.get(here) as Region(3){rect};
                 for ([i,j,k] in gridDistHere) {
@@ -635,7 +635,7 @@ public class PME {
 		val K1 = this.K1; // TODO shouldn't be necessary XTENLANG-1913;
 		val K2 = this.K2; // TODO shouldn't be necessary XTENLANG-1913;
 		val K3 = this.K3; // TODO shouldn't be necessary XTENLANG-1913;
-        finish ateach (place1 in Dist.makeUnique()) {
+        finish ateach(place1 in Dist.makeUnique()) {
             val splines = new Array[Double](1..(splineOrder-1));
             for (k in 1..(splineOrder-1)) {
                 splines(k) = bSpline(splineOrder, k);
@@ -682,7 +682,7 @@ public class PME {
 		val K3 = this.K3; // TODO shouldn't be necessary XTENLANG-1913;
         val edgeReciprocals = this.edgeReciprocals; // TODO shouldn't be necessary XTENLANG-1913
         val beta = this.beta; // TODO shouldn't be necessary XTENLANG-1913
-        finish ateach (place1 in Dist.makeUnique()) {
+        finish ateach(place1 in Dist.makeUnique()) {
             val regionHere = C.dist(here) as Region(3){rect};
             for ([m1,m2,m3] in regionHere) {
                 val m1prime = m1 <= K1/2 ? m1 as Double : m1 - K1;

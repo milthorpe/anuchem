@@ -147,7 +147,7 @@ public class PeriodicFmm3d extends Fmm3d {
         val size = this.size; // TODO shouldn't be necessary XTENLANG-1913
         val boxAtomsTemp = DistArray.make[ArrayList[PointCharge]](lowestLevelBoxes.dist, (Point) => new ArrayList[PointCharge]());
         val dipole = finish(VectorSumReducer()) {
-            ateach (p1 in atoms) {
+            ateach(p1 in atoms) {
                 var myDipole : Vector3d = Vector3d.NULL;
                 val localAtoms = atoms(p1);
                 finish for (i in 0..(localAtoms.size-1)) {
@@ -173,7 +173,7 @@ public class PeriodicFmm3d extends Fmm3d {
 
         // TODO pruning before cancel dipole causes NPE on corner 
         //      boxes for small or non-uniform distributions
-        finish ateach (boxIndex in lowestLevelBoxes) {
+        finish ateach(boxIndex in lowestLevelBoxes) {
             val boxAtoms = boxAtomsTemp(boxIndex);
             if (boxAtoms.size() == 0) {
                 // post-prune leaf boxes
@@ -259,7 +259,7 @@ public class PeriodicFmm3d extends Fmm3d {
         val lowestLevelDim = this.lowestLevelDim; // TODO shouldn't be necessary XTENLANG-1913
         val size = this.size; // TODO shouldn't be necessary XTENLANG-1913
         val directEnergy = finish (SumReducer()) {
-            ateach (p1 in locallyEssentialTrees) {
+            ateach(p1 in locallyEssentialTrees) {
                 val myLET = locallyEssentialTrees(p1);
                 val cachedAtoms = myLET.cachedAtoms;
                 var thisPlaceEnergy : Double = 0.0;

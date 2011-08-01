@@ -50,7 +50,7 @@ final public class ScalableTreeBarrier {
     public def this(places : PlaceGroup) {
         val nodes = DistArray.make[TreeNode](Dist.makeUnique(places), ([i] : Point) => new TreeNode(places.size));
         val P = nodes.region.size();
-        finish ateach ([i] in nodes) {
+        finish ateach([i] in nodes) {
             val thisNode = nodes(i);
             val parentId = Math.floor((i-1)/4) as Int;
             thisNode.parent = (i == 0) ? null : at(nodes.dist(parentId)) {new Box[GlobalRef[TreeNode]](GlobalRef[TreeNode](nodes(parentId)))};

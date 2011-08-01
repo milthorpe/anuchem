@@ -56,7 +56,7 @@ public class ElectrostaticDirectMethod {
             val otherAtoms = this.otherAtoms; // TODO shouldn't be necessary XTENLANG-1913
 
             if (asyncComms) {
-                ateach ([p1] in atoms) {
+                ateach([p1] in atoms) {
                     val myAtoms = atoms(p1);
                     var energyThisPlace : Double = 0.0;
 
@@ -111,7 +111,7 @@ public class ElectrostaticDirectMethod {
                     offer energyThisPlace;
                 }
             } else {
-                ateach ([p1] in atoms) {
+                ateach([p1] in atoms) {
                     val myAtoms = atoms(p1);
                     // energy for all interactions with other atoms at other places
                     for ([p2] in atoms) async {
