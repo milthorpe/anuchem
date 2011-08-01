@@ -87,61 +87,55 @@ public class PeriodicFmm3d extends Fmm3d {
      */
     def combineMacroscopicExpansions() {
         timer.start(TIMER_INDEX_MACROSCOPIC);
-        // TODO distributed impl.
-        val numShells = this.numShells; // TODO shouldn't be necessary XTENLANG-1913
-        val numTerms = this.numTerms; // TODO shouldn't be necessary XTENLANG-1913
-        val size = this.size; // TODO shouldn't be necessary XTENLANG-1913
-        val boxes = this.boxes; // TODO shouldn't be necessary XTENLANG-1913
-        at(boxes(0).dist(0,0,0)) {
-            val macroMultipoles = new Array[MultipoleExpansion](numShells+1);
-            val macroLocalTranslations = new Array[LocalExpansion](numShells+1);
-            val topLevelBox = boxes(0)(0,0,0);
-            macroMultipoles(0) = topLevelBox.multipoleExp;
+        // TODO assumes boxes(0)(0,0,0) is at place 0
+        val macroMultipoles = new Array[MultipoleExpansion](numShells+1);
+        val macroLocalTranslations = new Array[LocalExpansion](numShells+1);
+        val topLevelBox = boxes(0)(0,0,0);
+        macroMultipoles(0) = topLevelBox.multipoleExp;
 
-            var macroTranslation : MultipoleExpansion = new MultipoleExpansion(numTerms);
+        var macroTranslation : MultipoleExpansion = new MultipoleExpansion(numTerms);
 
-            // multipoles for shell 1
-            for ([i,j,k] in threeCube) {
+        // multipoles for shell 1
+        for ([i,j,k] in threeCube) {
+            val translationVector = Vector3d(i * size,
+                                             j * size,
+                                             k * size);
+            val translation = MultipoleExpansion.getOlm(translationVector, numTerms);
+            macroTranslation.unsafeAdd(translation); // only one thread for macro, so this is OK
+        }
+        macroMultipoles(1) = new MultipoleExpansion(numTerms);
+        macroMultipoles(1).translateAndAddMultipole(macroTranslation, macroMultipoles(0));
+        //Console.OUT.println("final for 1 = " + macroMultipoles(1));
+
+        // locals for shell 1
+        macroLocalTranslations(0) = new LocalExpansion(numTerms);
+        for ([i,j,k] in nineCube) {
+            if (Math.abs(i) > 1 || Math.abs(j) > 1 || Math.abs(k) > 1) {
+                // inner 27 boxes done at a lower level
                 val translationVector = Vector3d(i * size,
                                                  j * size,
                                                  k * size);
-                val translation = MultipoleExpansion.getOlm(translationVector, numTerms);
-                macroTranslation.unsafeAdd(translation); // only one thread for macro, so this is OK
+                val transform = LocalExpansion.getMlm(translationVector, numTerms);
+                macroLocalTranslations(0).unsafeAdd(transform); // only one thread for macro, so this is OK
             }
-            macroMultipoles(1) = new MultipoleExpansion(numTerms);
-            macroMultipoles(1).translateAndAddMultipole(macroTranslation, macroMultipoles(0));
-            //Console.OUT.println("final for 1 = " + macroMultipoles(1));
-
-            // locals for shell 1
-            macroLocalTranslations(0) = new LocalExpansion(numTerms);
-            for ([i,j,k] in nineCube) {
-                if (Math.abs(i) > 1 || Math.abs(j) > 1 || Math.abs(k) > 1) {
-                    // inner 27 boxes done at a lower level
-                    val translationVector = Vector3d(i * size,
-                                                     j * size,
-                                                     k * size);
-                    val transform = LocalExpansion.getMlm(translationVector, numTerms);
-                    macroLocalTranslations(0).unsafeAdd(transform); // only one thread for macro, so this is OK
-                }
-            }
-            macroLocalTranslations(1) = macroLocalTranslations(0).getMacroscopicParent();
-
-            // remaining shells
-            for (var shell: Int = 2; shell <= numShells; shell++) {
-                macroTranslation = macroTranslation.getMacroscopicParent();
-                macroMultipoles(shell) = new MultipoleExpansion(numTerms);
-                macroMultipoles(shell).translateAndAddMultipole(macroTranslation, macroMultipoles(shell-1));
-                //Console.OUT.println("final for " + shell + " = " + macroMultipoles(shell));
-                macroLocalTranslations(shell) = macroLocalTranslations(shell-1).getMacroscopicParent();
-            }
-
-            // now transform and add macroscopic multipoles to local expansion for top level box
-            for (var shell: Int = 0; shell <= numShells; shell++) {
-                val localExpansion = macroLocalTranslations(shell);
-                topLevelBox.localExp.transformAndAddToLocal(localExpansion, macroMultipoles(shell));
-            }
-            //Console.OUT.println("final for topLevel = " + topLevelBox.localExp);
         }
+        macroLocalTranslations(1) = macroLocalTranslations(0).getMacroscopicParent();
+
+        // remaining shells
+        for (var shell: Int = 2; shell <= numShells; shell++) {
+            macroTranslation = macroTranslation.getMacroscopicParent();
+            macroMultipoles(shell) = new MultipoleExpansion(numTerms);
+            macroMultipoles(shell).translateAndAddMultipole(macroTranslation, macroMultipoles(shell-1));
+            //Console.OUT.println("final for " + shell + " = " + macroMultipoles(shell));
+            macroLocalTranslations(shell) = macroLocalTranslations(shell-1).getMacroscopicParent();
+        }
+
+        // now transform and add macroscopic multipoles to local expansion for top level box
+        for (var shell: Int = 0; shell <= numShells; shell++) {
+            val localExpansion = macroLocalTranslations(shell);
+            topLevelBox.localExp.transformAndAddToLocal(localExpansion, macroMultipoles(shell));
+        }
+        //Console.OUT.println("final for topLevel = " + topLevelBox.localExp);
         timer.stop(TIMER_INDEX_MACROSCOPIC);
     }
 
@@ -163,9 +157,12 @@ public class PeriodicFmm3d extends Fmm3d {
                     myDipole = myDipole + Vector3d(offsetCentre) * charge;
                     val boxIndex = Fmm3d.getLowestLevelBoxIndex(offsetCentre, lowestLevelDim, size);
                     // TODO should be able to call PeriodicDist.dist with Point(3) inlined
-                    async at(lowestLevelBoxes.dist(boxIndex(0), boxIndex(1), boxIndex(2))) {
+                    val x = boxIndex(0);
+                    val y = boxIndex(1);
+                    val z = boxIndex(2);
+                    async at(boxAtomsTemp.dist(x,y,z)) {
                         val remoteAtom = new PointCharge(offsetCentre, charge);
-                        atomic boxAtomsTemp(boxIndex).add(remoteAtom);
+                        atomic boxAtomsTemp(x,y,z).add(remoteAtom);
                     }
                 }
                 offer myDipole;

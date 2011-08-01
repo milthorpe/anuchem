@@ -223,7 +223,7 @@ public class Fmm3d {
                 val charge = atom.charge;
                 val offsetCentre = atom.centre + offset;
                 val boxIndex = Fmm3d.getLowestLevelBoxIndex(offsetCentre, lowestLevelDim, size);
-                async at(lowestLevelBoxes.dist(boxIndex)) {
+                async at(boxAtomsTemp.dist(boxIndex)) {
                     val remoteAtom = new PointCharge(offsetCentre, charge);
                     atomic boxAtomsTemp(boxIndex).add(remoteAtom);
                 }
@@ -452,8 +452,8 @@ public class Fmm3d {
             val vListForPlace = placeEntry.getValue();
             val vListArray = vListForPlace.toArray();
             val multipolesForPlace = (placeId == here.id) ?
-                getMultipolesForBoxList(thisLevelBoxes, vListArray) :
-                at(Place.place(placeId)) { getMultipolesForBoxList(thisLevelBoxes, vListArray)};
+                Fmm3d.getMultipolesForBoxList(thisLevelBoxes, vListArray) :
+                at(Place.place(placeId)) { Fmm3d.getMultipolesForBoxList(thisLevelBoxes, vListArray)};
             for (i in 0..(vListArray.size-1)) {
                 thisLevelCopies(vListArray(i)) = multipolesForPlace(i);
             }
@@ -509,8 +509,8 @@ public class Fmm3d {
                 val uListForPlace = placeEntry.getValue();
                 val uListArray = uListForPlace.toArray();
                 val atomsForPlace = (placeId == here.id) ?
-                    getAtomsForBoxList(lowestLevelBoxes, uListArray) :
-                    at(Place.place(placeId)) { getAtomsForBoxList(lowestLevelBoxes, uListArray)};
+                    Fmm3d.getAtomsForBoxList(lowestLevelBoxes, uListArray) :
+                    at(Place.place(placeId)) { Fmm3d.getAtomsForBoxList(lowestLevelBoxes, uListArray)};
                 for (i in 0..(uListArray.size-1)) {
                     myLET.cachedAtoms(uListArray(i)) = atomsForPlace(i);
                 }
