@@ -130,7 +130,7 @@ public class Distributed3dFft_SPMD {
                     for ([x,y,z] in transferRegion) {
                         elementsToTransfer(i++) = temp(x,y,z);
                     }
-                    async at (p2) {
+                    async at(p2) {
                         var i : Int = 0;
                         for ([x,y,z] in transferRegion) {
                             // transpose dimensions

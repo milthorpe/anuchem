@@ -53,11 +53,11 @@ final public class ScalableTreeBarrier {
         finish ateach ([i] in nodes) {
             val thisNode = nodes(i);
             val parentId = Math.floor((i-1)/4) as Int;
-            thisNode.parent = (i == 0) ? null : at (nodes.dist(parentId)) {new Box[GlobalRef[TreeNode]](GlobalRef[TreeNode](nodes(parentId)))};
+            thisNode.parent = (i == 0) ? null : at(nodes.dist(parentId)) {new Box[GlobalRef[TreeNode]](GlobalRef[TreeNode](nodes(parentId)))};
             val childId0 = 2*i+1;
-            thisNode.children(0) = (childId0 >= P) ? null : at (nodes.dist(childId0)) {new Box[GlobalRef[TreeNode]](GlobalRef[TreeNode](nodes(childId0)))};
+            thisNode.children(0) = (childId0 >= P) ? null : at(nodes.dist(childId0)) {new Box[GlobalRef[TreeNode]](GlobalRef[TreeNode](nodes(childId0)))};
             val childId1 = 2*i+2;
-            thisNode.children(1) = (childId1 >= P) ? null : at (nodes.dist(childId1)) {new Box[GlobalRef[TreeNode]](GlobalRef[TreeNode](nodes(childId1)))};
+            thisNode.children(1) = (childId1 >= P) ? null : at(nodes.dist(childId1)) {new Box[GlobalRef[TreeNode]](GlobalRef[TreeNode](nodes(childId1)))};
         }
         this.nodes = nodes;
     }
@@ -80,7 +80,7 @@ final public class ScalableTreeBarrier {
             // let parent know I'm ready
             Console.OUT.println("I am ready : " + i);
             val parent = thisNode.parent();
-            at (parent) {
+            at(parent) {
                 Console.OUT.println("At : " + here.id + " setting " + ((i-1)%4));
                 parent().childNotReady((i-1)%4) = false;
                 Console.OUT.println("At : " + here.id + " have set " + ((i-1)%4));
@@ -99,7 +99,7 @@ final public class ScalableTreeBarrier {
             if (childBox != null) {
                 val child = childBox();
                 Console.OUT.println("About to signal : " + child.home);
-                at (child) { 
+                at(child) { 
                     child().parentSense = thisNodeSense;
                     Console.OUT.println("Signalled : " + here.id);
                 }

@@ -92,7 +92,7 @@ public class PeriodicFmm3d extends Fmm3d {
         val numTerms = this.numTerms; // TODO shouldn't be necessary XTENLANG-1913
         val size = this.size; // TODO shouldn't be necessary XTENLANG-1913
         val boxes = this.boxes; // TODO shouldn't be necessary XTENLANG-1913
-        at (boxes(0).dist(0,0,0)) {
+        at(boxes(0).dist(0,0,0)) {
             val macroMultipoles = new Array[MultipoleExpansion](numShells+1);
             val macroLocalTranslations = new Array[LocalExpansion](numShells+1);
             val topLevelBox = boxes(0)(0,0,0);

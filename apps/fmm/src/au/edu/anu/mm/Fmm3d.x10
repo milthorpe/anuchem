@@ -416,7 +416,7 @@ public class Fmm3d {
                     val childY = 2*y1 + dy;
                     val childZ = 2*z1 + dz;
 
-                    async at (childLevelBoxes.dist(childX,childY,childZ)) {
+                    async at(childLevelBoxes.dist(childX,childY,childZ)) {
                         offer downward(childX, childY, childZ, childLevel, parentExp);
                     }
                 }

@@ -29,7 +29,7 @@ public class TestDistributed3dFft {
         val output = DistArray.make[Complex](input.dist);
         val temp = DistArray.make[Complex](input.dist);
         Console.OUT.println("input");
-        for (p1 in input.dist.places()) at (p1) {
+        for (p1 in input.dist.places()) at(p1) {
             for (p in input.dist | here) {
                 //Console.OUT.println(input(p));
             }
@@ -39,7 +39,7 @@ public class TestDistributed3dFft {
 
         //Console.OUT.println("\noutput");
         fft.doFFT3d(false);
-        for (p1 in output.dist.places()) at (p1) {
+        for (p1 in output.dist.places()) at(p1) {
             for (p in output.dist | here) {
                 //Console.OUT.println(output(p));
             }
@@ -49,7 +49,7 @@ public class TestDistributed3dFft {
 
         Console.OUT.println("\nroundtrip");
         roundtrip.doFFT3d(true);
-        for (p1 in output.dist.places()) at (p1) {
+        for (p1 in output.dist.places()) at(p1) {
             for (p in output.dist | here) {
                 //Console.OUT.println((output(p) / (N*N*N)));
                 if (Math.abs((output(p)/(N*N*N)).re - input(p).re) > 1.0e-10) {

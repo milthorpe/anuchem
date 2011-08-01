@@ -80,7 +80,7 @@ public class TestPeriodicFmm3dWaterBox extends TestElectrostatic {
             val charge = atom.charge;
             val p = getPlaceId(x, y, z);
             if (p >= 0 && p < Place.MAX_PLACES) {
-                async at (Place.place(p)) {
+                async at(Place.place(p)) {
                     val atom = new MMAtom(Point3d(x,y,z), charge);
                     //Console.OUT.println(atom);
                     atomic { tempAtoms(p).add(atom); }

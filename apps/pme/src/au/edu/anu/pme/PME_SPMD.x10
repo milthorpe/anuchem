@@ -210,7 +210,7 @@ public class PME_SPMD {
         timer.start(TIMER_INDEX_TOTAL);
 
         timer.start(TIMER_INDEX_GRIDCHARGES);
-        finish for (place in Place.places()) async at (place) {
+        finish for (place in Place.places()) async at(place) {
             val myPackedAtoms = packedAtomsCache(here.id);
             val gridDistHere = gridDist.get(here) as Region(3){rect};
 
@@ -276,7 +276,7 @@ public class PME_SPMD {
                 val i = (centre.i / halfCutoff) as Int;
                 val j = (centre.j / halfCutoff) as Int;
                 val k = (centre.k / halfCutoff) as Int;
-                async at (subCellsTemp.dist(i,j,k)) {
+                async at(subCellsTemp.dist(i,j,k)) {
                     atomic subCellsTemp(i,j,k).add(atom);
                 }
             }
@@ -295,7 +295,7 @@ public class PME_SPMD {
         timer.start(TIMER_INDEX_PREFETCH);
 		val subCells = this.subCells; // TODO shouldn't be necessary XTENLANG-1913
 		val packedAtomsCache = this.packedAtomsCache; // TODO shouldn't be necessary XTENLANG-1913
-        finish for (place in subCells.dist.places()) async at (place) {
+        finish for (place in subCells.dist.places()) async at(place) {
             val myPackedAtoms = packedAtomsCache(here.id);
             prefetchPackedAtomsLocal(subCells, myPackedAtoms);
         }
@@ -328,7 +328,7 @@ public class PME_SPMD {
             val placeId = placeEntry.getKey();
             val haloForPlace = placeEntry.getValue();
             val haloListArray = haloForPlace.toArray();
-            val packedForPlace = at (Place.place(placeId)) { getPackedAtomsForSubcellList(subCells, haloListArray)};
+            val packedForPlace = at(Place.place(placeId)) { getPackedAtomsForSubcellList(subCells, haloListArray)};
             for (i in 0..(haloListArray.size-1)) {
                 myPackedAtoms(haloListArray(i)) = packedForPlace(i);
             }
@@ -622,7 +622,7 @@ public class PME_SPMD {
             for ([i,j,k] in sourceRegion) {
                 overlap(l++) = sourceGrid(i,j,k);
             }
-            async at (targetPlace) {
+            async at(targetPlace) {
                 atomic {
                     var m : Int = 0;
                     for ([i,j,k] in overlapRegion) {
@@ -746,7 +746,7 @@ public class PME_SPMD {
                 C(m1,m2,m3) = Math.exp(-(Math.PI*Math.PI) * mSquared / (beta * beta)) / (mSquared * Math.PI * V);
             }
         }
-        at (C.dist(0,0,0)) {
+        at(C.dist(0,0,0)) {
             C(0,0,0) = 0.0;
         }
     }

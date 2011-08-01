@@ -258,7 +258,7 @@ public class PME {
                 val i = (centre.i / halfCutoff) as Int;
                 val j = (centre.j / halfCutoff) as Int;
                 val k = (centre.k / halfCutoff) as Int;
-                async at (subCellsTemp.dist(i,j,k)) {
+                async at(subCellsTemp.dist(i,j,k)) {
                     atomic subCellsTemp(i,j,k).add(new PointCharge(centre, charge));
                 }
             }
@@ -300,7 +300,7 @@ public class PME {
                     val placeId = placeEntry.getKey();
                     val haloForPlace = placeEntry.getValue();
                     val haloListArray = haloForPlace.toArray();
-                    val atomsForPlace = at (Place.place(placeId)) { getAtomsForSubcellList(subCells, haloListArray)};
+                    val atomsForPlace = at(Place.place(placeId)) { getAtomsForSubcellList(subCells, haloListArray)};
                     for (i in 0..(haloListArray.size-1)) {
                         myAtomsCache(haloListArray(i)) = atomsForPlace(i);
                     }
@@ -570,7 +570,7 @@ public class PME {
             for ([i,j,k] in sourceRegion) {
                 overlap(l++) = sourceGrid(i,j,k);
             }
-            async at (targetPlace) {
+            async at(targetPlace) {
                 atomic {
                     var m : Int = 0;
                     for ([i,j,k] in overlapRegion) {
@@ -693,7 +693,7 @@ public class PME {
                 C(m1,m2,m3) = Math.exp(-(Math.PI*Math.PI) * mSquared / (beta * beta)) / (mSquared * Math.PI * V);
             }
         }
-        at (C.dist(0,0,0)) {
+        at(C.dist(0,0,0)) {
             C(0,0,0) = 0.0;
         }
     }

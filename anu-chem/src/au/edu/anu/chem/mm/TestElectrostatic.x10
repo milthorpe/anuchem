@@ -69,7 +69,7 @@ public class TestElectrostatic {
             val z = clusterStart + (gridZ + 0.5 + randomNoise()) * (sizeOfCentralCluster() / gridSize);
             val charge = i%2==0?1:-1;
             val p = getPlaceId(x, y, z);
-            async at (Place.place(p)) {
+            async at(Place.place(p)) {
                 val atom = new MMAtom(Point3d(x, y, z), charge);
                 //Console.OUT.println(atom);
                 atomic { tempAtoms(p).add(atom); }

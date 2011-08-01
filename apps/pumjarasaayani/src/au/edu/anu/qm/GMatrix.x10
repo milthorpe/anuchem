@@ -332,7 +332,7 @@ public class GMatrix extends Matrix {
         val gMat = getMatrix();
         val computeInst = this.computeInst; // TODO this should not be required XTENLANG-1913
         finish for ([placeId] in computeInst) async {
-            val placeContribution = at (Place.place(placeId)) {
+            val placeContribution = at(Place.place(placeId)) {
                 //val placeTimer = new Timer(1);
                 //placeTimer.start(0);
 
@@ -368,7 +368,7 @@ public class GMatrix extends Matrix {
         computeInst(0).density = density; // prepare for broadcast
         val computeInst = this.computeInst; // TODO this should not be required XTENLANG-1913
         finish for ([placeId] in computeInst) async {
-            val placeContribution = at (Place.place(placeId)) {
+            val placeContribution = at(Place.place(placeId)) {
                 val placeTimer = new Timer(1);
                 placeTimer.start(0);
 
@@ -422,7 +422,7 @@ public class GMatrix extends Matrix {
         computeInst(0).density = density; // prepare for broadcast
         val computeInst = this.computeInst; // TODO this should not be required XTENLANG-1913
         finish for ([placeId] in computeInst) async {
-            val placeContribution = at (Place.place(placeId)) {
+            val placeContribution = at(Place.place(placeId)) {
                 //val placeTimer = new Timer(1);
                 //placeTimer.start(0);
                 val comp_loc = computeInst(placeId);
