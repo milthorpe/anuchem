@@ -65,7 +65,7 @@ public class TestFmm3d extends TestElectrostatic {
             Console.OUT.println("Testing FMM for " + numAtoms 
                       + " atoms, target density = " + density
                       + " numTerms = " + numTerms
-                      + " wellSpaced param = " + wellSpaced
+                      + " wellSpaced = " + wellSpaced
                       + " numLevels = " + numLevels);
         } else {
             Console.OUT.print(numAtoms + " atoms: ");
@@ -85,7 +85,6 @@ public class TestFmm3d extends TestElectrostatic {
             logTime("Direct",     Fmm3d.TIMER_INDEX_DIRECT,    fmm3d.timer);
             logTime("Multipole",  Fmm3d.TIMER_INDEX_MULTIPOLE, fmm3d.timer);
             logTime("Combine",    Fmm3d.TIMER_INDEX_COMBINE,   fmm3d.timer);
-            logTime("Prefetch m", Fmm3d.TIMER_INDEX_FETCHM,    fmm3d.timer);
             logTime("Downward",   Fmm3d.TIMER_INDEX_DOWNWARD,  fmm3d.timer);
         }
 

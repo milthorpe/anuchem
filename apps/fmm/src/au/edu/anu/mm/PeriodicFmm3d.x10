@@ -36,7 +36,7 @@ public class PeriodicFmm3d extends Fmm3d {
     /** The number of concentric shells of copies of the unit cell. */
     public val numShells : Int;
 
-    public static val TIMER_INDEX_MACROSCOPIC : Int = 8;
+    public static val TIMER_INDEX_MACROSCOPIC : Int = 7;
 
     /** A region representing a cube of 3x3x3 boxes, used for constructing macroscopic multipoles. */
     static val threeCube : Region(3) = (-1..1)*(-1..1)*(-1..1);
@@ -74,7 +74,6 @@ public class PeriodicFmm3d extends Fmm3d {
             }
             upwardPass();
             combineMacroscopicExpansions();
-            prefetchMultipoles();
             farFieldEnergy = downwardPass();
         }
         val totalEnergy = getDirectEnergy() + farFieldEnergy;

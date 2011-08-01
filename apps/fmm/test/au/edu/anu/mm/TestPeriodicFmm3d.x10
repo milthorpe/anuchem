@@ -82,7 +82,6 @@ public class TestPeriodicFmm3d extends TestElectrostatic {
             logTime("Multipole",  Fmm3d.TIMER_INDEX_MULTIPOLE, fmm3d.timer);
             logTime("Combine",    Fmm3d.TIMER_INDEX_COMBINE,   fmm3d.timer);
             logTime("Macroscopic", PeriodicFmm3d.TIMER_INDEX_MACROSCOPIC, fmm3d.timer);
-            logTime("Prefetch m", Fmm3d.TIMER_INDEX_FETCHM,    fmm3d.timer);
             logTime("Downward",   Fmm3d.TIMER_INDEX_DOWNWARD,  fmm3d.timer);
         }
 
