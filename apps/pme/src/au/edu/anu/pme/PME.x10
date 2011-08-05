@@ -94,6 +94,9 @@ public class PME {
     /** The inverse DFT of the Q array.  TODO this should be a scoped local variable in getEnergy() XTENLANG-??? */
     private val Qinv : DistArray[Complex]{self.dist==gridDist};
 
+    /** thetaRecConvQ as used in Eq. 4.7.  TODO this should be a scoped local variable in getEnergy() XTENLANG-??? */
+    private val thetaRecConvQ : DistArray[Complex]{self.dist==gridDist};
+
     /** Scratch array for use during 3D FFT.  TODO this should be a scoped local variable in getEnergy() XTENLANG-??? */
     private val temp : DistArray[Complex]{self.dist==gridDist};
 
@@ -182,6 +185,7 @@ public class PME {
 
         // TODO following arrays should be scoped local variables XTENLANG-???
         Qinv = DistArray.make[Complex](gridDist);
+        thetaRecConvQ = DistArray.make[Complex](gridDist);
         temp = DistArray.make[Complex](gridDist);
         B = DistArray.make[Double](gridDist);
         C = DistArray.make[Double](gridDist);
@@ -205,7 +209,6 @@ public class PME {
     public def getEnergy() : Double {
         timer.start(TIMER_INDEX_TOTAL);
 
-        val thetaRecConvQ : DistArray[Complex]{self.dist==gridDist};
         finish {
             async { prefetchRemoteAtoms(); }
 
@@ -218,7 +221,7 @@ public class PME {
 
             timer.start(TIMER_INDEX_THETARECCONVQ);
             // create F^-1(thetaRecConvQ)
-            thetaRecConvQ = BdotC.map(Qinv, (a:Double, b:Complex) => (a*b));
+            BdotC.map(thetaRecConvQ, Qinv, (a:Double, b:Complex) => (a*b));
 
             // and do inverse FFT
             new Distributed3dFft(gridSize(0), thetaRecConvQ, thetaRecConvQ, temp).doFFT3d(true);
