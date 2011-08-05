@@ -10,7 +10,7 @@
  */
 package au.edu.anu.fft;
 
-import x10.compiler.Native;
+import x10.compiler.NativeCPPInclude;
 import x10.util.ArrayList;
 import x10.util.Team;
 import edu.mit.fftw.FFTW;
@@ -19,6 +19,7 @@ import edu.mit.fftw.FFTW;
  * This class implements a distributed three-dimensional FFT using
  * FFTW at the base level for sequential 1D FFTs.
  */
+@NativeCPPInclude("FFTW_typedef.h")
 public class Distributed3dFft {
     /** The length of one dimension of the 3D source and target arrays. */
     public val dataSize : Int;
@@ -69,16 +70,18 @@ public class Distributed3dFft {
                     Team.WORLD.barrier(here.id);
                     do1DFftAndTranspose(temp, target, oneDSource, oneDTarget, forward);
                 } else {
-                    do1DFftToTemp(source, oneDSource, oneDTarget, forward);
+                    val plan : FFTW.FFTWPlan = FFTW.fftwPlan1d(dataSize, oneDSource, oneDTarget, forward);
+                    do1DFftToTemp(source, oneDSource, oneDTarget, plan);
                     transposeTempToTarget();
                     Team.WORLD.barrier(here.id);
-                    do1DFftToTemp(target, oneDSource, oneDTarget, forward);
+                    do1DFftToTemp(target, oneDSource, oneDTarget, plan);
                     Team.WORLD.barrier(here.id);
                     transposeTempToTarget();
                     Team.WORLD.barrier(here.id);
-                    do1DFftToTemp(target, oneDSource, oneDTarget, forward);
+                    do1DFftToTemp(target, oneDSource, oneDTarget, plan);
                     Team.WORLD.barrier(here.id);
                     transposeTempToTarget();
+                    FFTW.fftwDestroyPlan(plan);
                 }
             }
 /*
@@ -124,8 +127,7 @@ public class Distributed3dFft {
     private def do1DFftToTemp(source : DistArray[Complex](3),
                                      oneDSource : Rail[Complex],
                                      oneDTarget : Rail[Complex],
-                                     forward : Boolean) {
-        val plan : FFTW.FFTWPlan = FFTW.fftwPlan1d(dataSize, oneDSource, oneDTarget, forward);
+                                     plan : FFTW.FFTWPlan) {
         val mySource = source.dist | here;
         val gridRegionWithoutZ = (mySource.region.eliminate(2)) as Region(2){rect};
         for ([i,j] in gridRegionWithoutZ) {
@@ -138,7 +140,6 @@ public class Distributed3dFft {
                 temp(i,j,k) = oneDTarget(k);
             }
         }
-        FFTW.fftwDestroyPlan(plan);
     }
 
     /**

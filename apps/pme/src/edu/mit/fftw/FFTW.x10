@@ -3,6 +3,7 @@ package edu.mit.fftw;
 import x10.compiler.Native;
 import x10.compiler.NativeRep;
 import x10.compiler.NativeCPPCompilationUnit;
+import x10.compiler.NativeCPPInclude;
 
 @NativeCPPCompilationUnit("FFTW.cc")
 @NativeRep("c++", "::edu::mit::fftw::FFTWWrapper", "::edu::mit::fftw::FFTWWrapper", null)
@@ -38,6 +39,7 @@ public class FFTW {
     public native static def fftwCleanupThreads() : void;
     */
 
+    @NativeCPPInclude("FFTW_FFTWPlan.h")
     @NativeRep("c++", "::edu::mit::fftw::FFTW_FFTWPlan", "::edu::mit::fftw::FFTW_FFTWPlan", null)
     @NativeRep("java", "edu.mit.fftw.FFTWPlan", "edu.mit.fftw.FFTWPlan", null)
     public static struct FFTWPlan { };
