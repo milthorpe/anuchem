@@ -12,13 +12,13 @@
     <property name="profile"  value="false" />
     <property name="inlineopt" value="false" />
     <property name="cpuprofile"  value="false"/>
-    <property name="perftoolsHome" location="/scratch/perftools"/>
+    <property name="perftoolsHome" location="${user.home}/perftools"/>
     <property name="heapprofile" value="false" />
 
     <property name="testclass" value="src/au/edu/anu/qm/PumjaRasaayani.x10" />
 
-    <property name="gsl.include" location="/scratch/gsl/include" />
-    <property name="gsl.lib" location="/scratch/gsl/lib" />
+    <property name="gsl.include" location="${user.home}/gsl/include" />
+    <property name="gsl.lib" location="${user.home}/gsl/lib" />
 
     <property name="usenativegsl" value="true" />
 

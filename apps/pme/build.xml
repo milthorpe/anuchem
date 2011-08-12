@@ -8,19 +8,19 @@
 	<property name="anuchem.src" location="${anuchem}/src"/>
 	<property name="anuchem.lib" location="${anuchem}/lib/anu-chem.jar"/>
     <property name="x10.testlib" location="${user.home}/x10-trunk/x10.tests/examples/x10lib"/>
-    <property name="fftw3.include" location="/scratch/fftw/include" />
-    <property name="fftw3.lib" location="/scratch/fftw/lib" />
+    <property name="fftw3.include" location="${user.home}/fftw/include" />
+    <property name="fftw3.lib" location="${user.home}/fftw/lib" />
     <property environment="env"/>
     <property name="bash.exe" value="bash"/>    
     <property name="optimize" value="true"/>
     <property name="nochecks" value="true"/>
     <property name="inline-methods" value="true"/>
     <property name="profile"  value="false"/>
-    <property name="cpuprofile"  value="true"/>
-    <property name="perftoolsHome" location="/scratch/perftools"/>
+    <property name="cpuprofile"  value="false"/>
+    <property name="perftoolsHome" location="${user.home}/perftools"/>
     <property name="mpiPprofile"  value="false"/>
-    <property name="mpiPHome" location="/scratch/mpiP"/>
-    <property name="binutilsHome" location="/scratch/binutils"/>
+    <property name="mpiPHome" location="${user.home}/mpiP"/>
+    <property name="binutilsHome" location="${user.home}/binutils"/>
     <property name="x10rt" value="mpi"/>
 	<property name="target" location="${basedir}/target"/>
 	<property name="target-src" location="${target}/classes"/>
