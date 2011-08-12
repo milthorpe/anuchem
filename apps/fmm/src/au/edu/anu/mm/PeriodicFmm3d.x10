@@ -255,12 +255,12 @@ public class PeriodicFmm3d extends Fmm3d {
         timer.start(TIMER_INDEX_DIRECT);
 
         val lowestLevelBoxes = boxes(numLevels);
-        val locallyEssentialTrees = this.locallyEssentialTrees; // TODO shouldn't be necessary XTENLANG-1913
+        val locallyEssentialTree = this.locallyEssentialTree; // TODO shouldn't be necessary XTENLANG-1913
         val lowestLevelDim = this.lowestLevelDim; // TODO shouldn't be necessary XTENLANG-1913
         val size = this.size; // TODO shouldn't be necessary XTENLANG-1913
         val directEnergy = finish (SumReducer()) {
-            ateach(p1 in locallyEssentialTrees) {
-                val myLET = locallyEssentialTrees(p1);
+            ateach(p1 in Dist.makeUnique()) {
+                val myLET = locallyEssentialTree();
                 val cachedAtoms = myLET.cachedAtoms;
                 var thisPlaceEnergy : Double = 0.0;
                 for ([x1,y1,z1] in lowestLevelBoxes.dist(here)) {
