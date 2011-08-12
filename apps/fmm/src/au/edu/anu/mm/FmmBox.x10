@@ -10,10 +10,10 @@
  */
 package au.edu.anu.mm;
 
-import x10.compiler.Inline;
 import x10.util.ArrayList;
 
 import x10x.vector.Point3d;
+import x10x.vector.Vector3d;
 
 /**
  * This class represents a box in the 3D division of space
@@ -85,8 +85,82 @@ public class FmmBox {
             || Math.abs(z - box2.z) > ws;
     }
 
-    public @Inline final def getTranslationIndex(boxIndex2 : Point(3)) : Point(3) {
-        return Point.make(boxIndex2(0)-x, boxIndex2(1)-y, boxIndex2(2)-z);
+    protected def downward(size:Double, parentLocalExpansion:LocalExpansion, fmmOperators:PlaceLocalHandle[FmmOperators], locallyEssentialTree:PlaceLocalHandle[LocallyEssentialTree], boxes:Rail[DistArray[FmmBox](3)]):Double {
+        val myOperators = fmmOperators();
+        addMultipolesAtSameLevel(size, myOperators, locallyEssentialTree());
+        addParentExpansion(size, parentLocalExpansion, myOperators);
+
+        val childLevel = level+1;
+        val childLevelBoxes = boxes(childLevel);
+
+        val parentExp = localExp;
+
+        val farField = finish (SumReducer()) {
+            for (i in 0..7) {
+                val dx = i / 4;
+                val dy = i % 4 / 2;
+                val dz = i % 2;
+                val childX = 2*this.x + dx;
+                val childY = 2*this.y + dy;
+                val childZ = 2*this.z + dz;
+
+                async at(childLevelBoxes.dist(childX,childY,childZ)) {
+                    val childBox = boxes(childLevel)(childX,childY,childZ);
+                    if (childBox != null) {
+                        offer childBox.downward(size, parentExp, fmmOperators, locallyEssentialTree, boxes);
+                    }
+                }
+            }
+        };
+        return farField;
+    }
+
+    protected def addMultipolesAtSameLevel(size:Double, fmmOperators:FmmOperators, locallyEssentialTree:LocallyEssentialTree) {
+        val sideLength = size / Math.pow2(level);
+        val myComplexK = fmmOperators.complexK;
+        val myWignerB = fmmOperators.wignerB;
+        val thisLevelMultipoleCopies = locallyEssentialTree.multipoleCopies(level);
+
+        // transform and add multipole expansions from same level
+        val numTerms = localExp.p;
+        val scratch = new MultipoleExpansion(numTerms);    
+        val scratch_array = new Array[Complex](-numTerms..numTerms) as Array[Complex](1){rect,rail==false};
+        val vList = getVList();
+        for ([p] in vList) {
+            val boxIndex2 = vList(p);
+            // TODO - should be able to detect Point rank and inline
+            val x2 = boxIndex2(0);
+            val y2 = boxIndex2(1);
+            val z2 = boxIndex2(2);
+            val box2MultipoleExp = thisLevelMultipoleCopies(x2, y2, z2);
+           
+            if (box2MultipoleExp != null) {
+               // TODO should be able to inline Point
+                val dx2 = x2-this.x;
+                val dy2 = y2-this.y;
+                val dz2 = z2-this.z;
+                localExp.transformAndAddToLocal(scratch, scratch_array,
+			        Vector3d(dx2*sideLength, dy2*sideLength, dz2*sideLength), 
+					myComplexK(dx2,dy2,dz2), box2MultipoleExp, myWignerB(dx2,dy2,dz2) );
+            }
+        }
+    }
+
+    protected def addParentExpansion(size:Double, parentLocalExpansion:LocalExpansion, fmmOperators:FmmOperators) {
+        val sideLength = size / Math.pow2(level);
+        val myComplexK = fmmOperators.complexK;
+        val myWignerC = fmmOperators.wignerC;
+
+        if (parentLocalExpansion != null) {
+            // translate and add parent local expansion
+            val dx = 2*(this.x%2)-1;
+            val dy = 2*(this.y%2)-1;
+            val dz = 2*(this.z%2)-1;
+
+            localExp.translateAndAddLocal(
+                Vector3d(dx*0.5*sideLength, dy*0.5*sideLength, dz*0.5*sideLength),
+                myComplexK(dx,dy,dz), parentLocalExpansion, myWignerC((dx+1)/2, (dy+1)/2, (dz+1)/2));
+        }
     }
 
     public def getVList() = this.vList;
@@ -139,6 +213,11 @@ public class FmmBox {
             }
         }
         this.vList = vList.toArray();
+    }
+
+    static struct SumReducer implements Reducible[Double] {
+        public def zero() = 0.0;
+        public operator this(a:Double, b:Double) = (a + b);
     }
 
     public def toString(): String {

@@ -36,6 +36,24 @@ public class FmmLeafBox extends FmmBox {
         this.atoms = atoms;
     }
 
+    protected def downward(size:Double, parentLocalExpansion:LocalExpansion, fmmOperators:PlaceLocalHandle[FmmOperators], locallyEssentialTree:PlaceLocalHandle[LocallyEssentialTree], boxes:Rail[DistArray[FmmBox](3)]):Double {
+        val myOperators = fmmOperators();
+        addMultipolesAtSameLevel(size, myOperators, locallyEssentialTree());
+        addParentExpansion(size, parentLocalExpansion, myOperators);
+
+        var leafBoxEnergy:Double = 0.0;
+        val boxAtoms = getAtoms();
+        val boxCentre = getCentre(size);
+        for (atomIndex in 0..(boxAtoms.size-1)) {
+           val atom = boxAtoms(atomIndex);
+           val locationWithinBox = atom.centre.vector(boxCentre);
+           val farFieldEnergy = localExp.getPotential(atom.charge, locationWithinBox);
+           leafBoxEnergy += farFieldEnergy;
+        }
+        return leafBoxEnergy;
+        
+    }
+
     public def getUList() = this.uList;
 
     public def setUList(uList : Rail[Point(3)]) {
