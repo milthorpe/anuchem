@@ -18,71 +18,86 @@ import x10.io.File;
  * of activity generation approaches
  * @author milthorpe 06/2011
  */
-public class BenchmarkDistParallelLoop(size : Int) extends x10Test {
+public class BenchmarkDistParallelLoop(size : Int, print:Boolean) extends x10Test {
+    private static ITERS = 10;
 
     private static val work = new Array[Int](Runtime.MAX_THREADS);
 
-    public def this(size : Int) {
-        property(size);
+    public def this(size : Int, print:Boolean) {
+        property(size, print);
     }
 
 	public def run(): Boolean = {
         val a = DistArray.make[Int](Dist.makeBlock(0..(size-1)));
 
-        //val bigArray = new Array[Int](arraySize, (i:Int) => i);
-
         var start:Long = System.nanoTime();
-        finish for (place in a.dist.places()) async at(place) {
-            val aLocal = a.getLocalPortion();
-            for (p in aLocal) async {
-                aLocal(p) = Runtime.workerId();
-                work(Runtime.workerId())++;
-            }
-        }
-        var stop:Long = System.nanoTime();
-        Console.OUT.printf("standard loop: %g ms\n", ((stop-start) as Double) / 1e6);
-        writeLocalSchedulingFile(a, "standard.dat");
-        printAndResetWork();
-
-        start = System.nanoTime();
-        finish for (place in a.dist.places()) async at(place) {
-            val aLocal = a.getLocalPortion();
-            val regionIter = aLocal.region.iterator();
-            while(regionIter.hasNext()) {
-                val p = regionIter.next();
-                async {
+        for (i in 1..ITERS) {
+            finish for (place in a.dist.places()) async at(place) {
+                val aLocal = a.getLocalPortion() as Rail[Int];
+                for (p in aLocal) async {
                     aLocal(p) = Runtime.workerId();
                     work(Runtime.workerId())++;
                 }
             }
         }
-        stop = System.nanoTime();
-        Console.OUT.printf("hand-cut while loop: %g ms\n", ((stop-start) as Double) / 1e6);
-        writeLocalSchedulingFile(a, "hand.dat");
+        var stop:Long = System.nanoTime();
+        Console.OUT.printf("standard loop: %g ms\n", ((stop-start) as Double) / 1e6 / ITERS);
+        writeLocalSchedulingFile(a, "standard.dat");
         printAndResetWork();
 
         start = System.nanoTime();
-        finish for (place in a.dist.places()) async at(place) {
-            val aLocal = a.getLocalPortion();
-            val regionIter = aLocal.region.iterator();
-            val assign = (p:Point(1)) => { aLocal(p) = Runtime.workerId(); work(Runtime.workerId())++;};
-            BenchmarkDistParallelLoop.remainder(regionIter, assign);
+        for (i in 1..ITERS) {
+            finish for (place in a.dist.places()) async at(place) {
+                val aLocal = a.getLocalPortion() as Rail[Int];
+                val regionIter = aLocal.region.iterator();
+                while(regionIter.hasNext()) {
+                    val p = regionIter.next();
+                    async {
+                        aLocal(p) = Runtime.workerId();
+                        work(Runtime.workerId())++;
+                    }
+                }
+            }
         }
         stop = System.nanoTime();
-        Console.OUT.printf("inverted loop: %g ms\n", ((stop-start) as Double) / 1e6);
-        writeLocalSchedulingFile(a, "invert.dat");
+        Console.OUT.printf("iterator loop: %g ms\n", ((stop-start) as Double) / 1e6 / ITERS);
+        writeLocalSchedulingFile(a, "iterator.dat");
         printAndResetWork();
 
         start = System.nanoTime();
-        finish for (place in a.dist.places()) async at(place) {
-            val aLocal = a.getLocalPortion();
-            val regionIter = aLocal.region;
-            val assign = (p:Int) => { aLocal(p) = Runtime.workerId(); work(Runtime.workerId())++;};
-            BenchmarkDistParallelLoop.doBisectingLoop(regionIter.min(0), regionIter.max(0), assign);
+        for (i in 1..ITERS) {
+            finish for (place in a.dist.places()) async at(place) {
+                val aLocal = a.getLocalPortion();
+                val regionIter = aLocal.region;
+                val assign = (p:Int) => { aLocal(p) = Runtime.workerId(); work(Runtime.workerId())++;};
+                BenchmarkDistParallelLoop.doBisectingLoop(regionIter.min(0), regionIter.max(0), assign);
+            }
         }
         stop = System.nanoTime();
-        Console.OUT.printf("bisected loop: %g ms\n", ((stop-start) as Double) / 1e6);
+        Console.OUT.printf("bisected loop: %g ms\n", ((stop-start) as Double) / 1e6 / ITERS);
         writeLocalSchedulingFile(a, "bisect.dat");
+        printAndResetWork();
+
+        start = System.nanoTime();
+        for (i in 1..ITERS) {
+            finish for (place in a.dist.places()) async at(place) {
+                val aLocal = a.getLocalPortion();
+                val nthreads = Runtime.NTHREADS;
+                val chunkSize = size / nthreads;
+                val remainder = size % nthreads;
+                for (t in 0..(nthreads-1)) {
+                    val begin = (t < remainder) ? t*(chunkSize+1) : remainder + t*chunkSize;
+                    val end = (t < remainder) ? (t+1)*(chunkSize+1) - 1 : remainder + (t+1)*chunkSize - 1;
+                    async for (p in begin..end) {
+                        aLocal(p) = Runtime.workerId();
+                        work(Runtime.workerId())++;
+                    }
+                }
+            }
+        }
+        stop = System.nanoTime();
+        Console.OUT.printf("chunked loop: %g ms\n", ((stop-start) as Double) / 1e6 / ITERS);
+        writeLocalSchedulingFile(a, "chunked.dat");
         printAndResetWork();
 
         return true;
@@ -130,11 +145,15 @@ public class BenchmarkDistParallelLoop(size : Int) extends x10Test {
     }
 
 	public static def main(var args: Array[String](1)): void = {
-        var size : Int = 8000;
+        var size:Int = 8000;
+        var print:Boolean = false;
         if (args.size > 0) {
             size = Int.parse(args(0));
+            if (args.size > 1) {
+                print=true;
+            }
         }
-		new BenchmarkDistParallelLoop(size).execute();
+		new BenchmarkDistParallelLoop(size, print).execute();
 	}
 
 }
