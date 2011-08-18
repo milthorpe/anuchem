@@ -1,0 +1,49 @@
+#include <stdlib.h>
+#include <sys/time.h>
+#include <stdio.h>
+#include <cilk-lib.cilkh>
+
+const int ITERS = 10000;
+
+cilk void set(int* i, int val) {
+    *i = val;
+}
+
+cilk int main() {
+    int myVector[8000];
+
+    Cilk_time start;
+    int i,j;
+    Cilk_time stop;
+
+    start = Cilk_get_wall_time();
+
+    for (i=0; i<ITERS; i++) {
+        for (j=0; j<8000; j++) {
+            myVector[j] = j;
+        }
+    }
+
+    stop = Cilk_get_wall_time();
+
+    printf("serial for loop  = %4f ms\n",
+		 Cilk_wall_time_to_sec(stop - start) * 1000 / ITERS);
+
+    start = Cilk_get_wall_time();
+
+    for (i=0; i<ITERS; i++) {
+        for (j=0; j<8000; j++) {
+            spawn set(& myVector[j], j);
+        }
+        sync;
+    }
+
+    stop = Cilk_get_wall_time();
+
+    printf("cilk for loop  = %4f ms\n",
+		 Cilk_wall_time_to_sec(stop - start) * 1000 / ITERS);
+
+    //coutVector(myVector);
+    return 0;
+}
+

@@ -1,5 +1,5 @@
 CPP := g++
-CPPFLAGS := -O3 -fopenmp -lgomp
+CPPFLAGS := -O3 -fopenmp -lgomp -std=c++0x
 
 run:    parallelLoop
 	./parallelLoop

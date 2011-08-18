@@ -5,6 +5,7 @@
 #include <sys/time.h>
 #include <iostream>
 #include <stdio.h>
+#include <omp.h>
 
 using namespace std;
 
@@ -14,9 +15,10 @@ static long microTime() {
     return (long)(tv.tv_sec * 1000000LL + tv.tv_usec);
 }
 
-void setToOne(int& i)
+
+void setToOne(int& i, int val)
 {
-  i = 1;
+  i = val;
 }
 
 void coutVector(const std::vector<int>& myVector)
@@ -28,31 +30,32 @@ void coutVector(const std::vector<int>& myVector)
   }
 }
 
+const int ITERS = 100000;
 
 int main() {
     std::vector<int> myVector(8000);
 
     long start = microTime();
 
-    for (int i=0; i<10000; i++) {
+    for (int i=0; i<ITERS; i++) {
         for (int j=0; j<8000; j++) {
-            myVector[j] = 1;
+            myVector[j] = j;
         }
     }
 
     long stop = microTime();
 
-    printf("serial for loop %.3f ms\n", (stop-start) / 1.0e4);
+    printf("serial for loop %.3f ms\n", (stop-start) / 1.0e3 / ITERS);
 
     start = microTime();
 
-    for (int i=0; i<10000; i++) {
-        std::for_each(myVector.begin(),myVector.end(), setToOne);
+    for (int i=0; i<ITERS; i++) {
+        std::for_each(myVector.begin(), myVector.end(), [](int &n){ n++; });
     }
 
     stop = microTime();
 
-    printf("std::for_each %.3f ms\n", (stop-start) / 1.0e4);
+    printf("std::for_each %.3f ms\n", (stop-start) / 1.0e3 / ITERS);
 
     //coutVector(myVector);
     return 0;
