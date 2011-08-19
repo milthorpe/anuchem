@@ -30,7 +30,7 @@ public class BenchmarkParallelLoop(size : Int, print:Boolean) extends x10Test {
 
         var start:Long = System.nanoTime();
         for (i in 1..ITERS) {
-            for ([p] in a) async {
+            finish for ([p] in a) async {
                 a(p) = p;
             }
         }
@@ -39,11 +39,13 @@ public class BenchmarkParallelLoop(size : Int, print:Boolean) extends x10Test {
 
         start = System.nanoTime();
         for (i in 1..ITERS) {
-            val regionIter = a.region.iterator();
-            while(regionIter.hasNext()) {
-                val p = regionIter.next();
-                async {
-                    a(p) = p(0);
+            finish {
+                val regionIter = a.region.iterator();
+                while(regionIter.hasNext()) {
+                    val p = regionIter.next();
+                    async {
+                        a(p) = p(0);
+                    }
                 }
             }
         }
@@ -53,7 +55,7 @@ public class BenchmarkParallelLoop(size : Int, print:Boolean) extends x10Test {
         start = System.nanoTime();
         for (i in 1..ITERS) {
             val assign = (p:Int) => { a(p) = p;};
-            BenchmarkParallelLoop.doForEach(a.region, assign);
+            finish BenchmarkParallelLoop.doForEach(a.region, assign);
         }
         stop = System.nanoTime();
         Console.OUT.printf("bisected loop: %g ms\n", ((stop-start) as Double) / 1e6 / ITERS);
@@ -63,7 +65,7 @@ public class BenchmarkParallelLoop(size : Int, print:Boolean) extends x10Test {
             val nthreads = Runtime.NTHREADS;
             val chunkSize = size / nthreads;
             val remainder = size % nthreads;
-            for (t in 0..(nthreads-1)) {
+            finish for (t in 0..(nthreads-1)) {
                 val begin = (t < remainder) ? t*(chunkSize+1) : remainder + t*chunkSize;
                 val end = (t < remainder) ? (t+1)*(chunkSize+1) - 1 : remainder + (t+1)*chunkSize - 1;
                 async for (p in begin..end) {
