@@ -109,7 +109,7 @@ public class BenchmarkDistParallelLoop(size : Int, print:Boolean) extends x10Tes
         }
     }
 
-    static class RegionBisection(r:Region) {
+    static struct RegionBisection(r:Region) {
         public val firstHalf:Region(r.rank);
         public val secondHalf:Region(r.rank);
 
@@ -138,7 +138,7 @@ public class BenchmarkDistParallelLoop(size : Int, print:Boolean) extends x10Tes
                 throw new IllegalArgumentException("unable to bisect region " + r);
             }
         }
-        public final def size() = r.size();
+        public def size() = r.size();
     }
 
     @Inline static def doForEach(r:Region(1){rect==false}, closure:(Point) => void) {
