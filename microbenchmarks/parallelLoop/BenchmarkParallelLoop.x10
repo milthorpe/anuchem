@@ -11,7 +11,6 @@
 import harness.x10Test;
 
 import x10.compiler.Inline;
-import x10.io.File;
 
 /**
  * Benchmarks loop iteration using a variety 
@@ -65,10 +64,10 @@ public class BenchmarkParallelLoop(size : Int, print:Boolean) extends x10Test {
             val nthreads = Runtime.NTHREADS;
             val chunkSize = size / nthreads;
             val remainder = size % nthreads;
-            finish for (t in 0..(nthreads-1)) {
+            finish for (t in 0..(nthreads-1)) async {
                 val begin = (t < remainder) ? t*(chunkSize+1) : remainder + t*chunkSize;
                 val end = (t < remainder) ? (t+1)*(chunkSize+1) - 1 : remainder + (t+1)*chunkSize - 1;
-                async for (p in begin..end) {
+                for (p in begin..end) async {
                     a(p) = p;
                 }
             }
@@ -128,11 +127,11 @@ public class BenchmarkParallelLoop(size : Int, print:Boolean) extends x10Test {
         public def size() = r.size();
     }
 
-    @Inline static def doForEach(r:Region(1){rect==false}, closure:(Point) => void) {
+    @Inline static final def doForEach(r:Region(1){rect==false}, closure:(Point) => void) {
         bisection(new RegionBisection(r), closure);
     }
 
-    private static def bisection(b:RegionBisection, closure:(Point) => void) {
+    private static final def bisection(b:RegionBisection, closure:(Point) => void) {
         val size = b.size();
         if (size == 1) {
             val r = b.r;
@@ -149,11 +148,11 @@ public class BenchmarkParallelLoop(size : Int, print:Boolean) extends x10Test {
         }
     }
 
-    @Inline static def doForEach(r:Region(1){rect}, closure:(Int) => void) {
+    @Inline final static def doForEach(r:Region(1){rect}, closure:(Int) => void) {
         bisection1D(r.min(0), r.max(0), closure);
     }
 
-    private static def bisection1D(start:Int, end:Int, closure:(Int) => void) { 
+    private static final def bisection1D(start:Int, end:Int, closure:(Int) => void) { 
         if (start == end) {
             closure(start);
         } else {

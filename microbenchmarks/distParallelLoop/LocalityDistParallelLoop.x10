@@ -84,10 +84,10 @@ public class LocalityDistParallelLoop(size : Int, print:Boolean) extends x10Test
                 val nthreads = Runtime.NTHREADS;
                 val chunkSize = size / nthreads;
                 val remainder = size % nthreads;
-                for (t in 0..(nthreads-1)) {
+                for (t in 0..(nthreads-1)) async {
                     val begin = (t < remainder) ? t*(chunkSize+1) : remainder + t*chunkSize;
                     val end = (t < remainder) ? (t+1)*(chunkSize+1) - 1 : remainder + (t+1)*chunkSize - 1;
-                    async for (p in begin..end) {
+                    for (p in begin..end) async {
                         aLocal(p) = Runtime.workerId();
                         //work(Runtime.workerId())++;
                     }
@@ -176,39 +176,38 @@ public class LocalityDistParallelLoop(size : Int, print:Boolean) extends x10Test
         public final def size() = r.size();
     }
 
-    @Inline static def doForEach(r:Region(1){rect==false}, closure:(Point) => void) {
+    @Inline static final def doForEach(r:Region(1){rect==false}, closure:(Point) => void) {
         bisection(new RegionBisection(r), closure);
     }
 
-    private static def bisection(b:RegionBisection, closure:(Point) => void) {
+    private static final def bisection(b:RegionBisection, closure:(Point) => void) {
         val size = b.size();
         if (size == 1) {
             val r = b.r;
             closure(Point.make(new Array[Int](r.rank, (i:Int)=>r.max(i))));
         } else if (size == 2) {
             val r = b.r;
-            async closure(Point.make(new Array[Int](r.rank, (i:Int)=>r.max(i))));
-            closure(Point.make(new Array[Int](r.rank, (i:Int)=>r.min(i))));
+            async closure(Point.make(new Array[Int](r.rank, (i:Int)=>r.min(i))));
+            closure(Point.make(new Array[Int](r.rank, (i:Int)=>r.max(i))));
+
         } else {
             val firstHalf = new RegionBisection(b.firstHalf);
             val secondHalf = new RegionBisection(b.secondHalf);
-            async bisection(secondHalf, closure);
-            bisection(firstHalf, closure);
+            async bisection(firstHalf, closure);
+            bisection(secondHalf, closure);
+
         }
     }
 
-    @Inline static def doForEach(r:Region(1){rect}, closure:(Int) => void) {
+    @Inline static final def doForEach(r:Region(1){rect}, closure:(Int) => void) {
         bisection1D(r.min(0), r.max(0), closure);
     }
 
-    private static def bisection1D(start:Int, end:Int, closure:(Int) => void) { 
-        val numElems = end-start+1;
-        if (numElems == 1) {
-            closure(start);
-        } else if (numElems == 2) {
-            async closure(end);
+    private static final def bisection1D(start:Int, end:Int, closure:(Int) => void) { 
+        if (start == end) {
             closure(start);
         } else {
+            val numElems = end-start+1;
             val halfway = start+numElems/2;
             async bisection1D(halfway, end, closure);
             bisection1D(start, halfway-1, closure);
