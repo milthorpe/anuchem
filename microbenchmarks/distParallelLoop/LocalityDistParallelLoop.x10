@@ -69,12 +69,25 @@ public class LocalityDistParallelLoop(size : Int, print:Boolean) extends x10Test
             finish for (place in a.dist.places()) async at(place) {
                 val aLocal = a.getLocalPortion() as Rail[Int];
                 val assign = (p:Int) => { aLocal(p) = Runtime.workerId(); /*work(Runtime.workerId())++;*/};
-                BenchmarkDistParallelLoop.doForEach(aLocal.region, assign);
+                LocalityDistParallelLoop.doForEach(aLocal.region, assign);
             }
         }
         stop = System.nanoTime();
         Console.OUT.printf("bisected loop: %g ms\n", ((stop-start) as Double) / 1e6 / ITERS);
         writeLocalSchedulingFile(a, "bisect.dat");
+        printAndResetWork();
+
+        start = System.nanoTime();
+        for (i in 1..ITERS) {
+            finish for (place in a.dist.places()) async at(place) {
+                val aLocal = a.getLocalPortion() as Rail[Int];
+                val assign = (p:Int) => { aLocal(p) = Runtime.workerId(); /*work(Runtime.workerId())++;*/};
+                finish LocalityDistParallelLoop.doForEach2(aLocal.region, assign);
+            }
+        }
+        stop = System.nanoTime();
+        Console.OUT.printf("partially bisected loop: %g ms\n", ((stop-start) as Double) / 1e6 / ITERS);
+        writeLocalSchedulingFile(a, "part_bisect.dat");
         printAndResetWork();
 
         start = System.nanoTime();
@@ -104,7 +117,7 @@ public class LocalityDistParallelLoop(size : Int, print:Boolean) extends x10Test
             finish for (place in a.dist.places()) async at(place) {
                 val aLocal = a.getLocalPortion() as Rail[Int];
                 for ([p] in aLocal) {
-                    aLocal(p) = 1;
+                    aLocal(p) = Runtime.workerId();
                     //work(Runtime.workerId())++;
                 }
             }
@@ -211,6 +224,35 @@ public class LocalityDistParallelLoop(size : Int, print:Boolean) extends x10Test
             val halfway = start+numElems/2;
             async bisection1D(halfway, end, closure);
             bisection1D(start, halfway-1, closure);
+        }
+    }
+
+    /** @return the depth of the binary tree spanning the threads */
+    private static def getTreeDepth(numThreads:Int):Int {
+        var p:Int = numThreads;
+        var i:Int = 0;
+        while (p > 0) { p = p>>1; i++; }
+        return i;
+    }
+
+    @Inline final static def doForEach2(r:Region(1){rect}, closure:(Int) => void) {
+        val treeDepth = getTreeDepth(Runtime.NTHREADS);
+        bisection1D_limited(r.min(0), r.max(0), treeDepth, 0, closure);
+    }
+
+    private static final def bisection1D_limited(start:Int, end:Int, treeDepth:Int, currentLevel:Int, closure:(Int) => void) {
+        if (currentLevel == treeDepth) {
+            // don't divide any further
+            for (p in start..end) async {
+                closure(p);
+            }
+        } else if (start == end) {
+            closure(start);
+        } else {
+            val numElems = end-start+1;
+            val halfway = start+numElems/2;
+            async bisection1D_limited(halfway, end, treeDepth, currentLevel+1, closure);
+            bisection1D_limited(start, halfway-1, treeDepth, currentLevel+1, closure);
         }
     }
 

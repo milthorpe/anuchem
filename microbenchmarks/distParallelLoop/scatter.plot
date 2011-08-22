@@ -22,6 +22,10 @@ set output 'bisect.ps'
 set title "Array elements processed by each worker thread: X10_NTHREADS=4 : loop bisection"
 plot "bisect.dat" using 1:2 with linespoints pt 5 notitle
 
+set output 'part_bisect.ps'
+set title "Array elements processed by each worker thread: X10_NTHREADS=4 : partial loop bisection"
+plot "part_bisect.dat" using 1:2 with linespoints pt 5 notitle
+
 set output 'chunked.ps'
 set title "Array elements processed by each worker thread: X10_NTHREADS=4 : chunked loop"
 plot "chunked.dat" using 1:2 with linespoints pt 5 notitle
