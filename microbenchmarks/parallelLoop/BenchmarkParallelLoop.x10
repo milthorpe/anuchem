@@ -8,8 +8,6 @@
  *
  *  (C) Copyright Australian National University 2011.
  */
-import harness.x10Test;
-
 import x10.compiler.Inline;
 
 /**
@@ -17,14 +15,14 @@ import x10.compiler.Inline;
  * of activity generation approaches
  * @author milthorpe 08/2011
  */
-public class BenchmarkParallelLoop(size : Int, print:Boolean) extends x10Test {
+public class BenchmarkParallelLoop(size : Int, print:Boolean) {
     private static ITERS = 1000;
 
     public def this(size : Int, print:Boolean) {
         property(size, print);
     }
 
-	public def run(): Boolean = {
+	public def testAll() {
         val a = new Array[Int](size);
 
         var start:Long = System.nanoTime();
@@ -92,7 +90,6 @@ public class BenchmarkParallelLoop(size : Int, print:Boolean) extends x10Test {
         stop = System.nanoTime();
         Console.OUT.printf("sequential loop: %g ms\n", ((stop-start) as Double) / 1e6 / ITERS);
 
-        return true;
 	}
 
     @Inline static def remainder(iter:Iterator[Point(1)], closure:(Point(1)) => void) {
@@ -209,7 +206,7 @@ public class BenchmarkParallelLoop(size : Int, print:Boolean) extends x10Test {
                 print=true;
             }
         }
-		new BenchmarkParallelLoop(size, print).execute();
+		new BenchmarkParallelLoop(size, print).testAll();
 	}
 
 }

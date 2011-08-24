@@ -8,8 +8,6 @@
  *
  *  (C) Copyright Australian National University 2011.
  */
-import harness.x10Test;
-
 import x10.compiler.Inline;
 import x10.io.File;
 
@@ -18,7 +16,7 @@ import x10.io.File;
  * of activity generation approaches
  * @author milthorpe 08/2011
  */
-public class LocalityDistParallelLoop(size : Int, print:Boolean) extends x10Test {
+public class LocalityDistParallelLoop(size : Int, print:Boolean) {
     private static ITERS = 10;
 
     private static val work = new Array[Int](Runtime.MAX_THREADS);
@@ -27,13 +25,13 @@ public class LocalityDistParallelLoop(size : Int, print:Boolean) extends x10Test
         property(size, print);
     }
 
-	public def run(): Boolean = {
+	public def testAll() {
         val a = DistArray.make[Int](Dist.makeBlock(0..(size-1)));
 
         var start:Long = System.nanoTime();
         for (i in 1..ITERS) {
             finish for (place in a.dist.places()) async at(place) {
-                val aLocal = a.getLocalPortion() as Rail[Int];
+                val aLocal = a.getLocalPortion() as Array[Int](1){rect};
                 for ([p] in aLocal) async {
                     aLocal(p) = Runtime.workerId();
                     //work(Runtime.workerId())++;
@@ -48,7 +46,7 @@ public class LocalityDistParallelLoop(size : Int, print:Boolean) extends x10Test
         start = System.nanoTime();
         for (i in 1..ITERS) {
             finish for (place in a.dist.places()) async at(place) {
-                val aLocal = a.getLocalPortion() as Rail[Int];
+                val aLocal = a.getLocalPortion() as Array[Int](1){rect};
                 val regionIter = aLocal.region.iterator();
                 while(regionIter.hasNext()) {
                     val p = regionIter.next();
@@ -67,7 +65,7 @@ public class LocalityDistParallelLoop(size : Int, print:Boolean) extends x10Test
         start = System.nanoTime();
         for (i in 1..ITERS) {
             finish for (place in a.dist.places()) async at(place) {
-                val aLocal = a.getLocalPortion() as Rail[Int];
+                val aLocal = a.getLocalPortion() as Array[Int](1){rect};
                 val assign = (p:Int) => { aLocal(p) = Runtime.workerId(); /*work(Runtime.workerId())++;*/};
                 LocalityDistParallelLoop.doForEach(aLocal.region, assign);
             }
@@ -80,7 +78,7 @@ public class LocalityDistParallelLoop(size : Int, print:Boolean) extends x10Test
         start = System.nanoTime();
         for (i in 1..ITERS) {
             finish for (place in a.dist.places()) async at(place) {
-                val aLocal = a.getLocalPortion() as Rail[Int];
+                val aLocal = a.getLocalPortion() as Array[Int](1){rect};
                 val assign = (p:Int) => { aLocal(p) = Runtime.workerId(); /*work(Runtime.workerId())++;*/};
                 finish LocalityDistParallelLoop.doForEach2(aLocal.region, assign);
             }
@@ -93,7 +91,7 @@ public class LocalityDistParallelLoop(size : Int, print:Boolean) extends x10Test
         start = System.nanoTime();
         for (i in 1..ITERS) {
             finish for (place in a.dist.places()) async at(place) {
-                val aLocal = a.getLocalPortion() as Rail[Int];
+                val aLocal = a.getLocalPortion() as Array[Int](1){rect};
                 val nthreads = Runtime.NTHREADS;
                 val chunkSize = size / nthreads;
                 val remainder = size % nthreads;
@@ -115,7 +113,7 @@ public class LocalityDistParallelLoop(size : Int, print:Boolean) extends x10Test
         start = System.nanoTime();
         for (i in 1..ITERS) {
             finish for (place in a.dist.places()) async at(place) {
-                val aLocal = a.getLocalPortion() as Rail[Int];
+                val aLocal = a.getLocalPortion() as Array[Int](1){rect};
                 for ([p] in aLocal) {
                     aLocal(p) = Runtime.workerId();
                     //work(Runtime.workerId())++;
@@ -126,8 +124,6 @@ public class LocalityDistParallelLoop(size : Int, print:Boolean) extends x10Test
         Console.OUT.printf("sequential loop: %g ms\n", ((stop-start) as Double) / 1e6 / ITERS);
         writeLocalSchedulingFile(a, "sequential.dat");
         printAndResetWork();
-
-        return true;
 	}
 
     private def writeLocalSchedulingFile(a:DistArray[Int](1), fileName:String) {
@@ -265,7 +261,7 @@ public class LocalityDistParallelLoop(size : Int, print:Boolean) extends x10Test
                 print=true;
             }
         }
-		new LocalityDistParallelLoop(size, print).execute();
+		new LocalityDistParallelLoop(size, print).testAll();
 	}
 
 }

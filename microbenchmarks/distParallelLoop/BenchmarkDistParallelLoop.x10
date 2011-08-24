@@ -8,30 +8,28 @@
  *
  *  (C) Copyright Australian National University 2011.
  */
-import harness.x10Test;
-
 import x10.compiler.Inline;
 import x10.io.File;
 
 /**
- * Benchmarks loop iteration using a variety 
+ * Benchmarks dist array iteration using a variety 
  * of activity generation approaches
  * @author milthorpe 08/2011
  */
-public class BenchmarkDistParallelLoop(size : Int, print:Boolean) extends x10Test {
+public class BenchmarkDistParallelLoop(size : Int, print:Boolean) {
     private static ITERS = 100;
 
     public def this(size : Int, print:Boolean) {
         property(size, print);
     }
 
-	public def run(): Boolean = {
+	public def testAll() {
         val a = DistArray.make[Int](Dist.makeBlock(0..(size-1)));
 
         var start:Long = System.nanoTime();
         for (i in 1..ITERS) {
             finish for (place in a.dist.places()) async at(place) {
-                val aLocal = a.getLocalPortion() as Rail[Int];
+                val aLocal = a.getLocalPortion() as Array[Int](1){rect};
                 for ([p] in aLocal) async {
                     aLocal(p) = p;
                 }
@@ -43,7 +41,7 @@ public class BenchmarkDistParallelLoop(size : Int, print:Boolean) extends x10Tes
         start = System.nanoTime();
         for (i in 1..ITERS) {
             finish for (place in a.dist.places()) async at(place) {
-                val aLocal = a.getLocalPortion() as Rail[Int];
+                val aLocal = a.getLocalPortion() as Array[Int](1){rect};
                 val regionIter = aLocal.region.iterator();
                 while(regionIter.hasNext()) {
                     val p = regionIter.next();
@@ -59,7 +57,7 @@ public class BenchmarkDistParallelLoop(size : Int, print:Boolean) extends x10Tes
         start = System.nanoTime();
         for (i in 1..ITERS) {
             finish for (place in a.dist.places()) async at(place) {
-                val aLocal = a.getLocalPortion() as Rail[Int];
+                val aLocal = a.getLocalPortion() as Array[Int](1){rect};
                 val assign = (p:Int) => { aLocal(p) = p;};
                 BenchmarkDistParallelLoop.doForEach(aLocal.region, assign);
             }
@@ -69,9 +67,11 @@ public class BenchmarkDistParallelLoop(size : Int, print:Boolean) extends x10Tes
 
         start = System.nanoTime();
         for (i in 1..ITERS) {
-            val aLocal = a.getLocalPortion() as Rail[Int];
-            val assign = (p:Int) => { aLocal(p) = p;};
-            finish BenchmarkDistParallelLoop.doForEach2(aLocal.region, assign);
+            finish for (place in a.dist.places()) async at(place) {
+                val aLocal = a.getLocalPortion() as Array[Int](1){rect};
+                val assign = (p:Int) => { aLocal(p) = p;};
+                finish BenchmarkDistParallelLoop.doForEach2(aLocal.region, assign);
+            }
         }
         stop = System.nanoTime();
         Console.OUT.printf("partially bisected loop: %g ms\n", ((stop-start) as Double) / 1e6 / ITERS);
@@ -79,7 +79,7 @@ public class BenchmarkDistParallelLoop(size : Int, print:Boolean) extends x10Tes
         start = System.nanoTime();
         for (i in 1..ITERS) {
             finish for (place in a.dist.places()) async at(place) {
-                val aLocal = a.getLocalPortion() as Rail[Int];
+                val aLocal = a.getLocalPortion() as Array[Int](1){rect};
                 val nthreads = Runtime.NTHREADS;
                 val chunkSize = size / nthreads;
                 val remainder = size % nthreads;
@@ -98,7 +98,7 @@ public class BenchmarkDistParallelLoop(size : Int, print:Boolean) extends x10Tes
         start = System.nanoTime();
         for (i in 1..ITERS) {
             finish for (place in a.dist.places()) async at(place) {
-                val aLocal = a.getLocalPortion() as Rail[Int];
+                val aLocal = a.getLocalPortion() as Array[Int](1){rect};
                 for ([p] in aLocal) {
                     aLocal(p) = p;
                 }
@@ -106,8 +106,6 @@ public class BenchmarkDistParallelLoop(size : Int, print:Boolean) extends x10Tes
         }
         stop = System.nanoTime();
         Console.OUT.printf("sequential loop: %g ms\n", ((stop-start) as Double) / 1e6 / ITERS);
-
-        return true;
 	}
 
     @Inline static def remainder(iter:Iterator[Point(1)], closure:(Point(1)) => void) {
@@ -207,6 +205,7 @@ public class BenchmarkDistParallelLoop(size : Int, print:Boolean) extends x10Tes
             // don't divide any further
             for (p in start..end) async {
                 closure(p);
+
             }
         } else if (start == end) {
             closure(start);
@@ -227,7 +226,7 @@ public class BenchmarkDistParallelLoop(size : Int, print:Boolean) extends x10Tes
                 print=true;
             }
         }
-		new BenchmarkDistParallelLoop(size, print).execute();
+		new BenchmarkDistParallelLoop(size, print).testAll();
 	}
 
 }
