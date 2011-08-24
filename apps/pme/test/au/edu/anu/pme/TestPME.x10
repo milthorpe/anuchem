@@ -22,6 +22,7 @@ import au.edu.anu.util.Timer;
  * @author milthorpe
  */
 public class TestPME extends TestElectrostatic {
+    public static ITERS = 10;
     public def sizeOfCentralCluster() : Double = 80.0;
 
     public static def main(args : Array[String](1)) {
@@ -72,7 +73,10 @@ public class TestPME extends TestElectrostatic {
         val atoms = generateAtoms(numAtoms);
         val pme = new PME(edges, gridSizes, atoms, splineOrder, ewaldCoefficient, cutoff);
         pme.setup();
-        val energy = pme.getEnergy();
+        var energy:Double = 0.0; 
+        for (i in 1..ITERS) {
+            energy = pme.getEnergy();
+        }
         Console.OUT.println("energy = " + energy);
 
         logTime("Direct",            PME.TIMER_INDEX_DIRECT,        pme.timer);

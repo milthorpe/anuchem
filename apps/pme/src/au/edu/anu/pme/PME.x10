@@ -214,7 +214,6 @@ public class PME {
 
             gridCharges();
 
-
             timer.start(TIMER_INDEX_INVFFT);
             new Distributed3dFft(gridSize(0), Q, Qinv, temp).doFFT3d(false);
             timer.stop(TIMER_INDEX_INVFFT);
@@ -454,6 +453,8 @@ public class PME {
 		val Q = this.Q; // TODO shouldn't be necessary XTENLANG-1913;
 		val edgeReciprocals = this.edgeReciprocals; // TODO shouldn't be necessary XTENLANG-1913
         finish ateach(place1 in Dist.makeUnique()) {
+            val qLocal = Q.getLocalPortion() as Array[Complex](3){rect};
+            qLocal.clear();
             val gridSize0 = gridSize(0);
             val gridSize2 = gridSize(2);
 			val gridRegion = gridDist.region;
