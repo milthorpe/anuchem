@@ -128,16 +128,18 @@ public class Distributed3dFft {
                                      oneDSource : Rail[Complex],
                                      oneDTarget : Rail[Complex],
                                      plan : FFTW.FFTWPlan) {
-        val mySource = source.dist | here;
-        val gridRegionWithoutZ = (mySource.region.eliminate(2)) as Region(2){rect};
+        val localSource = source.getLocalPortion();
+        val localRegion = localSource.region as Region(3){rect};
+        val localTemp = temp.getLocalPortion();
+        val gridRegionWithoutZ = (localRegion.eliminate(2)) as Region(2){rect};
         for ([i,j] in gridRegionWithoutZ) {
             // TODO need to copy into Array - can use raw()?
             for (k in 0..(dataSize-1)) {
-                oneDSource(k) = source(i,j,k);
+                oneDSource(k) = localSource(i,j,k);
             }
             FFTW.fftwExecute(plan);
             for (k in 0..(dataSize-1)) {
-                temp(i,j,k) = oneDTarget(k);
+                localTemp(i,j,k) = oneDTarget(k);
             }
         }
     }
@@ -154,6 +156,7 @@ public class Distributed3dFft {
         val sourceEndX = sourceDist.region.max(0);
         val sourceStartY = sourceDist.region.min(1);
         val sourceEndY = sourceDist.region.max(1);
+        val localTemp = temp.getLocalPortion();
         val target = this.target; // TODO shouldn't be necessary XTENLANG-1913;
         finish {
             for (p2 in temp.dist.places()) {
@@ -168,22 +171,24 @@ public class Distributed3dFft {
                 val transferRegion = (startX..endX) * (startY..endY) * (startZ..endZ);
                 if (transferRegion.size() > 0) {
                     if (p2 == here) {
+                        val localTarget = target.getLocalPortion();
                         // do a synchronous in-place transpose from temp to target
                         for ([x,y,z] in transferRegion) {
-                            target(z,x,y) = temp(x,y,z);
+                            localTarget(z,x,y) = localTemp(x,y,z);
                         }
                     } else {
                         // collect elements to transfer to remote place
                         val elementsToTransfer = new Array[Complex](transferRegion.size());
                         var i : Int = 0;
                         for ([x,y,z] in transferRegion) {
-                            elementsToTransfer(i++) = temp(x,y,z);
+                            elementsToTransfer(i++) = localTemp(x,y,z);
                         }
                         async at(p2) {
+                            val localTarget = target.getLocalPortion();
                             var i2 : Int = 0;
                             for ([x,y,z] in transferRegion) {
                                 // transpose dimensions
-                                target(z,x,y) = elementsToTransfer(i2++);
+                                localTarget(z,x,y) = elementsToTransfer(i2++);
                             }
                         }
                     }
