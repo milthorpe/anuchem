@@ -349,7 +349,7 @@ public class PME {
                 val localSubCells = subCells.getLocalPortion();
                 val localRegion = localSubCells.region as Region(3){rect};
                 for (p in localRegion) async {
-                    val thisCell = localSubCells(p);
+                    val thisCell = localSubCells(p) as Rail[PointCharge];
                     var myDirectEnergy : Double = 0.0;
                     for (var i : Int = p(0)-2; i<=p(0); i++) {
                         var n1 : Int = 0;
