@@ -438,7 +438,7 @@ public class PME {
                 val localRegion = localSubCells.region as Region(3){rect};
                 var mySelfEnergy : Double = 0.0;
                 for ([i,j,k] in localRegion) {
-                    val thisCell = localSubCells(i,j,k);
+                    val thisCell = localSubCells(i,j,k) as Rail[PointCharge];
                     for (thisAtom in 0..(thisCell.size-1)) {
                         mySelfEnergy += thisCell(thisAtom).charge * thisCell(thisAtom).charge;
                     }
@@ -482,7 +482,7 @@ public class PME {
                 val splines = new Array[Double](0..2 * 0..(splineOrder-1));
 
                 for (p in place1Region) {
-                    val thisCell = localSubCells(p);
+                    val thisCell = localSubCells(p) as Rail[PointCharge];
                     for (atomIndex in 0..(thisCell.size-1)) {
                         val atom = thisCell(atomIndex);
                         val q = atom.charge;
