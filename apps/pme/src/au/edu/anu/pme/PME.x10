@@ -489,11 +489,13 @@ public class PME {
             if (!place1Region.isEmpty()) {
                 val place1HaloRegion = getGridRegionForSubcellAtoms(gridSize, numSubCells, splineOrder, place1Region);
                 val myQ = new Array[Double](place1HaloRegion);
-                val splines = new Array[Double](0..2 * 0..(splineOrder-1));
+                val iSpline = new Array[Double](splineOrder);
+                val jSpline = new Array[Double](splineOrder);
+                val kSpline = new Array[Double](splineOrder);
 
                 for ([x,y,z] in place1Region) {
                     val thisCell = localSubCells(x,y,z) as Rail[PointCharge];
-                    val atomOffset = new Array[Double](3);
+
                     for (atomIndex in 0..(thisCell.size-1)) {
                         val atom = thisCell(atomIndex);
                         val q = atom.charge;
@@ -501,44 +503,20 @@ public class PME {
                         val u1c = Math.ceil(u.i) as Int;
                         val u2c = Math.ceil(u.j) as Int;
                         val u3c = Math.ceil(u.k) as Int;
-                        atomOffset(0) = u1c - u.i;
-                        atomOffset(1) = u2c - u.j;
-                        atomOffset(2) = u3c - u.k;
 
-                        for(j in 0..2) {
-                            val offset = atomOffset(j);
-                        
-                            splines(j,splineOrder-1) = 0.0;
-                            splines(j,1) = offset;
-                            splines(j,0) = 1.0 - offset;
-                        
-                            for(k in 3..(splineOrder-1)) {
-                                val div = 1.0 / (k-1.0);    
-                                splines(j,k-1) = div * offset * splines(j,k-2);
-                                for(l in 1..(k-2)) {
-                                    splines(j,k-l-1) = div * ((offset+l) * splines(j,k-l-2) + (k-l-offset) * splines(j,k-l-1));
-                                }
-                                splines(j,0) = div * (1.0-offset) * splines(j,0);
-                            }
-                        
-                            val div = 1.0 / (splineOrder-1);
-                            splines(j,splineOrder-1) = div * offset * splines(j,splineOrder-2);
-                            for(l in 1..(splineOrder-2)) {
-                                splines(j,splineOrder-l-1) = div * 
-                                    ((offset+l) * splines(j,splineOrder-l-2) + (splineOrder-l-offset) * splines(j,splineOrder-l-1));
-                            }
-                            splines(j,0) = div * (1.0-offset) * splines(j,0);
-                        } 
+                        fillSpline(u1c - u.i, iSpline);
+                        fillSpline(u2c - u.j, jSpline);
+                        fillSpline(u3c - u.k, kSpline);
 
                         for (i in 0..(splineOrder-1)) {
                             val k1 = (u1c - i - 1);
-                            val iVal = q * splines(0, i);
+                            val iVal = q * iSpline(i);
                             for (j in 0..(splineOrder-1)) {
                                 val k2 = (u2c - j - 1);
-                                val jVal = iVal * splines(1, j);
+                                val jVal = iVal * jSpline(j);
                                 for (k in 0..(splineOrder-1)) {
                                     val k3 = (u3c - k - 1);
-                                    val kVal = jVal * splines(2, k);
+                                    val kVal = jVal * kSpline(k);
                                     // because array is not divided in the z (k3) dimension, we can apply periodicity in that dimension 
                                     val wrapk3 = k3 < 0 ? (k3 + gridSize2) : (k3 >= gridSize2 ? (k3 - gridSize2) : k3);
                                     myQ(k1,k2,wrapk3) = myQ(k1,k2,wrapk3) + kVal;
@@ -659,6 +637,29 @@ public class PME {
 
         timer.stop(TIMER_INDEX_RECIPROCAL);
         return reciprocalEnergy / 2.0;
+    }
+
+    private @Inline def fillSpline(offset:Double, spline:Rail[Double]) {           
+        spline(splineOrder-1) = 0.0;
+        spline(1) = offset;
+        spline(0) = 1.0 - offset;
+    
+        for(k in 3..(splineOrder-1)) {
+            val div = 1.0 / (k-1.0);    
+            spline(k-1) = div * offset * spline(k-2);
+            for(l in 1..(k-2)) {
+                spline(k-l-1) = div * ((offset+l) * spline(k-l-2) + (k-l-offset) * spline(k-l-1));
+            }
+            spline(0) = div * (1.0-offset) * spline(0);
+        }
+    
+        val div = 1.0 / (splineOrder-1);
+        spline(splineOrder-1) = div * offset * spline(splineOrder-2);
+        for(l in 1..(splineOrder-2)) {
+            spline(splineOrder-l-1) = div * 
+                ((offset+l) * spline(splineOrder-l-2) + (splineOrder-l-offset) * spline(splineOrder-l-1));
+        }
+        spline(0) = div * (1.0-offset) * spline(0);
     }
 
     /**
