@@ -59,6 +59,12 @@ public class PME {
     /** The conjugate reciprocal vectors for each dimension. */
     private val edgeReciprocals : Rail[Vector3d];
 
+    /** 
+     * Scaling vector for scaled fractional coordinates.
+     * Assumes unit rectangular cell. 
+     */
+    private val scalingVector : Vector3d;
+
     private val gridDist : Dist(3);
     
     /** The order of B-spline interpolation */
@@ -137,12 +143,16 @@ public class PME {
             beta : Double,
             cutoff : Double) {
         this.gridSize = gridSize;
-        K1 = gridSize(0) as Double;
-        K2 = gridSize(1) as Double;
-        K3 = gridSize(2) as Double;
+        val K1 = gridSize(0) as Double;
+        val K2 = gridSize(1) as Double;
+        val K3 = gridSize(2) as Double;
         this.edges = edges;
         this.edgeLengths = new Array[Double](3, (i : Int) => edges(i).length());
         this.edgeReciprocals = new Array[Vector3d](3, (i : Int) => edges(i).inverse());
+        this.scalingVector = Vector3d(edges(0).inverse().i * K1, edges(1).inverse().j * K2, edges(2).inverse().k * K3);
+        this.K1 = K1;
+        this.K2 = K2;
+        this.K3 = K3;
 
         this.atoms = atoms;
         val gridRegion = (0..(gridSize(0)-1)) * (0..(gridSize(1)-1)) * (0..(gridSize(2)-1));
@@ -222,6 +232,9 @@ public class PME {
             // create F^-1(thetaRecConvQ)
             // TODO DistArray.map uses slow apply,set operators
             //BdotC.map(thetaRecConvQ, Qinv, (a:Double, b:Complex) => (a*b));
+            val BdotC = this.BdotC; // TODO shouldn't be necessary XTENLANG-1913
+            val thetaRecConvQ = this.thetaRecConvQ; // TODO shouldn't be necessary XTENLANG-1913
+            val Qinv = this.Qinv; // TODO shouldn't be necessary XTENLANG-1913
             finish ateach(placeId in Dist.makeUnique(gridDist.places())) {
                 val localBdotC = BdotC.getLocalPortion();
                 val localThetaRecConvQ = thetaRecConvQ.getLocalPortion();
@@ -463,11 +476,8 @@ public class PME {
 		val splineOrder = this.splineOrder; // TODO shouldn't be necessary XTENLANG-1913
 		val gridDist = this.gridDist; // TODO shouldn't be necessary XTENLANG-1913
 		val subCells = this.subCells; // TODO shouldn't be necessary XTENLANG-1913
-		val K1 = this.K1; // TODO shouldn't be necessary XTENLANG-1913;
-		val K2 = this.K2; // TODO shouldn't be necessary XTENLANG-1913;
-		val K3 = this.K3; // TODO shouldn't be necessary XTENLANG-1913;
+        val scalingVector = this.scalingVector; // TODO shouldn't be necessary XTENLANG-1913;
 		val Q = this.Q; // TODO shouldn't be necessary XTENLANG-1913;
-		val edgeReciprocals = this.edgeReciprocals; // TODO shouldn't be necessary XTENLANG-1913
         finish ateach(place1 in Dist.makeUnique()) {
             val qLocal = Q.getLocalPortion() as Array[Complex](3){rect};
             qLocal.clear();
@@ -481,18 +491,22 @@ public class PME {
                 val myQ = new Array[Double](place1HaloRegion);
                 val splines = new Array[Double](0..2 * 0..(splineOrder-1));
 
-                for (p in place1Region) {
-                    val thisCell = localSubCells(p) as Rail[PointCharge];
+                for ([x,y,z] in place1Region) {
+                    val thisCell = localSubCells(x,y,z) as Rail[PointCharge];
+                    val atomOffset = new Array[Double](3);
                     for (atomIndex in 0..(thisCell.size-1)) {
                         val atom = thisCell(atomIndex);
                         val q = atom.charge;
-                        val u = getScaledFractionalCoordinates(K1, K2, K3, edgeReciprocals, atom.centre); // TODO general non-cubic
-                        val u1c = Math.ceil(u(0)) as Int;
-                        val u2c = Math.ceil(u(1)) as Int;
-                        val u3c = Math.ceil(u(2)) as Int;
+                        val u = atom.centre.scale(scalingVector); // TODO general non-cubic
+                        val u1c = Math.ceil(u.i) as Int;
+                        val u2c = Math.ceil(u.j) as Int;
+                        val u3c = Math.ceil(u.k) as Int;
+                        atomOffset(0) = u1c - u.i;
+                        atomOffset(1) = u2c - u.j;
+                        atomOffset(2) = u3c - u.k;
 
                         for(j in 0..2) {
-                            val offset = Math.ceil(u(j)) - u(j);
+                            val offset = atomOffset(j);
                         
                             splines(j,splineOrder-1) = 0.0;
                             splines(j,1) = offset;
@@ -658,7 +672,7 @@ public class PME {
 		val K2 = this.K2; // TODO shouldn't be necessary XTENLANG-1913;
 		val K3 = this.K3; // TODO shouldn't be necessary XTENLANG-1913;
         finish ateach(place1 in Dist.makeUnique()) {
-            val splines = new Array[Double](1..(splineOrder-1));
+            val splines = new Array[Double](splineOrder);
             for (k in 1..(splineOrder-1)) {
                 splines(k) = bSpline(splineOrder, k);
             }
@@ -766,18 +780,6 @@ public class PME {
         } else {
             return 1.0 - Math.abs(u - 1.0);
         }
-    }
-
-    /** 
-	 * Gets scaled fractional coordinate u as per Eq. 3.1 - cubic only 
-	 * TODO should use instance fields instead of all those parameters - XTENLANG-1913
-	 */
-    public static @Inline def getScaledFractionalCoordinates(K1 : Double, K2 : Double, K3 : Double, edgeReciprocals : Rail[Vector3d], r : Point3d) : Rail[Double] {
-        val coords = new Array[Double](3);
-        coords(0) = edgeReciprocals(0).i * K1 * r.i;
-        coords(1) = edgeReciprocals(1).j * K2 * r.j;
-        coords(2) = edgeReciprocals(2).k * K3 * r.k;
-        return coords;
     }
     
     /** Gets scaled fractional coordinate u as per Eq. 3.1 - general rectangular */
