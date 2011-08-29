@@ -97,6 +97,9 @@ public class PME {
     /** The gridded charge array Q as defined in Eq. 4.6 */
     private val Q : DistArray[Complex]{self.dist==gridDist};
 
+    /** The local contribution to Q from each place. */
+    private val localQ : PlaceLocalHandle[Array[Double](3){rect}];
+
     /** The inverse DFT of the Q array.  TODO this should be a scoped local variable in getEnergy() XTENLANG-??? */
     private val Qinv : DistArray[Complex]{self.dist==gridDist};
 
@@ -156,7 +159,8 @@ public class PME {
 
         this.atoms = atoms;
         val gridRegion = (0..(gridSize(0)-1)) * (0..(gridSize(1)-1)) * (0..(gridSize(2)-1));
-        gridDist = Dist.makeBlockBlock(gridRegion, 0, 1);
+        val gridDist = Dist.makeBlockBlock(gridRegion, 0, 1);
+        this.gridDist = gridDist;
         this.splineOrder = splineOrder;
         this.beta = beta;
         this.cutoff = cutoff;
@@ -191,6 +195,13 @@ public class PME {
         //Console.OUT.println("gridDist = " + gridDist);
 
         Q = DistArray.make[Complex](gridDist);
+        this.localQ = PlaceLocalHandle.make[Array[Double](3){rect}](
+                Dist.makeUnique(),
+                () => {
+                    val r = PME.getGridRegionForSubcellAtoms(gridSize, numSubCells, splineOrder, subCells.dist(here));
+                    new Array[Double](r)
+                }
+        );
         BdotC = DistArray.make[Double](gridDist);
 
         // TODO following arrays should be scoped local variables XTENLANG-???
@@ -476,8 +487,9 @@ public class PME {
 		val splineOrder = this.splineOrder; // TODO shouldn't be necessary XTENLANG-1913
 		val gridDist = this.gridDist; // TODO shouldn't be necessary XTENLANG-1913
 		val subCells = this.subCells; // TODO shouldn't be necessary XTENLANG-1913
-        val scalingVector = this.scalingVector; // TODO shouldn't be necessary XTENLANG-1913;
-		val Q = this.Q; // TODO shouldn't be necessary XTENLANG-1913;
+        val scalingVector = this.scalingVector; // TODO shouldn't be necessary XTENLANG-1913
+		val Q = this.Q; // TODO shouldn't be necessary XTENLANG-1913
+        val localQ = this.localQ; // TODO shouldn't be necessary XTENLANG-1913
         finish ateach(place1 in Dist.makeUnique()) {
             val qLocal = Q.getLocalPortion() as Array[Complex](3){rect};
             qLocal.clear();
@@ -487,8 +499,9 @@ public class PME {
             val localSubCells = subCells.getLocalPortion();
             val place1Region = localSubCells.region as Region(3){rect};
             if (!place1Region.isEmpty()) {
-                val place1HaloRegion = getGridRegionForSubcellAtoms(gridSize, numSubCells, splineOrder, place1Region);
-                val myQ = new Array[Double](place1HaloRegion);
+                val myQ = localQ() as Array[Double](3){rect};
+                myQ.clear();
+                val place1HaloRegion = myQ.region;
                 val iSpline = new Array[Double](splineOrder);
                 val jSpline = new Array[Double](splineOrder);
                 val kSpline = new Array[Double](splineOrder);
