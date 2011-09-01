@@ -513,22 +513,22 @@ public class PME {
                         val atom = thisCell(atomIndex);
                         val q = atom.charge;
                         val u = atom.centre.scale(scalingVector); // TODO general non-cubic
-                        val u1c = Math.ceil(u.i) as Int;
-                        val u2c = Math.ceil(u.j) as Int;
-                        val u3c = Math.ceil(u.k) as Int;
+                        val u1i = u.i as Int;
+                        val u2i = u.j as Int;
+                        val u3i = u.k as Int;
 
-                        fillSpline(u1c - u.i, iSpline);
-                        fillSpline(u2c - u.j, jSpline);
-                        fillSpline(u3c - u.k, kSpline);
+                        fillSpline(1 - (u.i - u1i), iSpline);
+                        fillSpline(1 - (u.j - u2i), jSpline);
+                        fillSpline(1 - (u.k - u3i), kSpline);
 
                         for (i in 0..(splineOrder-1)) {
-                            val k1 = (u1c - i - 1);
+                            val k1 = (u1i - i);
                             val iVal = q * iSpline(i);
                             for (j in 0..(splineOrder-1)) {
-                                val k2 = (u2c - j - 1);
+                                val k2 = (u2i - j);
                                 val jVal = iVal * jSpline(j);
                                 for (k in 0..(splineOrder-1)) {
-                                    val k3 = (u3c - k - 1);
+                                    val k3 = (u3i - k);
                                     val kVal = jVal * kSpline(k);
                                     // because array is not divided in the z (k3) dimension, we can apply periodicity in that dimension 
                                     val wrapk3 = k3 < 0 ? (k3 + gridSize2) : (k3 >= gridSize2 ? (k3 - gridSize2) : k3);
