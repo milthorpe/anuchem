@@ -33,13 +33,13 @@ import x10.util.Pair;
 public class PME {
     // TODO enum - XTENLANG-1118
     public static val TIMER_INDEX_TOTAL : Int = 0;
-    public static val TIMER_INDEX_PREFETCH : Int = 1;
-    public static val TIMER_INDEX_DIRECT : Int = 2;
-    public static val TIMER_INDEX_SELF : Int = 3;
-    public static val TIMER_INDEX_GRIDCHARGES : Int = 4;
-    public static val TIMER_INDEX_INVFFT : Int = 5;
-    public static val TIMER_INDEX_THETARECCONVQ : Int = 6;
-    public static val TIMER_INDEX_RECIPROCAL : Int = 7;
+    public static val TIMER_INDEX_GRIDCHARGES : Int = 1;
+    public static val TIMER_INDEX_INVFFT : Int = 2;
+    public static val TIMER_INDEX_THETARECCONVQ : Int = 3;
+    public static val TIMER_INDEX_RECIPROCAL : Int = 4;
+    public static val TIMER_INDEX_SELF : Int = 5;
+    public static val TIMER_INDEX_DIRECT : Int = 6;
+    public static val TIMER_INDEX_PREFETCH : Int = 7;
     public static val TIMER_INDEX_SETUP : Int = 8;
     /** A multi-timer for the several segments of a single getEnergy invocation, indexed by the constants above. */
     public val timer = new Timer(9);

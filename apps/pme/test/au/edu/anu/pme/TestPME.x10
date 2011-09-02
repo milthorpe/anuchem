@@ -79,15 +79,16 @@ public class TestPME extends TestElectrostatic {
         }
         Console.OUT.println("energy = " + energy);
 
-        logTime("Direct",            PME.TIMER_INDEX_DIRECT,        pme.timer);
-        logTime("Self energy",       PME.TIMER_INDEX_SELF,          pme.timer);
         logTime("Grid charges",      PME.TIMER_INDEX_GRIDCHARGES,   pme.timer);
         logTime("Inverse FFT",       PME.TIMER_INDEX_INVFFT,        pme.timer);
         logTime("ThetaRecConvQ",     PME.TIMER_INDEX_THETARECCONVQ, pme.timer);
         logTime("Reciprocal energy", PME.TIMER_INDEX_RECIPROCAL,    pme.timer);
+        logTime("Self energy",       PME.TIMER_INDEX_SELF,          pme.timer);
+        logTime("Direct",            PME.TIMER_INDEX_DIRECT,        pme.timer);
         logTime("Total",             PME.TIMER_INDEX_TOTAL,         pme.timer);
-        logTime("Setup",             PME.TIMER_INDEX_SETUP,         pme.timer);
         logTime("Prefetch",          PME.TIMER_INDEX_PREFETCH,      pme.timer);
+        logTime("Setup",             PME.TIMER_INDEX_SETUP,         pme.timer);
+
  /*
         val direct = new ElectrostaticDirectMethod(atoms);
         val directEnergy = direct.getEnergy();
