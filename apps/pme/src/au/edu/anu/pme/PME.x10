@@ -587,19 +587,30 @@ public class PME {
                                              targetPlace : Place) {
         val overlapRegion = (sourceGrid.region + shift && targetRegion) as Region(3){rect};
         if (! overlapRegion.isEmpty()) {
-            val sourceRegion = (overlapRegion - shift) as Region(3){rect};
-            val overlap = new Array[Double](overlapRegion.size());
-
-            var l : Int = 0;
-            for ([i,j,k] in sourceRegion) {
-                overlap(l++) = sourceGrid(i,j,k);
-            }
-            async at(targetPlace) {
+            if (targetPlace == here) {
                 val localQ = Q.getLocalPortion();
-                atomic {
-                    var m : Int = 0;
-                    for ([i,j,k] in overlapRegion) {
-                        localQ(i,j,k) = localQ(i,j,k) + overlap(m++);
+                // TODO should use point operations instead of hand-written indexing
+                val shiftI = shift(0);
+                val shiftJ = shift(1);
+                val shiftK = shift(2);
+                for ([i,j,k] in overlapRegion) {
+                    localQ(i,j,k) += sourceGrid(i-shiftI,j-shiftJ,k-shiftK);
+                }
+            } else {
+                val sourceRegion = (overlapRegion - shift) as Region(3){rect};
+                val overlap = new Array[Double](overlapRegion.size());
+
+                var l : Int = 0;
+                for ([i,j,k] in sourceRegion) {
+                    overlap(l++) = sourceGrid(i,j,k);
+                }
+                async at(targetPlace) {
+                    val localQ = Q.getLocalPortion();
+                    atomic {
+                        var m : Int = 0;
+                        for ([i,j,k] in overlapRegion) {
+                            localQ(i,j,k) = localQ(i,j,k) + overlap(m++);
+                        }
                     }
                 }
             }
