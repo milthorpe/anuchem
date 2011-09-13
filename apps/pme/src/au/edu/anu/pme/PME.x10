@@ -542,10 +542,15 @@ public class PME {
                 // scatter myQ and accumulate to distributed Q
                 finish for (place2 in gridDist.places()) {
                     val place2Region = gridDist.get(place2) as Region(3){rect};
-                    // each halo region could be scattered to other regions in up to four chunks,
-                    // as the region is periodic and divided along two dimensions.
-                    val shiftX = (place1HaloRegion.max(0) < place2Region.min(0) || place1HaloRegion.min(0) < gridRegion.min(0)) ? gridSize0 : ((place1HaloRegion.min(0) > place2Region.max(0) || place1HaloRegion.max(0) > gridRegion.max(0)) ? -gridSize0 : 0);
-                    val shiftY = (place1HaloRegion.max(1) < place2Region.min(1) || place1HaloRegion.min(1) < gridRegion.min(1)) ? gridSize0 : ((place1HaloRegion.min(1) > place2Region.max(1) || place1HaloRegion.max(1) > gridRegion.max(1)) ? -gridSize0 : 0);
+                    /*
+                     * Each halo region could be scattered to other regions in
+                     * up to four chunks, as the region is periodic and divided
+                     * along two dimensions.  We only ever need to shift rightwards
+                     * and/or upwards, as the grid region only extends outside this
+                     * place's region in the leftwards and downwards directions.
+                     */
+                    val shiftX = (place1HaloRegion.max(0) < place2Region.min(0) || place1HaloRegion.min(0) < gridRegion.min(0)) ? gridSize0 : 0;
+                    val shiftY = (place1HaloRegion.max(1) < place2Region.min(1) || place1HaloRegion.min(1) < gridRegion.min(1)) ? gridSize0 : 0;
                     scatterAndReduceShiftedGridContribution(myQ, Point.make(0,0,0), place2Region, Q, place2);
                     if (shiftX != 0) {
                         scatterAndReduceShiftedGridContribution(myQ, Point.make(shiftX,0,0), place2Region, Q, place2);
@@ -576,6 +581,11 @@ public class PME {
      * four different directions.
      * N.B. the case of a periodic array divided in three dimensions
      * is even worse!
+     * @param sourceGrid the source grid array
+     * @param a Point comprising the required shift for each dimension
+     * @param targetPlace the place to which the data should be sent
+     * @param targetRegion the region of Q held at the target place
+     * @param Q the target charge grid array
      * TODO a more general solution to this problem with be required to solve
      * XTENLANG-1373 (in conjuction with XTENLANG-1365)
 	 * TODO should use instance fields instead of all those parameters - XTENLANG-1913
