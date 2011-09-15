@@ -4,6 +4,7 @@
 #PBS -q normal 
 #PBS -l walltime=01:00:00,vmem=8GB,ncpus=8
 #PBS -wd
+module load openmpi
 cat /proc/cpuinfo > cpuinfo.out
 echo "1 CPU"
 X10_NTHREADS=1 bin/pme 51396 
