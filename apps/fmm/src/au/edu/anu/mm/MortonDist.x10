@@ -55,12 +55,6 @@ public final class MortonDist extends Dist(3) {
             return MortonDist.this.getMortonIndex(i0,i1,i2) - start;
         }
 
-        // TODO I hope these aren't used
-        public def boundingBox(): Region(rank) {throw new UnsupportedOperationException("boundingBox()");}
-        protected  def computeBoundingBox(): Region(rank) {throw new UnsupportedOperationException("computeBoundingBox()");}
-        public def min():(Int)=>Int = (i:Int)=> 0;
-        public def max():(Int)=>Int = (i:Int)=> Math.pow2(MortonDist.this.dimDigits);
-
         public def contains(that: Region(rank)): boolean {
             if (that instanceof MortonSubregion) {
                 val thatMS = that as MortonSubregion;
@@ -81,12 +75,6 @@ public final class MortonDist extends Dist(3) {
                 throw new UnsupportedOperationException("intersection(Region(!MortonSubregion))");
             }
         }
-
-        public def complement(): Region(rank) {throw new UnsupportedOperationException("complement()");}
-        public def product(that:Region): Region{self!=null} {throw new UnsupportedOperationException("product(Region)");}
-        public def projection(axis:Int): Region(1) {throw new UnsupportedOperationException("projection(axis : Int)");}
-        public def translate(v:Point(rank)): Region(rank){throw new UnsupportedOperationException("translate(Point)");}
-        public def eliminate(axis:Int): Region /*(rank-1)*/{throw new UnsupportedOperationException("eliminate(axis : Int)");}
 
         public def contains(p:Point): boolean {
             if (p.rank != 3) return false;
@@ -118,6 +106,16 @@ public final class MortonDist extends Dist(3) {
         public def toString(): String {
             return "Z[" + start + ".." + end + "]";
         }
+
+        // TODO proper implementations for following methods - currently unused
+        protected  def computeBoundingBox(): Region(rank) {throw new UnsupportedOperationException("computeBoundingBox()");}
+        public def min():(Int)=>Int = (i:Int)=> 0;
+        public def max():(Int)=>Int = (i:Int)=> Math.pow2(MortonDist.this.dimDigits);
+        public def complement(): Region(rank) {throw new UnsupportedOperationException("complement()");}
+        public def product(that:Region): Region{self!=null} {throw new UnsupportedOperationException("product(Region)");}
+        public def projection(axis:Int): Region(1) {throw new UnsupportedOperationException("projection(axis : Int)");}
+        public def translate(v:Point(rank)): Region(rank){throw new UnsupportedOperationException("translate(Point)");}
+        public def eliminate(axis:Int): Region /*(rank-1)*/{throw new UnsupportedOperationException("eliminate(axis : Int)");}
     }
 
     public static def makeMorton(r:Region(3)) : MortonDist{self.region==r} {
@@ -182,10 +180,8 @@ public final class MortonDist extends Dist(3) {
      */
     public def getMortonIndex(p:Point/*(rank)*/):Int {
         if (p.rank != 3) throw new UnsupportedOperationException("getMortonIndex(p{self.rank!=3})");
-        //Console.OUT.println("getMortonIndex for " + p + " dimDigits = " + dimDigits);
         var index : Int = 0;
         var digitMask : Int = Math.pow2(dimDigits-1);
-        //Console.OUT.println("digitMask = " + digitMask.toBinaryString());
         for (var digit : Int = dimDigits; digit > 0; digit--) {
             for (var dim : Int = 0; dim < 3; dim++) {
                 val thisDim = digitMask & p(dim);
@@ -193,7 +189,6 @@ public final class MortonDist extends Dist(3) {
             }
             digitMask = digitMask >> 1;
         }
-        //Console.OUT.println(p + " => " + index + " bin = " + index.toBinaryString());
         return index;
     }
 
@@ -226,7 +221,6 @@ public final class MortonDist extends Dist(3) {
      * @param index the Morton index into the 3D array
      */
     public def getPoint(index:Int) : Point(3) {
-        //Console.OUT.println("getPoint for " + index + " region.size() = " + region.size() + " dimDigits = " + dimDigits);
         val p = new Array[Int](3);
         var digitMask : Int = region.size() / 2; 
         for (var digit : Int = dimDigits; digit > 0; digit--) {
@@ -236,7 +230,6 @@ public final class MortonDist extends Dist(3) {
                 digitMask = digitMask >> 1;
             }
         }
-        //Console.OUT.println(index + " => " + p);
         return Point.make(p);
     }
 
