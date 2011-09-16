@@ -10,6 +10,8 @@
  */
 package x10x.xla;
 
+import x10.compiler.Inline;
+
 import x10x.vector.Vector;
 import x10x.matrix.Matrix;
 
@@ -22,8 +24,6 @@ import x10x.matrix.Matrix;
 public class JacobiDiagonalizer {
     var eigenValuesVec:Vector; 
     var eigenVectorsMat:Matrix;
-    var eigenValues:Rail[Double];
-    var eigenVectors:Array[Double](2){rect};
 
     val maxIterations : Int = 100;
 
@@ -34,14 +34,14 @@ public class JacobiDiagonalizer {
        eigenVectorsMat = new Matrix(n);
        eigenVectorsMat.makeIdentity();
 
-       eigenVectors = eigenVectorsMat.getMatrix();
+       val eigenVectors = eigenVectorsMat.getMatrix();
 
        // operate on a clone of the matrix
        val aMat = new Matrix(mat);
        val a = aMat.getMatrix();
 
        eigenValuesVec = new Vector(n); 
-       eigenValues = eigenValuesVec.getVector();
+       val eigenValues = eigenValuesVec.getVector();
       
        val bVec = new Vector(n);
        val zVec = new Vector(n);
@@ -116,7 +116,7 @@ public class JacobiDiagonalizer {
        eigenVectorsMat = eigenVectorsMat.transpose();
     }
 
-    private static def doRotate(a:Array[Double](2){rect}, i:Int, j:Int, k:Int, l:Int,
+    private @Inline static def doRotate(a:Array[Double](2){rect,zeroBased}, i:Int, j:Int, k:Int, l:Int,
                                 sin:Double, tau:Double) : void {
        val g = a(i,j);
        val h = a(k,l);
@@ -128,6 +128,8 @@ public class JacobiDiagonalizer {
         var i:Int, j:Int, k:Int;
         var p:Double;
         val n = eigenValuesVec.getSize();
+        val eigenValues = eigenValuesVec.getVector();
+        val eigenVectors = eigenVectorsMat.getMatrix();
         
         for(i=0; i<n; i++) {
             p = eigenValues(k=i);
