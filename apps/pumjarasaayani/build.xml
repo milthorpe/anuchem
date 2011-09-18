@@ -9,8 +9,8 @@
     <property name="bash.exe" value="bash"/>    
     <property name="optimize" value="true" />
     <property name="nochecks" value="true" />
+    <property name="debug" value="false"/>
     <property name="profile"  value="false" />
-    <property name="inlineopt" value="false" />
     <property name="cpuprofile"  value="false"/>
     <property name="perftoolsHome" location="${user.home}/perftools"/>
     <property name="heapprofile" value="false" />
@@ -41,17 +41,18 @@
         <istrue value="${nochecks}" />
     </condition>
 
-    <condition property="post.profile" value="-pg" else="">
+    <condition property="x10c.debug" value="-DEBUG" else="">
+        <istrue value="${debug}"/>
+    </condition>
+
+    <condition property="x10c.profile" value="-pg" else="">
         <istrue value="${profile}" />
     </condition>
 
     <condition property="post.cpuprofile" value="-L${perftoolsHome}/lib -lprofiler" else="">
         <istrue value="${cpuprofile}"/>
     </condition>
-  
-    <condition property="x10c.inlineopt" value="-INLINE_OPTIMIZATIONS=true" else="">
-        <istrue value="${inlineopt}" />
-    </condition>
+
 
     <condition property="post.heapprofile" value="-ltcmalloc" else="">
         <istrue value="${heapprofile}" />
@@ -129,7 +130,7 @@
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/src">
             <arg value="-c"/> 
-            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.nochecks} ${x10c.optimize} ${x10c.inlineopt} -report postcompile=1 -post '# -g ${post.profile} ${post.cpuprofile} ${post.heapprofile} ${post.usenativegsl}' -sourcepath .:${x10x.xlalib}:${anuchem.src} -d ${target-src} ${basedir}/${testclass}"/>
+            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.debug} ${x10c.profile} ${x10c.optimize} ${x10c.nochecks} -report postcompile=1 -post '# ${post.cpuprofile} ${post.heapprofile} ${post.usenativegsl}' -sourcepath .:${x10x.xlalib}:${anuchem.src} -d ${target-src} ${basedir}/${testclass}"/>
         </exec>
     </target>
 

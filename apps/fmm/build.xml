@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE project [<!ENTITY buildfile SYSTEM "file:./build-user.xml">]>
-<project name="X10 application project" default="build" basedir=".">
+<project name="Fast Multipole Method" default="build" basedir=".">
     &buildfile;
 	<property name="x10x.lib" location="../../x10x.lib"/>
 	<property name="xla.src" location="${x10x.lib}/xla/src"/>
@@ -16,6 +16,7 @@
     <property name="bash.exe" value="bash"/>    
     <property name="optimize" value="true"/>
     <property name="nochecks" value="true"/>
+    <property name="debug" value="false"/>
     <property name="profile"  value="false"/>
     <property name="cpuprofile"  value="false"/>
     <property name="perftoolsHome" location="${user.home}/perftools"/>
@@ -38,8 +39,12 @@
         <istrue value="${nochecks}"/>
     </condition>
 
-    <condition property="post.profile" value="-pg" else="">
-        <istrue value="${profile}"/>
+    <condition property="x10c.debug" value="-DEBUG" else="">
+        <istrue value="${debug}"/>
+    </condition>
+
+    <condition property="x10c.profile" value="-pg" else="">
+        <istrue value="${profile}" />
     </condition>
 
     <condition property="post.cpuprofile" value="-L${perftoolsHome}/lib -lprofiler" else="">
@@ -87,11 +92,11 @@
     <target name="build-src-cpp" depends="check-src-cpp" unless="src.uptodate.cpp">
         <echo message="Building source tree"/>
 
-        <echo message="x10c++ -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} -post '# -g ${post.profile} # ${link.mpiPprofile} ${post.cpuprofile}' -sourcepath '.${path.separator}${xre.src}${path.separator}${xla.src}${path.separator}${anuchem.src}' '${basedir}/${testclass}'"/>
+        <echo message="x10c++ -x10rt ${x10rt} ${x10c.debug} ${x10c.profile} ${x10c.optimize} ${x10c.nochecks} -post '# # ${link.mpiPprofile} ${post.cpuprofile}' -sourcepath '.${path.separator}${xre.src}${path.separator}${xla.src}${path.separator}${anuchem.src}' '${basedir}/${testclass}'"/>
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/src">
             <arg value="-c"/>
-            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} -report postcompile=1 -post '# -g ${post.profile} # ${link.mpiPprofile} ${post.cpuprofile}' -sourcepath '.${path.separator}${xre.src}${path.separator}${xla.src}${path.separator}${anuchem.src}${path.separator}${x10.testlib}' -d '${target-src}' '${basedir}/${testclass}'"/>
+            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.debug} ${x10c.profile} ${x10c.optimize} ${x10c.nochecks} -report postcompile=1 -post '# # ${link.mpiPprofile} ${post.cpuprofile}' -sourcepath '.${path.separator}${xre.src}${path.separator}${xla.src}${path.separator}${anuchem.src}${path.separator}${x10.testlib}' -d '${target-src}' '${basedir}/${testclass}'"/>
         </exec>
     </target>
 
