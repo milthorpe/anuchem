@@ -179,7 +179,7 @@ public class PME {
 
         val atomsCache = DistArray.make[Array[Rail[PointCharge]]{rank==3,rect}](Dist.makeUnique());
         finish ateach(p in atomsCache) {
-            val mySubCellRegion = (subCells.dist | here).region;
+            val mySubCellRegion = subCells.dist(here);
             if (! mySubCellRegion.isEmpty()) {
                 val directRequiredRegion = ((mySubCellRegion.min(0) - 2)..(mySubCellRegion.max(0) + 2))
                                          * ((mySubCellRegion.min(1) - 2)..(mySubCellRegion.max(1) + 2))
@@ -470,16 +470,16 @@ public class PME {
         timer.start(TIMER_INDEX_GRIDCHARGES);
 
         val gridSize = this.gridSize; // TODO shouldn't be necessary XTENLANG-1913
-		val numSubCells = this.numSubCells; // TODO shouldn't be necessary XTENLANG-1913
-		val splineOrder = this.splineOrder; // TODO shouldn't be necessary XTENLANG-1913
-		val gridDist = this.gridDist; // TODO shouldn't be necessary XTENLANG-1913
-		val subCells = this.subCells; // TODO shouldn't be necessary XTENLANG-1913
+        val numSubCells = this.numSubCells; // TODO shouldn't be necessary XTENLANG-1913
+        val splineOrder = this.splineOrder; // TODO shouldn't be necessary XTENLANG-1913
+        val subCells = this.subCells; // TODO shouldn't be necessary XTENLANG-1913
         val scalingVector = this.scalingVector; // TODO shouldn't be necessary XTENLANG-1913
-		val Q = this.Q; // TODO shouldn't be necessary XTENLANG-1913
+        val Q = this.Q; // TODO shouldn't be necessary XTENLANG-1913
         val atomsCache = this.atomsCache; // TODO shouldn't be necessary XTENLANG-1913
         finish ateach(place1 in Dist.makeUnique()) {
             val qLocal = Q.getLocalPortion() as Array[Complex](3){rect};
-            val localGridRegion = qLocal.region;
+            val localGridRegion = qLocal.region as Region(3){rect};
+            val subCellRegion = subCells.region as Region(3){rect};
             if (!localGridRegion.isEmpty()) {
                 qLocal.clear();
                 val gridSize0 = gridSize(0);
@@ -487,7 +487,7 @@ public class PME {
                 val gridSize2 = gridSize(2);
                 val localSubCells = subCells.getLocalPortion();
                 val myAtomsCache = atomsCache(here.id);
-                val subCellHaloRegion = getSubcellHaloRegionForPlace(gridSize0, numSubCells, splineOrder, localGridRegion, subCells.region);
+                val subCellHaloRegion = PME.getSubcellHaloRegionForPlace(gridSize0, numSubCells, splineOrder, localGridRegion, subCellRegion);
                 //Console.OUT.println("subCellHaloRegion at " + here + " = " + subCellHaloRegion);
                 val iSpline = new Array[Double](splineOrder);
                 val jSpline = new Array[Double](splineOrder);
