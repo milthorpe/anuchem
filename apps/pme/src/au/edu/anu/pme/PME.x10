@@ -366,30 +366,30 @@ public class PME {
                 val cachedAtoms = atomsCache(here.id);
                 val translations = imageTranslations(here.id);
                 val localRegion = subCellsDist(here) as Region(3){rect};
-                for (p in localRegion) async {
-                    val thisCell = cachedAtoms(p) as Rail[PointCharge];
+                for ([x,y,z] in localRegion) async {
+                    val thisCell = cachedAtoms(x,y,z) as Rail[PointCharge];
                     var myDirectEnergy : Double = 0.0;
-                    for (var i : Int = p(0)-2; i<=p(0); i++) {
+                    for (var i : Int = x-2; i<=x; i++) {
                         var n1 : Int = 0;
                         if (i < 0) {
                             n1 = -1;
                         } // can't have (i > numSubCells+1)
-                        for (var j : Int = p(1)-2; j<=p(1)+2; j++) {
+                        for (var j : Int = y-2; j<=y+2; j++) {
                             var n2 : Int = 0;
                             if (j < 0) {
                                 n2 = -1;
                             } else if (j > numSubCells-1) {
                                 n2 = 1;
                             }
-                            for (var k : Int = p(2)-2; k<=p(2)+2; k++) {
+                            for (var k : Int = z-2; k<=z+2; k++) {
                                 var n3 : Int = 0;
                                 if (k < 0) {
                                     n3 = -1;
                                 } else if (k > numSubCells-1) {
                                     n3 = 1;
                                 }
-                                // interact with "left half" of other boxes i.e. only boxes with i<=p(0)
-                                if (i < p(0) || (i == p(0) && j < p(1)) || (i == p(0) && j == p(1) && k < p(2))) {
+                                // interact with "left half" of other boxes i.e. only boxes with i<=x
+                                if (i < x || (i == x && j < y) || (i == x && j == y && k < z)) {
                                     val translation = translations(n1,n2,n3);
                                     val otherCell : Rail[PointCharge] = cachedAtoms(i,j,k);
                                     for (otherAtomIndex in 0..(otherCell.size-1)) {
