@@ -11,6 +11,10 @@
 
 import x10.compiler.NonEscaping;
 import x10.compiler.Inline;
+import x10.io.File;
+import x10.io.FileWriter;
+import x10.io.Printer;
+
 import au.edu.anu.util.Timer;
 
 /**
@@ -27,9 +31,10 @@ import au.edu.anu.util.Timer;
  */
 public class Boltzmann {
     public static NSIZE = 129;
+    public static SIZE = new Array[Int](2, NSIZE);
     public static GHOST_WIDTH = 1;
 
-    public static NSTEPS = 30;
+    public static NSTEPS = 5000;
 
     public static VISCOSITY = 1.0;
 
@@ -38,6 +43,9 @@ public class Boltzmann {
 
     /** the dimensions of the square cavity */
     public static XMAX = 256.0;
+
+    /** the distance between lattice points */
+    val DELTA_X = XMAX/((NSIZE-1) as Double);
 
     /** temperature of fluid */
     public static TMPRTR0 = 1.0;
@@ -103,8 +111,7 @@ public class Boltzmann {
         val ux0 = 0.0;
         val uy0 = 0.0;
 
-        val delta_x = XMAX/((NSIZE-1) as Double);
-        val cspd = Math.sqrt(2.0)*delta_x/DELTA_T;
+        val cspd = Math.sqrt(2.0)*DELTA_X/DELTA_T;
         this.cspd = cspd;
         val tau_rho = 6.0 * VISCOSITY / (cspd*cspd*DELTA_T) + 0.5;
         Console.OUT.println("Value of tau_rho is " + tau_rho);
@@ -189,29 +196,29 @@ public class Boltzmann {
 
     private static def initHash(): Array[Int](2){rect} {
         val hash = new Array[Int](-1..1 * -1..1);
-        hash(0,0)   = 1;
-        hash(1,0)   = 2;
-        hash(-1,0)  = 3;
-        hash(0,1)   = 4;
-        hash(0,-1)  = 5;
-        hash(1,1)   = 6;
-        hash(-1,-1) = 7;
-        hash(1,-1)  = 8;
-        hash(-1,1)  = 9;
+        hash(0,0)   = 0;
+        hash(1,0)   = 1;
+        hash(-1,0)  = 2;
+        hash(0,1)   = 3;
+        hash(0,-1)  = 4;
+        hash(1,1)   = 5;
+        hash(-1,-1) = 6;
+        hash(1,-1)  = 7;
+        hash(-1,1)  = 8;
         return hash;
     }
 
     private static def initIHash(): Array[Int](2){rect} {
         val ihash = new Array[Int](-1..1 * -1..1);
-        ihash(0,0)   = 1;
-        ihash(1,0)   = 3;
-        ihash(-1,0)  = 2;
-        ihash(0,1)   = 5;
-        ihash(0,-1)  = 4;
-        ihash(1,1)   = 7;
-        ihash(-1,-1) = 6;
-        ihash(1,-1)  = 9;
-        ihash(-1,1)  = 8;
+        ihash(0,0)   = 0;
+        ihash(1,0)   = 2;
+        ihash(-1,0)  = 1;
+        ihash(0,1)   = 4;
+        ihash(0,-1)  = 3;
+        ihash(1,1)   = 6;
+        ihash(-1,-1) = 5;
+        ihash(1,-1)  = 8;
+        ihash(-1,1)  = 7;
         return ihash;
     }
 
@@ -236,9 +243,14 @@ public class Boltzmann {
 		val uxtot = new Accumulator[Double](SumReducer());
 		val uytot = new Accumulator[Double](SumReducer());
         finish ateach (p in Dist.makeUnique()) {
+            var myUxtot:Double = 0.0;
+            var myUytot:Double = 0.0;
+            var myRtot:Double = 0.0;
+            val lbLocal = lb.getLocalPortion();
+            val lbPropsLocal = lbProps.getLocalPortion();
             val lbInterior = (latticeDist.region && interiorRegion) as Region(2){rect};
             for([ii,jj] in lbInterior) {
-                val props = lbProps(ii,jj);
+                val props = lbPropsLocal(ii,jj);
 
                 // evaluate density and momentum
                 for (i in 0..8) {
@@ -252,15 +264,11 @@ public class Boltzmann {
                         ex = cspd2*ei(j,0);
                         ey = cspd2*ei(j,1);
                     }
-                    props.density += lb(ii,jj,i).actual;
-                    props.px += ex * lb(ii,jj,i).actual;
-                    props.py += ey * lb(ii,jj,i).actual;
+                    val dd = lbLocal(ii,jj,i).actual;
+                    props.density += dd;
+                    props.px += ex * dd;
+                    props.py += ey * dd;
                 }
-
-                // note: momentum accumulated *before* dividing by density
-                uxtot <- props.px;
-                uytot <- props.py;
-
                 props.px /= props.density;
                 props.py /= props.density;
 
@@ -278,12 +286,18 @@ public class Boltzmann {
                 }
     */
 
-                val rho = props.density;
-                // evaluate pressure (eq. 4.9)
-                props.pressure = rho*RGAS*TMPRTR0/(1.0-B_VDW*rho) - A_VDW*rho*rho;
+                myUxtot += props.px;
+                myUytot += props.py;
 
-                rtot <- rho;
+                // evaluate pressure (eq. 4.9)
+                val rho = props.density;
+                props.pressure = rho*RGAS*TMPRTR0/(1.0-B_VDW*rho) - A_VDW*rho*rho;
+                myRtot += rho;
+                
             }
+            uxtot <- myUxtot;
+            uytot <- myUytot;
+            rtot <- myRtot;
         }
         this.rtot = rtot();
         this.uxtot = uxtot();
@@ -300,6 +314,8 @@ public class Boltzmann {
 
         finish ateach (p in Dist.makeUnique()) {
             val ffa = new Array[Double](9);
+            val lbLocal = lb.getLocalPortion();
+            val lbPropsLocal = lbProps.getLocalPortion();
             val lbInterior = (latticeDist.region && interiorRegion) as Region(2){rect};
             for([ii,jj] in lbInterior) {
                 for (j in 0..8) {
@@ -312,7 +328,7 @@ public class Boltzmann {
                         ex = cspd2*ei(j-1,0);
                         ey = cspd2*ei(j-1,1);
                     }
-                    val props = lbProps(ii,jj);
+                    val props = lbPropsLocal(ii,jj);
                     val aa = (rdim/(b*c2)) * props.pressure;
                     val aa0 = props.density - b*aa;
                     if (j == 1) {
@@ -323,7 +339,7 @@ public class Boltzmann {
                         ffa(j) = aa;
                     }
 
-                    lb(ii,jj,j).equilibrium = ffa(j) 
+                    lbLocal(ii,jj,j).equilibrium = ffa(j) 
                        + props.density * ffb(j)*(props.px*ex + props.py*ey)
                        + ffc(j) * 
                             (props.px*props.px * ex*ex
@@ -335,6 +351,7 @@ public class Boltzmann {
         }
     }
 
+    /** Advance simulation one timestep */
     private def timestep() {
         timer.start(0);
 
@@ -348,7 +365,7 @@ public class Boltzmann {
             val lbLocal = lb.getLocalPortion();
             val lbInterior = (lb.dist(here) && (interiorRegion * 0..8)) as Region(3){rect};
             for ([ii,jj,i] in lbInterior) {
-                lb(ii,jj,i).temp = lb(ii,jj,i).actual;
+                lbLocal(ii,jj,i).temp = lbLocal(ii,jj,i).actual;
             }
 
         }
@@ -368,15 +385,15 @@ public class Boltzmann {
                         val k = i-1;
                         val ix = ei(k,0); //Math.round(ei(k,0)) as Int;
                         val iy = ei(k,1); //Math.round(ei(k,1)) as Int;
-                        lb(ii,jj,i).actual = lb(ii-ix,jj-iy,i).temp;
+                        lbLocal(ii,jj,i).actual = lbLocal(ii-ix,jj-iy,i).temp;
                     }
                 } else {
-                    getPatch(ii, jj, patch); // maps to fgp
+                    getPatch(ii, jj, patch, lbLocal); // maps to fgp
                     for (i in 1..8) {
                         val k = i-1;
                         val ix = ei(k,0); //Math.round(ei(k,0)) as Int;
                         val iy = ei(k,1); //Math.round(ei(k,1)) as Int;
-                        lb(ii,jj,i).actual = patch(-ix,-iy,i);
+                        lbLocal(ii,jj,i).actual = patch(-ix,-iy,i);
                     }   
                 }
             }
@@ -389,31 +406,225 @@ public class Boltzmann {
 
         finish ateach (p in Dist.makeUnique()) {
             val lbLocal = lb.getLocalPortion();
+            val lbPropsLocal = lbProps.getLocalPortion();
             val lbInterior = (lb.dist(here) && (interiorRegion * 0..8)) as Region(3){rect};
-            for ([ii,jj,i] in lbInterior) {  
-                if (lbProps(ii,jj).t_rho > 0.0) {
-                    lb(ii,jj,i).actual = lb(ii,jj,i).temp
-                             - (lb(ii,jj,i).temp - lb(ii,jj,i).equilibrium) / lbProps(ii,jj).t_rho;
+            for ([ii,jj,i] in lbInterior) {
+                val t_rho = lbPropsLocal(ii,jj).t_rho;
+                if (t_rho > 0.0) {
+                    val t = lbLocal(ii,jj,i).temp;
+                    lbLocal(ii,jj,i).actual = t - (t - lbLocal(ii,jj,i).equilibrium) / t_rho;
                 }
                 // TODO boundary constant condition is commented out in GA code
     //            if (bc(ii,jj) == 2) {
-    //                lb(ii,jj,i).actual = lb(ii,jj,i).equilibrium;
+    //                lbLocal(ii,jj,i).actual = lbLocal(ii,jj,i).equilibrium;
     //            }
             }
         }
         timer.stop(0);
     }
 
-    private @Inline def getPatch(ii:Int, jj:Int, patch:Array[Double](3){rect}) {
-        // TODO
+    /** Handle cells at boundary */
+    private def getPatch(ii:Int, jj:Int, patch:Array[Double](3){rect}, lbLocal:Array[LBDist](3){rect}) {
+        // Check values of neighboring cells
+        val mask = new Array[Int](-1..1 * -1..1, ([k,l]:Point(2)) =>
+                (interiorRegion.contains(ii+k, jj+l) && boundary(ii+k, jj+l) == 0) ? 0 : 2);
+
+        // Determine if cells in mask represent interior cells
+        // or are on the boundary
+        for ([k,l] in mask) {
+            if (mask(k,l) != 0 && (k!=0 || l!=0)) {
+                for (kk in Math.max(k-1,-1)..Math.min(k+1,1)) {
+                    for (ll in Math.max(l-1,-1)..Math.min(l+1,1)) {
+                        if (mask(kk,ll) == 0) mask(k,l) = 1;
+                    }
+                }
+            }
+        }
+
+            
+        // Evaluate distribution in boundary patch
+        val bval = boundary(ii,jj);
+
+        if (bval == 1) {
+            // Apply simple bounce back condition
+            for ([k,l] in mask) {
+                if (mask(k,l) == 2) {
+                    patch(k,l,ihash(k,l)) = lbLocal(ii,jj,hash(k,l)).temp;
+                } else {
+                    patch(k,l,ihash(k,l)) = lbLocal(ii+k,jj+l,ihash(k,l)).temp;
+                }
+            }
+
+        } else if (bval == 2) {
+            // Apply constant velocity boundary condition to flat upper boundary
+            val cspd2 = cspd / Math.sqrt(2.0);
+            var rho:Double = 0.0;
+            var ux:Double = 0.0;
+            var uy:Double = 0.0;
+            for ([k,l] in mask) {
+                if (mask(k,l) == 2) {
+                    patch(k,l,ihash(k,l)) = lbLocal(ii,jj,hash(k,l)).temp;
+                } else {
+                    patch(k,l,ihash(k,l)) = lbLocal(ii+k,jj+l,ihash(k,l)).temp;
+                }
+                rho = rho + patch(k,l,ihash(k,l));
+                ux = ux - cspd2 * k * patch(k,l,ihash(k,l));
+                uy = uy - cspd2 * l * patch(k,l,ihash(k,l));
+            }
+
+            ux = ux / rho;
+            uy = uy / rho;
+            ux = UXBC - ux;
+
+            // Add corrections needed to adjust for velocity mismatch
+            patch(1,1,ihash(1,1)) = patch(1,1,ihash(1,1)) - 0.5*rho*ux/cspd2;
+            patch(-1,1,ihash(-1,1)) = patch(-1,1,ihash(-1,1)) + 0.5*rho*ux/cspd2;
+        
+        } else if (bval == 3) {
+            // Apply constant velocity boundary condition
+            val cspd2 = Math.sqrt(2.0)*cspd;
+            var rho:Double = 0.0;
+            var ux:Double = 0.0;
+            var uy:Double = 0.0;
+            for ([k,l] in mask) {
+                if (mask(k,l) == 2 && (k!=0 || l!=0)) {
+                  patch(k,l,ihash(k,l)) = lbLocal(ii,jj,hash(k,l)).actual;
+                  rho = rho + lbLocal(ii,jj,hash(k,l)).actual;
+                  ux = ux + cspd2*k*lbLocal(ii,jj,hash(k,l)).actual;
+                  uy = uy + cspd2*l*lbLocal(ii,jj,hash(k,l)).actual;
+                } else {
+                  patch(k,l,ihash(k,l)) = lbLocal(ii+k,jj+l,ihash(k,l)).actual; // TODO check: GA has ihash(i,l)
+                  rho = rho + lbLocal(ii+k,jj+l,ihash(k,l)).actual;
+                  ux = ux + cspd2*k*lbLocal(ii+k,jj+l,ihash(k,l)).actual;
+                  uy = uy + cspd2*l*lbLocal(ii+k,jj+l,ihash(k,l)).actual;
+                }
+            }
+
+            // Determine value of correction needed to get specified final velocity
+            // TODO these are never used in GA code
+            //val dux = bcpar(2,1) - ux;
+            //val duy = bcpar(2,2) - uy;
+        }
     }
 
+    /** Evaluate the vorticity of velocity field */
     private def vorticity() {
+        lbProps.updateGhosts();
+        finish ateach (p in Dist.makeUnique()) {
+            val lbLocal = lb.getLocalPortion();
+            val lbPropsLocal = lbProps.getLocalPortion();
+            val lbInterior = (latticeDist.region && interiorRegion) as Region(2){rect};
+            for ([ii,jj] in lbInterior) {
+                val propsThis = lbPropsLocal(ii,jj);
+                var drni:Double = 0.0;
+                var drxi:Double = 0.0;
+                var dryi:Double = 0.0;
+                var drho_x:Double = 0.0;
+                var drho_y:Double = 0.0;
+                var dux_x:Double = 0.0;
+                var dux_y:Double = 0.0;
+                var duy_x:Double = 0.0;
+                var duy_y:Double = 0.0;
+                for (j in -1..1) {
+                    val dy = j * DELTA_X;
+                    val dyi:Double;
+                    if (dy == 0.0) {
+                        dyi = 0.0;
+                    } else {
+                        dyi = 1.0 / dy;
+                    }
+                    for (i in -1..1) {
+                        if (boundary(ii+i,jj+j) == 0 && (i!=0||j!=0)) {
+                            val dx = i * DELTA_X;
+                            val dxi:Double;
+                            if (dx == 0.0) {
+                                dxi = 0.0;
+                            } else {
+                                dxi = 1.0 / dx;
+                            }
+                            val dr = Math.sqrt(dx*dx + dy*dy);
+                            val dri = 1.0/dr;
+                            val adxi = Math.abs(dx*dri*dri);
+                            val adyi = Math.abs(dy*dri*dri);
+                            val propsOther = lbPropsLocal(ii+i,jj+j);
+                            val rhot = propsOther.density;
+                            val uxt = propsOther.px;
+                            val uyt = propsOther.py;
+                            drho_x += (rhot-propsThis.density)*dxi*adxi;
+                            drho_y += (rhot-propsThis.density)*dyi*adyi;
+                            dux_x += (uxt-propsThis.px)*dxi*adxi;
+                            dux_y += (uxt-propsThis.px)*dyi*adyi;
+                            duy_x += (uyt-propsThis.py)*dxi*adxi;
+                            duy_y += (uyt-propsThis.py)*dyi*adyi;
+                            drxi += adxi;
+                            dryi += adyi;
+                        }
+                    }
+                }
 
+                drho_x /= drxi;
+                drho_y /= dryi;
+                dux_x /= drxi;
+                dux_y /= dryi;
+                duy_x /= drxi;
+                duy_y /= dryi;
+                propsThis.vorticity = duy_x - dux_y;
+            }
+        }
     }
 
+    /** Print current value of fields to a file */
     private def printData() {
+        val imax = NSIZE/10;
+        val glo = new Array[Int](3, 1);
+        val ghi = new Array[Int](3);
+        ghi(0) = NSIZE;
+        ghi(2) = 3;
+        val bld = new Array[Int](2);
+        bld(0) = NSIZE;
+        bld(1) = 10;
 
+        val MAXELEM=256;
+
+        // Check dimensions to see if size needs to be reduced
+        val inc1:Int;
+        val inc2:Int;
+        val icnt1:Int;
+        val icnt2:Int;
+        // TODO non-square array (use size(i))
+        if (NSIZE > MAXELEM) {
+            inc1 = SIZE(0)/MAXELEM;
+            inc2 = SIZE(1)/MAXELEM;
+            icnt1 = SIZE(0)/inc1;
+            icnt2 = SIZE(1)/inc2;
+        } else {
+            inc2 = inc1 = 1;
+            icnt1 = SIZE(0);
+            icnt2 = SIZE(1);
+        }
+
+
+        val fil = new Printer(new FileWriter(new File("bltz.gmv")));
+        fil.println("gmvinput ascii");
+        fil.printf("nodes       -1 %10i%10i%10i\n", icnt1, icnt2, 1);
+
+        val dx = inc1*XMAX/(SIZE(0)-1);
+        val dy = inc1*XMAX/(SIZE(1)-1);
+        for (i in 0..(icnt1-1)) {
+            fil.printf("    %12.4f", i*dx);
+            if (i%5 == 4) fil.println();
+        }
+        fil.println();
+        for (i in 0..(icnt2-1)) {
+            fil.printf("    %12.4f", i*dy);
+            if (i%5 == 4) fil.println();
+        }
+        fil.println();
+        fil.printf("    %12.4f", 0.0);
+        fil.println("cells     0");
+        fil.println("variable");
+        fil.println("rho                           1");
+        var jcnt:Int = 0;
     }
 
 	static struct SumReducer implements Reducible[Double] {
@@ -444,6 +655,7 @@ public class Boltzmann {
         public var pressure:Double;
         /** relaxation */
         public var t_rho:Double;
+        public var vorticity:Double;
 
         public def this() { }
         public def this(density:Double, px:Double, py:Double, pressure:Double, t_rho:Double) {
