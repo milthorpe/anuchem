@@ -30,11 +30,11 @@ import au.edu.anu.util.Timer;
  * 23/09 started 20:45
  */
 public class Boltzmann {
-    public static NSIZE = 129;
+    public static NSIZE = 5;
     public static SIZE = new Array[Int](2, NSIZE);
     public static GHOST_WIDTH = 1;
 
-    public static NSTEPS = 5000;
+    public static NSTEPS = 1;
 
     public static VISCOSITY = 1.0;
 
@@ -45,7 +45,7 @@ public class Boltzmann {
     public static XMAX = 256.0;
 
     /** the distance between lattice points */
-    val DELTA_X = XMAX/((NSIZE-1) as Double);
+    public static DELTA_X = XMAX/((NSIZE-1) as Double);
 
     /** temperature of fluid */
     public static TMPRTR0 = 1.0;
@@ -72,7 +72,7 @@ public class Boltzmann {
     val latticeDist = Dist.makeBlockBlock(latticeRegion, 0, 1);
 
     /** The region of interior points of the lattice. */
-    val interiorRegion = 1..(NSIZE-2) * 1..(NSIZE-2);
+    val interiorRegion:Region(2){rect};
 
     /** The lattice Boltzmann distribution functions at each site. maps to g_fg*/
     val lb:DistArray[LBDist](3);
@@ -112,6 +112,7 @@ public class Boltzmann {
         val uy0 = 0.0;
 
         val cspd = Math.sqrt(2.0)*DELTA_X/DELTA_T;
+        Console.OUT.println("cspd = " + cspd);
         this.cspd = cspd;
         val tau_rho = 6.0 * VISCOSITY / (cspd*cspd*DELTA_T) + 0.5;
         Console.OUT.println("Value of tau_rho is " + tau_rho);
@@ -119,20 +120,24 @@ public class Boltzmann {
         //Console.OUT.println("latticeDist = " + latticeDist);
 
         // initialize boundary conditions
-        val boundaryCond = ([i,j]:Point(2)) => { (i==1 || i==NSIZE || j==1) ? 1 : (j==NSIZE) ? 2 : 0 };
+        val boundaryCond = ([i,j]:Point(2)) => { (i==0 || i==(SIZE(0)-1) || j==0) ? 1 : (j==(SIZE(1)-1)) ? 2 : 0 };
         val boundary = DistArray.make[Int](latticeDist, boundaryCond, GHOST_WIDTH);
         boundary.updateGhosts();
         this.boundary = boundary;
 
+        val interiorRegion = 1..(NSIZE-2) * 1..(NSIZE-2);
+
         // initialize distribution of density and velocities
         val lbProps = DistArray.make[LBProperties](latticeDist, 
-            (Point) => new LBProperties(
+            (p:Point) => interiorRegion.contains(p) ? new LBProperties(
                 RHO0, // + 0.0*cos(2.0d00*pi*dble(j-1) / dble(size(2)-1))                                    
                 ux0, uy0,
                 RHO0 * RGAS * TMPRTR0 / (1.0 - B_VDW*RHO0) - A_VDW*RHO0*RHO0,
-                6.0 * VISCOSITY / (cspd*cspd*DELTA_T) + 0.5),
+                6.0 * VISCOSITY / (cspd*cspd*DELTA_T) + 0.5)
+                : new LBProperties(),
             GHOST_WIDTH);
         this.lbProps = lbProps;
+        this.interiorRegion = interiorRegion;
         rtot = RHO0*lbProps.region.size();
 
         initializeLatticeParameters();
@@ -142,9 +147,41 @@ public class Boltzmann {
         val lb = DistArray.make[LBDist](lbDist, (Point) => new LBDist(), GHOST_WIDTH);
         this.lb = lb;
     }
+
+    private def printLb() {
+        for (place in lb.dist.places()) at (place) {
+            val ffa = new Array[Double](9);
+            val lbsLocal = lb.getLocalPortion();
+            val lbInterior = (lb.dist(here) && (interiorRegion * 0..8)) as Region(3){rect};
+            for (ii in lbInterior.min(0)..lbInterior.max(0)) {
+                for (jj in lbInterior.min(1)..lbInterior.max(1)) {
+                    for (i in 0..8) {
+                        Console.OUT.printf("%12.4f", lbsLocal(ii,jj,i).actual);
+                    }
+                    Console.OUT.println();
+                }
+                Console.OUT.println();
+            }
+        }
+    }
+
+    private def printLbProps() {
+        for (place in lb.dist.places()) at (place) {
+            val ffa = new Array[Double](9);
+            val lbPropsLocal = lbProps.getLocalPortion();
+            val lbInterior = (latticeDist.region && interiorRegion) as Region(2){rect};
+            for (i in lbInterior.min(0)..lbInterior.max(0)) {
+                for (j in lbInterior.min(1)..lbInterior.max(1)) {
+                    Console.OUT.println(lbPropsLocal(i,j).density);
+                }
+                Console.OUT.println();
+            }
+        }
+    }
     
 
     public def boltzmann() {
+        printLbProps();
         // initialize equilibrium and actual distributions
         equilibrium();
         finish ateach([ii,jj] in latticeDist | interiorRegion) {
@@ -152,20 +189,23 @@ public class Boltzmann {
                 lb(ii,jj,i).actual = lb(ii,jj,i).equilibrium;
             }
         }
+        printLb();
+        properties();
+        printLbProps();
         Console.OUT.println("Total mass is " + rtot);
         Console.OUT.println("Total x-momentum is " + uxtot);
         Console.OUT.println("Total y-momentum is " + uytot);
 
         for (i in 1..NSTEPS) {
             timestep();
-            if (i % 200 == 0) {
+            //if (i % 200 == 0) {
                 Console.OUT.println("Completed step " + i);
                 Console.OUT.println("Total density is " + rtot);
                 Console.OUT.println("Total x-momentum is " + uxtot);
                 Console.OUT.println("Total y-momentum is " + uytot);
                 vorticity();
                 printData();
-            }
+            //}
         }
         vorticity();
         printData();
@@ -223,7 +263,7 @@ public class Boltzmann {
     }
 
     private static def initEi(): Array[Int](2){rect,zeroBased} {
-        val ei = new Array[Int](0..8 * 0..1);
+        val ei = new Array[Int](0..7 * 0..1);
         ei(0,0) =  1; ei(0,1) =  0;
         ei(1,0) = -1; ei(1,1) =  0;
         ei(2,0) =  0; ei(2,1) =  1;
@@ -232,12 +272,16 @@ public class Boltzmann {
         ei(5,0) = -1; ei(5,1) = -1;
         ei(6,0) =  1; ei(6,1) = -1;
         ei(7,0) = -1; ei(7,1) =  1;
-        ei(8,0) =  0; ei(8,1) =  0;
         return ei;
     }
 
     /** Update values of density, momentum and pressure */
     private def properties() {
+        val lb = this.lb; // TODO shouldn't be necessary XTENLANG-1913
+        val latticeDist = this.latticeDist; // TODO shouldn't be necessary XTENLANG-1913
+        val interiorRegion = this.interiorRegion; // TODO shouldn't be necessary XTENLANG-1913
+        val lbProps = this.lbProps; // TODO shouldn't be necessary XTENLANG-1913
+
         val cspd2 = cspd / Math.sqrt(2.0);
 		val rtot = new Accumulator[Double](SumReducer());
 		val uxtot = new Accumulator[Double](SumReducer());
@@ -251,13 +295,16 @@ public class Boltzmann {
             val lbInterior = (latticeDist.region && interiorRegion) as Region(2){rect};
             for([ii,jj] in lbInterior) {
                 val props = lbPropsLocal(ii,jj);
+                props.density = 0.0;
+                props.px = 0.0;
+                props.py = 0.0;
 
                 // evaluate density and momentum
                 for (i in 0..8) {
                     val j = i-1;
                     val ex:Double;
                     val ey:Double;
-                    if (j==-1) {
+                    if (j<0) {
                         ex = 0.0;
                         ey = 0.0;
                     } else {
@@ -306,6 +353,11 @@ public class Boltzmann {
 
     /** Update equilibrium distributions */
     private def equilibrium() {
+        val lb = this.lb; // TODO shouldn't be necessary XTENLANG-1913
+        val latticeDist = this.latticeDist; // TODO shouldn't be necessary XTENLANG-1913
+        val interiorRegion = this.interiorRegion; // TODO shouldn't be necessary XTENLANG-1913
+        val lbProps = this.lbProps; // TODO shouldn't be necessary XTENLANG-1913
+
         val rdim = 4.0;
         val b = 24.0;
         val c2 = cspd*cspd;
@@ -331,7 +383,7 @@ public class Boltzmann {
                     val props = lbPropsLocal(ii,jj);
                     val aa = (rdim/(b*c2)) * props.pressure;
                     val aa0 = props.density - b*aa;
-                    if (j == 1) {
+                    if (j == 0) {
                         ffa(j) = aa0 + 4.0*aa;
                     } else if (j < 5) {
                         ffa(j) = 4.0*aa;
@@ -355,31 +407,36 @@ public class Boltzmann {
     private def timestep() {
         timer.start(0);
 
-        val lb = this.lb;
-        val latticeDist = this.latticeDist;
-        val interiorRegion = this.interiorRegion;
+        val lb = this.lb; // TODO shouldn't be necessary XTENLANG-1913
+        val latticeDist = this.latticeDist; // TODO shouldn't be necessary XTENLANG-1913
+        val interiorRegion = this.interiorRegion; // TODO shouldn't be necessary XTENLANG-1913
+        val boundary = this.boundary; // TODO shouldn't be necessary XTENLANG-1913
+        val lbProps = this.lbProps; // TODO shouldn't be necessary XTENLANG-1913
 
         // make backup copies of distribution and update ghost cells
         //finish ateach ([ii,jj] in latticeDist | interiorRegion) {
         finish ateach (p in Dist.makeUnique()) {
             val lbLocal = lb.getLocalPortion();
-            val lbInterior = (lb.dist(here) && (interiorRegion * 0..8)) as Region(3){rect};
-            for ([ii,jj,i] in lbInterior) {
+            val localRegion = (lb.dist(here)) as Region(3){rect};
+            for ([ii,jj,i] in localRegion) {
                 lbLocal(ii,jj,i).temp = lbLocal(ii,jj,i).actual;
             }
-
         }
 
         timer.start(1);
         lb.updateGhosts();
         timer.stop(1);
 
+        Console.OUT.println("timestep 0");
+        printLb();
+
         // Perform streaming operation
         finish ateach (p in Dist.makeUnique()) {
             val lbLocal = lb.getLocalPortion();
-            val lbInterior = (latticeDist.region && interiorRegion) as Region(2){rect};
+            val localRegion = latticeDist(here) as Region(2){rect};
             val patch = new Array[Double](-1..1 * -1..1 * 0..8);
-            for ([ii,jj] in lbInterior) {
+            for ([ii,jj] in localRegion) {
+                Console.OUT.println("boundary " + ii+","+jj+" = " + boundary(ii,jj));
                 if (boundary(ii,jj) == 0) {
                     for (i in 1..8) {
                         val k = i-1;
@@ -399,10 +456,19 @@ public class Boltzmann {
             }
         }
 
+        Console.OUT.println("timestep 1");
+        printLb();
+
         properties();
+
+        Console.OUT.println("timestep 2");
+        printLb();
 
         // perform relaxation
         equilibrium();
+
+        Console.OUT.println("timestep 3");
+        printLb();
 
         finish ateach (p in Dist.makeUnique()) {
             val lbLocal = lb.getLocalPortion();
@@ -420,6 +486,8 @@ public class Boltzmann {
     //            }
             }
         }
+        Console.OUT.println("timestep 4");
+        printLb();
         timer.stop(0);
     }
 
@@ -427,7 +495,7 @@ public class Boltzmann {
     private def getPatch(ii:Int, jj:Int, patch:Array[Double](3){rect}, lbLocal:Array[LBDist](3){rect}) {
         // Check values of neighboring cells
         val mask = new Array[Int](-1..1 * -1..1, ([k,l]:Point(2)) =>
-                (interiorRegion.contains(ii+k, jj+l) && boundary(ii+k, jj+l) == 0) ? 0 : 2);
+                (latticeRegion.contains(ii+k, jj+l) && boundary(ii+k, jj+l) == 0) ? 0 : 2);
 
         // Determine if cells in mask represent interior cells
         // or are on the boundary
@@ -444,6 +512,7 @@ public class Boltzmann {
             
         // Evaluate distribution in boundary patch
         val bval = boundary(ii,jj);
+        Console.OUT.println("bval " + ii+","+jj+" = " + bval);
 
         if (bval == 1) {
             // Apply simple bounce back condition
