@@ -1,8 +1,8 @@
 X10CPP := x10c++
-X10CPPFLAGS := -O -x10rt mpi -VERBOSE_CHECKS
+X10CPPFLAGS := -O -NO_CHECKS -x10rt mpi -VERBOSE_CHECKS
 X10SOURCEPATH := -sourcepath ../../anu-chem/src
 ifdef CPUPROFILE
-  X10CPPFLAGS += -DEBUG -post '\# -g -lprofiler'
+  X10CPPFLAGS += -DEBUG -post '\# -lprofiler -L/scratch/perftools/lib'
 endif
 X10FLAGS := X10_NTHREADS=1
 
