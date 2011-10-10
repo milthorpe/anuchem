@@ -486,10 +486,12 @@ public class Boltzmann(nsize:Int) {
         timer.stop(0);
     }
 
+    static MASK_REGION = -1..1 * -1..1;
+
     /** Handle cells at boundary */
     private def getPatch(ii:Int, jj:Int, patch:Array[Double](3){rect}, lbLocal:Array[LBDist](3){rect}) {
         // Check values of neighboring cells
-        val mask = new Array[Int](-1..1 * -1..1, ([k,l]:Point(2)) =>
+        val mask = new Array[Int](MASK_REGION, ([k,l]:Point(2)) =>
                 (latticeRegion.contains(ii+k, jj+l) && boundary(ii+k, jj+l) == 0) ? 0 : 2);
 
         // Determine if cells in mask represent interior cells
