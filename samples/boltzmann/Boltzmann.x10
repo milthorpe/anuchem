@@ -72,23 +72,20 @@ public class Boltzmann(nsize:Int) {
     /** The region of interior points of the lattice. */
     val interiorRegion:Region(2){rect};
 
-    /** The lattice Boltzmann distribution functions at each site. maps to g_fg*/
-    val lb:DistArray[LBDist](3);
+    /** The lattice Boltzmann distribution functions at each site. maps to g_fg(..,..,1..9) */
+    val current:DistArray[Double](3);
+
+    /** The equilibrium distribution functions at each site. maps to g_fg(..,..,10..18) */
+    val equilibrium:DistArray[Double](3){dist==current.dist};
+
+    /** The previous values of distribution functions. maps to g_fg(..,..,19..27) */
+    val previous:DistArray[Double](3){dist==current.dist};
 
     /** The properties (density, momentum etc.) at each site. maps to g_fld*/
     val lbProps:DistArray[LBProperties](2);
 
     /** The boundary condition data. maps to g_bc*/
     val boundary:DistArray[Int](2);
-
-    /** Total mass */
-    var rtot:Double;
-
-    /** Total x-momentum */
-    var uxtot:Double;
-
-    /** Total y-momentum */
-    var uytot:Double;
 
     /** Speed - magnitude of velocity for e_i */
     val cspd:Double;
@@ -116,9 +113,6 @@ public class Boltzmann(nsize:Int) {
         val latticeDist = Dist.makeBlockBlock(latticeRegion, 0, 1);
         this.latticeDist = latticeDist;
 
-        val ux0 = 0.0;
-        val uy0 = 0.0;
-
         val cspd = Math.sqrt(2.0)*delta_x/DELTA_T;
         Console.OUT.println("cspd = " + cspd);
         this.cspd = cspd;
@@ -136,6 +130,8 @@ public class Boltzmann(nsize:Int) {
         val interiorRegion = 1..(size(0)-2) * 1..(size(1)-2);
 
         // initialize distribution of density and velocities
+        val ux0 = 0.0;
+        val uy0 = 0.0;
         val lbProps = DistArray.make[LBProperties](latticeDist, 
             (p:Point) => new LBProperties(
                 RHO0, // + 0.0*cos(2.0d00*pi*dble(j-1) / dble(size(2)-1))                                    
@@ -145,25 +141,25 @@ public class Boltzmann(nsize:Int) {
             GHOST_WIDTH);
         this.lbProps = lbProps;
         this.interiorRegion = interiorRegion;
-        rtot = RHO0*lbProps.region.size();
+        val rtot = RHO0*lbProps.region.size();
 
         initializeLatticeParameters();
 
         val lbDist = Dist.makeBlockBlock(latticeRegion * 0..8, 0, 1);
         Console.OUT.println("lbDist = " + lbDist);
-        val lb = DistArray.make[LBDist](lbDist, (Point) => new LBDist(), GHOST_WIDTH);
-        this.lb = lb;
+        this.current = DistArray.make[Double](lbDist, 0);
+        this.equilibrium = DistArray.make[Double](lbDist, 0);
+        this.previous = DistArray.make[Double](lbDist, GHOST_WIDTH);
     }
 
-    private def printLb() {
-        val lb = this.lb;
-        for (place in lb.dist.places()) at (place) {
-            val lbsLocal = lb.getLocalPortion();
-            val lbHere = lb.dist(here) as Region(3){rect};
+    private def printDistributions() {
+        for (place in current.dist.places()) at (place) {
+            val currentLocal = current.getLocalPortion();
+            val lbHere = current.dist(here) as Region(3){rect};
             for (ii in lbHere.min(0)..lbHere.max(0)) {
                 for (jj in lbHere.min(1)..lbHere.max(1)) {
                     for (i in 0..8) {
-                        Console.OUT.printf("%12.4f", lbsLocal(ii,jj,i).actual);
+                        Console.OUT.printf("%12.4f", currentLocal(ii,jj,i));
                     }
                     Console.OUT.println();
                 }
@@ -190,32 +186,43 @@ public class Boltzmann(nsize:Int) {
 
     public def boltzmann() {
         // initialize distributions
-        equilibrium();
-        finish ateach([ii,jj] in latticeDist) {
-            for (i in 0..8) {
-                lb(ii,jj,i).temp = lb(ii,jj,i).actual = lb(ii,jj,i).equilibrium;
+		val stats = new Accumulator[LBStatistics](LBStatistics.SumReducer());
+
+        finish ateach (p in Dist.makeUnique()) {
+            val currentLocal = current.getLocalPortion() as Array[Double](3){rect};
+            val equilibriumLocal = equilibrium.getLocalPortion() as Array[Double](3){rect};
+            val previousLocal = previous.getLocalPortion() as Array[Double](3){rect};
+            val lbPropsLocal = lbProps.getLocalPortion() as Array[LBProperties](2){rect};
+            val latticeRegionLocal = latticeDist(here) as Region(2){rect};
+
+            updateEquilibrium(latticeRegionLocal, equilibriumLocal, lbPropsLocal);
+            for ([ii,jj] in latticeRegionLocal) {
+                for (i in 0..8) {
+                    previousLocal(ii,jj,i) = currentLocal(ii,jj,i) = equilibriumLocal(ii,jj,i);
+                }
             }
+            stats <- updateProperties(latticeRegionLocal, currentLocal, lbPropsLocal);
         }
-        properties();
-        Console.OUT.println("Total mass is " + rtot);
-        Console.OUT.println("Total x-momentum is " + uxtot);
-        Console.OUT.println("Total y-momentum is " + uytot);
+        val initialStats = stats();
+        Console.OUT.println("Total mass is " + initialStats.rtot);
+        Console.OUT.println("Total x-momentum is " + initialStats.uxtot);
+        Console.OUT.println("Total y-momentum is " + initialStats.uytot);
 
         for (i in 1..NSTEPS) {
-            timestep();
+            val currentStats = timestep();
             if (i % 200 == 0) {
                 Console.OUT.println("Completed step " + i);
-                Console.OUT.println("Total density is " + rtot);
-                Console.OUT.println("Total x-momentum is " + uxtot);
-                Console.OUT.println("Total y-momentum is " + uytot);
+                Console.OUT.println("Total density is " + currentStats.rtot);
+                Console.OUT.println("Total x-momentum is " + currentStats.uxtot);
+                Console.OUT.println("Total y-momentum is " + currentStats.uytot);
                 vorticity();
                 printData();
             }
         }
         vorticity();
         printData();
-        Console.OUT.println("Time in lattice Boltzmann updates :" + (timer.total(0) as Double) / 1e9);
-        Console.OUT.println("Time in ghost cell updates        :" + (timer.total(1) as Double) / 1e9);
+        Console.OUT.printf("Time in lattice Boltzmann updates :%12.4f\n", (timer.total(0) as Double) / 1e9);
+        Console.OUT.printf("Time in ghost cell updates        :%12.4f\n", (timer.total(1) as Double) / 1e9);
     }
 
     private @NonEscaping def initializeLatticeParameters() {
@@ -284,194 +291,164 @@ public class Boltzmann(nsize:Int) {
         return ei;
     }
 
-    /** Update values of density, momentum and pressure */
-    private def properties() {
-        val lb = this.lb; // TODO shouldn't be necessary XTENLANG-1913
-        val latticeDist = this.latticeDist; // TODO shouldn't be necessary XTENLANG-1913
-        val interiorRegion = this.interiorRegion; // TODO shouldn't be necessary XTENLANG-1913
-        val lbProps = this.lbProps; // TODO shouldn't be necessary XTENLANG-1913
-        val ei = this.ei; // TODO shouldn't be necessary XTENLANG-1913
-
+    /** Update values of density, momentum and pressure for a local region */
+    private def updateProperties(latticeRegionLocal:Region(2){rect},
+                           currentLocal:Array[Double](3){rect}, 
+                           lbPropsLocal:Array[LBProperties](2){rect}):LBStatistics {
         val cspd2 = cspd / Math.sqrt(2.0);
-		val rtot = new Accumulator[Double](SumReducer());
-		val uxtot = new Accumulator[Double](SumReducer());
-		val uytot = new Accumulator[Double](SumReducer());
-        finish ateach (p in Dist.makeUnique()) {
-            var myUxtot:Double = 0.0;
-            var myUytot:Double = 0.0;
-            var myRtot:Double = 0.0;
-            val lbLocal = lb.getLocalPortion();
-            val lbPropsLocal = lbProps.getLocalPortion();
-            val latticeRegionHere = latticeDist(here) as Region(2){rect};
-            for([ii,jj] in latticeRegionHere) {
-                val props = lbPropsLocal(ii,jj);
-                props.density = 0.0;
+        var myUxtot:Double = 0.0;
+        var myUytot:Double = 0.0;
+        var myRtot:Double = 0.0;
+        for([ii,jj] in latticeRegionLocal) {
+            val props = lbPropsLocal(ii,jj);
+            props.density = 0.0;
+            props.px = 0.0;
+            props.py = 0.0;
+
+            // evaluate density and momentum
+            for (i in 0..8) {
+                val ex = cspd2*ei(i).x;
+                val ey = cspd2*ei(i).y;
+                val dd = currentLocal(ii,jj,i);
+                props.density += dd;
+                props.px += ex * dd;
+                props.py += ey * dd;
+            }
+
+            props.px /= props.density;
+            props.py /= props.density;
+
+/*
+            // TODO boundary modifications are commented out in GA code
+            if (boundary(ii,jj) == 1) {
+                // sides
                 props.px = 0.0;
                 props.py = 0.0;
-
-                // evaluate density and momentum
-                for (i in 0..8) {
-                    val ex = cspd2*ei(i).x;
-                    val ey = cspd2*ei(i).y;
-                    val dd = lbLocal(ii,jj,i).actual;
-                    props.density += dd;
-                    props.px += ex * dd;
-                    props.py += ey * dd;
-                }
-
-                props.px /= props.density;
-                props.py /= props.density;
-
-    /*
-                // TODO boundary modifications are commented out in GA code
-                if (boundary(ii,jj) == 1) {
-                    // sides
-                    props.px = 0.0;
-                    props.py = 0.0;
-                } else if (boundary(ii,jj) == 2) {
-                    // lid
-                    props.density = RHO0;
-                    props.px = UXBC;
-                    props.py = 0.0;
-                }
-    */
-
-                myUxtot += props.px * props.density;
-                myUytot += props.py * props.density;
-
-                // evaluate pressure (eq. 4.9)
-                val rho = props.density;
-                props.pressure = rho*RGAS*TMPRTR0/(1.0-B_VDW*rho) - A_VDW*rho*rho;
-                myRtot += rho;
-                
+            } else if (boundary(ii,jj) == 2) {
+                // lid
+                props.density = RHO0;
+                props.px = UXBC;
+                props.py = 0.0;
             }
-            uxtot <- myUxtot;
-            uytot <- myUytot;
-            rtot <- myRtot;
+*/
+
+            myUxtot += props.px * props.density;
+            myUytot += props.py * props.density;
+
+            // evaluate pressure (eq. 4.9)
+            val rho = props.density;
+            props.pressure = rho*RGAS*TMPRTR0/(1.0-B_VDW*rho) - A_VDW*rho*rho;
+            myRtot += rho;
+            
         }
-        this.rtot = rtot();
-        this.uxtot = uxtot();
-        this.uytot = uytot();
+        return LBStatistics(myRtot, myUxtot, myUytot);
     }
 
-    /** Update equilibrium distributions */
-    private def equilibrium() {
-        val lb = this.lb; // TODO shouldn't be necessary XTENLANG-1913
-        val latticeDist = this.latticeDist; // TODO shouldn't be necessary XTENLANG-1913
-        val lbProps = this.lbProps; // TODO shouldn't be necessary XTENLANG-1913
-        val ei = this.ei; // TODO shouldn't be necessary XTENLANG-1913
-        val ffb = this.ffb; // TODO shouldn't be necessary XTENLANG-1913
-        val ffc = this.ffc; // TODO shouldn't be necessary XTENLANG-1913
-        val ffd = this.ffd; // TODO shouldn't be necessary XTENLANG-1913
-
+    private def updateEquilibrium(latticeRegionLocal:Region(2){rect},
+                           equilibriumLocal:Array[Double](3){rect}, 
+                           lbPropsLocal:Array[LBProperties](2){rect}) {
         val rdim = 4.0;
         val b = 24.0;
         val c2 = cspd*cspd;
         val cspd2 = cspd/Math.sqrt(2.0);
 
-        finish ateach (p in Dist.makeUnique()) {
-            val lbLocal = lb.getLocalPortion();
-            val lbPropsLocal = lbProps.getLocalPortion();
-            val latticeRegionHere = latticeDist(here) as Region(2){rect};
-            for([ii,jj] in latticeRegionHere) {
-                for (j in 0..8) {
-                    val ex = cspd2*ei(j).x;
-                    val ey = cspd2*ei(j).y;
-                    val props = lbPropsLocal(ii,jj);
-                    val aa = (rdim/(b*c2)) * props.pressure;
-                    val aa0 = props.density - b*aa;
-                    val ffa:Double;
-                    if (j == 0) {
-                        ffa = aa0 + 4.0*aa;
-                    } else if (j < 5) {
-                        ffa = 4.0*aa;
-                    } else {
-                        ffa = aa;
-                    }
-
-                    lbLocal(ii,jj,j).equilibrium = ffa 
-                       + props.density * ffb(j)*(props.px*ex + props.py*ey)
-                       + ffc(j) * 
-                            (props.px*props.px * ex*ex
-                              + 2.0*props.px*props.py*ex*ey
-                              + props.py*props.py * ey*ey)
-                       + ffd(j) * (props.px*props.px + props.py*props.py);
+        for([ii,jj] in latticeRegionLocal) {
+            for (j in 0..8) {
+                val ex = cspd2*ei(j).x;
+                val ey = cspd2*ei(j).y;
+                val props = lbPropsLocal(ii,jj);
+                val aa = (rdim/(b*c2)) * props.pressure;
+                val aa0 = props.density - b*aa;
+                val ffa:Double;
+                if (j == 0) {
+                    ffa = aa0 + 4.0*aa;
+                } else if (j < 5) {
+                    ffa = 4.0*aa;
+                } else {
+                    ffa = aa;
                 }
+
+                val px = props.px;
+                val py = props.py;
+                equilibriumLocal(ii,jj,j) = ffa 
+                   + props.density * ffb(j)*(px*ex + py*ey)
+                   + ffc(j) * (px*px * ex*ex + 2.0*px*py*ex*ey + py*py * ey*ey)
+                   + ffd(j) * (px*px + py*py);
             }
         }
     }
 
     /** Advance simulation one timestep */
-    private def timestep() {
+    private def timestep():LBStatistics {
         timer.start(0);
 
-        val lb = this.lb; // TODO shouldn't be necessary XTENLANG-1913
-        val latticeDist = this.latticeDist; // TODO shouldn't be necessary XTENLANG-1913
-        val boundary = this.boundary; // TODO shouldn't be necessary XTENLANG-1913
-        val lbProps = this.lbProps; // TODO shouldn't be necessary XTENLANG-1913
-        val cspd = this.cspd; // TODO shouldn't be necessary XTENLANG-1913
-        val ei = this.ei; // TODO shouldn't be necessary XTENLANG-1913
+		val stats = new Accumulator[LBStatistics](LBStatistics.SumReducer());
 
         timer.start(1);
-        lb.updateGhosts();
+        previous.updateGhosts();
         timer.stop(1);
 
-        // Perform streaming operation
         finish ateach (p in Dist.makeUnique()) {
-            val lbLocal = lb.getLocalPortion() as Array[LBDist](3){rect};
-            val latticeRegionHere = latticeDist(here) as Region(2){rect};
+            val currentLocal = current.getLocalPortion() as Array[Double](3){rect};
+            val equilibriumLocal = equilibrium.getLocalPortion() as Array[Double](3){rect};
+            val previousLocal = previous.getLocalPortion() as Array[Double](3){rect};
+            val lbPropsLocal = lbProps.getLocalPortion() as Array[LBProperties](2){rect};
+            val latticeRegionLocal = latticeDist(here) as Region(2){rect};
+            val latticeRegion = latticeDist.region as Region(2){rect,zeroBased};
+
+            // Perform streaming operation
             val boundaryLocal = boundary.getLocalPortion() as Array[Int](2){rect};
             val patch = new Array[Double](-1..1 * -1..1 * 0..8);
-            for ([ii,jj] in latticeRegionHere) {
+            for ([ii,jj] in latticeRegionLocal) {
                 if (boundaryLocal(ii,jj) == 0) {
                     for (i in 1..8) {
                         val ix = ei(i).x; //Math.round(ei(i).x) as Int;
                         val iy = ei(i).y; //Math.round(ei(i).y) as Int;
-                        lbLocal(ii,jj,i).actual = lbLocal(ii-ix,jj-iy,i).temp;
+                        currentLocal(ii,jj,i) = previousLocal(ii-ix,jj-iy,i);
                     }
                 } else {
-                    Boltzmann.getPatch(ii, jj, patch, lbLocal, boundaryLocal, latticeDist.region, cspd); // maps to fgp
+                    Boltzmann.getPatch(ii, jj, patch, currentLocal, previousLocal, boundaryLocal, latticeRegion, cspd); // maps to fgp
                     for (i in 1..8) {
                         val ix = ei(i).x; //Math.round(ei(i).x) as Int;
                         val iy = ei(i).y; //Math.round(ei(i).y) as Int;
-                        lbLocal(ii,jj,i).actual = patch(-ix,-iy,i);
+                        currentLocal(ii,jj,i) = patch(-ix,-iy,i);
                     }   
                 }
             }
-        }
 
-        properties();
+            val localStats = updateProperties(latticeRegionLocal, currentLocal, lbPropsLocal);
 
-        // perform relaxation
-        equilibrium();
+            // perform relaxation
+            updateEquilibrium(latticeRegionLocal, equilibriumLocal, lbPropsLocal);
 
-        finish ateach (p in Dist.makeUnique()) {
-            val lbLocal = lb.getLocalPortion();
-            val lbPropsLocal = lbProps.getLocalPortion();
-            val latticeRegionHere = latticeDist(here) as Region(2){rect};
-            for ([ii,jj] in latticeRegionHere) {
-                val t_rho = lbPropsLocal(ii,jj).t_rho;
-                if (t_rho > 0.0) {
+            for ([ii,jj] in latticeRegionLocal) {
+                val tRho = lbPropsLocal(ii,jj).t_rho;
+                if (tRho > 0.0) {
+                    val invTRho = 1.0 / tRho;
                     for (i in 0..8) {
-                        val lb_i = lbLocal(ii,jj,i);
-                        lb_i.actual = lb_i.temp - (lb_i.temp - lb_i.equilibrium) / t_rho;
+                        val t = previousLocal(ii,jj,i);
+                        currentLocal(ii,jj,i) = t - (t - equilibriumLocal(ii,jj,i)) * invTRho;
                         // make backup copy of distribution
-                        lb_i.temp = lb_i.actual;
+                        previousLocal(ii,jj,i) = currentLocal(ii,jj,i);
                     }
                 }
                 // TODO boundary constant condition is commented out in GA code
     //            if (bc(ii,jj) == 2) {
-    //                lbLocal(ii,jj,i).actual = lbLocal(ii,jj,i).equilibrium;
+    //                currentLocal(ii,jj,i) = equilibriumLocal(ii,jj,i);
     //            }
             }
+            stats <- localStats;
         }
+        val finalStats = stats();
         timer.stop(0);
+
+        return finalStats;
     }
 
     static MASK_REGION = -1..1 * -1..1;
 
     /** Handle cells at boundary */
-    private static def getPatch(ii:Int, jj:Int, patch:Array[Double](3){rect}, lbLocal:Array[LBDist](3){rect}, boundaryLocal:Array[Int](2){rect}, latticeRegion:Region(2){rect,zeroBased}, cspd:Double) {
+    private static def getPatch(ii:Int, jj:Int, patch:Array[Double](3){rect}, currentLocal:Array[Double](3){rect}, previousLocal:Array[Double](3){rect}, boundaryLocal:Array[Int](2){rect}, latticeRegion:Region(2){rect,zeroBased}, cspd:Double) {
         @StackAllocate val mask = @StackAllocate new Array[Int](MASK_REGION);
         // Check values of neighboring cells
         for (k in -1..1) {
@@ -505,9 +482,9 @@ public class Boltzmann(nsize:Int) {
             for (k in -1..1) {
                 for (l in -1..1) {
                     if (mask(k,l) == 2) {
-                        patch(k,l,ihash(k,l)) = lbLocal(ii,jj,hash(k,l)).temp;
+                        patch(k,l,ihash(k,l)) = previousLocal(ii,jj,hash(k,l));
                     } else {
-                        patch(k,l,ihash(k,l)) = lbLocal(ii+k,jj+l,ihash(k,l)).temp;
+                        patch(k,l,ihash(k,l)) = previousLocal(ii+k,jj+l,ihash(k,l));
                     }
                 }
             }
@@ -522,9 +499,9 @@ public class Boltzmann(nsize:Int) {
                 for (l in -1..1) {
                     val p_kl:Double;
                     if (mask(k,l) == 2) {
-                        p_kl = lbLocal(ii,jj,hash(k,l)).temp;
+                        p_kl = previousLocal(ii,jj,hash(k,l));
                     } else {
-                        p_kl = lbLocal(ii+k,jj+l,ihash(k,l)).temp;
+                        p_kl = previousLocal(ii+k,jj+l,ihash(k,l));
                     }
                     patch(k,l,ihash(k,l)) = p_kl;
                     rho += p_kl;
@@ -550,13 +527,13 @@ public class Boltzmann(nsize:Int) {
             for (k in -1..1) {
                 for (l in -1..1) {
                     if (mask(k,l) == 2 && (k!=0 || l!=0)) {
-                        val p_kl = lbLocal(ii,jj,hash(k,l)).actual;
+                        val p_kl = currentLocal(ii,jj,hash(k,l));
                         patch(k,l,ihash(k,l)) = p_kl;
                         rho += p_kl;
                         ux += cspd2*k*p_kl;
                         uy += cspd2*l*p_kl;
                     } else {
-                        val p_kl = lbLocal(ii+k,jj+l,ihash(k,l)).actual;
+                        val p_kl = currentLocal(ii+k,jj+l,ihash(k,l));
                         patch(k,l,ihash(k,l)) = p_kl; // TODO check: GA has ihash(i,l)
                         rho += p_kl;
                         ux += cspd2*k*p_kl;
@@ -581,8 +558,8 @@ public class Boltzmann(nsize:Int) {
         lbProps.updateGhosts();
         finish ateach (p in Dist.makeUnique()) {
             val lbPropsLocal = lbProps.getLocalPortion();
-            val lbInterior = (latticeDist.region && interiorRegion) as Region(2){rect};
-            for ([ii,jj] in lbInterior) {
+            val interiorRegionHere = (latticeDist(here) && interiorRegion) as Region(2){rect};
+            for ([ii,jj] in interiorRegionHere) {
                 val props = lbPropsLocal(ii,jj);
                 var drni:Double = 0.0;
                 var drxi:Double = 0.0;
@@ -671,7 +648,6 @@ public class Boltzmann(nsize:Int) {
             icnt2 = size(1);
         }
 
-
         val fil = new Printer(new FileWriter(new File("bltz.gmv")));
         fil.println("gmvinput ascii");
         fil.printf("nodes       -1%10i%10i%10i", icnt1, icnt2, 1);
@@ -690,13 +666,29 @@ public class Boltzmann(nsize:Int) {
         fil.println("cells     0");
         fil.println("variable");
         fil.println("rho                           1");
-        var jcnt:Int = 0;
-    }
 
-	static struct SumReducer implements Reducible[Double] {
-        public def zero():Double = 0.0;
-        public operator this(x:Double,y:Double):Double = x+y;
-	}
+/*
+        var jcnt:Int = 0;
+        for (i in 0..(imax-1)) {
+            glo(2) = (i-1)*10 + 1;
+            ghi(2) = i*10;
+            if (ghi(2) > size(2)) ghi(2) = size(2);
+            if (ghi(2) >= glo(2)) {
+                //call nga_get(g_fld, glo, ghi, buffer, bld)
+                for (k in 0..(ghi(2)-glo(2))) {
+                    jcnt++;                      
+                    if (((jcnt-1) % inc2) == 0) {
+                        for (j in 0..(size(1)-1) {
+                            if (i%5 == 0) fil.print("\n    ");
+                            fil.printf("%12.4f", lbProps(i,j));
+                        }
+                    }
+                }
+            }
+        }
+*/
+        fil.println("ux                            1");
+    }
 
     public static def main(args:Rail[String]) {
         var nsize:Int = 129;
@@ -704,14 +696,6 @@ public class Boltzmann(nsize:Int) {
             nsize = Int.parseInt(args(0));
         }
         new Boltzmann(nsize).boltzmann();
-    }
-
-    // TODO mutable Struct?
-    // maps to g_fg
-    public static final class LBDist {
-        var actual:Double;
-        var equilibrium:Double;
-        var temp:Double;
     }
 
     // TODO mutable Struct?
@@ -735,6 +719,32 @@ public class Boltzmann(nsize:Int) {
             this.pressure = pressure;
             this.t_rho = t_rho;
         }
+    }
+
+    /** 
+     * This struct holds aggregate properties for a local portion held at a
+     * place, or for the system as a whole.
+     */
+    public static struct LBStatistics(
+        /* total density */
+        rtot:Double,
+        /* total x momentum */
+        uxtot:Double,
+        /* total y momentum */
+        uytot:Double
+    ) {
+        public def this(rtot:Double, uxtot:Double, uytot:Double) {
+            property(rtot, uxtot, uytot);
+        }
+    
+        public static struct SumReducer implements Reducible[LBStatistics] {
+            public def zero():LBStatistics = LBStatistics(0.0, 0.0, 0.0);
+            public operator this(a:LBStatistics,b:LBStatistics):LBStatistics {
+                return LBStatistics(a.rtot  + b.rtot,
+                                    a.uxtot + b.uxtot,
+                                    a.uytot + b.uytot);
+            }
+	    }
     }
 }
 
