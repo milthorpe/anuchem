@@ -398,7 +398,7 @@ public class Boltzmann(nsize:Int) {
 
             // Perform streaming operation
             val boundaryLocal = boundary.getLocalPortion() as Array[Int](2){rect};
-            val patch = new Array[Double](-1..1 * -1..1 * 0..8);
+            val patch = new Array[Double](-1..1 * -1..1 * 0..8); // maps to fgp
             for ([ii,jj] in latticeRegionLocal) {
                 if (boundaryLocal(ii,jj) == 0) {
                     for (i in 1..8) {
@@ -407,7 +407,7 @@ public class Boltzmann(nsize:Int) {
                         currentLocal(ii,jj,i) = previousLocal(ii-ix,jj-iy,i);
                     }
                 } else {
-                    Boltzmann.getPatch(ii, jj, patch, currentLocal, previousLocal, boundaryLocal, latticeRegion, cspd); // maps to fgp
+                    getPatch(ii, jj, patch, currentLocal, previousLocal, boundaryLocal, latticeRegion);
                     for (i in 1..8) {
                         val ix = ei(i).x; //Math.round(ei(i).x) as Int;
                         val iy = ei(i).y; //Math.round(ei(i).y) as Int;
@@ -448,7 +448,7 @@ public class Boltzmann(nsize:Int) {
     static MASK_REGION = -1..1 * -1..1;
 
     /** Handle cells at boundary */
-    private static def getPatch(ii:Int, jj:Int, patch:Array[Double](3){rect}, currentLocal:Array[Double](3){rect}, previousLocal:Array[Double](3){rect}, boundaryLocal:Array[Int](2){rect}, latticeRegion:Region(2){rect,zeroBased}, cspd:Double) {
+    private def getPatch(ii:Int, jj:Int, patch:Array[Double](3){rect}, currentLocal:Array[Double](3){rect}, previousLocal:Array[Double](3){rect}, boundaryLocal:Array[Int](2){rect}, latticeRegion:Region(2){rect,zeroBased}) {
         @StackAllocate val mask = @StackAllocate new Array[Int](MASK_REGION);
         // Check values of neighboring cells
         for (k in -1..1) {
