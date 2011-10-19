@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE project [<!ENTITY buildfile SYSTEM "file:./build-user.xml">]>
-<project name="X10 application project" default="build" basedir=".">
+<project name="Particle Mesh Ewald method" default="build" basedir=".">
 	<property name="x10x.lib" location="../../x10x.lib"/>
 	<property name="xla.src" location="${x10x.lib}/xla/src"/>
 	<property name="xla.lib" location="${x10x.lib}/xla/lib/xla.jar"/>
@@ -8,19 +8,20 @@
 	<property name="anuchem.src" location="${anuchem}/src"/>
 	<property name="anuchem.lib" location="${anuchem}/lib/anu-chem.jar"/>
     <property name="x10.testlib" location="${user.home}/x10-trunk/x10.tests/examples/x10lib"/>
-    <property name="fftw3.include" location="/scratch/fftw/include" />
-    <property name="fftw3.lib" location="/scratch/fftw/lib" />
+    <property name="fftw3.include" location="${user.home}/fftw/include" />
+    <property name="fftw3.lib" location="${user.home}/fftw/lib" />
     <property environment="env"/>
     <property name="bash.exe" value="bash"/>    
     <property name="optimize" value="true"/>
     <property name="nochecks" value="true"/>
-    <property name="inline-methods" value="true"/>
+    <property name="debug" value="false"/>
     <property name="profile"  value="false"/>
-    <property name="cpuprofile"  value="true"/>
-    <property name="perftoolsHome" location="/scratch/perftools"/>
+    <property name="cpuprofile"  value="false"/>
+    <property name="workstealing"  value="false"/>
+    <property name="perftoolsHome" location="${user.home}/perftools"/>
     <property name="mpiPprofile"  value="false"/>
-    <property name="mpiPHome" location="/scratch/mpiP"/>
-    <property name="binutilsHome" location="/scratch/binutils"/>
+    <property name="mpiPHome" location="${user.home}/mpiP"/>
+    <property name="binutilsHome" location="${user.home}/binutils"/>
     <property name="x10rt" value="mpi"/>
 	<property name="target" location="${basedir}/target"/>
 	<property name="target-src" location="${target}/classes"/>
@@ -37,11 +38,15 @@
         <istrue value="${nochecks}"/>
     </condition>
 
-    <condition property="x10c.inline-methods" value="-INLINE_METHODS_IMPLICIT" else="">
-        <istrue value="${inline-methods}"/>
+    <condition property="x10c.debug" value="-DEBUG" else="">
+        <istrue value="${debug}"/>
     </condition>
 
-    <condition property="post.profile" value="-pg" else="">
+    <condition property="x10c.workstealing" value="-WORK_STEALING=true" else="">
+        <istrue value="${workstealing}"/>
+    </condition>
+
+    <condition property="x10c.profile" value="-pg" else="">
         <istrue value="${profile}" />
     </condition>
 
@@ -105,7 +110,7 @@
         <pathconvert property="src.list" refid="changed.src.files" dirsep="/" pathsep=" ">
             <map from="${basedir}${file.separator}src${file.separator}" to=""/>
         </pathconvert>
-        <echo message="x10c++ -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} ${x10c.inline-methods} -sourcepath '.${path.separator}${xla.src}${path.separator}${anuchem.src}' '${basedir}/${testclass}'"/>
+        <echo message="x10c++ -x10rt ${x10rt} ${x10c.debug} ${x10c.profile} ${x10c.optimize} ${x10c.nochecks} ${x10c.workstealing} -sourcepath '.${path.separator}${xla.src}${path.separator}${anuchem.src}' '${basedir}/${testclass}'"/>
 
         <copy todir="${target}/classes">
             <fileset id="cpp.files" dir="${basedir}/src" includes="**/*.h,**/*.struct_h,**/*.cc"/>
@@ -113,7 +118,7 @@
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/src">
             <arg value="-c"/>
-            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} -report postcompile=1 -post '# -g ${x10c.optimize} ${post.profile} -Wall &quot;-I${fftw3.include}&quot; # &quot;-L${fftw3.lib}&quot; ${link.mpiPprofile} ${post.cpuprofile} # -lfftw3' -sourcepath '.${path.separator}${xla.src}${path.separator}${anuchem.src}' -d '${target-src}' '${basedir}/${testclass}'"/>
+            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.debug} ${x10c.profile} ${x10c.optimize} ${x10c.nochecks} ${x10c.workstealing} -report postcompile=1 -post '# &quot;-I${fftw3.include}&quot; # &quot;-L${fftw3.lib}&quot; ${link.mpiPprofile} ${post.cpuprofile} # -lfftw3' -sourcepath '.${path.separator}${xla.src}${path.separator}${anuchem.src}' -d '${target-src}' '${basedir}/${testclass}'"/>
         </exec>
     </target>
 

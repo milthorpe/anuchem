@@ -21,7 +21,7 @@ import au.edu.anu.chem.PointCharge;
  * @author milthorpe
  */
 public class FmmLeafBox extends FmmBox {
-    public val atoms : ArrayList[PointCharge] = new ArrayList[PointCharge]();
+    private var atoms : Rail[PointCharge];
 
     /** The U-list consists of all leaf boxes not well-separated to this box. */
     private var uList : Rail[Point(3)];
@@ -30,8 +30,28 @@ public class FmmLeafBox extends FmmBox {
         super(level, x, y, z, numTerms, parent);
     }
 
-    public atomic def addAtom(atom : PointCharge) {
-        atoms.add(atom);
+    public def getAtoms() = atoms;
+
+    public def setAtoms(atoms : Rail[PointCharge]) {
+        this.atoms = atoms;
+    }
+
+    protected def downward(size:Double, parentLocalExpansion:LocalExpansion, fmmOperators:PlaceLocalHandle[FmmOperators], locallyEssentialTree:PlaceLocalHandle[LocallyEssentialTree], boxes:Rail[DistArray[FmmBox](3)]):Double {
+        val myOperators = fmmOperators();
+        addMultipolesAtSameLevel(size, myOperators, locallyEssentialTree());
+        addParentExpansion(size, parentLocalExpansion, myOperators);
+
+        var leafBoxEnergy:Double = 0.0;
+        val boxAtoms = getAtoms();
+        val boxCentre = getCentre(size);
+        for (atomIndex in 0..(boxAtoms.size-1)) {
+           val atom = boxAtoms(atomIndex);
+           val locationWithinBox = atom.centre.vector(boxCentre);
+           val farFieldEnergy = localExp.getPotential(atom.charge, locationWithinBox);
+           leafBoxEnergy += farFieldEnergy;
+        }
+        return leafBoxEnergy;
+        
     }
 
     public def getUList() = this.uList;

@@ -35,6 +35,6 @@ run_test() {
 i=1
 while [ $i -le $MAX_PLACES ]
 do
-  run_test "mpirun $MPIARGS -np $i bin/periodicFmm3d 51396"
+  run_test "mpirun $MPIARGS -np $i bin/periodicFmm3d 51396 60 10 10 -verbose"
   i=$(( i*2 ))
 done

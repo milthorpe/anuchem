@@ -10,8 +10,6 @@
  */
 package au.edu.anu.mm;
 
-import x10.compiler.TempNoInline_1;
-
 public class ExpansionRegion extends Region  {
     // XTENLANG-49
     static type ExpansionRegion(rank:Int) = ExpansionRegion{self.rank==rank};
@@ -93,9 +91,9 @@ public class ExpansionRegion extends Region  {
     public def projection(axis: int): Region(1) {
         switch (axis) {
             case 0:
-                return 0..p;
+                return Region.make(0, p);
             case 1:
-                return -p..p;
+                return Region.make(-p, p);
             default:
                 throw new UnsupportedOperationException("projection(" + axis + ")");
         }
@@ -104,9 +102,9 @@ public class ExpansionRegion extends Region  {
     public def eliminate(axis: int): Region(1) {
         switch (axis) {
             case 0:
-                return (-p..p);
+                return Region.make(-p, p);
             case 1:
-                return (0..p);
+                return Region.make(0, p);
             default:
                 throw new UnsupportedOperationException("projection(" + axis + ")");
         }
@@ -118,11 +116,13 @@ public class ExpansionRegion extends Region  {
     }
 
     public def boundingBox(): Region(rank) {
-        return (0..p) * (-p..p);
+        val r = ((0..p) * (-p..p)) as Region(2);
+        return r;
     }
 
     protected def computeBoundingBox(): Region(rank) {
-        return (0..p) * (-p..p);
+        val r = ((0..p) * (-p..p)) as Region(2);
+        return r;
     }
 
     public def iterator(): Iterator[Point(rank)] {

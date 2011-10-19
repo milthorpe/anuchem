@@ -19,26 +19,34 @@ import x10.compiler.Inline;
  *
  * @author: V.Ganesh
  */
-public class PrimitiveGaussian {
-    val origin:Point3d;
-    val power:Power;
-    val exponent:Double;
-    var coefficient:Double;
-    var normalization:Double;
+public final class PrimitiveGaussian {
+    public val origin:Point3d;
+    public val power:Power;
+    public val exponent:Double;
+    public var coefficient:Double;
+    public val normalization:Double;
 
-    public def this(origin:Point3d, power:Power, exponent:Double, coefficient:Double) { 
+    public def this(origin:Point3d, power:Power, exponent:Double, coefficient:Double, normalize:Boolean) { 
         this.origin = origin;
         this.power = power;
         this.exponent = exponent;
         this.coefficient = coefficient;
+        if (normalize) {
+            val l = power.l; 
+            val m = power.m;
+            val n = power.n;       
+
+            this.normalization = Math.sqrt(Math.pow(2, 2 * (l + m + n) + 1.5) *
+                                       Math.pow(exponent, l + m + n + 1.5) /
+                                       MathUtil.factorial2(2 * l - 1) / 
+                                       MathUtil.factorial2(2 * m - 1) /
+                                       MathUtil.factorial2(2 * n - 1) /
+                                       PI_RAISE_TO_1DOT5);
+        } else {
+            this.normalization = 0.0; // TODO - should be 1.0?
+        }
     } 
 
-    public def getOrigin() = origin;
-    public def getPower() = power;
-    public def getExponent() = exponent;
-    public def getCoefficient() = coefficient;
-    public def getNormalization() = normalization;
-    public def setNormalization(n:Double) : void { normalization = n; }
     public def getTotalAngularMomentum() = power.getTotalAngularMomentum();
     public def getMaximumAngularMomentum() = power.getMaximumAngularMomentum();
     public def getMinimumAngularMomentum() = power.getMinimumAngularMomentum();
@@ -76,7 +84,7 @@ public class PrimitiveGaussian {
                          (exponent * origin.j + pg.exponent * pg.origin.j) / gamma,
                          (exponent * origin.k + pg.exponent * pg.origin.k) / gamma
                         );
-        val pgres = new PrimitiveGaussian(newOrigin, Power(0,0,0), gamma, 0.0);
+        val pgres = new PrimitiveGaussian(newOrigin, Power(0,0,0), gamma, 0.0, false);
 
         return pgres;
     }
@@ -100,19 +108,6 @@ public class PrimitiveGaussian {
 
     val PI_RAISE_TO_1DOT5 = Math.pow(Math.PI, 1.5);
 
-    public def normalize() : void {
-       val l = power.l; 
-       val m = power.m;
-       val n = power.n;       
-        
-       normalization = Math.sqrt(Math.pow(2, 2 * (l + m + n) + 1.5) *
-                                   Math.pow(exponent, l + m + n + 1.5) /
-                                   MathUtil.factorial2(2 * l - 1) / 
-                                   MathUtil.factorial2(2 * m - 1) /
-                                   MathUtil.factorial2(2 * n - 1) /
-                                   PI_RAISE_TO_1DOT5);
-    }
-
     /**
      * The Kinetic Energy (KE) componant
      *
@@ -130,16 +125,16 @@ public class PrimitiveGaussian {
 
         val origin = pg.origin;
 
-        val p1 = new PrimitiveGaussian(origin, Power(l2+2, m2, n2), pg.exponent, pg.coefficient);
-        val p2 = new PrimitiveGaussian(origin, Power(l2, m2+2, n2), pg.exponent, pg.coefficient);
-        val p3 = new PrimitiveGaussian(origin, Power(l2, m2, n2+2), pg.exponent, pg.coefficient);
+        val p1 = new PrimitiveGaussian(origin, Power(l2+2, m2, n2), pg.exponent, pg.coefficient, false);
+        val p2 = new PrimitiveGaussian(origin, Power(l2, m2+2, n2), pg.exponent, pg.coefficient, false);
+        val p3 = new PrimitiveGaussian(origin, Power(l2, m2, n2+2), pg.exponent, pg.coefficient, false);
 
         term += -2.0 * Math.pow(pg.exponent, 2.0)
                      * (ovrlp(p1) + ovrlp(p2) + ovrlp(p3));
 
-        val p4 = new PrimitiveGaussian(origin, Power(l2-2, m2, n2), pg.exponent, pg.coefficient);
-        val p5 = new PrimitiveGaussian(origin, Power(l2, m2-2, n2), pg.exponent, pg.coefficient);
-        val p6 = new PrimitiveGaussian(origin, Power(l2, m2, n2-2), pg.exponent, pg.coefficient);
+        val p4 = new PrimitiveGaussian(origin, Power(l2-2, m2, n2), pg.exponent, pg.coefficient, false);
+        val p5 = new PrimitiveGaussian(origin, Power(l2, m2-2, n2), pg.exponent, pg.coefficient, false);
+        val p6 = new PrimitiveGaussian(origin, Power(l2, m2, n2-2), pg.exponent, pg.coefficient, false);
 
         term += -0.5 * ((l2 * (l2 - 1)) * ovrlp(p4)
                         + (m2 * (m2 - 1)) * ovrlp(p5)
@@ -153,28 +148,28 @@ public class PrimitiveGaussian {
      *
      * <i> Taken from THO eq. 2.12 <i>
      */
-    public def nuclear(pg:PrimitiveGaussian, center:Point3d) :Double {
+    public def nuclear(pg:PrimitiveGaussian, centre:Point3d) :Double {
         val prod = mul(pg); 
         val rABSquared = origin.distanceSquared(pg.origin);
-        val rCPSquared = center.distanceSquared(prod.origin);
+        val rCPSquared = centre.distanceSquared(prod.origin);
 
         val ax = new Array[Double](power.l + pg.power.l + 1);
         fillAArray(ax, power.l, pg.power.l,
                      prod.origin.i - origin.i,
                      prod.origin.i - pg.origin.i,
-                     prod.origin.i - center.i, prod.exponent);
+                     prod.origin.i - centre.i, prod.exponent);
 
         val ay = new Array[Double](power.m + pg.power.m + 1);
         fillAArray(ay, power.m, pg.power.m,
                      prod.origin.j - origin.j,
                      prod.origin.j - pg.origin.j,
-                     prod.origin.j - center.j, prod.exponent);
+                     prod.origin.j - centre.j, prod.exponent);
 
         val az = new Array[Double](power.n + pg.power.n + 1);
         fillAArray(az, power.n, pg.power.n,
                      prod.origin.k - origin.k,
                      prod.origin.k - pg.origin.k,
-                     prod.origin.k - center.k, prod.exponent);
+                     prod.origin.k - centre.k, prod.exponent);
 
         var sum:Double = 0.0;
 
@@ -197,7 +192,7 @@ public class PrimitiveGaussian {
      * <i> "THO eq. 2.18 and 3.1 <i>
      * note: assumes array a is already filled with zeros
      */
-    private @Inline def fillAArray(a:Rail[Double], 
+    private def fillAArray(a:Rail[Double], 
                             l1:Int, l2:Int, pa:Double, pb:Double,
                             cp:Double, gamma:Double) {
 

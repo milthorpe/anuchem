@@ -26,14 +26,14 @@ import au.edu.anu.chem.Molecule;
  */
 public class Fragment extends Molecule[QMAtom] {
 
-     public var centeredOn:Int;
+     public var centreedOn:Int;
 
      public var energy:Double;
 
      public var cardinalitySign:Int;
      
      public def this() {
-          centeredOn = -1;
+          centreedOn = -1;
           cardinalitySign = 1;
      }
 

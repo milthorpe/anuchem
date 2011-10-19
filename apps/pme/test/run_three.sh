@@ -1,0 +1,5 @@
+echo "mpiexec -n $X10_NPLACES -x X10_NTHREADS=1 -x X10_STATIC_THREADS=true bin/pme 51396"
+mpiexec -n $X10_NPLACES -x X10_NTHREADS=1 -x X10_STATIC_THREADS=true bin/pme 51396
+mpiexec -n $X10_NPLACES -x X10_NTHREADS=1 -x X10_STATIC_THREADS=true bin/pme 51396
+mpiexec -n $X10_NPLACES -x X10_NTHREADS=1 -x X10_STATIC_THREADS=true bin/pme 51396
+

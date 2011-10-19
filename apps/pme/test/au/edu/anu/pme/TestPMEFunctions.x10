@@ -80,7 +80,7 @@ public class TestPMEFunctions extends TestElectrostatic {
 		    BdotC(p) = B(p) * C(p);
 	    }
         for (p in BdotC) {
-            at (BdotC.dist(p)) {
+            at(BdotC.dist(p)) {
                 if (BdotC(p) != 0.0) {
                     Console.OUT.println("BdotC" + p + " = " + BdotC(p));
                 }

@@ -1,0 +1,564 @@
+Log file opened on Fri Oct  1 01:44:17 2010
+Host: r011n05i0  pid: 100  nodeid: 0  nnodes:  4
+The Gromacs distribution was built Thu Sep 23 02:46:19 EDT 2010 by
+xcmiltho@bgpfen2 (Linux 2.6.16.60-0.21-ppc64 ppc64)
+
+
+                         :-)  G  R  O  M  A  C  S  (-:
+
+                   Groningen Machine for Chemical Simulation
+
+                            :-)  VERSION 4.5.1  (-:
+
+        Written by Emile Apol, Rossen Apostolov, Herman J.C. Berendsen,
+      Aldert van Buuren, Pär Bjelkmar, Rudi van Drunen, Anton Feenstra, 
+        Gerrit Groenhof, Peter Kasson, Per Larsson, Peiter Meulenhoff, 
+          Teemu Murtola, Szilard Pall, Sander Pronk, Roland Schultz, 
+                Michael Shirts, Alfons Sijbers, Peter Tieleman,
+
+               Berk Hess, David van der Spoel, and Erik Lindahl.
+
+       Copyright (c) 1991-2000, University of Groningen, The Netherlands.
+            Copyright (c) 2001-2010, The GROMACS development team at
+        Uppsala University & The Royal Institute of Technology, Sweden.
+            check out http://www.gromacs.org for more information.
+
+         This program is free software; you can redistribute it and/or
+          modify it under the terms of the GNU General Public License
+         as published by the Free Software Foundation; either version 2
+             of the License, or (at your option) any later version.
+
+           :-)  /gpfs/DDNgpfs3/xcmiltho/gmx/bgp/bin/mdrun_mpi_bg  (-:
+
+
+++++ PLEASE READ AND CITE THE FOLLOWING REFERENCE ++++
+B. Hess and C. Kutzner and D. van der Spoel and E. Lindahl
+GROMACS 4: Algorithms for highly efficient, load-balanced, and scalable
+molecular simulation
+J. Chem. Theory Comput. 4 (2008) pp. 435-447
+-------- -------- --- Thank You --- -------- --------
+
+
+++++ PLEASE READ AND CITE THE FOLLOWING REFERENCE ++++
+D. van der Spoel, E. Lindahl, B. Hess, G. Groenhof, A. E. Mark and H. J. C.
+Berendsen
+GROMACS: Fast, Flexible and Free
+J. Comp. Chem. 26 (2005) pp. 1701-1719
+-------- -------- --- Thank You --- -------- --------
+
+
+++++ PLEASE READ AND CITE THE FOLLOWING REFERENCE ++++
+E. Lindahl and B. Hess and D. van der Spoel
+GROMACS 3.0: A package for molecular simulation and trajectory analysis
+J. Mol. Mod. 7 (2001) pp. 306-317
+-------- -------- --- Thank You --- -------- --------
+
+
+++++ PLEASE READ AND CITE THE FOLLOWING REFERENCE ++++
+H. J. C. Berendsen, D. van der Spoel and R. van Drunen
+GROMACS: A message-passing parallel molecular dynamics implementation
+Comp. Phys. Comm. 91 (1995) pp. 43-56
+-------- -------- --- Thank You --- -------- --------
+
+Input Parameters:
+   integrator           = steep
+   nsteps               = 10000
+   init_step            = 0
+   ns_type              = Grid
+   nstlist              = 5
+   ndelta               = 2
+   nstcomm              = 1
+   comm_mode            = Linear
+   nstlog               = 50
+   nstxout              = 0
+   nstvout              = 0
+   nstfout              = 0
+   nstcalcenergy        = -1
+   nstenergy            = 50
+   nstxtcout            = 50
+   init_t               = 0
+   delta_t              = 0.002
+   xtcprec              = 1000
+   nkx                  = 72
+   nky                  = 72
+   nkz                  = 72
+   pme_order            = 4
+   ewald_rtol           = 1e-05
+   ewald_geometry       = 0
+   epsilon_surface      = 0
+   optimize_fft         = FALSE
+   ePBC                 = xyz
+   bPeriodicMols        = FALSE
+   bContinuation        = FALSE
+   bShakeSOR            = FALSE
+   etc                  = No
+   nsttcouple           = -1
+   epc                  = No
+   epctype              = Isotropic
+   nstpcouple           = -1
+   tau_p                = 0.5
+   ref_p (3x3):
+      ref_p[    0]={ 1.00000e+00,  0.00000e+00,  0.00000e+00}
+      ref_p[    1]={ 0.00000e+00,  1.00000e+00,  0.00000e+00}
+      ref_p[    2]={ 0.00000e+00,  0.00000e+00,  1.00000e+00}
+   compress (3x3):
+      compress[    0]={ 4.50000e-05,  0.00000e+00,  0.00000e+00}
+      compress[    1]={ 0.00000e+00,  4.50000e-05,  0.00000e+00}
+      compress[    2]={ 0.00000e+00,  0.00000e+00,  4.50000e-05}
+   refcoord_scaling     = No
+   posres_com (3):
+      posres_com[0]= 0.00000e+00
+      posres_com[1]= 0.00000e+00
+      posres_com[2]= 0.00000e+00
+   posres_comB (3):
+      posres_comB[0]= 0.00000e+00
+      posres_comB[1]= 0.00000e+00
+      posres_comB[2]= 0.00000e+00
+   andersen_seed        = 815131
+   rlist                = 1
+   rlistlong            = 1
+   rtpi                 = 0.05
+   coulombtype          = PME
+   rcoulomb_switch      = 0
+   rcoulomb             = 1
+   vdwtype              = Cut-off
+   rvdw_switch          = 0
+   rvdw                 = 1
+   epsilon_r            = 1
+   epsilon_rf           = 1
+   tabext               = 1
+   implicit_solvent     = No
+   gb_algorithm         = Still
+   gb_epsilon_solvent   = 80
+   nstgbradii           = 1
+   rgbradii             = 2
+   gb_saltconc          = 0
+   gb_obc_alpha         = 1
+   gb_obc_beta          = 0.8
+   gb_obc_gamma         = 4.85
+   gb_dielectric_offset = 0.009
+   sa_algorithm         = No
+   sa_surface_tension   = 2.092
+   DispCorr             = EnerPres
+   free_energy          = no
+   init_lambda          = 0
+   delta_lambda         = 0
+   n_foreign_lambda     = 0
+   sc_alpha             = 0
+   sc_power             = 0
+   sc_sigma             = 0.3
+   sc_sigma_min         = 0.3
+   nstdhdl              = 10
+   separate_dhdl_file   = yes
+   dhdl_derivatives     = yes
+   dh_hist_size         = 0
+   dh_hist_spacing      = 0.1
+   nwall                = 0
+   wall_type            = 9-3
+   wall_atomtype[0]     = -1
+   wall_atomtype[1]     = -1
+   wall_density[0]      = 0
+   wall_density[1]      = 0
+   wall_ewald_zfac      = 3
+   pull                 = no
+   disre                = No
+   disre_weighting      = Conservative
+   disre_mixed          = FALSE
+   dr_fc                = 1000
+   dr_tau               = 0
+   nstdisreout          = 100
+   orires_fc            = 0
+   orires_tau           = 0
+   nstorireout          = 100
+   dihre-fc             = 1000
+   em_stepsize          = 0.01
+   em_tol               = 100
+   niter                = 20
+   fc_stepsize          = 0
+   nstcgsteep           = 1000
+   nbfgscorr            = 10
+   ConstAlg             = Lincs
+   shake_tol            = 1e-04
+   lincs_order          = 4
+   lincs_warnangle      = 30
+   lincs_iter           = 1
+   bd_fric              = 0
+   ld_seed              = 1993
+   cos_accel            = 0
+   deform (3x3):
+      deform[    0]={ 0.00000e+00,  0.00000e+00,  0.00000e+00}
+      deform[    1]={ 0.00000e+00,  0.00000e+00,  0.00000e+00}
+      deform[    2]={ 0.00000e+00,  0.00000e+00,  0.00000e+00}
+   userint1             = 0
+   userint2             = 0
+   userint3             = 0
+   userint4             = 0
+   userreal1            = 0
+   userreal2            = 0
+   userreal3            = 0
+   userreal4            = 0
+grpopts:
+   nrdf:      102783
+   ref_t:           0
+   tau_t:           0
+anneal:          No
+ann_npoints:           0
+   acc:	           0           0           0
+   nfreeze:           N           N           N
+   energygrp_flags[  0]: 0
+   efield-x:
+      n = 0
+   efield-xt:
+      n = 0
+   efield-y:
+      n = 0
+   efield-yt:
+      n = 0
+   efield-z:
+      n = 0
+   efield-zt:
+      n = 0
+   bQMMM                = FALSE
+   QMconstraints        = 0
+   QMMMscheme           = 0
+   scalefactor          = 1
+qm_opts:
+   ngQM                 = 0
+
+Initializing Domain Decomposition on 4 nodes
+Dynamic load balancing: no
+Will sort the charge groups at every domain (re)decomposition
+Using 0 separate PME nodes
+Optimizing the DD grid for 4 cells with a minimum initial size of 0.000 nm
+Domain decomposition grid 4 x 1 x 1, separate PME nodes 0
+PME domain decomposition: 4 x 1 x 1
+Domain decomposition nodeid 0, coordinates 0 0 0
+
+Table routines are used for coulomb: TRUE
+Table routines are used for vdw:     FALSE
+Will do PME sum in reciprocal space.
+
+++++ PLEASE READ AND CITE THE FOLLOWING REFERENCE ++++
+U. Essman, L. Perela, M. L. Berkowitz, T. Darden, H. Lee and L. G. Pedersen 
+A smooth particle mesh Ewald method
+J. Chem. Phys. 103 (1995) pp. 8577-8592
+-------- -------- --- Thank You --- -------- --------
+
+Will do ordinary reciprocal space Ewald sum.
+Using a Gaussian width (1/beta) of 0.320163 nm for Ewald
+Cut-off's:   NS: 1   Coulomb: 1   LJ: 1
+Long Range LJ corr.: <C6> 2.9079e-04
+System total charge: 0.000
+Generated table with 1000 data points for Ewald.
+Tabscale = 500 points/nm
+Generated table with 1000 data points for LJ6.
+Tabscale = 500 points/nm
+Generated table with 1000 data points for LJ12.
+Tabscale = 500 points/nm
+
+Enabling SPC-like water optimization for 17131 molecules.
+
+Configuring nonbonded kernels...
+Configuring standard C nonbonded kernels...
+Testing BlueGene support... present.
+
+
+Removing pbc first time
+
+++++ PLEASE READ AND CITE THE FOLLOWING REFERENCE ++++
+S. Miyamoto and P. A. Kollman
+SETTLE: An Analytical Version of the SHAKE and RATTLE Algorithms for Rigid
+Water Models
+J. Comp. Chem. 13 (1992) pp. 952-962
+-------- -------- --- Thank You --- -------- --------
+
+
+Linking all bonded interactions to atoms
+
+The initial number of communication pulses is: X 1
+The initial domain decomposition cell size is: X 2.00 nm
+
+
+Making 1D domain decomposition grid 4 x 1 x 1, home cell index 0 0 0
+
+Initiating Steepest Descents
+Charge group distribution at step 0: 4247 4288 4311 4285
+Grid: 5 x 12 x 12 cells
+Started Steepest Descents on node 0 Fri Oct  1 01:44:18 2010
+
+Steepest Descents:
+   Tolerance (Fmax)   =  1.00000e+02
+   Number of steps    =        10000
+           Step           Time         Lambda
+              0        0.00000        0.00000
+
+   Energies (kJ/mol)
+        LJ (SR)  Disper. corr.   Coulomb (SR)   Coul. recip.      Potential
+    1.53866e+05   -1.25671e+04   -9.56910e+05   -6.30158e+04   -8.78627e+05
+ Pres. DC (bar) Pressure (bar)
+    0.00000e+00   -8.38547e+03
+
+DD  step 0 load imb.: force  0.5%
+
+           Step           Time         Lambda
+              1        1.00000        0.00000
+
+           Step           Time         Lambda
+              2        2.00000        0.00000
+
+   Energies (kJ/mol)
+        LJ (SR)  Disper. corr.   Coulomb (SR)   Coul. recip.      Potential
+    1.54048e+05   -1.25671e+04   -9.57154e+05   -6.30138e+04   -8.78687e+05
+ Pres. DC (bar) Pressure (bar)
+    0.00000e+00   -8.38900e+03
+
+           Step           Time         Lambda
+              3        3.00000        0.00000
+
+   Energies (kJ/mol)
+        LJ (SR)  Disper. corr.   Coulomb (SR)   Coul. recip.      Potential
+    1.54047e+05   -1.25671e+04   -9.57316e+05   -6.30198e+04   -8.78856e+05
+ Pres. DC (bar) Pressure (bar)
+    0.00000e+00   -8.39133e+03
+
+           Step           Time         Lambda
+              4        4.00000        0.00000
+
+   Energies (kJ/mol)
+        LJ (SR)  Disper. corr.   Coulomb (SR)   Coul. recip.      Potential
+    1.54211e+05   -1.25671e+04   -9.57542e+05   -6.30173e+04   -8.78916e+05
+ Pres. DC (bar) Pressure (bar)
+    0.00000e+00   -8.39677e+03
+
+           Step           Time         Lambda
+              5        5.00000        0.00000
+
+   Energies (kJ/mol)
+        LJ (SR)  Disper. corr.   Coulomb (SR)   Coul. recip.      Potential
+    1.54241e+05   -1.25671e+04   -9.57662e+05   -6.30181e+04   -8.79006e+05
+ Pres. DC (bar) Pressure (bar)
+    0.00000e+00   -8.39865e+03
+
+           Step           Time         Lambda
+              6        6.00000        0.00000
+
+   Energies (kJ/mol)
+        LJ (SR)  Disper. corr.   Coulomb (SR)   Coul. recip.      Potential
+    1.54380e+05   -1.25671e+04   -9.57833e+05   -6.30153e+04   -8.79036e+05
+ Pres. DC (bar) Pressure (bar)
+    0.00000e+00   -8.39977e+03
+
+           Step           Time         Lambda
+              7        7.00000        0.00000
+
+   Energies (kJ/mol)
+        LJ (SR)  Disper. corr.   Coulomb (SR)   Coul. recip.      Potential
+    1.54418e+05   -1.25671e+04   -9.57964e+05   -6.30136e+04   -8.79127e+05
+ Pres. DC (bar) Pressure (bar)
+    0.00000e+00   -8.40584e+03
+
+           Step           Time         Lambda
+              8        8.00000        0.00000
+
+           Step           Time         Lambda
+              9        9.00000        0.00000
+
+   Energies (kJ/mol)
+        LJ (SR)  Disper. corr.   Coulomb (SR)   Coul. recip.      Potential
+    1.54467e+05   -1.25671e+04   -9.58079e+05   -6.30242e+04   -8.79203e+05
+ Pres. DC (bar) Pressure (bar)
+    0.00000e+00   -8.40708e+03
+
+           Step           Time         Lambda
+             10       10.00000        0.00000
+
+   Energies (kJ/mol)
+        LJ (SR)  Disper. corr.   Coulomb (SR)   Coul. recip.      Potential
+    1.54621e+05   -1.25671e+04   -9.58312e+05   -6.30112e+04   -8.79269e+05
+ Pres. DC (bar) Pressure (bar)
+    0.00000e+00   -8.40791e+03
+
+           Step           Time         Lambda
+             11       11.00000        0.00000
+
+   Energies (kJ/mol)
+        LJ (SR)  Disper. corr.   Coulomb (SR)   Coul. recip.      Potential
+    1.54665e+05   -1.25671e+04   -9.58424e+05   -6.30238e+04   -8.79350e+05
+ Pres. DC (bar) Pressure (bar)
+    0.00000e+00   -8.40440e+03
+
+           Step           Time         Lambda
+             12       12.00000        0.00000
+
+   Energies (kJ/mol)
+        LJ (SR)  Disper. corr.   Coulomb (SR)   Coul. recip.      Potential
+    1.54790e+05   -1.25671e+04   -9.58587e+05   -6.30056e+04   -8.79370e+05
+ Pres. DC (bar) Pressure (bar)
+    0.00000e+00   -8.40580e+03
+
+           Step           Time         Lambda
+             13       13.00000        0.00000
+
+   Energies (kJ/mol)
+        LJ (SR)  Disper. corr.   Coulomb (SR)   Coul. recip.      Potential
+    1.54831e+05   -1.25671e+04   -9.58699e+05   -6.30211e+04   -8.79456e+05
+ Pres. DC (bar) Pressure (bar)
+    0.00000e+00   -8.41042e+03
+
+           Step           Time         Lambda
+             14       14.00000        0.00000
+
+           Step           Time         Lambda
+             15       15.00000        0.00000
+
+   Energies (kJ/mol)
+        LJ (SR)  Disper. corr.   Coulomb (SR)   Coul. recip.      Potential
+    1.54875e+05   -1.25671e+04   -9.58826e+05   -6.30222e+04   -8.79540e+05
+ Pres. DC (bar) Pressure (bar)
+    0.00000e+00   -8.41482e+03
+
+           Step           Time         Lambda
+             16       16.00000        0.00000
+
+   Energies (kJ/mol)
+        LJ (SR)  Disper. corr.   Coulomb (SR)   Coul. recip.      Potential
+    1.55059e+05   -1.25671e+04   -9.59055e+05   -6.30158e+04   -8.79580e+05
+ Pres. DC (bar) Pressure (bar)
+    0.00000e+00   -8.41946e+03
+
+           Step           Time         Lambda
+             17       17.00000        0.00000
+
+   Energies (kJ/mol)
+        LJ (SR)  Disper. corr.   Coulomb (SR)   Coul. recip.      Potential
+    1.55092e+05   -1.25671e+04   -9.59206e+05   -6.30189e+04   -8.79699e+05
+ Pres. DC (bar) Pressure (bar)
+    0.00000e+00   -8.41689e+03
+
+           Step           Time         Lambda
+             18       18.00000        0.00000
+
+           Step           Time         Lambda
+             19       19.00000        0.00000
+
+   Energies (kJ/mol)
+        LJ (SR)  Disper. corr.   Coulomb (SR)   Coul. recip.      Potential
+    1.55153e+05   -1.25671e+04   -9.59316e+05   -6.30258e+04   -8.79756e+05
+ Pres. DC (bar) Pressure (bar)
+    0.00000e+00   -8.41822e+03
+
+           Step           Time         Lambda
+             20       20.00000        0.00000
+
+   Energies (kJ/mol)
+        LJ (SR)  Disper. corr.   Coulomb (SR)   Coul. recip.      Potential
+    1.55244e+05   -1.25671e+04   -9.59463e+05   -6.30159e+04   -8.79802e+05
+ Pres. DC (bar) Pressure (bar)
+    0.00000e+00   -8.41968e+03
+
+           Step           Time         Lambda
+             21       21.00000        0.00000
+
+   Energies (kJ/mol)
+        LJ (SR)  Disper. corr.   Coulomb (SR)   Coul. recip.      Potential
+    1.55303e+05   -1.25671e+04   -9.59568e+05   -6.30240e+04   -8.79856e+05
+ Pres. DC (bar) Pressure (bar)
+    0.00000e+00   -8.42091e+03
+
+           Step           Time         Lambda
+             22       22.00000        0.00000
+
+   Energies (kJ/mol)
+        LJ (SR)  Disper. corr.   Coulomb (SR)   Coul. recip.      Potential
+    1.55394e+05   -1.25671e+04   -9.59701e+05   -6.30093e+04   -8.79883e+05
+ Pres. DC (bar) Pressure (bar)
+    0.00000e+00   -8.41970e+03
+
+           Step           Time         Lambda
+             23       23.00000        0.00000
+
+   Energies (kJ/mol)
+        LJ (SR)  Disper. corr.   Coulomb (SR)   Coul. recip.      Potential
+    1.55450e+05   -1.25671e+04   -9.59793e+05   -6.30191e+04   -8.79930e+05
+ Pres. DC (bar) Pressure (bar)
+    0.00000e+00   -8.42075e+03
+
+           Step           Time         Lambda
+             24       24.00000        0.00000
+
+           Step           Time         Lambda
+             25       25.00000        0.00000
+
+   Energies (kJ/mol)
+        LJ (SR)  Disper. corr.   Coulomb (SR)   Coul. recip.      Potential
+    1.55478e+05   -1.25671e+04   -9.59930e+05   -6.30255e+04   -8.80045e+05
+ Pres. DC (bar) Pressure (bar)
+    0.00000e+00   -8.42286e+03
+
+
+Steepest Descents converged to Fmax < 100 in 26 steps
+Potential Energy  = -8.8004488e+05
+Maximum force     =  9.8396515e+01 on atom 3058
+Norm of force     =  7.2836766e+00
+
+	M E G A - F L O P S   A C C O U N T I N G
+
+   RF=Reaction-Field  FE=Free Energy  SCFE=Soft-Core/Free Energy
+   T=Tabulated        W3=SPC/TIP3p    W4=TIP4p (single or pairs)
+   NF=No Forces
+
+ Computing:                               M-Number         M-Flops  % Flops
+-----------------------------------------------------------------------------
+ Coul(T) + LJ [W3-W3]                    31.022354       11850.539    64.7
+ Outer nonbonded loop                     5.770539          57.705     0.3
+ Calc Weights                             4.008654         144.312     0.8
+ Spread Q Bspline                        85.517952         171.036     0.9
+ Gather F Bspline                        85.517952         513.108     2.8
+ 3D-FFT                                 359.254272        2874.034    15.7
+ Solve PME                                4.987008         319.169     1.7
+ NS-Pairs                                98.275681        2063.789    11.3
+ Reset In Box                             0.445406           1.336     0.0
+ CG-CoM                                   1.644576           4.934     0.0
+ Virial                                   1.340898          24.136     0.1
+ Settle                                   0.890812         287.732     1.6
+-----------------------------------------------------------------------------
+ Total                                                   18311.830   100.0
+-----------------------------------------------------------------------------
+
+
+    D O M A I N   D E C O M P O S I T I O N   S T A T I S T I C S
+
+ av. #atoms communicated per step for force:  2 x 25652.2
+
+
+     R E A L   C Y C L E   A N D   T I M E   A C C O U N T I N G
+
+ Computing:         Nodes     Number     G-Cycles    Seconds     %
+-----------------------------------------------------------------------
+ Domain decomp.         4         31        1.370        0.8     1.8
+ DD comm. load          4          1        0.000        0.0     0.0
+ Comm. coord.           4         26        0.033        0.0     0.0
+ Neighbor search        4         26        9.827        6.1    13.1
+ Force                  4         26       16.766       10.4    22.3
+ Wait + Comm. F         4         26        0.041        0.0     0.1
+ PME mesh               4         26        8.231        5.1    10.9
+ Constraints            4         51        0.483        0.3     0.6
+ Comm. energies         4         26        0.014        0.0     0.0
+ Rest                   4                  38.438       23.8    51.1
+-----------------------------------------------------------------------
+ Total                  4                  75.204       46.5   100.0
+-----------------------------------------------------------------------
+-----------------------------------------------------------------------
+ PME redist. X/F        4         52        0.372        0.2     0.5
+ PME spread/gather      4         52        3.843        2.4     5.1
+ PME 3D-FFT             4         52        2.406        1.5     3.2
+ PME solve              4         26        1.609        1.0     2.1
+-----------------------------------------------------------------------
+
+	Parallel run - timing based on wallclock.
+
+               NODE (s)   Real (s)      (%)
+       Time:     11.623     11.623    100.0
+               (Mnbf/s)   (GFlops)   (steps/hour)
+Performance:     24.022     18.312         8053.2
+Finished mdrun on node 0 Fri Oct  1 01:44:30 2010

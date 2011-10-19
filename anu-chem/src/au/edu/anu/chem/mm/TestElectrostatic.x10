@@ -37,9 +37,9 @@ public class TestElectrostatic {
 
     public def logTime(desc : String, timerIndex : Int, timer : Timer, printNewline : Boolean) {
         if (printNewline) {
-            Console.OUT.printf(desc + ": %g seconds\n", (timer.total(timerIndex) as Double) / 1e9);
+            Console.OUT.printf(desc + ": %g seconds\n", (timer.mean(timerIndex) as Double) / 1e9);
         } else {
-            Console.OUT.printf(desc + ": %g seconds", (timer.total(timerIndex) as Double) / 1e9);
+            Console.OUT.printf(desc + ": %g seconds", (timer.mean(timerIndex) as Double) / 1e9);
         }
     }
 
@@ -69,7 +69,7 @@ public class TestElectrostatic {
             val z = clusterStart + (gridZ + 0.5 + randomNoise()) * (sizeOfCentralCluster() / gridSize);
             val charge = i%2==0?1:-1;
             val p = getPlaceId(x, y, z);
-            async at (Place.place(p)) {
+            async at(Place.place(p)) {
                 val atom = new MMAtom(Point3d(x, y, z), charge);
                 //Console.OUT.println(atom);
                 atomic { tempAtoms(p).add(atom); }

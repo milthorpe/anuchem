@@ -3,6 +3,7 @@ package edu.mit.fftw;
 import x10.compiler.Native;
 import x10.compiler.NativeRep;
 import x10.compiler.NativeCPPCompilationUnit;
+import x10.compiler.NativeCPPInclude;
 
 @NativeCPPCompilationUnit("FFTW.cc")
 @NativeRep("c++", "::edu::mit::fftw::FFTWWrapper", "::edu::mit::fftw::FFTWWrapper", null)

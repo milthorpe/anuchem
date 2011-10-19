@@ -39,15 +39,17 @@ public class LocalExpansion extends Expansion {
     public static def getMlm(v : Tuple3d, p : int) : LocalExpansion {
         val exp = new LocalExpansion(p);
         val terms = exp.terms;
-        val v_pole : Polar3d = Polar3d.getPolar3d(v);
-        val pplm = AssociatedLegendrePolynomial.getPlk(v_pole.theta, p); 
-
+        val v_pole = Polar3d.getPolar3d(v);
+        val pplm = AssociatedLegendrePolynomial.getPlk(v_pole.theta, p);
         val rfac0 : Double = 1.0 / v_pole.r;
+
+        terms(0,0) = Complex(rfac0 * pplm(0,0), 0.0);
+
         val phifac0 = Complex(Math.cos(v_pole.phi), Math.sin(v_pole.phi));
-        var rfac : Double = rfac0;
+        var rfac : Double = rfac0 * rfac0;
         var il : Double = 1.0;
-        for (l in 0..p) {
-            il = il * Math.max(l,1);
+        for (l in 1..p) {
+            il = il * l;
             var ilm : Double = il;
             var phifac : Complex = Complex.ONE;
             terms(l,0) = phifac * (rfac * pplm(l,0) * ilm);

@@ -12,12 +12,11 @@ package au.edu.anu.mm;
 
 import x10.util.Pair;
 import x10x.vector.Point3d;
-import x10x.vector.Vector3d;
 import au.edu.anu.chem.mm.MMAtom;
 import au.edu.anu.util.Timer;
 
 /**
- * Tests ANU Molecular Mechanics with a simple Morse oscillator: HF.
+ * Tests ANU Molecular Mechanics with a simple harmonic oscillator: HF.
  * A test problem borrowed from Chapter 1 of
  * Herman J.C. Berendsen, "Simulating the Physical World"
  * Cambridge University Press, 2007

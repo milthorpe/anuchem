@@ -6,7 +6,7 @@
  *  You may obtain a copy of the License at
  *      http://www.opensource.org/licenses/eclipse-1.0.php
  *
- * (C) Copyright Australian National University 2010.
+ * (C) Copyright Australian National University 2010-2011.
  */
 package au.edu.anu.qm;
 
@@ -20,11 +20,11 @@ import au.edu.anu.chem.Molecule;
  *
  * @author: V.Ganesh
  */
-public class BasisFunctions { 
-    val molecule:Molecule[QMAtom];
-    val basisName:String;
-    val basisFunctions:ArrayList[ContractedGaussian];
-    val shellList:ShellList;
+public struct BasisFunctions { 
+    public val molecule:Molecule[QMAtom];
+    public val basisName:String;
+    public val basisFunctions:ArrayList[ContractedGaussian];
+    public val shellList:ShellList;
 
     public def this(mol:Molecule[QMAtom], basNam:String, basisDir:String) { 
         this.molecule  = mol;
@@ -44,35 +44,38 @@ public class BasisFunctions {
         for(var atmno:Int=0; atmno<molecule.getNumberOfAtoms(); atmno++) {
             val atom      = molecule.getAtom(atmno);
             val atomBasis = basisSet.getBasis(atom);
-            val orbitals  = atomBasis.getOrbitals();
+            val orbitals  = atomBasis.orbitals;
             val atombfs   = new ArrayList[ContractedGaussian]();
 
-            for(var orbno:Int=0; orbno<orbitals.size(); orbno++) { 
-               val orb = orbitals.get(orbno);
-               val typ = orb.getType();
-               val pList = plInst.getPowers(typ);
+            for(var orbno:Int=0; orbno<orbitals.size; orbno++) { 
+                val orb = orbitals(orbno);
+                val shape = orb.shape;
+                val pList = plInst.getPowers(shape);
 
-               val coeff:ArrayList[Double] = orb.getCoefficients();
-               val exps:ArrayList[Double]  = orb.getExponents();
+                val coeffs = orb.coefficients;
+                val exps = orb.exponents;
+                val centre = atom.centre;
 
-               for(var l:Int=0; l<pList.size; l++) {
-                  val center = atom.centre;
-                  val power = pList(l);
-                  val cg = new ContractedGaussian(center, power, coeff, exps);
-                  cg.setIntIndex(intIndx);
+                for(var l:Int=0; l<pList.size; l++) {
+                    val power = pList(l);
+                    val primitives = new Array[PrimitiveGaussian](coeffs.size);
+                    for(var i:Int=0; i<coeffs.size; i++) {
+                        primitives(i) = new PrimitiveGaussian(centre, power, exps(i), coeffs(i), true);
+                    }
+                    val cg = new ContractedGaussian(centre, power, primitives, intIndx, true);
+                    basisFunctions.add(cg);
+                } // end for
 
-                  cg.normalize();
+                val am = orb.angularMomentum;
+                val atomPrimitives = new Array[PrimitiveGaussian](coeffs.size);
+                for(var i:Int=0; i<coeffs.size; i++) {
+                    atomPrimitives(i) = new PrimitiveGaussian(centre, Power(am, 0, 0), exps(i), coeffs(i), false);
+                }
+                val acg = new ContractedGaussian(centre, Power(am, 0, 0), atomPrimitives, intIndx, false);
+                atombfs.add(acg);
 
-                  basisFunctions.add(cg);
-               } // end for
-
-               val am = orb.getAngularMomentum();
-               val acg = new ContractedGaussian(atom.centre, Power(am, 0, 0), coeff, exps);
-               acg.setIntIndex(intIndx);
-
-               atombfs.add(acg);
-               intIndx += ((am+1)*(am+2)/2);
-            } // end for          
+                intIndx += ((am+1)*(am+2)/2);
+            } // end for
 
             atom.setBasisFunctions(atombfs);  
         } // end for
@@ -98,8 +101,8 @@ public class BasisFunctions {
                 val prms  = bfi.getPrimitives(); 
                 for(var j:Int=0; j<prms.size; j++) {
                     val prmj = prms(j); 
-                    val fact3 = Math.pow(prmj.getExponent(), (2.0*lmn+3.0)/4.0);
-                    prmj.setCoefficient(prmj.getCoefficient()*fact1*fact2*fact3);
+                    val fact3 = Math.pow(prmj.exponent, (2.0*lmn+3.0)/4.0);
+                    prmj.setCoefficient(prmj.coefficient*fact1*fact2*fact3);
                 } // end for
 
                 val pi3O2By2Tlmn = Math.pow(Math.PI, 1.5) / Math.pow(2.0, lmn); 
@@ -112,8 +115,8 @@ public class BasisFunctions {
                    for(var l:Int=0; l<prms.size; l++) {
                        val prml = prms(l);
 
-                       factA = prmk.getCoefficient() * prml.getCoefficient();
-                       factB = Math.pow(prmk.getExponent() + prml.getExponent(), lmn+1.5);
+                       factA = prmk.coefficient * prml.coefficient;
+                       factB = Math.pow(prmk.exponent + prml.exponent, lmn+1.5);
                        coefExpoSum += factA/factB;
                    } // end for
                 } // end for 
@@ -121,7 +124,7 @@ public class BasisFunctions {
                 val norm = Math.pow(coefExpoSum*factC, -0.5);
                 for(var j:Int=0; j<prms.size; j++) {
                     val prmj = prms(j); 
-                    prmj.setCoefficient(prmj.getCoefficient()*norm);
+                    prmj.setCoefficient(prmj.coefficient*norm);
                 } // end for 
             } // end for
         } // end for

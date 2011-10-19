@@ -36,7 +36,7 @@ public class PumjaRasaayani {
     var time:Double = 0.0;
 
     public def this() {
-        this.inputFileName = "dummy";
+        this.inputFileName = "./dummy";
         initDefault();
     } 
 

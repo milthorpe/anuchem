@@ -90,7 +90,7 @@ public class Matrix {
      * Make the current Matrix as Identity
      */
     public def makeIdentity() : void {
-        mat.fill(0.0);
+        mat.clear();
         for (i in 0..region.max(0)) {
             mat(i,i) = 1.0;
         }
@@ -100,7 +100,7 @@ public class Matrix {
      * Fill the current Matrix with zero
      */
     public def makeZero() : void {
-        mat.fill(0.0);
+        mat.clear();
     }
 
     /**

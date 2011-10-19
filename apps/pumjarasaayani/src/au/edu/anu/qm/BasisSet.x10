@@ -59,24 +59,23 @@ public class BasisSet {
             val symbol = words(0);
             val noOfContractions = Int.parseInt(words(1));
 
-            val atomBasis = new AtomicBasis();
-
+            val orbitals = new Array[Orbital](noOfContractions);
             for(var j:Int=0; j<noOfContractions; j++) {
                 val words1 = fil.readLine().split(" ");
                 var orbitalType:String = words1(0);
                 var noOfPrimitives:Int = Int.parseInt(words1(1));
 
-                val orbital = new Orbital(orbitalType);
-
+                val exps:Rail[Double] = new Array[Double](noOfPrimitives);
+                val coeffs:Rail[Double] = new Array[Double](noOfPrimitives);
                 for(var k:Int=0; k<noOfPrimitives; k++) { 
                     val words2 = fil.readLine().split(" ");
+                    exps(k) = Double.parseDouble(words2(0));
+                    coeffs(k) = Double.parseDouble(words2(1));
+                }
+                orbitals(j) = new Orbital(orbitalType, exps, coeffs); 
+            }
 
-                    orbital.add(Double.parseDouble(words2(0)),
-                                Double.parseDouble(words2(1)));
-                } // end for
-
-             atomBasis.addOrbital(orbital); 
-            } // end for
+            val atomBasis = new AtomicBasis(orbitals);
 
             basisInfo.put(symbol, atomBasis);
         } // end for
@@ -85,79 +84,67 @@ public class BasisSet {
     }
  
     private def init(name:String) {
-       if (name.equals("sto3g")) {
-          var orbType:String;
-          val hBasis = new AtomicBasis();
-          orbType = "S";
-          val hOrb = new Orbital(orbType);
-          hOrb.add(3.425251, 0.154329);
-          hOrb.add(0.623914, 0.535328);
-          hOrb.add(0.168855, 0.444635); 
-          hBasis.addOrbital(hOrb);
-          basisInfo.put("H", hBasis);
+        if (name.equals("sto3g")) {
 
-          val cBasis = new AtomicBasis();
-          orbType = "S";
-          val cOrb1 = new Orbital(orbType);
-          cOrb1.add(71.616837, 0.154329);
-          cOrb1.add(13.045096, 0.535328);
-          cOrb1.add(3.530512, 0.444635);
-          cBasis.addOrbital(cOrb1);
-          orbType = "S";
-          val cOrb2 = new Orbital(orbType);
-          cOrb2.add(2.941249, -0.099967);
-          cOrb2.add(0.683483, 0.399513);
-          cOrb2.add(0.222290, 0.700115);
-          cBasis.addOrbital(cOrb2); 
-          orbType = "P";
-          val cOrb3 = new Orbital(orbType);
-          cOrb3.add(2.941249, 0.155916);
-          cOrb3.add(0.683483, 0.607684);
-          cOrb3.add(0.222290, 0.391957);
-          cBasis.addOrbital(cOrb3);
-          basisInfo.put("C", cBasis);    
+            var orbType:String = "S";
+            var exps:Rail[Double] = [3.425251, 0.623914, 0.168855];
+            var coeffs:Rail[Double] = [0.154329, 0.535328, 0.444635];
+            val hOrb = new Orbital(orbType, exps, coeffs);
+            var orbs : Rail[Orbital] = [hOrb as Orbital];
+            val hBasis = new AtomicBasis(orbs);
 
-          val nBasis = new AtomicBasis();;
-          orbType = "S";
-          val nOrb1 = new Orbital(orbType);
-          nOrb1.add(99.106169, 0.154329);
-          nOrb1.add(18.052312, 0.535328);
-          nOrb1.add(4.885660, 0.444635);
-          nBasis.addOrbital(nOrb1);
-          orbType = "S";
-          val nOrb2 = new Orbital(orbType);
-          nOrb2.add(3.780456, -0.099967);
-          nOrb2.add(0.878497, 0.399513);
-          nOrb2.add(0.285714, 0.700115);
-          nBasis.addOrbital(nOrb2);
-          orbType = "P";
-          val nOrb3 = new Orbital(orbType);
-          nOrb3.add(3.780456, 0.155916);
-          nOrb3.add(0.878497, 0.607684);
-          nOrb3.add(0.285714, 0.391957);
-          nBasis.addOrbital(nOrb3);
-          basisInfo.put("N", nBasis);    
+            basisInfo.put("H", hBasis);
 
-          val oBasis = new AtomicBasis();
-          orbType = "S";
-          val oOrb1 = new Orbital(orbType);
-          oOrb1.add(130.709321, 0.154329);
-          oOrb1.add(23.808866, 0.535328);
-          oOrb1.add(6.443608, 0.444635);
-          oBasis.addOrbital(oOrb1);
-          orbType = "S";
-          val oOrb2 = new Orbital(orbType);
-          oOrb2.add(5.033151, -0.099967);
-          oOrb2.add(1.169596, 0.399513);
-          oOrb2.add(0.380389, 0.700115);
-          oBasis.addOrbital(oOrb2);
-          orbType = "P";
-          val oOrb3 = new Orbital(orbType);
-          oOrb3.add(5.033151, 0.155916);
-          oOrb3.add(1.169596, 0.607684);
-          oOrb3.add(0.380389, 0.391957);      
-          oBasis.addOrbital(oOrb3);
-          basisInfo.put("O", oBasis);    
+            orbType = "S";
+            exps = [71.616837, 13.045096, 3.530512];
+            coeffs = [0.154329, 0.535328, 0.444635];
+            val cOrb1 = new Orbital(orbType, exps, coeffs);
+            orbType = "S";
+            exps = [2.941249, 0.683483, 0.222290];
+            coeffs = [-0.099967, 0.399513, 0.700115];
+            val cOrb2 = new Orbital(orbType, exps, coeffs);
+            orbType = "P";
+            exps = [2.941249, 0.683483, 0.222290];
+            coeffs = [0.155916, 0.607684, 0.391957];
+            val cOrb3 = new Orbital(orbType, exps, coeffs);
+            orbs = [cOrb1, cOrb2, cOrb3];
+            val cBasis = new AtomicBasis(orbs);
+
+            basisInfo.put("C", cBasis);
+
+            orbType = "S";
+            exps = [99.106169, 18.052312, 4.885660];
+            coeffs = [0.154329, 0.535328, 0.444635];
+            val nOrb1 = new Orbital(orbType, exps, coeffs);
+            orbType = "S";
+            exps = [3.780456, 0.878497, 0.285714];
+            coeffs = [-0.099967, 0.399513, 0.700115];
+            val nOrb2 = new Orbital(orbType, exps, coeffs);
+            orbType = "P";
+            exps = [3.780456, 0.878497, 0.285714];
+            coeffs = [0.155916, 0.607684, 0.391957];
+            val nOrb3 = new Orbital(orbType, exps, coeffs);
+            orbs = [nOrb1, nOrb2, nOrb3];
+            val nBasis = new AtomicBasis(orbs);
+
+            basisInfo.put("N", nBasis);
+
+            orbType = "S";
+            exps = [130.709321, 23.808866, 6.443608];
+            coeffs = [0.154329, 0.535328, 0.444635];
+            val oOrb1 = new Orbital(orbType, exps, coeffs);
+            orbType = "S";
+            exps = [5.033151, 1.169596, 0.380389];
+            coeffs = [-0.099967, 0.399513, 0.700115];
+            val oOrb2 = new Orbital(orbType, exps, coeffs);
+            orbType = "P";
+            exps = [5.033151, 1.169596, 0.380389];
+            coeffs = [0.155916, 0.607684, 0.391957];
+            val oOrb3 = new Orbital(orbType, exps, coeffs);
+            orbs = [oOrb1, oOrb2, oOrb3];
+            val oBasis = new AtomicBasis(orbs);
+
+            basisInfo.put("O", oBasis);    
        } // end if
     }
 

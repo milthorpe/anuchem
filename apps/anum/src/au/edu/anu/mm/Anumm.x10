@@ -143,7 +143,7 @@ public class Anumm {
             val atom = atomList(i);
             val p = getPlaceId(atom.centre.i, atom.centre.j, atom.centre.k, maxExtent);
             //Console.OUT.println(atom + " to " + p);
-            async at (Place.place(p)) {
+            async at(Place.place(p)) {
                 val remoteAtom = new MMAtom(atom);
                 atomic { tempAtoms(p).add(remoteAtom); }
             }

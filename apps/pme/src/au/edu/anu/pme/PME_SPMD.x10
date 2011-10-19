@@ -167,7 +167,7 @@ public class PME_SPMD {
         this.numSubCells = numSubCells;
 
         val packedAtomsCache = DistArray.make[Array[Rail[MMAtom.PackedRepresentation]]{rank==3,rect}](Dist.makeUnique());
-        finish ateach (p in packedAtomsCache) {
+        finish ateach(p in packedAtomsCache) {
             val mySubCellRegion = (subCells.dist | here).region;
             if (! mySubCellRegion.isEmpty()) {
                 val directRequiredRegion = ((mySubCellRegion.min(0) - 2)..(mySubCellRegion.max(0) + 2))
@@ -210,7 +210,7 @@ public class PME_SPMD {
         timer.start(TIMER_INDEX_TOTAL);
 
         timer.start(TIMER_INDEX_GRIDCHARGES);
-        finish for (place in Place.places()) async at (place) {
+        finish for (place in Place.places()) async at(place) {
             val myPackedAtoms = packedAtomsCache(here.id);
             val gridDistHere = gridDist.get(here) as Region(3){rect};
 
@@ -267,7 +267,7 @@ public class PME_SPMD {
         val halfCutoff = (cutoff / 2.0);
         val subCellsTemp = DistArray.make[ArrayList[MMAtom]](subCells.dist, (Point) => new ArrayList[MMAtom]());
         val atoms = this.atoms; // TODO shouldn't be necessary XTENLANG-1913
-        finish ateach (p in atoms) {
+        finish ateach(p in atoms) {
             val localAtoms = atoms(p);
             for (l in 0..(localAtoms.size-1)) {
                 val atom = localAtoms(l);
@@ -276,13 +276,13 @@ public class PME_SPMD {
                 val i = (centre.i / halfCutoff) as Int;
                 val j = (centre.j / halfCutoff) as Int;
                 val k = (centre.k / halfCutoff) as Int;
-                async at (subCellsTemp.dist(i,j,k)) {
+                async at(subCellsTemp.dist(i,j,k)) {
                     atomic subCellsTemp(i,j,k).add(atom);
                 }
             }
         }
         val subCells = this.subCells; // TODO shouldn't be necessary XTENLANG-1913
-        finish ateach ([i,j,k] in subCells) {
+        finish ateach([i,j,k] in subCells) {
             subCells(i,j,k) = subCellsTemp(i,j,k).toArray();
         }
     }
@@ -295,7 +295,7 @@ public class PME_SPMD {
         timer.start(TIMER_INDEX_PREFETCH);
 		val subCells = this.subCells; // TODO shouldn't be necessary XTENLANG-1913
 		val packedAtomsCache = this.packedAtomsCache; // TODO shouldn't be necessary XTENLANG-1913
-        finish for (place in subCells.dist.places()) async at (place) {
+        finish for (place in subCells.dist.places()) async at(place) {
             val myPackedAtoms = packedAtomsCache(here.id);
             prefetchPackedAtomsLocal(subCells, myPackedAtoms);
         }
@@ -328,7 +328,7 @@ public class PME_SPMD {
             val placeId = placeEntry.getKey();
             val haloForPlace = placeEntry.getValue();
             val haloListArray = haloForPlace.toArray();
-            val packedForPlace = at (Place.place(placeId)) { getPackedAtomsForSubcellList(subCells, haloListArray)};
+            val packedForPlace = at(Place.place(placeId)) { getPackedAtomsForSubcellList(subCells, haloListArray)};
             for (i in 0..(haloListArray.size-1)) {
                 myPackedAtoms(haloListArray(i)) = packedForPlace(i);
             }
@@ -361,7 +361,7 @@ public class PME_SPMD {
 		val imageTranslations = this.imageTranslations; // TODO shouldn't be necessary XTENLANG-1913
 		val beta = this.beta; // TODO shouldn't be necessary XTENLANG-1913
         val directEnergy = finish(SumReducer()) {
-            ateach (place in Dist.makeUnique()) {
+            ateach(place in Dist.makeUnique()) {
                 var myDirectEnergy : Double = 0.0;
                 for (p in subCells.dist(here)) {
                     val thisCell = subCells(p);
@@ -497,7 +497,7 @@ public class PME_SPMD {
 		val K3 = this.K3; // TODO shouldn't be necessary XTENLANG-1913;
 		val Q = this.Q; // TODO shouldn't be necessary XTENLANG-1913;
 		val edgeReciprocals = this.edgeReciprocals; // TODO shouldn't be necessary XTENLANG-1913
-        finish ateach (place1 in Dist.makeUnique()) {
+        finish ateach(place1 in Dist.makeUnique()) {
             gridChargesLocal(gridSize, numSubCells, splineOrder, gridDist, subCells, K1, K2, K3, Q, edgeReciprocals);
         }
 
@@ -622,7 +622,7 @@ public class PME_SPMD {
             for ([i,j,k] in sourceRegion) {
                 overlap(l++) = sourceGrid(i,j,k);
             }
-            async at (targetPlace) {
+            async at(targetPlace) {
                 atomic {
                     var m : Int = 0;
                     for ([i,j,k] in overlapRegion) {
@@ -688,7 +688,7 @@ public class PME_SPMD {
 		val K1 = this.K1; // TODO shouldn't be necessary XTENLANG-1913;
 		val K2 = this.K2; // TODO shouldn't be necessary XTENLANG-1913;
 		val K3 = this.K3; // TODO shouldn't be necessary XTENLANG-1913;
-        finish ateach (place1 in Dist.makeUnique()) {
+        finish ateach(place1 in Dist.makeUnique()) {
             val splines = new Array[Double](1..(splineOrder-1));
             for (k in 1..(splineOrder-1)) {
                 splines(k) = bSpline(splineOrder, k);
@@ -735,7 +735,7 @@ public class PME_SPMD {
 		val K3 = this.K3; // TODO shouldn't be necessary XTENLANG-1913;
         val edgeReciprocals = this.edgeReciprocals; // TODO shouldn't be necessary XTENLANG-1913
         val beta = this.beta; // TODO shouldn't be necessary XTENLANG-1913
-        finish ateach (place1 in Dist.makeUnique()) {
+        finish ateach(place1 in Dist.makeUnique()) {
             val regionHere = C.dist(here) as Region(3){rect};
             for ([m1,m2,m3] in regionHere) {
                 val m1prime = m1 <= K1/2 ? m1 as Double : m1 - K1;
@@ -746,7 +746,7 @@ public class PME_SPMD {
                 C(m1,m2,m3) = Math.exp(-(Math.PI*Math.PI) * mSquared / (beta * beta)) / (mSquared * Math.PI * V);
             }
         }
-        at (C.dist(0,0,0)) {
+        at(C.dist(0,0,0)) {
             C(0,0,0) = 0.0;
         }
     }

@@ -33,7 +33,7 @@ public class MandelbrotDist {
 
         for (i in 0..15) {
             Console.OUT.println(offsets);
-            finish ateach (place in Dist.makeUnique()) {
+            finish ateach(place in Dist.makeUnique()) {
                 val myResult = new Array[Double](offsets(here.id)..offsets(here.id+1) * 0..(imaginaryPoints-1));
                 val start = System.nanoTime();
                 for ([gridRe,gridIm] in myResult) {

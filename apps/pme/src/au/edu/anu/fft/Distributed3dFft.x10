@@ -10,7 +10,7 @@
  */
 package au.edu.anu.fft;
 
-import x10.compiler.Native;
+import x10.compiler.NativeCPPInclude;
 import x10.util.ArrayList;
 import x10.util.Team;
 import edu.mit.fftw.FFTW;
@@ -19,6 +19,7 @@ import edu.mit.fftw.FFTW;
  * This class implements a distributed three-dimensional FFT using
  * FFTW at the base level for sequential 1D FFTs.
  */
+@NativeCPPInclude("FFTW_typedef.h")
 public class Distributed3dFft {
     /** The length of one dimension of the 3D source and target arrays. */
     public val dataSize : Int;
@@ -58,29 +59,29 @@ public class Distributed3dFft {
             FFTW.fftwExecute(plan);
             FFTW.fftwDestroyPlan(plan); 
         } else {
-            finish {
-                for (p1 in source.dist.places()) async at(p1) {
-                    // 'scratch' arrays, for use in the 1D FFTs
-                    val oneDSource = new Array[Complex](dataSize);
-                    val oneDTarget = new Array[Complex](dataSize);
-                    if (dribble) {
-                        do1DFftAndTranspose(source, target, oneDSource, oneDTarget, forward);
-                        Team.WORLD.barrier(here.id);
-                        do1DFftAndTranspose(target, temp, oneDSource, oneDTarget, forward);
-                        Team.WORLD.barrier(here.id);
-                        do1DFftAndTranspose(temp, target, oneDSource, oneDTarget, forward);
-                    } else {
-                        do1DFftToTemp(source, oneDSource, oneDTarget, forward);
-                        transposeTempToTarget();
-                        Team.WORLD.barrier(here.id);
-                        do1DFftToTemp(target, oneDSource, oneDTarget, forward);
-                        Team.WORLD.barrier(here.id);
-                        transposeTempToTarget();
-                        Team.WORLD.barrier(here.id);
-                        do1DFftToTemp(target, oneDSource, oneDTarget, forward);
-                        Team.WORLD.barrier(here.id);
-                        transposeTempToTarget();
-                    }
+            finish ateach(p in Dist.makeUnique(source.dist.places())) {
+                // 'scratch' arrays, for use in the 1D FFTs
+                val oneDSource = new Array[Complex](dataSize);
+                val oneDTarget = new Array[Complex](dataSize);
+                if (dribble) {
+                    do1DFftAndTranspose(source, target, oneDSource, oneDTarget, forward);
+                    Team.WORLD.barrier(here.id);
+                    do1DFftAndTranspose(target, temp, oneDSource, oneDTarget, forward);
+                    Team.WORLD.barrier(here.id);
+                    do1DFftAndTranspose(temp, target, oneDSource, oneDTarget, forward);
+                } else {
+                    val plan : FFTW.FFTWPlan = FFTW.fftwPlan1d(dataSize, oneDSource, oneDTarget, forward);
+                    do1DFftToTemp(source, oneDSource, oneDTarget, plan);
+                    transposeTempToTarget();
+                    Team.WORLD.barrier(here.id);
+                    do1DFftToTemp(target, oneDSource, oneDTarget, plan);
+                    Team.WORLD.barrier(here.id);
+                    transposeTempToTarget();
+                    Team.WORLD.barrier(here.id);
+                    do1DFftToTemp(target, oneDSource, oneDTarget, plan);
+                    Team.WORLD.barrier(here.id);
+                    transposeTempToTarget();
+                    FFTW.fftwDestroyPlan(plan);
                 }
             }
 /*
@@ -126,21 +127,21 @@ public class Distributed3dFft {
     private def do1DFftToTemp(source : DistArray[Complex](3),
                                      oneDSource : Rail[Complex],
                                      oneDTarget : Rail[Complex],
-                                     forward : Boolean) {
-        val plan : FFTW.FFTWPlan = FFTW.fftwPlan1d(dataSize, oneDSource, oneDTarget, forward);
-        val mySource = source.dist | here;
-        val gridRegionWithoutZ = (mySource.region.eliminate(2)) as Region(2){rect};
+                                     plan : FFTW.FFTWPlan) {
+        val localSource = source.getLocalPortion();
+        val localRegion = localSource.region as Region(3){rect};
+        val localTemp = temp.getLocalPortion();
+        val gridRegionWithoutZ = (localRegion.eliminate(2)) as Region(2){rect};
         for ([i,j] in gridRegionWithoutZ) {
             // TODO need to copy into Array - can use raw()?
             for (k in 0..(dataSize-1)) {
-                oneDSource(k) = source(i,j,k);
+                oneDSource(k) = localSource(i,j,k);
             }
             FFTW.fftwExecute(plan);
             for (k in 0..(dataSize-1)) {
-                temp(i,j,k) = oneDTarget(k);
+                localTemp(i,j,k) = oneDTarget(k);
             }
         }
-        FFTW.fftwDestroyPlan(plan);
     }
 
     /**
@@ -155,6 +156,7 @@ public class Distributed3dFft {
         val sourceEndX = sourceDist.region.max(0);
         val sourceStartY = sourceDist.region.min(1);
         val sourceEndY = sourceDist.region.max(1);
+        val localTemp = temp.getLocalPortion();
         val target = this.target; // TODO shouldn't be necessary XTENLANG-1913;
         finish {
             for (p2 in temp.dist.places()) {
@@ -169,22 +171,24 @@ public class Distributed3dFft {
                 val transferRegion = (startX..endX) * (startY..endY) * (startZ..endZ);
                 if (transferRegion.size() > 0) {
                     if (p2 == here) {
+                        val localTarget = target.getLocalPortion();
                         // do a synchronous in-place transpose from temp to target
                         for ([x,y,z] in transferRegion) {
-                            target(z,x,y) = temp(x,y,z);
+                            localTarget(z,x,y) = localTemp(x,y,z);
                         }
                     } else {
                         // collect elements to transfer to remote place
                         val elementsToTransfer = new Array[Complex](transferRegion.size());
                         var i : Int = 0;
                         for ([x,y,z] in transferRegion) {
-                            elementsToTransfer(i++) = temp(x,y,z);
+                            elementsToTransfer(i++) = localTemp(x,y,z);
                         }
-                        async at (p2) {
+                        async at(p2) {
+                            val localTarget = target.getLocalPortion();
                             var i2 : Int = 0;
                             for ([x,y,z] in transferRegion) {
                                 // transpose dimensions
-                                target(z,x,y) = elementsToTransfer(i2++);
+                                localTarget(z,x,y) = elementsToTransfer(i2++);
                             }
                         }
                     }
@@ -227,7 +231,7 @@ public class Distributed3dFft {
                         for (x in startX..endX) {
                             elementsToTransfer(k++) = oneDTarget(x);
                         }
-                        async at (p2) {
+                        async at(p2) {
                             var x:Int = 0;
                             for (k2 in startX..endX) {
                                 target(k2,i,j) = elementsToTransfer(x++);

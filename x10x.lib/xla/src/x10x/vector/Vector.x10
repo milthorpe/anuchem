@@ -74,7 +74,7 @@ public class Vector {
      * make this Vector a null vector
      */
     public def makeZero() : void {
-        vec.fill(0.0);
+        vec.clear();
     }
 
     /**

@@ -83,10 +83,10 @@ public class TwoElectronIntegrals {
          val cPrims = c.getPrimitives();
          val dPrims = d.getPrimitives();
 
-         val aCen  = a.getCenter();
-         val bCen  = b.getCenter();
-         val cCen  = c.getCenter();
-         val dCen  = d.getCenter();
+         val aCen  = a.centre;
+         val bCen  = b.centre;
+         val cCen  = c.centre;
+         val dCen  = d.centre;
 
          val dAng  = d.getMaximumAngularMomentum();
          val cAng  = c.getMaximumAngularMomentum();
@@ -103,10 +103,10 @@ public class TwoElectronIntegrals {
          val bLim = ((bAng+1)*(bAng+2)/2);
          val aLim = ((aAng+1)*(aAng+2)/2);
 
-         val dStrt = d.getIntIndex();
-         val cStrt = c.getIntIndex();
-         val bStrt = b.getIntIndex();
-         val aStrt = a.getIntIndex();
+         val dStrt = d.intIndex;
+         val cStrt = c.intIndex;
+         val bStrt = b.intIndex;
+         val aStrt = a.intIndex;
 
          val angMomAB = aAng + bAng;
          val angMomCD = cAng + dAng;
@@ -120,17 +120,17 @@ public class TwoElectronIntegrals {
 
          for([ap] in aPrims) {
             val aPrim = aPrims(ap);
-           val aAlpha = aPrim.getExponent();
-           val aCoeff = aPrim.getCoefficient();
+           val aAlpha = aPrim.exponent;
+           val aCoeff = aPrim.coefficient;
 
            for([bp] in bPrims) {
              val bPrim = bPrims(bp);
-             pcdint.fill(0.0);
-             val bAlpha = bPrim.getExponent();
+             pcdint.clear();
+             val bAlpha = bPrim.exponent;
              val gamma1 = aAlpha + bAlpha;
-             val bCoeff = bPrim.getCoefficient();
+             val bCoeff = bPrim.coefficient;
 
-             // val p = gaussianProductCenter(aAlpha, aCen, bAlpha, bCen);
+             // val p = gaussianProductCentre(aAlpha, aCen, bAlpha, bCen);
 
              val p = Point3d(
                          (aAlpha * aCen.i + bAlpha * bCen.i) / gamma1,
@@ -146,18 +146,18 @@ public class TwoElectronIntegrals {
 
              for([cp] in cPrims) {
                 val cPrim = cPrims(cp);
-               val cAlpha = cPrim.getExponent();
-               val cCoeff = cPrim.getCoefficient();
+               val cAlpha = cPrim.exponent;
+               val cCoeff = cPrim.coefficient;
 
                for([dp] in dPrims) {
                     val dPrim = dPrims(dp);
-                 val dAlpha = dPrim.getExponent();
-                 val dCoeff = dPrim.getCoefficient();
+                 val dAlpha = dPrim.exponent;
+                 val dCoeff = dPrim.coefficient;
 
                  val gamma2 = cAlpha + dAlpha;
                  val eta    = (gamma1*gamma2)/(gamma1+gamma2);
 
-                 // val q = gaussianProductCenter(cAlpha, cCen, dAlpha, dCen);
+                 // val q = gaussianProductCentre(cAlpha, cCen, dAlpha, dCen);
                  val q = Point3d(
                            (cAlpha * cCen.i + dAlpha * dCen.i) / gamma2,
                            (cAlpha * cCen.j + dAlpha * dCen.j) / gamma2,
@@ -238,10 +238,10 @@ public class TwoElectronIntegrals {
         val cPrims = c.getPrimitives();
         val dPrims = d.getPrimitives();
 
-        val aCen  = a.getCenter();
-        val bCen  = b.getCenter();
-        val cCen  = c.getCenter();
-        val dCen  = d.getCenter();
+        val aCen  = a.centre;
+        val bCen  = b.centre;
+        val cCen  = c.centre;
+        val dCen  = d.centre;
 
         val shellA = shellList.getPowers(aAng);
         val shellB = shellList.getPowers(bAng);
@@ -261,17 +261,17 @@ public class TwoElectronIntegrals {
 
         for([ap] in aPrims) {
           val aPrim = aPrims(ap);
-          val aAlpha = aPrim.getExponent();
-          val aCoeff = aPrim.getCoefficient();
+          val aAlpha = aPrim.exponent;
+          val aCoeff = aPrim.coefficient;
 
           for([bp] in bPrims) {
              val bPrim = bPrims(bp);
-             pcdint.fill(0.0);
-             val bAlpha = bPrim.getExponent();
+             pcdint.clear();
+             val bAlpha = bPrim.exponent;
              val gamma1 = aAlpha + bAlpha;
-             val bCoeff = bPrim.getCoefficient();
+             val bCoeff = bPrim.coefficient;
 
-             // val p = gaussianProductCenter(aAlpha, aCen, bAlpha, bCen);
+             // val p = gaussianProductCentre(aAlpha, aCen, bAlpha, bCen);
 
              val p = Point3d(
                          (aAlpha * aCen.i + bAlpha * bCen.i) / gamma1,
@@ -287,18 +287,18 @@ public class TwoElectronIntegrals {
 
              for([cp] in cPrims) {
                 val cPrim = cPrims(cp);
-               val cAlpha = cPrim.getExponent();
-               val cCoeff = cPrim.getCoefficient();
+               val cAlpha = cPrim.exponent;
+               val cCoeff = cPrim.coefficient;
 
                for([dp] in dPrims) {
                 val dPrim = dPrims(dp);
-                 val dAlpha = dPrim.getExponent();
-                 val dCoeff = dPrim.getCoefficient();
+                 val dAlpha = dPrim.exponent;
+                 val dCoeff = dPrim.coefficient;
 
                  val gamma2 = cAlpha + dAlpha;
                  val eta    = (gamma1*gamma2)/(gamma1+gamma2);
 
-                 // val q = gaussianProductCenter(cAlpha, cCen, dAlpha, dCen);
+                 // val q = gaussianProductCentre(cAlpha, cCen, dAlpha, dCen);
                  val q = Point3d(
                            (cAlpha * cCen.i + dAlpha * dCen.i) / gamma2,
                            (cAlpha * cCen.j + dAlpha * dCen.j) / gamma2,
@@ -906,14 +906,14 @@ public class TwoElectronIntegrals {
                       d:Point3d, dNorm:Double, dAlpha:Double, m:Int) : Double {
         var res:Double = 0.0;
 
-        val p = gaussianProductCenter(aAlpha, a, bAlpha, b);
-        val q = gaussianProductCenter(cAlpha, c, dAlpha, d);
+        val p = gaussianProductCentre(aAlpha, a, bAlpha, b);
+        val q = gaussianProductCentre(cAlpha, c, dAlpha, d);
         val zeta = aAlpha + bAlpha;
         val eta  = cAlpha + dAlpha;
         val zetaPlusEta = zeta + eta;
         val zetaByZetaPlusEta = zeta / zetaPlusEta;
         val etaByZetaPlusEta  = eta / zetaPlusEta;
-        val w = gaussianProductCenter(zeta, p, eta, q);
+        val w = gaussianProductCentre(zeta, p, eta, q);
         
         val la = aPower.getL();
         val ma = aPower.getM();
@@ -1110,16 +1110,16 @@ public class TwoElectronIntegrals {
     }
 
     /** Product of two gaussians */
-    private static def gaussianProductCenter(alpha1:Double, a:Point3d,  
+    private static def gaussianProductCentre(alpha1:Double, a:Point3d,  
                                     alpha2:Double, b:Point3d) : Point3d {
-        val gamma:Double = alpha1 + alpha2;
-        val center:Point3d =  Point3d(
+        val gamma = alpha1 + alpha2;
+        val centre = Point3d(
                          (alpha1 * a.i + alpha2 * b.i) / gamma,
                          (alpha1 * a.j + alpha2 * b.j) / gamma,
                          (alpha1 * a.k + alpha2 * b.k) / gamma
                        );
 
-        return center;
+        return centre;
     }
 }
 
