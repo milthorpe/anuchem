@@ -30,10 +30,8 @@ import au.edu.anu.util.Timer;
  * @author milthorpe 09/2011
  * 23/09 started 20:45
  */
-public class Boltzmann(nsize:Int) {
+public class Boltzmann(nsize:Int, nsteps:Int) {
     public static GHOST_WIDTH = 1;
-
-    public static NSTEPS = 5000;
 
     public static VISCOSITY = 1.0;
 
@@ -69,9 +67,6 @@ public class Boltzmann(nsize:Int) {
     /** The distribution of the full lattice. */
     val latticeDist:Dist(2);
 
-    /** The region of interior points of the lattice. */
-    val interiorRegion:Region(2){rect};
-
     /** The lattice Boltzmann distribution functions at each site. maps to g_fg(..,..,1..9) */
     val current:DistArray[Double](3);
 
@@ -102,8 +97,8 @@ public class Boltzmann(nsize:Int) {
     static hash = initHash();
     static ihash = initIHash();
 
-    public def this(nsize:Int) {
-        property(nsize);
+    public def this(nsize:Int, nsteps:Int) {
+        property(nsize, nsteps);
         val size = new Array[Int](2, nsize);
         this.size = size;
         val delta_x = XMAX/((nsize-1) as Double);
@@ -127,8 +122,6 @@ public class Boltzmann(nsize:Int) {
         boundary.updateGhosts();
         this.boundary = boundary;
 
-        val interiorRegion = 1..(size(0)-2) * 1..(size(1)-2);
-
         // initialize distribution of density and velocities
         val ux0 = 0.0;
         val uy0 = 0.0;
@@ -140,7 +133,6 @@ public class Boltzmann(nsize:Int) {
                 6.0 * VISCOSITY / (cspd*cspd*DELTA_T) + 0.5),
             GHOST_WIDTH);
         this.lbProps = lbProps;
-        this.interiorRegion = interiorRegion;
         val rtot = RHO0*lbProps.region.size();
 
         initializeLatticeParameters();
@@ -153,11 +145,13 @@ public class Boltzmann(nsize:Int) {
     }
 
     private def printDistributions() {
+        Console.OUT.println("new timestep");
         for (place in current.dist.places()) at (place) {
             val currentLocal = current.getLocalPortion();
             val lbHere = current.dist(here) as Region(3){rect};
-            for (ii in lbHere.min(0)..lbHere.max(0)) {
-                for (jj in lbHere.min(1)..lbHere.max(1)) {
+            for (jj in lbHere.min(1)..lbHere.max(1)) {
+                for (ii in lbHere.min(0)..lbHere.max(0)) {
+                    Console.OUT.print("    ");
                     for (i in 0..8) {
                         Console.OUT.printf("%12.4f", currentLocal(ii,jj,i));
                     }
@@ -208,7 +202,7 @@ public class Boltzmann(nsize:Int) {
         Console.OUT.println("Total x-momentum is " + initialStats.uxtot);
         Console.OUT.println("Total y-momentum is " + initialStats.uytot);
 
-        for (i in 1..NSTEPS) {
+        for (i in 1..nsteps) {
             val currentStats = timestep();
             if (i % 200 == 0) {
                 Console.OUT.println("Completed step " + i);
@@ -417,7 +411,7 @@ public class Boltzmann(nsize:Int) {
             }
 
             val localStats = updateProperties(latticeRegionLocal, currentLocal, lbPropsLocal);
-
+ 
             // perform relaxation
             updateEquilibrium(latticeRegionLocal, equilibriumLocal, lbPropsLocal);
 
@@ -553,12 +547,12 @@ public class Boltzmann(nsize:Int) {
     private def vorticity() {
         val latticeDist = this.latticeDist; // TODO shouldn't be necessary XTENLANG-1913
         val lbProps = this.lbProps; // TODO shouldn't be necessary XTENLANG-1913
-        val interiorRegion = this.interiorRegion; // TODO shouldn't be necessary XTENLANG-1913
 
         lbProps.updateGhosts();
         finish ateach (p in Dist.makeUnique()) {
             val lbPropsLocal = lbProps.getLocalPortion();
-            val interiorRegionHere = (latticeDist(here) && interiorRegion) as Region(2){rect};
+            val interiorRegion = 1..(size(0)-2) * 1..(size(1)-2);
+            val interiorRegionHere = (interiorRegion && latticeDist(here)) as Region(2){rect};
             for ([ii,jj] in interiorRegionHere) {
                 val props = lbPropsLocal(ii,jj);
                 var drni:Double = 0.0;
@@ -692,10 +686,14 @@ public class Boltzmann(nsize:Int) {
 
     public static def main(args:Rail[String]) {
         var nsize:Int = 129;
+        var nsteps:Int = 5000;
         if (args.size > 0) {
             nsize = Int.parseInt(args(0));
+            if (args.size > 1) {
+                nsteps = Int.parseInt(args(1));
+            }
         }
-        new Boltzmann(nsize).boltzmann();
+        new Boltzmann(nsize, nsteps).boltzmann();
     }
 
     // TODO mutable Struct?
