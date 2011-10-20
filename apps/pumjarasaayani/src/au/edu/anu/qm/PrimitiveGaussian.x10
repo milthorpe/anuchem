@@ -111,7 +111,7 @@ public final class PrimitiveGaussian {
     /**
      * The Kinetic Energy (KE) componant
      *
-     * <i> Taken from THO eq. 2.12 <i>
+     * <i> Taken from THO eq. 2.14 <i>
      */
     public def kinetic(pg:PrimitiveGaussian) : Double {
         val l1 = power.l;
@@ -146,7 +146,7 @@ public final class PrimitiveGaussian {
     /**
      * The nuclear attraction term.
      *
-     * <i> Taken from THO eq. 2.12 <i>
+     * <i> Taken from THO eq. 2.16 <i>
      */
     public def nuclear(pg:PrimitiveGaussian, centre:Point3d) :Double {
         val prod = mul(pg); 
