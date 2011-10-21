@@ -322,6 +322,7 @@ public class GMatrix extends Matrix {
     }
 
     private def computeDirectMultiPlaceStatic(density:Density) {
+        makeZero();
         val noOfAtoms = mol.getNumberOfAtoms();
         val nPlaces = Place.MAX_PLACES;
         val workPerPlace = noOfAtoms / nPlaces;
