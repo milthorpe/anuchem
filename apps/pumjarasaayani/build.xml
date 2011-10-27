@@ -24,7 +24,7 @@
 
     <!-- <property name="x10rt" value="standalone" /> -->
     <!-- <property name="x10rt" value="pgas_bgp" />  -->
-    <property name="x10rt" value="mpi" />
+    <property name="x10rt" value="sockets" />
     
     <property name="target" location="${basedir}/target" />
     <property name="target-src" location="${target}/classes" />
