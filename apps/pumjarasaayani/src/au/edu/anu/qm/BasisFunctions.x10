@@ -130,6 +130,30 @@ public struct BasisFunctions {
         } // end for
     }
 
+    public def getNormalizationFactors():Rail[Double] {
+        val norms = new Array[Double](basisFunctions.size());
+        for(var i:Int=0; i<basisFunctions.size(); i++) {
+             val prms  = basisFunctions(i).getPrimitives();
+             for(var j:Int=0; j<1; j++) {
+                val prmj = prms(j);
+       
+                var lmx:Int = prmj.power.getL();
+                var lmy:Int = prmj.power.getM();
+                var lmz:Int = prmj.power.getN();
+                var lmt:Int = prmj.power.getTotalAngularMomentum();
+                var denom:Double=1.0;
+
+                while(lmt>1) { denom *= (2.0*lmt-1.0); lmt--; }
+                while(lmx>1) { denom /= (2.0*lmx-1.0); lmx--; }
+                while(lmy>1) { denom /= (2.0*lmy-1.0); lmy--; }
+                while(lmz>1) { denom /= (2.0*lmz-1.0); lmz--; }
+
+                norms(i) = Math.sqrt(denom);
+            }
+        }
+        return norms;
+    }
+
     public def getBasisName() = this.basisName;
     public def getBasisFunctions() = basisFunctions;
     public def getShellList() = shellList;

@@ -95,7 +95,7 @@ public class GMatrix extends Matrix {
 
         val shellList = bfs.getShellList();
         val maxam = shellList.getMaximumAngularMomentum();
-        val twoE = new TwoElectronIntegrals(maxam);
+        val twoE = new TwoElectronIntegrals(maxam, bfs.getNormalizationFactors());
 
         val noOfAtoms = mol.getNumberOfAtoms();
         // centre a
@@ -155,12 +155,10 @@ public class GMatrix extends Matrix {
 
         makeZero();
 
-        val shellList = bfs.getShellList();
-
         val computeThreads = new Array[ComputeThread](Runtime.NTHREADS);
 
         for(var i:Int=0; i<Runtime.NTHREADS; i++) {
-            computeThreads(i) = new ComputeThread(N, shellList);
+            computeThreads(i) = new ComputeThread(N, bfs);
         } // end for
 
         val noOfAtoms = mol.getNumberOfAtoms();
@@ -467,9 +465,8 @@ public class GMatrix extends Matrix {
             val noOfOccupancies = noOfElectrons / 2;
             density = new Density(N, noOfOccupancies);
 
-            val shellList = bfs.getShellList();
             for(var i:Int=0; i<Runtime.NTHREADS; i++) {
-                computeThreads(i) = new ComputeThread(gMatrixContribution.getRowCount(), shellList);
+                computeThreads(i) = new ComputeThread(gMatrixContribution.getRowCount(), bfs);
             }
         }
 
@@ -682,10 +679,11 @@ public class GMatrix extends Matrix {
         val shellList:ShellList;
         val jMat:Matrix, kMat:Matrix;
 
-        public def this(N: Int, sh:ShellList) {
+        public def this(N: Int, bfs:BasisFunctions) {
             this.N = N;
-            this.twoEI = new TwoElectronIntegrals(sh.getMaximumAngularMomentum());
-            this.shellList = sh;
+            val shellList = bfs.getShellList();
+            this.twoEI = new TwoElectronIntegrals(shellList.getMaximumAngularMomentum(), bfs.getNormalizationFactors());
+            this.shellList = shellList;
 
             jMat = new Matrix(N);
             kMat = new Matrix(N);

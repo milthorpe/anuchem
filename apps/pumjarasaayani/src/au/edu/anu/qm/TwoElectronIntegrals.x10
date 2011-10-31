@@ -44,10 +44,13 @@ public class TwoElectronIntegrals {
 
     private val maxam:Int, maxam2:Int, maxam4:Int, maxamN:Int, maxam2M:Int, maxam2N:Int, pqdim:Int;
 
+    private val normFactors:Rail[Double];
+
     /**
      * @param maxam maximum angular momentum (determines total number of integrals)
+     * @param normFactors normalization factors for integrals of different angular momenta
      */
-    public def this(maxam : Int) {
+    public def this(maxam : Int, normFactors:Rail[Double]) {
         // allocate scratch memory
         this.maxam = maxam;
         maxam2 = 2*maxam;
@@ -56,6 +59,8 @@ public class TwoElectronIntegrals {
         maxam2M  = ((maxam2+1)*(maxam2+2)/2);
         maxam2N  = ((maxam2+1)*(maxam2M+1));
         pqdim = maxam2M+1;
+
+        this.normFactors = normFactors;
 
         // Console.OUT.println("alloc: " + maxam + " " + maxam2N);
 
@@ -672,7 +677,9 @@ public class TwoElectronIntegrals {
                         val iijj = ii*(ii+1)/2 + jj;
 
                         if (iijj >= kkll) {
-                            val twoEIntVal = twoEInts(intIndx++); 
+                            val twoEIntVal = twoEInts(intIndx++)
+                                * normFactors(ll) * normFactors(jj)
+                                * normFactors(kk) * normFactors(ii);
 
                             jMatrix(ii,jj) += dMatrix(kk,ll) * twoEIntVal;
                             jMatrix(kk,ll) += dMatrix(ii,jj) * twoEIntVal;
