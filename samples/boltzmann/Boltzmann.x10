@@ -393,6 +393,7 @@ public class Boltzmann(nsize:Int, nsteps:Int) {
             // Perform streaming operation
             val boundaryLocal = boundary.getLocalPortion() as Array[Int](2){rect};
             val patch = new Array[Double](-1..1 * -1..1 * 0..8); // maps to fgp
+            val mask = new Array[Int](MASK_REGION);
             for ([ii,jj] in latticeRegionLocal) {
                 if (boundaryLocal(ii,jj) == 0) {
                     for (i in 1..8) {
@@ -401,7 +402,7 @@ public class Boltzmann(nsize:Int, nsteps:Int) {
                         currentLocal(ii,jj,i) = previousLocal(ii-ix,jj-iy,i);
                     }
                 } else {
-                    getPatch(ii, jj, patch, currentLocal, previousLocal, boundaryLocal, latticeRegion);
+                    getPatch(ii, jj, patch, mask, currentLocal, previousLocal, boundaryLocal, latticeRegion);
                     for (i in 1..8) {
                         val ix = ei(i).x; //Math.round(ei(i).x) as Int;
                         val iy = ei(i).y; //Math.round(ei(i).y) as Int;
@@ -442,8 +443,7 @@ public class Boltzmann(nsize:Int, nsteps:Int) {
     static MASK_REGION = -1..1 * -1..1;
 
     /** Handle cells at boundary */
-    private def getPatch(ii:Int, jj:Int, patch:Array[Double](3){rect}, currentLocal:Array[Double](3){rect}, previousLocal:Array[Double](3){rect}, boundaryLocal:Array[Int](2){rect}, latticeRegion:Region(2){rect,zeroBased}) {
-        @StackAllocate val mask = @StackAllocate new Array[Int](MASK_REGION);
+    private def getPatch(ii:Int, jj:Int, patch:Array[Double](3){rect}, mask:Array[Int](2){rect}, currentLocal:Array[Double](3){rect}, previousLocal:Array[Double](3){rect}, boundaryLocal:Array[Int](2){rect}, latticeRegion:Region(2){rect,zeroBased}) {
         // Check values of neighboring cells
         for (k in -1..1) {
             for (l in -1..1) {
@@ -459,7 +459,7 @@ public class Boltzmann(nsize:Int, nsteps:Int) {
         // or are on the boundary
         for (k in -1..1) {
             for (l in -1..1) {
-                if (mask(k,l) != 0 && (k!=0 || l!=0)) {
+                if ((k!=0 || l!=0) && mask(k,l) != 0) {
                     for (kk in Math.max(k-1,-1)..Math.min(k+1,1)) {
                         for (ll in Math.max(l-1,-1)..Math.min(l+1,1)) {
                             if (mask(kk,ll) == 0) mask(k,l) = 1;
