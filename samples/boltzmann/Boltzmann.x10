@@ -347,12 +347,14 @@ public class Boltzmann(nsize:Int, nsteps:Int) {
         val cspd2 = cspd/Math.sqrt(2.0);
 
         for([ii,jj] in latticeRegionLocal) {
+            val props = lbPropsLocal(ii,jj);
+            val aa = (rdim/(b*c2)) * props.pressure;
+            val aa0 = props.density - b*aa;
+            val px = props.px;
+            val py = props.py;
             for (j in 0..8) {
                 val ex = cspd2*ei(j).x;
                 val ey = cspd2*ei(j).y;
-                val props = lbPropsLocal(ii,jj);
-                val aa = (rdim/(b*c2)) * props.pressure;
-                val aa0 = props.density - b*aa;
                 val ffa:Double;
                 if (j == 0) {
                     ffa = aa0 + 4.0*aa;
@@ -362,8 +364,6 @@ public class Boltzmann(nsize:Int, nsteps:Int) {
                     ffa = aa;
                 }
 
-                val px = props.px;
-                val py = props.py;
                 equilibriumLocal(ii,jj,j) = ffa 
                    + props.density * ffb(j)*(px*ex + py*ey)
                    + ffc(j) * (px*px * ex*ex + 2.0*px*py*ex*ey + py*py * ey*ey)
