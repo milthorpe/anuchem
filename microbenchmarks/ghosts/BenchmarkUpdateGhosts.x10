@@ -15,7 +15,7 @@
  * @author milthorpe 09/2011
  */
 public class BenchmarkUpdateGhosts(arrayDim : Int) {
-    public static ITERS = 1000;
+    public static ITERS = 10000;
 
     public def this(elementsPerPlace : Int) {
         property(elementsPerPlace);
@@ -24,13 +24,13 @@ public class BenchmarkUpdateGhosts(arrayDim : Int) {
     public def run(): Boolean = {
         val facI = Math.sqrt(Place.MAX_PLACES) as Int;
         val facJ = Place.MAX_PLACES / facI;
-        val r = 0..(arrayDim*facI-1) * 0..(arrayDim*facJ-1) * 0..(arrayDim-1);
+        val r = 0..513 * 0..513 * 0..9;
         Console.OUT.println("r =  " + r);
         val d = Dist.makeBlockBlock(r, 0, 1);
         //Console.OUT.println("d = " + d);
 
         val a = DistArray.make[Double](d, 2);
-
+/*
         var start:Long = System.nanoTime();
         for ([t] in 1..ITERS) {
             a.updateGhosts();
