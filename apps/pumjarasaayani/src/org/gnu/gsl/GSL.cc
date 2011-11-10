@@ -6,7 +6,7 @@
  *  You may obtain a copy of the License at
  *      http://www.opensource.org/licenses/eclipse-1.0.php
  *
- * (C) Copyright Australian National University 2010.
+ * (C) Copyright Australian National University 2010-2011.
  */
 
 #include "GSL.h"
@@ -45,14 +45,14 @@ namespace org {
              gsl_vector_view xView = gsl_vector_view_array(x, aSize);
              gsl_permutation * p = gsl_permutation_alloc(aSize);
 
-             int info;
+             int signum;
 
-             gsl_linalg_LU_decomp(&(aView.matrix), p, &info);
-             gsl_linalg_LU_solve(&(aView.matrix), p, &(bView.vector), &(xView.vector));
+             gsl_linalg_LU_decomp(&(aView.matrix), p, &signum);
+             int returnValue = gsl_linalg_LU_solve(&(aView.matrix), p, &(bView.vector), &(xView.vector));
 
              gsl_permutation_free(p);
 
-             return info;
+             return returnValue;
          }
       } // gsl
    } // gnu
