@@ -33,7 +33,7 @@ public class HartreeFockSCFMethod extends SCFMethod {
 
     public def scf() : void {
         val noOfBasisFunctions = bfs.getBasisFunctions().size();
-        val noOfIntegrals = noOfBasisFunctions * (noOfBasisFunctions + 1)
+        val noOfIntegrals:Long = noOfBasisFunctions * (noOfBasisFunctions + 1)
                           * (noOfBasisFunctions * noOfBasisFunctions
                              + noOfBasisFunctions + 2) / 8;
         Console.OUT.println("\nNumber of 2E integrals: " + noOfIntegrals);
