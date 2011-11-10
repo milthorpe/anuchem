@@ -31,17 +31,27 @@ public class DIISFockExtrapolator {
     val errorVectorList:ArrayList[Vector];
 
     val errorThreshold = 0.1;
+    val MinnondiisStep:Int = 2;
+    val MaxnondiisStep:Int = 5;    
 
     var diisStep:Int = 0;
+    var nondiisStep:Int = 0;
+
     var diisStarted:Boolean = false;
+    var converged:Boolean = false;
 
     var oldFock:Fock;
 
     public def this() {
         fockMatrixList  = new ArrayList[Fock]();
         errorVectorList = new ArrayList[Vector]();
-
+        nondiisStep = 0;
         diisStep = 0;
+        converged = false;
+    }
+
+    public def isConverged() : Boolean {
+        return converged;
     }
 
     /** Generate a new Fock by extrapolating from previous recorded Fock and their difference vectors */
@@ -58,12 +68,16 @@ public class DIISFockExtrapolator {
         val errorVector = new Vector(FPS.sub(SPF));
         val mxerr = errorVector.maxNorm();
 
-        if (mxerr < errorThreshold && !diisStarted) {
+        //Console.OUT.printf("Max DIIS error %20.11f\n",mxerr);
+        if (mxerr <1e-6) converged=true;
+
+        if ( ( (mxerr < errorThreshold && diisStep>=MaxnondiisStep) || nondiisStep>=MaxnondiisStep) && !diisStarted) {
             Console.OUT.println("Starting DIIS...");
             diisStarted = true;
         } // end if
 
         if (!diisStarted) {
+            nondiisStep++;
             if (oldFock == null) {
                 oldFock = currentFock;
 
@@ -111,22 +125,16 @@ public class DIISFockExtrapolator {
         // val gele = new GaussianElimination();
         val gele = new NativeLinearEquationSolver();
 
-        try {
-          val solVec = gele.findSolution(A, B).getVector();
+        val solVec = gele.findSolution(A, B).getVector();
 
-          for (var i:Int=0; i < noOfIterations; i++) {
-              val prevFockMat = fockMatrixList.get(i).getMatrix();
-              for (var j:Int=0; j < N; j++) {
-                 for (var k:Int=0; k < N; k++) {
-                     newFockMat(j,k) += solVec(i) * prevFockMat(j,k);
-                 } // end for
-              } // end for
+        for (var i:Int=0; i < noOfIterations; i++) {
+          val prevFockMat = fockMatrixList.get(i).getMatrix();
+          for (var j:Int=0; j < N; j++) {
+             for (var k:Int=0; k < N; k++) {
+                 newFockMat(j,k) += solVec(i) * prevFockMat(j,k);
+             } // end for
           } // end for
-        } catch(e:Exception) {
-          diisStep++;
-          
-          return currentFock;
-        } // end catch throw
+        } // end for
 
         diisStep++;
 

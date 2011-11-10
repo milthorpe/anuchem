@@ -73,7 +73,7 @@ public class HartreeFockSCFMethod extends SCFMethod {
 
         //Console.OUT.println("    Starting RHF-SCF ... ");        
 
-        val diis = new DIISFockExtrapolator();
+        var diis:DIISFockExtrapolator = null;
 
         // start the SCF cycle
         for(var scfIteration:Int=0; scfIteration<maxIteration; scfIteration++) {
@@ -89,6 +89,7 @@ public class HartreeFockSCFMethod extends SCFMethod {
             // make fock matrix
             fock.compute(hCore, gMatrix);
             // TODO: DIIS to be switched on / off on request 
+            if (scfIteration % 50==0) diis = new DIISFockExtrapolator();
             fock = diis.next(fock, overlap, density);
             timer.stop(0);
             //Console.OUT.println ("    Time to construct Fock: " + (timer.total(0) as Double) / 1e9 + " seconds");
@@ -109,10 +110,10 @@ public class HartreeFockSCFMethod extends SCFMethod {
             
             energy = eOne + eTwo + nuclearEnergy;
 
-            Console.OUT.println("Cycle #" + scfIteration + " Total energy = " + energy);
-                        
+            Console.OUT.print("Cycle #" + scfIteration + " Total energy = " + energy);
+            Console.OUT.printf(" (%.6f)\n",energy - oldEnergy);            
             // ckeck for convergence
-            if (Math.abs(energy - oldEnergy) < energyTolerance) {
+            if (Math.abs(energy - oldEnergy) < energyTolerance && diis.isConverged()) {
                 converged = true;
                 break;
             } // end if
