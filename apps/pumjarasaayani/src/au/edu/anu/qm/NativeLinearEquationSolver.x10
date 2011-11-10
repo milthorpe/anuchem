@@ -23,15 +23,16 @@ import org.gnu.gsl.GSL;
  */
 public class NativeLinearEquationSolver extends LinearEquationSolver {
  
-     public def findSolution(matrixA:Matrix, vectorB:Vector) : Vector {
-          val N = matrixA.getRowCount();
-          val vectorX = new Vector(N);
+    public def findSolution(matrixA:Matrix, vectorB:Vector) : Vector {
+        val N = matrixA.getRowCount();
+        val vectorX = new Vector(N);
 
-          vectorX.makeZero();
-          
-          if (GSL.solve(matrixA, vectorB, vectorX) != 0) throw new Exception("No solution!");
+        val solvedResult = GSL.solve(matrixA, vectorB, vectorX);
+        if (solvedResult != 0) {
+            Console.ERR.println("NativeLinearEquationSolver.findSolution(): no solution! return code = " + solvedResult);
+        }
 
-          return vectorX;
-     }
+        return vectorX;
+    }
 }
 

@@ -30,9 +30,6 @@ public class NativeDiagonalizer implements Diagonalizer {
          eigenVectorsMat = new Matrix(n);
          eigenValuesVec  = new Vector(n);
 
-         eigenVectorsMat.makeZero();
-         eigenValuesVec.makeZero();
-
          GSL.eigenSymmv(mat, eigenVectorsMat, eigenValuesVec);
          
          eigenVectorsMat = eigenVectorsMat.transpose();
