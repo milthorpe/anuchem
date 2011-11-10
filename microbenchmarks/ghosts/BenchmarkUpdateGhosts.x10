@@ -29,7 +29,7 @@ public class BenchmarkUpdateGhosts(arrayDim : Int) {
         val d = Dist.makeBlockBlock(r, 0, 1);
         //Console.OUT.println("d = " + d);
 
-        val a = DistArray.make[Double](d, 2);
+        val a = DistArray.make[Double](d, 2, false);
 /*
         var start:Long = System.nanoTime();
         for ([t] in 1..ITERS) {
