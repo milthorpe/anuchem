@@ -34,19 +34,15 @@ public class BasisSet {
     } 
 
     public def this(name:String, basisDir:String) {
-       Console.OUT.println("\tReading in basis info. for " + name + " from " + basisDir);
+        Console.OUT.println("\tReading in basis info. for " + name + " from " + basisDir);
 
-       basisInfo = new HashMap[String, AtomicBasis]();
-       this.name = name;
-
-       try {
-         init(name, basisDir);
-       } catch(e:Exception) {
-         Console.OUT.println("Unable to read basis from : " + basisDir + ".");
-         Console.OUT.println("Will use sto3g basis.");
-
-         init("sto3g");
-       } // end of try .. catch block
+        basisInfo = new HashMap[String, AtomicBasis]();
+        this.name = name;
+        try {
+            init(name, basisDir);
+        } catch(e:Exception) {
+            throw new Exception("Unable to read basis from : "+basisDir, e);
+        }
     }
 
     private def init(name:String, basisDir:String) {

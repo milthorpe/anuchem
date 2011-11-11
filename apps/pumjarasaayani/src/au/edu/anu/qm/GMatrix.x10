@@ -29,6 +29,8 @@ import au.edu.anu.util.Timer;
  * @author: V.Ganesh
  */
 public class GMatrix extends Matrix {
+    public static DEFAULT_GMATTYPE=5;
+
     private val gMatType : Int;
     private val computeInst : DistArray[ComputePlace](1);
 
@@ -79,7 +81,7 @@ public class GMatrix extends Matrix {
            break;
        } // end switch .. case
        timer.stop(0);
-       Console.OUT.println ("    Time to construct GMatrix: " + (timer.total(0) as Double) / 1e9 + " seconds");
+       Console.OUT.printf("    Time to construct GMatrix: %.3g seconds\n", (timer.total(0) as Double) / 1e9);
     }
 
     private def computeDirectSerial(density:Density) {
@@ -293,12 +295,12 @@ public class GMatrix extends Matrix {
         } // finish
 
         timer.stop(0);
-        Console.OUT.println("\tTime for actual computation: " + (timer.total(0) as Double) / 1e9 + " seconds"); 
+        Console.OUT.printf("\tTime for actual computation: %.3g seconds\n", (timer.total(0) as Double) / 1e9); 
 
         timer.start(1);
         gatherAndReduceGMatrix();
         timer.stop(1);
-        Console.OUT.println("\tTime for summing up GMatrix bits: " + (timer.total(1) as Double) / 1e9 + " seconds"); 
+        Console.OUT.printf("\tTime for summing up GMatrix bits: %.3g seconds\n", (timer.total(1) as Double) / 1e9); 
     }
 
     /**

@@ -56,7 +56,7 @@ public class HartreeFockSCFMethod extends SCFMethod {
         var oldEnergy:Double = 0.0;
 
         val nuclearEnergy = getNuclearEnergy();
-        Console.OUT.println("Nuclear repulsion energy = " + nuclearEnergy + " a.u.");
+        Console.OUT.printf("Nuclear repulsion energy = %.6f a.u.\n", nuclearEnergy);
 
         //Console.OUT.println ("    Initializing matrices ...");
         // init memory for the matrices
@@ -103,15 +103,14 @@ public class HartreeFockSCFMethod extends SCFMethod {
          
             // compute the total energy at this point
             val eOne = density.mul(hCore).trace();
-            Console.OUT.println("    Nuclear electron attraction energy = " + eOne + " a.u.");
+            Console.OUT.printf("    Nuclear electron attraction energy = %.6f a.u.\n", eOne);
 
             val eTwo = density.mul(fock).trace();
-            Console.OUT.println("    Electron repulsion energy = " + eTwo + " a.u.");
+            Console.OUT.printf("    Electron repulsion energy = %.6f a.u.\n", eTwo);
             
             energy = eOne + eTwo + nuclearEnergy;
 
-            Console.OUT.print("Cycle #" + scfIteration + " Total energy = " + energy);
-            Console.OUT.printf(" (%.6f)\n",energy - oldEnergy);            
+            Console.OUT.printf("Cycle #" + scfIteration + " Total energy = %.6f a.u. (%.6f)\n", energy, (energy-oldEnergy));
             // ckeck for convergence
             if (Math.abs(energy - oldEnergy) < energyTolerance && diis.isConverged()) {
                 converged = true;
@@ -124,7 +123,7 @@ public class HartreeFockSCFMethod extends SCFMethod {
         if (!converged) 
            Console.OUT.println("SCF did not converge in " + maxIteration + " cycles!");
         else 
-           Console.OUT.println("SCF converged. Final SCF energy = " + energy + " a.u.");
+           Console.OUT.printf("SCF converged. Final SCF energy = %.6f a.u.\n", energy);
     }
 }
 
