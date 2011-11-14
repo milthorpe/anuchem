@@ -14,6 +14,7 @@ import x10.io.File;
 import x10.io.FileReader;
 import x10.util.HashMap;
 import au.edu.anu.chem.Atom;
+import x10x.matrix.Matrix;
 
 /**
  * BasisSet.x10
@@ -25,23 +26,25 @@ import au.edu.anu.chem.Atom;
 public class BasisSet { 
     val name:String;
     val basisInfo:HashMap[String, AtomicBasis];
-
-    public def this(name:String) { 
-       this.name = name;
-
-       basisInfo = new HashMap[String, AtomicBasis]();
-       init(name);
-    } 
+    val basisAtomicDensity:HashMap[String, Matrix];
 
     public def this(name:String, basisDir:String) {
         Console.OUT.println("\tReading in basis info. for " + name + " from " + basisDir);
 
         basisInfo = new HashMap[String, AtomicBasis]();
+	    basisAtomicDensity = new HashMap[String, Matrix]();
+ 
         this.name = name;
         try {
             init(name, basisDir);
         } catch(e:Exception) {
             throw new Exception("Unable to read basis from : "+basisDir, e);
+        }
+
+        try {
+            initDensity(name, basisDir);
+        } catch(e:Exception) {
+            throw new Exception("Unable to read density from : "+basisDir, e);
         }
     }
 
@@ -78,74 +81,36 @@ public class BasisSet {
 
         fil.close();
     }
- 
-    private def init(name:String) {
-        if (name.equals("sto3g")) {
 
-            var orbType:String = "S";
-            var exps:Rail[Double] = [3.425251, 0.623914, 0.168855];
-            var coeffs:Rail[Double] = [0.154329, 0.535328, 0.444635];
-            val hOrb = new Orbital(orbType, exps, coeffs);
-            var orbs : Rail[Orbital] = [hOrb as Orbital];
-            val hBasis = new AtomicBasis(orbs);
+    private def initDensity(name:String, basisDir:String) {
+        val fileName = basisDir + File.SEPARATOR + name + ".P";
+        val fil = new FileReader(new File(fileName));       
+        val noOfAtoms = Int.parseInt(fil.readLine());
 
-            basisInfo.put("H", hBasis);
+        for(var i:Int=0; i<noOfAtoms; i++) {
+            val words = fil.readLine().split(" ");
+            val symbol = words(0);
+            val noOfFunctions = Int.parseInt(words(1));
 
-            orbType = "S";
-            exps = [71.616837, 13.045096, 3.530512];
-            coeffs = [0.154329, 0.535328, 0.444635];
-            val cOrb1 = new Orbital(orbType, exps, coeffs);
-            orbType = "S";
-            exps = [2.941249, 0.683483, 0.222290];
-            coeffs = [-0.099967, 0.399513, 0.700115];
-            val cOrb2 = new Orbital(orbType, exps, coeffs);
-            orbType = "P";
-            exps = [2.941249, 0.683483, 0.222290];
-            coeffs = [0.155916, 0.607684, 0.391957];
-            val cOrb3 = new Orbital(orbType, exps, coeffs);
-            orbs = [cOrb1, cOrb2, cOrb3];
-            val cBasis = new AtomicBasis(orbs);
+            val density = new Matrix(noOfFunctions, noOfFunctions);
+	        val aDensity = density.getMatrix();
+            for(var j:Int=0; j<noOfFunctions; j++) {
+                val words1 = fil.readLine().split(" ");
+                for(var k:Int=0; k<noOfFunctions; k++) {
+                    aDensity(j,k) = Double.parseDouble(words1(k));
+                }
+            }
 
-            basisInfo.put("C", cBasis);
+            basisAtomicDensity.put(symbol, density);
+        } // end for
 
-            orbType = "S";
-            exps = [99.106169, 18.052312, 4.885660];
-            coeffs = [0.154329, 0.535328, 0.444635];
-            val nOrb1 = new Orbital(orbType, exps, coeffs);
-            orbType = "S";
-            exps = [3.780456, 0.878497, 0.285714];
-            coeffs = [-0.099967, 0.399513, 0.700115];
-            val nOrb2 = new Orbital(orbType, exps, coeffs);
-            orbType = "P";
-            exps = [3.780456, 0.878497, 0.285714];
-            coeffs = [0.155916, 0.607684, 0.391957];
-            val nOrb3 = new Orbital(orbType, exps, coeffs);
-            orbs = [nOrb1, nOrb2, nOrb3];
-            val nBasis = new AtomicBasis(orbs);
-
-            basisInfo.put("N", nBasis);
-
-            orbType = "S";
-            exps = [130.709321, 23.808866, 6.443608];
-            coeffs = [0.154329, 0.535328, 0.444635];
-            val oOrb1 = new Orbital(orbType, exps, coeffs);
-            orbType = "S";
-            exps = [5.033151, 1.169596, 0.380389];
-            coeffs = [-0.099967, 0.399513, 0.700115];
-            val oOrb2 = new Orbital(orbType, exps, coeffs);
-            orbType = "P";
-            exps = [5.033151, 1.169596, 0.380389];
-            coeffs = [0.155916, 0.607684, 0.391957];
-            val oOrb3 = new Orbital(orbType, exps, coeffs);
-            orbs = [oOrb1, oOrb2, oOrb3];
-            val oBasis = new AtomicBasis(orbs);
-
-            basisInfo.put("O", oBasis);    
-       } // end if
+        fil.close();
     }
 
     public def getName() = this.name;
 
     public def getBasis(atom:Atom) = basisInfo.getOrElse(atom.symbol, null);
+    public def getDensity(atom:Atom) = basisAtomicDensity.getOrElse(atom.symbol, null);
+
 }
 

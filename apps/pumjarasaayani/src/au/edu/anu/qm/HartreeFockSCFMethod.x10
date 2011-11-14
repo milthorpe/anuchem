@@ -6,7 +6,7 @@
  *  You may obtain a copy of the License at
  *      http://www.opensource.org/licenses/eclipse-1.0.php
  *
- * (C) Copyright Australian National University 2010.
+ * (C) Copyright Australian National University 2010-2011.
  */
 package au.edu.anu.qm;
 
@@ -70,6 +70,8 @@ public class HartreeFockSCFMethod extends SCFMethod {
         //Console.OUT.println("    Forming initial guess ...");
         // compute initial MOs
         mos.compute(hCore, overlap);
+	    density.compute(mos);
+	    density.applyGuess(bfs.getSAD());
 
         //Console.OUT.println("    Starting RHF-SCF ... ");        
 
@@ -78,6 +80,7 @@ public class HartreeFockSCFMethod extends SCFMethod {
         // start the SCF cycle
         for(var scfIteration:Int=0; scfIteration<maxIteration; scfIteration++) {
             // make or guess density
+	    if (scfIteration>0) //
             density.compute(mos);
             
             // make the G matrix
@@ -110,9 +113,11 @@ public class HartreeFockSCFMethod extends SCFMethod {
             
             energy = eOne + eTwo + nuclearEnergy;
 
-            Console.OUT.printf("Cycle #" + scfIteration + " Total energy = %.6f a.u. (%.6f)\n", energy, (energy-oldEnergy));
+            Console.OUT.printf("Cycle #" + scfIteration + " Total energy = %.6f a.u.", energy);
+            if (scfIteration>0) Console.OUT.printf(" (%.6f)",energy-oldEnergy);
+            Console.OUT.printf("\n");
             // ckeck for convergence
-            if (Math.abs(energy - oldEnergy) < energyTolerance && diis.isConverged()) {
+            if (scfIteration>0/*Math.abs(energy - oldEnergy) < energyTolerance &&*/&& diis.isConverged()) {
                 converged = true;
                 break;
             } // end if

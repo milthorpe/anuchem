@@ -6,11 +6,10 @@
  *  You may obtain a copy of the License at
  *      http://www.opensource.org/licenses/eclipse-1.0.php
  *
- * (C) Copyright Australian National University 2010.
+ * (C) Copyright Australian National University 2010-2011.
  */
 package au.edu.anu.qm;
 
-import x10x.matrix.Matrix;
 import x10x.matrix.Matrix;
 
 /**
@@ -51,6 +50,16 @@ public class Density extends Matrix {
         val thisMat = getMatrix();
         for([i, j] in thisMat.region)
            thisMat(i, j) = res(i, j);
+    }
+
+    public def applyGuess(SAD:Matrix)  {
+        val N = SAD.getRowCount();
+        val dMat = SAD.getMatrix();
+        val thisMat = getMatrix();
+        for([i,j] in dMat.region) {
+            thisMat(i, j) = dMat(i, j);
+            //Console.OUT.printf("%d %d %f\n",i,j,dMat(i,j));
+        }
     }
 }
 

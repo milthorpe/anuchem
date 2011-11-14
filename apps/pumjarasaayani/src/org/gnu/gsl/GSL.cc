@@ -47,7 +47,7 @@ namespace org {
 
              int signum;
 
-             gsl_linalg_LU_decomp(&(aView.matrix), p, &signum);
+             if (gsl_linalg_LU_decomp(&(aView.matrix), p, &signum)!=0) return 1;
              int returnValue = gsl_linalg_LU_solve(&(aView.matrix), p, &(bView.vector), &(xView.vector));
 
              gsl_permutation_free(p);

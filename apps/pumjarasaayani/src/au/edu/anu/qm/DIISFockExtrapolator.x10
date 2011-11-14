@@ -27,12 +27,13 @@ import x10x.xla.GaussianElimination;
  * @author: V.Ganesh
  */
 public class DIISFockExtrapolator {
+    static ERROR_THRESHOLD = 0.1;
+    static MIN_NON_DIIS_STEP:Int = 1;
+    static MAX_NON_DIIS_STEP:Int = 1;    
+    static DIIS_SUBSPACE_SIZE = 15;
+
     val fockMatrixList:ArrayList[Fock];
     val errorVectorList:ArrayList[Vector];
-
-    val errorThreshold = 0.1;
-    val MinnondiisStep:Int = 2;
-    val MaxnondiisStep:Int = 5;    
 
     var diisStep:Int = 0;
     var nondiisStep:Int = 0;
@@ -68,13 +69,14 @@ public class DIISFockExtrapolator {
         val errorVector = new Vector(FPS.sub(SPF));
         val mxerr = errorVector.maxNorm();
 
-        //Console.OUT.printf("Max DIIS error %20.11f\n",mxerr);
+        Console.OUT.printf("Max DIIS error %.3e\n",mxerr);
         if (mxerr <1e-6) converged=true;
 
-        if ( ( (mxerr < errorThreshold && diisStep>=MaxnondiisStep) || nondiisStep>=MaxnondiisStep) && !diisStarted) {
+        if (!diisStarted && 
+          ( (mxerr < ERROR_THRESHOLD && diisStep>=MAX_NON_DIIS_STEP) || nondiisStep>=MAX_NON_DIIS_STEP)) {
             Console.OUT.println("Starting DIIS...");
             diisStarted = true;
-        } // end if
+        }
 
         if (!diisStarted) {
             nondiisStep++;
@@ -95,6 +97,11 @@ public class DIISFockExtrapolator {
                 return newFock;
             } // end if
         } // end if
+
+	if (nondiisStep >= DIIS_SUBSPACE_SIZE) {
+	    errorVectorList.removeAt(0);
+	    fockMatrixList.removeAt(0);
+	}
         
         errorVectorList.add(errorVector);
         fockMatrixList.add(currentFock);

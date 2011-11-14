@@ -11,6 +11,8 @@
 package au.edu.anu.qm;
 
 import x10.util.ArrayList;
+
+import x10x.matrix.Matrix;
 import au.edu.anu.chem.Molecule;
 
 /**
@@ -25,19 +27,38 @@ public struct BasisFunctions {
     public val basisName:String;
     public val basisFunctions:ArrayList[ContractedGaussian];
     public val shellList:ShellList;
+    public val SADMatrix:Matrix;
 
     public def this(mol:Molecule[QMAtom], basNam:String, basisDir:String) { 
         this.molecule  = mol;
         this.basisName = basNam;
 
         basisFunctions = new ArrayList[ContractedGaussian](); 
-        initBasisFunctions(basisDir);
+        val basisSet:BasisSet = new BasisSet(basisName, basisDir);
 
+        val size = initBasisFunctions(basisSet);
         shellList = new ShellList(mol);
+        SADMatrix = new Matrix(size,size);
+        initDensity(basisSet);
     }
 
-    private def initBasisFunctions(basisDir:String) {
-        val basisSet:BasisSet = new BasisSet(basisName, basisDir);
+    private def initDensity(basisSet:BasisSet) {
+        val smat = SADMatrix.getMatrix(); 
+        var shift:Int=0; 
+        for(var atmno:Int=0; atmno<molecule.getNumberOfAtoms(); atmno++) {
+            val atom = molecule.getAtom(atmno);
+            val aDensity = basisSet.getDensity(atom);
+            val aMatrix = aDensity.getMatrix();
+            val matsize = aDensity.getRowCount();
+            for ([i,j] in aMatrix.region) {
+                smat(i+shift,j+shift) = aMatrix(i,j);
+            }
+            shift+=matsize;
+        }
+    }
+
+    private def initBasisFunctions(basisSet:BasisSet):Int {
+        
         var intIndx:Int = 0;
         val plInst = PowerList.getInstance();
 
@@ -127,7 +148,8 @@ public struct BasisFunctions {
                     prmj.setCoefficient(prmj.coefficient*norm);
                 } // end for 
             } // end for
-        } // end for
+        } // end for	
+	    return intIndx;
     }
 
     public def getNormalizationFactors():Rail[Double] {
@@ -156,6 +178,8 @@ public struct BasisFunctions {
 
     public def getBasisName() = this.basisName;
     public def getBasisFunctions() = basisFunctions;
+    /** @return the guess for the density matrix formed from a superposition of atomic densities */
+    public def getSAD() = SADMatrix;
     public def getShellList() = shellList;
 }
 
