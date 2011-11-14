@@ -85,7 +85,7 @@ where <n> is number of places
 2 : (1) implemented as multi place code [*]
 3 : (1) using purely static load balancing [*]
 4 : (1) load balancing based on Bernholdt "Code 3", uses future and atomic [*] [**]
-5 : like (3) but uses a shell based loop [*]
+5 : like (3) but uses a shell based loop [*] (the default)
 
 [*] - most relevant for timings and scaling at this point
 [**] - currently segfaults for many test cases with multiple places

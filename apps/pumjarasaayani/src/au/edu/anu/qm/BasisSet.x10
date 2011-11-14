@@ -17,8 +17,6 @@ import au.edu.anu.chem.Atom;
 import x10x.matrix.Matrix;
 
 /**
- * BasisSet.x10
- *
  * Represents a basis set, used for setting up basis functions (by BasisFunctions)
  *
  * @author: V.Ganesh

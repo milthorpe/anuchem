@@ -22,9 +22,7 @@ import au.edu.anu.util.SharedCounter;
 import au.edu.anu.util.Timer;
 
 /**
- * GMatrix.x10
- *
- * GMatrix in HF calculation
+ * G matrix in HF calculation
  *
  * @author: V.Ganesh
  */

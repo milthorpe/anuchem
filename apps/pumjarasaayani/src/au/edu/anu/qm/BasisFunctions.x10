@@ -16,8 +16,6 @@ import x10x.matrix.Matrix;
 import au.edu.anu.chem.Molecule;
 
 /**
- * BasisFunctions.x10
- *
  * Generates basis functions for a given Molecule object
  *
  * @author: V.Ganesh

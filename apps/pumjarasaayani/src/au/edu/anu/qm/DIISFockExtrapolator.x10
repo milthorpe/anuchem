@@ -6,23 +6,21 @@
  *  You may obtain a copy of the License at
  *      http://www.opensource.org/licenses/eclipse-1.0.php
  *
- * (C) Copyright Australian National University 2010.
+ * (C) Copyright Australian National University 2010-2011.
  */
 package au.edu.anu.qm;
 
 import x10.util.ArrayList;
 import x10x.matrix.Matrix;
 import x10x.vector.Vector;
-import x10x.xla.GaussianElimination;
 
 /**
- * DIISFockExtrapolator.x10
- *
  * DIIS based fock extrapolation
- * Note: Mostly lifted from MeTA Studio code.
- * For reference see:
- * "CONVERGENCE ACCELERATION OF ITERATIVE SEQUENCES. THE CASE OF SCF ITERATION", Peter Pulay, Chem. Phys. Lett., 73, 393, 1980.
- * (opps! thats my birth year ;-))
+ * 
+ * @see Pulay, P. (1980). "Convergence acceleration of iterative sequences.
+ *     The case of SCF iteration".  Chem. Phys. Lett., 73 (2) pp. 393-398.
+ * @see Pulay, P. (1982). "Improved SCF convergence acceleration".
+ *     J. Comp. Chem., 3 (4) pp. 556-560.
  *
  * @author: V.Ganesh
  */
