@@ -12,7 +12,6 @@
 package au.edu.anu.qm;
 
 import x10x.vector.Point3d;
-import x10.compiler.Inline;
 
 /**
  * Represents a primitive gaussian function

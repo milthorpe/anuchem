@@ -10,6 +10,7 @@
  */
 package au.edu.anu.qm;
 
+import x10.compiler.Inline;
 import x10.util.ArrayList;
 
 import x10x.matrix.Matrix;
@@ -33,7 +34,7 @@ import au.edu.anu.chem.Molecule;
  *   J. Comp. Phys, 26 (2) pp. 218-231.
  */
 public class TwoElectronIntegrals {
-    private static val SQ2PI = Math.pow((2.0/Math.PI), 0.5); 
+    private static val SQ2PI = Math.pow((2.0/Math.PI), 0.5);
 
     private val gmt:Rail[Double], zeroM:Rail[Double];
 
@@ -42,7 +43,7 @@ public class TwoElectronIntegrals {
     private val npint:Array[Double](2){rect,zeroBased};
     private val pcdint:Array[Double](3){rect,zeroBased};
 
-    private val maxam:Int, maxam2:Int, maxam4:Int, maxamN:Int, maxam2M:Int, maxam2N:Int, pqdim:Int;
+    private val maxam:Int, maxam2:Int, maxam2M:Int, pqdim:Int;
 
     private val normFactors:Rail[Double];
 
@@ -54,10 +55,10 @@ public class TwoElectronIntegrals {
         // allocate scratch memory
         this.maxam = maxam;
         maxam2 = 2*maxam;
-        maxam4 = 4*maxam;
-        maxamN = ((maxam+1)*(maxam+2)/2);
+        val maxam4 = 4*maxam;
+        val maxamN = ((maxam+1)*(maxam+2)/2);
         maxam2M  = ((maxam2+1)*(maxam2+2)/2);
-        maxam2N  = ((maxam2+1)*(maxam2M+1));
+        val maxam2N  = ((maxam2+1)*(maxam2M+1));
         pqdim = maxam2M+1;
 
         this.normFactors = normFactors;
@@ -120,8 +121,9 @@ public class TwoElectronIntegrals {
          val radiusABSquared = a.distanceSquaredFrom(b); 
          val radiusCDSquared = c.distanceSquaredFrom(d);
 
-         val nTot = aLim*bLim*cLim*dLim;
-         val twoEInts = new Array[Double](nTot);
+         val jMatrix = jMat.getMatrix();
+         val kMatrix = kMat.getMatrix();
+         val dMatrix = dMat.getMatrix();
 
          for([ap] in aPrims) {
             val aPrim = aPrims(ap);
@@ -201,7 +203,7 @@ public class TwoElectronIntegrals {
 
                  // form [p|cd]
                  computePcd(angMomAB, gamma2, q, dLim, cLim,
-                            shellD, shellC, dCen, cCen, shellList);
+                            shellD, shellC, dCen, cCen);
                } // dPrim
               } // cPrim
 
@@ -210,22 +212,11 @@ public class TwoElectronIntegrals {
 
               computeAbcd(dLim, cLim, bLim, aLim,
                           dStrt, cStrt, bStrt, aStrt,
-                          shellList, shellB, shellA,
+                          shellB, shellA,
                           aCen, bCen, p, 2.0*gamma1,
-                          twoEInts); 
+                          jMatrix, kMatrix, dMatrix); 
            }
         }
-
-        val jMatrix = jMat.getMatrix();
-        val kMatrix = kMat.getMatrix();
-        val dMatrix = dMat.getMatrix();
-
-        fillJKMatrices(dLim, cLim, bLim, aLim,
-                       dStrt, cStrt, bStrt, aStrt,
-                       shellList, bAng, aAng,
-                       twoEInts,
-                       jMatrix, kMatrix,
-                       dMatrix);
     }
 
     /** A modification of above function */
@@ -261,8 +252,9 @@ public class TwoElectronIntegrals {
 
         val radiusCDSquared = c.distanceSquaredFrom(d);
 
-        val nTot = abLim*cLim*dLim;
-        val twoEInts = new Array[Double](nTot);
+        val jMatrix = jMat.getMatrix();
+        val kMatrix = kMat.getMatrix();
+        val dMatrix = dMat.getMatrix();
 
         for([ap] in aPrims) {
           val aPrim = aPrims(ap);
@@ -342,7 +334,7 @@ public class TwoElectronIntegrals {
 
                  // form [p|cd]
                  computePcd(angMomAB, gamma2, q, dLim, cLim,
-                            shellD, shellC, dCen, cCen, shellList);
+                            shellD, shellC, dCen, cCen);
                } // dPrim
               } // cPrim
 
@@ -351,22 +343,11 @@ public class TwoElectronIntegrals {
 
               computeAbcd(dLim, cLim, bLim, aLim,
                           dStrt, cStrt, bStrt, aStrt,
-                          shellList, shellB, shellA,
+                          shellB, shellA,
                           aCen, bCen, p, 2.0*gamma1,
-                          twoEInts); 
+                          jMatrix, kMatrix, dMatrix); 
            }
         }
-
-        val jMatrix = jMat.getMatrix();
-        val kMatrix = kMat.getMatrix();
-        val dMatrix = dMat.getMatrix();
-
-        fillJKMatrices(dLim, cLim, bLim, aLim,
-                       dStrt, cStrt, bStrt, aStrt,
-                       shellList, bAng, aAng,
-                       twoEInts,
-                       jMatrix, kMatrix,
-                       dMatrix);
     }
 
     /** MD recurrence relation steps in following two subroutines */
@@ -548,7 +529,7 @@ public class TwoElectronIntegrals {
     }
 
     private def computePcd(angMomAB:Int, gamma2:Double, q:Point3d, dLim:Int, cLim:Int, 
-                           shellD:Rail[Power], shellC:Rail[Power], dCen:Point3d, cCen:Point3d, shellList:ShellList) {
+                           shellD:Rail[Power], shellC:Rail[Power], dCen:Point3d, cCen:Point3d) {
          val qdi = q.i-dCen.i;
          val qdj = q.j-dCen.j;
          val qdk = q.k-dCen.k;
@@ -597,159 +578,138 @@ public class TwoElectronIntegrals {
  
     private def computeAbcd(dLim:Int, cLim:Int, bLim:Int, aLim:Int,
                             dStrt:Int, cStrt:Int, bStrt:Int, aStrt:Int,
-                            shellList:ShellList, shellB:Rail[Power], shellA:Rail[Power], 
+                            shellB:Rail[Power], shellA:Rail[Power], 
                             aCen:Point3d, bCen:Point3d, p:Point3d, gamma1:Double,
-                            twoEInts:Rail[Double]) {
-         val pbi = p.i-bCen.i;
-         val pbj = p.j-bCen.j;
-         val pbk = p.k-bCen.k;
+                            jMatrix:Array[Double](2){rect,zeroBased}, 
+                            kMatrix:Array[Double](2){rect,zeroBased},
+                            dMatrix:Array[Double](2){rect,zeroBased}) {
+        val pbi = p.i-bCen.i;
+        val pbj = p.j-bCen.j;
+        val pbk = p.k-bCen.k;
 
-         val pai = p.i-aCen.i;
-         val paj = p.j-aCen.j;
-         val pak = p.k-aCen.k;
+        val pai = p.i-aCen.i;
+        val paj = p.j-aCen.j;
+        val pak = p.k-aCen.k;
 
-         var intIndx:Int = 0;
+        for (dd in 0..(dLim-1)) {
+            val ll = dStrt + dd;
+            val normL = normFactors(ll);
 
-         for (dd in 0..(dLim-1)) {
-             val ll = dStrt + dd;
+            for (cc in 0..(cLim-1)) {
+                val kk = cStrt + cc;
+                val normK = normFactors(kk);
 
-             for (cc in 0..(cLim-1)) {
-                 val kk = cStrt + cc;
+                if (kk < ll) continue;
+                val kkll_st = kk*(kk+1)/2 + ll;
 
-                 if (kk < ll) continue;
-                 val kkll_st = kk*(kk+1)/2 + ll;
-
-                 for (k in 0..maxam2) {
+                for (k in 0..maxam2) {
                     val kpq = k*pqdim;
                     for (l in 0..maxam2M)
                         npint(k,l) = pcdint(dd, cc, kpq+l);
-                 }
+                }
 
-                 for (bb in 0..(bLim-1)) {
-                     val jj = bStrt + bb;
-                     val powersB = shellB(bb);
-                     val lp = powersB.l;
-                     val mp = powersB.m;
-                     val np = powersB.n;
+                for (bb in 0..(bLim-1)) {
+                    val jj = bStrt + bb;
+                    val normJ = normFactors(jj);
+                    val powersB = shellB(bb);
+                    val lp = powersB.l;
+                    val mp = powersB.m;
+                    val np = powersB.n;
 
-                     for (aa in 0..(aLim-1)) {
-                         val ii = aStrt + aa;
+                    for (aa in 0..(aLim-1)) {
+                        val ii = aStrt + aa;
 
-                         if (ii >= jj) {
-                             val iijj_st = ii*(ii+1)/2 + jj;
+                        if (ii >= jj) {
+                            val iijj_st = ii*(ii+1)/2 + jj;
 
-
-                             if (iijj_st >= kkll_st) {                                   
-                                 val powersA = shellA(aa);
-                                 val lq = powersA.l;
-                                 val mq = powersA.m;
-                                 val nq = powersA.n;
- 
-                                 twoEInts(intIndx) += mdHrr(lp, mp, np, lq, mq, nq, 0, 0, 0,
+                            if (iijj_st >= kkll_st) {     
+                                val normI = normFactors(ii);                              
+                                val powersA = shellA(aa);
+                                val lq = powersA.l;
+                                val mq = powersA.m;
+                                val nq = powersA.n;
+                                val intVal = mdHrr(lp, mp, np, lq, mq, nq, 0, 0, 0,
                                                             pbi, pbj, pbk, pai, paj, pak, gamma1);  // can use hrr instead
-                                 intIndx++;
-                             } // end if
-                         } // end if
-                     } // for aa
-                 } // for bb
-             } // for cc
-         } // for dd
+
+                                val normIntVal = intVal
+                                    * normL * normK
+                                    * normJ * normI;
+                                 fillJKMatrices(normIntVal, ii, jj, kk, ll, jMatrix, kMatrix, dMatrix);
+                            } // end if
+                        } // end if
+                    } // for aa
+                } // for bb
+            } // for cc
+        } // for dd
     }
 
-    private def fillJKMatrices(dLim:Int, cLim:Int, bLim:Int, aLim:Int,
-                               dStrt:Int, cStrt:Int, bStrt:Int, aStrt:Int,
-                               shellList:ShellList, bAng:Int, aAng:Int,
-                               twoEInts:Rail[Double],
-                               jMatrix:Array[Double](2){rect,zeroBased}, 
-                               kMatrix:Array[Double](2){rect,zeroBased},
-                               dMatrix:Array[Double](2){rect,zeroBased}) {
-        // Console.OUT.println("Filling in JK matrix");
-        var intIndx:Int = 0;
-
-        for (ll in dStrt..(dStrt+dLim-1)) {
-            val kStrt = Math.max(cStrt, ll);
-            for (kk in kStrt..(cStrt+cLim-1)) {
-                val kkll = kk*(kk+1)/2 + ll;
-
-                for (jj in bStrt..(bStrt+bLim-1)) {
-                    val iStrt = Math.max(aStrt, jj);
-                    for (ii in iStrt..(aStrt+aLim-1)) {
-                        val iijj = ii*(ii+1)/2 + jj;
-
-                        if (iijj >= kkll) {
-                            val twoEIntVal = twoEInts(intIndx++)
-                                * normFactors(ll) * normFactors(jj)
-                                * normFactors(kk) * normFactors(ii);
-
-                            jMatrix(ii,jj) += dMatrix(kk,ll) * twoEIntVal;
-                            jMatrix(kk,ll) += dMatrix(ii,jj) * twoEIntVal;
-                            kMatrix(ii,kk) += dMatrix(jj,ll) * twoEIntVal;
-                            kMatrix(ii,ll) += dMatrix(jj,kk) * twoEIntVal;
-                            kMatrix(jj,kk) += dMatrix(ii,ll) * twoEIntVal;
-                            kMatrix(jj,ll) += dMatrix(ii,kk) * twoEIntVal;
-                            if (ii != jj) {
-                                jMatrix(jj,ii) += dMatrix(kk,ll) * twoEIntVal;
-                                jMatrix(kk,ll) += dMatrix(jj,ii) * twoEIntVal;
-                                kMatrix(jj,kk) += dMatrix(ii,ll) * twoEIntVal;
-                                kMatrix(jj,ll) += dMatrix(ii,kk) * twoEIntVal;
-                                kMatrix(ii,kk) += dMatrix(jj,ll) * twoEIntVal;
-                                kMatrix(ii,ll) += dMatrix(jj,kk) * twoEIntVal;
-                                if (kk != ll) {
-                                    jMatrix(jj,ii) += dMatrix(ll,kk) * twoEIntVal;
-                                    jMatrix(ll,kk) += dMatrix(jj,ii) * twoEIntVal;
-                                    kMatrix(jj,ll) += dMatrix(ii,kk) * twoEIntVal;
-                                    kMatrix(jj,kk) += dMatrix(ii,ll) * twoEIntVal;
-                                    kMatrix(ii,ll) += dMatrix(jj,kk) * twoEIntVal;
-                                    kMatrix(ii,kk) += dMatrix(jj,ll) * twoEIntVal;
-                                }
-                            }
-                            if (kk != ll) {
-                                jMatrix(ii,jj) += dMatrix(ll,kk) * twoEIntVal;
-                                jMatrix(ll,kk) += dMatrix(ii,jj) * twoEIntVal;
-                                kMatrix(ii,ll) += dMatrix(jj,kk) * twoEIntVal;
-                                kMatrix(ii,kk) += dMatrix(jj,ll) * twoEIntVal;
-                                kMatrix(jj,ll) += dMatrix(ii,kk) * twoEIntVal;
-                                kMatrix(jj,kk) += dMatrix(ii,ll) * twoEIntVal;
-                            }
-                            if (ii != kk || jj != ll) {
-                                jMatrix(kk,ll) += dMatrix(ii,jj) * twoEIntVal;
-                                jMatrix(ii,jj) += dMatrix(kk,ll) * twoEIntVal;
-                                kMatrix(kk,ii) += dMatrix(ll,jj) * twoEIntVal;
-                                kMatrix(kk,jj) += dMatrix(ll,ii) * twoEIntVal;
-                                kMatrix(ll,ii) += dMatrix(kk,jj) * twoEIntVal;
-                                kMatrix(ll,jj) += dMatrix(kk,ii) * twoEIntVal;
-                                if (ii != jj) {
-                                    jMatrix(kk,ll) += dMatrix(jj,ii) * twoEIntVal;
-                                    jMatrix(jj,ii) += dMatrix(kk,ll) * twoEIntVal;
-                                    kMatrix(kk,jj) += dMatrix(ll,ii) * twoEIntVal;
-                                    kMatrix(kk,ii) += dMatrix(ll,jj) * twoEIntVal;
-                                    kMatrix(ll,jj) += dMatrix(kk,ii) * twoEIntVal;
-                                    kMatrix(ll,ii) += dMatrix(kk,jj) * twoEIntVal;
-                                    if (kk != ll) {
-                                        jMatrix(ll,kk) += dMatrix(jj,ii) * twoEIntVal;
-                                        jMatrix(jj,ii) += dMatrix(ll,kk) * twoEIntVal;
-                                        kMatrix(ll,jj) += dMatrix(kk,ii) * twoEIntVal;
-                                        kMatrix(ll,ii) += dMatrix(kk,jj) * twoEIntVal;
-                                        kMatrix(kk,jj) += dMatrix(ll,ii) * twoEIntVal;
-                                        kMatrix(kk,ii) += dMatrix(ll,jj) * twoEIntVal;
-                                    }
-                                }
-                                if (kk != ll) {
-                                    jMatrix(ll,kk) += dMatrix(ii,jj) * twoEIntVal;
-                                    jMatrix(ii,jj) += dMatrix(ll,kk) * twoEIntVal;
-                                    kMatrix(ll,ii) += dMatrix(kk,jj) * twoEIntVal;
-                                    kMatrix(ll,jj) += dMatrix(kk,ii) * twoEIntVal;
-                                    kMatrix(kk,ii) += dMatrix(ll,jj) * twoEIntVal;
-                                    kMatrix(kk,jj) += dMatrix(ll,ii) * twoEIntVal;
-                                }
-                            }
-                         } // end if
-                     } // for aa
-                 } // for bb
-             } // for cc
-         } // for dd
-
-         // Console.OUT.println("\tNumber of actual integrals used in block: " + intIndx);
+    private @Inline def fillJKMatrices(twoEIntVal:Double,
+                                ii:Int, jj:Int, kk:Int, ll:Int,
+                                jMatrix:Array[Double](2){rect,zeroBased}, 
+                                kMatrix:Array[Double](2){rect,zeroBased},
+                                dMatrix:Array[Double](2){rect,zeroBased}) {
+        jMatrix(ii,jj) += dMatrix(kk,ll) * twoEIntVal;
+        jMatrix(kk,ll) += dMatrix(ii,jj) * twoEIntVal;
+        kMatrix(ii,kk) += dMatrix(jj,ll) * twoEIntVal;
+        kMatrix(ii,ll) += dMatrix(jj,kk) * twoEIntVal;
+        kMatrix(jj,kk) += dMatrix(ii,ll) * twoEIntVal;
+        kMatrix(jj,ll) += dMatrix(ii,kk) * twoEIntVal;
+        if (ii != jj) {
+            jMatrix(jj,ii) += dMatrix(kk,ll) * twoEIntVal;
+            jMatrix(kk,ll) += dMatrix(jj,ii) * twoEIntVal;
+            kMatrix(jj,kk) += dMatrix(ii,ll) * twoEIntVal;
+            kMatrix(jj,ll) += dMatrix(ii,kk) * twoEIntVal;
+            kMatrix(ii,kk) += dMatrix(jj,ll) * twoEIntVal;
+            kMatrix(ii,ll) += dMatrix(jj,kk) * twoEIntVal;
+            if (kk != ll) {
+                jMatrix(jj,ii) += dMatrix(ll,kk) * twoEIntVal;
+                jMatrix(ll,kk) += dMatrix(jj,ii) * twoEIntVal;
+                kMatrix(jj,ll) += dMatrix(ii,kk) * twoEIntVal;
+                kMatrix(jj,kk) += dMatrix(ii,ll) * twoEIntVal;
+                kMatrix(ii,ll) += dMatrix(jj,kk) * twoEIntVal;
+                kMatrix(ii,kk) += dMatrix(jj,ll) * twoEIntVal;
+            }
+        }
+        if (kk != ll) {
+            jMatrix(ii,jj) += dMatrix(ll,kk) * twoEIntVal;
+            jMatrix(ll,kk) += dMatrix(ii,jj) * twoEIntVal;
+            kMatrix(ii,ll) += dMatrix(jj,kk) * twoEIntVal;
+            kMatrix(ii,kk) += dMatrix(jj,ll) * twoEIntVal;
+            kMatrix(jj,ll) += dMatrix(ii,kk) * twoEIntVal;
+            kMatrix(jj,kk) += dMatrix(ii,ll) * twoEIntVal;
+        }
+        if (ii != kk || jj != ll) {
+            jMatrix(kk,ll) += dMatrix(ii,jj) * twoEIntVal;
+            jMatrix(ii,jj) += dMatrix(kk,ll) * twoEIntVal;
+            kMatrix(kk,ii) += dMatrix(ll,jj) * twoEIntVal;
+            kMatrix(kk,jj) += dMatrix(ll,ii) * twoEIntVal;
+            kMatrix(ll,ii) += dMatrix(kk,jj) * twoEIntVal;
+            kMatrix(ll,jj) += dMatrix(kk,ii) * twoEIntVal;
+            if (ii != jj) {
+                jMatrix(kk,ll) += dMatrix(jj,ii) * twoEIntVal;
+                jMatrix(jj,ii) += dMatrix(kk,ll) * twoEIntVal;
+                kMatrix(kk,jj) += dMatrix(ll,ii) * twoEIntVal;
+                kMatrix(kk,ii) += dMatrix(ll,jj) * twoEIntVal;
+                kMatrix(ll,jj) += dMatrix(kk,ii) * twoEIntVal;
+                kMatrix(ll,ii) += dMatrix(kk,jj) * twoEIntVal;
+                if (kk != ll) {
+                    jMatrix(ll,kk) += dMatrix(jj,ii) * twoEIntVal;
+                    jMatrix(jj,ii) += dMatrix(ll,kk) * twoEIntVal;
+                    kMatrix(ll,jj) += dMatrix(kk,ii) * twoEIntVal;
+                    kMatrix(ll,ii) += dMatrix(kk,jj) * twoEIntVal;
+                    kMatrix(kk,jj) += dMatrix(ll,ii) * twoEIntVal;
+                    kMatrix(kk,ii) += dMatrix(ll,jj) * twoEIntVal;
+                }
+            }
+            if (kk != ll) {
+                jMatrix(ll,kk) += dMatrix(ii,jj) * twoEIntVal;
+                jMatrix(ii,jj) += dMatrix(ll,kk) * twoEIntVal;
+                kMatrix(ll,ii) += dMatrix(kk,jj) * twoEIntVal;
+                kMatrix(ll,jj) += dMatrix(kk,ii) * twoEIntVal;
+                kMatrix(kk,ii) += dMatrix(ll,jj) * twoEIntVal;
+                kMatrix(kk,jj) += dMatrix(ll,ii) * twoEIntVal;
+            }
+        }
     }
 
     /**

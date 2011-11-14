@@ -11,7 +11,6 @@
 package au.edu.anu.qm;
 
 import x10x.matrix.Matrix;
-import x10x.xla.JacobiDiagonalizer;
 
 /**
  * Represents MOs in a HF-SCF
