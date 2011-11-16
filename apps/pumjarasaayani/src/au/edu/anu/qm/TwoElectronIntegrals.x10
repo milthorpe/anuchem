@@ -29,7 +29,7 @@ import au.edu.anu.chem.Molecule;
  *   Phys. Soc. Japan, 21 (11) p. 2313.
  *
  * New Murchie-Davidson (MD) code based on:
- *   McMurchie, L. E.; Davidson, E. R. (1978).
+ *   McMurchie, L. E. and Davidson, E. R. (1978).
  *   "One- and two-electron integrals over cartesian gaussian functions".
  *   J. Comp. Phys, 26 (2) pp. 218-231.
  */
@@ -76,56 +76,59 @@ public class TwoElectronIntegrals {
         // Console.OUT.println("alloc2: " + pcdint.region.size());
     }
 
-    /* Note: M_D  routines mostly taken from Alistair's code, with a few changes. 
-       Uses MD recurrence relations to evaluate higher angular momentum integrals.
-       Direct update to GMtarix is based on the code in GMatrix.compute..() */
+    /**
+     * Compute all two electron integrals for given shells and store in J,K matrices.
+     * Uses MD recurrence relations to evaluate higher angular momentum integrals. 
+     */
     public def compute2EAndRecord(a:ContractedGaussian, b:ContractedGaussian, 
                                   c:ContractedGaussian, d:ContractedGaussian, 
                                   shellList:ShellList, 
                                   jMat:Matrix, kMat:Matrix,
-                                  dMat:Density) : void {
-         val aPrims = a.getPrimitives();
-         val bPrims = b.getPrimitives();
-         val cPrims = c.getPrimitives();
-         val dPrims = d.getPrimitives();
+                                  dMat:Density):Int {
+        val aPrims = a.getPrimitives();
+        val bPrims = b.getPrimitives();
+        val cPrims = c.getPrimitives();
+        val dPrims = d.getPrimitives();
 
-         val aCen  = a.centre;
-         val bCen  = b.centre;
-         val cCen  = c.centre;
-         val dCen  = d.centre;
+        val aCen  = a.centre;
+        val bCen  = b.centre;
+        val cCen  = c.centre;
+        val dCen  = d.centre;
 
-         val dAng  = d.getMaximumAngularMomentum();
-         val cAng  = c.getMaximumAngularMomentum();
-         val bAng  = b.getMaximumAngularMomentum();
-         val aAng  = a.getMaximumAngularMomentum();
+        val dAng  = d.getMaximumAngularMomentum();
+        val cAng  = c.getMaximumAngularMomentum();
+        val bAng  = b.getMaximumAngularMomentum();
+        val aAng  = a.getMaximumAngularMomentum();
 
         val shellA = shellList.getPowers(aAng);
         val shellB = shellList.getPowers(bAng);
         val shellC = shellList.getPowers(cAng);
         val shellD = shellList.getPowers(dAng);
 
-         val dLim = ((dAng+1)*(dAng+2)/2);
-         val cLim = ((cAng+1)*(cAng+2)/2);
-         val bLim = ((bAng+1)*(bAng+2)/2);
-         val aLim = ((aAng+1)*(aAng+2)/2);
+        val dLim = ((dAng+1)*(dAng+2)/2);
+        val cLim = ((cAng+1)*(cAng+2)/2);
+        val bLim = ((bAng+1)*(bAng+2)/2);
+        val aLim = ((aAng+1)*(aAng+2)/2);
 
-         val dStrt = d.intIndex;
-         val cStrt = c.intIndex;
-         val bStrt = b.intIndex;
-         val aStrt = a.intIndex;
+        val nTot = aLim*bLim*cLim*dLim;
 
-         val angMomAB = aAng + bAng;
-         val angMomCD = cAng + dAng;
-         val angMomABCD = angMomAB+angMomCD;
+        val dStrt = d.intIndex;
+        val cStrt = c.intIndex;
+        val bStrt = b.intIndex;
+        val aStrt = a.intIndex;
 
-         val radiusABSquared = a.distanceSquaredFrom(b); 
-         val radiusCDSquared = c.distanceSquaredFrom(d);
+        val angMomAB = aAng + bAng;
+        val angMomCD = cAng + dAng;
+        val angMomABCD = angMomAB+angMomCD;
 
-         val jMatrix = jMat.getMatrix();
-         val kMatrix = kMat.getMatrix();
-         val dMatrix = dMat.getMatrix();
+        val radiusABSquared = a.distanceSquaredFrom(b); 
+        val radiusCDSquared = c.distanceSquaredFrom(d);
 
-         for([ap] in aPrims) {
+        val jMatrix = jMat.getMatrix();
+        val kMatrix = kMat.getMatrix();
+        val dMatrix = dMat.getMatrix();
+
+        for([ap] in aPrims) {
             val aPrim = aPrims(ap);
            val aAlpha = aPrim.exponent;
            val aCoeff = aPrim.coefficient;
@@ -217,6 +220,7 @@ public class TwoElectronIntegrals {
                           jMatrix, kMatrix, dMatrix); 
            }
         }
+        return nTot;
     }
 
     /** A modification of above function */
@@ -228,7 +232,7 @@ public class TwoElectronIntegrals {
                                   radiusABSquared:Double, 
                                   aAng:Int, bAng:Int, cAng:Int, dAng:Int, angMomAB:Int,
                                   aStrt:Int, bStrt:Int, cStrt:Int, dStrt:Int,
-                                  aLim:Int, bLim:Int, abLim:Int) : void {
+                                  aLim:Int, bLim:Int, abLim:Int):Int {
         val aPrims = a.getPrimitives();
         val bPrims = b.getPrimitives();
         val cPrims = c.getPrimitives();
@@ -246,6 +250,7 @@ public class TwoElectronIntegrals {
 
         val dLim = ((dAng+1)*(dAng+2)/2);
         val cLim = ((cAng+1)*(cAng+2)/2);
+        val nTot = aLim*bLim*cLim*dLim;
 
         val angMomCD = cAng + dAng;
         val angMomABCD = angMomAB+angMomCD;
@@ -348,6 +353,7 @@ public class TwoElectronIntegrals {
                           jMatrix, kMatrix, dMatrix); 
            }
         }
+        return nTot;
     }
 
     /** MD recurrence relation steps in following two subroutines */
