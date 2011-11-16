@@ -13,8 +13,6 @@ package au.edu.anu.qm;
 import x10x.matrix.Matrix;
 
 /**
- * Fock.x10
- *
  * The Fock matrix in the HF calculation
  *
  * @author: V.Ganesh

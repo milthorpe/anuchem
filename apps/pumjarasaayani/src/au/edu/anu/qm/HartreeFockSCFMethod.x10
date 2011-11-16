@@ -14,8 +14,6 @@ import au.edu.anu.chem.Molecule;
 import au.edu.anu.util.Timer;
 
 /**
- * HartreeFockSCFMethod.x10
- *
  * Implementation of Hartree-Fock SCF method
  *
  * @author: V.Ganesh

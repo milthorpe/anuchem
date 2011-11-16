@@ -10,11 +10,7 @@
  */
 package au.edu.anu.qm;
 
-import x10.util.*;
-
 /**
- * AtomicBasis.x10
- *
  * Represents an atomic basis as a collection of Orbital objects
  *
  * @author: V.Ganesh

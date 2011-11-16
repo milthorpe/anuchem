@@ -10,18 +10,12 @@
  */
 package au.edu.anu.qm;
 
-import x10.util.*;
+import x10.util.ArrayList;
 
 /**
- * Utility.x10
- *
  * A few utility functions
- *
  */
 public class Utility {
-
-    public def this() { }
-
     /**
      * split a string and return the result as an ArrayList
      */

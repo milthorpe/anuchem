@@ -10,16 +10,12 @@
  */
 package au.edu.anu.qm;
 
-import x10.util.*;
-
 /**
- * Orbitals.x10
- *
  * Represents an Orbital (used for basis function formation)
  *
  * @author: V.Ganesh, milthorpe
  */
-public struct Orbital { 
+public struct Orbital {
     public val exponents:Rail[Double];
     public val coefficients:Rail[Double];
     public val shape:String;

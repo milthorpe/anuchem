@@ -11,8 +11,6 @@
 package au.edu.anu.qm;
 
 /**
- * MathUtil.x10
- *
  * Some math functions that are not provided by the x10 library
  *
  * @author: V.Ganesh

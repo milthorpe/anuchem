@@ -6,12 +6,14 @@
  *  You may obtain a copy of the License at
  *      http://www.opensource.org/licenses/eclipse-1.0.php
  *
- * (C) Copyright Australian National University 2010.
+ * (C) Copyright Australian National University 2010-2011.
  */
 package au.edu.anu.qm;
 
-import x10.io.*;
+import x10.io.File;
+import x10.io.FileReader;
 import au.edu.anu.chem.Molecule;
+import au.edu.anu.util.StringSplitter;
 import x10x.vector.Point3d;
 
 /**
@@ -32,22 +34,19 @@ public class JobInput {
     } 
 
     private def readInp(inpFile:String) { 
-       x10.io.Console.OUT.println("NOTE: the input file is expected to be in ** a.u. ** units");
+       Console.OUT.println("NOTE: the input file is expected to be in ** a.u. ** units");
 
        val fil = new FileReader(new File(inpFile));
 
        val noOfAtoms = Int.parseInt(fil.readLine());
-        /*
-         * TODO does not handle multiple spaces between words.  
-         * Should split on whitespace regex (currently not supported by x10.lang.String).
-         */
-       val words = fil.readLine().trim().split(" ");
+
+       val words = StringSplitter.splitOnWhitespace(fil.readLine());
  
        molecule = new Molecule[QMAtom](words(0));
        basisName = words(1);
 
        for(var i:Int=0; i<noOfAtoms; i++) { 
-         val wrd = fil.readLine().trim().split(" ");
+         val wrd = StringSplitter.splitOnWhitespace(fil.readLine());
 
          molecule.addAtom(new QMAtom(wrd(0), 
                                        Point3d(Double.parseDouble(wrd(1)),

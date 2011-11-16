@@ -10,16 +10,21 @@
  */
 package au.edu.anu.qm;
 
+import x10.io.EOFException;
 import x10.io.File;
 import x10.io.FileReader;
+import x10.util.ArrayList;
 import x10.util.HashMap;
 import au.edu.anu.chem.Atom;
+import au.edu.anu.util.StringSplitter;
 import x10x.matrix.Matrix;
 
 /**
  * Represents a basis set, used for setting up basis functions (by BasisFunctions)
+ * Basis set input files are expected to be in Gaussian 94 format.
+ * @see http://www.emsl.pnl.gov/forms/basisform.html
  *
- * @author: V.Ganesh
+ * @author V. Ganesh, milthorpe
  */
 public class BasisSet { 
     val name:String;
@@ -46,38 +51,88 @@ public class BasisSet {
         }
     }
 
+    /** 
+     * Initialize this basis set from a file in Gaussian 94 format. 
+     * Limitations:
+     * - only supports atomic symbol specifications (not center numbers)
+     * - assumes only one shell block per atom type
+     * @see http://www.gaussian.com/g_tech/g_ur/k_gen.htm
+     */
     private def init(name:String, basisDir:String) {
         val fileName = basisDir + File.SEPARATOR + name;
         val fil = new FileReader(new File(fileName));       
-        val noOfAtoms = Int.parseInt(fil.readLine());
 
-        for(var i:Int=0; i<noOfAtoms; i++) {
-            val words = fil.readLine().split(" ");
-            val symbol = words(0);
-            val noOfContractions = Int.parseInt(words(1));
-
-            val orbitals = new Array[Orbital](noOfContractions);
-            for(var j:Int=0; j<noOfContractions; j++) {
-                val words1 = fil.readLine().split(" ");
-                var orbitalType:String = words1(0);
-                var noOfPrimitives:Int = Int.parseInt(words1(1));
-
-                val exps:Rail[Double] = new Array[Double](noOfPrimitives);
-                val coeffs:Rail[Double] = new Array[Double](noOfPrimitives);
-                for(var k:Int=0; k<noOfPrimitives; k++) { 
-                    val words2 = fil.readLine().split(" ");
-                    exps(k) = Double.parseDouble(words2(0));
-                    coeffs(k) = Double.parseDouble(words2(1));
-                }
-                orbitals(j) = new Orbital(orbitalType, exps, coeffs); 
-            }
-
-            val atomBasis = new AtomicBasis(orbitals);
-
-            basisInfo.put(symbol, atomBasis);
-        } // end for
+        while(readCenterDefinitionBlock(fil) != null);
 
         fil.close();
+    }
+
+    private def isComment(line:String) {
+        return line.startsWith("!");
+    }
+
+    private def isSectionDivider(line:String) {
+        return line.startsWith("****") || line.startsWith("++++");
+    }
+
+    /** Read the center definition block for a single atom type. */
+    private def readCenterDefinitionBlock(fil:FileReader):AtomicBasis {
+        try {
+            var line:String = fil.readLine();
+            while (line != null) {
+                line = line.trim();
+                if (line.length() > 0 && !(isComment(line) || isSectionDivider(line))) {
+                    val centerIdentiferWords = StringSplitter.splitOnWhitespace(line);
+                    val symbol = centerIdentiferWords(0);
+
+                    val orbitalList = new ArrayList[Orbital]();
+                    line = fil.readLine();
+                    while(!isSectionDivider(line)) {
+                        val shellWords = StringSplitter.splitOnWhitespace(line);
+                        val shellType = shellWords(0);
+                        val numGaussians = Int.parseInt(shellWords(1));
+                        val scaleFactor = Double.parseDouble(shellWords(2)); // TODO what to do with scaleFactor
+
+                        if (shellType.equals("SP")) {
+                            val exps:Rail[Double] = new Array[Double](numGaussians);
+                            val sCoeffs:Rail[Double] = new Array[Double](numGaussians);
+                            val pCoeffs:Rail[Double] = new Array[Double](numGaussians);
+                            for (i in 0..(numGaussians-1)) {
+                                line = fil.readLine();
+                                val gaussianWords = StringSplitter.splitOnWhitespace(line);
+                                exps(i) = Double.parseDouble(gaussianWords(0));
+                                sCoeffs(i) = Double.parseDouble(gaussianWords(1));
+                                pCoeffs(i) = Double.parseDouble(gaussianWords(2));
+                            }
+                            orbitalList.add(new Orbital("S", exps, sCoeffs));
+                            orbitalList.add(new Orbital("P", exps, pCoeffs));
+                        } else {
+                            val exps:Rail[Double] = new Array[Double](numGaussians);
+                            val coeffs:Rail[Double] = new Array[Double](numGaussians);
+                            for (i in 0..(numGaussians-1)) {
+                                line = fil.readLine();
+                                val gaussianWords = StringSplitter.splitOnWhitespace(line);
+                                exps(i) = Double.parseDouble(gaussianWords(0));
+                                coeffs(i) = Double.parseDouble(gaussianWords(1));
+                            }
+                            orbitalList.add(new Orbital(shellType, exps, coeffs));
+                        }
+                        line = fil.readLine();
+                    }
+
+                    val atomBasis = new AtomicBasis(orbitalList.toArray());
+
+                    basisInfo.put(symbol, atomBasis);
+
+                    return atomBasis;
+                }
+                line = fil.readLine();
+            }
+        } catch (e:EOFException) {
+            // no more center definition blocks
+        }
+
+        return null;
     }
 
     private def initDensity(name:String, basisDir:String) {
@@ -86,14 +141,14 @@ public class BasisSet {
         val noOfAtoms = Int.parseInt(fil.readLine());
 
         for(var i:Int=0; i<noOfAtoms; i++) {
-            val words = fil.readLine().split(" ");
+            val words = StringSplitter.splitOnWhitespace(fil.readLine());
             val symbol = words(0);
             val noOfFunctions = Int.parseInt(words(1));
 
             val density = new Matrix(noOfFunctions, noOfFunctions);
 	        val aDensity = density.getMatrix();
             for(var j:Int=0; j<noOfFunctions; j++) {
-                val words1 = fil.readLine().split(" ");
+                val words1 = StringSplitter.splitOnWhitespace(fil.readLine());
                 for(var k:Int=0; k<noOfFunctions; k++) {
                     aDensity(j,k) = Double.parseDouble(words1(k));
                 }

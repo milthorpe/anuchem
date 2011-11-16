@@ -11,8 +11,6 @@
 package au.edu.anu.qm;
 
 /**
- * Power.x10
- *
  * Represents a gaussian power
  *
  * @author: V.Ganesh

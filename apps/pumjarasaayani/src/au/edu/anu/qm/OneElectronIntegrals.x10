@@ -13,8 +13,6 @@ import au.edu.anu.chem.AtomInfo;
 import au.edu.anu.chem.Molecule;
 
 /**
- * OneElectronIntegrals.x10
- *
  * Evaluate 1E integrals
  *
  * @author: V.Ganesh

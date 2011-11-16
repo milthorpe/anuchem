@@ -11,11 +11,9 @@
 package au.edu.anu.qm;
 
 import x10.compiler.NonEscaping;
-import x10.util.*;
+import x10.util.HashMap;
 
 /**
- * PowerList.x10
- *
  * Represents gaussian powers terms for various orbital types
  *
  * @author: V.Ganesh

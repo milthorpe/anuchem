@@ -14,8 +14,6 @@ import au.edu.anu.chem.AtomInfo;
 import au.edu.anu.chem.Molecule;
 
 /**
- * SCFMethod.x10
- *
  * Stub for SCF method
  *
  * @author: V.Ganesh

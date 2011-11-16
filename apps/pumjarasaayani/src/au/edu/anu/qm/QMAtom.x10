@@ -15,8 +15,6 @@ import x10x.vector.Point3d;
 import au.edu.anu.chem.Atom;
 
 /**
- * QMAtom.x10
- *
  * This class represents an atom for the purposes of
  * Quantum Chemistry simulations
  *

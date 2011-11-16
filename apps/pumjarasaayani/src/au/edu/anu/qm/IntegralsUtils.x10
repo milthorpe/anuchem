@@ -11,16 +11,11 @@
 package au.edu.anu.qm;
 
 /**
- * IntegralsUtils.x10
- *
  * Some utilities for integral evaluation
  *
  * @author: V.Ganesh
  */
 public class IntegralsUtils { 
-    public def this() { 
-    } 
-
     /**
      * Indexing (i,j,k,l) into long array.
      */

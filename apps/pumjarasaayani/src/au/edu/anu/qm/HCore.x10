@@ -13,8 +13,6 @@ package au.edu.anu.qm;
 import x10x.matrix.Matrix;
 
 /**
- * HCore.x10
- *
  * The HCore matrix in HF calculation
  *
  * @author: V.Ganesh

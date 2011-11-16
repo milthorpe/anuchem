@@ -61,6 +61,10 @@ To run:
 The test cases are in directory: test/
 The basis sets are in directory: test/basis/   [ contains sto-3g, 3-21g, and 6-31g(d,p) ]
 
+Basis sets are assumed to be in Gaussian 94 format.
+The provided basis sets were taken from EMSL Basis Set Exchange.
+https://bse.pnl.gov/bse/portal
+
 To test, you need to be in a directory above basis/
 
 Single place:

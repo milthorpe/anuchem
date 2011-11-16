@@ -16,8 +16,6 @@ import x10.util.HashMap;
 import au.edu.anu.chem.Molecule;
 
 /**
- * ShellList.x10
- *
  * Structure storing Shell list
  *
  * @author: V.Ganesh, milthorpe
