@@ -115,7 +115,7 @@ public struct BasisFunctions {
                 while(lm>1) { denom *= (2.0*lm-1.0); lm--; }
               
                 val lmn   = bfi.getMaximumAngularMomentum();
-                val fact2 = Math.pow(2.0, lmn) / Math.pow(denom, 0.5);
+                val fact2 = Math.pow2(lmn) / Math.pow(denom, 0.5);
               
                 val prms  = bfi.getPrimitives(); 
                 for(var j:Int=0; j<prms.size; j++) {
@@ -124,7 +124,7 @@ public struct BasisFunctions {
                     prmj.setCoefficient(prmj.coefficient*fact1*fact2*fact3);
                 } // end for
 
-                val pi3O2By2Tlmn = Math.pow(Math.PI, 1.5) / Math.pow(2.0, lmn); 
+                val pi3O2By2Tlmn = Math.pow(Math.PI, 1.5) / Math.pow2(lmn);
                 val factC = denom * pi3O2By2Tlmn;
                 var factA:Double = 0.0, factB:Double = 0.0;
                 var coefExpoSum:Double = 0.0;

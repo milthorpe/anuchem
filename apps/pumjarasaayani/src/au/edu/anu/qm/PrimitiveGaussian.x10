@@ -95,7 +95,7 @@ public final class PrimitiveGaussian {
      */
     public def overlap1D(l1:Int, l2:Int, pax:Double, pbx:Double, gamma:Double) : Double {
         var sum:Double = 0.0;
-        val k:Double = 1 + (Math.floor(0.5 * (l1 + l2)) as Int);
+        val k:Double = 1.0 + Math.floor(0.5 * (l1 + l2));
 
         // TODO: x10 parallel
         for(var i:Int = 0; i < k; i++) 
@@ -197,8 +197,8 @@ public final class PrimitiveGaussian {
 
         // TODO : x10 - parallel
         for(var i:Int=0; i<a.size; i++) {
-            for(var r:Int=0; r<((Math.floor(i/2.0)+1.0) as Int); r++) {
-                for(var u:Int=0; u<((Math.floor((i-2.0 * r) / 2.0)+1.0) as Int); u++) {
+            for(var r:Int=0; r<(i/2+1); r++) {
+                for(var u:Int=0; u<((i-2*r)/2+1); u++) {
                     a(i-2 * r-u) += Math.pow(-1.0, i) 
                          * MathUtil.binomialPrefactor(i, l1, l2, pa, pb)
                          * Math.pow(-1.0, u) * MathUtil.factorial(i)
