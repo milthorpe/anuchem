@@ -232,7 +232,7 @@ public class TwoElectronIntegrals {
                                   radiusABSquared:Double, 
                                   aAng:Int, bAng:Int, cAng:Int, dAng:Int, angMomAB:Int,
                                   aStrt:Int, bStrt:Int, cStrt:Int, dStrt:Int,
-                                  aLim:Int, bLim:Int, abLim:Int):Int {
+                                  aLim:Int, bLim:Int):Int {
         val aPrims = a.getPrimitives();
         val bPrims = b.getPrimitives();
         val cPrims = c.getPrimitives();

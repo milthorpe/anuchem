@@ -714,7 +714,6 @@ public class GMatrix extends Matrix {
             val angMomAB = aAng + bAng;
             val aLim = ((aAng+1)*(aAng+2)/2);
             val bLim = ((bAng+1)*(bAng+2)/2);
-            val abLim = aLim * bLim;
 
             val radiusABSquared = aFunc.distanceSquaredFrom(bFunc);
 
@@ -743,7 +742,7 @@ public class GMatrix extends Matrix {
 
                             totInt += computeThreads(0).computeSingle2(aFunc, bFunc, cFunc, dFunc,
                                         radiusABSquared, aAng, bAng, cAng, dAng, angMomAB,
-                                        aStrt, bStrt, cStrt, dStrt, aLim, bLim, abLim,
+                                        aStrt, bStrt, cStrt, dStrt, aLim, bLim,
                                         density);
                         }
                     }
@@ -904,7 +903,7 @@ public class GMatrix extends Matrix {
                                   radiusABSquared:Double,
                                   aAng:Int, bAng:Int, cAng:Int, dAng:Int, angMomAB:Int,
                                   aStrt:Int, bStrt:Int, cStrt:Int, dStrt:Int,
-                                  aLim:Int, bLim:Int, abLim:Int,
+                                  aLim:Int, bLim:Int,
                                   density : Density):Long {
             return twoEI.compute2EAndRecord2(i, j, k, l,
                                       shellList,
@@ -912,7 +911,7 @@ public class GMatrix extends Matrix {
                                       radiusABSquared,
                                       aAng, bAng, cAng, dAng, angMomAB,
                                       aStrt, bStrt, cStrt, dStrt,
-                                      aLim, bLim, abLim);
+                                      aLim, bLim);
         }
         
         public def setValue(i:ContractedGaussian, j:ContractedGaussian,
