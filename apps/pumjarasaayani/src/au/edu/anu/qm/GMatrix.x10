@@ -40,9 +40,6 @@ public class GMatrix extends Matrix {
 
     static THRESH:Double = 1.0e-8;
     private var thresh2:Double = 0.0;
-    private val qCut:Matrix;
-    private val dCut:Matrix;
-    private var maxEst:Double = 0;
 
     public def this(N:Int, bfs:BasisFunctions, molecule:Molecule[QMAtom], gMatType:Int) {
         super(N);
@@ -50,73 +47,19 @@ public class GMatrix extends Matrix {
         this.mol = molecule;
         this.gMatType = gMatType;
 
-        val basisName = bfs.getBasisName();
-
-	    // Schwarz cut-off: Häser & Ahlrichs eqn 12
+        val dCut = new Matrix(N);
+        val qCut = new Matrix(N);
+        // Schwarz cut-off: Häser & Ahlrichs eqn 12
         val shellList = bfs.getShellList();
         val maxam = shellList.getMaximumAngularMomentum();
         val twoE = new TwoElectronIntegrals(maxam, bfs.getNormalizationFactors());
 
-        val dCut = new Matrix(N);
-        this.dCut = dCut;
 
-        val qCut = new Matrix(N);
-        this.qCut = qCut;
-	
-	    val fakeDensity = new Density(N, 2);
-	    val fakeD = fakeDensity.getMatrix();
-	    fakeD.fill(1.0);
+        val fakeDensity = new Density(N, 2);
+        val fakeD = fakeDensity.getMatrix();
+        fakeD.fill(1.0);
 
         val noOfAtoms = mol.getNumberOfAtoms();
- 	    // centre a
-        for(var a:Int=0; a<noOfAtoms; a++) {
-            val aFunc = mol.getAtom(a).getBasisFunctions();
-            val naFunc = aFunc.size();
-            // basis functions on a
-            for(var i:Int=0; i<naFunc; i++) {
-                val iaFunc = aFunc.get(i);
-
-                // centre b
-                for(var b:Int=0; b<=a; b++) {
-                    val bFunc = mol.getAtom(b).getBasisFunctions();
-                    val nbFunc = (b<a) ? bFunc.size() : i+1;
-                    // basis functions on b
-                    for(var j:Int=0; j<nbFunc; j++) {
-                        val jbFunc = bFunc.get(j);
-		                twoE.compute2EAndRecord(iaFunc, jbFunc, iaFunc, jbFunc, shellList, qCut, dCut, fakeDensity);
-		            }
-	            }
-            }
-        }
-	
-	    val est = qCut.getMatrix();
-
-        var maxEst:Double = 0.0;
-	    for(var a:Int=0; a<N; a++) for(var b:Int=0; b<N; b++) {
-	        if (a==b) est(a,b)*=.5; else est(a,b)*=.25;	
-	        est(a,b)=Math.sqrt(Math.abs(est(a,b)));
-	        if (est(a,b)>maxEst) maxEst=est(a,b);
-	        //Console.OUT.printf("%d %d %e \n",a,b,EST(a,b));	
-	    }
-	
-	    Console.OUT.println("  maxEst " + maxEst);
-        this.maxEst = maxEst;
-        val maxEstVal = maxEst;
-
-        computeInst = DistArray.make[ComputePlace](Dist.makeUnique(), (Point) => new ComputePlace(N, molecule, bfs, qCut, dCut, maxEstVal));
-
-    }
-
-    /** top level method to form the G Matrix, depending on gMatType appropriate functions are called */
-    public def compute(density:Density) {
-        val timer = new Timer(1);
-	    // Häser & Ahlrichs -- eqn 7  
-        val noOfAtoms = mol.getNumberOfAtoms();
-
-        dCut.makeZero();
-        val denCut = dCut.getMatrix();
-        val den = density.getMatrix();
-        var maxDen:Double = 0.;
         // centre a
         for(var a:Int=0; a<noOfAtoms; a++) {
             val aFunc = mol.getAtom(a).getBasisFunctions();
@@ -132,22 +75,31 @@ public class GMatrix extends Matrix {
                     // basis functions on b
                     for(var j:Int=0; j<nbFunc; j++) {
                         val jbFunc = bFunc.get(j);
-		                val bAng  = jbFunc.getMaximumAngularMomentum();
-                 		val aAng  = iaFunc.getMaximumAngularMomentum();
-			            val NA:Int = (aAng+2)*(aAng+1)/2+iaFunc.intIndex;
-			            val NB:Int = (bAng+2)*(bAng+1)/2+jbFunc.intIndex;
-			            var newMaxDen:Double=0;
-			            for (var iden:Int=iaFunc.intIndex; iden<NA; iden++) for (var jden:Int=jbFunc.intIndex; jden<NB; jden++ )
-			                if (Math.abs(den(iden,jden))>newMaxDen) newMaxDen=Math.abs(den(iden,jden));
-		                denCut(iaFunc.intIndex,jbFunc.intIndex) = newMaxDen;
-			            if (newMaxDen>maxDen) maxDen = newMaxDen;
-	                }
-	            }
-             }
-         }
-	    Console.OUT.println("  maxDen " + maxDen);
-	    thresh2 = THRESH/maxEst/maxDen;
+                        twoE.compute2EAndRecord(iaFunc, jbFunc, iaFunc, jbFunc, shellList, qCut, dCut, fakeDensity);
+                    }
+                }
+            }
+        }
 
+        val est = qCut.getMatrix();
+
+        var maxEst:Double = 0.0;
+        for(var a:Int=0; a<N; a++) for(var b:Int=0; b<N; b++) {
+            if (a==b) est(a,b)*=.5; else est(a,b)*=.25;
+            est(a,b)=Math.sqrt(Math.abs(est(a,b)));
+            if (est(a,b)>maxEst) maxEst=est(a,b);
+            //Console.OUT.printf("%d %d %e \n",a,b,EST(a,b));
+        }
+
+        Console.OUT.println("  maxEst " + maxEst);
+        val maxEstVal = maxEst;
+
+        computeInst = DistArray.make[ComputePlace](Dist.makeUnique(), (Point) => new ComputePlace(N, molecule, bfs, qCut, dCut, maxEstVal));
+    }
+
+    /** top level method to form the G Matrix, depending on gMatType appropriate functions are called */
+    public def compute(density:Density) {
+        val timer = new Timer(1);
        timer.start(0);
        switch(gMatType) {
        case 0:
@@ -183,86 +135,31 @@ public class GMatrix extends Matrix {
     private def computeDirectSerial(density:Density) {
         val N = getRowCount();
 
-        makeZero();
-
-        val jMat = new Matrix(N);
-        val kMat = new Matrix(N);
-
-        jMat.makeZero();
-        kMat.makeZero();
+        val computePlace = computeInst(here.id);
+        computePlace.reset(density);
 
         val shellList = bfs.getShellList();
-        val maxam = shellList.getMaximumAngularMomentum();
-        val twoE = new TwoElectronIntegrals(maxam, bfs.getNormalizationFactors());
+        val shellPrimitives = shellList.getShellPrimitives();
+        val numPrimitives = shellList.getNumberOfShellPrimitives();
 
-        val noOfAtoms = mol.getNumberOfAtoms();
+        var totInt:Long=0;
 
-	    val est = qCut.getMatrix();
-	    val denCut = dCut.getMatrix();
-
-	    var totInt:Long=0;
-        // centre a
-        for(var a:Int=0; a<noOfAtoms; a++) {
-            val aFunc = mol.getAtom(a).getBasisFunctions();
-            val naFunc = aFunc.size();
-            // basis functions on a
-            for(var i:Int=0; i<naFunc; i++) {
-                val iaFunc = aFunc.get(i);
-
-                // centre b
-                for(var b:Int=0; b<=a; b++) {
-                    val bFunc = mol.getAtom(b).getBasisFunctions();
-                    val nbFunc = (b<a) ? bFunc.size() : i+1;
-                    // basis functions on b
-                    for(var j:Int=0; j<nbFunc; j++) {
-                        val jbFunc = bFunc.get(j);
-
-			            if (est(iaFunc.intIndex,jbFunc.intIndex) < thresh2) continue;					
-
-                        // centre c
-                        for(var c:Int=0; c<noOfAtoms; c++) {
-                            val cFunc = mol.getAtom(c).getBasisFunctions();
-                            val ncFunc = cFunc.size();
-                            // basis functions on c
-                            for(var k:Int=0; k<ncFunc; k++) {
-                                val kcFunc = cFunc.get(k);
-
-                                // centre d
-                                for(var d:Int=0; d<=c; d++) {
-                                    val dFunc = mol.getAtom(d).getBasisFunctions();
-                                    val ndFunc = (d<c) ? dFunc.size() : k+1;
-                                    // basis functions on d
-                                    for(var l:Int=0; l<ndFunc; l++) {
-                                        val ldFunc = dFunc.get(l);
-					                    // Häser & Ahlrichs -- eqn 6
-
-					                    val maxDCut1 = Math.max(denCut(iaFunc.intIndex,jbFunc.intIndex),denCut(kcFunc.intIndex,ldFunc.intIndex));
-					                    val maxDCut2 = .25*Math.max(denCut(kcFunc.intIndex,jbFunc.intIndex),denCut(iaFunc.intIndex,ldFunc.intIndex));
-					                    val maxDCut3 = .25*Math.max(denCut(kcFunc.intIndex,iaFunc.intIndex),denCut(jbFunc.intIndex,ldFunc.intIndex));
-					                    val maxDCut4 = Math.max(maxDCut2,maxDCut3);
-					                    val maxDCut = Math.max(maxDCut4,maxDCut1);
-                                        // Console.OUT.println(a + ", " + b + ", " + c + ", " + d);
-					
-					                    if (est(iaFunc.intIndex,jbFunc.intIndex)*est(kcFunc.intIndex,ldFunc.intIndex)*maxDCut<THRESH)
-						                    continue;
-
-            	                        totInt += twoE.compute2EAndRecord(iaFunc, jbFunc, kcFunc, ldFunc, 
-                                                                shellList, jMat, kMat, density);
-
-                                    } // end l
-                                } // centre d
-                            } // end k
-                        } // centre c
-                    } // end j
-                } // centre b
-            } // end i
-        } // centre a
-     	Console.OUT.println("  totInt = "+totInt);
+        for(var a:Int=0; a<numPrimitives; a++) {
+            val aFunc = shellPrimitives(a);
+            for(var b:Int=0; b<numPrimitives; b++) {
+                val bFunc = shellPrimitives(b);
+                totInt += computePlace.computeOneShellPair(aFunc, bFunc, numPrimitives, shellPrimitives);
+            }
+        }
+        Console.OUT.println("  totInt = "+totInt);
         // form the G matrix
         val gMatrix = getMatrix();
-        val jMatrix = jMat.getMatrix();
-        val kMatrix = kMat.getMatrix();
-        for([x,y] in gMatrix.region) gMatrix(x,y) = jMatrix(x,y) - (0.25*kMatrix(x,y));     
+        val jMatrix = computePlace.computeThreads(0).getJMat().getMatrix();
+        val kMatrix = computePlace.computeThreads(0).getKMat().getMatrix();
+
+        for([x,y] in gMatrix) {
+           gMatrix(x,y) = jMatrix(x,y) - (0.25*kMatrix(x,y));
+        }
     }
 
     private def computeDirectLowMemNoAtomic(density:Density) : void {
@@ -270,11 +167,10 @@ public class GMatrix extends Matrix {
 
         makeZero();
 
-        val computeThreads = new Array[ComputeThread](Runtime.NTHREADS);
+        val computePlace = computeInst(here.id);
+        computePlace.reset(density);
 
-        for(var i:Int=0; i<Runtime.NTHREADS; i++) {
-            computeThreads(i) = new ComputeThread(N, bfs);
-        } // end for
+        val computeThreads = computePlace.computeThreads;
 
         val noOfAtoms = mol.getNumberOfAtoms();
         finish {
@@ -322,8 +218,8 @@ public class GMatrix extends Matrix {
                                                } // end if
                                            } // end for
                                         } // end while
-				                    } // end l
-			                    } // centre d
+                                    } // end l
+                                } // centre d
                            } // end k
                        } // centre c
                    } // end j
@@ -579,7 +475,7 @@ public class GMatrix extends Matrix {
 
         public def this(N : Int, mol:Molecule[QMAtom], bfs:BasisFunctions, qCut:Matrix, dCut:Matrix, maxEst:Double) {
             this.mol = mol;
-	        this.qCut = qCut; 
+            this.qCut = qCut; 
             this.dCut = dCut;
             this.maxEst = maxEst;
 
@@ -654,21 +550,23 @@ public class GMatrix extends Matrix {
                         // basis functions on b
                         for(var j:Int=0; j<nbFunc; j++) {
                             val jbFunc = bFunc.get(j);
-		                    val bAng  = jbFunc.getMaximumAngularMomentum();
-                     		val aAng  = iaFunc.getMaximumAngularMomentum();
-			                val NA:Int = (aAng+2)*(aAng+1)/2+iaFunc.intIndex;
-			                val NB:Int = (bAng+2)*(bAng+1)/2+jbFunc.intIndex;
-			                var newMaxDen:Double=0;
-			                for (var iden:Int=iaFunc.intIndex; iden<NA; iden++) for (var jden:Int=jbFunc.intIndex; jden<NB; jden++ )
-			                    if (Math.abs(den(iden,jden))>newMaxDen) newMaxDen=Math.abs(den(iden,jden));
-		                    denCut(iaFunc.intIndex,jbFunc.intIndex) = newMaxDen;
-			                if (newMaxDen>maxDen) maxDen = newMaxDen;
-	                    }
-	                }
+                            val bAng  = jbFunc.getMaximumAngularMomentum();
+                            val aAng  = iaFunc.getMaximumAngularMomentum();
+                            val NA:Int = (aAng+2)*(aAng+1)/2+iaFunc.intIndex;
+                            val NB:Int = (bAng+2)*(bAng+1)/2+jbFunc.intIndex;
+                            var newMaxDen:Double=0;
+                            for (var iden:Int=iaFunc.intIndex; iden<NA; iden++) for (var jden:Int=jbFunc.intIndex; jden<NB; jden++ )
+                                if (Math.abs(den(iden,jden))>newMaxDen) newMaxDen=Math.abs(den(iden,jden));
+                            denCut(iaFunc.intIndex,jbFunc.intIndex) = newMaxDen;
+                            if (newMaxDen>maxDen) maxDen = newMaxDen;
+                        }
+                    }
                  }
              }
-	        Console.OUT.println("  maxDen " + maxDen);
-	        thresh2 = THRESH/maxEst/maxDen;
+            if (Place.FIRST_PLACE == here) {
+                Console.OUT.println("  maxDen " + maxDen);
+            }
+            thresh2 = THRESH/maxEst/maxDen;
         }
 
         /**
@@ -689,12 +587,16 @@ public class GMatrix extends Matrix {
         }
 
         public def computeOneShellPair(shellPrim : Int, nPrimitives : Int, bfs : ArrayList[ContractedGaussian]):Long {
-            var totInt:Long = 0;
             val a = shellPrim / nPrimitives;
             val b = shellPrim % nPrimitives;
 
             val aFunc = bfs(a);
             val bFunc = bfs(b);
+            return computeOneShellPair(aFunc, bFunc, nPrimitives, bfs);
+        }
+
+        public def computeOneShellPair(aFunc:ContractedGaussian, bFunc:ContractedGaussian, nPrimitives : Int, bfs : ArrayList[ContractedGaussian]):Long {
+            var totInt:Long = 0;
 
             val aStrt = aFunc.intIndex;
             val bStrt = bFunc.intIndex;
@@ -709,7 +611,7 @@ public class GMatrix extends Matrix {
             // Cut-off
             val est = qCut.getMatrix();
             val denCut = dCut.getMatrix();
-            if (est(aFunc.intIndex,bFunc.intIndex)<thresh2) return 0;				
+            if (est(aFunc.intIndex,bFunc.intIndex)<thresh2) return 0;
 
             val angMomAB = aAng + bAng;
             val aLim = ((aAng+1)*(aAng+2)/2);
@@ -731,14 +633,14 @@ public class GMatrix extends Matrix {
                         val dd = dStrt + dAng;
 
                         if (cc >= dd) {
-					        val maxDCut1 = Math.max(denCut(aFunc.intIndex,bFunc.intIndex),denCut(cFunc.intIndex,dFunc.intIndex));
-					        val maxDCut2 = .25*Math.max(denCut(cFunc.intIndex,bFunc.intIndex),denCut(aFunc.intIndex,dFunc.intIndex));
-					        val maxDCut3 = .25*Math.max(denCut(cFunc.intIndex,aFunc.intIndex),denCut(bFunc.intIndex,dFunc.intIndex));
-					        val maxDCut4 = Math.max(maxDCut2,maxDCut3);
-					        val maxDCut = Math.max(maxDCut4,maxDCut1);
+                            val maxDCut1 = Math.max(denCut(aFunc.intIndex,bFunc.intIndex),denCut(cFunc.intIndex,dFunc.intIndex));
+                            val maxDCut2 = .25*Math.max(denCut(cFunc.intIndex,bFunc.intIndex),denCut(aFunc.intIndex,dFunc.intIndex));
+                            val maxDCut3 = .25*Math.max(denCut(cFunc.intIndex,aFunc.intIndex),denCut(bFunc.intIndex,dFunc.intIndex));
+                            val maxDCut4 = Math.max(maxDCut2,maxDCut3);
+                            val maxDCut = Math.max(maxDCut4,maxDCut1);
 
-					        if (est(aFunc.intIndex,bFunc.intIndex)*est(cFunc.intIndex,dFunc.intIndex)*maxDCut<THRESH)
-						        continue;
+                            if (est(aFunc.intIndex,bFunc.intIndex)*est(cFunc.intIndex,dFunc.intIndex)*maxDCut<THRESH)
+                                continue;
 
                             totInt += computeThreads(0).computeSingle2(aFunc, bFunc, cFunc, dFunc,
                                         radiusABSquared, aAng, bAng, cAng, dAng, angMomAB,
