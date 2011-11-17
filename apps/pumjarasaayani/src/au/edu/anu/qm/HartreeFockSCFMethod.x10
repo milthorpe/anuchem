@@ -30,7 +30,7 @@ public class HartreeFockSCFMethod extends SCFMethod {
     }
 
     public def scf() : void {
-        val noOfBasisFunctions = bfs.getBasisFunctions().size();
+        val noOfBasisFunctions:Long = bfs.getBasisFunctions().size();
         val noOfIntegrals:Long = noOfBasisFunctions * (noOfBasisFunctions + 1)
                           * (noOfBasisFunctions * noOfBasisFunctions
                              + noOfBasisFunctions + 2) / 8;
@@ -40,7 +40,7 @@ public class HartreeFockSCFMethod extends SCFMethod {
         val noOfElectrons = molecule.getNumberOfElectrons();
         val noOfOccupancies = noOfElectrons / 2;
         
-        if (noOfElectrons%2 != 0) {
+        if (noOfElectrons%2 != 0 || molecule.getMultiplicity()!=1) {
            Console.OUT.println("Currently supports only closed shell calculations!");
            return;
         } // end if

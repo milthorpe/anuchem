@@ -24,6 +24,8 @@ import x10x.vector.Point3d;
 public class Molecule[T]{T <: Atom} {
     val atomList = new ArrayList[T](); 
     val name : String;
+    val charge : Int;
+    val multiplicity : Int;
 
     val ringList = new ArrayList[Ring[T]]();
 
@@ -32,13 +34,17 @@ public class Molecule[T]{T <: Atom} {
      * of all atoms. This is used to estimate a rough cubic box size.
      */
     private var maxExtent : Double = 0.0;
-
+    // Require for Fragment.x10:35-38:
     public def this() { 
-        name = "unknown";
+        name = "unknown"; 
+        this.charge = 0; 
+        this.multiplicity = 1;
     }
 
-    public def this(name:String) {
+    public def this(name:String, c:Int, m:Int) {
         this.name = name;
+        this.charge = c;
+        this.multiplicity = m;
     }
 
     public def getName() = this.name;
@@ -53,6 +59,8 @@ public class Molecule[T]{T <: Atom} {
     public def getAtom(index:Int) : T = atomList.get(index);
     public def getAtoms() = atomList;
     public def getNumberOfAtoms() : Int = atomList.size();
+    public def getCharge() : Int = charge;
+    public def getMultiplicity() : Int = multiplicity;
 
     public def addRing(r:Ring[T]) { ringList.add(r); }
     public def getRings() : ArrayList[Ring[T]] = ringList;
@@ -64,7 +72,7 @@ public class Molecule[T]{T <: Atom} {
        for(atm:T in atomList)
           ne += ai.getAtomicNumber(atm);
 
-       return ne;
+       return ne-charge;
     }
 
     public def getMaxExtent() = maxExtent;

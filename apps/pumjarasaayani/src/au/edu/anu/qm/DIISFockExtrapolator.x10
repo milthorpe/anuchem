@@ -26,8 +26,8 @@ import x10x.vector.Vector;
  */
 public class DIISFockExtrapolator {
     static ERROR_THRESHOLD = 0.1;
-    static MIN_NON_DIIS_STEP:Int = 1;
-    static MAX_NON_DIIS_STEP:Int = 1;    
+    static MIN_NON_DIIS_STEP:Int = 0;
+    static MAX_NON_DIIS_STEP:Int = 4;    
     static DIIS_SUBSPACE_SIZE = 15;
 
     val fockMatrixList:ArrayList[Fock];
@@ -70,19 +70,29 @@ public class DIISFockExtrapolator {
         Console.OUT.printf("Max DIIS error %.3e\n",mxerr);
         if (mxerr <1e-6) converged=true;
 
+        if (nondiisStep >= DIIS_SUBSPACE_SIZE) {
+            errorVectorList.removeAt(0);
+            fockMatrixList.removeAt(0);
+        }
+        
+        errorVectorList.add(errorVector);
+        fockMatrixList.add(currentFock);
+
+        val noOfIterations = errorVectorList.size();
+
         if (!diisStarted && 
-          ( (mxerr < ERROR_THRESHOLD && diisStep>=MAX_NON_DIIS_STEP) || nondiisStep>=MAX_NON_DIIS_STEP)) {
+          ( (mxerr < ERROR_THRESHOLD && diisStep>=MIN_NON_DIIS_STEP) || nondiisStep>=MAX_NON_DIIS_STEP)) {
             Console.OUT.println("Starting DIIS...");
             diisStarted = true;
         }
 
         if (!diisStarted) {
             nondiisStep++;
-            if (oldFock == null) {
+          //  if (oldFock == null) {
                 oldFock = currentFock;
 
                 return currentFock;
-            } else {
+           /* } else {
                 val oldFockMat = oldFock.getMatrix();
                 for(var i:Int=0; i<N; i++) {
                    for(var j:Int=0; j<N; j++) {
@@ -93,18 +103,10 @@ public class DIISFockExtrapolator {
                 oldFock = currentFock;
 
                 return newFock;
-            } // end if
-        } // end if
+            } // end if*/
+        } // end if 
 
-	if (nondiisStep >= DIIS_SUBSPACE_SIZE) {
-	    errorVectorList.removeAt(0);
-	    fockMatrixList.removeAt(0);
-	}
-        
-        errorVectorList.add(errorVector);
-        fockMatrixList.add(currentFock);
 
-        val noOfIterations = errorVectorList.size();
 
         val A = new Matrix(noOfIterations+1);
         val B = new Vector(noOfIterations+1);

@@ -41,20 +41,25 @@ public class JobInput {
        val noOfAtoms = Int.parseInt(fil.readLine());
 
        val words = StringSplitter.splitOnWhitespace(fil.readLine());
- 
-       molecule = new Molecule[QMAtom](words(0));
        basisName = words(1);
+       val charge:Int;
+       val multiplicity:Int;
+       val conversion:Double;
+       if (words.size > 2) charge = Int.parseInt(words(2)); else charge = 0;
+       if (words.size > 3) multiplicity = Int.parseInt(words(3)); else multiplicity = 1;
+       if (words.size > 4) conversion = Double.parseDouble(words(4)); else conversion=1.0;
+       molecule = new Molecule[QMAtom](words(0),charge,multiplicity);    
 
        for(var i:Int=0; i<noOfAtoms; i++) { 
          val wrd = StringSplitter.splitOnWhitespace(fil.readLine());
 
          molecule.addAtom(new QMAtom(wrd(0), 
-                                       Point3d(Double.parseDouble(wrd(1)),
-                                               Double.parseDouble(wrd(2)),
-                                               Double.parseDouble(wrd(3))
+                                       Point3d(Double.parseDouble(wrd(1))/conversion,
+                                               Double.parseDouble(wrd(2))/conversion,
+                                               Double.parseDouble(wrd(3))/conversion
                                     )
                             ));
-       } // end while              
+       }
 
        fil.close();
     }
