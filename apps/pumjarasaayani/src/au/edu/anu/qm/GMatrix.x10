@@ -91,7 +91,7 @@ public class GMatrix extends Matrix {
             //Console.OUT.printf("%d %d %e \n",a,b,EST(a,b));
         }
 
-        Console.OUT.println("  maxEst " + maxEst);
+        Console.OUT.println("    maxEst " + maxEst);
         val maxEstVal = maxEst;
 
         computeInst = DistArray.make[ComputePlace](Dist.makeUnique(), (Point) => new ComputePlace(N, molecule, bfs, qCut, dCut, maxEstVal));
@@ -151,7 +151,7 @@ public class GMatrix extends Matrix {
                 totInt += computePlace.computeOneShellPair(aFunc, bFunc, numPrimitives, shellPrimitives);
             }
         }
-        Console.OUT.println("  totInt = "+totInt);
+        Console.OUT.println("    totInt = "+totInt);
         // form the G matrix
         val gMatrix = getMatrix();
         val jMatrix = computePlace.computeThreads(0).getJMat().getMatrix();
@@ -442,7 +442,7 @@ public class GMatrix extends Matrix {
                 comp_loc.reset();
                 val totInt = comp_loc.computeShells(nPairs);
                 //placeTimer.stop(0);
-                Console.OUT.println("  totInt at " + here + " = " + totInt);
+                Console.OUT.println("    totInt at " + here + " = " + totInt);
                 //Console.OUT.println("\tcompute at " + here + " " + (placeTimer.total(0) as Double) / 1e9 + " seconds");
                 comp_loc.getGMatContributionArray()
             };
@@ -564,7 +564,7 @@ public class GMatrix extends Matrix {
                  }
              }
             if (Place.FIRST_PLACE == here) {
-                Console.OUT.println("  maxDen " + maxDen);
+                Console.OUT.println("    maxDen " + maxDen);
             }
             thresh2 = THRESH/maxEst/maxDen;
         }

@@ -27,8 +27,9 @@ import x10x.vector.Vector;
 public class DIISFockExtrapolator {
     static ERROR_THRESHOLD = 0.1;
     static MIN_NON_DIIS_STEP:Int = 0;
-    static MAX_NON_DIIS_STEP:Int = 4;    
-    static DIIS_SUBSPACE_SIZE = 15;
+    static MAX_NON_DIIS_STEP:Int = 2;    
+    static DIIS_SUBSPACE_SIZE = 15; // Q-CHEM default
+    static DIIS_MAX_ERROR_CRITERIA = 1e-5; // Q-CHEM default
 
     val fockMatrixList:ArrayList[Fock];
     val errorVectorList:ArrayList[Vector];
@@ -66,14 +67,21 @@ public class DIISFockExtrapolator {
 
         val errorVector = new Vector(FPS.sub(SPF));
         val mxerr = errorVector.maxNorm();
+        val errorVectorSize = errorVectorList.size();
 
-        Console.OUT.printf("Max DIIS error %.3e\n",mxerr);
-        if (mxerr <1e-6) converged=true;
+        Console.OUT.printf("   Max DIIS error = %.3e subspaceSize = %d\n",mxerr,errorVectorSize);
+        if (mxerr < DIIS_MAX_ERROR_CRITERIA) {
+            converged=true;
+            Console.OUT.printf("   Converged\n");
+            return currentFock;
+        }
 
-        if (nondiisStep >= DIIS_SUBSPACE_SIZE) {
+        if (errorVectorSize >= DIIS_SUBSPACE_SIZE) {
             errorVectorList.removeAt(0);
             fockMatrixList.removeAt(0);
         }
+
+        // TODO if (reset=true) remove all vector
         
         errorVectorList.add(errorVector);
         fockMatrixList.add(currentFock);
@@ -88,11 +96,11 @@ public class DIISFockExtrapolator {
 
         if (!diisStarted) {
             nondiisStep++;
-          //  if (oldFock == null) {
+            if (oldFock == null) {
                 oldFock = currentFock;
 
                 return currentFock;
-           /* } else {
+            } else {
                 val oldFockMat = oldFock.getMatrix();
                 for(var i:Int=0; i<N; i++) {
                    for(var j:Int=0; j<N; j++) {
@@ -103,7 +111,7 @@ public class DIISFockExtrapolator {
                 oldFock = currentFock;
 
                 return newFock;
-            } // end if*/
+            } // end if
         } // end if 
 
 

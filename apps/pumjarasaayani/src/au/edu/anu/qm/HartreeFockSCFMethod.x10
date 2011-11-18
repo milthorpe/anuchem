@@ -66,14 +66,18 @@ public class HartreeFockSCFMethod extends SCFMethod {
         var fock:Fock  = new Fock(N);
 
         //Console.OUT.println("    Forming initial guess ...");
-        // compute initial MOs
-        mos.compute(hCore, overlap);
-	    density.compute(mos);
-	    density.applyGuess(bfs.getSAD());
+
+        // GUESS = CORE 
+        // mos.compute(hCore, overlap);
+	// density.compute(mos);
+	
+        // GUESS = SAD
+	density.applyGuess(bfs.getSAD());
 
         //Console.OUT.println("    Starting RHF-SCF ... ");        
 
-        var diis:DIISFockExtrapolator = null;
+        //var diis:DIISFockExtrapolator = null;
+        val diis = new DIISFockExtrapolator();
 
         // start the SCF cycle
         for(var scfIteration:Int=0; scfIteration<maxIteration; scfIteration++) {
@@ -89,13 +93,11 @@ public class HartreeFockSCFMethod extends SCFMethod {
             timer.start(0);
             // make fock matrix
             fock.compute(hCore, gMatrix);
-            // TODO: DIIS to be switched on / off on request 
-            if (scfIteration % 50==0) diis = new DIISFockExtrapolator();
+            // SCF_ALGORITHM = DIIS  
             fock = diis.next(fock, overlap, density);
             timer.stop(0);
             //Console.OUT.println ("    Time to construct Fock: " + (timer.total(0) as Double) / 1e9 + " seconds");
- 
-            
+     
             timer.start(1);
             // compute the new MOs
             mos.compute(fock, overlap);
@@ -104,17 +106,17 @@ public class HartreeFockSCFMethod extends SCFMethod {
          
             // compute the total energy at this point
             val eOne = density.mul(hCore).trace();
-            Console.OUT.printf("    Nuclear electron attraction energy = %.6f a.u.\n", eOne);
+            // Console.OUT.printf("  Nuclear electron attraction energy = %.6f a.u.\n", eOne);
 
             val eTwo = density.mul(fock).trace();
-            Console.OUT.printf("    Electron repulsion energy = %.6f a.u.\n", eTwo);
+            // Console.OUT.printf("  Electron repulsion energy = %.6f a.u.\n", eTwo);
             
             energy = eOne + eTwo + nuclearEnergy;
 
             Console.OUT.printf("Cycle #" + scfIteration + " Total energy = %.6f a.u.", energy);
             if (scfIteration>0) Console.OUT.printf(" (%.6f)",energy-oldEnergy);
-            Console.OUT.printf("\n");
-            // ckeck for convergence
+            Console.OUT.printf("\n----------------------------------------------------------\n");
+            // check for convergence
             if (scfIteration>0/*Math.abs(energy - oldEnergy) < energyTolerance &&*/&& diis.isConverged()) {
                 converged = true;
                 break;

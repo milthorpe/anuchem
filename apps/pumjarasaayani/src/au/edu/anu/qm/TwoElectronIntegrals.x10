@@ -47,6 +47,7 @@ public class TwoElectronIntegrals {
 
     private val normFactors:Rail[Double];
     private val THRESH:Double;
+    private val TCrit:Double;
 
     /**
      * @param maxam maximum angular momentum (determines total number of integrals)
@@ -64,6 +65,7 @@ public class TwoElectronIntegrals {
 
         this.normFactors = normFactors;
         this.THRESH = Th;
+        this.TCrit = - Math.log(Th);
 
         // Console.OUT.println("alloc: " + maxam + " " + maxam2N);
 
@@ -442,6 +444,16 @@ public class TwoElectronIntegrals {
      * International Journal of Quantum Chemistry, vol 40, 745-752 (1991)
     */    
     def computeZeroM(angMomABCD:Int, T:Double, Upq:Double, eta:Double) {
+        // GJP1991 eqn 20-21
+        if (T > TCrit) { 
+            val invR2 = eta/T;
+            zeroM(0) = Upq*Math.sqrt(invR2);
+            for (m in 1..angMomABCD)
+                zeroM(m) = zeroM(m-1) * (2*m-1) * invR2;                       
+            return zeroM;
+        }
+
+        // In GJP1991, this is calculated by Modified Chebyshev Interpolation instead.
         computeGmt(angMomABCD, T);
         val twoEta = 2.0*eta;
         var etaPow : Double = Math.sqrt(twoEta);
@@ -449,7 +461,6 @@ public class TwoElectronIntegrals {
         for(i in 0..angMomABCD) {
             zeroM(i) = UpqSQ2PI * etaPow * gmt(i);
             etaPow *= twoEta; // etaPow = twoEta^(i+0.5)
-            // Console.OUT.println(Upq + " " + zeroM(i));
         }
         return zeroM;
     }
