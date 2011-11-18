@@ -52,7 +52,7 @@ public class GMatrix extends Matrix {
         // Schwarz cut-off: Häser & Ahlrichs eqn 12
         val shellList = bfs.getShellList();
         val maxam = shellList.getMaximumAngularMomentum();
-        val twoE = new TwoElectronIntegrals(maxam, bfs.getNormalizationFactors());
+        val twoE = new TwoElectronIntegrals(maxam, bfs.getNormalizationFactors(), THRESH);
 
 
         val fakeDensity = new Density(N, 2);
@@ -772,7 +772,7 @@ public class GMatrix extends Matrix {
         public def this(N: Int, bfs:BasisFunctions) {
             this.N = N;
             val shellList = bfs.getShellList();
-            this.twoEI = new TwoElectronIntegrals(shellList.getMaximumAngularMomentum(), bfs.getNormalizationFactors());
+            this.twoEI = new TwoElectronIntegrals(shellList.getMaximumAngularMomentum(), bfs.getNormalizationFactors(), THRESH);
             this.shellList = shellList;
 
             jMat = new Matrix(N);

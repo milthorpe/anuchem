@@ -46,12 +46,13 @@ public class TwoElectronIntegrals {
     private val maxam:Int, maxam2:Int, maxam2M:Int, pqdim:Int;
 
     private val normFactors:Rail[Double];
+    private val THRESH:Double;
 
     /**
      * @param maxam maximum angular momentum (determines total number of integrals)
      * @param normFactors normalization factors for integrals of different angular momenta
      */
-    public def this(maxam : Int, normFactors:Rail[Double]) {
+    public def this(maxam : Int, normFactors:Rail[Double], Th:Double) {
         // allocate scratch memory
         this.maxam = maxam;
         maxam2 = 2*maxam;
@@ -62,6 +63,7 @@ public class TwoElectronIntegrals {
         pqdim = maxam2M+1;
 
         this.normFactors = normFactors;
+        this.THRESH = Th;
 
         // Console.OUT.println("alloc: " + maxam + " " + maxam2N);
 
@@ -433,12 +435,19 @@ public class TwoElectronIntegrals {
          return res;
     }
 
+    /** 
+     * TODO The best way to evaluate this function is to follow "GJP1991"
+     * P. M. W. Gill, B. G. Johnson and J. A. Pople 
+     * "Two-electron repulsion Integrals Over Gaussian s Functions"
+     * International Journal of Quantum Chemistry, vol 40, 745-752 (1991)
+    */    
     def computeZeroM(angMomABCD:Int, T:Double, Upq:Double, eta:Double) {
         computeGmt(angMomABCD, T);
         val twoEta = 2.0*eta;
         var etaPow : Double = Math.sqrt(twoEta);
+        val UpqSQ2PI = Upq*SQ2PI;
         for(i in 0..angMomABCD) {
-            zeroM(i) = Upq * etaPow * gmt(i);
+            zeroM(i) = UpqSQ2PI * etaPow * gmt(i);
             etaPow *= twoEta; // etaPow = twoEta^(i+0.5)
             // Console.OUT.println(Upq + " " + zeroM(i));
         }
@@ -446,31 +455,32 @@ public class TwoElectronIntegrals {
     }
 
     private def computeGmt(angMomABCD:Int, T:Double) {
-        if (T > 30.0){
+        if (T > 30.0){  // This is quivalent to GJP1991 eqn 20-21
             val invT = 1/T;
             gmt(0) = Math.sqrt(Math.PI*invT)*0.5;
            
             for (m in 1..angMomABCD) {
                 gmt(m) = gmt(m-1) * (m-0.5) * invT;
             }
-        } else {
+        } else {  
+            // This is done by Modified Chebyshev Interpolation in GJP1991. 
+            // However, this one is not too bad. term ~ T^n / (angMomABCD + 0.5 + n)!
+            // By Sterling approximation one can see that the factorial kills term very quickly.
+            // This is equivalent to eqn 29 in GJP1991. (Taylor's series)
             var denom : Double = angMomABCD + 0.5;
             var term : Double = 0.5 / denom;
             var sum : Double = term;
-            while (term > 1.0e-15)  {
+            while (term > THRESH)  {
                 denom = (denom + 1.0);
                 term  = term * T / denom;
                 sum   = sum + term;
             }
-
+            // This exp is done by Chebyshev Interpolation too in GJP1991
             val expNegT = Math.exp(-T);
             gmt(angMomABCD) = expNegT * sum;
-            for (var m:Int=angMomABCD-1; m >= 0; m--) {
+            for (var m:Int=angMomABCD-1; m >= 0; m--) { // This is quivalent to GJP1991 eqn 24
                 gmt(m) = (2.0 * T * gmt(m+1) + expNegT) / (2*m + 1);
             }
-        }
-        for(var i:Int=0; i<=angMomABCD; i++) {
-            gmt(i) *= SQ2PI;
         }
     }
 
