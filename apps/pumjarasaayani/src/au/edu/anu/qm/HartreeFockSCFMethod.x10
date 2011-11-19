@@ -69,14 +69,14 @@ public class HartreeFockSCFMethod extends SCFMethod {
 
         // GUESS = CORE 
         // mos.compute(hCore, overlap);
-	// density.compute(mos);
+	    // density.compute(mos);
 	
         // GUESS = SAD
-	density.applyGuess(bfs.getSAD());
+	    density.applyGuess(bfs.getSAD());
 
-        //Console.OUT.println("    Starting RHF-SCF ... ");        
+        //Console.OUT.println("    Starting RHF-SCF ... ");  
+        Console.OUT.printf("\n----------------------------------------------------------\n");      
 
-        //var diis:DIISFockExtrapolator = null;
         val diis = new DIISFockExtrapolator();
 
         // start the SCF cycle
@@ -88,20 +88,20 @@ public class HartreeFockSCFMethod extends SCFMethod {
             // make the G matrix
             gMatrix.compute(density);
            
-            val timer = new Timer(2);
+            //val timer = new Timer(2);
 
-            timer.start(0);
+            //timer.start(0);
             // make fock matrix
             fock.compute(hCore, gMatrix);
             // SCF_ALGORITHM = DIIS  
             fock = diis.next(fock, overlap, density);
-            timer.stop(0);
+            //timer.stop(0);
             //Console.OUT.println ("    Time to construct Fock: " + (timer.total(0) as Double) / 1e9 + " seconds");
      
-            timer.start(1);
+            //timer.start(1);
             // compute the new MOs
             mos.compute(fock, overlap);
-            timer.stop(1);
+            //timer.stop(1);
             //Console.OUT.println ("    Time to form MOS: " + (timer.total(1) as Double) / 1e9 + " seconds");
          
             // compute the total energy at this point
@@ -129,6 +129,17 @@ public class HartreeFockSCFMethod extends SCFMethod {
            Console.OUT.println("SCF did not converge in " + maxIteration + " cycles!");
         else 
            Console.OUT.printf("SCF converged. Final SCF energy = %.6f a.u.\n", energy);
+
+        Console.OUT.printf("==========================================================\n");
+
+        Console.OUT.println("GMatrix construction timings:");
+        Console.OUT.println("iters     mean   stddev      min      max");
+        Console.OUT.printf("%5i %8.4g %8.4g %8.4g %8.4g", 
+                            gMatrix.timer.count(0), 
+                            (gMatrix.timer.mean(0) as Double) / 1e9,
+                            (gMatrix.timer.stdDev(0)) / 1e9,
+                            (gMatrix.timer.min(0) as Double) / 1e9,
+                            (gMatrix.timer.max(0) as Double) / 1e9);
     }
 }
 

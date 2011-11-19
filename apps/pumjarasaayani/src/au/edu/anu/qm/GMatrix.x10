@@ -20,6 +20,7 @@ import x10x.vector.Point3d;
 import au.edu.anu.chem.Molecule;
 import au.edu.anu.util.SharedCounter;
 import au.edu.anu.util.Timer;
+import au.edu.anu.util.StatisticalTimer;
 
 /**
  * G matrix in HF calculation
@@ -31,6 +32,9 @@ import au.edu.anu.util.Timer;
  */
 public class GMatrix extends Matrix {
     public static DEFAULT_GMATTYPE=5;
+
+    public val timer = new StatisticalTimer(1);
+    public static TIMER_IDX_TOTAL = 0;
 
     private val gMatType : Int;
     private val computeInst : DistArray[ComputePlace](1);
@@ -46,6 +50,34 @@ public class GMatrix extends Matrix {
         this.bfs = bfs;
         this.mol = molecule;
         this.gMatType = gMatType;
+
+        val nPlaces = Place.MAX_PLACES;
+        switch(gMatType) {
+        case 0:
+            Console.OUT.println("GMatrix.computeDirectSerial: " + gMatType);
+            break;
+        case 1:
+            Console.OUT.println("GMatrix.computeDirectLowMemNoAtomic: " + gMatType);
+            break;
+        case 2:
+            Console.OUT.println("GMatrix.computeDirectMultiPlaceNoAtomic: " + gMatType);
+            break;
+        case 3:
+            Console.OUT.println("GMatrix.computeDirectMultiPlaceStatic: " + gMatType);
+            val noOfAtoms = mol.getNumberOfAtoms();
+            Console.OUT.println("\tWork units per place: " + (noOfAtoms / nPlaces) + " remainder " + (noOfAtoms % nPlaces));
+            break;
+        case 4:
+            Console.OUT.println("GMatrix.computeDirectMultiPlaceFuture: " + gMatType);
+            break;
+        case 5:
+        default:
+            Console.OUT.println("GMatrix.computeDirectMultiPlaceShellLoop: " + gMatType);
+            val shellList = bfs.getShellList();
+            val nPairs = shellList.getNumberOfShellPairs();
+            Console.OUT.println("\tWork units per place: " + (nPairs / nPlaces) + " remainder " + (nPairs % nPlaces));
+            break;
+        }
 
         val dCut = new Matrix(N);
         val qCut = new Matrix(N);
@@ -99,37 +131,30 @@ public class GMatrix extends Matrix {
 
     /** top level method to form the G Matrix, depending on gMatType appropriate functions are called */
     public def compute(density:Density) {
-        val timer = new Timer(1);
        timer.start(0);
        switch(gMatType) {
        case 0:
-           Console.OUT.println("   GMatrix.computeDirectSerial: " + gMatType);
            computeDirectSerial(density); 
            break;
        case 1:
-           Console.OUT.println("   GMatrix.computeDirectLowMemNoAtomic: " + gMatType);
            computeDirectLowMemNoAtomic(density); 
            break;
        case 2:
-           Console.OUT.println("   GMatrix.computeDirectMultiPlaceNoAtomic: " + gMatType);
            computeDirectMultiPlaceNoAtomic(density);
            break;
        case 3:
-           Console.OUT.println("   GMatrix.computeDirectMultiPlaceStatic: " + gMatType);
            computeDirectMultiPlaceStatic(density);
            break;
        case 4:
-           Console.OUT.println("   GMatrix.computeDirectMultiPlaceFuture: " + gMatType);
            computeDirectMultiPlaceFuture(density);
            break;
        case 5:
        default:
-           Console.OUT.println("   GMatrix.computeDirectMultiPlaceShellLoop: " + gMatType);
            computeDirectMultiPlaceShellLoop(density);
            break;
        } // end switch .. case
        timer.stop(0);
-       Console.OUT.printf("    Time to construct GMatrix: %.3g seconds\n", (timer.total(0) as Double) / 1e9);
+       Console.OUT.printf("    Time to construct GMatrix: %.3g seconds\n", (timer.last(0) as Double) / 1e9);
     }
 
     private def computeDirectSerial(density:Density) {
@@ -243,10 +268,6 @@ public class GMatrix extends Matrix {
     private def computeDirectMultiPlaceNoAtomic(density:Density) {
         val noOfAtoms = mol.getNumberOfAtoms();
 
-        val timer = new Timer(2);
-
-        timer.start(0);
-
         val computeInst = this.computeInst; // TODO this should not be required XTENLANG-1913
         finish ateach(p in computeInst) {
             computeInst(p).reset(density);
@@ -303,13 +324,7 @@ public class GMatrix extends Matrix {
             } // centre a
         } // finish
 
-        timer.stop(0);
-        Console.OUT.printf("\tTime for actual computation: %.3g seconds\n", (timer.total(0) as Double) / 1e9); 
-
-        timer.start(1);
         gatherAndReduceGMatrix();
-        timer.stop(1);
-        Console.OUT.printf("\tTime for summing up GMatrix bits: %.3g seconds\n", (timer.total(1) as Double) / 1e9); 
     }
 
     /**
@@ -337,7 +352,6 @@ public class GMatrix extends Matrix {
         val workPerPlace = noOfAtoms / nPlaces;
         val remainder = noOfAtoms % nPlaces;
         val firstChunk = remainder * (workPerPlace + 1);
-        Console.OUT.println("\tWork units per place: " + workPerPlace + " remainder " + remainder);
 
         val gMat = getMatrix();
         val computeInst = this.computeInst; // TODO this should not be required XTENLANG-1913
@@ -422,11 +436,6 @@ public class GMatrix extends Matrix {
     private def computeDirectMultiPlaceShellLoop(density:Density) {
         val shellList = bfs.getShellList();
         val nPairs = shellList.getNumberOfShellPairs();
-        val nPlaces = Place.MAX_PLACES;
-        val workPerPlace = nPairs / nPlaces;
-        val remainder = nPairs % nPlaces;
-        val firstChunk = remainder * (workPerPlace + 1);
-        Console.OUT.println("\tWork units per place: " + workPerPlace + " remainder " + remainder);
 
         makeZero();
         val gMat = getMatrix();
@@ -442,7 +451,7 @@ public class GMatrix extends Matrix {
                 comp_loc.reset();
                 val totInt = comp_loc.computeShells(nPairs);
                 //placeTimer.stop(0);
-                Console.OUT.println("    totInt at " + here + " = " + totInt);
+                //Console.OUT.println("    totInt at " + here + " = " + totInt);
                 //Console.OUT.println("\tcompute at " + here + " " + (placeTimer.total(0) as Double) / 1e9 + " seconds");
                 comp_loc.getGMatContributionArray()
             };
