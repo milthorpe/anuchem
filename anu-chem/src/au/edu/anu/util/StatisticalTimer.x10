@@ -29,7 +29,12 @@ final public class StatisticalTimer {
     }
 
     public def start(id:Int) { current(id) = -System.nanoTime(); }
-    public def clear(id:Int) { total(id) = 0; count(id) = 0; sumOfSquares(id) = 0.0;}
+    public def clear(id:Int) { 
+        total(id) = 0; count(id) = 0;
+        min(id) = Long.MAX_VALUE; max(id) = Long.MIN_VALUE;
+        sumOfSquares(id) = 0.0;
+    }
+
     public def stop(id:Int) {
         current(id) += System.nanoTime();
         val elapsed = current(id);

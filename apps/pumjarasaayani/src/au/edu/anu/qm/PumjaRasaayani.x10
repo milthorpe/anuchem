@@ -13,7 +13,6 @@ package au.edu.anu.qm;
 import x10.io.File;
 import au.edu.anu.chem.Molecule;
 import au.edu.anu.util.Timer;
-import x10x.vector.Point3d;
 
 import au.edu.anu.qm.mta.Fragment; 
 import au.edu.anu.qm.mta.Fragmentor; 
@@ -46,6 +45,7 @@ public class PumjaRasaayani {
         } catch(e:Exception) {
             throw new Exception("Unable to read input file: "+inpFile, e);
         }
+        mol.transformToSNO();
     } 
 
     public def this(inpFile:String, gMatType:Int, mtaOpt:String) {

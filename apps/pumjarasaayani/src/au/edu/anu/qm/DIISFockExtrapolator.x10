@@ -72,7 +72,6 @@ public class DIISFockExtrapolator {
         Console.OUT.printf("   Max DIIS error = %.3e subspaceSize = %d\n",mxerr,errorVectorSize);
         if (mxerr < DIIS_MAX_ERROR_CRITERIA) {
             converged=true;
-            Console.OUT.printf("   Converged\n");
             return currentFock;
         }
 

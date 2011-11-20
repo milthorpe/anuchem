@@ -14,6 +14,7 @@ import x10.util.Pair;
 import x10.util.ArrayList;
 
 import x10x.vector.Point3d;
+import x10x.vector.Vector3d;
 
 /**
  * This class represents a Molecule
@@ -100,6 +101,41 @@ public class Molecule[T]{T <: Atom} {
         }
 
         return Point3d(x/massSum,y/massSum,z/massSum);
+    }
+
+    public def getCentreOfNuclearCharge():Point3d {
+        val ai = AtomInfo.getInstance();
+        var x:Double = 0.0, y:Double = 0.0, z:Double = 0.0;
+        var chargeSum:Double = 0.0;
+
+        for(atm:T in atomList) {
+            val nuclearCharge = ai.getAtomicNumber(atm);
+            x += nuclearCharge * atm.centre.i;
+            y += nuclearCharge * atm.centre.j;
+            z += nuclearCharge * atm.centre.k;
+
+            chargeSum += nuclearCharge;
+        }
+
+        return Point3d(x/chargeSum,y/chargeSum,z/chargeSum);
+    }
+
+    /**
+     * Translates and rotates this molecule to standard nuclear orientation.
+     * @see Gill, P.M.W., Johnson, B.G. and Pople, J.A. (1993).
+     *   "A standard grid for density functional calculations".
+     *    Chem. Phys. Lett. 209 (5-6) pp.506-512  (Appendix A)
+     */
+    public def transformToSNO() {
+        val zeroMoment = getCentreOfNuclearCharge();
+        val translation = Vector3d(-zeroMoment.i, -zeroMoment.j, -zeroMoment.k);
+        if (translation.magnitude() > 1.0e-12) {
+            Console.OUT.println("translated molecule by " + translation);
+        }
+        for(atm:T in atomList) {
+            atm.centre += translation;
+        }
+        // TODO rotation
     }
 
     public def toString() : String {

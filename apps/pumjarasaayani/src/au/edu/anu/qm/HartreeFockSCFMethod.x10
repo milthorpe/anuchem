@@ -82,8 +82,9 @@ public class HartreeFockSCFMethod extends SCFMethod {
         // start the SCF cycle
         for(var scfIteration:Int=0; scfIteration<maxIteration; scfIteration++) {
             // make or guess density
-	    if (scfIteration>0) //
-            density.compute(mos);
+	        if (scfIteration>0) {
+                density.compute(mos);
+            }
             
             // make the G matrix
             gMatrix.compute(density);
@@ -114,10 +115,16 @@ public class HartreeFockSCFMethod extends SCFMethod {
             energy = eOne + eTwo + nuclearEnergy;
 
             Console.OUT.printf("Cycle #" + scfIteration + " Total energy = %.6f a.u.", energy);
-            if (scfIteration>0) Console.OUT.printf(" (%.6f)",energy-oldEnergy);
+            if (scfIteration>0) {
+                Console.OUT.printf(" (%.6f)",energy-oldEnergy);
+            } else {
+                // ignore the first cycle's timings 
+                // as far fewer integrals are calculated
+                gMatrix.timer.clear(0);
+            }
             Console.OUT.printf("\n----------------------------------------------------------\n");
             // check for convergence
-            if (scfIteration>0/*Math.abs(energy - oldEnergy) < energyTolerance &&*/&& diis.isConverged()) {
+            if (scfIteration > 0 && diis.isConverged()) {
                 converged = true;
                 break;
             } // end if
