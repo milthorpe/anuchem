@@ -141,22 +141,23 @@ public class TwoElectronIntegrals {
              val bPrim = bPrims(bp);
              pcdint.clear();
              val bAlpha = bPrim.exponent;
-             val gamma1 = aAlpha + bAlpha;
+             val gamma1 = (aAlpha + bAlpha);
+             val sigmaP = 1.0 / gamma1;
              val bCoeff = bPrim.coefficient;
 
              // val p = gaussianProductCentre(aAlpha, aCen, bAlpha, bCen);
 
              val p = Point3d(
-                         (aAlpha * aCen.i + bAlpha * bCen.i) / gamma1,
-                         (aAlpha * aCen.j + bAlpha * bCen.j) / gamma1,
-                         (aAlpha * aCen.k + bAlpha * bCen.k) / gamma1
+                         (aAlpha * aCen.i + bAlpha * bCen.i) * sigmaP,
+                         (aAlpha * aCen.j + bAlpha * bCen.j) * sigmaP,
+                         (aAlpha * aCen.k + bAlpha * bCen.k) * sigmaP
                        );
 
-             val Gab = Math.exp(-aAlpha*bAlpha*radiusABSquared/gamma1);
-             val pgx = Math.PI/gamma1;
+             val Gab = Math.exp(-aAlpha*bAlpha*radiusABSquared*sigmaP);
+             val pgx = Math.PI * sigmaP;
              val Up = aCoeff*bCoeff*Gab*Math.sqrt(pgx*pgx*pgx);
              // Console.OUT.println("Coeff: " + aCoeff + " " + bCoeff);
-             // Console.OUT.println("Zeta, Gab, Up: " + gamma1 + " " + Gab + " " + Up);
+             // Console.OUT.println("sigmaP, Gab, Up: " + sigmaP + " " + Gab + " " + Up);
 
              for([cp] in cPrims) {
                 val cPrim = cPrims(cp);
@@ -168,21 +169,22 @@ public class TwoElectronIntegrals {
                  val dAlpha = dPrim.exponent;
                  val dCoeff = dPrim.coefficient;
 
-                 val gamma2 = cAlpha + dAlpha;
-                 val eta    = (gamma1*gamma2)/(gamma1+gamma2);
+                 val gamma2 = (cAlpha + dAlpha);
+                 val sigmaQ = 1.0 / gamma2;
+                 val eta = (gamma1*gamma2)/(gamma1+gamma2);
 
                  // val q = gaussianProductCentre(cAlpha, cCen, dAlpha, dCen);
                  val q = Point3d(
-                           (cAlpha * cCen.i + dAlpha * dCen.i) / gamma2,
-                           (cAlpha * cCen.j + dAlpha * dCen.j) / gamma2,
-                           (cAlpha * cCen.k + dAlpha * dCen.k) / gamma2
+                           (cAlpha * cCen.i + dAlpha * dCen.i) * sigmaQ,
+                           (cAlpha * cCen.j + dAlpha * dCen.j) * sigmaQ,
+                           (cAlpha * cCen.k + dAlpha * dCen.k) * sigmaQ
                          );
 
-                 val Gcd = Math.exp(-cAlpha*dAlpha*radiusCDSquared/gamma2);
-                 val qgx = Math.PI/gamma2;
+                 val Gcd = Math.exp(-cAlpha*dAlpha*radiusCDSquared*sigmaQ);
+                 val qgx = Math.PI * sigmaQ;
                  val Uq  = cCoeff*dCoeff*Gcd*Math.sqrt(qgx*qgx*qgx); 
                  // Console.OUT.println("Coeff: " + cCoeff + " " + dCoeff);
-                 // Console.OUT.println("Zeta, Gcd, Uq: " + gamma2 + " " + Gcd + " " + Uq);
+                 // Console.OUT.println("sigmaQ, Gcd, Uq: " + sigmaQ + " " + Gcd + " " + Uq);
 
                  val r = q.vector(p);
                  val radiusPQSquared = r.lengthSquared();
@@ -209,7 +211,7 @@ public class TwoElectronIntegrals {
                  // Console.OUT.println("Computing [p|cd] ");
 
                  // form [p|cd]
-                 computePcd(angMomAB, gamma2, q, dLim, cLim,
+                 computePcd(angMomAB, sigmaQ, q, dLim, cLim,
                             shellD, shellC, dCen, cCen);
                } // dPrim
               } // cPrim
@@ -220,7 +222,7 @@ public class TwoElectronIntegrals {
               computeAbcd(dLim, cLim, bLim, aLim,
                           dStrt, cStrt, bStrt, aStrt,
                           shellB, shellA,
-                          aCen, bCen, p, 2.0*gamma1,
+                          aCen, bCen, p, sigmaP,
                           jMatrix, kMatrix, dMatrix); 
            }
         }
@@ -274,22 +276,23 @@ public class TwoElectronIntegrals {
              val bPrim = bPrims(bp);
              pcdint.clear();
              val bAlpha = bPrim.exponent;
-             val gamma1 = aAlpha + bAlpha;
+             val gamma1 = (aAlpha + bAlpha);
+             val sigmaP = 1.0 / gamma1;
              val bCoeff = bPrim.coefficient;
 
              // val p = gaussianProductCentre(aAlpha, aCen, bAlpha, bCen);
 
              val p = Point3d(
-                         (aAlpha * aCen.i + bAlpha * bCen.i) / gamma1,
-                         (aAlpha * aCen.j + bAlpha * bCen.j) / gamma1,
-                         (aAlpha * aCen.k + bAlpha * bCen.k) / gamma1
+                         (aAlpha * aCen.i + bAlpha * bCen.i) * sigmaP,
+                         (aAlpha * aCen.j + bAlpha * bCen.j) * sigmaP,
+                         (aAlpha * aCen.k + bAlpha * bCen.k) * sigmaP
                        );
 
-             val Gab = Math.exp(-aAlpha*bAlpha*radiusABSquared/gamma1);
-             val pgx = Math.PI/gamma1;
+             val Gab = Math.exp(-aAlpha*bAlpha*radiusABSquared*sigmaP);
+             val pgx = Math.PI * sigmaP;
              val Up = aCoeff*bCoeff*Gab*Math.sqrt(pgx*pgx*pgx);
              // Console.OUT.println("Coeff: " + aCoeff + " " + bCoeff);
-             // Console.OUT.println("Zeta, Gab, Up: " + gamma1 + " " + Gab + " " + Up);
+             // Console.OUT.println("sigmaP, Gab, Up: " + sigmaP + " " + Gab + " " + Up);
 
              for([cp] in cPrims) {
                 val cPrim = cPrims(cp);
@@ -301,21 +304,22 @@ public class TwoElectronIntegrals {
                  val dAlpha = dPrim.exponent;
                  val dCoeff = dPrim.coefficient;
 
-                 val gamma2 = cAlpha + dAlpha;
-                 val eta    = (gamma1*gamma2)/(gamma1+gamma2);
+                 val gamma2 = (cAlpha + dAlpha);
+                 val sigmaQ = 1.0 / gamma2;
+                 val eta = (gamma1*gamma2)/(gamma1+gamma2);
 
                  // val q = gaussianProductCentre(cAlpha, cCen, dAlpha, dCen);
                  val q = Point3d(
-                           (cAlpha * cCen.i + dAlpha * dCen.i) / gamma2,
-                           (cAlpha * cCen.j + dAlpha * dCen.j) / gamma2,
-                           (cAlpha * cCen.k + dAlpha * dCen.k) / gamma2
+                           (cAlpha * cCen.i + dAlpha * dCen.i) * sigmaQ,
+                           (cAlpha * cCen.j + dAlpha * dCen.j) * sigmaQ,
+                           (cAlpha * cCen.k + dAlpha * dCen.k) * sigmaQ
                          );
 
-                 val Gcd = Math.exp(-cAlpha*dAlpha*radiusCDSquared/gamma2);
-                 val qgx = Math.PI/gamma2;
+                 val Gcd = Math.exp(-cAlpha*dAlpha*radiusCDSquared*sigmaQ);
+                 val qgx = Math.PI * sigmaQ;
                  val Uq  = cCoeff*dCoeff*Gcd*Math.sqrt(qgx*qgx*qgx); 
                  // Console.OUT.println("Coeff: " + cCoeff + " " + dCoeff);
-                 // Console.OUT.println("Zeta, Gcd, Uq: " + gamma2 + " " + Gcd + " " + Uq);
+                 // Console.OUT.println("sigmaQ, Gcd, Uq: " + sigmaQ + " " + Gcd + " " + Uq);
 
                  val r = q.vector(p);
                  val radiusPQSquared = r.lengthSquared();  
@@ -342,7 +346,7 @@ public class TwoElectronIntegrals {
                  // Console.OUT.println("Computing [p|cd] ");
 
                  // form [p|cd]
-                 computePcd(angMomAB, gamma2, q, dLim, cLim,
+                 computePcd(angMomAB, sigmaQ, q, dLim, cLim,
                             shellD, shellC, dCen, cCen);
                } // dPrim
               } // cPrim
@@ -353,7 +357,7 @@ public class TwoElectronIntegrals {
               computeAbcd(dLim, cLim, bLim, aLim,
                           dStrt, cStrt, bStrt, aStrt,
                           shellB, shellA,
-                          aCen, bCen, p, 2.0*gamma1,
+                          aCen, bCen, p, sigmaP,
                           jMatrix, kMatrix, dMatrix); 
            }
         }
@@ -400,34 +404,34 @@ public class TwoElectronIntegrals {
     }
 
     private def mdHrr(xa:Int, ya:Int, za:Int, xb:Int, yb:Int, zb:Int, xp:Int, yp:Int, zp:Int,
-                      pai:Double, paj:Double, pak:Double, pbi:Double, pbj:Double, pbk:Double, zeta2:Double) : Double {
+                      pai:Double, paj:Double, pak:Double, pbi:Double, pbj:Double, pbk:Double, sigma:Double) : Double {
         var res:Double;
         if (xp < 0 || yp < 0 || zp < 0) {
             res = 0.0;
         } else if (xa > 0) {
-            res = mdHrr(xa-1, ya, za, xb, yb, zb, xp-1, yp, zp, pai, paj, pak, pbi, pbj, pbk, zeta2)*xp
-                + mdHrr(xa-1, ya, za, xb, yb, zb, xp  , yp, zp, pai, paj, pak, pbi, pbj, pbk, zeta2)*(pai)
-                + mdHrr(xa-1, ya, za, xb, yb, zb, xp+1, yp, zp, pai, paj, pak, pbi, pbj, pbk, zeta2)/(zeta2);
+            res = mdHrr(xa-1, ya, za, xb, yb, zb, xp-1, yp, zp, pai, paj, pak, pbi, pbj, pbk, sigma)*xp
+                + mdHrr(xa-1, ya, za, xb, yb, zb, xp  , yp, zp, pai, paj, pak, pbi, pbj, pbk, sigma)*(pai)
+                + mdHrr(xa-1, ya, za, xb, yb, zb, xp+1, yp, zp, pai, paj, pak, pbi, pbj, pbk, sigma)*sigma;
         } else if (ya > 0) {
-            res = mdHrr(xa, ya-1, za, xb, yb, zb, xp, yp-1, zp, pai, paj, pak, pbi, pbj, pbk, zeta2)*yp
-                + mdHrr(xa, ya-1, za, xb, yb, zb, xp, yp  , zp, pai, paj, pak, pbi, pbj, pbk, zeta2)*(paj)
-                + mdHrr(xa, ya-1, za, xb, yb, zb, xp, yp+1, zp, pai, paj, pak, pbi, pbj, pbk, zeta2)/(zeta2);
+            res = mdHrr(xa, ya-1, za, xb, yb, zb, xp, yp-1, zp, pai, paj, pak, pbi, pbj, pbk, sigma)*yp
+                + mdHrr(xa, ya-1, za, xb, yb, zb, xp, yp  , zp, pai, paj, pak, pbi, pbj, pbk, sigma)*(paj)
+                + mdHrr(xa, ya-1, za, xb, yb, zb, xp, yp+1, zp, pai, paj, pak, pbi, pbj, pbk, sigma)*sigma;
         } else if (za > 0) {
-            res = mdHrr(xa, ya, za-1, xb, yb, zb, xp, yp, zp-1, pai, paj, pak, pbi, pbj, pbk, zeta2)*zp
-                + mdHrr(xa, ya, za-1, xb, yb, zb, xp, yp, zp  , pai, paj, pak, pbi, pbj, pbk, zeta2)*(pak)
-                + mdHrr(xa, ya, za-1, xb, yb, zb, xp, yp, zp+1, pai, paj, pak, pbi, pbj, pbk, zeta2)/(zeta2);
+            res = mdHrr(xa, ya, za-1, xb, yb, zb, xp, yp, zp-1, pai, paj, pak, pbi, pbj, pbk, sigma)*zp
+                + mdHrr(xa, ya, za-1, xb, yb, zb, xp, yp, zp  , pai, paj, pak, pbi, pbj, pbk, sigma)*(pak)
+                + mdHrr(xa, ya, za-1, xb, yb, zb, xp, yp, zp+1, pai, paj, pak, pbi, pbj, pbk, sigma)*sigma;
         } else if (xb > 0 ) {
-            res = mdHrr(xa, ya, za, xb-1, yb, zb, xp-1, yp, zp, pai, paj, pak, pbi, pbj, pbk, zeta2)*xp
-                + mdHrr(xa, ya, za, xb-1, yb, zb, xp  , yp, zp, pai, paj, pak, pbi, pbj, pbk, zeta2)*(pbi)
-                + mdHrr(xa, ya, za, xb-1, yb, zb, xp+1, yp, zp, pai, paj, pak, pbi, pbj, pbk, zeta2)/(zeta2);
+            res = mdHrr(xa, ya, za, xb-1, yb, zb, xp-1, yp, zp, pai, paj, pak, pbi, pbj, pbk, sigma)*xp
+                + mdHrr(xa, ya, za, xb-1, yb, zb, xp  , yp, zp, pai, paj, pak, pbi, pbj, pbk, sigma)*(pbi)
+                + mdHrr(xa, ya, za, xb-1, yb, zb, xp+1, yp, zp, pai, paj, pak, pbi, pbj, pbk, sigma)*sigma;
         } else if (yb > 0) {
-            res = mdHrr(xa, ya, za, xb, yb-1, zb, xp, yp-1, zp, pai, paj, pak, pbi, pbj, pbk, zeta2)*yp
-                + mdHrr(xa, ya, za, xb, yb-1, zb, xp, yp  , zp, pai, paj, pak, pbi, pbj, pbk, zeta2)*(pbj)
-                + mdHrr(xa, ya, za, xb, yb-1, zb, xp, yp+1, zp, pai, paj, pak, pbi, pbj, pbk, zeta2)/(zeta2);
+            res = mdHrr(xa, ya, za, xb, yb-1, zb, xp, yp-1, zp, pai, paj, pak, pbi, pbj, pbk, sigma)*yp
+                + mdHrr(xa, ya, za, xb, yb-1, zb, xp, yp  , zp, pai, paj, pak, pbi, pbj, pbk, sigma)*(pbj)
+                + mdHrr(xa, ya, za, xb, yb-1, zb, xp, yp+1, zp, pai, paj, pak, pbi, pbj, pbk, sigma)*sigma;
         } else if (zb > 0) {
-            res = mdHrr(xa, ya, za, xb, yb, zb-1, xp, yp, zp-1, pai, paj, pak, pbi, pbj, pbk, zeta2)*zp
-                + mdHrr(xa, ya, za, xb, yb, zb-1, xp, yp, zp  , pai, paj, pak, pbi, pbj, pbk, zeta2)*(pbk)
-                + mdHrr(xa, ya, za, xb, yb, zb-1, xp, yp, zp+1, pai, paj, pak, pbi, pbj, pbk, zeta2)/(zeta2);
+            res = mdHrr(xa, ya, za, xb, yb, zb-1, xp, yp, zp-1, pai, paj, pak, pbi, pbj, pbk, sigma)*zp
+                + mdHrr(xa, ya, za, xb, yb, zb-1, xp, yp, zp  , pai, paj, pak, pbi, pbj, pbk, sigma)*(pbk)
+                + mdHrr(xa, ya, za, xb, yb, zb-1, xp, yp, zp+1, pai, paj, pak, pbi, pbj, pbk, sigma)*sigma;
         } else {
             val ptot = xp+yp+zp;
             val idx  = xp*(2*(ptot)-xp+3)/2+yp;
@@ -555,7 +559,7 @@ public class TwoElectronIntegrals {
          }
     }
 
-    private def computePcd(angMomAB:Int, gamma2:Double, q:Point3d, dLim:Int, cLim:Int, 
+    private def computePcd(angMomAB:Int, sigmaQ:Double, q:Point3d, dLim:Int, cLim:Int, 
                            shellD:Rail[Power], shellC:Rail[Power], dCen:Point3d, cCen:Point3d) {
          val qdi = q.i-dCen.i;
          val qdj = q.j-dCen.j;
@@ -564,7 +568,7 @@ public class TwoElectronIntegrals {
          val qcj = q.j-cCen.j;
          val qck = q.k-cCen.k;
 
-         val twoGamma = 2.0*gamma2;
+         val halfSigmaQ = 0.5*sigmaQ;
 
          var pLim : Int = 0;
          for(i in 0..angMomAB) {
@@ -594,7 +598,7 @@ public class TwoElectronIntegrals {
                          // Console.OUT.println("md: [" + maxam + "] " + dd + " " + cc + " " + (i*pqdim+pp));
 
                          pcdint(dd,cc,ipp) += mdHrr(lp, mp, np, lq, mq, nq, 0, 0, 0,
-                                                    qdi, qdj, qdk, qci, qcj, qck, twoGamma);   // can use hrr() instead
+                                                    qdi, qdj, qdk, qci, qcj, qck, halfSigmaQ);   // can use hrr() instead
 
                          // Console.OUT.println("md-done: " + dd + " " + cc + " " + i*pqdim+pp);
                      }
@@ -606,7 +610,7 @@ public class TwoElectronIntegrals {
     private def computeAbcd(dLim:Int, cLim:Int, bLim:Int, aLim:Int,
                             dStrt:Int, cStrt:Int, bStrt:Int, aStrt:Int,
                             shellB:Rail[Power], shellA:Rail[Power], 
-                            aCen:Point3d, bCen:Point3d, p:Point3d, gamma1:Double,
+                            aCen:Point3d, bCen:Point3d, p:Point3d, sigmaP:Double,
                             jMatrix:Array[Double](2){rect,zeroBased}, 
                             kMatrix:Array[Double](2){rect,zeroBased},
                             dMatrix:Array[Double](2){rect,zeroBased}) {
@@ -617,6 +621,8 @@ public class TwoElectronIntegrals {
         val pai = p.i-aCen.i;
         val paj = p.j-aCen.j;
         val pak = p.k-aCen.k;
+
+        val halfSigmaP = 0.5*sigmaP;
 
         for (dd in 0..(dLim-1)) {
             val ll = dStrt + dd;
@@ -656,7 +662,7 @@ public class TwoElectronIntegrals {
                                 val mq = powersA.m;
                                 val nq = powersA.n;
                                 val intVal = mdHrr(lp, mp, np, lq, mq, nq, 0, 0, 0,
-                                                            pbi, pbj, pbk, pai, paj, pak, gamma1);  // can use hrr instead
+                                                            pbi, pbj, pbk, pai, paj, pak, halfSigmaP);  // can use hrr instead
 
                                 val normIntVal = intVal
                                     * normL * normK
