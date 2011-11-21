@@ -123,7 +123,7 @@ public class GMatrix extends Matrix {
             //Console.OUT.printf("%d %d %e \n",a,b,EST(a,b));
         }
 
-        Console.OUT.println("    maxEst " + maxEst);
+        Console.OUT.printf("\tmaxEst %.4g\n", maxEst);
         val maxEstVal = maxEst;
 
         computeInst = DistArray.make[ComputePlace](Dist.makeUnique(), (Point) => new ComputePlace(N, molecule, bfs, qCut, dCut, maxEstVal));
@@ -406,19 +406,19 @@ public class GMatrix extends Matrix {
                 val nPrimitives = comp_loc.computeThreads(0).shellList.getNumberOfShellPrimitives();
                 val nPairs = comp_loc.computeThreads(0).shellList.getNumberOfShellPairs();
 
-                var completedHere : Int = 0;
-                var totInt:Long = 0;
+                var pairsHere : Int = 0;
+                var intHere:Long = 0;
                 for(var i:Int=myG; i<nPairs; i++) {
                     if (i == myG) {
                         val F2 = Future.make[Int](() => G.getAndIncrement());
-                        totInt += comp_loc.computeOneShellPair(i, nPrimitives, bfs);
-                        completedHere++;
+                        intHere += comp_loc.computeOneShellPair(i, nPrimitives, bfs);
+                        pairsHere++;
                         myG = F2.force();
                     }
                 }
 
                 placeTimer.stop(0);
-                Console.OUT.println("\tcompute at " + here + " completed " + completedHere + " totInt " + totInt + " " + (placeTimer.total(0) as Double) / 1e9 + " seconds");
+                Console.OUT.printf("\tcompute at %s pairs %i integrals %i %.4g seconds\n", here, pairsHere, intHere, ((placeTimer.total(0) as Double) / 1e9));
 
                 comp_loc.getGMatContributionArray()
             };
@@ -429,7 +429,7 @@ public class GMatrix extends Matrix {
             val sum = (a:Double, b:Double) => (a+b);
             atomic { gMat.map[Double,Double](gMat, placeContribution, sum); }
             //gatherTimer.stop(0);
-            //Console.OUT.println("\tgather from " + placeId + " " + (gatherTimer.total(0) as Double) / 1e9 + " seconds");
+            //Console.OUT.printf("\tgather from %i %.3g seconds\n", placeId, ((gatherTimer.total(0) as Double) / 1e9));
         } // ateach
     }
 
@@ -573,7 +573,7 @@ public class GMatrix extends Matrix {
                  }
              }
             if (Place.FIRST_PLACE == here) {
-                Console.OUT.println("    maxDen " + maxDen);
+                Console.OUT.printf("\tmaxDen %.4g\n", maxDen);
             }
             thresh2 = THRESH/maxEst/maxDen;
         }

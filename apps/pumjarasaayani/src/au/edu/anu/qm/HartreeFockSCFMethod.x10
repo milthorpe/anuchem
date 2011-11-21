@@ -30,37 +30,34 @@ public class HartreeFockSCFMethod extends SCFMethod {
     }
 
     public def scf() : void {
+        val noOfElectrons = molecule.getNumberOfElectrons();        
+        if (noOfElectrons%2 != 0 || molecule.getMultiplicity()!=1) {
+           Console.OUT.println("Currently supports only closed shell calculations!");
+           return;
+        }
+
+        val nuclearEnergy = getNuclearEnergy();
+        Console.OUT.printf("Nuclear repulsion energy = %.6f a.u.\n", nuclearEnergy);
+
         val noOfBasisFunctions:Long = bfs.getBasisFunctions().size();
         val noOfIntegrals:Long = noOfBasisFunctions * (noOfBasisFunctions + 1)
                           * (noOfBasisFunctions * noOfBasisFunctions
                              + noOfBasisFunctions + 2) / 8;
         Console.OUT.println("\nNumber of 2E integrals: " + noOfIntegrals);
-    
-        // check first if closed shell run?
-        val noOfElectrons = molecule.getNumberOfElectrons();
-        val noOfOccupancies = noOfElectrons / 2;
-        
-        if (noOfElectrons%2 != 0 || molecule.getMultiplicity()!=1) {
-           Console.OUT.println("Currently supports only closed shell calculations!");
-           return;
-        } // end if
 
-        val hCore   = oneE.getHCore();
-        val overlap = oneE.getOverlap();
-        
         energy = 0.0;
 
         var converged:Boolean = false;
         var oldEnergy:Double = 0.0;
 
-        val nuclearEnergy = getNuclearEnergy();
-        Console.OUT.printf("Nuclear repulsion energy = %.6f a.u.\n", nuclearEnergy);
+        val hCore   = oneE.getHCore();
+        val overlap = oneE.getOverlap();
 
-        //Console.OUT.println ("    Initializing matrices ...");
         // init memory for the matrices
         val N = hCore.getRowCount();
         val gMatrix  = new GMatrix(N, bfs, molecule, gMatType);
         val mos      = new MolecularOrbitals(N);
+        val noOfOccupancies = noOfElectrons / 2;
         val density  = new Density(N, noOfOccupancies); // density.make();
 
         var fock:Fock  = new Fock(N);
@@ -74,8 +71,7 @@ public class HartreeFockSCFMethod extends SCFMethod {
         // GUESS = SAD
 	    density.applyGuess(bfs.getSAD());
 
-        //Console.OUT.println("    Starting RHF-SCF ... ");  
-        Console.OUT.printf("\n----------------------------------------------------------\n");      
+        Console.OUT.printf("----------------------------------------------------------\n");      
 
         val diis = new DIISFockExtrapolator();
 
@@ -114,9 +110,9 @@ public class HartreeFockSCFMethod extends SCFMethod {
             
             energy = eOne + eTwo + nuclearEnergy;
 
-            Console.OUT.printf("Cycle #" + scfIteration + " Total energy = %.6f a.u.", energy);
+            Console.OUT.printf("Cycle #%i Total energy = %.6f a.u.", scfIteration, energy);
             if (scfIteration>0) {
-                Console.OUT.printf(" (%.6f)",energy-oldEnergy);
+                Console.OUT.printf(" (%.6f)", energy-oldEnergy);
             } else {
                 // ignore the first cycle's timings 
                 // as far fewer integrals are calculated

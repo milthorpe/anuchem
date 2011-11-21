@@ -38,7 +38,6 @@ public class OneElectronIntegrals {
 
     private def compute1E(molecule:Molecule[QMAtom]) : void {
        val bfs  = basisFunctions.getBasisFunctions();
-       val nbf  = bfs.size();
        val nat  = molecule.getNumberOfAtoms();
        val atno = new Array[Double](nat);
        val ai   = AtomInfo.getInstance();
@@ -50,7 +49,7 @@ public class OneElectronIntegrals {
        val ovr = overlap.getMatrix();
        val h   = hCore.getMatrix();
 
-       finish for([i, j] in h) {
+       for([i, j] in h) {
               val bfi = bfs.get(i);
               val bfj = bfs.get(j);
 

@@ -45,21 +45,21 @@ public class PumjaRasaayani {
         } catch(e:Exception) {
             throw new Exception("Unable to read input file: "+inpFile, e);
         }
-        mol.transformToSNO();
     } 
 
     public def this(inpFile:String, gMatType:Int, mtaOpt:String) {
         this(inpFile, gMatType);
 
-        if (mtaOpt.equals("-mta")) this.isMTA = true;
-        else                       this.isMTA = false;
+        this.isMTA = (mtaOpt.equals("-mta"));
     }
 
     public def runIt() {
-        Console.OUT.println("PumjaRasaayani shunya.tri, Quantum Chemisty program in x10, v0.3");
+        Console.OUT.println("PumjaRasaayani shunya.tri, Quantum Chemistry program in x10, v0.4");
 
         Console.OUT.println("No. of places: " + Place.MAX_PLACES);
         Console.OUT.println("No. of threads per place: " + Runtime.NTHREADS);
+
+        mol.transformToSNO();
 
         Console.OUT.println("\nInput deck:");
         Console.OUT.println(mol);
@@ -76,13 +76,12 @@ public class PumjaRasaayani {
         val bsf = new BasisFunctions(mol, basisName, getBasisDirName(inputFileName));
         Console.OUT.println("\nUsing " + bsf.getBasisFunctions().size() + " basis functions.");
         timer.stop(1);
-        Console.OUT.printf("\tTime for setting up basis functions: %.3g milliseconds\n\n", (timer.total(1) as Double) / 1e6);
+        Console.OUT.printf("    Time for setting up basis functions: %.3g milliseconds\n\n", (timer.total(1) as Double) / 1e6);
         
         timer.start(2);
         val oneE = new OneElectronIntegrals(bsf, mol);
-        Console.OUT.println("\nComputed one-electron integrals.");
         timer.stop(2);
-        Console.OUT.printf("\tTime for computing 1E integrals: %.3g seconds\n\n", (timer.total(2) as Double) / 1e9);
+        Console.OUT.printf("    Time for computing 1E integrals: %.3g seconds\n\n", (timer.total(2) as Double) / 1e9);
         // Console.OUT.println("HCore");
         // Console.OUT.println(oneE.getHCore());   
         // Console.OUT.println("Overlap");
@@ -91,7 +90,7 @@ public class PumjaRasaayani {
         val hfscf = new HartreeFockSCFMethod(mol, oneE, bsf, gMatType);
         hfscf.scf();
         timer.stop(0);
-        Console.OUT.printf("\n-End of SCF-\n\nTotal time since start: %.3g seconds\n\n", (timer.total(0) as Double) / 1e9);
+        Console.OUT.printf("\n\nTotal time since start: %.3g seconds\n\n", (timer.total(0) as Double) / 1e9);
     }
 
     private def runHF(fragment:Fragment) {
@@ -150,7 +149,7 @@ public class PumjaRasaayani {
         } // end for 
         timer.stop(0);
 
-        Console.OUT.printf("Final MTA energy: %.8f\n", ene);
+        Console.OUT.printf("Final MTA energy: %.6f a.u.\n", ene);
         Console.OUT.printf("\n-End of MTA run-\n\nTotal time since start: %.3g seconds\n", (timer.total(0) as Double) / 1e9);
     }
 

@@ -130,7 +130,7 @@ public class Molecule[T]{T <: Atom} {
         val zeroMoment = getCentreOfNuclearCharge();
         val translation = Vector3d(-zeroMoment.i, -zeroMoment.j, -zeroMoment.k);
         if (translation.magnitude() > 1.0e-12) {
-            Console.OUT.println("translated molecule by " + translation);
+            Console.OUT.printf("\ntranslated molecule by [%.4g, %.4g, %.4g]\n", translation.i, translation.j, translation.k);
         }
         for(atm:T in atomList) {
             atm.centre += translation;
@@ -139,7 +139,7 @@ public class Molecule[T]{T <: Atom} {
     }
 
     public def toString() : String {
-       var str:String = "";
+       var str:String = name + "\n";
 
        for(atm:T in atomList)
          str += atm.toString() + "\n";

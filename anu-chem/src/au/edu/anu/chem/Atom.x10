@@ -85,7 +85,7 @@ public class Atom {
     public def getIndex() = index;
 
     public def toString() : String {
-        return symbol + " " + centre.i + " " + centre.j + " " + centre.k;
+        return String.format("%s %#10.5f %#10.5f %#10.5f", [symbol, centre.i, centre.j, centre.k]);
     }
 }
 
