@@ -70,6 +70,8 @@ public class GMatrix extends Matrix {
         case 4:
             Console.OUT.println("GMatrix.computeDistDynamicByShells: " + gMatType);
             break;
+        case 6:
+            Console.OUT.println("with allreduce:");
         case 5:
         default:
             Console.OUT.println("GMatrix.computeDistStaticByShells: " + gMatType);
@@ -151,6 +153,9 @@ public class GMatrix extends Matrix {
        case 5:
        default:
            computeDistStaticByShells(density);
+           break;
+       case 6:
+           computeDistStaticByShellsReduce(density);
            break;
        } // end switch .. case
        timer.stop(0);
@@ -387,45 +392,83 @@ public class GMatrix extends Matrix {
         val G = new SharedCounter();
         G.set(Place.MAX_PLACES); // each place is first assigned the counter value of its own place number
 
+        makeZero();
+        val gMat = getMatrix();
+
         computeInst(0).density = density; // prepare for broadcast
         val computeInst = this.computeInst; // TODO this should not be required XTENLANG-1913
-        finish ateach ([placeId] in computeInst) {
-            val placeTimer = new Timer(2);
-            placeTimer.start(0);
+        finish for ([placeId] in computeInst) async {
+            val placeContribution = at(Place.place(placeId)) {
+                val placeTimer = new Timer(1);
+                placeTimer.start(0);
 
-            val comp_loc = computeInst(placeId);
-            comp_loc.reset();
+                val comp_loc = computeInst(placeId);
+                comp_loc.reset();
 
-            var myG : Int = placeId;
+                var myG : Int = placeId;
 
-            val bfs = comp_loc.computeThreads(0).shellList.getShellPrimitives();
-            val nPrimitives = comp_loc.computeThreads(0).shellList.getNumberOfShellPrimitives();
-            val nPairs = comp_loc.computeThreads(0).shellList.getNumberOfShellPairs();
+                val bfs = comp_loc.computeThreads(0).shellList.getShellPrimitives();
+                val nPrimitives = comp_loc.computeThreads(0).shellList.getNumberOfShellPrimitives();
+                val nPairs = comp_loc.computeThreads(0).shellList.getNumberOfShellPairs();
 
-            var pairsHere : Int = 0;
-            var intHere:Long = 0;
-            for(var i:Int=myG; i<nPairs; i++) {
-                if (i == myG) {
-                    val F2 = Future.make[Int](() => G.getAndIncrement());
-                    intHere += comp_loc.computeOneShellPair(i, nPrimitives, bfs);
-                    pairsHere++;
-                    myG = F2.force();
+                var pairsHere : Int = 0;
+                var intHere:Long = 0;
+                for(var i:Int=myG; i<nPairs; i++) {
+                    if (i == myG) {
+                        val F2 = Future.make[Int](() => G.getAndIncrement());
+                        intHere += comp_loc.computeOneShellPair(i, nPrimitives, bfs);
+                        pairsHere++;
+                        myG = F2.force();
+                    }
                 }
-            }
+                placeTimer.stop(0);
+                Console.OUT.printf("\tcompute at %s pairs %i integrals %i %.4g seconds\n", here, pairsHere, intHere, ((placeTimer.total(0) as Double) / 1e9));
 
-            placeTimer.stop(0);
-            Console.OUT.printf("\tcompute at %s pairs %i integrals %i %.4g seconds\n", here, pairsHere, intHere, ((placeTimer.total(0) as Double) / 1e9));
-            placeTimer.start(1);
-            comp_loc.allreduceGMat();
-            placeTimer.stop(1);
-            Console.OUT.printf("\tallreduce at %s %.4g seconds\n", here, ((placeTimer.total(1) as Double) / 1e9));
+                comp_loc.getGMatContributionArray()
+            };
+            // gather and reduce my gMatrix contribution
+            //val gatherTimer = new Timer(1);
+            //gatherTimer.start(0);
+            val sum = (a:Double, b:Double) => (a+b);
+            atomic { gMat.map[Double,Double](gMat, placeContribution, sum); }
+            //gatherTimer.stop(0);
+            //Console.OUT.printf("\tgather from %i %.3g seconds\n", placeId, ((gatherTimer.total(0) as Double) / 1e9));
         }
-        // TODO should reduce directly to gMat
-        val gMat = getMatrix();
-        Array.copy(computeInst(0).gMatrixContribution.getMatrix(), gMat);
     }
 
     private def computeDistStaticByShells(density:Density) {
+        val shellList = bfs.getShellList();
+        val nPairs = shellList.getNumberOfShellPairs();
+
+        makeZero();
+        val gMat = getMatrix();
+
+        computeInst(0).density = density; // prepare for broadcast
+        val computeInst = this.computeInst; // TODO this should not be required XTENLANG-1913
+        finish for ([placeId] in computeInst) async {
+            val placeContribution = at(Place.place(placeId)) {
+                //val placeTimer = new Timer(1);
+                //placeTimer.start(0);
+                val comp_loc = computeInst(placeId);
+                comp_loc.reset();
+                val totInt = comp_loc.computeShells(nPairs);
+                //placeTimer.stop(0);
+                //Console.OUT.println("    totInt at " + here + " = " + totInt);
+                //Console.OUT.println("\tcompute at " + here + " " + (placeTimer.total(0) as Double) / 1e9 + " seconds");
+                comp_loc.getGMatContributionArray()
+            };
+
+            // gather and reduce my gMatrix contribution
+            //val gatherTimer = new Timer(1);
+            //gatherTimer.start(0);
+            val sum = (a:Double, b:Double) => (a+b);
+            atomic { gMat.map[Double,Double](gMat, placeContribution, sum); }
+            //gatherTimer.stop(0);
+            //Console.OUT.printf("\tgather from %i %.3g seconds\n", placeId, ((gatherTimer.total(0) as Double) / 1e9));
+        }
+    }
+
+    private def computeDistStaticByShellsReduce(density:Density) {
         val shellList = bfs.getShellList();
         val nPairs = shellList.getNumberOfShellPairs();
 
