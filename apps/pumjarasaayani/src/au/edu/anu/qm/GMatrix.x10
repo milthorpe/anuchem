@@ -54,28 +54,28 @@ public class GMatrix extends Matrix {
         val nPlaces = Place.MAX_PLACES;
         switch(gMatType) {
         case 0:
-            Console.OUT.println("GMatrix.computeDirectSerial: " + gMatType);
+            Console.OUT.println("GMatrix.computeSerialByShells: " + gMatType);
             break;
         case 1:
-            Console.OUT.println("GMatrix.computeDirectLowMemNoAtomic: " + gMatType);
+            Console.OUT.println("GMatrix.computeThreadedLowMemNoAtomicByBF: " + gMatType);
             break;
         case 2:
-            Console.OUT.println("GMatrix.computeDirectMultiPlaceNoAtomic: " + gMatType);
+            Console.OUT.println("GMatrix.computeDistNoAtomicByBF: " + gMatType);
             break;
         case 3:
-            Console.OUT.println("GMatrix.computeDirectMultiPlaceStatic: " + gMatType);
+            Console.OUT.println("GMatrix.computeDistStaticByAtoms: " + gMatType);
             val noOfAtoms = mol.getNumberOfAtoms();
-            Console.OUT.println("\tWork units per place: " + (noOfAtoms / nPlaces) + " remainder " + (noOfAtoms % nPlaces));
+            Console.OUT.println("\tAtoms per place: " + (noOfAtoms / nPlaces) + " remainder " + (noOfAtoms % nPlaces));
             break;
         case 4:
-            Console.OUT.println("GMatrix.computeDirectMultiPlaceFuture: " + gMatType);
+            Console.OUT.println("GMatrix.computeDistDynamicByShells: " + gMatType);
             break;
         case 5:
         default:
-            Console.OUT.println("GMatrix.computeDirectMultiPlaceShellLoop: " + gMatType);
+            Console.OUT.println("GMatrix.computeDistStaticByShells: " + gMatType);
             val shellList = bfs.getShellList();
             val nPairs = shellList.getNumberOfShellPairs();
-            Console.OUT.println("\tWork units per place: " + (nPairs / nPlaces) + " remainder " + (nPairs % nPlaces));
+            Console.OUT.println("\tShell pairs per place: " + (nPairs / nPlaces) + " remainder " + (nPairs % nPlaces));
             break;
         }
 
@@ -134,30 +134,30 @@ public class GMatrix extends Matrix {
        timer.start(0);
        switch(gMatType) {
        case 0:
-           computeDirectSerial(density); 
+           computeSerialByShells(density); 
            break;
        case 1:
-           computeDirectLowMemNoAtomic(density); 
+           computeThreadedLowMemNoAtomicByBF(density); 
            break;
        case 2:
-           computeDirectMultiPlaceNoAtomic(density);
+           computeDistNoAtomicByBF(density);
            break;
        case 3:
-           computeDirectMultiPlaceStatic(density);
+           computeDistStaticByAtoms(density);
            break;
        case 4:
-           computeDirectMultiPlaceFuture(density);
+           computeDistDynamicByShells(density);
            break;
        case 5:
        default:
-           computeDirectMultiPlaceShellLoop(density);
+           computeDistStaticByShells(density);
            break;
        } // end switch .. case
        timer.stop(0);
        Console.OUT.printf("    Time to construct GMatrix: %.3g seconds\n", (timer.last(0) as Double) / 1e9);
     }
 
-    private def computeDirectSerial(density:Density) {
+    private def computeSerialByShells(density:Density) {
         val N = getRowCount();
 
         val computePlace = computeInst(here.id);
@@ -187,7 +187,7 @@ public class GMatrix extends Matrix {
         }
     }
 
-    private def computeDirectLowMemNoAtomic(density:Density) : void {
+    private def computeThreadedLowMemNoAtomicByBF(density:Density) : void {
         val N = getRowCount();
 
         makeZero();
@@ -265,7 +265,7 @@ public class GMatrix extends Matrix {
         } // end for
     }
 
-    private def computeDirectMultiPlaceNoAtomic(density:Density) {
+    private def computeDistNoAtomicByBF(density:Density) {
         val noOfAtoms = mol.getNumberOfAtoms();
 
         val computeInst = this.computeInst; // TODO this should not be required XTENLANG-1913
@@ -345,7 +345,7 @@ public class GMatrix extends Matrix {
         } // end for
     }
 
-    private def computeDirectMultiPlaceStatic(density:Density) {
+    private def computeDistStaticByAtoms(density:Density) {
         makeZero();
         val noOfAtoms = mol.getNumberOfAtoms();
         val nPlaces = Place.MAX_PLACES;
@@ -383,87 +383,68 @@ public class GMatrix extends Matrix {
     }
 
     /** Code snippet 3, Bernholdt paper  */
-    private def computeDirectMultiPlaceFuture(density:Density) {
+    private def computeDistDynamicByShells(density:Density) {
         val G = new SharedCounter();
         G.set(Place.MAX_PLACES); // each place is first assigned the counter value of its own place number
-        makeZero();
-        val gMat = getMatrix();
 
         computeInst(0).density = density; // prepare for broadcast
         val computeInst = this.computeInst; // TODO this should not be required XTENLANG-1913
-        val thresh2 = this.thresh2; // TODO this should not be required XTENLANG-1913
-        finish for ([placeId] in computeInst) async {
-            val placeContribution = at(Place.place(placeId)) {
-                val placeTimer = new Timer(1);
-                placeTimer.start(0);
+        finish ateach ([placeId] in computeInst) {
+            val placeTimer = new Timer(2);
+            placeTimer.start(0);
 
-                val comp_loc = computeInst(placeId);
-                comp_loc.reset();
+            val comp_loc = computeInst(placeId);
+            comp_loc.reset();
 
-                var myG : Int = placeId;
+            var myG : Int = placeId;
 
-                val bfs = comp_loc.computeThreads(0).shellList.getShellPrimitives();
-                val nPrimitives = comp_loc.computeThreads(0).shellList.getNumberOfShellPrimitives();
-                val nPairs = comp_loc.computeThreads(0).shellList.getNumberOfShellPairs();
+            val bfs = comp_loc.computeThreads(0).shellList.getShellPrimitives();
+            val nPrimitives = comp_loc.computeThreads(0).shellList.getNumberOfShellPrimitives();
+            val nPairs = comp_loc.computeThreads(0).shellList.getNumberOfShellPairs();
 
-                var pairsHere : Int = 0;
-                var intHere:Long = 0;
-                for(var i:Int=myG; i<nPairs; i++) {
-                    if (i == myG) {
-                        val F2 = Future.make[Int](() => G.getAndIncrement());
-                        intHere += comp_loc.computeOneShellPair(i, nPrimitives, bfs);
-                        pairsHere++;
-                        myG = F2.force();
-                    }
+            var pairsHere : Int = 0;
+            var intHere:Long = 0;
+            for(var i:Int=myG; i<nPairs; i++) {
+                if (i == myG) {
+                    val F2 = Future.make[Int](() => G.getAndIncrement());
+                    intHere += comp_loc.computeOneShellPair(i, nPrimitives, bfs);
+                    pairsHere++;
+                    myG = F2.force();
                 }
+            }
 
-                placeTimer.stop(0);
-                Console.OUT.printf("\tcompute at %s pairs %i integrals %i %.4g seconds\n", here, pairsHere, intHere, ((placeTimer.total(0) as Double) / 1e9));
-
-                comp_loc.getGMatContributionArray()
-            };
-
-            // gather and reduce my gMatrix contribution
-            //val gatherTimer = new Timer(1);
-            //gatherTimer.start(0);
-            val sum = (a:Double, b:Double) => (a+b);
-            atomic { gMat.map[Double,Double](gMat, placeContribution, sum); }
-            //gatherTimer.stop(0);
-            //Console.OUT.printf("\tgather from %i %.3g seconds\n", placeId, ((gatherTimer.total(0) as Double) / 1e9));
-        } // ateach
+            placeTimer.stop(0);
+            Console.OUT.printf("\tcompute at %s pairs %i integrals %i %.4g seconds\n", here, pairsHere, intHere, ((placeTimer.total(0) as Double) / 1e9));
+            placeTimer.start(1);
+            comp_loc.allreduceGMat();
+            placeTimer.stop(1);
+            Console.OUT.printf("\tallreduce at %s %.4g seconds\n", here, ((placeTimer.total(1) as Double) / 1e9));
+        }
+        // TODO should reduce directly to gMat
+        val gMat = getMatrix();
+        Array.copy(computeInst(0).gMatrixContribution.getMatrix(), gMat);
     }
 
-    private def computeDirectMultiPlaceShellLoop(density:Density) {
+    private def computeDistStaticByShells(density:Density) {
         val shellList = bfs.getShellList();
         val nPairs = shellList.getNumberOfShellPairs();
 
-        makeZero();
-        val gMat = getMatrix();
-
         computeInst(0).density = density; // prepare for broadcast
         val computeInst = this.computeInst; // TODO this should not be required XTENLANG-1913
-        val thresh2 = this.thresh2; // TODO this should not be required XTENLANG-1913
-        finish for ([placeId] in computeInst) async {
-            val placeContribution = at(Place.place(placeId)) {
-                //val placeTimer = new Timer(1);
-                //placeTimer.start(0);
-                val comp_loc = computeInst(placeId);
-                comp_loc.reset();
-                val totInt = comp_loc.computeShells(nPairs);
-                //placeTimer.stop(0);
-                //Console.OUT.println("    totInt at " + here + " = " + totInt);
-                //Console.OUT.println("\tcompute at " + here + " " + (placeTimer.total(0) as Double) / 1e9 + " seconds");
-                comp_loc.getGMatContributionArray()
-            };
-
-            // gather and reduce my gMatrix contribution
-            //val gatherTimer = new Timer(1);
-            //gatherTimer.start(0);
-            val sum = (a:Double, b:Double) => (a+b);
-            atomic { gMat.map[Double,Double](gMat, placeContribution, sum); }
-            //gatherTimer.stop(0);
-            //Console.OUT.println("\tgather at " + here + " " + (gatherTimer.total(0) as Double) / 1e9 + " seconds");
+        finish ateach ([placeId] in computeInst) {
+            //val placeTimer = new Timer(1);
+            //placeTimer.start(0);
+            val comp_loc = computeInst(placeId);
+            comp_loc.reset();
+            val totInt = comp_loc.computeShells(nPairs);
+            //placeTimer.stop(0);
+            //Console.OUT.println("    totInt at " + here + " = " + totInt);
+            //Console.OUT.println("\tcompute at " + here + " " + (placeTimer.total(0) as Double) / 1e9 + " seconds");
+            comp_loc.allreduceGMat();
         }
+        // TODO should reduce directly to gMat
+        val gMat = getMatrix();
+        Array.copy(computeInst(0).gMatrixContribution.getMatrix(), gMat);
     }
 
     /** Compute class for the new code - multi place version */
@@ -534,6 +515,15 @@ public class GMatrix extends Matrix {
                 computeThreads(i).reset();
             }
             recomputeDCut();
+        }
+
+        /**
+         * Combines the gmat matrix contributions from all places.
+         * TODO should use reduce, but not currently implemented in x10.util.Team
+         */
+        public def allreduceGMat() {
+            val gmat = getGMatContributionArray();
+            Team.WORLD.allreduce[Double](here.id, gmat, 0, gmat, 0, gmat.size, Team.ADD);
         }
 
         private def recomputeDCut() {

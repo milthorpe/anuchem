@@ -17,35 +17,6 @@ package au.edu.anu.qm;
  */
 public class IntegralsUtils { 
     /**
-     * Indexing (i,j,k,l) into long array.
-     */
-    public static def ijkl2intindex(var i:Int, var j:Int, var k:Int, var l:Int) : Int {
-        var temp:Int;
-
-        if (i<j) {
-            temp = i;
-            i    = j;
-            j    = temp;
-        } // end if
-        if (k<l) {
-            temp = k;
-            k    = l;
-            l    = temp;
-        } // end if
-
-        var ij:Int = i * (i+1) / 2+j;
-        var kl:Int = k * (k+1) / 2+l;
-
-        if (ij < kl) {
-            temp = ij;
-            ij   = kl;
-            kl   = temp;
-        } // end id
-
-        return (ij * (ij+1) / 2+kl);
-    }
-
-    /**
      * Incomplete gamma function
      */
     public static def computeFGamma(m:Int, var x:Double) : Double {

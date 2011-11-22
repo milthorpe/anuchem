@@ -98,12 +98,5 @@ public final class MathUtil {
         }
         return r;
     }
-
-    /**
-     * @return minus one to the power (a)
-     */
-    public static final def minusOnePow(a: Int) {
-        return (a % 2 == 0) ? 1 : -1;
-    }
 }
 
