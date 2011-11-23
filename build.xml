@@ -39,7 +39,7 @@
     description="Test the Pumja Rasaayani app code">
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/apps/pumjarasaayani/bin">
             <arg value="-c"/>
-            <arg value="./pumjarasaayani ../test/h2o-321.inp 5"/>
+            <arg value="./pumjarasaayani ../test/H2O-321g.inp"/>
         </exec>
     </target>
 
