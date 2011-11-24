@@ -69,7 +69,7 @@ To test, you need to be in a directory above basis/
 
 Single place:
 
-$ runx10 bin/pumjarasaayani test/h2o.inp [<gmatype>] [-mta]
+$ runx10 bin/pumjarasaayani test/H2O-321g.inp [<gmatype>] [-mta]
 
 The -mta switch is used to invoke the molecular tailoring algorithm. This basically
 splits the molecule into a series of overlapping fragments and then performs HF on 
@@ -78,36 +78,26 @@ of the big molecule.
 
 Multiple place:
 
-$ launcher -t <n> bin/pumjarasaayani test/h2o.inp [<gmatype>] [-mta]  { pgas compiled }
-$ mpiexec -n <n> bin/pumjarasaayani test/h2o.inp [<gmatype>]  [-mta] { mpi compiled  }
+$ launcher -t <n> bin/pumjarasaayani test/H2O-321g.inp [<gmatype>] [-mta]  { pgas compiled }
+$ mpiexec -n <n> bin/pumjarasaayani test/H2O-321g.inp [<gmatype>]  [-mta] { mpi compiled  }
 
 where <n> is number of places
 
 [<gmatype>] is:
 0 : serial G matrix formation using a low flop count integral evaluation (but uses recursion)
 1 : like (0) , but uses pseudocode (2) for multithreaded implementation
-2 : (1) implemented as multi place code [*]
-3 : (1) using purely static load balancing [*]
-4 : (1) load balancing based on Bernholdt "Code 3", uses future and atomic [*] [**]
-5 : like (3) but uses a shell based loop [*] (the default)
+2 : (1) implemented as multi place code
+3 : (1) using purely static load balancing
+4 : (1) load balancing based on Bernholdt "Code 3", uses shared counter (the default) [*]
+5 : like (3) but uses a shell based loop [*] 
 
 [*] - most relevant for timings and scaling at this point
-[**] - currently segfaults for many test cases with multiple places
 
 Note: options 3 and 5 do not have multithreaded implementation at present, so wont scale on a single place
-For most performance tests, Option 5 is the best suitable at the moment. 
+For most performance tests, Option 4 is the best suitable at the moment. 
 
 When -mta switch is active each fragment is run sequentially over multiple places. This is not 
-optimal but works at the moment. 
-
-Tests for which all the above run correctly
-..................................
-h2-sto.inp   h2.inp   h2o.inp   h2o-dp.inp  nh3.inp  nh3-dp.inp  ch4-dp.inp 
-benzene.inp  benzene-321.inp benzene-dp.inp  h2co.inp h2co-321.inp
-cyclohexane-321.inp aspirin.inp(*) aspirin-321.inp(*)
-
-(*) Indicates it runs, but has convergence problems
-
+optimal but works at the moment.
 
 A summary of what the code does:
 -----------------------------------

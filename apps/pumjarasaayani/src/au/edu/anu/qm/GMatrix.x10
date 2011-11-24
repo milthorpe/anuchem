@@ -12,7 +12,6 @@ package au.edu.anu.qm;
 
 import x10.util.ArrayList;
 import x10.util.Team;
-import x10.util.concurrent.Future;
 
 import x10x.matrix.Matrix;
 import x10x.vector.Vector;
@@ -31,7 +30,7 @@ import au.edu.anu.util.StatisticalTimer;
  * @author: V.Ganesh
  */
 public class GMatrix extends Matrix {
-    public static DEFAULT_GMATTYPE=5;
+    public static DEFAULT_GMATTYPE=4;
 
     public val timer = new StatisticalTimer(1);
     public static TIMER_IDX_TOTAL = 0;
@@ -415,10 +414,11 @@ public class GMatrix extends Matrix {
                 var intHere:Long = 0;
                 for(var i:Int=myG; i<nPairs; i++) {
                     if (i == myG) {
-                        val F2 = Future.make[Int](() => G.getAndIncrement());
-                        intHere += comp_loc.computeOneShellPair(i, nPrimitives, bfs);
+                        finish {
+                          async intHere += comp_loc.computeOneShellPair(i, nPrimitives, bfs);
+                          myG = G.getAndIncrement();
+                        }
                         pairsHere++;
-                        myG = F2.force();
                     }
                 }
                 placeTimer.stop(0);
