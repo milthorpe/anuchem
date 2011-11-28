@@ -12,6 +12,7 @@ package au.edu.anu.qm;
 
 import x10.util.ArrayList;
 import x10.util.Team;
+import x10.util.concurrent.AtomicInteger;
 
 import x10x.matrix.Matrix;
 import x10x.vector.Vector;
@@ -501,10 +502,7 @@ public class GMatrix extends Matrix {
     /** As per computeDistDynamicByShells with multithreaded places  */
     private def computeDistThreadedDynamicByShells(density:Density) {
         val G = new SharedCounter();
-        // TODO assumes same number of threads at each place
-        val nThreads = Runtime.NTHREADS;
-        // each thread is first assigned a counter based on its place and thread number
-        G.set(Place.MAX_PLACES*nThreads);
+        G.set(Place.MAX_PLACES); // each place is first assigned the counter value of its own place number
 
         makeZero();
         val gMat = getMatrix();
@@ -518,37 +516,24 @@ public class GMatrix extends Matrix {
 
                 val comp_loc = computeInst(placeId);
                 comp_loc.reset();
+                val computeThread = comp_loc.computeThreads(0);
+
+                var myG : Int = placeId;
+
+                val bfs = comp_loc.computeThreads(0).shellList.getShellPrimitives();
+                val nPrimitives = comp_loc.computeThreads(0).shellList.getNumberOfShellPrimitives();
+                val nPairs = comp_loc.computeThreads(0).shellList.getNumberOfShellPairs();
 
                 var placePairs:Int = 0;
                 var placeInts:Long = 0;
-
-                finish for([threadNum] in comp_loc.computeThreads) async {
-                    val threadTimer = new Timer(1);
-                    threadTimer.start(0);
-                    var myG : Int = placeId*nThreads + threadNum;
-                    val computeThread = comp_loc.computeThreads(threadNum);
-
-                    val bfs = computeThread.shellList.getShellPrimitives();
-                    val nPrimitives = computeThread.shellList.getNumberOfShellPrimitives();
-                    val nPairs = computeThread.shellList.getNumberOfShellPairs();
-
-                    var threadPairs:Int = 0;
-                    var threadInts:Long = 0;
-                    for(var i:Int=myG; i<nPairs; i++) {
-                        if (i == myG) {
-                            finish {
-                              async threadInts += computeThread.computeOneShellPair(i, nPrimitives, bfs);
-                              myG = G.getAndIncrement();
-                            }
-                            threadPairs++;
+                for(var i:Int=myG; i<nPairs; i++) {
+                    if (i == myG) {
+                        finish {
+                          async myG = G.getAndIncrement();
+                          placeInts += comp_loc.computeOneShellPairThreaded(i, nPrimitives, bfs);
                         }
+                        placePairs++;
                     }
-                    atomic {
-                        placePairs += threadPairs;
-                        placeInts += threadInts;
-                    }
-                    threadTimer.stop(0);
-                    Console.OUT.printf("\t  compute at %s thread %i pairs %i integrals %i %.4g seconds\n", here, threadNum, threadPairs, threadInts, ((threadTimer.total(0) as Double) / 1e9));
                 }
                 placeTimer.stop(0);
                 Console.OUT.printf("\tcompute at %s pairs %i integrals %i %.4g seconds\n", here, placePairs, placeInts, ((placeTimer.total(0) as Double) / 1e9));
@@ -574,6 +559,7 @@ public class GMatrix extends Matrix {
         val jMatrixContribution : Matrix;
         val kMatrixContribution : Matrix;
 
+        private val qCut:Matrix;
         private val dCut:Matrix;
         private val maxEst:Double;
         private var thresh2:Double;
@@ -582,6 +568,7 @@ public class GMatrix extends Matrix {
 
         public def this(N : Int, mol:Molecule[QMAtom], bfs:BasisFunctions, qCut:Matrix, dCut:Matrix, maxEst:Double) {
             this.mol = mol;
+            this.qCut = qCut;
             this.dCut = dCut;
             this.maxEst = maxEst;
 
@@ -797,6 +784,66 @@ public class GMatrix extends Matrix {
 
             return kMatrixContribution;
         }
+
+        public def computeOneShellPairThreaded(shellPair:Int, nPrimitives:Int, bfs:ArrayList[ContractedGaussian]):Long {
+            val a = shellPair / nPrimitives;
+            val b = shellPair % nPrimitives;
+
+            val aFunc = bfs(a);
+            val bFunc = bfs(b);
+            return computeOneShellPairThreaded(aFunc, bFunc, nPrimitives, bfs);
+        }
+
+        public def computeOneShellPairThreaded(aFunc:ContractedGaussian, bFunc:ContractedGaussian, nPrimitives:Int, bfs:ArrayList[ContractedGaussian]):Long {
+            var totInt:Long = 0;
+
+            val aStrt = aFunc.intIndex;
+            val bStrt = bFunc.intIndex;
+            val aAng  = aFunc.getMaximumAngularMomentum();
+            val bAng  = bFunc.getMaximumAngularMomentum();
+
+            val aa = aStrt + aAng;
+            val bb = bStrt + bAng;
+
+            if (aa < bb) return 0;
+
+            // Cut-off
+            val est = qCut.getMatrix();
+            val denCut = dCut.getMatrix();
+            if (est(aFunc.intIndex,bFunc.intIndex)<thresh2) return 0;
+
+            val angMomAB = aAng + bAng;
+            val aLim = ((aAng+1)*(aAng+2)/2);
+            val bLim = ((bAng+1)*(bAng+2)/2);
+
+            val radiusABSquared = aFunc.distanceSquaredFrom(bFunc);
+
+            val currentTriplet = new AtomicInteger(computeThreads.size);
+            finish for ([threadNum] in computeThreads) async {
+                val computeThread = computeThreads(threadNum);
+
+                var threadInts:Long = 0;
+
+                var myTriplet:Int = threadNum;
+                var i:Int = 0;
+                for (c in 0..(nPrimitives-1)) {
+                    val cFunc = bfs(c);
+                    val cStrt = cFunc.intIndex;
+                    val cAng  = cFunc.getMaximumAngularMomentum();
+                    val cc = cStrt + cAng;
+
+                    if (aa >= cc) {
+                        i++; // a triplet to actually be computed
+                        if (i == myTriplet) {
+                          threadInts += computeThread.computeOneShellTriplet(aFunc, bFunc, cFunc, radiusABSquared, nPrimitives, bfs, qCut, dCut);
+                          myTriplet = currentTriplet.getAndIncrement();
+                        }
+                    }
+                }
+                atomic totInt += threadInts;
+            }
+            return totInt;
+        }
     }
 
     static class ComputeThread {
@@ -876,9 +923,9 @@ public class GMatrix extends Matrix {
             return true;
         }
 
-        public def computeOneShellPair(shellPrim : Int, nPrimitives : Int, bfs : ArrayList[ContractedGaussian]):Long {
-            val a = shellPrim / nPrimitives;
-            val b = shellPrim % nPrimitives;
+        public def computeOneShellPair(shellPair : Int, nPrimitives : Int, bfs : ArrayList[ContractedGaussian]):Long {
+            val a = shellPair / nPrimitives;
+            val b = shellPair % nPrimitives;
 
             val aFunc = bfs(a);
             val bFunc = bfs(b);
@@ -944,6 +991,48 @@ public class GMatrix extends Matrix {
                         // TODO instead, split work into smaller activities
                         Runtime.probe();
                     }
+                }
+            }
+            return totInt;
+        }
+
+        public def computeOneShellTriplet(aFunc:ContractedGaussian, bFunc:ContractedGaussian, cFunc:ContractedGaussian, radiusABSquared:Double, nPrimitives:Int, bfs:ArrayList[ContractedGaussian], qCut:Matrix, dCut:Matrix):Long {
+            val aStrt = aFunc.intIndex;
+            val aAng  = aFunc.getMaximumAngularMomentum();
+            val bStrt = bFunc.intIndex;
+            val bAng  = bFunc.getMaximumAngularMomentum();
+
+            val cStrt = cFunc.intIndex;
+            val cAng  = cFunc.getMaximumAngularMomentum();
+            val cc = cStrt + cAng;
+
+            val angMomAB = aAng + bAng;
+            val aLim = ((aAng+1)*(aAng+2)/2);
+            val bLim = ((bAng+1)*(bAng+2)/2);
+
+            val est = qCut.getMatrix();
+            val denCut = dCut.getMatrix();
+
+            var totInt:Long = 0;
+            for (d in 0..(nPrimitives-1)) {
+                val dFunc = bfs(d);
+                val dStrt = dFunc.intIndex;
+                val dAng  = dFunc.getMaximumAngularMomentum();
+                val dd = dStrt + dAng;
+                if (cc >= dd) {
+                    val maxDCut1 = Math.max(denCut(aStrt,bStrt),denCut(cStrt,dStrt));
+                    val maxDCut2 = .25*Math.max(denCut(cStrt,bStrt),denCut(aStrt,dStrt));
+                    val maxDCut3 = .25*Math.max(denCut(cStrt,aStrt),denCut(bStrt,dStrt));
+                    val maxDCut4 = Math.max(maxDCut2,maxDCut3);
+                    val maxDCut = Math.max(maxDCut4,maxDCut1);
+
+                    if (est(aFunc.intIndex,bFunc.intIndex)*est(cStrt,dStrt)*maxDCut<THRESH)
+                        continue;
+
+                    totInt += computeSingle2(aFunc, bFunc, cFunc, dFunc,
+                                radiusABSquared, aAng, bAng, cAng, dAng, angMomAB,
+                                aStrt, bStrt, cStrt, dStrt, aLim, bLim,
+                                density);
                 }
             }
             return totInt;
