@@ -66,7 +66,7 @@ public struct ShellList {
         return n;
     }
 
-    public def getShellPrimitives() : ArrayList[ContractedGaussian] {
+    public def getShellPrimitives() : Rail[ContractedGaussian] {
         val shellPrimitives = new ArrayList[ContractedGaussian]();
 
         for(shell in shellList.keySet()) { 
@@ -74,7 +74,7 @@ public struct ShellList {
             for(var i:Int=0; i<sp.size(); i++) shellPrimitives.add(sp(i));
         }
 
-        return shellPrimitives;
+        return shellPrimitives.toArray();
     }
 
     public def getNumberOfShellPairs() : Int {
