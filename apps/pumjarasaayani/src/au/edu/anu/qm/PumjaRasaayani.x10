@@ -156,7 +156,8 @@ public class PumjaRasaayani {
     private static def getBasisDirName(inpFile : String) {
         val inputFile = new File(inpFile);
         val parent = inputFile.getParentFile();
-        return parent.getPath() + File.SEPARATOR + "basis";
+        val inputFileDir = parent == null ? "" : (parent.getPath() + File.SEPARATOR);
+        return inputFileDir + "basis";
     }
 
     public static def main(args : Array[String](1)) {
