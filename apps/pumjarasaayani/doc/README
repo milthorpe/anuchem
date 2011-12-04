@@ -10,13 +10,16 @@ Hartree-Fock (HF) single point energy (SPE) evaluation on a given molecular
 system using a specified basis set.
 
 Current restrictions: Only closed shell systems with atoms H, C, N and O are supported.
-No integral screening employed, all O(N^4/8) combinations evaluated. 
 No geometrical symmetry is employed.
 Convergence acceleration of HF - SCF procedure is applied automatically, but cannot be 
 switched off. 
+Integral calculation is inefficient as it is performed through a horizontal recurrence
+relation with no reuse of intermediate products.
+
+Integral screening is applied by Schwartz bound as described in Häser & Ahlrichs (1989).
 
 A preliminary framework for a divide and conquer algorithm (specifically the
-Molecular Tailoring Approach - MTA) is also available with in Pumjarasaayani. However,
+Molecular Tailoring Approach - MTA) is also available within Pumjarasaayani. However,
 this is not fully implemented and will only work for simple chain style molecules.
 
 Pumjarasaayani is free software under the Eclipse Public License.
@@ -59,13 +62,12 @@ To run:
 ------
 
 The test cases are in directory: test/
-The basis sets are in directory: test/basis/   [ contains sto-3g, 3-21g, and 6-31g(d,p) ]
+The basis sets are in directory: test/basis/   [ contains sto3g, 321g, and 631gdp ]
+Note: the basis set for a test case must be located in a subdirectory ./basis
 
 Basis sets are assumed to be in Gaussian 94 format.
 The provided basis sets were taken from EMSL Basis Set Exchange.
 https://bse.pnl.gov/bse/portal
-
-To test, you need to be in a directory above basis/
 
 Single place:
 
@@ -83,18 +85,23 @@ $ mpiexec -n <n> bin/pumjarasaayani test/H2O-321g.inp [<gmatype>]  [-mta] { mpi 
 
 where <n> is number of places
 
-[<gmatype>] is:
+[<gmatype>] selects a load-balancing scheme for integral evaluation.
+Some options follow the schemes proposed in Bernholdt et al. (see below).
 0 : serial G matrix formation using a low flop count integral evaluation (but uses recursion)
-1 : like (0) , but uses pseudocode (2) for multithreaded implementation
-2 : (1) implemented as multi place code
-3 : (1) using purely static load balancing
-4 : (1) load balancing based on Bernholdt "Code 3", uses shared counter (the default) [*]
-5 : like (3) but uses a shell based loop [*] 
+1 : multi-threaded, dynamic load balancing as per pseudocode 2 below
+2 : multi-place, dynamic load balancing similar to pseudocode 2 below
+3 : multi-place, static load balancing by atom
+4 : multi-place, dynamic load balancing by shell pair using shared counter (Bernholdt code 3) (the default) [*]
+5 : multi-place, static load balancing by shell pair [*] 
+6 : as per (5) with density matrix reduction using Team.allreduce
+7 : multi-place dynamic load balancing by shell pair; multi-threaded dynamic load balancing between threads by shell triplet [*]
 
 [*] - most relevant for timings and scaling at this point
 
-Note: options 3 and 5 do not have multithreaded implementation at present, so wont scale on a single place
-For most performance tests, Option 4 is the best suitable at the moment. 
+Note: options 3, 4 and 5 are for single-threaded places and do not take advantage of threading within a place.
+For clusters of SMP nodes, option 7 should provide best performance as it makes use of shared memory and cache hierarchies within a node.
+For example, on a cluster of 32 Nehalem nodes with eight cores per node, run:
+mpiexec -bind-to-node -n 32 -x X10_NTHREADS=8 -x X10_STATIC_THREADS=true bin/pumjarasaayani test/aspirin-321g.inp 7
 
 When -mta switch is active each fragment is run sequentially over multiple places. This is not 
 optimal but works at the moment.
@@ -126,7 +133,7 @@ The compute (i, j, k, l) tasks are completely independent of each other.
 
 Pseudocode for reference:
 
-Pseudocode (1): GMatrix.computeDirectAsyncOld(), GMatrix.computeDirectLowMemNewNoAtomic()
+Pseudocode (1): GMatrix.computeThreadedLowMemNoAtomicByBF()
 
 for(i=0; i<nfuncs; i++)
    for(j=0; j<nfuncs; j++)
@@ -135,12 +142,10 @@ for(i=0; i<nfuncs; i++)
               async computeAndUpdate(i, j, k, l); and set global G matrix elements, 
                                                   using atomic block
 
-Pseudocode (2): GMatrix.computeDirectAsyncOldNoAtomic()
+Pseudocode (2): GMatrix.computeDistNoAtomicByBF()
 (a) 
-  for(i=0; i<Runtime.INIT_THREADS; i++) {
-            compute(i) = new ComputeTask(..);
-  }
- 
+  zero partial G matrix contributions
+  (multi-place) broadcast new density matrix to all places
 (b)
 for(i=0; i<nfuncs; i++)
    for(j=0; j<nfuncs; j++)
@@ -159,14 +164,13 @@ for(i=0; i<nfuncs; i++)
 (c)
 SUM all partial G matrices 
 
-Currently, for option 5, (b) scales OK, but parts (a) and (c) scale negatively and needs
-to be re-written. 
+For options 4, 5, and 7, part (a) uses a collective broadcast as so scales as the log of the number of places; part (b) is embarrassingly parallel, but part (c) scales linearly with the number of places.  Option 6 uses Team.allreduce, however this is currently "emulated" for x10rt=mpi, so scales poorly (linearly with the number of places).
 
 2. Multi place implementation
 .............................
 
 Use two level parallelism, the first level over places and the second over the 
-number of threads as indicated above. [ GMatrix.computeDirectMultiPlaceNoAtomic() ]
+number of threads as indicated above. [ GMatrix.computeDistNoAtomicByBF() ]
 
 
 Expected performance
