@@ -43,21 +43,14 @@ public class Density extends Matrix {
             for(var j:Int=0; j<N; j++) 
               dMat(i, j) = mosMat(i, j);
 
-        val res = dVector.transpose().mul(dVector).getMatrix();
-
-        val thisMat = getMatrix();
-        for([i, j] in thisMat.region)
-           thisMat(i, j) = res(i, j);
+        this.mulInPlace(dVector.transpose(), dVector);
     }
 
     public def applyGuess(SAD:Matrix)  {
         val N = SAD.getRowCount();
         val dMat = SAD.getMatrix();
         val thisMat = getMatrix();
-        for([i,j] in dMat.region) {
-            thisMat(i, j) = dMat(i, j);
-            //Console.OUT.printf("%d %d %f\n",i,j,dMat(i,j));
-        }
+        Array.copy[Double](dMat, thisMat);
     }
 }
 

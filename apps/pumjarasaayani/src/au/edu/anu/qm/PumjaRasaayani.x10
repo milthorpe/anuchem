@@ -31,7 +31,6 @@ public class PumjaRasaayani {
     var basisName:String;
     var gMatType:Int;
     var isMTA:Boolean;
-    var time:Double = 0.0;
 
     public def this(inpFile:String, gMatType:Int) {
         this.inputFileName = inpFile;
