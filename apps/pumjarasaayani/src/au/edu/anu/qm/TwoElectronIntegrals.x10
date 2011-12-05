@@ -39,11 +39,11 @@ public class TwoElectronIntegrals {
     private val gmt:Rail[Double], zeroM:Rail[Double];
 
     private val rM:Array[Double](2){rect,zeroBased};
-    private val pqInts:Array[Double](2){rect,zeroBased};
+    private val pqInts:Array[Double](4){rect,zeroBased};
     private val npint:Array[Double](2){rect,zeroBased};
-    private val pcdint:Array[Double](3){rect,zeroBased};
+    private val pcdint:Array[Double](4){rect,zeroBased};
 
-    private val maxam:Int, maxam2:Int, maxam2M:Int, pqdim:Int;
+    private val maxam:Int, maxam2:Int, maxam2M:Int, maxam2N:Int;
 
     private val normFactors:Rail[Double];
     private val THRESH:Double;
@@ -61,7 +61,7 @@ public class TwoElectronIntegrals {
         val maxamN = ((maxam+1)*(maxam+2)/2);
         maxam2M  = ((maxam2+1)*(maxam2+2)/2);
         val maxam2N  = ((maxam2+1)*(maxam2M+1));
-        pqdim = maxam2M+1;
+        this.maxam2N = maxam2N;
 
         this.normFactors = normFactors;
         this.THRESH = Th;
@@ -73,9 +73,9 @@ public class TwoElectronIntegrals {
         zeroM  = new Array[Double](maxam4+1);
 
         rM     = new Array[Double](0..(maxam4+1) * 0..((maxam4+1) * (maxam4+2)/2));
-        pqInts = new Array[Double](0..(maxam2N)  * 0..(maxam2N));
-        npint  = new Array[Double](0..(maxam2+1) * 0..(maxam2M+1));
-        pcdint = new Array[Double](0..(maxamN+1) * 0..(maxamN+1) * 0..(maxam2N));
+        pqInts = new Array[Double](0..maxam2 * 0..maxam2M * 0..maxam2 * 0..maxam2M);
+        npint  = new Array[Double](0..maxam2 * 0..maxam2M);
+        pcdint = new Array[Double](0..(maxamN+1) * 0..(maxamN+1) * 0..maxam2 * 0..maxam2M);
 
         // Console.OUT.println("alloc2: " + pcdint.region.size());
     }
@@ -526,8 +526,6 @@ public class TwoElectronIntegrals {
                  val mp = powersAB.m;
                  val np = powersAB.n;
 
-                 val ipp = i*pqdim+pp;
-
                  var qLim : Int = 0;
                  for(j in 0..angMomCD) {
                      val shellCD = shellList.getPowers(j);
@@ -545,14 +543,11 @@ public class TwoElectronIntegrals {
 
                          val rr = lr*(2*(lr+mr+nr)-lr+3)/2+mr;
 
-                         val jqq = j*pqdim+qq;
-
                          if ((lq+mq+nq)%2 == 0)
-                            pqInts(ipp, jqq) =  rM(rtyp, rr);
+                            pqInts(i, pp, j, qq) =  rM(rtyp, rr);
                          else
-                            pqInts(ipp, jqq) = -rM(rtyp, rr);
+                            pqInts(i, pp, j, qq) = -rM(rtyp, rr);
 
-                         // Console.OUT.println(pqInts(i*pqdim+pp, j*pqdim+qq));
                      }
                  }
              }
@@ -574,14 +569,7 @@ public class TwoElectronIntegrals {
          for(i in 0..angMomAB) {
              pLim += (i+1); // pLim = (p+1)*(p+2)/2
              for(pp in 0..(pLim-1)) {
-                 val ipp = i*pqdim+pp;
-
-                 for (k in 0..maxam2) {
-                    val kpq = k*pqdim;
-                    for (l in 0..maxam2M) {
-                        npint(k,l) = pqInts(ipp, kpq+l);
-                    }
-                 }
+                Array.copy(pqInts, pqInts.region.indexOf(i,pp,0,0), npint, 0, maxam2N);
 
                  for(dd in 0..(dLim-1)) {
                      val powersD = shellD(dd);
@@ -595,12 +583,9 @@ public class TwoElectronIntegrals {
                          val mq = powersC.m;
                          val nq = powersC.n;
 
-                         // Console.OUT.println("md: [" + maxam + "] " + dd + " " + cc + " " + (i*pqdim+pp));
-
-                         pcdint(dd,cc,ipp) += mdHrr(lp, mp, np, lq, mq, nq, 0, 0, 0,
+                         pcdint(dd,cc,i,pp) += mdHrr(lp, mp, np, lq, mq, nq, 0, 0, 0,
                                                     qdi, qdj, qdk, qci, qcj, qck, halfSigmaQ);   // can use hrr() instead
 
-                         // Console.OUT.println("md-done: " + dd + " " + cc + " " + i*pqdim+pp);
                      }
                  }
              }
@@ -635,11 +620,7 @@ public class TwoElectronIntegrals {
                 if (kk < ll) continue;
                 val kkll_st = kk*(kk+1)/2 + ll;
 
-                for (k in 0..maxam2) {
-                    val kpq = k*pqdim;
-                    for (l in 0..maxam2M)
-                        npint(k,l) = pcdint(dd, cc, kpq+l);
-                }
+                Array.copy(pcdint, pcdint.region.indexOf(dd,cc,0,0), npint, 0, maxam2N);
 
                 for (bb in 0..(bLim-1)) {
                     val jj = bStrt + bb;
