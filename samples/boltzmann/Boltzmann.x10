@@ -118,7 +118,7 @@ public class Boltzmann(nsize:Int, nsteps:Int) {
 
         // initialize boundary conditions
         val boundaryCond = ([i,j]:Point(2)) => { (i==0 || i==(size(0)-1) || j==0) ? 1 : (j==(size(1)-1)) ? 2 : 0 };
-        val boundary = DistArray.make[Int](latticeDist, boundaryCond, GHOST_WIDTH);
+        val boundary = DistArray.make[Int](latticeDist, boundaryCond, GHOST_WIDTH, false);
         boundary.updateGhosts();
         this.boundary = boundary;
 
@@ -131,7 +131,8 @@ public class Boltzmann(nsize:Int, nsteps:Int) {
                 ux0, uy0,
                 RHO0 * RGAS * TMPRTR0 / (1.0 - B_VDW*RHO0) - A_VDW*RHO0*RHO0,
                 6.0 * VISCOSITY / (cspd*cspd*DELTA_T) + 0.5),
-            GHOST_WIDTH);
+            GHOST_WIDTH,
+            false);
         this.lbProps = lbProps;
         val rtot = RHO0*lbProps.region.size();
 
