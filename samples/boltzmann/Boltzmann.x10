@@ -140,9 +140,9 @@ public class Boltzmann(nsize:Int, nsteps:Int) {
 
         val lbDist = Dist.makeBlockBlock(latticeRegion * 0..8, 0, 1);
         Console.OUT.println("lbDist = " + lbDist);
-        this.current = DistArray.make[Double](lbDist, 0);
-        this.equilibrium = DistArray.make[Double](lbDist, 0);
-        this.previous = DistArray.make[Double](lbDist, GHOST_WIDTH);
+        this.current = DistArray.make[Double](lbDist, 0, false);
+        this.equilibrium = DistArray.make[Double](lbDist, 0, false);
+        this.previous = DistArray.make[Double](lbDist, GHOST_WIDTH, false);
     }
 
     private def printDistributions() {
