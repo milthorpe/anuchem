@@ -50,7 +50,11 @@
         <istrue value="${profile}" />
     </condition>
 
-    <condition property="post.cpuprofile" value="-L${perftoolsHome}/lib -lprofiler" else="">
+    <condition property="x10c.cpuprofile" value="-gpt" else="">
+        <istrue value="${cpuprofile}"/>
+    </condition>
+
+    <condition property="post.cpuprofile" value="-L${perftoolsHome}/lib" else="">
         <istrue value="${cpuprofile}"/>
     </condition>
 
@@ -81,36 +85,18 @@
             <fileset id="java.files" dir="${basedir}/src" includes="**/FFTW*.java"/>
         </copy>
 
-        <fileset id="changed.src.files" dir="${basedir}/src" includes="**/*.x10">
-            <depend targetdir="${target}/classes">
-                <mapper type="glob" from="*.x10" to="*.java"/>
-            </depend>
-        </fileset>
-
-        <pathconvert property="src.list" refid="changed.src.files" dirsep="/" pathsep=" ">
-            <map from="${basedir}${file.separator}src${file.separator}" to=""/>
-        </pathconvert>
-        <echo message="x10c ${src.list}"/>
+        <echo message="x10c ${x10c.debug} ${x10c.optimize} ${x10c.nochecks} ${x10c.workstealing} -sourcepath '.${path.separator}${xla.src}${path.separator}${anuchem.src}' '${basedir}/${testclass}'"/>
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/src">
             <arg value="-c"/>
-            <arg value="'x10c' ${x10c.optimize} -sourcepath '.${path.separator}${path.separator}${xla.src}${path.separator}${anuchem.src}' -classpath '${path.separator}${xla.lib}${path.separator}${anuchem.lib}' -d '${target-src}' ${src.list}"/>
+            <arg value="'x10c' ${x10c.debug} ${x10c.optimize} ${x10c.nochecks} ${x10c.workstealing} -sourcepath '.${path.separator}${path.separator}${xla.src}${path.separator}${anuchem.src}' -classpath '${path.separator}${xla.lib}${path.separator}${anuchem.lib}' -d '${target-src}' ${basedir}/${testclass}"/>
         </exec>
     </target>
 
     <target name="build-src-cpp" depends="check-src-cpp,build-fftw-wrapper" unless="src.uptodate.cpp">
         <echo message="Building source tree"/>
 
-        <fileset id="changed.src.files" dir="${basedir}/src" includes="**/*.x10">
-            <depend targetdir="${target}/classes">
-                <mapper type="glob" from="*.x10" to="*.cc"/>
-            </depend>
-        </fileset>
-
-        <pathconvert property="src.list" refid="changed.src.files" dirsep="/" pathsep=" ">
-            <map from="${basedir}${file.separator}src${file.separator}" to=""/>
-        </pathconvert>
-        <echo message="x10c++ -x10rt ${x10rt} ${x10c.debug} ${x10c.profile} ${x10c.optimize} ${x10c.nochecks} ${x10c.workstealing} -sourcepath '.${path.separator}${xla.src}${path.separator}${anuchem.src}' '${basedir}/${testclass}'"/>
+        <echo message="x10c++ -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} ${x10c.debug} ${x10c.cpuprofile} ${x10c.profile} ${x10c.workstealing} -sourcepath '.${path.separator}${xla.src}${path.separator}${anuchem.src}' '${basedir}/${testclass}'"/>
 
         <copy todir="${target}/classes">
             <fileset id="cpp.files" dir="${basedir}/src" includes="**/*.h,**/*.struct_h,**/*.cc"/>
@@ -118,7 +104,7 @@
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/src">
             <arg value="-c"/>
-            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.debug} ${x10c.profile} ${x10c.optimize} ${x10c.nochecks} ${x10c.workstealing} -report postcompile=1 -post '# &quot;-I${fftw3.include}&quot; # &quot;-L${fftw3.lib}&quot; ${link.mpiPprofile} ${post.cpuprofile} # -lfftw3' -sourcepath '.${path.separator}${xla.src}${path.separator}${anuchem.src}' -d '${target-src}' '${basedir}/${testclass}'"/>
+            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} ${x10c.debug} ${x10c.cpuprofile} ${x10c.profile}  ${x10c.workstealing} -report postcompile=1 -post '# -echo &quot;-I${fftw3.include}&quot; # &quot;-L${fftw3.lib}&quot; ${link.mpiPprofile} ${post.cpuprofile} # -lfftw3' -sourcepath '.${path.separator}${xla.src}${path.separator}${anuchem.src}' -d '${target-src}' '${basedir}/${testclass}'"/>
         </exec>
     </target>
 
