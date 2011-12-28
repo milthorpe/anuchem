@@ -160,7 +160,7 @@ public class PeriodicFmm3d extends Fmm3d {
                     val x = boxIndex(0);
                     val y = boxIndex(1);
                     val z = boxIndex(2);
-                    async at(boxAtomsTemp.dist(x,y,z)) {
+                    at(boxAtomsTemp.dist(x,y,z)) async {
                         val remoteAtom = new PointCharge(offsetCentre, charge);
                         atomic boxAtomsTemp(x,y,z).add(remoteAtom);
                     }
@@ -191,7 +191,7 @@ public class PeriodicFmm3d extends Fmm3d {
         val size = this.size; // TODO shouldn't be necessary XTENLANG-1913
         val numTerms = this.numTerms; // TODO shouldn't be necessary XTENLANG-1913
         val lowestLevelBoxes = boxes(numLevels);
-        async at(lowestLevelBoxes.dist(boxIndex)) {
+        at(lowestLevelBoxes.dist(boxIndex)) async {
             val remoteAtom = new PointCharge(offsetCentre, charge);
             val leafBox = lowestLevelBoxes(boxIndex) as FmmLeafBox;
             val boxLocation = leafBox.getCentre(size).vector(offsetCentre);

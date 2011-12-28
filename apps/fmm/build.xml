@@ -18,7 +18,7 @@
     <property name="nochecks" value="true"/>
     <property name="debug" value="false"/>
     <property name="profile"  value="false"/>
-    <property name="cpuprofile"  value="false"/>
+    <property name="cpuprofile"  value="true"/>
     <property name="perftoolsHome" location="${user.home}/perftools"/>
     <property name="mpiPprofile"  value="false"/>
     <property name="mpiPHome" location="${user.home}/mpiP"/>
@@ -45,6 +45,10 @@
 
     <condition property="x10c.profile" value="-pg" else="">
         <istrue value="${profile}" />
+    </condition>
+
+    <condition property="x10c.cpuprofile" value="-gpt" else="">
+        <istrue value="${cpuprofile}"/>
     </condition>
 
     <condition property="post.cpuprofile" value="-L${perftoolsHome}/lib -lprofiler" else="">
@@ -92,11 +96,11 @@
     <target name="build-src-cpp" depends="check-src-cpp" unless="src.uptodate.cpp">
         <echo message="Building source tree"/>
 
-        <echo message="x10c++ -x10rt ${x10rt} ${x10c.debug} ${x10c.profile} ${x10c.optimize} ${x10c.nochecks} -post '# # ${link.mpiPprofile} ${post.cpuprofile}' -sourcepath '.${path.separator}${xre.src}${path.separator}${xla.src}${path.separator}${anuchem.src}' '${basedir}/${testclass}'"/>
+        <echo message="x10c++ -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} ${x10c.debug} ${x10c.cpuprofile} ${x10c.profile} -post '# # ${link.mpiPprofile} ${post.cpuprofile}' -sourcepath '.${path.separator}${xre.src}${path.separator}${xla.src}${path.separator}${anuchem.src}' '${basedir}/${testclass}'"/>
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/src">
             <arg value="-c"/>
-            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.debug} ${x10c.profile} ${x10c.optimize} ${x10c.nochecks} -report postcompile=1 -post '# # ${link.mpiPprofile} ${post.cpuprofile}' -sourcepath '.${path.separator}${xre.src}${path.separator}${xla.src}${path.separator}${anuchem.src}${path.separator}${x10.testlib}' -d '${target-src}' '${basedir}/${testclass}'"/>
+            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} ${x10c.debug} ${x10c.cpuprofile} ${x10c.profile} -report postcompile=1 -post '# # ${link.mpiPprofile} ${post.cpuprofile}' -sourcepath '.${path.separator}${xre.src}${path.separator}${xla.src}${path.separator}${anuchem.src}${path.separator}${x10.testlib}' -d '${target-src}' '${basedir}/${testclass}'"/>
         </exec>
     </target>
 

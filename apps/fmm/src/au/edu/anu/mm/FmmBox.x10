@@ -104,7 +104,7 @@ public class FmmBox {
                 val childY = 2*this.y + dy;
                 val childZ = 2*this.z + dz;
 
-                async at(childLevelBoxes.dist(childX,childY,childZ)) {
+                at(childLevelBoxes.dist(childX,childY,childZ)) async {
                     val childBox = boxes(childLevel)(childX,childY,childZ);
                     if (childBox != null) {
                         offer childBox.downward(size, parentExp, fmmOperators, locallyEssentialTree, boxes);
