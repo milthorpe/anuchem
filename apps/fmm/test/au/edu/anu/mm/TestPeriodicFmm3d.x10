@@ -21,6 +21,7 @@ import au.edu.anu.util.Timer;
  * @author milthorpe
  */
 public class TestPeriodicFmm3d extends TestElectrostatic {
+    public static ITERS=10;
     public def sizeOfCentralCluster() : Double = 80.0;
 
     public static def main(args : Array[String](1)) {
@@ -70,7 +71,10 @@ public class TestPeriodicFmm3d extends TestElectrostatic {
         val atoms = generateAtoms(numAtoms);
         val fmm3d = new PeriodicFmm3d(density, numTerms, Point3d(0.0, 0.0, 0.0), SIZE, numAtoms, numShells);
         fmm3d.assignAtomsToBoxes(atoms);
-        val energy = fmm3d.calculateEnergy();
+        var energy:Double = 0.0;
+        for (i in 1..ITERS) {
+            energy = fmm3d.calculateEnergy();
+        }
         
         if (verbose) {
             Console.OUT.println("energy = " + energy);
