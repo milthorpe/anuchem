@@ -511,20 +511,17 @@ public class PME {
                         PME.fillSpline(1.0 - (u.j - u2i), jSpline, splineOrder);
                         PME.fillSpline(1.0 - (u.k - u3i), kSpline, splineOrder);
                         for (i in 0..(splineOrder-1)) {
-                            val k1 = (u1i - i);
+                            val k1 = (u1i - i + gridSize0) % gridSize0;
                             val iVal = q * iSpline(i);
-                            val wrapk1 = k1 < 0 ? (k1 + gridSize0) : (k1 >= gridSize0 ? (k1 - gridSize0) : k1);
-                            if (wrapk1 >= qiMin && wrapk1 <= qiMax) {
+                            if (k1 >= qiMin && k1 <= qiMax) {
                                 for (j in 0..(splineOrder-1)) {
-                                    val k2 = (u2i - j);
+                                    val k2 = (u2i - j + gridSize1) % gridSize1;
                                     val jVal = iVal * jSpline(j);
-                                    val wrapk2 = k2 < 0 ? (k2 + gridSize1) : (k2 >= gridSize1 ? (k2 - gridSize1) : k2);
-                                    if (wrapk2 >= qjMin && wrapk2 <= qjMax) {
+                                    if (k2 >= qjMin && k2 <= qjMax) {
                                         for (k in 0..(splineOrder-1)) {
-                                            val k3 = (u3i - k);
+                                            val k3 = (u3i - k + gridSize2) % gridSize2;
                                             val kVal = jVal * kSpline(k);
-                                            val wrapk3 = k3 < 0 ? (k3 + gridSize2) : (k3 >= gridSize2 ? (k3 - gridSize2) : k3);
-                                            qLocal(wrapk1,wrapk2,wrapk3) += kVal;
+                                            qLocal(k1,k2,k3) += kVal;
                                         }
                                     }
                                 }
@@ -588,8 +585,7 @@ public class PME {
                 val localThetaRecConvQ = thetaRecConvQ.getLocalPortion();
                 val localRegion = localQ.region as Region(3){rect};
                 for ([i,j,k] in localRegion) {
-                    val gridPointContribution = localQ(i,j,k) * localThetaRecConvQ(i,j,k);
-                    myReciprocalEnergy += gridPointContribution.re;
+                    myReciprocalEnergy += localQ(i,j,k).re * localThetaRecConvQ(i,j,k).re;
                 }
                 offer myReciprocalEnergy;
             }
