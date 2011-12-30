@@ -1,3 +1,8 @@
-1
-Hydride 631gdp -1 1 
-H 0.0 0.0 0.0
+Hydride 
+basis 631gdp
+charge -1
+multiplicity 1
+molecule
+  H 0.0 0.0 0.0
+
+

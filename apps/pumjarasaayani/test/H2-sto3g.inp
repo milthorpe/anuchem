@@ -1,5 +1,6 @@
-2
-h2 sto3g 
+H2
+basis sto3g
+molecule 
 H 0.0 0.0 0.0
 H 1.0 0.0 0.0
 

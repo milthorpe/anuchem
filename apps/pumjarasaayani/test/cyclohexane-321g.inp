@@ -1,5 +1,6 @@
-18
-cyclohexane 321g  
+cyclohexane
+basis 321g
+molecule  
 H 0.0998334 0.995004 -1.2
 H 0.139767 1.39301 -0.12
 C 0.0998334 0.995004 -0.2

@@ -106,6 +106,20 @@ mpiexec -bind-to-node -n 32 -x X10_NTHREADS=8 -x X10_STATIC_THREADS=true bin/pum
 When -mta switch is active each fragment is run sequentially over multiple places. This is not 
 optimal but works at the moment.
 
+Input file format:
+-----------------------------------
+<title>
+basis <6-31gdp>
+charge <n> [optional]
+multiplicity <n> [if charge specified]
+conversion <c> [optional unit conversion factor]
+molecule
+<symbol> <x> <y> <z>
+...
+
+Coordinates are assumed to be in a.u. if no conversion factor is supplied.
+
+
 A summary of what the code does:
 -----------------------------------
 

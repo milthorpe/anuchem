@@ -60,7 +60,7 @@ public class PumjaRasaayani {
 
         mol.transformToSNO();
 
-        Console.OUT.println("\nInput deck:");
+        Console.OUT.println("\nmolecule:");
         Console.OUT.println(mol);
         Console.OUT.println("Number of atoms: " + mol.getNumberOfAtoms());
 
