@@ -139,12 +139,17 @@ public class Molecule[T]{T <: Atom} {
     }
 
     public def toString() : String {
-       var str:String = name + "\n";
+        var str:String = name + "\n";
 
-       for(atm:T in atomList)
+        if (charge != 0) {
+            str += "charge " + charge + "\n"
+                + "multiplicity " + multiplicity + "\n";
+        }
+
+        for(atm:T in atomList)
          str += atm.toString() + "\n";
 
-       return str;
+        return str;
     }
 }
 

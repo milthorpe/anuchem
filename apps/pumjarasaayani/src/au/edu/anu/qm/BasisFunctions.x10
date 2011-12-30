@@ -46,6 +46,9 @@ public struct BasisFunctions {
         for(var atmno:Int=0; atmno<molecule.getNumberOfAtoms(); atmno++) {
             val atom = molecule.getAtom(atmno);
             val aDensity = basisSet.getDensity(atom);
+            if (aDensity == null) {
+                throw new Exception("No density matrix found for atom type " + atom.symbol);
+            }
             val aMatrix = aDensity.getMatrix();
             val matsize = aDensity.getRowCount();
             for ([i,j] in aMatrix.region) {
@@ -63,6 +66,9 @@ public struct BasisFunctions {
         for(var atmno:Int=0; atmno<molecule.getNumberOfAtoms(); atmno++) {
             val atom      = molecule.getAtom(atmno);
             val atomBasis = basisSet.getBasis(atom);
+            if (atomBasis == null) {
+                throw new Exception("No basis found for atom type " + atom.symbol);
+            }
             val orbitals  = atomBasis.orbitals;
             val atombfs   = new ArrayList[ContractedGaussian]();
 
