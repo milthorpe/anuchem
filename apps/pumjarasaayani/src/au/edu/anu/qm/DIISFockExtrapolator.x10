@@ -6,7 +6,7 @@
  *  You may obtain a copy of the License at
  *      http://www.opensource.org/licenses/eclipse-1.0.php
  *
- * (C) Copyright Australian National University 2010-2011.
+ * (C) Copyright Australian National University 2010-2012.
  */
 package au.edu.anu.qm;
 
@@ -25,11 +25,12 @@ import x10x.vector.Vector;
  * @author: V.Ganesh
  */
 public class DIISFockExtrapolator {
-    static ERROR_THRESHOLD = 0.1;
     static MIN_NON_DIIS_STEP:Int = 0;
-    static MAX_NON_DIIS_STEP:Int = 2;    
-    static DIIS_SUBSPACE_SIZE = 15; // Q-CHEM default
-    static DIIS_MAX_ERROR_CRITERIA = 1e-5; // Q-CHEM default
+    static MAX_NON_DIIS_STEP:Int = 2;
+
+    private val diisStartThreshold:Double;
+    private val diisSubspaceSize:Int;
+    private val diisMaxError:Double;
 
     val fockMatrixList:ArrayList[Fock];
     val errorVectorList:ArrayList[Vector];
@@ -45,6 +46,12 @@ public class DIISFockExtrapolator {
     public def this() {
         fockMatrixList  = new ArrayList[Fock]();
         errorVectorList = new ArrayList[Vector]();
+
+        val jd = JobDefaults.getInstance();
+        diisStartThreshold = jd.diisStartThreshold;
+        diisMaxError = jd.diisConvergenceThreshold;
+        diisSubspaceSize = jd.diisSubspaceSize;
+
         nondiisStep = 0;
         diisStep = 0;
         converged = false;
@@ -70,12 +77,12 @@ public class DIISFockExtrapolator {
         val errorVectorSize = errorVectorList.size();
 
         Console.OUT.printf("   Max DIIS error = %.3e subspaceSize = %d\n",mxerr,errorVectorSize);
-        if (mxerr < DIIS_MAX_ERROR_CRITERIA) {
+        if (mxerr < diisMaxError) {
             converged=true;
             return currentFock;
         }
 
-        if (errorVectorSize >= DIIS_SUBSPACE_SIZE) {
+        if (errorVectorSize >= diisSubspaceSize) {
             errorVectorList.removeAt(0);
             fockMatrixList.removeAt(0);
         }
@@ -88,7 +95,7 @@ public class DIISFockExtrapolator {
         val noOfIterations = errorVectorList.size();
 
         if (!diisStarted && 
-          ( (mxerr < ERROR_THRESHOLD && diisStep>=MIN_NON_DIIS_STEP) || nondiisStep>=MAX_NON_DIIS_STEP)) {
+          ( (mxerr < diisStartThreshold && diisStep>=MIN_NON_DIIS_STEP) || nondiisStep>=MAX_NON_DIIS_STEP)) {
             Console.OUT.println("Starting DIIS...");
             diisStarted = true;
         }

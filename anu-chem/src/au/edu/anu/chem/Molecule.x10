@@ -6,7 +6,7 @@
  *  You may obtain a copy of the License at
  *      http://www.opensource.org/licenses/eclipse-1.0.php
  *
- * (C) Copyright Australian National University 2010.
+ * (C) Copyright Australian National University 2010-2012.
  */
 package au.edu.anu.chem;
 
@@ -130,7 +130,7 @@ public class Molecule[T]{T <: Atom} {
         val zeroMoment = getCentreOfNuclearCharge();
         val translation = Vector3d(-zeroMoment.i, -zeroMoment.j, -zeroMoment.k);
         if (translation.magnitude() > 1.0e-12) {
-            Console.OUT.printf("\ntranslated molecule by [%.4g, %.4g, %.4g]\n", translation.i, translation.j, translation.k);
+            Console.OUT.printf("\ntranslated molecule by [%.4g, %.4g, %.4g]\n\n", translation.i, translation.j, translation.k);
         }
         for(atm:T in atomList) {
             atm.centre += translation;
@@ -139,7 +139,7 @@ public class Molecule[T]{T <: Atom} {
     }
 
     public def toString() : String {
-        var str:String = name + "\n";
+        var str:String = "";
 
         if (charge != 0) {
             str += "charge " + charge + "\n"

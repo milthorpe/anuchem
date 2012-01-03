@@ -37,8 +37,8 @@ public abstract class SCFMethod {
 
         val jd = JobDefaults.getInstance();
 
-        maxIteration    = jd.getMaxIterations();
-        energyTolerance = jd.getEnergyTolerance(); 
+        maxIteration    = jd.maxIterations;
+        energyTolerance = jd.energyTolerance; 
 
         energy = 0.0;
     } 

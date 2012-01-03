@@ -71,21 +71,60 @@ https://bse.pnl.gov/bse/portal
 
 Single place:
 
-$ runx10 bin/pumjarasaayani test/H2O-321g.inp [<gmatype>] [-mta]
-
-The -mta switch is used to invoke the molecular tailoring algorithm. This basically
-splits the molecule into a series of overlapping fragments and then performs HF on 
-individual fragments. The results are finally patched back to give total energy 
-of the big molecule. 
+$ runx10 bin/pumjarasaayani test/H2O-321g.inp
 
 Multiple place:
 
-$ launcher -t <n> bin/pumjarasaayani test/H2O-321g.inp [<gmatype>] [-mta]  { pgas compiled }
-$ mpiexec -n <n> bin/pumjarasaayani test/H2O-321g.inp [<gmatype>]  [-mta] { mpi compiled  }
+$ launcher -t <n> bin/pumjarasaayani test/H2O-321g.inp { pgas compiled }
+$ mpiexec -n <n> bin/pumjarasaayani test/H2O-321g.inp { mpi compiled  }
 
 where <n> is number of places
 
-[<gmatype>] selects a load-balancing scheme for integral evaluation.
+Input file format:
+-----------------------------------
+  <title>
+  basis <6-31gdp>
++ charge <n>
++ multiplicity <n> [if charge specified]
++ conversion <c> [optional unit conversion factor]
+  molecule
+  <symbol> <x> <y> <z>
+  ...
+  end
++ scf_method [diis|roothaan]
++ scf_max <n>
++ scf_converge <x>
++ diis_start <x>
++ diis_converge <x>
++ diis_subspace size <n>
++ gmat_parallel_scheme <n>
++ fragment mta
++ scratch <filename>
++ checkpoint <filename>
++ guess [core|sad|file]
+* print [hcore|overla|orthonorm|2e] [<filename>]
+* scf_print [mo|density] [<filename>]
+* scf_final_print [mo|density] [<filename>]
+
+Lines marked with "+" are optional; lines marked with "*" are optional and may
+be specified for multiple options.
+
+== conversion ==
+
+Coordinates are assumed to be in a.u. if no conversion factor is supplied.
+
+== fragment mta ==
+
+This invokes the molecular tailoring algorithm, which splits the molecule
+into a series of overlapping fragments and then performs HF on individual
+fragments. The results are finally patched together to give the total energy of
+the molecule.
+Each fragment is run sequentially over multiple places. This is not optimal; it
+is preferred to divide the fragments among places.
+
+== gmat_parallel_scheme ==
+
+This selects a load-balancing scheme for integral evaluation.
 Some options follow the schemes proposed in Bernholdt et al. (see below).
 0 : serial G matrix formation using a low flop count integral evaluation (but uses recursion)
 1 : multi-threaded, dynamic load balancing as per pseudocode 2 below
@@ -102,22 +141,6 @@ Note: options 3, 4 and 5 are for single-threaded places and do not take advantag
 For clusters of SMP nodes, option 7 should provide best performance as it makes use of shared memory and cache hierarchies within a node.
 For example, on a cluster of 32 Nehalem nodes with eight cores per node, run:
 mpiexec -bind-to-node -n 32 -x X10_NTHREADS=8 -x X10_STATIC_THREADS=true bin/pumjarasaayani test/aspirin-321g.inp 7
-
-When -mta switch is active each fragment is run sequentially over multiple places. This is not 
-optimal but works at the moment.
-
-Input file format:
------------------------------------
-<title>
-basis <6-31gdp>
-charge <n> [optional]
-multiplicity <n> [if charge specified]
-conversion <c> [optional unit conversion factor]
-molecule
-<symbol> <x> <y> <z>
-...
-
-Coordinates are assumed to be in a.u. if no conversion factor is supplied.
 
 
 A summary of what the code does:

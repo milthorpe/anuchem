@@ -6,7 +6,7 @@
  *  You may obtain a copy of the License at
  *      http://www.opensource.org/licenses/eclipse-1.0.php
  *
- * (C) Copyright Australian National University 2010-2011.
+ * (C) Copyright Australian National University 2010-2012.
  */
 package au.edu.anu.qm;
 
@@ -29,12 +29,9 @@ public class PumjaRasaayani {
     var mol:Molecule[QMAtom];
     val inputFileName:String;
     var basisName:String;
-    var gMatType:Int;
-    var isMTA:Boolean;
 
-    public def this(inpFile:String, gMatType:Int) {
+    public def this(inpFile:String) {
         this.inputFileName = inpFile;
-        this.gMatType = gMatType;
         try {
             val inp = new JobInput();
             inp.make(inpFile);
@@ -46,30 +43,22 @@ public class PumjaRasaayani {
         }
     } 
 
-    public def this(inpFile:String, gMatType:Int, mtaOpt:String) {
-        this(inpFile, gMatType);
-
-        this.isMTA = (mtaOpt.equals("-mta"));
-    }
-
-    public def runIt() {
+    public def runHF() {
         Console.OUT.println("PumjaRasaayani shunya.tri, Quantum Chemistry program in x10, v0.4");
-
-        Console.OUT.println("No. of places: " + Place.MAX_PLACES);
-        Console.OUT.println("No. of threads per place: " + Runtime.NTHREADS);
+        Console.OUT.println("" + Place.MAX_PLACES + " places, " + Runtime.NTHREADS + " threads per place");
 
         mol.transformToSNO();
 
-        Console.OUT.println("\nmolecule:");
-        Console.OUT.println(mol);
-        Console.OUT.println("Number of atoms: " + mol.getNumberOfAtoms());
+        printInput();
 
-        if (isMTA) { runMTA(); return; } // is it an MTA run?
+        val jd = JobDefaults.getInstance();
+
+        if (jd.useMta) { runMTA(); return; }
+
+        Console.OUT.println("Number of atoms: " + mol.getNumberOfAtoms());
  
         val timer = new Timer(3);
         timer.start(0);
-
-        Console.OUT.println("\nSetting up basis set: " + basisName);
 
         timer.start(1);
         val bsf = new BasisFunctions(mol, basisName, getBasisDirName(inputFileName));
@@ -86,7 +75,7 @@ public class PumjaRasaayani {
         // Console.OUT.println("Overlap");
         // Console.OUT.println(oneE.getOverlap());   
 
-        val hfscf = new HartreeFockSCFMethod(mol, oneE, bsf, gMatType);
+        val hfscf = new HartreeFockSCFMethod(mol, oneE, bsf);
         hfscf.scf();
         timer.stop(0);
         Console.OUT.printf("\n\nTotal time since start: %.3g seconds\n\n", (timer.total(0) as Double) / 1e9);
@@ -96,10 +85,8 @@ public class PumjaRasaayani {
         val timer = new Timer(3);
         timer.start(0);
 
-        Console.OUT.println("\nFragment Input deck:");
+        Console.OUT.println("\nfragment:");
         Console.OUT.println(fragment);
-
-        Console.OUT.println("\nSetting up basis set: " + basisName);
 
         timer.start(1);
         val bsf = new BasisFunctions(fragment, basisName, getBasisDirName(inputFileName));
@@ -117,7 +104,7 @@ public class PumjaRasaayani {
         // Console.OUT.println("Overlap");
         // Console.OUT.println(oneE.getOverlap());
 
-        val hfscf = new HartreeFockSCFMethod(fragment, oneE, bsf, gMatType);
+        val hfscf = new HartreeFockSCFMethod(fragment, oneE, bsf);
         hfscf.scf();
         timer.stop(0);
 
@@ -152,6 +139,34 @@ public class PumjaRasaayani {
         Console.OUT.printf("\n-End of MTA run-\n\nTotal time since start: %.3g seconds\n", (timer.total(0) as Double) / 1e9);
     }
 
+    private def printInput() {
+        Console.OUT.printf("----------------------------------------------------------\n");
+        Console.OUT.println("Input (including defaults):");
+        Console.OUT.printf("----------------------------------------------------------\n");
+
+        Console.OUT.println(mol.getName());
+        Console.OUT.println("basis " + basisName);
+        Console.OUT.println("molecule");
+        Console.OUT.println(mol + "end");
+
+        val jd = JobDefaults.getInstance();
+
+        Console.OUT.println("scf_method " + jd.scfMethod);
+        Console.OUT.println("scf_max " + jd.maxIterations);
+        Console.OUT.println("scf_converge " + jd.energyTolerance);
+        Console.OUT.println("diis_start " + jd.diisStartThreshold);
+        Console.OUT.println("diis_converge " + jd.diisConvergenceThreshold);
+        Console.OUT.println("diis_subspace_size " + jd.diisSubspaceSize);
+        if (jd.gMatrixParallelScheme != GMatrix.DEFAULT_GMATTYPE) {
+            Console.OUT.println("gmat_parallel_scheme " + jd.gMatrixParallelScheme);
+        }
+        if (jd.useMta) {
+            Console.OUT.println("fragment mta");
+        }
+
+        Console.OUT.printf("----------------------------------------------------------\n");
+    }
+
     private static def getBasisDirName(inpFile : String) {
         val inputFile = new File(inpFile);
         val parent = inputFile.getParentFile();
@@ -160,14 +175,12 @@ public class PumjaRasaayani {
     }
 
     public static def main(args : Array[String](1)) {
-        if (args.size < 1) {
-            Console.ERR.println("usage: pumjarasaayani <inputFile> [<gMatType>] [-mta]");
+        if (args.size != 1) {
+            Console.ERR.println("usage: pumjarasaayani <inputFile>");
             System.setExitCode(1);
         } else {
-            val qmApp = args.size == 1 ? new PumjaRasaayani(args(0), GMatrix.DEFAULT_GMATTYPE) : 
-                        args.size == 2 ? new PumjaRasaayani(args(0), Int.parseInt(args(1))) : 
-                                         new PumjaRasaayani(args(0), Int.parseInt(args(1)), args(2));
-            qmApp.runIt();
+            val qmApp = new PumjaRasaayani(args(0));
+            qmApp.runHF();
         }
     }
 }

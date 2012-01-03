@@ -6,7 +6,7 @@
  *  You may obtain a copy of the License at
  *      http://www.opensource.org/licenses/eclipse-1.0.php
  *
- * (C) Copyright Australian National University 2010-2011.
+ * (C) Copyright Australian National University 2010-2012.
  */
 package au.edu.anu.qm;
 
@@ -45,11 +45,13 @@ public class GMatrix extends Matrix {
     static THRESH:Double = 1.0e-8;
     private var thresh2:Double = 0.0;
 
-    public def this(N:Int, bfs:BasisFunctions, molecule:Molecule[QMAtom], gMatType:Int) {
+    public def this(N:Int, bfs:BasisFunctions, molecule:Molecule[QMAtom]) {
         super(N);
         this.bfs = bfs;
         this.mol = molecule;
-        this.gMatType = gMatType;
+
+        val jd = JobDefaults.getInstance();
+        this.gMatType = jd.gMatrixParallelScheme;
 
         val nPlaces = Place.MAX_PLACES;
         switch(gMatType) {
