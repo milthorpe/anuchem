@@ -177,7 +177,7 @@
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/test">
             <arg value="-c"/>
-            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.nochecks} ${x10c.inlineopt} ${x10c.optimize} -sourcepath ${x10.testlib}:${basedir}/src:.:${x10x.xlalib}:${anuchem.src} -classpath ${target-src} -d ${target-test} ${test.list}"/>
+            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.nochecks} ${x10c.optimize} -sourcepath ${x10.testlib}:${basedir}/src:.:${x10x.xlalib}:${anuchem.src} -classpath ${target-src} -d ${target-test} ${test.list}"/>
         </exec>
     </target>
 
@@ -208,7 +208,7 @@
 		<echo message="x10c ${x10.testlib}/harness/x10Test.x10"/>
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/test">
             <arg value="-c"/>
-            <arg value="'x10c' ${x10c.nochecks} ${x10c.inlineopt} ${x10c.optimize} -sourcepath . -d ${target-test} ${x10.testlib}/harness/x10Test.x10"/>
+            <arg value="'x10c' ${x10c.nochecks} ${x10c.optimize} -sourcepath . -d ${target-test} ${x10.testlib}/harness/x10Test.x10"/>
         </exec>
     </target>
 

@@ -6,7 +6,7 @@
  *  You may obtain a copy of the License at
  *      http://www.opensource.org/licenses/eclipse-1.0.php
  *
- * (C) Copyright Australian National University 2010-2011.
+ * (C) Copyright Australian National University 2010-2012.
  */
 package au.edu.anu.qm;
 
@@ -19,14 +19,11 @@ import au.edu.anu.util.Timer;
  * @author: V.Ganesh
  */
 public class HartreeFockSCFMethod extends SCFMethod { 
-    val gMatType:Int;
 
     public def this(mol:Molecule[QMAtom],  
                     oneE:OneElectronIntegrals, 
-                    bfs:BasisFunctions, gMatType:Int) {
+                    bfs:BasisFunctions) {
         super(mol, oneE, bfs);
-
-        this.gMatType = gMatType;
     }
 
     public def scf() : void {
@@ -55,7 +52,7 @@ public class HartreeFockSCFMethod extends SCFMethod {
 
         // init memory for the matrices
         val N = hCore.getRowCount();
-        val gMatrix  = new GMatrix(N, bfs, molecule, gMatType);
+        val gMatrix  = new GMatrix(N, bfs, molecule);
         val mos      = new MolecularOrbitals(N);
         val noOfOccupancies = noOfElectrons / 2;
         val density  = new Density(N, noOfOccupancies); // density.make();

@@ -19,7 +19,8 @@ import au.edu.anu.qm.TwoElectronIntegrals;
 public class TestTwoElectronIntegrals {
 
     public static def main(args : Rail[String]) {
-	    val twoE = new TwoElectronIntegrals(3);
+        val norm = [1.0, 2.0, 1.0];
+	    val twoE = new TwoElectronIntegrals(3, norm, 0.1);
         val zeroM = twoE.computeZeroM(1, 2.5, 2.0, 0.5);
         for (i in 0..(zeroM.size-1)) {
             Console.OUT.println(i + " " + zeroM(i));

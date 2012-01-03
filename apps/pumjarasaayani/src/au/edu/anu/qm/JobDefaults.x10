@@ -6,42 +6,40 @@
  *  You may obtain a copy of the License at
  *      http://www.opensource.org/licenses/eclipse-1.0.php
  *
- * (C) Copyright Australian National University 2010.
+ * (C) Copyright Australian National University 2010-2012.
  */
 package au.edu.anu.qm;
 
 /**
  * SCF Job defaults
  *
- * @author V. Ganesh
+ * @author V. Ganesh, milthorpe
  */
 public class JobDefaults {
-   private var maxIterations:Int;
-   private var energyTolerance:Double;
-   private var densityTolerance:Double; 
+    public static SCF_METHOD_DIIS = "diis";
+    public static SCF_METHOD_ROOTHAAN = "roothaan";
 
-   private def this() { 
-       maxIterations    = 100;
-       energyTolerance  = 1e-5;
-       densityTolerance = 1e-4;
-   }
+    public var scfMethod:String = SCF_METHOD_DIIS;
 
-   private static _theInstance = new JobDefaults();
-   public static def getInstance() = _theInstance;
+    public var maxIterations:Int;
+    public var energyTolerance:Double;
+    public var diisStartThreshold:Double;
+    public var diisConvergenceThreshold:Double;
+    public var diisSubspaceSize:Int;
+    public var gMatrixParallelScheme:Int;
+    public var useMta:Boolean;
 
-   public def getMaxIterations() = maxIterations;
-   public def setMaxIterations(it:Int) {
-      maxIterations = maxIterations;
-   }
+    private def this() { 
+        maxIterations = 100;
+        energyTolerance = 1e-5;
+        diisStartThreshold = 0.1;
+        diisConvergenceThreshold = 1e-5; // Q-CHEM default
+        diisSubspaceSize = 15; // Q-CHEM default
+        gMatrixParallelScheme = GMatrix.DEFAULT_GMATTYPE;
+        useMta = false;
+    }
 
-   public def getEnergyTolerance() = energyTolerance;
-   public def setEnergyTolerance(et:Double) {
-      energyTolerance = et;
-   }
-
-   public def getDensityTolerance() = energyTolerance;
-   public def setDensityTolerance(dt:Double) {
-      densityTolerance = dt;
-   }
+    private static _theInstance = new JobDefaults();
+    public static def getInstance() = _theInstance;
 }
 

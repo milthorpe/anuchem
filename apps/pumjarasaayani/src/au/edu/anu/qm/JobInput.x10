@@ -6,7 +6,7 @@
  *  You may obtain a copy of the License at
  *      http://www.opensource.org/licenses/eclipse-1.0.php
  *
- * (C) Copyright Australian National University 2010-2011.
+ * (C) Copyright Australian National University 2010-2012.
  */
 package au.edu.anu.qm;
 
@@ -21,14 +21,29 @@ import x10x.vector.Point3d;
  * This class parses an input file in the format described below.
  * Coordinates are assumed to be in a.u. if no conversion factor is supplied.
  *
- *  <title>
- *  basis 6-31gdp
- *  charge 0 [optional]
- *  multiplicity 1 [if charge specified]
- *  conversion 1.0 [optional unit conversion factor]
- *  molecule
- *  symbol x y z
- *  ...
+ *   <title>
+ *   basis <6-31gdp>
+ * + charge <n>
+ * + multiplicity <n> [if charge specified]
+ * + conversion <c> [optional unit conversion factor]
+ *   molecule
+ *   <symbol> <x> <y> <z>
+ *   ...
+ *   end
+ * + scf_method [diis|roothaan]
+ * + scf_max <n>
+ * + scf_converge <x>
+ * + diis_start <x>
+ * + diis_converge <x>
+ * + diis_subspace size <n>
+ * + gmat_parallel_scheme <n>
+ * + fragment mta
+ * + scratch <filename>
+ * + checkpoint <filename>
+ * + guess [core|sad|file]
+ * * print [hcore|overla|orthonorm|2e] [<filename>]
+ * * scf_print [mo|density] [<filename>]
+ * * scf_final_print [mo|density] [<filename>]
  */
 public class JobInput { 
     var molecule:Molecule[QMAtom];
@@ -54,7 +69,7 @@ public class JobInput {
         var charge:Int = 0;
         var multiplicity:Int = 1;
         if (line.startsWith("charge")) {
-            charge = Int.parseInt(StringSplitter.splitOnWhitespace(line)(1));
+            charge = getIntParam(line);
             line = fil.readLine();
             val multWords = StringSplitter.splitOnWhitespace(line);
             if (!multWords(0).equals("multiplicity")) {
@@ -66,7 +81,7 @@ public class JobInput {
 
         var conversion:Double = 1.0;
         if (line.startsWith("units")) {
-            conversion = Double.parseDouble(StringSplitter.splitOnWhitespace(line)(1));
+            conversion = getDoubleParam(line);
             line = fil.readLine();
         }
 
@@ -74,28 +89,51 @@ public class JobInput {
             throw new Exception("Invalid input: must specify molecule. Next line was:\n"+line);
         }
 
-        molecule = new Molecule[QMAtom](title,charge,multiplicity);    
+        molecule = new Molecule[QMAtom](title,charge,multiplicity);
+        val jd = JobDefaults.getInstance();
 
         line = fil.readLine();
-        while (line != null && line.trim().length() > 0) {
-            val wrd = StringSplitter.splitOnWhitespace(line);
+        try {
+            while (line != null && !line.startsWith("end")) {
+                val wrd = StringSplitter.splitOnWhitespace(line);
 
-            molecule.addAtom(new QMAtom(wrd(0), 
-                               Point3d(Double.parseDouble(wrd(1))/conversion,
-                                        Double.parseDouble(wrd(2))/conversion,
-                                        Double.parseDouble(wrd(3))/conversion
-                                )
-                            ));
-            try {
+                molecule.addAtom(new QMAtom(wrd(0), 
+                                   Point3d(Double.parseDouble(wrd(1))/conversion,
+                                            Double.parseDouble(wrd(2))/conversion,
+                                            Double.parseDouble(wrd(3))/conversion
+                                    )
+                                ));
+
                 line = fil.readLine();
-            } catch (e:EOFException) {
-                // no more atoms
-                break;
             }
+            line = fil.readLine();
+            while (line != null && !line.startsWith("end")) {
+                if (line.startsWith("scf_max")) {
+                    jd.maxIterations = getIntParam(line);
+                } else if (line.startsWith("scf_converge")) {
+                    jd.energyTolerance = getDoubleParam(line);
+                } else if (line.startsWith("diis_start")) {
+                    jd.diisStartThreshold = getDoubleParam(line);
+                } else if (line.startsWith("diis_converge")) {
+                    jd.diisConvergenceThreshold = getDoubleParam(line);
+                } else if (line.startsWith("diis_subspace_size")) {
+                    jd.diisSubspaceSize = getIntParam(line);
+                } else if (line.startsWith("gmat_parallel_scheme")) {
+                    jd.gMatrixParallelScheme = getIntParam(line);
+                } else if (line.startsWith("fragment mta")) {
+                    jd.useMta = true;
+                }
+                line = fil.readLine();
+            }
+        } catch (e:EOFException) {
+            // no more atoms / job directives
         }
 
         fil.close();
     }
+
+    private static def getIntParam(line:String) = Int.parseInt(StringSplitter.splitOnWhitespace(line)(1));
+    private static def getDoubleParam(line:String) = Double.parseDouble(StringSplitter.splitOnWhitespace(line)(1));
 
     public def getMolecule():Molecule[QMAtom] = molecule;
     public def getBasisName():String = basisName;
