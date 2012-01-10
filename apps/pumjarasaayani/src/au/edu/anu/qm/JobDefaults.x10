@@ -28,6 +28,9 @@ public class JobDefaults {
     public var diisSubspaceSize:Int;
     public var gMatrixParallelScheme:Int;
     public var useMta:Boolean;
+// RO Var
+    public var roN:Int;
+
 
     private def this() { 
         maxIterations = 100;
