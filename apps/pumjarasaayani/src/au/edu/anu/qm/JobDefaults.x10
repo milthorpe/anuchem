@@ -30,7 +30,9 @@ public class JobDefaults {
     public var useMta:Boolean;
 // RO Var
     public var roN:Int;
-
+    public var roL:Int;
+    public var roZ:Double;
+    public var centering:Int; // See Q-CHEM Job description
 
     private def this() { 
         maxIterations = 100;

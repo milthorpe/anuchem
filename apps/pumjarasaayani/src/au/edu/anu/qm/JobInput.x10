@@ -122,6 +122,14 @@ public class JobInput {
                     jd.gMatrixParallelScheme = getIntParam(line);
                 } else if (line.startsWith("fragment mta")) {
                     jd.useMta = true;
+                } else if (line.startsWith("RO_N")) {
+                    jd.roN = getIntParam(line);
+                } else if (line.startsWith("RO_L")) {
+                    jd.roL = getIntParam(line);
+                } else if (line.startsWith("RO_Z")) {
+                    jd.roZ = getDoubleParam(line); 
+                } else if (line.startsWith("Center")) {
+                    jd.centering = getIntParam(line);
                 }
                 line = fil.readLine();
             }
