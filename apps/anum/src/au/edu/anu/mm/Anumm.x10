@@ -6,7 +6,7 @@
  *  You may obtain a copy of the License at
  *      http://www.opensource.org/licenses/eclipse-1.0.php
  *
- * (C) Copyright Josh Milthorpe 2010.
+ * (C) Copyright Josh Milthorpe 2010-2012.
  */
 package au.edu.anu.mm;
 
@@ -143,7 +143,7 @@ public class Anumm {
             val atom = atomList(i);
             val p = getPlaceId(atom.centre.i, atom.centre.j, atom.centre.k, maxExtent);
             //Console.OUT.println(atom + " to " + p);
-            async at(Place.place(p)) {
+            at(Place.place(p)) async {
                 val remoteAtom = new MMAtom(atom);
                 atomic { tempAtoms(p).add(remoteAtom); }
             }

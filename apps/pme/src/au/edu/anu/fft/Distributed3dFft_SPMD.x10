@@ -6,7 +6,7 @@
  *  You may obtain a copy of the License at
  *      http://www.opensource.org/licenses/eclipse-1.0.php
  *
- * (C) Copyright Josh Milthorpe 2011.
+ * (C) Copyright Josh Milthorpe 2011-2012.
  */
 package au.edu.anu.fft;
 
@@ -130,7 +130,7 @@ public class Distributed3dFft_SPMD {
                     for ([x,y,z] in transferRegion) {
                         elementsToTransfer(i++) = temp(x,y,z);
                     }
-                    async at(p2) {
+                    at(p2) async {
                         var i : Int = 0;
                         for ([x,y,z] in transferRegion) {
                             // transpose dimensions
