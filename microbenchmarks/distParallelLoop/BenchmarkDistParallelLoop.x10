@@ -6,7 +6,7 @@
  *  You may obtain a copy of the License at
  *      http://www.opensource.org/licenses/eclipse-1.0.php
  *
- *  (C) Copyright Australian National University 2011.
+ *  (C) Copyright Josh Milthorpe 2011-2012.
  */
 import x10.compiler.Inline;
 import x10.io.File;
@@ -28,7 +28,7 @@ public class BenchmarkDistParallelLoop(size : Int, print:Boolean) {
 
         var start:Long = System.nanoTime();
         for (i in 1..ITERS) {
-            finish for (place in a.dist.places()) async at(place) {
+            finish for (place in a.dist.places()) at(place) async {
                 val aLocal = a.getLocalPortion() as Array[Int](1){rect};
                 for ([p] in aLocal) async {
                     aLocal(p) = p;
@@ -40,7 +40,7 @@ public class BenchmarkDistParallelLoop(size : Int, print:Boolean) {
 
         start = System.nanoTime();
         for (i in 1..ITERS) {
-            finish for (place in a.dist.places()) async at(place) {
+            finish for (place in a.dist.places()) at(place) async {
                 val aLocal = a.getLocalPortion() as Array[Int](1){rect};
                 val regionIter = aLocal.region.iterator();
                 while(regionIter.hasNext()) {
@@ -56,7 +56,7 @@ public class BenchmarkDistParallelLoop(size : Int, print:Boolean) {
 
         start = System.nanoTime();
         for (i in 1..ITERS) {
-            finish for (place in a.dist.places()) async at(place) {
+            finish for (place in a.dist.places()) at(place) async {
                 val aLocal = a.getLocalPortion() as Array[Int](1){rect};
                 val assign = (p:Int) => { aLocal(p) = p;};
                 BenchmarkDistParallelLoop.doForEach(aLocal.region, assign);
@@ -67,7 +67,7 @@ public class BenchmarkDistParallelLoop(size : Int, print:Boolean) {
 
         start = System.nanoTime();
         for (i in 1..ITERS) {
-            finish for (place in a.dist.places()) async at(place) {
+            finish for (place in a.dist.places()) at(place) async {
                 val aLocal = a.getLocalPortion() as Array[Int](1){rect};
                 val assign = (p:Int) => { aLocal(p) = p;};
                 finish BenchmarkDistParallelLoop.doForEach2(aLocal.region, assign);
@@ -78,7 +78,7 @@ public class BenchmarkDistParallelLoop(size : Int, print:Boolean) {
 
         start = System.nanoTime();
         for (i in 1..ITERS) {
-            finish for (place in a.dist.places()) async at(place) {
+            finish for (place in a.dist.places()) at(place) async {
                 val aLocal = a.getLocalPortion() as Array[Int](1){rect};
                 val nthreads = Runtime.NTHREADS;
                 val chunkSize = size / nthreads;
@@ -97,7 +97,7 @@ public class BenchmarkDistParallelLoop(size : Int, print:Boolean) {
 
         start = System.nanoTime();
         for (i in 1..ITERS) {
-            finish for (place in a.dist.places()) async at(place) {
+            finish for (place in a.dist.places()) at(place) async {
                 val aLocal = a.getLocalPortion() as Array[Int](1){rect};
                 for ([p] in aLocal) {
                     aLocal(p) = p;

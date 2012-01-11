@@ -6,7 +6,7 @@
  *  You may obtain a copy of the License at
  *      http://www.opensource.org/licenses/eclipse-1.0.php
  *
- * (C) Copyright Josh Milthorpe 2010-2011.
+ * (C) Copyright Josh Milthorpe 2010-2012.
  */
 package au.edu.anu.chem.mm;
 
@@ -63,7 +63,7 @@ public class ElectrostaticDirectMethod {
                     // before starting computation, send my atoms to next place
                     val nextPlace = here.next();
                     if (nextPlace != here) {
-                        @Uncounted async at(nextPlace) {
+                        @Uncounted at(nextPlace) async {
                             atomic {
                                 otherAtoms(nextPlace.id)(p1) = myAtoms;
                             }
@@ -85,7 +85,7 @@ public class ElectrostaticDirectMethod {
                         if (target != here) {
                             // send a set of atoms to next target place
                             val targetPlace = target;
-                            @Uncounted async at(targetPlace) {
+                            @Uncounted at(targetPlace) async {
                                 atomic {
                                     otherAtoms(targetPlace.id)(p1) = myAtoms;
                                 }
