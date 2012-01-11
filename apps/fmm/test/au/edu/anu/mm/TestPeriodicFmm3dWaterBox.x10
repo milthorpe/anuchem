@@ -6,7 +6,7 @@
  *  You may obtain a copy of the License at
  *      http://www.opensource.org/licenses/eclipse-1.0.php
  *
- * (C) Copyright Josh Milthorpe 2010.
+ * (C) Copyright Josh Milthorpe 2010-2012.
  */
 package au.edu.anu.mm;
 
@@ -80,7 +80,7 @@ public class TestPeriodicFmm3dWaterBox extends TestElectrostatic {
             val charge = atom.charge;
             val p = getPlaceId(x, y, z);
             if (p >= 0 && p < Place.MAX_PLACES) {
-                async at(Place.place(p)) {
+                at(Place.place(p)) async {
                     val atom = new MMAtom(Point3d(x,y,z), charge);
                     //Console.OUT.println(atom);
                     atomic { tempAtoms(p).add(atom); }
