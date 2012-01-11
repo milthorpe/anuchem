@@ -107,7 +107,7 @@ public class HartreeFockSCFMethod extends SCFMethod {
             
             energy = eOne + eTwo + nuclearEnergy;
 
-            Console.OUT.printf("Cycle #%i Total energy = %.6f a.u.", scfIteration, energy);
+            Console.OUT.printf("Cycle #%i Total energy = %.6f a.u. (scale factor = %.6f)", scfIteration, energy/bfs.roZ,bfs.roZ);
             if (scfIteration>0) {
                 Console.OUT.printf(" (%.6f)", energy-oldEnergy);
             } else {
@@ -128,7 +128,7 @@ public class HartreeFockSCFMethod extends SCFMethod {
         if (!converged) 
            Console.OUT.println("SCF did not converge in " + maxIteration + " cycles!");
         else 
-           Console.OUT.printf("SCF converged. Final SCF energy = %.6f a.u.\n", energy);
+           Console.OUT.printf("SCF converged. Final SCF energy = %.6f a.u.\n", energy/bfs.roZ,bfs.roZ);
 
         Console.OUT.printf("==========================================================\n");
 

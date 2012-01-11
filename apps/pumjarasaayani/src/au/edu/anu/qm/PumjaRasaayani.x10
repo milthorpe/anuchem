@@ -61,7 +61,7 @@ public class PumjaRasaayani {
         timer.start(0);
 
         timer.start(1);
-        val bsf = new BasisFunctions(mol, basisName, getBasisDirName(inputFileName));
+        val bsf = new BasisFunctions(mol, basisName, getBasisDirName(inputFileName),jd.roZ);
         Console.OUT.println("\nUsing " + bsf.getBasisFunctions().size() + " basis functions.");
         timer.stop(1);
         Console.OUT.printf("    Time for setting up basis functions: %.3g milliseconds\n\n", (timer.total(1) as Double) / 1e6);
@@ -84,12 +84,13 @@ public class PumjaRasaayani {
     private def runHF(fragment:Fragment) {
         val timer = new Timer(3);
         timer.start(0);
-
+        
         Console.OUT.println("\nfragment:");
         Console.OUT.println(fragment);
 
         timer.start(1);
-        val bsf = new BasisFunctions(fragment, basisName, getBasisDirName(inputFileName));
+        val jd = JobDefaults.getInstance();
+        val bsf = new BasisFunctions(fragment, basisName, getBasisDirName(inputFileName),jd.roZ);
         Console.OUT.println("\nUsing " + bsf.getBasisFunctions().size() + " basis functions.");
         timer.stop(1);
         Console.OUT.printf("\tTime for setting up basis functions: %.3g milliseconds\n\n", (timer.total(1) as Double) / 1e9);

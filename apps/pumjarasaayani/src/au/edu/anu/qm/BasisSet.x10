@@ -30,14 +30,16 @@ public class BasisSet {
     val name:String;
     val basisInfo:HashMap[String, AtomicBasis];
     val basisAtomicDensity:HashMap[String, Matrix];
+    val roZ:Double;
 
-    public def this(name:String, basisDir:String) {
+    public def this(name:String, basisDir:String, roZ:Double) {
         Console.OUT.println("\tReading in basis info. for " + name + " from " + basisDir);
 
         basisInfo = new HashMap[String, AtomicBasis]();
 	    basisAtomicDensity = new HashMap[String, Matrix]();
  
         this.name = name;
+        this.roZ=roZ;
         try {
             init(name, basisDir);
         } catch(e:Exception) {
@@ -100,7 +102,7 @@ public class BasisSet {
                             for (i in 0..(numGaussians-1)) {
                                 line = fil.readLine();
                                 val gaussianWords = StringSplitter.splitOnWhitespace(line);
-                                exps(i) = Double.parseDouble(gaussianWords(0));
+                                exps(i) = Double.parseDouble(gaussianWords(0))*roZ*roZ;
                                 sCoeffs(i) = Double.parseDouble(gaussianWords(1));
                                 pCoeffs(i) = Double.parseDouble(gaussianWords(2));
                             }
@@ -112,7 +114,7 @@ public class BasisSet {
                             for (i in 0..(numGaussians-1)) {
                                 line = fil.readLine();
                                 val gaussianWords = StringSplitter.splitOnWhitespace(line);
-                                exps(i) = Double.parseDouble(gaussianWords(0));
+                                exps(i) = Double.parseDouble(gaussianWords(0))*roZ*roZ;
                                 coeffs(i) = Double.parseDouble(gaussianWords(1));
                             }
                             orbitalList.add(new Orbital(shellType, exps, coeffs));

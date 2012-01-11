@@ -54,16 +54,16 @@ public class OneElectronIntegrals {
               val bfj = bfs.get(j);
 
               val oVal = bfi.overlap(bfj);
-              val hVal = bfi.kinetic(bfj);
+              val hVal = bfi.kinetic(bfj)/basisFunctions.roZ;
 
               ovr(i,j) = oVal; 
-                h(i,j) = hVal; 
-
+              h(i,j) = hVal; 
+                         
               for(var k:Int=0; k<nat; k++) {
                   val aVal = atno(k) * bfi.nuclear(bfj, atms.get(k).centre);
-
                   h(i,j) += aVal; 
               }
+           
        }
     }
 }
