@@ -26,15 +26,19 @@ public struct BasisFunctions {
     public val basisFunctions:ArrayList[ContractedGaussian];
     public val shellList:ShellList;
     public val SADMatrix:Matrix;
-    public val roZ:Double;
+//  public val roZ:Double;
+//  public val roN:Int;
+//  public val roL:Int;
 
-    public def this(mol:Molecule[QMAtom], basNam:String, basisDir:String, roZ:Double) { 
+    public def this(mol:Molecule[QMAtom], basNam:String, basisDir:String/*, roN:Int, roL:Int, roZ:Double*/) { 
         this.molecule  = mol;
         this.basisName = basNam;
-        this.roZ=roZ;
+//        this.roN=roN;
+//        this.roL=roL;
+//        this.roZ=roZ;
 
         basisFunctions = new ArrayList[ContractedGaussian](); 
-        val basisSet:BasisSet = new BasisSet(basisName, basisDir,roZ);
+        val basisSet:BasisSet = new BasisSet(basisName, basisDir/*,roZ*/);
 
         val size = initBasisFunctions(basisSet);
         shellList = new ShellList(mol);

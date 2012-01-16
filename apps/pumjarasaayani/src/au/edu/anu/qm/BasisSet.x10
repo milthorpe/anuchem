@@ -32,14 +32,15 @@ public class BasisSet {
     val basisAtomicDensity:HashMap[String, Matrix];
     val roZ:Double;
 
-    public def this(name:String, basisDir:String, roZ:Double) {
+    public def this(name:String, basisDir:String/*, roZ:Double*/) {
         Console.OUT.println("\tReading in basis info. for " + name + " from " + basisDir);
 
         basisInfo = new HashMap[String, AtomicBasis]();
 	    basisAtomicDensity = new HashMap[String, Matrix]();
  
         this.name = name;
-        this.roZ=roZ;
+        val jd = JobDefaults.getInstance();
+        this.roZ=jd.roZ;
         try {
             init(name, basisDir);
         } catch(e:Exception) {

@@ -21,6 +21,7 @@ public class OneElectronIntegrals {
     val basisFunctions:BasisFunctions;
     val hCore:HCore;
     val overlap:Overlap;
+    val roZ:Double;
 
     public def this(bfs:BasisFunctions, mol:Molecule[QMAtom]) { 
        this.basisFunctions = bfs;
@@ -29,6 +30,9 @@ public class OneElectronIntegrals {
        hCore    = new HCore(nbf);
        overlap  = new Overlap(nbf);
 
+       val jd = JobDefaults.getInstance();
+       this.roZ=jd.roZ;
+       
        compute1E(mol);
     } 
 
@@ -54,7 +58,7 @@ public class OneElectronIntegrals {
               val bfj = bfs.get(j);
 
               val oVal = bfi.overlap(bfj);
-              val hVal = bfi.kinetic(bfj)/basisFunctions.roZ;
+              val hVal = bfi.kinetic(bfj)/roZ; /*kinetic scales differently as it is not Coulombic interation*/
 
               ovr(i,j) = oVal; 
               h(i,j) = hVal; 

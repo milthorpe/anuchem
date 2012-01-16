@@ -45,12 +45,20 @@ public class GMatrix extends Matrix {
     static THRESH:Double = 1.0e-8;
     private var thresh2:Double = 0.0;
 
+    val roN:Int;
+    val roL:Int;
+    val roZ:Double;
+
     public def this(N:Int, bfs:BasisFunctions, molecule:Molecule[QMAtom]) {
         super(N);
         this.bfs = bfs;
         this.mol = molecule;
 
         val jd = JobDefaults.getInstance();
+        this.roN=jd.roN;
+        this.roL=jd.roL;
+        this.roZ=jd.roZ;
+
         this.gMatType = jd.gMatrixParallelScheme;
 
         val nPlaces = Place.MAX_PLACES;
