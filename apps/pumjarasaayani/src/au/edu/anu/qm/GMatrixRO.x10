@@ -59,11 +59,8 @@ public class GMatrixRO extends Matrix {
         val nOrbital=desity.getNoOfOccupancies();
         val noOfAtoms = mol.getNumberOfAtoms();
 
-
-
         val roK = (roN+1)*(roL+1)*(roL+1);
         val dk = new Array[Double](0..(roK-1)); // eqn 15b in RO#7
-
 
         // Infinite memory code two 3D Arrays
         val munuk = new Array[Double](0..(nBasis-1)*0..(nBasis-1)*0..(roK-1)); // Auxiliary integrals
@@ -82,11 +79,13 @@ public class GMatrixRO extends Matrix {
                    // basis functions on b
                    for(var j:Int=0; j<nbFunc; j++) {
                        val jbFunc = bFunc.get(j);
+                       
 
                        // swap A and B if B has higher anglular momentum than A                       
 
                        // extract info from basisfunctions
                        // Note that iafunc and jbFunc are ContractedGaussians
+                       // val may not work?  must specify the same type as in cpp code?
                        val aang = iafunc.getTotalAngularMomentum();
                        val aprimitive = iafunc.getPrimitive();
                        val dcona = aprimitive.size? ;
@@ -94,8 +93,8 @@ public class GMatrixRO extends Matrix {
                        for (ai=0 ai<acon; ai++) {
                            conA(ai)=aprimitive(ai).coefficient;
                            zetaA(ai)=aprimitive(ai).exponent;
-                           // norm*=aprimitive(ai).normalization
-                           // normalization problem to be addressed in cpp code?
+                           conA(ai)*=aprimitive(ai).normalization;
+                           // normalization problem to be addressed in integral pack cpp code? -- that will slow things down?
                        }
                        // do the same for b
 
@@ -103,9 +102,10 @@ public class GMatrixRO extends Matrix {
                        val maxbrab = (bang+1)*(bang+2)/2; 
                        val temp = new Array[Double](0..(maxbra*maxbra)*0..(roK-1)); // Result for one batch
 
-
-                       // call genclass (temp, info from basis function)
-                        
+                       // call genclass (temp, info from basis function)            
+                       // roN, roL should be there during initialization...
+                       Integral_Pack::Genclass(aang, bang, apoint, bpoint, zetaA, zetaB, conA, conB, dcona, dconB, temp);      
+                  
                        // transfer infomation from temp to munuk (Swap A and B again if necessary)
 
                        for (tmu=mu; tmu<mu+maxbraa ; tmu++) for (tnu=0; tnu<nu+maxbrab; tnu++) for (k=0; k<K; k++) 
@@ -127,12 +127,11 @@ public class GMatrixRO extends Matrix {
         }
 
         for (mu=0; mu<nBasis; mu++) for (nu=0; nu<nBasis; nu++) 
-           gMat(mu,nu) = hCore(mu,nu) + jMat(mu,nu) - 0.5 * kMat(mu,nu); //eqn14
+           gMat(mu,nu) = hCore(mu,nu) + jMat(mu,nu) - 0.5 * kMat(mu,nu); // eqn14
 
         timer.stop(0);
         Console.OUT.printf("    Time to construct GMatrix: %.3g seconds\n", (timer.last(0) as Double) / 1e9);
     }
-
  
 }
 
