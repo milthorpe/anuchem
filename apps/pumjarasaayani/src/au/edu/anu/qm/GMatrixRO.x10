@@ -57,13 +57,13 @@ public class GMatrixRO extends Matrix {
         val mostMat=mos.getMatrix();
         val denMat=density.getMatrix();
         val nOrbital=desity.getNoOfOccupancies();
+        val noOfAtoms = mol.getNumberOfAtoms();
 
-        val maxbral = bfs.getShellList().getMaximumAngularMomentum();
-        val maxbra = (maxbral+1)*(maxbral+2)/2; 
+
 
         val roK = (roN+1)*(roL+1)*(roL+1);
         val dk = new Array[Double](0..(roK-1)); // eqn 15b in RO#7
-        val temp = new Array[Double](0..(maxbra*maxbra)*0..(roK-1)); // Result for one batch
+
 
         // Infinite memory code two 3D Arrays
         val munuk = new Array[Double](0..(nBasis-1)*0..(nBasis-1)*0..(roK-1)); // Auxiliary integrals
@@ -77,22 +77,43 @@ public class GMatrixRO extends Matrix {
             for(var i:Int=0; i<naFunc; i++) {
                val iaFunc = aFunc.get(i);
                // centre b
-               for(var b:Int=0; b<=a; b++) {
+               for(var b:Int=0; b<noOfAtoms; b++) {
                    val bFunc = mol.getAtom(b).getBasisFunctions();
-                   // val nbFunc = (b<a) ? bFunc.size() : i+1;
                    // basis functions on b
                    for(var j:Int=0; j<nbFunc; j++) {
                        val jbFunc = bFunc.get(j);
 
-                       // swap A and B if B has higher anglular momentum than A
-                       extract info from basisfunctions 
-                       call genclass (temp, info from basis function)
-                       // transfer infomation from temp to munuk
+                       // swap A and B if B has higher anglular momentum than A                       
 
-                       for (mu; ;) for (nu; ;) for (k=0; k<K; k++) 
-                           dk(k) += denMat(mu,nu)*munuk(mu,nu,k); // eqn 15b
-                       for (mu; ;) for (nu; ;) for (a=0; a<nOrbital; a++) for (k=0; k<K; k++) 
-                           muak(mu,a,k) + = mosMat(a,nu) * munuk(mu,nu,k); // eqn 16b the most expensive step!!!
+                       // extract info from basisfunctions
+                       // Note that iafunc and jbFunc are ContractedGaussians
+                       val aang = iafunc.getTotalAngularMomentum();
+                       val aprimitive = iafunc.getPrimitive();
+                       val dcona = aprimitive.size? ;
+                       val apoint = aprimitive(0).origin;
+                       for (ai=0 ai<acon; ai++) {
+                           conA(ai)=aprimitive(ai).coefficient;
+                           zetaA(ai)=aprimitive(ai).exponent;
+                           // norm*=aprimitive(ai).normalization
+                           // normalization problem to be addressed in cpp code?
+                       }
+                       // do the same for b
+
+                       val maxbraa = (aang+1)*(aang+2)/2; 
+                       val maxbrab = (bang+1)*(bang+2)/2; 
+                       val temp = new Array[Double](0..(maxbra*maxbra)*0..(roK-1)); // Result for one batch
+
+
+                       // call genclass (temp, info from basis function)
+                        
+                       // transfer infomation from temp to munuk (Swap A and B again if necessary)
+
+                       for (tmu=mu; tmu<mu+maxbraa ; tmu++) for (tnu=0; tnu<nu+maxbrab; tnu++) for (k=0; k<K; k++) 
+                           dk(k) += denMat(tmu,tnu)*munuk(tmu,tnu,k); // eqn 15b
+                       for (tmu=mu; tmu<mu+maxbraa ; tmu++) for (tnu=0; tnu<nu+maxbrab; tnu++) for (a=0; a<nOrbital; a++) for (k=0; k<K; k++) 
+                           muak(tmu,a,k) + = mosMat(a,tnu) * munuk(tmu,tnu,k); // eqn 16b the most expensive step!!!
+
+                       mu+=maxbraa; nu+=maxbrab;
 
                    }
                }
