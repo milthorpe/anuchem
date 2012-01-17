@@ -23,27 +23,16 @@ import au.edu.anu.util.Timer;
 import au.edu.anu.util.StatisticalTimer;
 
 /**
- * G matrix in HF calculation
- * Integral screening by cutoff based on Häser & Ahlrichs (1989)
- * @see Häser, M. and Ahlrichs, R. (1989). "Improvements on the Direct SCF
- *   method". J. Comp. Chem. 10 (1) pp.104-111.
- *
- * @author: V.Ganesh
+ * G matrix in HF calculation -- RO 
  */
+
 public class GMatrixRO extends Matrix {
-    public static DEFAULT_GMATTYPE=4;
 
     public val timer = new StatisticalTimer(1);
     public static TIMER_IDX_TOTAL = 0;
 
-    private val gMatType : Int;
-    private val computeInst : DistArray[ComputePlace](1);
-
     private val bfs : BasisFunctions;
     private val mol : Molecule[QMAtom];
-
-    static THRESH:Double = 1.0e-8;
-    private var thresh2:Double = 0.0;
 
     val roN:Int;
     val roL:Int;
@@ -58,59 +47,7 @@ public class GMatrixRO extends Matrix {
         val jd = JobDefaults.getInstance();
         this.roN=jd.roN;
         this.roL=jd.roL;
-        this.roZ=jd.roZ;
-
-        this.gMatType = jd.gMatrixParallelScheme;
-        // TO DO   
-
-        val dCut = new Matrix(N);
-        val qCut = new Matrix(N);
-        // Schwarz cut-off: Häser & Ahlrichs eqn 12
-        val shellList = bfs.getShellList();
-        val maxam = shellList.getMaximumAngularMomentum();
-        val twoE = new TwoElectronIntegrals(maxam, bfs.getNormalizationFactors(), THRESH);
-
-
-        val fakeDensity = new Density(N, 2);
-        val fakeD = fakeDensity.getMatrix();
-        fakeD.fill(1.0);
-
-        val noOfAtoms = mol.getNumberOfAtoms();
-        // centre a
-        for(var a:Int=0; a<noOfAtoms; a++) {
-            val aFunc = mol.getAtom(a).getBasisFunctions();
-            val naFunc = aFunc.size();
-            // basis functions on a
-            for(var i:Int=0; i<naFunc; i++) {
-                val iaFunc = aFunc.get(i);
-
-                // centre b
-                for(var b:Int=0; b<=a; b++) {
-                    val bFunc = mol.getAtom(b).getBasisFunctions();
-                    val nbFunc = (b<a) ? bFunc.size() : i+1;
-                    // basis functions on b
-                    for(var j:Int=0; j<nbFunc; j++) {
-                        val jbFunc = bFunc.get(j);
-                        twoE.compute2EAndRecord(iaFunc, jbFunc, iaFunc, jbFunc, shellList, qCut, dCut, fakeDensity);
-                    }
-                }
-            }
-        }
-
-        val est = qCut.getMatrix();
-
-        var maxEst:Double = 0.0;
-        for(var a:Int=0; a<N; a++) for(var b:Int=0; b<N; b++) {
-            if (a==b) est(a,b)*=.5; else est(a,b)*=.25;
-            est(a,b)=Math.sqrt(Math.abs(est(a,b)));
-            if (est(a,b)>maxEst) maxEst=est(a,b);
-            //Console.OUT.printf("%d %d %e \n",a,b,EST(a,b));
-        }
-
-        Console.OUT.printf("\tmaxEst %.4g\n", maxEst);
-        val maxEstVal = maxEst;
-
-        computeInst = DistArray.make[ComputePlace](Dist.makeUnique(), (Point) => new ComputePlace(N, molecule, bfs, qCut, dCut, maxEstVal));
+        this.roZ=jd.roZ;  
     }
 
 
@@ -119,15 +56,18 @@ public class GMatrixRO extends Matrix {
 
         val mostMat=mos.getMatrix();
         val denMat=density.getMatrix();
-        val nOrbital=mos.something;
+        val nOrbital=desity.getNoOfOccupancies();
 
-        // Infinite memory code
-        val maxbra = 6; // dfunctions
+        val maxbral = bfs.getShellList().getMaximumAngularMomentum();
+        val maxbra = (maxbral+1)*(maxbral+2)/2; 
+
         val roK = (roN+1)*(roL+1)*(roL+1);
         val dk = new Array[Double](0..(roK-1)); // eqn 15b in RO#7
+        val temp = new Array[Double](0..(maxbra*maxbra)*0..(roK-1)); // Result for one batch
+
+        // Infinite memory code
         val munuk = new Array[Double](0..(nBasis-1)*0..(nBasis-1)*0..(roK-1)); // Auxiliary integrals
         val muak = new Array[Double](0..(nBasis-1)*0..(nOrbital-1)*0..(roK-1)); // half-transformed auxiliary integrals eqn 16b in RO#7
-        val temp = new Array[Double](0..(maxbra*maxbra)*0..(roK-1)); // Result for one batch
 
         // centre a
         for(var a:Int=0; a<noOfAtoms; a++) {
@@ -148,7 +88,6 @@ public class GMatrixRO extends Matrix {
                        extract info from basisfunctions 
                        call genclass (temp, info from basis function)
                        // transfer infomation from temp to munuk
-
 
                        for (mu; ;) for (nu; ;) for (k=0; k<K; k++) 
                            dk(k) += denMat(mu,nu)*munuk(mu,nu,k); // eqn 15b
