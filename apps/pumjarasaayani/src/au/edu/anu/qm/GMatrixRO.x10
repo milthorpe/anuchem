@@ -65,7 +65,7 @@ public class GMatrixRO extends Matrix {
         val dk = new Array[Double](0..(roK-1)); // eqn 15b in RO#7
         val temp = new Array[Double](0..(maxbra*maxbra)*0..(roK-1)); // Result for one batch
 
-        // Infinite memory code
+        // Infinite memory code two 3D Arrays
         val munuk = new Array[Double](0..(nBasis-1)*0..(nBasis-1)*0..(roK-1)); // Auxiliary integrals
         val muak = new Array[Double](0..(nBasis-1)*0..(nOrbital-1)*0..(roK-1)); // half-transformed auxiliary integrals eqn 16b in RO#7
 

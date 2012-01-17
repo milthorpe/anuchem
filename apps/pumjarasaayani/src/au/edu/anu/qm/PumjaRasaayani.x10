@@ -61,7 +61,7 @@ public class PumjaRasaayani {
         timer.start(0);
 
         timer.start(1);
-        val bsf = new BasisFunctions(mol, basisName, getBasisDirName(inputFileName)/*,jd.roN,jd.roL,jd.roZ*/);
+        val bsf = new BasisFunctions(mol, basisName, getBasisDirName(inputFileName));
         Console.OUT.println("\nUsing " + bsf.getBasisFunctions().size() + " basis functions.");
         timer.stop(1);
         Console.OUT.printf("    Time for setting up basis functions: %.3g milliseconds\n\n", (timer.total(1) as Double) / 1e6);
@@ -90,7 +90,7 @@ public class PumjaRasaayani {
 
         timer.start(1);
         val jd = JobDefaults.getInstance();
-        val bsf = new BasisFunctions(fragment, basisName, getBasisDirName(inputFileName)/*,jd.roN,jd.roL,jd.roZ*/);
+        val bsf = new BasisFunctions(fragment, basisName, getBasisDirName(inputFileName));
         Console.OUT.println("\nUsing " + bsf.getBasisFunctions().size() + " basis functions.");
         timer.stop(1);
         Console.OUT.printf("\tTime for setting up basis functions: %.3g milliseconds\n\n", (timer.total(1) as Double) / 1e9);
