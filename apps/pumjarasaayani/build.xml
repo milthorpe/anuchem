@@ -114,7 +114,7 @@
         </exec>
     </target>
 
-    <target name="build-src" depends="check-src,build-gsl-wrapper" unless="src.uptodate">
+    <target name="build-src" depends="check-src,build-cpp-wrappers" unless="src.uptodate">
         <echo message="Building source tree"/>
 
         <fileset id="changed.src.files" dir="${basedir}/src" includes="**/*.x10">
@@ -154,8 +154,8 @@
         </uptodate>
     </target>
 
-    <target name="build-gsl-wrapper" depends="check-src-gsl" unless="src.uptodate.gsl">
-        <echo message="Building GSL wrapper"/>
+    <target name="build-cpp-wrappers" depends="check-src-gsl" unless="src.uptodate.gsl">
+        <echo message="Building C++ wrappers"/>
 
         <copy todir="${target}/classes">
             <fileset id="cpp.files" dir="${basedir}/src" includes="**/*.h,**/*.cc"/>

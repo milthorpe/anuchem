@@ -56,7 +56,7 @@ public class HartreeFockSCFMethod extends SCFMethod {
 
         // init memory for the matrices
         val N = hCore.getRowCount();
-        val gMatrix  = new GMatrix(N, bfs, molecule);
+        val gMatrix  = new GMatrixRO(N, bfs, molecule);
         val mos      = new MolecularOrbitals(N);
         val noOfOccupancies = noOfElectrons / 2;
         val density  = new Density(N, noOfOccupancies); // density.make();
@@ -84,7 +84,7 @@ public class HartreeFockSCFMethod extends SCFMethod {
             }
             
             // make the G matrix
-            gMatrix.compute(density);
+            gMatrix.compute(density, mos);
            
             //val timer = new Timer(2);
 

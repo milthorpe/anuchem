@@ -6,7 +6,7 @@
  *  You may obtain a copy of the License at
  *      http://www.opensource.org/licenses/eclipse-1.0.php
  *
- * (C) Copyright Australian National University 2010-2011.
+ * (C) Copyright Australian National University 2010-2012.
  */
 package au.edu.anu.qm;
 
@@ -22,7 +22,7 @@ public class Fock extends Matrix {
         super(n);
     }
 
-    public def compute(hCore:HCore, gMatrix:GMatrix) : void {
+    public def compute(hCore:HCore, gMatrix:Matrix) : void {
         this.addInPlace(hCore, gMatrix);
     }
 }
