@@ -30,36 +30,40 @@ public class BenchmarkUpdateGhosts(arrayDim : Int) {
         //Console.OUT.println("d = " + d);
 
         val a = DistArray.make[Double](d, 2, false);
-/*
-        var start:Long = System.nanoTime();
-        for ([t] in 1..ITERS) {
-            a.updateGhosts();
-        }
-        var stop:Long = System.nanoTime();
 
-        Console.OUT.printf("updateGhosts put avg: %g ms\n", ((stop-start) as Double) / (1e06 * ITERS));
-/*
-        start = System.nanoTime();
-        for ([t] in 1..ITERS) {
-            a.updateGhostsShift();
-        }
-        stop = System.nanoTime();
-
-        Console.OUT.printf("updateGhosts shift avg: %g ms\n", ((stop-start) as Double) / (1e06 * ITERS));
-*/
-		val maxTime = new Accumulator[Long](Reducible.MaxReducer[Long](0L));
-        finish ateach(p in Dist.makeUnique(d.places())) {
-            val startHere = System.nanoTime();
-            for ([t] in 1..ITERS) {
-                a.sendGhosts();
-                a.waitOnGhosts();
+        val shiftTime = finish(MaxReducer()) {
+            ateach(p in Dist.makeUnique(d.places())) {
+                val startHere = System.nanoTime();
+                for ([t] in 1..ITERS) {
+                    a.sendGhosts();
+                    a.waitOnGhosts();
+                }
+                val stopHere = System.nanoTime();
+                offer (stopHere-startHere);
             }
-            val stopHere = System.nanoTime();
-            maxTime <- (stopHere-startHere);
-        }
-        Console.OUT.printf("updateGhosts no sync avg: %g ms\n", ((maxTime()) as Double) / (1e06 * ITERS));
+        };
+        Console.OUT.printf("updateGhosts shift avg: %g ms\n", ((shiftTime) as Double) / (1e06 * ITERS));
+
+        val b = DistArray.make[Double](d, 2, false, false);
+        val putTime = finish(MaxReducer()) {
+            ateach(p in Dist.makeUnique(d.places())) {
+                val startHere = System.nanoTime();
+                for ([t] in 1..ITERS) {
+                    b.sendGhosts();
+                    b.waitOnGhosts();
+                }
+                val stopHere = System.nanoTime();
+                offer (stopHere-startHere);
+            }
+        };
+        Console.OUT.printf("updateGhosts put avg: %g ms\n", ((putTime) as Double) / (1e06 * ITERS));
 
         return true;
+    }
+
+    static struct MaxReducer implements Reducible[Long] {
+        public def zero() = -1L;
+        public operator this(a:Long, b:Long) = Math.max(a,b);
     }
 
     public static def main(var args: Rail[String]): void = {
