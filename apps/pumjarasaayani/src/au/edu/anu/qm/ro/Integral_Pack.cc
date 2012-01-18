@@ -8,6 +8,8 @@
 #define sqr(x) ((x)*(x))
 #define SQRT2 1.4142135623730951
 
+int delta[3][3]={{1,0,0},{0,1,0},{0,0,1}};
+
 namespace au {
     namespace edu {
         namespace anu {

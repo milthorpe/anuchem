@@ -1,3 +1,6 @@
+#ifndef __INTEGRAL_PACK
+#define __INTEGRAL_PACK
+
 #include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
@@ -7,7 +10,6 @@
 #define SQRT2 1.4142135623730951
 
 typedef struct {int x,y,z;} Point;
-int delta[3][3]={{1,0,0},{0,1,0},{0,0,1}};
 
 namespace au {
     namespace edu {
@@ -51,3 +53,4 @@ namespace au {
     }
 }
 
+#endif // __INTEGRAL_PACK
