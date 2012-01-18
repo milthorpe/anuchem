@@ -83,10 +83,11 @@ public class GMatrixRO extends Matrix {
                 // centre b
                 for(var b:Int=0; b<noOfAtoms; b++) {
                     val bFunc = mol.getAtom(b).getBasisFunctions();
-                    val nbFunc = aFunc.size();
+                    val nbFunc = bFunc.size();
                     // basis functions on b
                     for(var j:Int=0; j<nbFunc; j++) {
                         val jbFunc = bFunc.get(j);
+                        Console.OUT.printf("a=%d i=%d b=%d j=%d [naFunc=%d nbFunc=%d]\n", a,i,b,j,naFunc,nbFunc);
 
                         // swap A and B if B has higher anglular momentum than A                       
 
@@ -126,8 +127,6 @@ public class GMatrixRO extends Matrix {
                            // normalization problem to be addressed in integral pack cpp code? -- that will slow things down?
                         }
 
-                        val L = roL; 
-
                         val maxbraa = (aang+1)*(aang+2)/2; 
                         val maxbrab = (bang+1)*(bang+2)/2; 
                         val temp = new Array[Double](0..(maxbraa*maxbrab)*0..(roK-1)); // Result for one batch
@@ -135,7 +134,8 @@ public class GMatrixRO extends Matrix {
                         // call genclass (temp, info from basis function)            
                         // roN, roL should be there during initialization...
                        
-                        aux.genClass(aang, bang, apoint, bpoint, zetaA, zetaB, conA, conB, dConA, dConB, temp);      
+                        // Segmetation fault?
+                        // aux.genClass(aang, bang, apoint, bpoint, zetaA, zetaB, conA, conB, dConA, dConB, temp);      
 
                         // transfer infomation from temp to munuk (Swap A and B again if necessary)
 
@@ -144,7 +144,10 @@ public class GMatrixRO extends Matrix {
                         for (tmu in mu..(mu+maxbraa-1)) for (tnu in 0..(nu+maxbrab-1)) for (aa in 0..(nOrbital-1)) for (k in 0..(roK-1)) 
                            muak(tmu,aa,k) += mosMat(aa,tnu) * munuk(tmu,tnu,k); // eqn 16b the most expensive step!!!
 
-                        mu+=maxbraa; nu+=maxbrab;
+                        if (b!=noOfAtoms-1 || j!=nbFunc-1) nu+=maxbrab;
+                        else {mu+=maxbraa; nu=0;}
+
+                        Console.OUT.printf("mu=%d nu=%d\n", mu,nu);
 
                     }
                 }
