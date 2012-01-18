@@ -135,7 +135,7 @@ public class GMatrixRO extends Matrix {
                         // call genclass (temp, info from basis function)            
                         // roN, roL should be there during initialization...
                        
-                        aux.genClass(aang, bang, apoint, bpoint, zetaA, zetaB, conA, conB, dConA, dConB/*, temp*/);      
+                        aux.genClass(aang, bang, apoint, bpoint, zetaA, zetaB, conA, conB, dConA, dConB, temp);      
 
                         // transfer infomation from temp to munuk (Swap A and B again if necessary)
 

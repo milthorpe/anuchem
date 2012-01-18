@@ -153,7 +153,7 @@ namespace au {
         }
     }
 
-    int Integral_Pack::Genclass(int a, int b, double *A, double *B, double *zetaA, double *zetaB, double *conA, double *conB, int dconA, int dconB){
+    int Integral_Pack::Genclass(int a, int b, double *A, double *B, double *zetaA, double *zetaB, double *conA, double *conB, int dconA, int dconB, double* temp){
         int bra,K = (N+1)*(L+1)*(L+1),p,e,i,ii,j,jj,k,n,l,m,initialn=lambda[0]==0.?1:0; // more regorious check / cut-off required
         double V1[totalBraL[a+b]][K];
         double V2[totalBraL[a+b]][K];
