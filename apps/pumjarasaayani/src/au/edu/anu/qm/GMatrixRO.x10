@@ -64,11 +64,14 @@ public class GMatrixRO extends Matrix {
 
         val roK = (roN+1)*(roL+1)*(roL+1);
         val dk = new Array[Double](0..(roK-1)); // eqn 15b in RO#7
-        val K = 1; // TODO
-
-        // Infinite memory code two 3D Arrays
+ 
+        // Infinite memory code -- two 3D Arrays
         val munuk = new Array[Double](0..(nBasis-1)*0..(nBasis-1)*0..(roK-1)); // Auxiliary integrals
         val muak = new Array[Double](0..(nBasis-1)*0..(nOrbital-1)*0..(roK-1)); // half-transformed auxiliary integrals eqn 16b in RO#7
+        val aux = new Integral_Pack(roN,roL);
+
+        var mu:Int = 0; 
+        var nu:Int = 0; 
 
         // centre a
         for(var a:Int=0; a<noOfAtoms; a++) {
@@ -107,14 +110,23 @@ public class GMatrixRO extends Matrix {
                         }
                         // do the same for b
 
-                        var mu:Int = 1; // TODO
-                        var nu:Int = 1; // TODO
-                        val bang = 1; // TODO
-                        val bpoint = new Rail[Double](3); // TODO
-                        val dConB = 1; // TODO
-                        val conB = new Rail[Double](dConB); // TODO
-                        val zetaB = new Rail[Double](dConB); // TODO
-                        val L = 1; // TODO
+                        val bang = jbFunc.getTotalAngularMomentum();
+                        val bprimitive = jbFunc.getPrimitives();
+                        val dConB = bprimitive .size; 
+                        val bpoint = new Rail[Double](3); 
+                        bpoint(0) = bprimitive(0).origin.i;
+                        bpoint(1) = bprimitive(0).origin.j;
+                        bpoint(2) = bprimitive(0).origin.k;
+                        val conB = new Rail[Double](dConB); 
+                        val zetaB = new Rail[Double](dConB); 
+                        for (bi in 0..(dConB-1)) {
+                           conB(bi)=bprimitive(bi).coefficient;
+                           zetaB(bi)=bprimitive(bi).exponent;
+                           conB(bi)*=bprimitive(bi).normalization;
+                           // normalization problem to be addressed in integral pack cpp code? -- that will slow things down?
+                        }
+
+                        val L = roL; 
 
                         val maxbraa = (aang+1)*(aang+2)/2; 
                         val maxbrab = (bang+1)*(bang+2)/2; 
@@ -122,14 +134,14 @@ public class GMatrixRO extends Matrix {
 
                         // call genclass (temp, info from basis function)            
                         // roN, roL should be there during initialization...
-                        val aux = new Integral_Pack(N);
-                        aux.genClass(aang, bang, apoint, bpoint, zetaA, zetaB, conA, conB, dConA, dConB, L/*, temp*/);      
+                       
+                        aux.genClass(aang, bang, apoint, bpoint, zetaA, zetaB, conA, conB, dConA, dConB/*, temp*/);      
 
                         // transfer infomation from temp to munuk (Swap A and B again if necessary)
 
-                        for (tmu in mu..(mu+maxbraa-1)) for (tnu in 0..(nu+maxbrab-1)) for (k in 0..(K-1)) 
+                        for (tmu in mu..(mu+maxbraa-1)) for (tnu in 0..(nu+maxbrab-1)) for (k in 0..(roK-1)) 
                            dk(k) += denMat(tmu,tnu)*munuk(tmu,tnu,k); // eqn 15b
-                        for (tmu in mu..(mu+maxbraa-1)) for (tnu in 0..(nu+maxbrab-1)) for (aa in 0..(nOrbital-1)) for (k in 0..(K-1)) 
+                        for (tmu in mu..(mu+maxbraa-1)) for (tnu in 0..(nu+maxbrab-1)) for (aa in 0..(nOrbital-1)) for (k in 0..(roK-1)) 
                            muak(tmu,aa,k) += mosMat(aa,tnu) * munuk(tmu,tnu,k); // eqn 16b the most expensive step!!!
 
                         mu+=maxbraa; nu+=maxbrab;
@@ -145,14 +157,14 @@ public class GMatrixRO extends Matrix {
         val kMat = kMatrix.getMatrix();
         val gMat = getMatrix();
         
-        for (mu in 0..(nBasis-1)) for (nu in 0..(nBasis-1)) for (k in 0..(K-1))  {
-            jMat(mu,nu) += munuk(mu,nu,k)*dk(k); // eqn 15a
+        for (tmu in 0..(nBasis-1)) for (tnu in 0..(nBasis-1)) for (k in 0..(roK-1))  {
+            jMat(tmu,tnu) += munuk(tmu,tnu,k)*dk(k); // eqn 15a
             for (a in 0..(nOrbital-1))
-                kMat(mu,nu) += muak(mu,a,k)*munuk(nu,a,k); // eqn16a 
+                kMat(mu,nu) += muak(tmu,a,k)*munuk(tnu,a,k); // eqn16a 
         }
 
-        for (mu in 0..(nBasis-1)) for (nu in 0..(nBasis-1))
-           gMat(mu,nu) = jMat(mu,nu) - 0.5 * kMat(mu,nu); // eqn14
+        for (tmu in 0..(nBasis-1)) for (tnu in 0..(nBasis-1))
+           gMat(tmu,nu) = jMat(tmu,tnu) - 0.5 * kMat(tmu,tnu); // eqn14
 
         timer.stop(0);
         Console.OUT.printf("    Time to construct GMatrix: %.3g seconds\n", (timer.last(0) as Double) / 1e9);

@@ -14,12 +14,12 @@ namespace au {
             namespace qm {
                 namespace ro {
 
-    Integral_Pack* Integral_Pack::_make(int N) {
-      return new Integral_Pack(N);
+    Integral_Pack* Integral_Pack::_make(int N, int L) {
+      return new Integral_Pack(N,L);
     }
 
-    Integral_Pack::Integral_Pack(int N) {
-        this->N = N;
+    Integral_Pack::Integral_Pack(int N,int L) {
+        this->N = N; this->L=L;
         initialize();
         initializeCoulomb(N);
     }
@@ -151,7 +151,7 @@ namespace au {
         }
     }
 
-    int Integral_Pack::Genclass(int a, int b, double *A, double *B, double *zetaA, double *zetaB, double *conA, double *conB, int dconA, int dconB, int L){
+    int Integral_Pack::Genclass(int a, int b, double *A, double *B, double *zetaA, double *zetaB, double *conA, double *conB, int dconA, int dconB){
         int bra,K = (N+1)*(L+1)*(L+1),p,e,i,ii,j,jj,k,n,l,m,initialn=lambda[0]==0.?1:0; // more regorious check / cut-off required
         double V1[totalBraL[a+b]][K];
         double V2[totalBraL[a+b]][K];
@@ -368,7 +368,7 @@ int main() {
     // int Genclass(int a, int b, double *A, double *B, double *zetaA, double *zetaB,
     // double *conA, double *conB, int dconA, int dconB,
     // double *lambda, double *q, int N, int L)
-    ip->Genclass(2,0,A,B,zetaA,zetaB,conA,conB,dconA,dconB,L);
+    ip->Genclass(2,0,A,B,zetaA,zetaB,conA,conB,dconA,dconB);
 
 }
 */

@@ -26,13 +26,13 @@ import x10.array.Array;
 @NativeRep("c++", "::au::edu::anu::qm::ro::Integral_Pack *", "::au::edu::anu::qm::ro::Integral_Pack", null)
 public class Integral_Pack {
 
-    public native def this(N:Int);
+    public native def this(N:Int,L:Int);
 
     /**
      * Generate a class of auxiliary integrals for the given parameters
      */
-    @Native("c++", "(#this)->Genclass((#1), (#2), (#3)._val->raw().raw(), (#4)._val->raw().raw(), (#5)._val->raw().raw(), (#6)._val->raw().raw(), (#7)._val->raw().raw(), (#8)._val->raw().raw(), (#9), (#10), (#11))")
-    public native def genClass(a:Int, b:Int, A:Rail[Double], B:Rail[Double], zetaA:Rail[Double], zetaB:Rail[Double], conA:Rail[Double], conB:Rail[Double], dconA:Int, dconB:Int, L:Int):Int;
+    @Native("c++", "(#this)->Genclass((#1), (#2), (#3)._val->raw().raw(), (#4)._val->raw().raw(), (#5)._val->raw().raw(), (#6)._val->raw().raw(), (#7)._val->raw().raw(), (#8)._val->raw().raw(), (#9), (#10))")
+    public native def genClass(a:Int, b:Int, A:Rail[Double], B:Rail[Double], zetaA:Rail[Double], zetaB:Rail[Double], conA:Rail[Double], conB:Rail[Double], dconA:Int, dconB:Int):Int;
 
 }
 
