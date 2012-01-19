@@ -170,7 +170,7 @@ namespace au {
             double rAB2 = sqr(A[0]-B[0])+sqr(A[1]-B[1])+sqr(A[2]-B[2]);
             double gAB=exp(-zetaA[ii]*zetaB[jj]/zeta*rAB2)*pow(PI/zeta,1.5)*conA[ii]*conB[jj];
             double one2zeta = .5/zeta;
-            //printf("ii=%d jj=%d zetaA=%e zetaB=%e zeta=%e rAB2=%e gAB=%e\n",ii,jj,zetaA[ii],zetaB[jj],zeta,rAB2,gAB);
+            printf("ii=%d jj=%d zetaA=%e zetaB=%e zeta=%e conA=%e conB=%e rAB2=%e gAB=%e\n",ii,jj,zetaA[ii],zetaB[jj],zeta,conA[ii],conB[jj],rAB2,gAB);
             double r=sqrt(sqr(P[0])+sqr(P[1])+sqr(P[2]));
             double X=P[2]/r;
             double phi=atan2(P[1],P[0]);

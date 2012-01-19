@@ -106,7 +106,8 @@ public class GMatrixRO extends Matrix {
                         for (ai in 0..(dConA-1)) {
                            conA(ai)=aprimitive(ai).coefficient;
                            zetaA(ai)=aprimitive(ai).exponent;
-                           conA(ai)*=aprimitive(ai).normalization;
+                           //conA(ai)*=aprimitive(ai).normalization;
+                           Console.OUT.printf("a=%d i=%d ai=%d [conA(ai)=%e zetaA(ai)=%e normalization=%e]\n", a,i,ai,aprimitive(ai).coefficient,aprimitive(ai).exponent,aprimitive(ai).normalization);
                            // normalization problem to be addressed in integral pack cpp code? -- that will slow things down?
                         }
                         // do the same for b
@@ -123,7 +124,7 @@ public class GMatrixRO extends Matrix {
                         for (bi in 0..(dConB-1)) {
                            conB(bi)=bprimitive(bi).coefficient;
                            zetaB(bi)=bprimitive(bi).exponent;
-                           conB(bi)*=bprimitive(bi).normalization;
+                           //conB(bi)*=bprimitive(bi).normalization;
                            // normalization problem to be addressed in integral pack cpp code? -- that will slow things down?
                         }
 
@@ -135,7 +136,8 @@ public class GMatrixRO extends Matrix {
                         // roN, roL should be there during initialization...
                        
                         // Segmetation fault?
-                        // aux.genClass(aang, bang, apoint, bpoint, zetaA, zetaB, conA, conB, dConA, dConB, temp);      
+                        Console.OUT.printf("aang=%d bang=%d\n", aang,bang);
+                        aux.genClass(aang, bang, apoint, bpoint, zetaA, zetaB, conA, conB, dConA, dConB, temp);      
 
                         // transfer infomation from temp to munuk (Swap A and B again if necessary)
 
