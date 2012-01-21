@@ -12,7 +12,7 @@ package au.edu.anu.qm;
 
 import x10.util.ArrayList;
 
-import x10x.matrix.Matrix;
+import x10.matrix.DenseMatrix;
 import au.edu.anu.chem.Molecule;
 
 /**
@@ -25,7 +25,7 @@ public struct BasisFunctions {
     public val basisName:String;
     public val basisFunctions:ArrayList[ContractedGaussian];
     public val shellList:ShellList;
-    public val SADMatrix:Matrix;
+    public val SADMatrix:DenseMatrix;
 
     public def this(mol:Molecule[QMAtom], basNam:String, basisDir:String) { 
         this.molecule  = mol;
@@ -36,12 +36,11 @@ public struct BasisFunctions {
 
         val size = initBasisFunctions(basisSet);
         shellList = new ShellList(mol);
-        SADMatrix = new Matrix(size,size);
+        SADMatrix = new DenseMatrix(size,size);
         initDensity(basisSet);
     }
 
     private def initDensity(basisSet:BasisSet) {
-        val smat = SADMatrix.getMatrix(); 
         var shift:Int=0; 
         for(var atmno:Int=0; atmno<molecule.getNumberOfAtoms(); atmno++) {
             val atom = molecule.getAtom(atmno);
@@ -49,10 +48,9 @@ public struct BasisFunctions {
             if (aDensity == null) {
                 throw new Exception("No density matrix found for atom type " + atom.symbol);
             }
-            val aMatrix = aDensity.getMatrix();
-            val matsize = aDensity.getRowCount();
-            for ([i,j] in aMatrix.region) {
-                smat(i+shift,j+shift) = aMatrix(i,j);
+            val matsize = aDensity.M;
+            for ([i,j] in 0..(matsize-1)*0..(matsize-1)) {
+                SADMatrix(i+shift,j+shift) = aDensity(i,j);
             }
             shift+=matsize;
         }

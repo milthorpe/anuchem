@@ -10,16 +10,16 @@
  */
 package au.edu.anu.qm;
 
-import x10x.matrix.Matrix;
+import x10.matrix.DenseMatrix;
 
 /**
  * The HCore matrix in HF calculation
  *
  * @author: V.Ganesh
  */
-public class HCore extends Matrix { 
-    public def this(n:Int) {
-        super(n);
+public class HCore extends DenseMatrix { 
+    public def this(n:Int):HCore{self.M==n,self.N==n} {
+        super(n, n);
     }
 }
 

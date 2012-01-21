@@ -10,31 +10,33 @@
  */
 package au.edu.anu.qm;
 
-import x10x.matrix.Matrix;
+import x10.matrix.DenseMatrix;
 
 /**
  * Represents MOs in a HF-SCF
  *
  * @author: V.Ganesh
  */
-public class MolecularOrbitals extends Matrix {
+public class MolecularOrbitals extends DenseMatrix {
     private var orbitalEnergies:Rail[Double];
 
     public def this(n:Int) {
-        super(n);
+        super(n, n);
     }
 
     public def getOrbitalEnergies() : Rail[Double] = orbitalEnergies;
  
-    public def compute(theMat:Matrix, overlap:Overlap) : void {
+    public def compute(theMat:DenseMatrix(this.N,this.N), overlap:Overlap{self.M==this.M,self.N==this.N}) : void {
         val x = overlap.getSHalf();
-        val a = theMat.similarityTransform(x);
-        val diag = new NativeDiagonalizer();
+        val a = new DenseMatrix(x.M, theMat.N);
+        a.multTrans((x % theMat), x); // a = x.theMat.x^T
+
+        val diag = new GMLDiagonalizer();
 
         diag.diagonalize(a);
-        orbitalEnergies = diag.getEigenValues().getVector();
+        orbitalEnergies = diag.getEigenValues().d;
 
-        this.mulInPlace(diag.getEigenVectors(), x);
+        super.mult(diag.getEigenVectors(), x);
     }
 }
 

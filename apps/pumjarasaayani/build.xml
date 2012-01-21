@@ -6,10 +6,12 @@
     <property name="anuchem" location="../../anu-chem"/>
     <property name="anuchem.src" location="${anuchem}/src"/>
     <property name="anuchem.lib" location="${anuchem}/lib/anu-chem.jar"/>
+    <property name="gml.lib" location="${user.home}/x10-trunk/x10.gml/lib/native_mpi_gml.jar"/>
+    <property name="gml.props" location="${user.home}/x10-trunk/x10.gml/native_mpi_gml.properties"/>
     <property name="bash.exe" value="bash"/>    
     <property name="optimize" value="true" />
     <property name="nochecks" value="true" />
-    <property name="debug" value="false"/>
+    <property name="debug" value="true"/>
     <property name="profile"  value="false" />
     <property name="cpuprofile"  value="false"/>
     <property name="perftoolsHome" location="${user.home}/perftools"/>
@@ -24,7 +26,7 @@
 
     <!-- <property name="x10rt" value="standalone" /> -->
     <!-- <property name="x10rt" value="pgas_bgp" />  -->
-    <property name="x10rt" value="sockets" />
+    <property name="x10rt" value="mpi" />
     
     <property name="target" location="${basedir}/target" />
     <property name="target-src" location="${target}/classes" />
@@ -126,11 +128,11 @@
         <pathconvert property="src.list" refid="changed.src.files" dirsep="/" pathsep=" ">
             <map from="${basedir}${file.separator}src${file.separator}" to=""/>
         </pathconvert>
-        <echo message="x10c++ -x10rt ${x10rt} -sourcepath .:${x10x.xlalib}:${anuchem.src} ${basedir}/${testclass}"/>
+        <echo message="x10c++ -x10rt ${x10rt} -classpath ${gml.lib} -x10lib ${gml.props} -sourcepath .:${x10x.xlalib}:${anuchem.src} ${basedir}/${testclass}"/>
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/src">
             <arg value="-c"/> 
-            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.debug} ${x10c.profile} ${x10c.optimize} ${x10c.nochecks} -report postcompile=1 -post '# ${post.cpuprofile} ${post.heapprofile} ${post.usenativegsl}' -sourcepath .:${x10x.xlalib}:${anuchem.src} -d ${target-src} ${basedir}/${testclass}"/>
+            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.debug} ${x10c.profile} ${x10c.optimize} ${x10c.nochecks} -report postcompile=1 -post '# ${post.cpuprofile} ${post.heapprofile} # -L/usr/lib # -lblas -L/scratch/lapack -llapack' -classpath ${gml.lib} -x10lib ${gml.props} -sourcepath .:${x10x.xlalib}:${anuchem.src} -d ${target-src} ${basedir}/${testclass}"/>
         </exec>
     </target>
 

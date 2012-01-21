@@ -17,23 +17,23 @@ import au.edu.anu.chem.Molecule;
  *
  * @author: V.Ganesh
  */
-public class OneElectronIntegrals { 
+public class OneElectronIntegrals(numBasisFunctions:Int) { 
     val basisFunctions:BasisFunctions;
-    val hCore:HCore;
-    val overlap:Overlap;
+    val hCore:HCore{self.N==numBasisFunctions,self.M==numBasisFunctions};
+    val overlap:Overlap{self.N==numBasisFunctions,self.M==numBasisFunctions};
     val roZ:Double;
+  
+    public def this(bfs:BasisFunctions, mol:Molecule[QMAtom]) {
+        property(bfs.getBasisFunctions().size());
+        this.basisFunctions = bfs;
 
-    public def this(bfs:BasisFunctions, mol:Molecule[QMAtom]) { 
-       this.basisFunctions = bfs;
+        hCore    = new HCore(numBasisFunctions);
+        overlap  = new Overlap(numBasisFunctions);
 
-       val nbf  = basisFunctions.getBasisFunctions().size();
-       hCore    = new HCore(nbf);
-       overlap  = new Overlap(nbf);
+        val jd = JobDefaults.getInstance();
+        this.roZ=jd.roZ;
 
-       val jd = JobDefaults.getInstance();
-       this.roZ=jd.roZ;
-       
-       compute1E(mol);
+        compute1E(mol);
     } 
 
     public def getHCore() = hCore;
@@ -50,22 +50,19 @@ public class OneElectronIntegrals {
        for(var i:Int=0; i<nat; i++) 
            atno(i) = ai.getAtomicNumber(atms.get(i));
 
-       val ovr = overlap.getMatrix();
-       val h   = hCore.getMatrix();
-
-       for([i, j] in h) {
+       for([i, j] in 0..(hCore.M-1)*0..(hCore.N-1)) {
               val bfi = bfs.get(i);
               val bfj = bfs.get(j);
 
               val oVal = bfi.overlap(bfj);
               val hVal = bfi.kinetic(bfj)/roZ; /*kinetic scales differently as it is not Coulombic interation*/
 
-              ovr(i,j) = oVal; 
-              h(i,j) = hVal; 
+              overlap(i,j) = oVal;
+              hCore(i,j) = hVal;
                          
               for(var k:Int=0; k<nat; k++) {
                   val aVal = atno(k) * bfi.nuclear(bfj, atms.get(k).centre);
-                  h(i,j) += aVal; 
+                  hCore(i,j) += aVal;
               }
            
        }

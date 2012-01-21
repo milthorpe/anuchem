@@ -10,20 +10,21 @@
  */
 package au.edu.anu.qm;
 
-import x10x.matrix.Matrix;
+import x10.matrix.DenseMatrix;
 
 /**
  * The Fock matrix in the HF calculation
  *
  * @author: V.Ganesh
  */
-public class Fock extends Matrix {
-    public def this(n:Int) {
-        super(n);
+public class Fock extends DenseMatrix {
+    public def this(n:Int):Fock{self.M==n,self.N==n} {
+        super(n,n);
     }
-
-    public def compute(hCore:HCore, gMatrix:Matrix) : void {
-        this.addInPlace(hCore, gMatrix);
+  
+    public def compute(hCore:HCore{self.M==this.M,self.N==this.N}, gMatrix:GMatrix{self.M==this.M,self.N==this.N}):void {
+        hCore.copyTo(this);
+        super.cellAdd(gMatrix);
     }
 }
 

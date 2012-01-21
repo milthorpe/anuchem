@@ -11,8 +11,9 @@
 package au.edu.anu.qm;
 
 import x10.util.ArrayList;
-import x10x.matrix.Matrix;
-import x10x.vector.Vector;
+import x10.matrix.DenseMatrix;
+import x10.matrix.Vector;
+import x10.matrix.lapack.DenseMatrixLAPACK;
 
 /**
  * DIIS based fock extrapolation
@@ -62,17 +63,21 @@ public class DIISFockExtrapolator {
     }
 
     /** Generate a new Fock by extrapolating from previous recorded Fock and their difference vectors */
-    public def next(currentFock:Fock, overlap:Overlap, density:Density) : Fock {
-        val N = currentFock.getRowCount();
-        var newFock:Fock = new Fock(N);
+    public def next(currentFock:Fock, 
+                    overlap:Overlap{self.M==currentFock.M,self.N==currentFock.N},
+                    density:Density{self.M==currentFock.M,self.N==currentFock.N}):Fock{self.N==currentFock.N} {
+        val N = currentFock.N;
+        val newFock = new Fock(N);
+        Console.OUT.println("currentFock(0,0) = " + currentFock(0,0) + " overlap(0,0) = " + overlap(0,0) + " density(0,0) = " + density(0,0));
 
-        val newFockMat = newFock.getMatrix();
-        val curFockMat = currentFock.getMatrix();
-        
-        val FPS = currentFock.mul(density).mul(overlap);
-        val SPF = overlap.mul(density).mul(currentFock);
+        val FPS = (currentFock as DenseMatrix % density) % overlap;
+        val SPF = (overlap as DenseMatrix % density) % currentFock;
+        Console.OUT.println("FPS.M " + FPS.M + " FPS.N " + FPS.N);
+        Console.OUT.println("SPF.M " + SPF.M + " SPF.N " + SPF.N);
 
-        val errorVector = new Vector(FPS.sub(SPF));
+        val errorVector = new Vector((FPS - SPF).d);
+        Console.OUT.println("FPS(0,0) = " + FPS(0,0) + " SPF(0,0) = " + SPF(0,0) + " errorVector(0) = " + errorVector(0));
+        Console.OUT.println("FPS(0,1) = " + FPS(0,1) + " SPF(0,1) = " + SPF(0,1) + " errorVector(1) = " + errorVector(1));
         val mxerr = errorVector.maxNorm();
         val errorVectorSize = errorVectorList.size();
 
@@ -107,10 +112,9 @@ public class DIISFockExtrapolator {
 
                 return currentFock;
             } else {
-                val oldFockMat = oldFock.getMatrix();
                 for(var i:Int=0; i<N; i++) {
                    for(var j:Int=0; j<N; j++) {
-                      newFockMat(i, j) = oldFockMat(i,j) * 0.5 + curFockMat(i,j) * 0.5;
+                      newFock(i, j) = oldFock(i,j) * 0.5 + currentFock(i,j) * 0.5;
                    }
                 }
 
@@ -122,37 +126,32 @@ public class DIISFockExtrapolator {
 
 
 
-        val A = new Matrix(noOfIterations+1);
-        val B = new Vector(noOfIterations+1);
-
-        val aMatrix = A.getMatrix();
-        val bVector = B.getVector();
+        val A = new DenseMatrix(noOfIterations+1,noOfIterations+1);
+        val B = new DenseMatrix(noOfIterations+1,1);
 
         // set up A x = B to be solved
         for (var i:Int=0; i < noOfIterations; i++) {
             for (var j:Int=0; j < noOfIterations; j++) {
-                aMatrix(i,j) = errorVectorList.get(i).dot(errorVectorList.get(j));
+                A(i,j) = errorVectorList.get(i).norm(errorVectorList.get(j));
             } // end for
         } // end for
 
         for (var i:Int=0; i < noOfIterations; i++) {
-            aMatrix(noOfIterations,i) = aMatrix(i,noOfIterations) = -1.0;
-            bVector(i) = 0.0;
+            A(noOfIterations,i) = A(i,noOfIterations) = -1.0;
+            B(i) = 0.0;
         } // end for
 
-        aMatrix(noOfIterations,noOfIterations) = 0.0;
-        bVector(noOfIterations) = -1.0;
+        A(noOfIterations,noOfIterations) = 0.0;
+        B(noOfIterations) = -1.0;
 
-        // val gele = new GaussianElimination();
-        val gele = new NativeLinearEquationSolver();
-
-        val solVec = gele.findSolution(A, B).getVector();
+        val solVec = Vector.make(A.M);
+        DenseMatrixLAPACK.solveLinearEquation(A, B, solVec);
 
         for (var i:Int=0; i < noOfIterations; i++) {
-          val prevFockMat = fockMatrixList.get(i).getMatrix();
+          val prevFock = fockMatrixList.get(i);
           for (var j:Int=0; j < N; j++) {
              for (var k:Int=0; k < N; k++) {
-                 newFockMat(j,k) += solVec(i) * prevFockMat(j,k);
+                 newFock(j,k) += solVec(i) * prevFock(j,k);
              } // end for
           } // end for
         } // end for

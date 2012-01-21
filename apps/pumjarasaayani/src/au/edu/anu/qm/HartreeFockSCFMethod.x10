@@ -55,8 +55,8 @@ public class HartreeFockSCFMethod extends SCFMethod {
         val overlap = oneE.getOverlap();
 
         // init memory for the matrices
-        val N = hCore.getRowCount();
-        val gMatrix  = new GMatrixRO(N, bfs, molecule);
+        val N = hCore.N;
+        val gMatrix  = new GMatrix(N, bfs, molecule);
         val mos      = new MolecularOrbitals(N);
         val noOfOccupancies = noOfElectrons / 2;
         val density  = new Density(N, noOfOccupancies); // density.make();
@@ -78,13 +78,17 @@ public class HartreeFockSCFMethod extends SCFMethod {
 
         // start the SCF cycle
         for(var scfIteration:Int=0; scfIteration<maxIteration; scfIteration++) {
+            Console.OUT.println("before fock(0,0) = " + fock(0,0) + " overlap(0,0) = " + overlap(0,0) + " mos(0,0) " + mos(0,0) + " density(0,0) = " + density(0,0));
+
             // make or guess density
 	        if (scfIteration>0) {
                 density.compute(mos);
             }
             
             // make the G matrix
-            gMatrix.compute(density, mos);
+            gMatrix.compute(density);
+
+            Console.OUT.println("gMatrix(0,0) = " + gMatrix(0,0));
            
             //val timer = new Timer(2);
 
@@ -95,6 +99,8 @@ public class HartreeFockSCFMethod extends SCFMethod {
             fock = diis.next(fock, overlap, density);
             //timer.stop(0);
             //Console.OUT.println ("    Time to construct Fock: " + (timer.total(0) as Double) / 1e9 + " seconds");
+
+            Console.OUT.println("after fock(0,0) = " + fock(0,0) + " overlap(0,0) = " + overlap(0,0) + " mos(0,0) " + mos(0,0) + " density(0,0) = " + density(0,0));
      
             //timer.start(1);
             // compute the new MOs
@@ -103,10 +109,10 @@ public class HartreeFockSCFMethod extends SCFMethod {
             //Console.OUT.println ("    Time to form MOS: " + (timer.total(1) as Double) / 1e9 + " seconds");
          
             // compute the total energy at this point
-            val eOne = density.mul(hCore).trace();
+            val eOne = density.clone().mult(density, hCore).trace();
             // Console.OUT.printf("  Nuclear electron attraction energy = %.6f a.u.\n", eOne);
 
-            val eTwo = density.mul(fock).trace();
+            val eTwo = density.clone().mult(density, fock).trace();
             // Console.OUT.printf("  Electron repulsion energy = %.6f a.u.\n", eTwo);
             
             energy = eOne + eTwo + nuclearEnergy;
