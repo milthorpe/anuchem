@@ -160,7 +160,7 @@ public class GMatrixRO extends Matrix {
                         if (b!=noOfAtoms-1 || j!=nbFunc-1) nu+=maxbrab;
                         else {mu+=maxbraa; nu=0;}
 
-                        Console.OUT.printf("mu=%d nu=%d\n", mu,nu);
+                        //Console.OUT.printf("mu=%d nu=%d\n", mu,nu);
 
                     }
                 }
@@ -178,6 +178,12 @@ public class GMatrixRO extends Matrix {
             for (a in 0..(nOrbital-1))
                 kMat(tmu,tnu) += muak(tmu,a,k)*muak(tnu,a,k); // eqn16a 
         }
+
+        Console.OUT.println("J Mat RO");
+        Console.OUT.println(jMatrix);
+
+        Console.OUT.println("K Mat RO");
+        Console.OUT.println(kMatrix);
 
         for (tmu in 0..(nBasis-1)) for (tnu in 0..(nBasis-1))
            gMat(tmu,tnu) = jMat(tmu,tnu) - 0.5 * kMat(tmu,tnu); // eqn14
