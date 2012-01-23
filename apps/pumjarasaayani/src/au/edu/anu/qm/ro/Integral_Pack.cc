@@ -170,7 +170,7 @@ namespace au {
             double rAB2 = sqr(A[0]-B[0])+sqr(A[1]-B[1])+sqr(A[2]-B[2]);
             double gAB=exp(-zetaA[ii]*zetaB[jj]/zeta*rAB2)*pow(PI/zeta,1.5)*conA[ii]*conB[jj];
             double one2zeta = .5/zeta;
-            printf("ii=%d jj=%d zetaA=%e zetaB=%e zeta=%e conA=%e conB=%e rAB2=%e gAB=%e\n",ii,jj,zetaA[ii],zetaB[jj],zeta,conA[ii],conB[jj],rAB2,gAB);
+            //printf("ii=%d jj=%d zetaA=%e zetaB=%e zeta=%e conA=%e conB=%e rAB2=%e gAB=%e\n",ii,jj,zetaA[ii],zetaB[jj],zeta,conA[ii],conB[jj],rAB2,gAB);
             double r=sqrt(sqr(P[0])+sqr(P[1])+sqr(P[2]));
             double X=P[2]/r;
             double phi=atan2(P[1],P[0]);
@@ -266,13 +266,13 @@ namespace au {
         }
 
         //printf("[ x y z | n l m ] (a=%d b=%d nof=%d) \n",a,b,noOfBra[a+b]);
-        bra=-1;
+        /*bra=-1;
         for (p=0; p<=a+b; p++) for (i=0; i<noOfBra[p]; i++) {
             bra++;
             for (n=0; n<=N; n++) for (l=0; l<=L; l++) for (m=-l; m<=l; m++)
                 //printf("[%d %d %d | %2d %2d %2d] = %25.15e\n",inverseMap3[bra].x,inverseMap3[bra].y,inverseMap3[bra].z,n,l,m,(*Va)[bra][n*(L+1)*(L+1)+lm2k(l,m)]);
                 printf("%.15e\n",V[bra][n*(L+1)*(L+1)+lm2k(l,m)]);
-        }
+        }*/
         // HRR
         double dd[3]={A[0]-B[0],A[1]-B[1],A[2]-B[2]};
         double (*HRR[MAX_BRA_L+1][MAX_BRA_L+1])[K];
@@ -301,8 +301,8 @@ namespace au {
         	int indexa = ii + (a>0? totalBraL[a-1]:0);
         	int indexb = jj + (b>0? totalBraL[b-1]:0);
             for (n=0; n<=N; n++) for (l=0; l<=L; l++) for (m=-l; m<=l; m++) {
-                printf("[%d,%d,%d %d,%d,%d | %2d %2d %2d] = %25.15e\n",inverseMap3[indexa].x,inverseMap3[indexa].y,inverseMap3[indexa].z,
-                		inverseMap3[indexb].x,inverseMap3[indexb].y,inverseMap3[indexb].z,n,l,m,HRR[a][b][lindex][n*(L+1)*(L+1)+lm2k(l,m)]);
+                //printf("[%d,%d,%d %d,%d,%d | %2d %2d %2d] = %25.15e\n",inverseMap3[indexa].x,inverseMap3[indexa].y,inverseMap3[indexa].z,
+                //		inverseMap3[indexb].x,inverseMap3[indexb].y,inverseMap3[indexb].z,n,l,m,HRR[a][b][lindex][n*(L+1)*(L+1)+lm2k(l,m)]);
                 temp[ind++]=HRR[a][b][lindex][n*(L+1)*(L+1)+lm2k(l,m)];
             }
         }

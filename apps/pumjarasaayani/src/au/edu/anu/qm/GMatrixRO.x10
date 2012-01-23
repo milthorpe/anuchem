@@ -87,7 +87,7 @@ public class GMatrixRO extends Matrix {
                     // basis functions on b
                     for(var j:Int=0; j<nbFunc; j++) {
                         val jbFunc = bFunc.get(j);
-                        Console.OUT.printf("a=%d i=%d b=%d j=%d [naFunc=%d nbFunc=%d]\n", a,i,b,j,naFunc,nbFunc);
+                        //Console.OUT.printf("a=%d i=%d b=%d j=%d [naFunc=%d nbFunc=%d]\n", a,i,b,j,naFunc,nbFunc);
                         
                         var aaFunc:ContractedGaussian=iaFunc,bbFunc:ContractedGaussian=jbFunc;
                         // swap A and B if B has higher anglular momentum than A     
@@ -111,7 +111,7 @@ public class GMatrixRO extends Matrix {
                            conA(ai)=aprimitive(ai).coefficient;
                            zetaA(ai)=aprimitive(ai).exponent;
                            //conA(ai)*=aprimitive(ai).normalization;
-                           Console.OUT.printf("a=%d i=%d ai=%d [conA(ai)=%e zetaA(ai)=%e normalization=%e]\n", a,i,ai,aprimitive(ai).coefficient,aprimitive(ai).exponent,aprimitive(ai).normalization);
+                           // Console.OUT.printf("a=%d i=%d ai=%d [conA(ai)=%e zetaA(ai)=%e normalization=%e]\n", a,i,ai,aprimitive(ai).coefficient,aprimitive(ai).exponent,aprimitive(ai).normalization);
                            // normalization problem to be addressed in integral pack cpp code? -- that will slow things down?
                         }
                         // do the same for b
@@ -134,21 +134,21 @@ public class GMatrixRO extends Matrix {
 
                         val maxbraa = (aang+1)*(aang+2)/2; 
                         val maxbrab = (bang+1)*(bang+2)/2; 
-                        val temp = new Array[Double](0..(maxbraa*maxbrab)*0..(roK-1)); // Result for one batch
+                        val temp = new Array[Double](0..(maxbraa*maxbrab*roK-1)); // Result for one batch
 
-                        Console.OUT.printf("aang=%d bang=%d\n", aang,bang);
+                        //Console.OUT.printf("aang=%d bang=%d\n", aang,bang);
                         aux.genClass(aang, bang, apoint, bpoint, zetaA, zetaB, conA, conB, dConA, dConB, temp);      
 
                         // transfer infomation from temp to munuk (Swap A and B again if necessary)
                         var ind:Int=0;
                         if (iaFunc.getTotalAngularMomentum()>=jbFunc.getTotalAngularMomentum())
-                            for (var tmu:Int=0; tmu<mu+maxbraa; tmu++) for (var tnu:Int=0; tnu<nu+maxbrab; tnu++) for (var k:Int=0; k<roK; k++) {
-                                Console.OUT.printf("tmu=%d tnu=%d k=%d ind=%d\n",tmu,tnu,k,ind);
+                            for (var tmu:Int=mu; tmu<mu+maxbraa; tmu++) for (var tnu:Int=nu; tnu<nu+maxbrab; tnu++) for (var k:Int=0; k<roK; k++) {
+                                //Console.OUT.printf("tmu=%d tnu=%d k=%d ind=%d val=%e\n",tmu,tnu,k,ind,temp(ind));
                                 munuk(tmu,tnu,k)=temp(ind++);
                             }                                
                         else
-                            for (var tnu:Int=0; tnu<nu+maxbrab; tnu++) for (var tmu:Int=0; tmu<mu+maxbraa; tmu++) for (var k:Int=0; k<roK; k++) {
-                                Console.OUT.printf("(Swap) tmu=%d tnu=%d k=%d ind=%d\n",tmu,tnu,k,ind);
+                            for (var tnu:Int=nu; tnu<nu+maxbrab; tnu++) for (var tmu:Int=mu; tmu<mu+maxbraa; tmu++) for (var k:Int=0; k<roK; k++) {
+                                //Console.OUT.printf("(Swap) tmu=%d tnu=%d k=%d ind=%d val=%e\n",tmu,tnu,k,ind,temp(ind));
                                 munuk(tnu,tmu,k)=temp(ind++);
                             }
 
@@ -176,11 +176,11 @@ public class GMatrixRO extends Matrix {
         for (tmu in 0..(nBasis-1)) for (tnu in 0..(nBasis-1)) for (k in 0..(roK-1))  {
             jMat(tmu,tnu) += munuk(tmu,tnu,k)*dk(k); // eqn 15a
             for (a in 0..(nOrbital-1))
-                kMat(mu,nu) += muak(tmu,a,k)*munuk(tnu,a,k); // eqn16a 
+                kMat(tmu,tnu) += muak(tmu,a,k)*muak(tnu,a,k); // eqn16a 
         }
 
         for (tmu in 0..(nBasis-1)) for (tnu in 0..(nBasis-1))
-           gMat(tmu,nu) = jMat(tmu,tnu) - 0.5 * kMat(tmu,tnu); // eqn14
+           gMat(tmu,tnu) = jMat(tmu,tnu) - 0.5 * kMat(tmu,tnu); // eqn14
 
         timer.stop(0);
         Console.OUT.printf("    Time to construct GMatrix: %.3g seconds\n", (timer.last(0) as Double) / 1e9);
