@@ -29,6 +29,7 @@ public class JobDefaults {
     public var gMatrixParallelScheme:Int;
     public var useMta:Boolean;
 // RO Var
+    public var roOn:Int;
     public var roN:Int;
     public var roL:Int;
     public var roZ:Double;

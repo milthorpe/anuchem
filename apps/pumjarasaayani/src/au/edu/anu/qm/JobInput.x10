@@ -70,6 +70,9 @@ public class JobInput {
         var conversion:Double = 1.0;
         var charge:Int = 0;
         var multiplicity:Int = 1;
+        jd.roOn=0;
+        jd.roN=10;
+        jd.roL=10;
         jd.roZ=1.0;
 
         if (line.startsWith("charge")) {
@@ -136,7 +139,10 @@ public class JobInput {
                     jd.roL = getIntParam(line);
                 } else if (line.startsWith("Center")) {
                     jd.centering = getIntParam(line);
+                } else if (line.startsWith("USE_RO")) {
+                    jd.roOn = getIntParam(line);
                 }
+
                 line = fil.readLine();
             }
         } catch (e:EOFException) {
