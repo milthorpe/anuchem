@@ -136,19 +136,21 @@ public class GMatrixRO extends Matrix {
                         val maxbrab = (bang+1)*(bang+2)/2; 
                         val temp = new Array[Double](0..(maxbraa*maxbrab)*0..(roK-1)); // Result for one batch
 
-                        // call genclass (temp, info from basis function)            
-                        // roN, roL should be there during initialization...
-                       
-                        // Segmetation fault?
                         Console.OUT.printf("aang=%d bang=%d\n", aang,bang);
                         aux.genClass(aang, bang, apoint, bpoint, zetaA, zetaB, conA, conB, dConA, dConB, temp);      
 
                         // transfer infomation from temp to munuk (Swap A and B again if necessary)
                         var ind:Int=0;
                         if (iaFunc.getTotalAngularMomentum()>=jbFunc.getTotalAngularMomentum())
-                            for (var tmu:Int=0; tmu<mu+maxbraa; tmu++) for (var tnu:Int=0; tnu<nu+maxbrab; tnu++)  for (var k:Int=0; k<roK; k++) munuk(tmu,tnu,k)=temp(ind++);
+                            for (var tmu:Int=0; tmu<mu+maxbraa; tmu++) for (var tnu:Int=0; tnu<nu+maxbrab; tnu++) for (var k:Int=0; k<roK; k++) {
+                                Console.OUT.printf("tmu=%d tnu=%d k=%d ind=%d\n",tmu,tnu,k,ind);
+                                munuk(tmu,tnu,k)=temp(ind++);
+                            }                                
                         else
-                            for (var tnu:Int=0; tnu<nu+maxbrab; tnu++) for (var tmu:Int=0; tmu<mu+maxbraa; tmu++) for (var k:Int=0; k<roK; k++) munuk(tnu,tmu,k)=temp(ind++);
+                            for (var tnu:Int=0; tnu<nu+maxbrab; tnu++) for (var tmu:Int=0; tmu<mu+maxbraa; tmu++) for (var k:Int=0; k<roK; k++) {
+                                Console.OUT.printf("(Swap) tmu=%d tnu=%d k=%d ind=%d\n",tmu,tnu,k,ind);
+                                munuk(tnu,tmu,k)=temp(ind++);
+                            }
 
                         for (tmu in mu..(mu+maxbraa-1)) for (tnu in nu..(nu+maxbrab-1)) for (k in 0..(roK-1)) 
                            dk(k) += denMat(tmu,tnu)*munuk(tmu,tnu,k); // eqn 15b
