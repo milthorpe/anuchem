@@ -24,11 +24,14 @@ public class GMLDiagonalizer {
     var eigenVectorsMat:DenseMatrix;
 
     public def diagonalize(A:DenseMatrix):void {
-        eigenVectorsMat = A.clone();
-        eigenValuesVec = Vector.make(eigenVectorsMat.N);
-        val scratch = new Rail[Double](3*eigenVectorsMat.N-1);
+        val a = A.clone();
+        eigenValuesVec = Vector.make(a.N);
+        val scratch = new Rail[Double](3*a.N-1);
 
-        DenseMatrixLAPACK.compEigenVector(eigenVectorsMat, eigenValuesVec, scratch);
+        DenseMatrixLAPACK.compEigenVector(a, eigenValuesVec, scratch);
+
+        eigenVectorsMat = new DenseMatrix(a.N, A.M);
+        a.T(eigenVectorsMat);
     }
 
     public static def symmetricOrthogonalization(A:DenseMatrix):DenseMatrix(A.N,A.N) {

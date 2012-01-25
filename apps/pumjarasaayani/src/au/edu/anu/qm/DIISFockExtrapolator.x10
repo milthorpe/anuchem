@@ -68,7 +68,6 @@ public class DIISFockExtrapolator {
                     density:Density{self.M==currentFock.M,self.N==currentFock.N}):Fock{self.N==currentFock.N} {
         val N = currentFock.N;
         val newFock = new Fock(N);
-        Console.OUT.println("currentFock(0,0) = " + currentFock(0,0) + " overlap(0,0) = " + overlap(0,0) + " density(0,0) = " + density(0,0));
 
         val FPS = (currentFock as DenseMatrix % density) % overlap;
         val SPF = (overlap as DenseMatrix % density) % currentFock;
@@ -126,7 +125,7 @@ public class DIISFockExtrapolator {
         // set up A x = B to be solved
         for (var i:Int=0; i < noOfIterations; i++) {
             for (var j:Int=0; j < noOfIterations; j++) {
-                A(i,j) = errorVectorList.get(i).norm(errorVectorList.get(j));
+                A(i,j) = errorVectorList.get(i).blasTransProduct(errorVectorList.get(j));
             } // end for
         } // end for
 
@@ -138,12 +137,8 @@ public class DIISFockExtrapolator {
         A(noOfIterations,noOfIterations) = 0.0;
         B(noOfIterations,0) = -1.0;
 
-        Console.OUT.println("A = "  + A + " B = " + B);
-
         val permutation = Vector.make(A.M);
         val result = DenseMatrixLAPACK.solveLinearEquation(A, B, permutation);
-
-        Console.OUT.println("result = " + result + " B = " + B);
 
         for (var i:Int=0; i < noOfIterations; i++) {
           val prevFock = fockMatrixList.get(i);
