@@ -72,12 +72,8 @@ public class DIISFockExtrapolator {
 
         val FPS = (currentFock as DenseMatrix % density) % overlap;
         val SPF = (overlap as DenseMatrix % density) % currentFock;
-        Console.OUT.println("FPS.M " + FPS.M + " FPS.N " + FPS.N);
-        Console.OUT.println("SPF.M " + SPF.M + " SPF.N " + SPF.N);
 
         val errorVector = new Vector((FPS - SPF).d);
-        Console.OUT.println("FPS(0,0) = " + FPS(0,0) + " SPF(0,0) = " + SPF(0,0) + " errorVector(0) = " + errorVector(0));
-        Console.OUT.println("FPS(0,1) = " + FPS(0,1) + " SPF(0,1) = " + SPF(0,1) + " errorVector(1) = " + errorVector(1));
         val mxerr = errorVector.maxNorm();
         val errorVectorSize = errorVectorList.size();
 
@@ -124,8 +120,6 @@ public class DIISFockExtrapolator {
             } // end if
         } // end if 
 
-
-
         val A = new DenseMatrix(noOfIterations+1,noOfIterations+1);
         val B = new DenseMatrix(noOfIterations+1,1);
 
@@ -138,20 +132,24 @@ public class DIISFockExtrapolator {
 
         for (var i:Int=0; i < noOfIterations; i++) {
             A(noOfIterations,i) = A(i,noOfIterations) = -1.0;
-            B(i) = 0.0;
+            B(i,0) = 0.0;
         } // end for
 
         A(noOfIterations,noOfIterations) = 0.0;
-        B(noOfIterations) = -1.0;
+        B(noOfIterations,0) = -1.0;
 
-        val solVec = Vector.make(A.M);
-        DenseMatrixLAPACK.solveLinearEquation(A, B, solVec);
+        Console.OUT.println("A = "  + A + " B = " + B);
+
+        val permutation = Vector.make(A.M);
+        val result = DenseMatrixLAPACK.solveLinearEquation(A, B, permutation);
+
+        Console.OUT.println("result = " + result + " B = " + B);
 
         for (var i:Int=0; i < noOfIterations; i++) {
           val prevFock = fockMatrixList.get(i);
           for (var j:Int=0; j < N; j++) {
              for (var k:Int=0; k < N; k++) {
-                 newFock(j,k) += solVec(i) * prevFock(j,k);
+                 newFock(j,k) += B(i,0) * prevFock(j,k);
              } // end for
           } // end for
         } // end for

@@ -78,8 +78,6 @@ public class HartreeFockSCFMethod extends SCFMethod {
 
         // start the SCF cycle
         for(var scfIteration:Int=0; scfIteration<maxIteration; scfIteration++) {
-            Console.OUT.println("before fock(0,0) = " + fock(0,0) + " overlap(0,0) = " + overlap(0,0) + " mos(0,0) " + mos(0,0) + " density(0,0) = " + density(0,0));
-
             // make or guess density
 	        if (scfIteration>0) {
                 density.compute(mos);
@@ -88,20 +86,17 @@ public class HartreeFockSCFMethod extends SCFMethod {
             // make the G matrix
             gMatrix.compute(density);
 
-            Console.OUT.println("gMatrix(0,0) = " + gMatrix(0,0));
-           
             //val timer = new Timer(2);
 
             //timer.start(0);
             // make fock matrix
             fock.compute(hCore, gMatrix);
+
             // SCF_ALGORITHM = DIIS  
             fock = diis.next(fock, overlap, density);
             //timer.stop(0);
             //Console.OUT.println ("    Time to construct Fock: " + (timer.total(0) as Double) / 1e9 + " seconds");
 
-            Console.OUT.println("after fock(0,0) = " + fock(0,0) + " overlap(0,0) = " + overlap(0,0) + " mos(0,0) " + mos(0,0) + " density(0,0) = " + density(0,0));
-     
             //timer.start(1);
             // compute the new MOs
             mos.compute(fock, overlap);

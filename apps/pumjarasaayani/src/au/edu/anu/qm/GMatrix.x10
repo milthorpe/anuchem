@@ -612,7 +612,7 @@ public class GMatrix extends DenseMatrix {
             val noOfAtoms = mol.getNumberOfAtoms();
 
             dCut.reset();
-            var maxDen:Double = 0.;
+            var maxDen:Double = 0.0;
             // centre a
             for(var a:Int=0; a<noOfAtoms; a++) {
                 val aFunc = mol.getAtom(a).getBasisFunctions();
@@ -632,11 +632,11 @@ public class GMatrix extends DenseMatrix {
                             val aAng  = iaFunc.getMaximumAngularMomentum();
                             val NA:Int = (aAng+2)*(aAng+1)/2+iaFunc.intIndex;
                             val NB:Int = (bAng+2)*(bAng+1)/2+jbFunc.intIndex;
-                            var newMaxDen:Double=0;
-                            for (var iden:Int=iaFunc.intIndex; iden<NA; iden++) for (var jden:Int=jbFunc.intIndex; jden<NB; jden++ )
-                                if (Math.abs(density(iden,jden))>newMaxDen) newMaxDen=Math.abs(density(iden,jden));
+                            var newMaxDen:Double=0.0;
+                            for (iden in iaFunc.intIndex..(NA-1)) for (jden in jbFunc.intIndex..(NB-1))
+                                newMaxDen = Math.max(newMaxDen, Math.abs(density(iden,jden)));
                             dCut(iaFunc.intIndex,jbFunc.intIndex) = newMaxDen;
-                            if (newMaxDen>maxDen) maxDen = newMaxDen;
+                            if (newMaxDen > maxDen) maxDen = newMaxDen;
                         }
                     }
                  }
