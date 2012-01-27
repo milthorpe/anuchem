@@ -22,8 +22,6 @@
     <property name="gsl.include" location="${user.home}/gsl/include" />
     <property name="gsl.lib" location="${user.home}/gsl/lib" />
 
-    <property name="usenativegsl" value="true" />
-
     <!-- <property name="x10rt" value="standalone" /> -->
     <!-- <property name="x10rt" value="pgas_bgp" />  -->
     <property name="x10rt" value="mpi" />
@@ -60,10 +58,6 @@
         <istrue value="${heapprofile}" />
     </condition>
     
-    <condition property="post.usenativegsl" value="-I${gsl.include} # # -L${gsl.lib} -lgsl -lgslcblas" else="">
-        <istrue value="${usenativegsl}" />
-    </condition>
-
     <target name="init">
         <mkdir dir="${target}"/>
     </target>

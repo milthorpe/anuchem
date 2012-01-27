@@ -41,9 +41,9 @@ public class Density extends DenseMatrix {
 */
     public def getNoOfOccupancies() = noOfOccupancies;
 
-    public def compute(mos:MolecularOrbitals) : void {
+    public def compute(mos:MolecularOrbitals{self.N==this.N}) : void {
         // construct it from the MOs .. C*C'
-        val dVector = new DenseMatrix(noOfOccupancies, mos.N);
+        val dVector = new DenseMatrix(noOfOccupancies, this.N);
 
         DenseMatrix.copyRows(mos, 0, dVector, 0, noOfOccupancies);
 

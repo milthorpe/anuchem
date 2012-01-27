@@ -61,7 +61,7 @@ public class HartreeFockSCFMethod extends SCFMethod {
         val noOfOccupancies = noOfElectrons / 2;
         val density  = new Density(N, noOfOccupancies); // density.make();
 
-        var fock:Fock  = new Fock(N);
+        var fock:Fock{self.M==N,self.N==N} = new Fock(N);
 
         //Console.OUT.println("    Forming initial guess ...");
 
