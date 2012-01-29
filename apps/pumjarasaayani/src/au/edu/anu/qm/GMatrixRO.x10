@@ -110,15 +110,13 @@ public class GMatrixRO extends Matrix {
                         for (ai in 0..(dConA-1)) {
                            conA(ai)=aprimitive(ai).coefficient;
                            zetaA(ai)=aprimitive(ai).exponent;
-                           //conA(ai)*=aprimitive(ai).normalization;
-                           // Console.OUT.printf("a=%d i=%d ai=%d [conA(ai)=%e zetaA(ai)=%e normalization=%e]\n", a,i,ai,aprimitive(ai).coefficient,aprimitive(ai).exponent,aprimitive(ai).normalization);
-                           // normalization problem to be addressed in integral pack cpp code? -- that will slow things down?
+                           Console.OUT.printf("a=%d i=%d ai=%d [conA(ai)=%e zetaA(ai)=%e]\n", a,i,ai,aprimitive(ai).coefficient,aprimitive(ai).exponent);
                         }
                         // do the same for b
 
                         val bang = bbFunc.getTotalAngularMomentum();
                         val bprimitive = bbFunc.getPrimitives();
-                        val dConB = bprimitive .size; 
+                        val dConB = bprimitive.size; 
                         val bpoint = new Rail[Double](3); 
                         bpoint(0) = bprimitive(0).origin.i;
                         bpoint(1) = bprimitive(0).origin.j;
@@ -128,8 +126,7 @@ public class GMatrixRO extends Matrix {
                         for (bi in 0..(dConB-1)) {
                            conB(bi)=bprimitive(bi).coefficient;
                            zetaB(bi)=bprimitive(bi).exponent;
-                           //conB(bi)*=bprimitive(bi).normalization;
-                           // normalization problem to be addressed in integral pack cpp code? -- that will slow things down?
+                           Console.OUT.printf("b=%d j=%d bi=%d [conA(bi)=%e zetaB(bi)=%e]\n", b,j,bi,bprimitive(bi).coefficient,aprimitive(bi).exponent);
                         }
 
                         val maxbraa = (aang+1)*(aang+2)/2; 

@@ -163,14 +163,14 @@ namespace au {
 
         double Y[(L+1)*(L+1)],J[(L+a+b+1)*(N+1)],JpY00[9]={0.28209479177387814, 0.09403159725795937, 0.018806319451591877,
         		0.0026866170645131254, 0.000298513007168125,0.000027137546106193183, 2.087503546630245e-6,1.39166903108683e-7, 8.186288418157823e-9};
-
+        printf("A %e %e %e B %e %e %e\n",A[0],A[1],A[2],B[0],B[1],B[2]);
         for (ii=0; ii<dconA; ii++) for (jj=0; jj<dconB; jj++) {
             double zeta=zetaA[ii]+zetaB[jj];
             double P[3]={(zetaA[ii]*A[0]+zetaB[jj]*B[0])/zeta, (zetaA[ii]*A[1]+zetaB[jj]*B[1])/zeta, (zetaA[ii]*A[2]+zetaB[jj]*B[2])/zeta};
             double rAB2 = sqr(A[0]-B[0])+sqr(A[1]-B[1])+sqr(A[2]-B[2]);
             double gAB=exp(-zetaA[ii]*zetaB[jj]/zeta*rAB2)*pow(PI/zeta,1.5)*conA[ii]*conB[jj];
             double one2zeta = .5/zeta;
-            //printf("ii=%d jj=%d zetaA=%e zetaB=%e zeta=%e conA=%e conB=%e rAB2=%e gAB=%e\n",ii,jj,zetaA[ii],zetaB[jj],zeta,conA[ii],conB[jj],rAB2,gAB);
+            printf("ii=%d jj=%d zetaA=%e zetaB=%e zeta=%e conA=%e conB=%e rAB2=%e gAB=%e\n",ii,jj,zetaA[ii],zetaB[jj],zeta,conA[ii],conB[jj],rAB2,gAB);
             double r=sqrt(sqr(P[0])+sqr(P[1])+sqr(P[2]));
             double X=P[2]/r;
             double phi=atan2(P[1],P[0]);
@@ -180,13 +180,15 @@ namespace au {
                 for (n=0; n<=N; n++) GenJ(&J[(L+a+b+1)*n],r*lambda[n],L+a+b);
             }
 
+            swap = false;
+
             for (p=a+b; p>=0; p--) {
                 swap = !swap;
                 double (*Va)[totalBraL[a+b]][K] = swap ? &V2 : &V1;
                 double (*Vb)[totalBraL[a+b]][K] = swap ? &V1 : &V2;
 
                 // lambda[0]=0 is taken care of by separately. (3-term RR & trivial initial conditions)
-        	    // only p=0 contributes!
+        	// only p=0 contributes!
                 if (initialn==1 && p==0) {
                     memset(Va,0,sizeof(double)*K*totalBraL[a+b]);
                     (*Va)[0][0]=JpY00[0]*q[0]*gAB;
@@ -204,6 +206,7 @@ namespace au {
                     }
                 }
 
+                // Fill e=0
                 for (n=initialn; n<=N; n++) {
                     if (r!=0.0) {
                         double nfactor=q[n]*gAB*exp(-.25*sqr(lambda[n])/zeta)*pow(-.5*lambda[n]/zeta/r,p);
@@ -219,8 +222,8 @@ namespace au {
                     }
                 }
 
-
-        	    for (n=initialn; n<=N; n++) {
+                // Fill higher e
+        	for (n=initialn; n<=N; n++) {
                     int nOffset=n*(L+1)*(L+1);
                     double onelambda=-1.0/lambda[n];
 
@@ -274,13 +277,14 @@ namespace au {
                 printf("%.15e\n",V[bra][n*(L+1)*(L+1)+lm2k(l,m)]);
         }*/
         // HRR
+        // Initialization - copy contracted integrals to HRR 
         double dd[3]={A[0]-B[0],A[1]-B[1],A[2]-B[2]};
         double (*HRR[MAX_BRA_L+1][MAX_BRA_L+1])[K];
-        double (*Va)[totalBraL[a+b]][K] = swap ? &V2 : &V1;
+        // double (*Va)[totalBraL[a+b]][K] = swap ? &V2 : &V1;
         for (i=a; i<=a+b; i++) {
             HRR[i][0] = (double (*)[K])(malloc(sizeof(double)*K*noOfBra[i]));
             for (bra=0; bra<noOfBra[i]; bra++ ) for (k=0; k<K; k++) {
-                HRR[i][0][bra][k] = (*Va)[bra+(i>0?totalBraL[i-1]:0)][k];
+                HRR[i][0][bra][k] = V[bra+(i>0?totalBraL[i-1]:0)][k];
             }
         }
 
@@ -301,8 +305,8 @@ namespace au {
         	int indexa = ii + (a>0? totalBraL[a-1]:0);
         	int indexb = jj + (b>0? totalBraL[b-1]:0);
             for (n=0; n<=N; n++) for (l=0; l<=L; l++) for (m=-l; m<=l; m++) {
-                //printf("[%d,%d,%d %d,%d,%d | %2d %2d %2d] = %25.15e\n",inverseMap3[indexa].x,inverseMap3[indexa].y,inverseMap3[indexa].z,
-                //		inverseMap3[indexb].x,inverseMap3[indexb].y,inverseMap3[indexb].z,n,l,m,HRR[a][b][lindex][n*(L+1)*(L+1)+lm2k(l,m)]);
+                printf("[%d,%d,%d %d,%d,%d | %2d %2d %2d] = %25.15e\n",inverseMap3[indexa].x,inverseMap3[indexa].y,inverseMap3[indexa].z,
+                		inverseMap3[indexb].x,inverseMap3[indexb].y,inverseMap3[indexb].z,n,l,m,HRR[a][b][lindex][n*(L+1)*(L+1)+lm2k(l,m)]);
                 temp[ind++]=HRR[a][b][lindex][n*(L+1)*(L+1)+lm2k(l,m)];
             }
         }
