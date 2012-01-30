@@ -124,7 +124,7 @@ public class HartreeFockSCFMethod extends SCFMethod {
 
             Console.OUT.printf("Cycle #%i Total energy = %.6f a.u. (scale factor = %.6f)", scfIteration, energy/roZ,roZ);
             if (scfIteration>0) {
-                Console.OUT.printf(" (%.6f)", energy-oldEnergy);
+                Console.OUT.printf(" (%.6f)", (energy-oldEnergy)/roZ);
             } else {
                 // ignore the first cycle's timings 
                 // as far fewer integrals are calculated
