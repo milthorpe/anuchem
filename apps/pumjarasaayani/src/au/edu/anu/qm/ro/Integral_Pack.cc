@@ -32,7 +32,7 @@ namespace au {
         for (l=0; l<=MAX_BRA_L; l++) {
             noOfBra[l]=((l+1)*(l+2))/2;
             if (l>0) totalBraL[l]=totalBraL[l-1]+noOfBra[l];
-            for (x=l; x>=0; x--) for (y=l-x; y>=0; y--) {
+              for (x=0; x<=l; x++) for (y=0; y<=l-x; y++) { // must be consistent with PowerList.x10
 
                 map3[x][y][z=l-x-y] = m;
                 inverseMap3[m].x = x;
@@ -323,7 +323,7 @@ namespace au {
             }
         }
 
-        for (i=0; i<=a+b; i++) for (j=0; j<=a+b; j++) free(HRR[i][j]);
+        for (i=a; i<=a+b; i++) for (j=0; j<=i-a; j++) free(HRR[i][j]);
 
     }
 

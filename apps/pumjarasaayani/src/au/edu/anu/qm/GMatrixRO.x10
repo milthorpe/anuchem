@@ -73,6 +73,9 @@ public class GMatrixRO extends Matrix {
         var mu:Int = 0; 
         var nu:Int = 0; 
 
+        val diagtwoe = new Matrix(N);
+        val diagtwoemat = diagtwoe.getMatrix();
+
         // centre a
         for(var a:Int=0; a<noOfAtoms; a++) {
             val aFunc = mol.getAtom(a).getBasisFunctions();
@@ -134,9 +137,8 @@ public class GMatrixRO extends Matrix {
                            //Console.OUT.printf("b=%d j=%d bi=%d [conA(bi)=%e zetaB(bi)=%e]\n", b,j,bi,conB(bi),zetaB(bi));
                         }
 
-
                         val temp = new Array[Double](0..(maxbraa*maxbrab*roK-1)); // Result for one batch
-
+                        Console.OUT.printf("temp size=%d ",maxbraa*maxbrab*roK);
                         Console.OUT.printf("aang=%d bang=%d\n", aang,bang);
                         aux.genClass(aang, bang, apoint, bpoint, zetaA, zetaB, conA, conB, dConA, dConB, temp);      
 
@@ -153,7 +155,6 @@ public class GMatrixRO extends Matrix {
                                 munuk(tmu,tnu,k)=temp(ind++);
                             }
 
-
                         for (tmu in mu..(mu+maxbraa-1)) for (tnu in nu..(nu+maxbrab-1)) for (k in 0..(roK-1)) 
                            dk(k) += denMat(tmu,tnu)*munuk(tmu,tnu,k); // eqn 15b
                         for (tmu in mu..(mu+maxbraa-1)) for (tnu in nu..(nu+maxbrab-1)) for (aorb in 0..(nOrbital-1)) for (k in 0..(roK-1)) 
@@ -165,6 +166,7 @@ public class GMatrixRO extends Matrix {
                             var intval:Double=0.;
                             for (k in 0..(roK-1)) intval+= munuk(tmu,tnu,k)*munuk(tmu,tnu,k);
                             Console.OUT.printf("mu=%d nu=%d intval=%e\n", tmu,tnu,intval);
+                            diagtwoemat(tmu,tnu)=intval;
                        }
                         // S Only
   //                      var intvale:Double-0.;
@@ -191,6 +193,9 @@ public class GMatrixRO extends Matrix {
             for (a in 0..(nOrbital-1))
                 kMat(tmu,tnu) += muak(tmu,a,k)*muak(tnu,a,k); // eqn16a 
         }
+
+        Console.OUT.println("diag2E RO");
+        Console.OUT.println(diagtwoe);
 
         Console.OUT.println("J Mat RO");
         Console.OUT.println(jMatrix);
