@@ -39,6 +39,8 @@ public class GMatrixRO extends Matrix {
     val roL:Int;
     val roZ:Double;
     val nBasis:Int;
+    
+    val Norm:Rail[Double];
 
     public def this(N:Int, bfs:BasisFunctions, molecule:Molecule[QMAtom]) {
         super(N);
@@ -48,7 +50,10 @@ public class GMatrixRO extends Matrix {
         val jd = JobDefaults.getInstance();
         this.roN=jd.roN;
         this.roL=jd.roL;
-        this.roZ=jd.roZ;  
+        this.roZ=jd.roZ;
+  
+        this.Norm = bfs.getNormalizationFactors();
+
     }
 
 
@@ -100,7 +105,7 @@ public class GMatrixRO extends Matrix {
                         // swap A and B if B has higher anglular momentum than A     
                         if (aa<bb) {
                             aaFunc=jbFunc; bbFunc=iaFunc;
-                            Console.OUT.printf("SWAP ab!\n");
+                            //Console.OUT.printf("SWAP ab!\n");
                         }                  
 
                         // extract info from basisfunctions
@@ -138,8 +143,8 @@ public class GMatrixRO extends Matrix {
                         }
 
                         val temp = new Array[Double](0..(maxbraa*maxbrab*roK-1)); // Result for one batch
-                        Console.OUT.printf("temp size=%d ",maxbraa*maxbrab*roK);
-                        Console.OUT.printf("aang=%d bang=%d\n", aang,bang);
+                        //Console.OUT.printf("temp size=%d ",maxbraa*maxbrab*roK);
+                        //Console.OUT.printf("aang=%d bang=%d\n", aang,bang);
                         aux.genClass(aang, bang, apoint, bpoint, zetaA, zetaB, conA, conB, dConA, dConB, temp);      
 
                         // transfer infomation from temp to munuk (Swap A and B again if necessary)
@@ -147,12 +152,12 @@ public class GMatrixRO extends Matrix {
                         if (iaFunc.getTotalAngularMomentum()>=jbFunc.getTotalAngularMomentum())
                             for (var tmu:Int=mu; tmu<mu+maxbraa; tmu++) for (var tnu:Int=nu; tnu<nu+maxbrab; tnu++) for (var k:Int=0; k<roK; k++) {
                                 //Console.OUT.printf("tmu=%d tnu=%d k=%d ind=%d val=%e\n",tmu,tnu,k,ind,temp(ind));
-                                munuk(tmu,tnu,k)=temp(ind++);
+                                munuk(tmu,tnu,k)=Norm(tmu)*Norm(tnu)*temp(ind++);
                             }                                
                         else // Becareful... this is tricky ... maxbra are not swap 
                             for (var tnu:Int=nu; tnu<nu+maxbrab; tnu++) for (var tmu:Int=mu; tmu<mu+maxbraa; tmu++) for (var k:Int=0; k<roK; k++) {
                                 //Console.OUT.printf("(Swap) tmu=%d tnu=%d k=%d ind=%d val=%e\n",tmu,tnu,k,ind,temp(ind));
-                                munuk(tmu,tnu,k)=temp(ind++);
+                                munuk(tmu,tnu,k)=Norm(tmu)*Norm(tnu)*temp(ind++);
                             }
 
                         for (tmu in mu..(mu+maxbraa-1)) for (tnu in nu..(nu+maxbrab-1)) for (k in 0..(roK-1)) 
@@ -160,18 +165,15 @@ public class GMatrixRO extends Matrix {
                         for (tmu in mu..(mu+maxbraa-1)) for (tnu in nu..(nu+maxbrab-1)) for (aorb in 0..(nOrbital-1)) for (k in 0..(roK-1)) 
                            muak(tmu,aorb,k) += mosMat(aorb,tnu) * munuk(tmu,tnu,k); // eqn 16b the most expensive step!!!
 
-                        // test
-                        
+                       // test
+                       /* 
                        for (tmu in mu..(mu+maxbraa-1)) for (tnu in nu..(nu+maxbrab-1))  {
                             var intval:Double=0.;
                             for (k in 0..(roK-1)) intval+= munuk(tmu,tnu,k)*munuk(tmu,tnu,k);
                             Console.OUT.printf("mu=%d nu=%d intval=%e\n", tmu,tnu,intval);
                             diagtwoemat(tmu,tnu)=intval;
-                       }
-                        // S Only
-  //                      var intvale:Double-0.;
-  //                      for (ii in 0..dConA) for (jj in 0..dConB) for (kk in 0..dConA) for (ll in 0..dConB)
-  //                           intvale+=conA(ii)*conB(jj)*conA(kk)*conB(ll)*
+                       }*/
+
                         if (b!=noOfAtoms-1 || j!=nbFunc-1) nu+=maxbrab;
                         else {mu+=maxbraa; nu=0;}
 
@@ -193,7 +195,7 @@ public class GMatrixRO extends Matrix {
             for (a in 0..(nOrbital-1))
                 kMat(tmu,tnu) += muak(tmu,a,k)*muak(tnu,a,k); // eqn16a 
         }
-
+/*
         Console.OUT.println("diag2E RO");
         Console.OUT.println(diagtwoe);
 
@@ -201,7 +203,7 @@ public class GMatrixRO extends Matrix {
         Console.OUT.println(jMatrix);
 
         Console.OUT.println("K Mat RO");
-        Console.OUT.println(kMatrix);
+        Console.OUT.println(kMatrix);*/
 
         for (tmu in 0..(nBasis-1)) for (tnu in 0..(nBasis-1))
            gMat(tmu,tnu) = 2.0*jMat(tmu,tnu) - kMat(tmu,tnu); // eqn14

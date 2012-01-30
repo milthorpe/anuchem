@@ -323,7 +323,10 @@ namespace au {
             }
         }
 
-        for (i=a; i<=a+b; i++) for (j=0; j<=i-a; j++) free(HRR[i][j]);
+        for (i=a; i<=a+b; i++)  {
+           free(HRR[i][0]);
+           for (j=1; j<=i-a; j++) free(HRR[i-j][j]);
+        }
 
     }
 
