@@ -101,7 +101,7 @@ public class HartreeFockSCFMethod extends SCFMethod {
             //timer.start(0);
             // make fock matrix
             if (jd.roOn>0) fock.compute(hCore, gMatrixRO);
-            else  fock.compute(hCore, gMatrix);
+            else fock.compute(hCore, gMatrix);
             // SCF_ALGORITHM = DIIS  
             fock = diis.next(fock, overlap, density);
             //timer.stop(0);

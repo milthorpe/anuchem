@@ -93,6 +93,7 @@ public class GMatrixRO extends Matrix {
                         // swap A and B if B has higher anglular momentum than A     
                         if (iaFunc.getTotalAngularMomentum()<jbFunc.getTotalAngularMomentum()) {
                             aaFunc=jbFunc; bbFunc=iaFunc;
+                            Console.OUT.printf("SWAP ab!\n");
                         }                  
 
                         // extract info from basisfunctions
@@ -110,7 +111,7 @@ public class GMatrixRO extends Matrix {
                         for (ai in 0..(dConA-1)) {
                            conA(ai)=aprimitive(ai).coefficient;
                            zetaA(ai)=aprimitive(ai).exponent;
-                           Console.OUT.printf("a=%d i=%d ai=%d [conA(ai)=%e zetaA(ai)=%e]\n", a,i,ai,aprimitive(ai).coefficient,aprimitive(ai).exponent);
+                           Console.OUT.printf("a=%d i=%d ai=%d [conA(ai)=%e zetaA(ai)=%e]\n", a,i,ai,conA(ai),zetaA(ai));
                         }
                         // do the same for b
 
@@ -126,14 +127,14 @@ public class GMatrixRO extends Matrix {
                         for (bi in 0..(dConB-1)) {
                            conB(bi)=bprimitive(bi).coefficient;
                            zetaB(bi)=bprimitive(bi).exponent;
-                           Console.OUT.printf("b=%d j=%d bi=%d [conA(bi)=%e zetaB(bi)=%e]\n", b,j,bi,bprimitive(bi).coefficient,aprimitive(bi).exponent);
+                           Console.OUT.printf("b=%d j=%d bi=%d [conA(bi)=%e zetaB(bi)=%e]\n", b,j,bi,conB(bi),zetaB(bi));
                         }
 
                         val maxbraa = (aang+1)*(aang+2)/2; 
                         val maxbrab = (bang+1)*(bang+2)/2; 
                         val temp = new Array[Double](0..(maxbraa*maxbrab*roK-1)); // Result for one batch
 
-                        //Console.OUT.printf("aang=%d bang=%d\n", aang,bang);
+                        Console.OUT.printf("aang=%d bang=%d\n", aang,bang);
                         aux.genClass(aang, bang, apoint, bpoint, zetaA, zetaB, conA, conB, dConA, dConB, temp);      
 
                         // transfer infomation from temp to munuk (Swap A and B again if necessary)
@@ -154,10 +155,16 @@ public class GMatrixRO extends Matrix {
                         for (tmu in mu..(mu+maxbraa-1)) for (tnu in nu..(nu+maxbrab-1)) for (aa in 0..(nOrbital-1)) for (k in 0..(roK-1)) 
                            muak(tmu,aa,k) += mosMat(aa,tnu) * munuk(tmu,tnu,k); // eqn 16b the most expensive step!!!
 
+                        // test
+                        var intval:Double=0.;
+                        for (k in 0..(roK-1))
+                            intval+= munuk(mu,nu,k)*munuk(mu,nu,k);
+                        Console.OUT.printf("mu=%d nu=%d intval=%e\n", mu,nu,intval);
+
                         if (b!=noOfAtoms-1 || j!=nbFunc-1) nu+=maxbrab;
                         else {mu+=maxbraa; nu=0;}
 
-                        //Console.OUT.printf("mu=%d nu=%d\n", mu,nu);
+                        Console.OUT.printf("mu=%d nu=%d\n", mu,nu);
 
                     }
                 }
@@ -183,7 +190,7 @@ public class GMatrixRO extends Matrix {
         Console.OUT.println(kMatrix);
 
         for (tmu in 0..(nBasis-1)) for (tnu in 0..(nBasis-1))
-           gMat(tmu,tnu) = jMat(tmu,tnu) - 0.5 * kMat(tmu,tnu); // eqn14
+           gMat(tmu,tnu) = 2.0*jMat(tmu,tnu) - kMat(tmu,tnu); // eqn14
 
         timer.stop(0);
         Console.OUT.printf("    Time to construct GMatrix: %.3g seconds\n", (timer.last(0) as Double) / 1e9);

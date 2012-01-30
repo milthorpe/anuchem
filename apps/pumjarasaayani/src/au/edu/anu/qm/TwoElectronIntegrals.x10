@@ -648,8 +648,8 @@ public class TwoElectronIntegrals {
                                 val normIntVal = intVal
                                     * normL * normK
                                     * normJ * normI;
-                                // printout twoeint
-                                Console.OUT.printf("2E %d %d %d %d = %e\n",ii,jj,kk,ll,normIntVal);
+                                // printout twoeint // this is uncontacted. you have to add them algether before compare it with other programs
+                                // Console.OUT.printf("2E %d %d %d %d = %e (norm = %e)\n",ii,jj,kk,ll,normIntVal,normL*normK*normJ*normI);
                                  fillJKMatrices(normIntVal, ii, jj, kk, ll, jMatrix, kMatrix, dMatrix);
                             } // end if
                         } // end if
