@@ -50,7 +50,7 @@ public struct ShellList {
 
         // init power list
         val maxam4 = (maxam*4)+2;
-        val powerList = new Rail[Rail[Power]](maxam4); 
+        val powerList = new Rail[Rail[Power]](maxam4+1); 
         val pList = PowerList.getInstance();
         for(i in 0..maxam4) powerList(i) = pList.generatePowerList(i); 
 
