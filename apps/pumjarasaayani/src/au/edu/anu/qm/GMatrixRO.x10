@@ -90,8 +90,12 @@ public class GMatrixRO extends Matrix {
                         //Console.OUT.printf("a=%d i=%d b=%d j=%d [naFunc=%d nbFunc=%d]\n", a,i,b,j,naFunc,nbFunc);
                         
                         var aaFunc:ContractedGaussian=iaFunc,bbFunc:ContractedGaussian=jbFunc;
+                        val aa=iaFunc.getTotalAngularMomentum();
+                        val bb=jbFunc.getTotalAngularMomentum();
+                        val maxbraa = (aa+1)*(aa+2)/2; 
+                        val maxbrab = (bb+1)*(bb+2)/2; 
                         // swap A and B if B has higher anglular momentum than A     
-                        if (iaFunc.getTotalAngularMomentum()<jbFunc.getTotalAngularMomentum()) {
+                        if (aa<bb) {
                             aaFunc=jbFunc; bbFunc=iaFunc;
                             Console.OUT.printf("SWAP ab!\n");
                         }                  
@@ -111,7 +115,7 @@ public class GMatrixRO extends Matrix {
                         for (ai in 0..(dConA-1)) {
                            conA(ai)=aprimitive(ai).coefficient;
                            zetaA(ai)=aprimitive(ai).exponent;
-                           Console.OUT.printf("a=%d i=%d ai=%d [conA(ai)=%e zetaA(ai)=%e]\n", a,i,ai,conA(ai),zetaA(ai));
+                           //Console.OUT.printf("a=%d i=%d ai=%d [conA(ai)=%e zetaA(ai)=%e]\n", a,i,ai,conA(ai),zetaA(ai));
                         }
                         // do the same for b
 
@@ -127,11 +131,10 @@ public class GMatrixRO extends Matrix {
                         for (bi in 0..(dConB-1)) {
                            conB(bi)=bprimitive(bi).coefficient;
                            zetaB(bi)=bprimitive(bi).exponent;
-                           Console.OUT.printf("b=%d j=%d bi=%d [conA(bi)=%e zetaB(bi)=%e]\n", b,j,bi,conB(bi),zetaB(bi));
+                           //Console.OUT.printf("b=%d j=%d bi=%d [conA(bi)=%e zetaB(bi)=%e]\n", b,j,bi,conB(bi),zetaB(bi));
                         }
 
-                        val maxbraa = (aang+1)*(aang+2)/2; 
-                        val maxbrab = (bang+1)*(bang+2)/2; 
+
                         val temp = new Array[Double](0..(maxbraa*maxbrab*roK-1)); // Result for one batch
 
                         Console.OUT.printf("aang=%d bang=%d\n", aang,bang);
@@ -144,27 +147,33 @@ public class GMatrixRO extends Matrix {
                                 //Console.OUT.printf("tmu=%d tnu=%d k=%d ind=%d val=%e\n",tmu,tnu,k,ind,temp(ind));
                                 munuk(tmu,tnu,k)=temp(ind++);
                             }                                
-                        else
+                        else // Becareful... this is tricky ... maxbra are not swap 
                             for (var tnu:Int=nu; tnu<nu+maxbrab; tnu++) for (var tmu:Int=mu; tmu<mu+maxbraa; tmu++) for (var k:Int=0; k<roK; k++) {
                                 //Console.OUT.printf("(Swap) tmu=%d tnu=%d k=%d ind=%d val=%e\n",tmu,tnu,k,ind,temp(ind));
-                                munuk(tnu,tmu,k)=temp(ind++);
+                                munuk(tmu,tnu,k)=temp(ind++);
                             }
+
 
                         for (tmu in mu..(mu+maxbraa-1)) for (tnu in nu..(nu+maxbrab-1)) for (k in 0..(roK-1)) 
                            dk(k) += denMat(tmu,tnu)*munuk(tmu,tnu,k); // eqn 15b
-                        for (tmu in mu..(mu+maxbraa-1)) for (tnu in nu..(nu+maxbrab-1)) for (aa in 0..(nOrbital-1)) for (k in 0..(roK-1)) 
-                           muak(tmu,aa,k) += mosMat(aa,tnu) * munuk(tmu,tnu,k); // eqn 16b the most expensive step!!!
+                        for (tmu in mu..(mu+maxbraa-1)) for (tnu in nu..(nu+maxbrab-1)) for (aorb in 0..(nOrbital-1)) for (k in 0..(roK-1)) 
+                           muak(tmu,aorb,k) += mosMat(aorb,tnu) * munuk(tmu,tnu,k); // eqn 16b the most expensive step!!!
 
                         // test
-                        var intval:Double=0.;
-                        for (k in 0..(roK-1))
-                            intval+= munuk(mu,nu,k)*munuk(mu,nu,k);
-                        Console.OUT.printf("mu=%d nu=%d intval=%e\n", mu,nu,intval);
-
+                        
+                       for (tmu in mu..(mu+maxbraa-1)) for (tnu in nu..(nu+maxbrab-1))  {
+                            var intval:Double=0.;
+                            for (k in 0..(roK-1)) intval+= munuk(tmu,tnu,k)*munuk(tmu,tnu,k);
+                            Console.OUT.printf("mu=%d nu=%d intval=%e\n", tmu,tnu,intval);
+                       }
+                        // S Only
+  //                      var intvale:Double-0.;
+  //                      for (ii in 0..dConA) for (jj in 0..dConB) for (kk in 0..dConA) for (ll in 0..dConB)
+  //                           intvale+=conA(ii)*conB(jj)*conA(kk)*conB(ll)*
                         if (b!=noOfAtoms-1 || j!=nbFunc-1) nu+=maxbrab;
                         else {mu+=maxbraa; nu=0;}
 
-                        Console.OUT.printf("mu=%d nu=%d\n", mu,nu);
+                        //Console.OUT.printf("mu=%d nu=%d\n", mu,nu);
 
                     }
                 }

@@ -8,7 +8,7 @@
     <property name="anuchem.lib" location="${anuchem}/lib/anu-chem.jar"/>
     <property name="bash.exe" value="bash"/>    
     <property name="optimize" value="true" />
-    <property name="nochecks" value="true" />
+    <property name="nochecks" value="false" />
     <property name="debug" value="true"/>
     <property name="profile"  value="false" />
     <property name="cpuprofile"  value="false"/>
