@@ -40,7 +40,11 @@ public class GMatrixRO extends Matrix {
     val roZ:Double;
     val nBasis:Int;
     
-    val Norm:Rail[Double];
+    val norm:Rail[Double];
+    val temp:Rail[Double];
+    transient val aux:Integral_Pack;
+    val jMatrix:Matrix;
+    val kMatrix:Matrix;
 
     public def this(N:Int, bfs:BasisFunctions, molecule:Molecule[QMAtom]) {
         super(N);
@@ -52,8 +56,14 @@ public class GMatrixRO extends Matrix {
         this.roL=jd.roL;
         this.roZ=jd.roZ;
   
-        this.Norm = bfs.getNormalizationFactors();
+        this.norm = bfs.getNormalizationFactors();
+        jMatrix = new Matrix(N);
+        kMatrix = new Matrix(N);
 
+        val roK = (roN+1)*(roL+1)*(roL+1);
+        val maxam4 = bfs.getShellList().getMaximumAngularMomentum()*4;
+        temp = new Rail[Double](maxam4*roK);
+        aux = new Integral_Pack(roN,roL);
     }
 
 
@@ -68,18 +78,17 @@ public class GMatrixRO extends Matrix {
         val noOfAtoms = mol.getNumberOfAtoms();
 
         val roK = (roN+1)*(roL+1)*(roL+1);
-        val dk = new Array[Double](0..(roK-1)); // eqn 15b in RO#7
+        val dk = new Rail[Double](roK); // eqn 15b in RO#7
  
         // Infinite memory code -- two 3D Arrays
         val munuk = new Array[Double](0..(nBasis-1)*0..(nBasis-1)*0..(roK-1)); // Auxiliary integrals
         val muak = new Array[Double](0..(nBasis-1)*0..(nOrbital-1)*0..(roK-1)); // half-transformed auxiliary integrals eqn 16b in RO#7
-        val aux = new Integral_Pack(roN,roL);
 
         var mu:Int = 0; 
         var nu:Int = 0; 
 
-        val diagtwoe = new Matrix(N);
-        val diagtwoemat = diagtwoe.getMatrix();
+        //val diagtwoe = new Matrix(N);
+        //val diagtwoemat = diagtwoe.getMatrix();
 
         // centre a
         for(var a:Int=0; a<noOfAtoms; a++) {
@@ -114,10 +123,7 @@ public class GMatrixRO extends Matrix {
                         val aang = aaFunc.getTotalAngularMomentum();
                         val aprimitive = aaFunc.getPrimitives();
                         val dConA = aprimitive.size;
-                        val apoint = new Rail[Double](3);
-                        apoint(0) = aprimitive(0).origin.i;
-                        apoint(1) = aprimitive(0).origin.j;
-                        apoint(2) = aprimitive(0).origin.k;
+                        val aPoint = aprimitive(0).origin;
                         val conA = new Rail[Double](dConA);
                         val zetaA = new Rail[Double](dConA);
                         for (ai in 0..(dConA-1)) {
@@ -130,10 +136,7 @@ public class GMatrixRO extends Matrix {
                         val bang = bbFunc.getTotalAngularMomentum();
                         val bprimitive = bbFunc.getPrimitives();
                         val dConB = bprimitive.size; 
-                        val bpoint = new Rail[Double](3); 
-                        bpoint(0) = bprimitive(0).origin.i;
-                        bpoint(1) = bprimitive(0).origin.j;
-                        bpoint(2) = bprimitive(0).origin.k;
+                        val bPoint = bprimitive(0).origin; 
                         val conB = new Rail[Double](dConB); 
                         val zetaB = new Rail[Double](dConB); 
                         for (bi in 0..(dConB-1)) {
@@ -142,22 +145,22 @@ public class GMatrixRO extends Matrix {
                            //Console.OUT.printf("b=%d j=%d bi=%d [conA(bi)=%e zetaB(bi)=%e]\n", b,j,bi,conB(bi),zetaB(bi));
                         }
 
-                        val temp = new Array[Double](0..(maxbraa*maxbrab*roK-1)); // Result for one batch
+                        val temp = new Rail[Double](maxbraa*maxbrab*roK); // Result for one batch
                         //Console.OUT.printf("temp size=%d ",maxbraa*maxbrab*roK);
                         //Console.OUT.printf("aang=%d bang=%d\n", aang,bang);
-                        aux.genClass(aang, bang, apoint, bpoint, zetaA, zetaB, conA, conB, dConA, dConB, temp);      
+                        aux.genClass(aang, bang, aPoint, bPoint, zetaA, zetaB, conA, conB, dConA, dConB, temp);      
 
                         // transfer infomation from temp to munuk (Swap A and B again if necessary)
                         var ind:Int=0;
                         if (iaFunc.getTotalAngularMomentum()>=jbFunc.getTotalAngularMomentum())
                             for (var tmu:Int=mu; tmu<mu+maxbraa; tmu++) for (var tnu:Int=nu; tnu<nu+maxbrab; tnu++) for (var k:Int=0; k<roK; k++) {
                                 //Console.OUT.printf("tmu=%d tnu=%d k=%d ind=%d val=%e\n",tmu,tnu,k,ind,temp(ind));
-                                munuk(tmu,tnu,k)=Norm(tmu)*Norm(tnu)*temp(ind++);
+                                munuk(tmu,tnu,k)=norm(tmu)*norm(tnu)*temp(ind++);
                             }                                
                         else // Becareful... this is tricky ... maxbra are not swap 
                             for (var tnu:Int=nu; tnu<nu+maxbrab; tnu++) for (var tmu:Int=mu; tmu<mu+maxbraa; tmu++) for (var k:Int=0; k<roK; k++) {
                                 //Console.OUT.printf("(Swap) tmu=%d tnu=%d k=%d ind=%d val=%e\n",tmu,tnu,k,ind,temp(ind));
-                                munuk(tmu,tnu,k)=Norm(tmu)*Norm(tnu)*temp(ind++);
+                                munuk(tmu,tnu,k)=norm(tmu)*norm(tnu)*temp(ind++);
                             }
 
                         for (tmu in mu..(mu+maxbraa-1)) for (tnu in nu..(nu+maxbrab-1)) for (k in 0..(roK-1)) 
@@ -184,8 +187,8 @@ public class GMatrixRO extends Matrix {
             }
         }     
 
-        val jMatrix = new Matrix(N);
-        val kMatrix = new Matrix(N);
+        jMatrix.makeZero();
+        kMatrix.makeZero();
         val jMat = jMatrix.getMatrix();
         val kMat = kMatrix.getMatrix();
         val gMat = getMatrix();
