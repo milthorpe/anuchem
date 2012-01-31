@@ -61,8 +61,9 @@ public class GMatrixRO extends Matrix {
         kMatrix = new Matrix(N);
 
         val roK = (roN+1)*(roL+1)*(roL+1);
-        val maxam4 = bfs.getShellList().getMaximumAngularMomentum()*4;
-        temp = new Rail[Double](maxam4*roK);
+        val maxam = bfs.getShellList().getMaximumAngularMomentum();
+        val maxam1 = (maxam+1)*(maxam+2)/2;
+        temp = new Rail[Double](maxam1*maxam1*roK);
         aux = new Integral_Pack(roN,roL);
     }
 
@@ -145,7 +146,7 @@ public class GMatrixRO extends Matrix {
                            //Console.OUT.printf("b=%d j=%d bi=%d [conA(bi)=%e zetaB(bi)=%e]\n", b,j,bi,conB(bi),zetaB(bi));
                         }
 
-                        val temp = new Rail[Double](maxbraa*maxbrab*roK); // Result for one batch
+                        //val temp = new Rail[Double](maxbraa*maxbrab*roK); // Result for one batch
                         //Console.OUT.printf("temp size=%d ",maxbraa*maxbrab*roK);
                         //Console.OUT.printf("aang=%d bang=%d\n", aang,bang);
                         aux.genClass(aang, bang, aPoint, bPoint, zetaA, zetaB, conA, conB, dConA, dConB, temp);      
