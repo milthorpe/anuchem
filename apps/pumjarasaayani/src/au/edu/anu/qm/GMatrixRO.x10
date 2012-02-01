@@ -170,10 +170,13 @@ public class GMatrixRO extends Matrix {
                                 munuk(tmu,tnu,k)=norm(tmu)*norm(tnu)*temp(ind++);
                             }
 
-                        for (tmu in mu..(mu+maxbraa-1)) for (tnu in nu..(nu+maxbrab-1)) for (k in 0..(roK-1)) 
+                        for (tmu in mu..(mu+maxbraa-1)) for (tnu in nu..(nu+maxbrab-1)) for (k in 0..(roK-1)) {
                            dk(k) += denMat(tmu,tnu)*munuk(tmu,tnu,k); // eqn 15b
-                        for (tmu in mu..(mu+maxbraa-1)) for (tnu in nu..(nu+maxbrab-1)) for (aorb in 0..(nOrbital-1)) for (k in 0..(roK-1)) 
-                           muak(tmu,aorb,k) += mosMat(aorb,tnu) * munuk(tmu,tnu,k); // eqn 16b the most expensive step!!!
+                        }
+ 
+                        for (tmu in mu..(mu+maxbraa-1)) for (tnu in nu..(nu+maxbrab-1)) for (aorb in 0..(nOrbital-1)) for (k in 0..(roK-1)) {
+                            muak(tmu,aorb,k) += mosMat(aorb,tnu) * munuk(tmu,tnu,k); // eqn 16b the most expensive step!!!
+                        }
 
                        // test
                        /* 
@@ -194,16 +197,21 @@ public class GMatrixRO extends Matrix {
             }
         }     
 
-        jMatrix.makeZero();
-        kMatrix.makeZero();
         val jMat = jMatrix.getMatrix();
         val kMat = kMatrix.getMatrix();
         val gMat = getMatrix();
         
-        for (tmu in 0..(nBasis-1)) for (tnu in 0..(nBasis-1)) for (k in 0..(roK-1))  {
-            jMat(tmu,tnu) += munuk(tmu,tnu,k)*dk(k); // eqn 15a
-            for (a in 0..(nOrbital-1))
-                kMat(tmu,tnu) += muak(tmu,a,k)*muak(tnu,a,k); // eqn16a 
+        for (tmu in 0..(nBasis-1)) for (tnu in 0..(nBasis-1)) {
+            var jContrib:Double = 0.0;
+            var kContrib:Double = 0.0;
+            for (k in 0..(roK-1))  {
+                jContrib += munuk(tmu,tnu,k)*dk(k); // eqn 15a
+                for (a in 0..(nOrbital-1)) {
+                    kContrib += muak(tmu,a,k)*muak(tnu,a,k); // eqn16a 
+                }
+            }
+            jMat(tmu,tnu) = jContrib;
+            kMat(tmu,tnu) = kContrib;
         }
 /*
         Console.OUT.println("diag2E RO");
