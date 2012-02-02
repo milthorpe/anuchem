@@ -30,7 +30,8 @@ public struct Orbital {
        else if (shape.equals("P")) angularMomentum = 1;
        else if (shape.equals("D")) angularMomentum = 2;
        else if (shape.equals("F")) angularMomentum = 3;
-       else angularMomentum = 0;
+       else if (shape.equals("G")) angularMomentum = 4;
+       else {Console.OUT.printf("unknown orbital '%s'.\n",shape); angularMomentum = 0;}
     }
 }
 

@@ -67,13 +67,12 @@ public class HartreeFockSCFMethod extends SCFMethod {
         var fock:Fock  = new Fock(N);
 
         //Console.OUT.println("    Forming initial guess ...");
-
-        // GUESS = CORE 
-        // mos.compute(hCore, overlap);
-	    // density.compute(mos);
-	
-        // GUESS = SAD
-	    density.applyGuess(bfs.getSAD());
+   
+	if (jd.guess==1) density.applyGuess(bfs.getSAD()); // GUESS = SAD
+        else if (jd.guess==0) {         // GUESS = CORE 
+            mos.compute(hCore, overlap);
+	    density.compute(mos);
+        }
 
         Console.OUT.printf("----------------------------------------------------------\n");      
 

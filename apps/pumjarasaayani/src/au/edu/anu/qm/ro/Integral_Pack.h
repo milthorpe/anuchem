@@ -26,7 +26,7 @@ namespace au {
                         private:
                             int N,L;
                             // BRA
-                            #define MAX_BRA_L 4
+                            #define MAX_BRA_L 8 //for gg
                             #define MAX_TOTAL_BRA_L (MAX_BRA_L+1)*(MAX_BRA_L+2)*(MAX_BRA_L+3)/6
                             int map3[MAX_BRA_L+1][MAX_BRA_L+1][MAX_BRA_L+1];
                             Point inverseMap3[MAX_TOTAL_BRA_L];

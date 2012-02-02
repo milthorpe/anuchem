@@ -36,8 +36,11 @@ public struct BasisFunctions {
 
         val size = initBasisFunctions(basisSet);
         shellList = new ShellList(mol);
+
+        val jd = JobDefaults.getInstance();
         SADMatrix = new Matrix(size,size);
-        initDensity(basisSet);
+        if (jd.guess==1)     
+            initDensity(basisSet);
     }
 
     private def initDensity(basisSet:BasisSet) {

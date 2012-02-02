@@ -9,3 +9,4 @@ end
 USE_RO 1
 RO_N 100
 RO_L 17
+gmat_parallel_scheme 0

@@ -74,6 +74,7 @@ public class JobInput {
         jd.roN=10;
         jd.roL=10;
         jd.roZ=1.0;
+        jd.guess=0;
 
         if (line.startsWith("charge")) {
             charge = getIntParam(line);
@@ -141,6 +142,8 @@ public class JobInput {
                     jd.centering = getIntParam(line);
                 } else if (line.startsWith("USE_RO")) {
                     jd.roOn = getIntParam(line);
+                } else if (line.startsWith("GUESS")) {
+                    jd.guess = getIntParam(line);
                 }
 
                 line = fil.readLine();
