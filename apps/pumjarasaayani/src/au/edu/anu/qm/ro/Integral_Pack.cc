@@ -26,6 +26,14 @@ namespace au {
         initializeCoulomb(N);
     }
 
+    Integral_Pack::~Integral_Pack() {
+        free(lambda);
+        free(q);
+        for (int i=1; i<=MAX_BRA_L; i++) for (int j=1; j<=i; j++) {
+            free(HRRMAP[i][j]);
+        }
+    }
+
     void Integral_Pack::initialize() {
         int x,y,z,l,m=0;
         totalBraL[0]=1;
@@ -348,7 +356,6 @@ namespace au {
         }
     }
 }
-
 /*
 int main() {
 
@@ -368,31 +375,32 @@ int main() {
     //printf("\n");
 
     // Test Genclass
-    int N=10,L=10,dconA=6,dconB=3;
+    int N=400;
+    int L=20;
+    int dconA=2;
+    int dconB=3;
     double A[3],B[3];
     double conA[dconA],conB[dconB],zetaA[dconA],zetaB[dconB];
+    double temp[1000000];
 
-    au::edu::anu::qm::ro::Integral_Pack* ip = new au::edu::anu::qm::ro::Integral_Pack(N);
+    au::edu::anu::qm::ro::Integral_Pack* ip = new au::edu::anu::qm::ro::Integral_Pack(N,L);
 
-    A[0]=.1; B[0]=.4;
-    A[1]=.2; B[1]=.3;
-    A[2]=.3; B[2]=.2;
+    A[0]=-0.03015; B[0]=-0.03015;
+    A[1]=-0.00255; B[1]=-0.00255;
+    A[2]=-0.03496; B[2]=-0.03496;
 
-    zetaA[0]=1.;  conA[0]=6.;
-    zetaA[1]=2.;  conA[1]=5.;
-    zetaA[2]=3.;  conA[2]=4.;
-    zetaA[3]=4.;  conA[3]=3.;
-    zetaA[4]=5.;  conA[4]=2.;
-    zetaA[5]=6.;  conA[5]=1.;
+    zetaA[0]=1.850735e+02;  conA[0]=2.379864e+02;
+    zetaA[1]=3.940500e+01;  conA[1]=1.201751e+02;
 
-    zetaB[0]=1.;  conB[0]=1.5;
-    zetaB[1]=2.;  conB[1]=2.5;
-    zetaB[2]=4.5; conB[2]=3.5;
+    zetaB[0]=8050.92;  conB[0]=35.8843;
+    zetaB[1]=1210.77;  conB[1]=51.42;
+    zetaB[2]=260.515;  conB[2]=32.7045;
 
     // int Genclass(int a, int b, double *A, double *B, double *zetaA, double *zetaB,
     // double *conA, double *conB, int dconA, int dconB,
     // double *lambda, double *q, int N, int L)
-    ip->Genclass(2,0,A,B,zetaA,zetaB,conA,conB,dconA,dconB);
+    ip->Genclass(1,0,A,B,zetaA,zetaB,conA,conB,dconA,dconB,temp);
 
+    delete ip;
 }
 */
