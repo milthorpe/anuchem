@@ -22,11 +22,11 @@ int imin2(int x, int y)
 
 void J_bessel_HalfInt(double x, int nb, double *b, int *ncalc) {
 
-    int nend, intx, nbmx, i, j, k, l, m, n, nstart;
+    int nend, intx, nbmx, i, k, l, m, n, nstart;
 
-    double capp, capq, pold, test;
-    double p, s, t, z, alpem, halfx, aa, bb, cc, psave, plast;
-    double tover, t1, alp2em, em, en, psavel, sum;
+    double pold, test;
+    double p, alpem, halfx, aa, bb, cc, psave, plast;
+    double tover, alp2em, em, en, psavel, sum;
 
     double sqrtpi = 1.7724538509055159; // sqrt pi
 
