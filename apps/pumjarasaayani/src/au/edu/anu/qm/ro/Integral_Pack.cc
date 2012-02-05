@@ -225,17 +225,18 @@ namespace au {
                 }
 
                 // Fill e=0
-                for (n=initialn; n<=N; n++) {
-                    if (r!=0.0) {
+                if (r!=0.0) {
+                    for (n=initialn; n<=N; n++) {
                         double nfactor=q[n]*gAB*exp(-.25*sqr(lambda[n])/zeta)*pow(-.5*lambda[n]/zeta/r,p);
                         for (l=0; l<=L; l++) for (m=-l; m<=l; m++) {
                             Va[0][n*(L+1)*(L+1)+lm2k(l,m)] = nfactor*J[(L+a+b+1)*n+l+p]*Y[lm2k(l,m)]; // eqn (23)
                             //printf("[0 0 0 | %2d %2d %2d] ^%d = %15.8e J= %15.8e Y=%15.8e\n",n,l,m,p, Va[0][n*(L+1)*(L+1)+lm2k(l,m)],J[(L+a+b+1)*n+l+p],Y[lm2k(l,m)]);
                         }
                     }
-                    else {
+                } else {
+                    memset(Va,0,sizeof(double)*K*totalBraL[a+b]);
+                    for (n=initialn; n<=N; n++) {
                         double nfactor=q[n]*gAB*exp(-.25*sqr(lambda[n])/zeta)*pow(-.5*sqr(lambda[n])/zeta,p);
-                        memset(Va,0,sizeof(double)*K*totalBraL[a+b]);
                         Va[0][n*(L+1)*(L+1)] = nfactor*JpY00[p]; // l=m=0 only
                     }
                 }
