@@ -18,6 +18,7 @@
 	<property name="target-test" location="${target}/test-classes" />
 	<property name="lib" location="${basedir}/lib" />
 	<property name="jar" value="anu-chem.jar"/>
+    <property name="x10lib-cpp" value="anuchem_${x10rt}" />
     <property name="bin" location="${basedir}/bin"/>
 	<property name="exe" value="direct"/>
     <property name="testclass" value="test/au/edu/anu/chem/mm/TestDirectElectrostatic.x10"/>
@@ -50,7 +51,7 @@
         </exec>
     </target>
 
-	<target name="dist" depends="jar">
+	<target name="dist" depends="buildx10lib-cpp">
         <mkdir dir="${lib}"/>
         <copy todir="${lib}">
             <fileset dir="${target}" includes="${jar}"/>
@@ -119,10 +120,26 @@
         </exec>
     </target>
 
+    <target name="buildx10lib-cpp" depends="check-src-cpp" unless="src.uptodate.cpp">
+        <echo message="Building source tree"/>
+
+        <fileset id="src.files" dir="${basedir}/src" includes="**/*.x10" />
+
+        <pathconvert property="src.list" refid="src.files" dirsep="/" pathsep=" ">
+            <map from="${basedir}${file.separator}src${file.separator}" to=""/>
+        </pathconvert>
+        <echo message="x10c++ -buildx10lib -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} -sourcepath '.${path.separator}${xla.src}' -o '${x10lib-cpp}' ${src.list}"/>
+
+        <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/src">
+            <arg value="-c"/>
+            <arg value="'x10c++' -buildx10lib -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} -report postcompile=1 -post '# -g ${x10c.optimize} # ${post.cpuprofile} #' -sourcepath '.${path.separator}${xla.src}' -d '${target-src}' -o '${x10lib-cpp}' ${src.list}"/>
+        </exec>
+    </target>
+
     <target name="check-src-cpp" depends="init-src">
-        <fileset id="src.files" dir="${basedir}/src" includes="**/*.x10"/>
+        <fileset id="changed.src.files" dir="${basedir}/src" includes="**/*.x10"/>
         <uptodate property="src.uptodate.cpp">
-            <srcfiles refid="src.files"/>
+            <srcfiles refid="changed.src.files"/>
             <globmapper from="*.x10" to="${target-src}/*.cc" handledirsep="true"/>
         </uptodate>
     </target>

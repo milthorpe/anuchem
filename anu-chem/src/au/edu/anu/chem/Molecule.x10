@@ -42,6 +42,10 @@ public class Molecule[T]{T <: Atom} {
         this.multiplicity = 1;
     }
 
+    public def this(name:String) {
+        this(name, 0, 1);
+    }
+
     public def this(name:String, c:Int, m:Int) {
         this.name = name;
         this.charge = c;
