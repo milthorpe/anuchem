@@ -157,14 +157,22 @@ public class GMatrixRO extends Matrix {
                         //Console.OUT.printf("aang=%d bang=%d\n", aang,bang);
                         aux.genClass(aang, bang, aPoint, bPoint, zetaA, zetaB, conA, conB, dConA, dConB, temp);      
 
-                        // transfer infomation from temp to munuk
+                        // transfer infomation from temp to munuk (Swap A and B again if necessary)
                         var ind:Int=0;
+                        if (iaFunc.getTotalAngularMomentum()>=jbFunc.getTotalAngularMomentum())
+                            for (var tmu:Int=mu; tmu<mu+maxbraa; tmu++) for (var tnu:Int=nu; tnu<nu+maxbrab; tnu++) for (var k:Int=0; k<roK; k++) {
+                                //Console.OUT.printf("tmu=%d tnu=%d k=%d ind=%d val=%e\n",tmu,tnu,k,ind,temp(ind));
+                                munuk(tmu,tnu,k)=norm(tmu)*norm(tnu)*temp(ind++);
+                            }                                
+                        else // Becareful... this is tricky ... maxbra are not swap 
+                            for (var tnu:Int=nu; tnu<nu+maxbrab; tnu++) for (var tmu:Int=mu; tmu<mu+maxbraa; tmu++) for (var k:Int=0; k<roK; k++) {
+                                //Console.OUT.printf("(Swap) tmu=%d tnu=%d k=%d ind=%d val=%e\n",tmu,tnu,k,ind,temp(ind));
+                                munuk(tmu,tnu,k)=norm(tmu)*norm(tnu)*temp(ind++);
+                            }
+
                         for (tmu in mu..(mu+maxbraa-1)) for (tnu in nu..(nu+maxbrab-1)) for (k in 0..(roK-1)) {
-                            //Console.OUT.printf("tmu=%d tnu=%d k=%d ind=%d val=%e\n",tmu,tnu,k,ind,temp(ind));
-                            val m = norm(tmu)*norm(tnu)*temp(ind++);
-                            munuk(tmu,tnu,k) = m;
-                            dk(k) += denMat(tmu,tnu)*m; // eqn 15b
-                        }                                
+                           dk(k) += denMat(tmu,tnu)*munuk(tmu,tnu,k); // eqn 15b
+                        }
  
                         for (tmu in mu..(mu+maxbraa-1)) for (tnu in nu..(nu+maxbrab-1)) for (aorb in 0..(nOrbital-1)) for (k in 0..(roK-1)) {
                             muak(tmu,aorb,k) += mosMat(aorb,tnu) * munuk(tmu,tnu,k); // eqn 16b the most expensive step!!!
