@@ -89,11 +89,11 @@ public class HartreeFockSCFMethod extends SCFMethod {
             gMatrixRO.compute(density, mos);
             gMatrix.compute(density);
 
-            Console.OUT.println("G Mat");
-            Console.OUT.println(gMatrix);
+            //Console.OUT.println("G Mat");
+            //Console.OUT.println(gMatrix);
 
-            Console.OUT.println("G Mat RO");
-            Console.OUT.println(gMatrixRO);
+            //Console.OUT.println("G Mat RO");
+            //Console.OUT.println(gMatrixRO);
 
             //val timer = new Timer(2);
 

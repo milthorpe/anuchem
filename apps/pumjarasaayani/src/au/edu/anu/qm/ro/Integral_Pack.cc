@@ -162,6 +162,13 @@ namespace au {
     }
 
     int Integral_Pack::Genclass(int a, int b, double *A, double *B, double *zetaA, double *zetaB, double *conA, double *conB, int dconA, int dconB, double* temp){
+        bool swapAB = false;
+        if (a<b) {
+            swapAB = true;
+            int t = a; double *T = A; double *zetaT = zetaA; double* conT = conA; int dconT = dconA;
+            a = b; A = B; zetaA = zetaB; conA = conB; dconA = dconB;
+            b = t; B = T; zetaB = zetaT; conB = conT; dconB = dconT;
+        }
         int bra,K = (N+1)*(L+1)*(L+1),p,e,i,ii,j,jj,k,n,l,m,initialn=lambda[0]==0.?1:0; // more regorious check / cut-off required
 //        double V1[totalBraL[a+b]][K];
 //        double V2[totalBraL[a+b]][K];
@@ -322,14 +329,33 @@ namespace au {
         	}
         }
         int ind=0;
-        for (ii=0; ii<noOfBra[a]; ii++) for (jj=0; jj<noOfBra[b]; jj++){
-        	int lindex = ii*noOfBra[b] + jj;
-        	//int indexa = ii + (a>0? totalBraL[a-1]:0);
-        	//int indexb = jj + (b>0? totalBraL[b-1]:0);
-            for (n=0; n<=N; n++) for (l=0; l<=L; l++) for (m=-l; m<=l; m++) {
-                //printf("[%d,%d,%d %d,%d,%d | %2d %2d %2d] = %25.15e\n",inverseMap3[indexa].x,inverseMap3[indexa].y,inverseMap3[indexa].z,
-                //		inverseMap3[indexb].x,inverseMap3[indexb].y,inverseMap3[indexb].z,n,l,m,HRR[a][b][lindex][n*(L+1)*(L+1)+lm2k(l,m)]);
-                temp[ind++]=HRR[a][b][lindex][n*(L+1)*(L+1)+lm2k(l,m)];
+        // munuk is sized [nBasis][nBasis][K];
+        // need to leave empty elements where noOfBra[a|b] < nBasis
+        if (swapAB) {
+            for (jj=0; jj<noOfBra[b]; jj++) {
+                for (ii=0; ii<noOfBra[a]; ii++) {
+                	int lindex = ii*noOfBra[b] + jj;
+                	//int indexa = ii + (a>0? totalBraL[a-1]:0);
+                	//int indexb = jj + (b>0? totalBraL[b-1]:0);
+                    for (n=0; n<=N; n++) for (l=0; l<=L; l++) for (m=-l; m<=l; m++) {
+                        //printf("[%d,%d,%d %d,%d,%d | %2d %2d %2d] = %25.15e\n",inverseMap3[indexa].x,inverseMap3[indexa].y,inverseMap3[indexa].z,
+                        //		inverseMap3[indexb].x,inverseMap3[indexb].y,inverseMap3[indexb].z,n,l,m,HRR[a][b][lindex][n*(L+1)*(L+1)+lm2k(l,m)]);
+                        temp[ind++]=HRR[a][b][lindex][n*(L+1)*(L+1)+lm2k(l,m)];
+                    }
+                }
+            }
+        } else {
+            for (ii=0; ii<noOfBra[a]; ii++) {
+                for (jj=0; jj<noOfBra[b]; jj++){
+                	int lindex = ii*noOfBra[b] + jj;
+                	//int indexa = ii + (a>0? totalBraL[a-1]:0);
+                	//int indexb = jj + (b>0? totalBraL[b-1]:0);
+                    for (n=0; n<=N; n++) for (l=0; l<=L; l++) for (m=-l; m<=l; m++) {
+                        //printf("[%d,%d,%d %d,%d,%d | %2d %2d %2d] = %25.15e\n",inverseMap3[indexa].x,inverseMap3[indexa].y,inverseMap3[indexa].z,
+                        //		inverseMap3[indexb].x,inverseMap3[indexb].y,inverseMap3[indexb].z,n,l,m,HRR[a][b][lindex][n*(L+1)*(L+1)+lm2k(l,m)]);
+                        temp[ind++]=HRR[a][b][lindex][n*(L+1)*(L+1)+lm2k(l,m)];
+                    }
+                }
             }
         }
 
