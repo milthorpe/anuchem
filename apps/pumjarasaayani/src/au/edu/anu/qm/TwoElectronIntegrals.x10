@@ -34,7 +34,7 @@ import au.edu.anu.chem.Molecule;
  *   J. Comp. Phys, 26 (2) pp. 218-231.
  */
 public class TwoElectronIntegrals {
-    private static val SQ2PI = Math.pow((2.0/Math.PI), 0.5);
+    private static SQ2PI = 0.797884560802865; //Math.pow((2.0/Math.PI), 0.5);
 
     private val gmt:Rail[Double], zeroM:Rail[Double];
 
