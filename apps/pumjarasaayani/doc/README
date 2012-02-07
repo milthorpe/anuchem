@@ -42,13 +42,13 @@ For other implementations see
 
 Dependency for compiling:
 ------------------------
-* X10 version 2.2.1 (optionally with x10rt=mpi)
+* X10 version 2.2.2 (optionally with x10rt=mpi)
 * GSL or equivalent BLAS library, will require rewrite of native wrappers for 
   any library other than GSL. However, the code can be compiled without any
   native wrappers. GSL is required for diagonalization and DIIS.
   http://www.gnu.org/software/gsl/
-* anu-chem library
-* x10x.lib library
+* anu-chem library (cd ~/x10-apps/anuchem && ant)
+* XLA library (cd ~/x10-apps/x10x.lib/xla && ant)
 
 Code organization:
 -----------------
@@ -239,4 +239,9 @@ Benchmark results
 See doc/pr-perform-bgp.ods
 
 
+Referencing Pumja Rasaayani:
+-----------------------------
 
+Please cite the following paper when referencing Pumja Rasaayani in a publication.
+
+J. Milthorpe, V. Ganesh, A.P. Rendell, and D. Grove (2011). X10 as a parallel language for scientific computation: practice and experience, in proceedings of the 25th IEEE International Parallel & Distributed Processing Symposium (ISBN 978-0-7695-4385-7), 1067-1075
