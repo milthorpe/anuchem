@@ -7,7 +7,7 @@ Introduction:
 
 This code performs an electrostatic potential calculation using the Smooth Particle Mesh Ewald method.
 
-The implementation follows Essmann et al. (1994), with some insights regarding the 3D FFT from Oh & Deng (2007).
+The implementation follows Essmann et al. (1995), with some insights regarding the 3D FFT from Oh & Deng (2007).
 
 The potential calculation by itself is not very useful; in the future we hope to incorporate it into a dynamics code.  For now, it provides an illustration of the possible use of X10 language constructs in structured grid codes and spectral methods.
 
@@ -18,22 +18,29 @@ The potential calculation by itself is not very useful; in the future we hope to
 Compiling:
 ----------
 
-$ ant clean && ant
+$ ant
 
-will build the executable bin/pme
+will build the required executable and put it in bin/pme
 
-The default build script builds agaist mpi.
-To build for Blue Gene change ${x10rt} to "pgas_bgp"
+$ ant clean
+
+will remove the executable and all intermediate C++ files.
+
+The default build script builds against the "sockets" implementation of X10RT.
+To build against the MPI implementation set property ${x10rt} to "mpi".
+To build for Blue Gene set ${x10rt} to "pgas_bgp".
+
+For other implementations see 
+  http://x10-lang.org/documentation/getting-started/x10rt-implementations.html
 
 
 Compile dependencies:
 ------------------------
-* X10 version 2.1.2 including x10rt=mpi (patched - see below)
+* X10 version 2.2.2 (optionally with x10rt=mpi)
 * FFTW http://www.fftw.org/ 
   (linked to at the locations ${fftw3.include} and ${fftw3.lib} in the ant build script)
-* anu-chem library
-* x10x.lib library
-* BlockDistWithoutProduct.patch - patch to X10 array library - see http://jira.codehaus.org/browse/XTENLANG-1365
+* anu-chem library (cd ~/x10-apps/anuchem && ant)
+* XLA library (cd ~/x10-apps/x10x.lib/xla && ant)
 
 
 To run:

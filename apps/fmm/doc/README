@@ -5,33 +5,41 @@ This program is controlled by the Eclipse Public Licence v1.0 http://www.eclipse
 Introduction:
 ------------
 
-This code performs an electrostatic potential calculation using the Fast Multipole
-Method with analytic expansions.
+This code performs an electrostatic potential calculation using the Fast Multipole Method with analytic expansions.
 
-The implementation basically follows White & Head-Gordon (1994), with some enhancements taken from Lashuk et al. (2009) such as the use of Locally Essential Trees.
+The implementation basically follows White & Head-Gordon (1994), with periodic boundary conditions as per Kudin & Scuseria (1998).  Some aspects of the distributed algorithm are taken from Lashuk et al. (2009) such as the use of Locally Essential Trees.
 
 The potential calculation by itself is not very useful; in the future we hope to incorporate it into a dynamics code.  For now, it provides an illustration of the possible use of X10 language constructs to construct a distributed tree code.
 
 1. White & Head-Gordon (1994). "Derivation and efficient implementation of the fast multipole method". J Chem Phys 101 (8)
-2. Lashuk et al. (2009). "A massively parallel adaptive fast-multipole method on heterogeneous architectures". Proceedings of SC 2009
+2. Kudin & Scuseria (1998). "A fast multipole method for periodic systems with arbitrary unit cell geometries". Chem Phys Lett 283 (1-2), 61
+3. Lashuk et al. (2009). "A massively parallel adaptive fast-multipole method on heterogeneous architectures". Proceedings of SC 2009
 
 
 Compiling:
 ----------
 
-$ ant clean && ant
+$ ant
 
-will build the executable bin/fmm3d
+will build the required executable and put it in bin/periodicFmm3d
 
-The default build script builds against MPI and therefore requires an X10 runtime built with X10RT_MPI=true.
-To build for Blue Gene change ${x10rt} to "pgas_bgp"
+$ ant clean
+
+will remove the executable and all intermediate C++ files.
+
+The default build script builds against the "sockets" implementation of X10RT.
+To build against the MPI implementation set property ${x10rt} to "mpi".
+To build for Blue Gene set ${x10rt} to "pgas_bgp".
+
+For other implementations see 
+  http://x10-lang.org/documentation/getting-started/x10rt-implementations.html
 
 
 Compile dependencies:
 ------------------------
-* X10 version 2.1.2 including x10rt=mpi
-* anu-chem library
-* x10x.lib library
+* X10 version 2.2.2 (optionally with x10rt=mpi)
+* anu-chem library (cd ~/x10-apps/anuchem && ant)
+* XLA library (cd ~/x10-apps/x10x.lib/xla && ant)
 
 
 To run:
@@ -39,11 +47,12 @@ To run:
 
 Single place:
 
-runx10 bin/fmm3d numAtoms [density] [numTerms] [wellSpaced]
+runx10 bin/fmm3d numAtoms [density] [numTerms] [wellSpaced] [-verbose] [-compare]
+runx10 bin/periodicFmm3d numAtoms [density] [numTerms] [numShells] [-verbose]
 
 Multiple place:
 
-mpiexec -n <n> bin/fmm3d numAtoms [density] [numTerms] [wellSpaced]
+mpiexec -n <n> bin/fmm3d numAtoms [density] [numTerms] [wellSpaced] [-verbose] [-compare]
 
 where <n> is number of places
 
@@ -51,4 +60,6 @@ where <n> is number of places
 - density is a "target density" for the mean number of particles per lowest-level box.  The default value is 3.0; a larger value means less levels in the tree, which gives less accurate results and shorter run time.
 - numTerms is the number of terms "p" at which to truncate multipole and local expansions.  The default is 10; the larger the value, the more accurate the result and the longer the run time.
 - wellSpaced is the number of intervening boxes by which a pair of boxes must be separated to be considered "well spaced".  The default is 2; the larger the value, the accurate the result and the longer the run time. 
+- -verbose provides more verbose logging, including statistics of the time spent in each phase of the code
+- -compare performs an additional N^2 (direct) electrostatics calculation, for the purpose of comparing performance and accuracy of the result
 
