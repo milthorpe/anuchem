@@ -37,7 +37,7 @@
 
     <target name="build" depends="dist"/>
 
-	<target name="dist" depends="buildx10lib-cpp">
+	<target name="dist" depends="init,buildx10lib-cpp">
         <mkdir dir="${lib}"/>
         <copy todir="${lib}">
             <fileset dir="${target}" includes="${jar}"/>
