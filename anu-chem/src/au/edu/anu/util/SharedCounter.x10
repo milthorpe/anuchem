@@ -6,7 +6,7 @@
  *  You may obtain a copy of the License at
  *      http://www.opensource.org/licenses/eclipse-1.0.php
  *
- * (C) Copyright Australian National University 2010.
+ * (C) Copyright Australian National University 2010-2012.
  */
 package au.edu.anu.util;
 
@@ -18,7 +18,7 @@ import x10.util.concurrent.AtomicInteger;
  * Usage: 
  *      val sc = new SharedCounter();
  *      finish for(place in Place.places) {
- *          async at(place) {
+ *          at(place) async {
  *              val current = sc.increment();
  *          }
  *      }

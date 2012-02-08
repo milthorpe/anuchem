@@ -27,6 +27,7 @@ public class PowerList {
        powerList.put("P", generatePowerList(1));
        powerList.put("D", generatePowerList(2));
        powerList.put("F", generatePowerList(3)); 
+       powerList.put("G", generatePowerList(4)); 
     }
 
     @NonEscaping 

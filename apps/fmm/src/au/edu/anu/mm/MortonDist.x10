@@ -48,7 +48,7 @@ public final class MortonDist extends Dist(3) {
         public def isConvex() = true;
         public def isEmpty() = (end < start);
         public def indexOf(pt:Point):Int {
-	        if (pt.rank != 3) return -1;
+            if (pt.rank != 3) return -1;
             return MortonDist.this.getMortonIndex(pt) - start;
         }
         public def indexOf(i0:Int, i1:Int, i2:Int):Int {
@@ -141,33 +141,37 @@ public final class MortonDist extends Dist(3) {
             if (regionForHere == null) {
                 regionForHere = mortonRegionForPlace(here);
             }
-	    return regionForHere;
+            return regionForHere;
         } else {
             return mortonRegionForPlace(p);
         }
     }
 
     private def mortonRegionForPlace(p : Place):Region{self.rank==this.rank} {
-        return new MortonSubregion(getPlaceStart(p.id), 
-                                   getPlaceEnd(p.id));
+        if (p.id >= region.size()) {
+            return Region.makeEmpty(3);
+        } else {
+            return new MortonSubregion(getPlaceStart(p.id), 
+                                       getPlaceEnd(p.id));
+        }
     }
 
     public def regions():Sequence[Region(rank)] {
-	    return new Array[Region(rank)](pg.numPlaces(), (i:Int)=>mortonRegionForPlace(pg(i))).sequence();
+        return new Array[Region(rank)](pg.numPlaces(), (i:Int)=>mortonRegionForPlace(pg(i))).sequence();
     }
 
     public def restriction(r:Region(rank)):Dist(rank) {
-	    throw new UnsupportedOperationException("restriction(r:Region(rank))");
+        throw new UnsupportedOperationException("restriction(r:Region(rank))");
     }
 
     public def restriction(p:Place):Dist(rank) {
-	    return Dist.makeConstant(this.get(p));
+        return Dist.makeConstant(this.get(p));
     }
 
     public def equals(thatObj:Any):boolean {
-	    if (!(thatObj instanceof MortonDist)) return false;
+        if (!(thatObj instanceof MortonDist)) return false;
         val that = thatObj as MortonDist;
-	    return this.region.size() == that.region.size();
+        return this.region.size() == that.region.size();
     }
 
     /**
@@ -267,7 +271,7 @@ public final class MortonDist extends Dist(3) {
     } 
 
     public operator this(pt:Point(rank)):Place {
-	    if (CompilerFlags.checkBounds() && !region.contains(pt)) raiseBoundsError(pt);
+        if (CompilerFlags.checkBounds() && !region.contains(pt)) raiseBoundsError(pt);
         val index = getMortonIndex(pt);
         return getPlaceForIndex(index);
     }
@@ -301,9 +305,12 @@ public final class MortonDist extends Dist(3) {
         var s: String = "MortonDist(";
         var first: boolean = true;
         for (p:Place in places()) {
-            if (!first) s += ",";
-            s += "" + get(p) + "->" + p.id;
-            first = false;
+            val r = get(p);
+            if (!r.isEmpty()) {
+                if (!first) s += ",";
+                s += "" + r + "->" + p.id;
+                first = false;
+            }
         }
         s += ")";
         return s;

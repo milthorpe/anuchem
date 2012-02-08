@@ -199,6 +199,13 @@ public class GMatrix extends Matrix {
         for([x,y] in gMatrix) {
            gMatrix(x,y) = jMatrix(x,y) - (0.25*kMatrix(x,y));
         }
+
+        Console.OUT.println("J Mat");
+        Console.OUT.println(computeThread.getJMat());
+
+        Console.OUT.println("K Mat");
+        Console.OUT.println(computeThread.getKMat());
+
     }
 
     private def computeThreadedLowMemNoAtomicByBF(density:Density) : void {

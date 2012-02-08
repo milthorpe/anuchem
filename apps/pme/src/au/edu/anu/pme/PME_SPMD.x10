@@ -210,7 +210,7 @@ public class PME_SPMD {
         timer.start(TIMER_INDEX_TOTAL);
 
         timer.start(TIMER_INDEX_GRIDCHARGES);
-        finish for (place in Place.places()) async at(place) {
+        finish for (place in Place.places()) at(place) async {
             val myPackedAtoms = packedAtomsCache(here.id);
             val gridDistHere = gridDist.get(here) as Region(3){rect};
 
@@ -276,7 +276,7 @@ public class PME_SPMD {
                 val i = (centre.i / halfCutoff) as Int;
                 val j = (centre.j / halfCutoff) as Int;
                 val k = (centre.k / halfCutoff) as Int;
-                async at(subCellsTemp.dist(i,j,k)) {
+                at(subCellsTemp.dist(i,j,k)) async {
                     atomic subCellsTemp(i,j,k).add(atom);
                 }
             }
@@ -295,7 +295,7 @@ public class PME_SPMD {
         timer.start(TIMER_INDEX_PREFETCH);
 		val subCells = this.subCells; // TODO shouldn't be necessary XTENLANG-1913
 		val packedAtomsCache = this.packedAtomsCache; // TODO shouldn't be necessary XTENLANG-1913
-        finish for (place in subCells.dist.places()) async at(place) {
+        finish for (place in subCells.dist.places()) at(place) async {
             val myPackedAtoms = packedAtomsCache(here.id);
             prefetchPackedAtomsLocal(subCells, myPackedAtoms);
         }
@@ -464,7 +464,7 @@ public class PME_SPMD {
         timer.start(TIMER_INDEX_SELF);
 		val subCells = this.subCells; // TODO shouldn't be necessary XTENLANG-1913
         val selfEnergy = finish(SumReducer()) {
-            for (place1 in gridDist.places()) async at(place1) {
+            for (place1 in gridDist.places()) at(place1) async {
                 var mySelfEnergy : Double = 0.0;
                 for ([i,j,k] in subCells.dist(here)) {
                     val thisCell = subCells(i,j,k);
@@ -622,7 +622,7 @@ public class PME_SPMD {
             for ([i,j,k] in sourceRegion) {
                 overlap(l++) = sourceGrid(i,j,k);
             }
-            async at(targetPlace) {
+            at(targetPlace) async {
                 atomic {
                     var m : Int = 0;
                     for ([i,j,k] in overlapRegion) {
@@ -663,7 +663,7 @@ public class PME_SPMD {
 			val gridDist = this.gridDist; // TODO shouldn't be necessary XTENLANG-1913
 			val Q = this.Q; // TODO shouldn't be necessary XTENLANG-1913
 			//val thetaRecConvQ = this.thetaRecConvQ; // TODO shouldn't be necessary XTENLANG-1913
-            for (place1 in gridDist.places()) async at(place1) {
+            for (place1 in gridDist.places()) at(place1) async {
                 var myReciprocalEnergy : Double = 0.0;
                 val gridDistHere = gridDist.get(here) as Region(3){rect};
                 for ([i,j,k] in gridDistHere) {

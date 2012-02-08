@@ -84,11 +84,12 @@ public class PumjaRasaayani {
     private def runHF(fragment:Fragment) {
         val timer = new Timer(3);
         timer.start(0);
-
+        
         Console.OUT.println("\nfragment:");
         Console.OUT.println(fragment);
 
         timer.start(1);
+        val jd = JobDefaults.getInstance();
         val bsf = new BasisFunctions(fragment, basisName, getBasisDirName(inputFileName));
         Console.OUT.println("\nUsing " + bsf.getBasisFunctions().size() + " basis functions.");
         timer.stop(1);

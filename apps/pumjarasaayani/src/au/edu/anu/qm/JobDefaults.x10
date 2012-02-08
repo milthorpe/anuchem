@@ -28,6 +28,14 @@ public class JobDefaults {
     public var diisSubspaceSize:Int;
     public var gMatrixParallelScheme:Int;
     public var useMta:Boolean;
+    public var guess:Int; // 0=core hamiltonian; 1=SAD
+
+// RO Var
+    public var roOn:Int;
+    public var roN:Int;
+    public var roL:Int;
+    public var roZ:Double;
+    public var centering:Int; // See Q-CHEM Job description
 
     private def this() { 
         maxIterations = 100;

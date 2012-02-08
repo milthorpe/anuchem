@@ -65,9 +65,17 @@ public class JobInput {
         }
         basisName = basisWords(1);
         line = fil.readLine();
-
+        // defaults
+        val jd = JobDefaults.getInstance();
+        var conversion:Double = 1.0;
         var charge:Int = 0;
         var multiplicity:Int = 1;
+        jd.roOn=0;
+        jd.roN=10;
+        jd.roL=10;
+        jd.roZ=1.0;
+        jd.guess=0;
+
         if (line.startsWith("charge")) {
             charge = getIntParam(line);
             line = fil.readLine();
@@ -79,18 +87,22 @@ public class JobInput {
             line = fil.readLine();
         }
 
-        var conversion:Double = 1.0;
         if (line.startsWith("units")) {
             conversion = getDoubleParam(line);
             line = fil.readLine();
         }
-
+ 
+        if (line.startsWith("RO_Z")) {
+            jd.roZ = getDoubleParam(line); 
+            line = fil.readLine();
+        }
+ 
         if (!line.startsWith("molecule")) {
             throw new Exception("Invalid input: must specify molecule. Next line was:\n"+line);
         }
 
         molecule = new Molecule[QMAtom](title,charge,multiplicity);
-        val jd = JobDefaults.getInstance();
+        
 
         line = fil.readLine();
         try {
@@ -98,9 +110,9 @@ public class JobInput {
                 val wrd = StringSplitter.splitOnWhitespace(line);
 
                 molecule.addAtom(new QMAtom(wrd(0), 
-                                   Point3d(Double.parseDouble(wrd(1))/conversion,
-                                            Double.parseDouble(wrd(2))/conversion,
-                                            Double.parseDouble(wrd(3))/conversion
+                                   Point3d(Double.parseDouble(wrd(1))/conversion/jd.roZ,
+                                            Double.parseDouble(wrd(2))/conversion/jd.roZ,
+                                            Double.parseDouble(wrd(3))/conversion/jd.roZ
                                     )
                                 ));
 
@@ -122,7 +134,18 @@ public class JobInput {
                     jd.gMatrixParallelScheme = getIntParam(line);
                 } else if (line.startsWith("fragment mta")) {
                     jd.useMta = true;
+                } else if (line.startsWith("RO_N")) {
+                    jd.roN = getIntParam(line);
+                } else if (line.startsWith("RO_L")) {
+                    jd.roL = getIntParam(line);
+                } else if (line.startsWith("Center")) {
+                    jd.centering = getIntParam(line);
+                } else if (line.startsWith("USE_RO")) {
+                    jd.roOn = getIntParam(line);
+                } else if (line.startsWith("GUESS")) {
+                    jd.guess = getIntParam(line);
                 }
+
                 line = fil.readLine();
             }
         } catch (e:EOFException) {

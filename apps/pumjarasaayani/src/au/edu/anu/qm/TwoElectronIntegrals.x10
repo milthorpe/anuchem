@@ -34,7 +34,7 @@ import au.edu.anu.chem.Molecule;
  *   J. Comp. Phys, 26 (2) pp. 218-231.
  */
 public class TwoElectronIntegrals {
-    private static val SQ2PI = Math.pow((2.0/Math.PI), 0.5);
+    private static SQ2PI = 0.797884560802865; //Math.pow((2.0/Math.PI), 0.5);
 
     private val gmt:Rail[Double], zeroM:Rail[Double];
 
@@ -648,6 +648,8 @@ public class TwoElectronIntegrals {
                                 val normIntVal = intVal
                                     * normL * normK
                                     * normJ * normI;
+                                // printout twoeint // this is uncontacted. you have to add them algether before compare it with other programs
+                                // Console.OUT.printf("2E %d %d %d %d = %e (norm = %e)\n",ii,jj,kk,ll,normIntVal,normL*normK*normJ*normI);
                                  fillJKMatrices(normIntVal, ii, jj, kk, ll, jMatrix, kMatrix, dMatrix);
                             } // end if
                         } // end if

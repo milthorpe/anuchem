@@ -197,7 +197,7 @@ public class Fmm3d {
                 val charge = atom.charge;
                 val offsetCentre = atom.centre + offset;
                 val boxIndex = Fmm3d.getLowestLevelBoxIndex(offsetCentre, lowestLevelDim, size);
-                async at(boxAtomsTemp.dist(boxIndex)) {
+                at(boxAtomsTemp.dist(boxIndex)) async {
                     val remoteAtom = new PointCharge(offsetCentre, charge);
                     atomic boxAtomsTemp(boxIndex).add(remoteAtom);
                 }
@@ -234,7 +234,7 @@ public class Fmm3d {
         val numTerms = this.numTerms; // TODO shouldn't be necessary XTENLANG-1913
         val numLevels = this.numLevels;
         val lowestLevelBoxes = boxes(numLevels);
-        finish ateach(p1 in Dist.makeUnique(lowestLevelBoxes.dist.places())) {
+        finish ateach(p1 in Dist.makeUnique()) {
             for ([x,y,z] in lowestLevelBoxes.dist(here)) {
                 val leafBox = lowestLevelBoxes(x,y,z) as FmmLeafBox;
                 if (leafBox != null) {
@@ -260,42 +260,52 @@ public class Fmm3d {
         timer.start(TIMER_INDEX_COMBINE);
         val fmmOperators = this.fmmOperators; // TODO shouldn't be necessary XTENLANG-1913
         val locallyEssentialTree = this.locallyEssentialTree; // TODO shouldn't be necessary XTENLANG-1913
+        val boxes = this.boxes; // TODO shouldn't be necessary XTENLANG-1913
+        val numLevels = this.numLevels; // TODO shouldn't be necessary XTENLANG-1913
+        val topLevel = this.topLevel; // TODO shouldn't be necessary XTENLANG-1913
+
         for (var level: Int = numLevels-1; level >= topLevel; level--) {
+            //val timer = new Timer(1);
+            //timer.start(0);
             val thisLevel = level;
             //Console.OUT.println("combine level " + level + " => " + (level-1));
-            val thisLevelBoxes = boxes(thisLevel);
-            val lowerLevelBoxes = boxes(thisLevel+1);
             val halfSideLength = size / Math.pow2(thisLevel+2);
-            finish ateach(p1 in Dist.makeUnique(thisLevelBoxes.dist.places())) {
+            finish ateach(p1 in Dist.makeUnique()) {
                 val wignerA = fmmOperators().wignerA;
                 val complexK = fmmOperators().complexK;
-                // can fetch multipoles for lower level while calculating this level
-                async Fmm3d.prefetchMultipoles(thisLevel+1, locallyEssentialTree(), lowerLevelBoxes);
+                val myLET = locallyEssentialTree();
 
-                val childMultipoles = new Array[MultipoleExpansion](8);
-                for ([x,y,z] in thisLevelBoxes.dist(here)) {
+                val thisLevelBoxes = boxes(thisLevel);
+                val regionHere = thisLevelBoxes.dist(here);
+
+                val childLevel = thisLevel+1;
+                val lowerLevelBoxes = boxes(thisLevel+1);
+                Fmm3d.fetchMultipoles(childLevel, myLET, regionHere, lowerLevelBoxes);
+
+                val lowerLevelMultipoleCopies = myLET.multipoleCopies(thisLevel+1);
+
+                for ([x,y,z] in regionHere) {
                     val parent = thisLevelBoxes(x,y,z);
-                    val childRegion = (2*x)..(2*x+1) * (2*y)..(2*y+1) * (2*z)..(2*z+1);
-                    // asynchronously fetch all child multipole expansions
-                    finish {
-                        for ([x2,y2,z2] in childRegion) async {
-                            childMultipoles(childRegion.indexOf(x2, y2, z2)) = getMultipoleExpansionLocalCopy(lowerLevelBoxes, x2, y2, z2);
-                        }
-                    }
-                    // and then sequentially sum them together
-                    for ([x2,y2,z2] in childRegion) {
-                        val dx = ((x2+1)%2)*2-1;
-                        val dy = ((y2+1)%2)*2-1;
-                        val dz = ((z2+1)%2)*2-1;
-                        val childExp = childMultipoles(childRegion.indexOf(x2, y2, z2));
-                        if (childExp != null) {
-        	                parent.multipoleExp.translateAndAddMultipole(
-			                    Vector3d(dx*halfSideLength, dy*halfSideLength, dz*halfSideLength),
-			                    complexK(dx,dy,dz), childExp, wignerA((dx+1)/2, (dy+1)/2, (dz+1)/2));
+                    // ... and then sequentially sum them together
+                    for (x2 in (2*x)..(2*x+1)) {
+                        for (y2 in (2*y)..(2*y+1)) {
+                            for (z2 in (2*z)..(2*z+1)) {
+                                val childExp = lowerLevelMultipoleCopies(x2, y2, z2);
+                                if (childExp != null) {
+                                    val dx = ((x2+1)%2)*2-1;
+                                    val dy = ((y2+1)%2)*2-1;
+                                    val dz = ((z2+1)%2)*2-1;
+                                    parent.multipoleExp.translateAndAddMultipole(
+                                      Vector3d(dx*halfSideLength, dy*halfSideLength, dz*halfSideLength),
+                                      complexK(dx,dy,dz), childExp, wignerA((dx+1)/2, (dy+1)/2, (dz+1)/2));
+                                }
+                            }
                         }
                     }
                 }
             }
+            //timer.stop(0);
+            //Console.OUT.printf("timer for level %i %8.4g\n", level, (timer.total(0) as Double) / 1.0e6); 
         }
         timer.stop(TIMER_INDEX_COMBINE);
     }
@@ -309,13 +319,14 @@ public class Fmm3d {
         val boxes = this.boxes; // TODO shouldn't be necessary XTENLANG-1913
         val fmmOperators = this.fmmOperators; // TODO shouldn't be necessary XTENLANG-1913
         val locallyEssentialTree = this.locallyEssentialTree; // TODO shouldn't be necessary XTENLANG-1913
+        val topLevelBoxes = boxes(startingLevel);
         if (!periodic) {
             // top level boxes won't yet have been fetched
             finish ateach(p1 in Dist.makeUnique()) {
-                Fmm3d.prefetchMultipoles(startingLevel, locallyEssentialTree(), boxes(startingLevel));
+                Fmm3d.fetchMultipoles(startingLevel, locallyEssentialTree(), Region.makeEmpty(3), topLevelBoxes);
             }
         }
-        val topLevelBoxes = boxes(startingLevel);
+
         val farField = finish(SumReducer()) {
             ateach([x,y,z] in topLevelBoxes) {
                 val box = topLevelBoxes(x,y,z);
@@ -327,36 +338,64 @@ public class Fmm3d {
     }
 
     /**
-     * Fetch all multipole expansions required for transform to local.
-     * This is communication-intensive, so can be overlapped with computation.
+     * Fetch all multipole expansions for the combined K- and V-lists:
+     * K-list == the child boxes of all parent boxes held at this place;
+     * V-list == boxes that are well separated from boxes held at this place.
+     * @param level the tree level for which multipole expansions are to be fetched
+     * @param myLET the LocallyEssentialTree at this place
+     * @param parentRegionHere the set of parent boxes (at level-1) held at this place
+     * @param boxes the distributed array of boxes at the given level
      */
-    protected static def prefetchMultipoles(thisLevel:Int, myLET:LocallyEssentialTree, thisLevelBoxes:DistArray[FmmBox](3)) {
-        val combinedVList = myLET.combinedVList(thisLevel);
-        val thisLevelCopies = myLET.multipoleCopies(thisLevel);
-        val vListPlaces = new HashMap[Int,ArrayList[Point(3)]](26); // a place may have up to 26 immediate neighbours
+    protected static def fetchMultipoles(level:Int, myLET:LocallyEssentialTree, parentRegionHere:Region(3), boxes:DistArray[FmmBox](3)) {
+        val kvListPlaces = new HashMap[Int,ArrayList[Point(3)]](26); // a place may have up to 26 immediate neighbour
 
-        // separate the vList into partial lists stored at each nearby place
-        for (p in combinedVList) {
-            val boxIndex = combinedVList(p);
-            val placeId = thisLevelBoxes.dist(boxIndex).id;
-            var vListForPlace : ArrayList[Point(3)] = vListPlaces.getOrElse(placeId, null);
-            if (vListForPlace == null) {
-                vListForPlace = new ArrayList[Point(3)]();
-                vListPlaces.put(placeId, vListForPlace);
+        if (parentRegionHere != null) {
+            // separate the kList into partial lists stored at each nearby place
+            for([x,y,z] in parentRegionHere) {
+                for(x2 in (2*x)..(2*x+1)) {
+                    for(y2 in (2*y)..(2*y+1)) {
+                        for(z2 in (2*z)..(2*z+1)) {
+                            val boxIndex = Point.make(x2,y2,z2);
+                            val placeId = boxes.dist(boxIndex).id;
+                            var kvListForPlace : ArrayList[Point(3)] = kvListPlaces.getOrElse(placeId, null);
+                            if (kvListForPlace == null) {
+                                kvListForPlace = new ArrayList[Point(3)]();
+                                kvListPlaces.put(placeId, kvListForPlace);
+                            }
+                            kvListForPlace.add(boxIndex);
+                        }
+                    }
+                }
             }
-            vListForPlace.add(boxIndex);
         }
 
-        // retrieve the partial list for each place and store into my LET
-        finish for(placeEntry in vListPlaces.entries()) async {
+        val combinedVList = myLET.combinedVList(level);
+        // separate the vList into partial lists stored at each nearby place
+        if (combinedVList != null) {
+            for (p in combinedVList) {
+                val boxIndex = combinedVList(p);
+                val placeId = boxes.dist(boxIndex).id;
+                var kvListForPlace : ArrayList[Point(3)] = kvListPlaces.getOrElse(placeId, null);
+                if (kvListForPlace == null) {
+                    kvListForPlace = new ArrayList[Point(3)]();
+                    kvListPlaces.put(placeId, kvListForPlace);
+                }
+                kvListForPlace.add(boxIndex);
+            }
+        }
+
+        val multipoleCopies = myLET.multipoleCopies(level);
+
+        // retrieve the multipole copies from each place and store into my LET
+        finish for(placeEntry in kvListPlaces.entries()) async {
             val placeId = placeEntry.getKey();
-            val vListForPlace = placeEntry.getValue();
-            val vListArray = vListForPlace.toArray();
+            val kvListForPlace = placeEntry.getValue();
+            val kvListArray = kvListForPlace.toArray();
             val multipolesForPlace = (placeId == here.id) ?
-                Fmm3d.getMultipolesForBoxList(thisLevelBoxes, vListArray) :
-                at(Place.place(placeId)) { Fmm3d.getMultipolesForBoxList(thisLevelBoxes, vListArray)};
-            for (i in 0..(vListArray.size-1)) {
-                thisLevelCopies(vListArray(i)) = multipolesForPlace(i);
+                Fmm3d.getMultipolesForBoxList(boxes, kvListArray) :
+                at(Place.place(placeId)) { Fmm3d.getMultipolesForBoxList(boxes, kvListArray)};
+            for (i in 0..(kvListArray.size-1)) {
+                multipoleCopies(kvListArray(i)) = multipolesForPlace(i);
             }
         }
     }

@@ -1,11 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE project [<!ENTITY buildfile SYSTEM "file:./build-user.xml">]>
 <project name="Pumja Rasaayani" default="build" basedir=".">
+    <property name="x10rt" value="sockets" />
+    <property name="x10x.xla" location="../../x10x.lib/xla"/>
+	<property name="xla.props" location="${x10x.xla}/xla_${x10rt}.properties"/>
     <property name="x10.testlib" location="${user.home}/x10-trunk/x10.tests/examples/x10lib"/>
     <property name="x10x.xlalib" location="../../x10x.lib/xla/src"/>
     <property name="anuchem" location="../../anu-chem"/>
     <property name="anuchem.src" location="${anuchem}/src"/>
-    <property name="anuchem.lib" location="${anuchem}/lib/anu-chem.jar"/>
+    <property name="anuchem.props" location="${anuchem}/anuchem_${x10rt}.properties"/>
     <property name="bash.exe" value="bash"/>    
     <property name="optimize" value="true" />
     <property name="nochecks" value="true" />
@@ -22,10 +25,6 @@
 
     <property name="usenativegsl" value="true" />
 
-    <!-- <property name="x10rt" value="standalone" /> -->
-    <!-- <property name="x10rt" value="pgas_bgp" />  -->
-    <property name="x10rt" value="sockets" />
-    
     <property name="target" location="${basedir}/target" />
     <property name="target-src" location="${target}/classes" />
     <property name="target-test" location="${target}/test-classes" />
@@ -84,7 +83,7 @@
         </jar>
     </target>
 
-    <target name="exe" depends="build-src">
+    <target name="exe" depends="build-src-cpp">
         <mkdir dir="${bin}"/>
         <copy file="${target}/classes/a.out" tofile="${bin}/${exe}" />
 
@@ -114,7 +113,7 @@
         </exec>
     </target>
 
-    <target name="build-src" depends="check-src,build-gsl-wrapper" unless="src.uptodate">
+    <target name="build-src-cpp" depends="check-src,build-cpp-wrappers" unless="src.uptodate">
         <echo message="Building source tree"/>
 
         <fileset id="changed.src.files" dir="${basedir}/src" includes="**/*.x10">
@@ -126,11 +125,11 @@
         <pathconvert property="src.list" refid="changed.src.files" dirsep="/" pathsep=" ">
             <map from="${basedir}${file.separator}src${file.separator}" to=""/>
         </pathconvert>
-        <echo message="x10c++ -x10rt ${x10rt} -sourcepath .:${x10x.xlalib}:${anuchem.src} ${basedir}/${testclass}"/>
+        <echo message="x10c++ -x10rt ${x10rt} -x10lib ${xla.props} -x10lib ${anuchem.props} -sourcepath . ${basedir}/${testclass}"/>
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/src">
             <arg value="-c"/> 
-            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.debug} ${x10c.profile} ${x10c.optimize} ${x10c.nochecks} -report postcompile=1 -post '# ${post.cpuprofile} ${post.heapprofile} ${post.usenativegsl}' -sourcepath .:${x10x.xlalib}:${anuchem.src} -d ${target-src} ${basedir}/${testclass}"/>
+            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.debug} ${x10c.profile} ${x10c.optimize} ${x10c.nochecks} -report postcompile=1 -post '# ${post.cpuprofile} ${post.heapprofile} ${post.usenativegsl}' -x10lib ${anuchem.props} -x10lib ${xla.props} -sourcepath . -d ${target-src} ${basedir}/${testclass}"/>
         </exec>
     </target>
 
@@ -154,8 +153,8 @@
         </uptodate>
     </target>
 
-    <target name="build-gsl-wrapper" depends="check-src-gsl" unless="src.uptodate.gsl">
-        <echo message="Building GSL wrapper"/>
+    <target name="build-cpp-wrappers" depends="check-src-gsl" unless="src.uptodate.gsl">
+        <echo message="Building C++ wrappers"/>
 
         <copy todir="${target}/classes">
             <fileset id="cpp.files" dir="${basedir}/src" includes="**/*.h,**/*.cc"/>
