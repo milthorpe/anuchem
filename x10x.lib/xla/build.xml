@@ -79,7 +79,15 @@
         </exec>
     </target>
 
-    <target name="buildx10lib-cpp" depends="check-src-cpp" unless="src.uptodate.cpp">
+	<target name="check-lib">
+        <fileset id="src.files" dir="${basedir}/src" includes="**/*.x10"/>
+        <uptodate property="lib.uptodate.cpp">
+            <srcfiles refid="src.files"/>
+            <globmapper from="*.x10" to="include/*.cc" handledirsep="true"/>
+        </uptodate>
+    </target>
+
+    <target name="buildx10lib-cpp" depends="check-lib" unless="lib.uptodate.cpp">
         <echo message="Building source tree"/>
         <mkdir dir="include"/>
         <mkdir dir="lib"/>
