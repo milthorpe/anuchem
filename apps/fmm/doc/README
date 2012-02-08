@@ -38,8 +38,8 @@ For other implementations see
 Compile dependencies:
 ------------------------
 * X10 version 2.2.2 (optionally with x10rt=mpi)
-* anu-chem library (cd ~/x10-apps/anuchem && ant)
 * XLA library (cd ~/x10-apps/x10x.lib/xla && ant)
+* anu-chem library (cd ~/x10-apps/anuchem && ant)
 
 
 To run:

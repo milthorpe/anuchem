@@ -39,8 +39,8 @@ Compile dependencies:
 * X10 version 2.2.2 (optionally with x10rt=mpi)
 * FFTW http://www.fftw.org/ 
   (linked to at the locations ${fftw3.include} and ${fftw3.lib} in the ant build script)
-* anu-chem library (cd ~/x10-apps/anuchem && ant)
 * XLA library (cd ~/x10-apps/x10x.lib/xla && ant)
+* anu-chem library (cd ~/x10-apps/anuchem && ant)
 
 
 To run:
