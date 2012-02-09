@@ -200,11 +200,11 @@ public class GMatrix extends Matrix {
            gMatrix(x,y) = jMatrix(x,y) - (0.25*kMatrix(x,y));
         }
 
-        //Console.OUT.println("J Mat");
-        //Console.OUT.println(computeThread.getJMat());
+        Console.OUT.println("J Mat");
+        Console.OUT.println(computeThread.getJMat());
 
-        //Console.OUT.println("K Mat");
-        //Console.OUT.println(computeThread.getKMat());
+        Console.OUT.println("K Mat");
+        Console.OUT.println(computeThread.getKMat());
 
     }
 
