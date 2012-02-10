@@ -162,18 +162,8 @@ namespace au {
     }
 
     int Integral_Pack::Genclass(int a, int b, double *A, double *B, double *zetaA, double *zetaB, double *conA, double *conB, int dconA, int dconB, double* temp){
-        bool swapAB = false;
-        if (a<b) {
-            swapAB = true;
-            int t = a; double *T = A; double *zetaT = zetaA; double* conT = conA; int dconT = dconA;
-            a = b; A = B; zetaA = zetaB; conA = conB; dconA = dconB;
-            b = t; B = T; zetaB = zetaT; conB = conT; dconB = dconT;
-        }
-        int bra,K = (N+1)*(L+1)*(L+1),p,e,i,ii,j,jj,k,n,l,m,initialn=lambda[0]==0.?1:0; // more regorious check / cut-off required
-//        double V1[totalBraL[a+b]][K];
-//        double V2[totalBraL[a+b]][K];
+        int bra,K = (N+1)*(L+1)*(L+1),p,e,i,ii,j,jj,k,n,l,m,initialn=lambda[0]==0.?1:0; // more rigorous check / cut-off required
         bool swap = false;
-//        double V[totalBraL[a+b]][K];
 
         double (*V1)[K];
         double (*V2)[K];
@@ -213,7 +203,7 @@ namespace au {
                 double (* Vb)[K] = swap ? V1 : V2;
 
                 // lambda[0]=0 is taken care of by separately. (3-term RR & trivial initial conditions)
-        	    // only p=0 contributes!
+        	// only p=0 contributes!
                 if (initialn==1 && p==0) {
                     memset(Va,0,sizeof(double)*K*totalBraL[a+b]);
                     Va[0][0]=JpY00[0]*q[0]*gAB;
@@ -248,7 +238,7 @@ namespace au {
                 }
 
                 // Fill higher e
-                for (n=initialn; n<=N; n++) {
+            	for (n=initialn; n<=N; n++) {
                     int nOffset=n*(L+1)*(L+1);
                     double onelambda=-1.0/lambda[n];
 
@@ -270,19 +260,21 @@ namespace au {
                                 kyminus=nOffset+lm2k(l-1,-(m-1)),
                                 kzero=nOffset+lm2k(l-1,m);
 
-                            Va[aplusIndex][k] += paj*Va[aIndex][k]+P[j]*Vb[aIndex][k];
-                            if (aj>0) Va[aplusIndex][k] += aj*one2zeta*(Va[aminusIndex][k]+Vb[aminusIndex][k]);
+                            double vapk = paj*Va[aIndex][k]+P[j]*Vb[aIndex][k];
+                            if (aj>0) vapk += aj*one2zeta*(Va[aminusIndex][k]+Vb[aminusIndex][k]);
+                            //printf("[%d %d %d | %2d %2d %2d] = %f ainx=%d\n",inverseMap3[aplusIndex].x,inverseMap3[aplusIndex].y,inverseMap3[aplusIndex].z,
+                            //		n,l,m,vapk,aIndex);
 
-                                    //printf("[%d %d %d | %2d %2d %2d] = %f ainx=%d\n",inverseMap3[aplusIndex].x,inverseMap3[aplusIndex].y,inverseMap3[aplusIndex].z,
-                                    //		n,l,m,Va[aplusIndex][k],aIndex);
-
-                            if (l==0) continue;
-                            if (j==2) Va[aplusIndex][k] += onelambda*cz[lm]*Vb[aIndex][kzero];
-                            else if (j==1) Va[aplusIndex][k] += onelambda*(cyminus[lm]*Vb[aIndex][kyminus]+cyplus[lm]*Vb[aIndex][kyplus]);
-                            else /*if (j==0)*/ Va[aplusIndex][k] += onelambda*(cxminus[lm]*Vb[aIndex][kxminus]+cxplus[lm]*Vb[aIndex][kxplus]);
-                                    // It's better to get the if statement out of the loop
-                                    //printf("[%d %d %d | %2d %2d %2d] = %.15e j=%d cy+ =%e aj=%d\n",inverseMap3[aplusIndex].x,inverseMap3[aplusIndex].y,inverseMap3[aplusIndex].z,
-                                   //		n,l,m,Va[aplusIndex][k],j,cxminus[lm]*Vb[aIndex][kxminus], aj );
+                            if (l!=0) {
+                                // no extra term for l=0 
+                                if (j==2) vapk += onelambda*cz[lm]*Vb[aIndex][kzero];
+                                else if (j==1) vapk += onelambda*(cyminus[lm]*Vb[aIndex][kyminus]+cyplus[lm]*Vb[aIndex][kyplus]);
+                                else /*if (j==0)*/ vapk += onelambda*(cxminus[lm]*Vb[aIndex][kxminus]+cxplus[lm]*Vb[aIndex][kxplus]);
+                                        // It's better to get the if statement out of the loop
+                                        //printf("[%d %d %d | %2d %2d %2d] = %.15e j=%d cy+ =%e aj=%d\n",inverseMap3[aplusIndex].x,inverseMap3[aplusIndex].y,inverseMap3[aplusIndex].z,
+                                       //		n,l,m,vapk,j,cxminus[lm]*Vb[aIndex][kxminus], aj );
+                            }
+                            Va[aplusIndex][k] = vapk;
                         }
                     }
                 }
@@ -326,33 +318,14 @@ namespace au {
         	}
         }
         int ind=0;
-        // munuk is sized [nBasis][nBasis][K];
-        // need to leave empty elements where noOfBra[a|b] < nBasis
-        if (swapAB) {
-            for (jj=0; jj<noOfBra[b]; jj++) {
-                for (ii=0; ii<noOfBra[a]; ii++) {
-                	int lindex = ii*noOfBra[b] + jj;
-                	//int indexa = ii + (a>0? totalBraL[a-1]:0);
-                	//int indexb = jj + (b>0? totalBraL[b-1]:0);
-                    for (n=0; n<=N; n++) for (l=0; l<=L; l++) for (m=-l; m<=l; m++) {
-                        //printf("[%d,%d,%d %d,%d,%d | %2d %2d %2d] = %25.15e\n",inverseMap3[indexa].x,inverseMap3[indexa].y,inverseMap3[indexa].z,
-                        //		inverseMap3[indexb].x,inverseMap3[indexb].y,inverseMap3[indexb].z,n,l,m,HRR[a][b][lindex][n*(L+1)*(L+1)+lm2k(l,m)]);
-                        temp[ind++]=HRR[a][b][lindex][n*(L+1)*(L+1)+lm2k(l,m)];
-                    }
-                }
-            }
-        } else {
-            for (ii=0; ii<noOfBra[a]; ii++) {
-                for (jj=0; jj<noOfBra[b]; jj++){
-                	int lindex = ii*noOfBra[b] + jj;
-                	//int indexa = ii + (a>0? totalBraL[a-1]:0);
-                	//int indexb = jj + (b>0? totalBraL[b-1]:0);
-                    for (n=0; n<=N; n++) for (l=0; l<=L; l++) for (m=-l; m<=l; m++) {
-                        //printf("[%d,%d,%d %d,%d,%d | %2d %2d %2d] = %25.15e\n",inverseMap3[indexa].x,inverseMap3[indexa].y,inverseMap3[indexa].z,
-                        //		inverseMap3[indexb].x,inverseMap3[indexb].y,inverseMap3[indexb].z,n,l,m,HRR[a][b][lindex][n*(L+1)*(L+1)+lm2k(l,m)]);
-                        temp[ind++]=HRR[a][b][lindex][n*(L+1)*(L+1)+lm2k(l,m)];
-                    }
-                }
+        for (ii=0; ii<noOfBra[a]; ii++) for (jj=0; jj<noOfBra[b]; jj++){
+        	int lindex = ii*noOfBra[b] + jj;
+        	int indexa = ii + (a>0? totalBraL[a-1]:0);
+        	int indexb = jj + (b>0? totalBraL[b-1]:0);
+            for (n=0; n<=N; n++) for (l=0; l<=L; l++) for (m=-l; m<=l; m++) {
+                //printf("[%d,%d,%d %d,%d,%d | %2d %2d %2d] = %25.15e\n",inverseMap3[indexa].x,inverseMap3[indexa].y,inverseMap3[indexa].z,
+                //		inverseMap3[indexb].x,inverseMap3[indexb].y,inverseMap3[indexb].z,n,l,m,HRR[a][b][lindex][n*(L+1)*(L+1)+lm2k(l,m)]);
+                temp[ind++]=HRR[a][b][lindex][n*(L+1)*(L+1)+lm2k(l,m)];
             }
         }
 
@@ -421,12 +394,11 @@ int main() {
     zetaB[1]=1210.77;  conB[1]=51.42;
     zetaB[2]=260.515;  conB[2]=32.7045;
 
-for (int x=0; x<100; x++) {
     // int Genclass(int a, int b, double *A, double *B, double *zetaA, double *zetaB,
     // double *conA, double *conB, int dconA, int dconB,
     // double *lambda, double *q, int N, int L)
     ip->Genclass(1,0,A,B,zetaA,zetaB,conA,conB,dconA,dconB,temp);
-}
+
     delete ip;
 }
 */

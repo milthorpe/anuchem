@@ -18,7 +18,6 @@ namespace au {
                 namespace ro {
                     class Integral_Pack {
                         public:
-                            int roK;
                             static Integral_Pack* _make(int N,int L);
                             Integral_Pack(int N, int L);
                             ~Integral_Pack();
