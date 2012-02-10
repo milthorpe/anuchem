@@ -170,11 +170,9 @@ namespace au {
         double (*V)[K]; 
         V1=(double (*)[K])malloc(totalBraL[a+b]*K*sizeof(double));
         V2=(double (*)[K])malloc(totalBraL[a+b]*K*sizeof(double));
-        V=(double (*)[K])malloc(totalBraL[a+b]*K*sizeof(double));
+        V=(double (*)[K])calloc(totalBraL[a+b]*K, sizeof(double));
 
         if (V1==NULL || V2==NULL || V ==NULL) exit(1);
-
-        memset(V,0,totalBraL[a+b]*K*sizeof(double));
 
         double Y[(L+1)*(L+1)],J[(L+a+b+1)*(N+1)],JpY00[9]={0.28209479177387814, 0.09403159725795937, 0.018806319451591877,
         		0.0026866170645131254, 0.000298513007168125,0.000027137546106193183, 2.087503546630245e-6,1.39166903108683e-7, 8.186288418157823e-9};
@@ -205,7 +203,7 @@ namespace au {
                 // lambda[0]=0 is taken care of by separately. (3-term RR & trivial initial conditions)
         	// only p=0 contributes!
                 if (initialn==1 && p==0) {
-                    memset(Va,0,sizeof(double)*K*totalBraL[a+b]);
+                    memset(Va,0.0,sizeof(double)*K*totalBraL[a+b]);
                     Va[0][0]=JpY00[0]*q[0]*gAB;
 
                     for (e=0; e<a+b; e++) for (i=0; i<noOfBra[e+1]; i++) {
@@ -230,7 +228,7 @@ namespace au {
                         }
                     }
                 } else {
-                    memset(Va,0,sizeof(double)*K*totalBraL[a+b]);
+                    memset(Va,0.0,sizeof(double)*K*totalBraL[a+b]);
                     for (n=initialn; n<=N; n++) {
                         double nfactor=q[n]*gAB*exp(-.25*sqr(lambda[n])/zeta)*pow(-.5*sqr(lambda[n])/zeta,p);
                         Va[0][n*(L+1)*(L+1)] = nfactor*JpY00[p]; // l=m=0 only
