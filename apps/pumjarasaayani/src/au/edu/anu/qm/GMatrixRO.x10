@@ -162,6 +162,9 @@ public class GMatrixRO extends Matrix {
                                 //Console.OUT.printf("tmu=%d tnu=%d k=%d ind=%d val=%e\n",tmu,tnu,k,ind,temp(ind));
                                 val m = norm(tmu)*norm(tnu)*temp(ind++);
                                 dk(k) += denMat(tmu,tnu)*m; // eqn 15b
+                                for(aorb in 0..(nOrbital-1)) {
+                                    muak(tmu,aorb,k) += mosMat(aorb,tnu) * m; // eqn 16b the most expensive step!!!
+                                }
                                 munuk(tmu,tnu,k) = m;
                             }                                
                         else // Be careful... this is tricky ... maxbra are not swap 
@@ -169,12 +172,12 @@ public class GMatrixRO extends Matrix {
                                 //Console.OUT.printf("(Swap) tmu=%d tnu=%d k=%d ind=%d val=%e\n",tmu,tnu,k,ind,temp(ind));
                                 val m = norm(tmu)*norm(tnu)*temp(ind++);
                                 dk(k) += denMat(tmu,tnu)*m; // eqn 15b
+                                for(aorb in 0..(nOrbital-1)) {
+                                    muak(tmu,aorb,k) += mosMat(aorb,tnu) * m; // eqn 16b the most expensive step!!!
+                                }
                                 munuk(tmu,tnu,k) = m;
                             }
 
-                        for (tmu in mu..(mu+maxbraa-1)) for (tnu in nu..(nu+maxbrab-1)) for (aorb in 0..(nOrbital-1)) for (k in 0..(roK-1)) {
-                            muak(tmu,aorb,k) += mosMat(aorb,tnu) * munuk(tmu,tnu,k); // eqn 16b the most expensive step!!!
-                        }
 
                        // test
                        /* 
@@ -219,13 +222,13 @@ public class GMatrixRO extends Matrix {
         Console.OUT.println(jMatrix);
 
         Console.OUT.println("K Mat RO");
-        Console.OUT.println(kMatrix);*/
+        Console.OUT.println(kMatrix);
+*/
 
-        for (tmu in 0..(nBasis-1)) for (tnu in 0..(nBasis-1))
-           gMat(tmu,tnu) = 2.0*jMat(tmu,tnu) - kMat(tmu,tnu); // eqn14
+        jMat.map(gMat, kMat, (j:Double,k:Double)=>(2.0*j-k)); // eqn 14
 
         timer.stop(0);
-        Console.OUT.printf("    Time to construct GMatrix: %.3g seconds\n", (timer.last(0) as Double) / 1e9);
+        Console.OUT.printf("    Time to construct GMatrix with RO: %.3g seconds\n", (timer.last(0) as Double) / 1e9);
     }
  
 }
