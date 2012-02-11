@@ -36,7 +36,7 @@ public class BasisSet {
         Console.OUT.println("\tReading in basis info. for " + name + " from " + basisDir);
 
         basisInfo = new HashMap[String, AtomicBasis]();
-	basisAtomicDensity = new HashMap[String, Matrix]();
+        basisAtomicDensity = new HashMap[String, Matrix]();
  
         this.name = name;
         val jd = JobDefaults.getInstance();
@@ -48,12 +48,12 @@ public class BasisSet {
         }
 
         if (jd.guess==1) {
-
-        try {
-            initDensity(name, basisDir);
-        } catch(e:Exception) {
-            throw new Exception("Unable to read density from : "+basisDir, e);
-        } }
+            try {
+                initDensity(name, basisDir);
+            } catch(e:Exception) {
+                throw new Exception("Unable to read density from : "+basisDir, e);
+            } 
+        }
     }
 
     /** 
@@ -99,9 +99,9 @@ public class BasisSet {
                         val scaleFactor = Double.parseDouble(shellWords(2)); // TODO what to do with scaleFactor
 
                         if (shellType.equals("SP")) {
-                            val exps:Rail[Double] = new Array[Double](numGaussians);
-                            val sCoeffs:Rail[Double] = new Array[Double](numGaussians);
-                            val pCoeffs:Rail[Double] = new Array[Double](numGaussians);
+                            val exps = new Array[Double](numGaussians);
+                            val sCoeffs = new Array[Double](numGaussians);
+                            val pCoeffs = new Array[Double](numGaussians);
                             for (i in 0..(numGaussians-1)) {
                                 line = fil.readLine();
                                 val gaussianWords = StringSplitter.splitOnWhitespace(line);
@@ -112,8 +112,8 @@ public class BasisSet {
                             orbitalList.add(new Orbital("S", exps, sCoeffs));
                             orbitalList.add(new Orbital("P", exps, pCoeffs));
                         } else {
-                            val exps:Rail[Double] = new Array[Double](numGaussians);
-                            val coeffs:Rail[Double] = new Array[Double](numGaussians);
+                            val exps = new Array[Double](numGaussians);
+                            val coeffs = new Array[Double](numGaussians);
                             for (i in 0..(numGaussians-1)) {
                                 line = fil.readLine();
                                 val gaussianWords = StringSplitter.splitOnWhitespace(line);

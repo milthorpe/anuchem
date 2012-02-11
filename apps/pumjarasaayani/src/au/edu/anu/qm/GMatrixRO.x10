@@ -128,29 +128,16 @@ public class GMatrixRO extends Matrix {
                         // Note that iaFunc and jbFunc are ContractedGaussians
                         // val may not work?  must specify the same type as in cpp code?
                         val aang = aaFunc.getTotalAngularMomentum();
-                        val aprimitive = aaFunc.getPrimitives();
-                        val dConA = aprimitive.size;
-                        val aPoint = aprimitive(0).origin;
-                        val conA = new Rail[Double](dConA);
-                        val zetaA = new Rail[Double](dConA);
-                        for (ai in 0..(dConA-1)) {
-                           conA(ai)=aprimitive(ai).coefficient;
-                           zetaA(ai)=aprimitive(ai).exponent;
-                           //Console.OUT.printf("a=%d i=%d ai=%d [conA(ai)=%e zetaA(ai)=%e]\n", a,i,ai,conA(ai),zetaA(ai));
-                        }
-                        // do the same for b
+                        val aPoint = aaFunc.origin;
+                        val zetaA = aaFunc.exponents;
+                        val conA = aaFunc.coefficients;
+                        val dConA = conA.size;
 
                         val bang = bbFunc.getTotalAngularMomentum();
-                        val bprimitive = bbFunc.getPrimitives();
-                        val dConB = bprimitive.size; 
-                        val bPoint = bprimitive(0).origin; 
-                        val conB = new Rail[Double](dConB); 
-                        val zetaB = new Rail[Double](dConB); 
-                        for (bi in 0..(dConB-1)) {
-                           conB(bi)=bprimitive(bi).coefficient;
-                           zetaB(bi)=bprimitive(bi).exponent;
-                           //Console.OUT.printf("b=%d j=%d bi=%d [conA(bi)=%e zetaB(bi)=%e]\n", b,j,bi,conB(bi),zetaB(bi));
-                        }
+                        val bPoint = bbFunc.origin; 
+                        val zetaB = bbFunc.exponents;                        
+                        val conB = bbFunc.coefficients; 
+                        val dConB = conB.size;
 
                         //Console.OUT.printf("aang=%d bang=%d\n", aang,bang);
                         aux.genClass(aang, bang, aPoint, bPoint, zetaA, zetaB, conA, conB, dConA, dConB, temp);      
