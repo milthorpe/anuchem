@@ -31,7 +31,7 @@ namespace au {
                             int map3[MAX_BRA_L+1][MAX_BRA_L+1][MAX_BRA_L+1];
                             Point inverseMap3[MAX_TOTAL_BRA_L];
                             int buildMap[MAX_TOTAL_BRA_L];
-                            int totalBraL[MAX_BRA_L+1],noOfBra[MAX_BRA_L+1];
+                            int totalBraL[MAX_BRA_L+2],noOfBra[MAX_BRA_L+1];
                             Point *HRRMAP[MAX_BRA_L+1][MAX_BRA_L+1];
 
                             // KET

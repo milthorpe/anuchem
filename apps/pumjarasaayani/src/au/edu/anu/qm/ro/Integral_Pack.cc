@@ -36,10 +36,11 @@ namespace au {
 
     void Integral_Pack::initialize() {
         int x,y,z,l,m=0;
-        totalBraL[0]=1;
+        totalBraL[0]=0;
+        totalBraL[1]=1;
         for (l=0; l<=MAX_BRA_L; l++) {
             noOfBra[l]=((l+1)*(l+2))/2;
-            if (l>0) totalBraL[l]=totalBraL[l-1]+noOfBra[l];
+            if (l>0) totalBraL[l+1]=totalBraL[l]+noOfBra[l];
               for (x=0; x<=l; x++) for (y=0; y<=l-x; y++) { // must be consistent with PowerList.x10
 
                 map3[x][y][z=l-x-y] = m;
@@ -66,14 +67,14 @@ namespace au {
             HRRMAP[i][j] = (Point *) malloc(sizeof(Point)*noOfBra[i]*noOfBra[j]);
             for (a=0; a<noOfBra[i]; a++) for (b=0; b<noOfBra[j]; b++) {
 
-             	int aInt=totalBraL[i-1]+a,bInt=totalBraL[j-1]+b;
+             	int aInt=totalBraL[i]+a,bInt=totalBraL[j]+b;
              	int ax=inverseMap3[aInt].x, ay=inverseMap3[aInt].y, az=inverseMap3[aInt].z,
              		bx=inverseMap3[bInt].x,	by=inverseMap3[bInt].y,	bz=inverseMap3[bInt].z;
 
              	int increment;
              	if (bx) increment=0; else if (by) increment=1; else /*if (bz)*/ increment=2;
-             	int bm1 = map3[bx-delta[0][increment]][by-delta[1][increment]][bz-delta[2][increment]]-(j>1?totalBraL[j-2]:0);
-             	int ap1 = map3[ax+delta[0][increment]][ay+delta[1][increment]][az+delta[2][increment]]-totalBraL[i];
+             	int bm1 = map3[bx-delta[0][increment]][by-delta[1][increment]][bz-delta[2][increment]]-totalBraL[j-1];
+             	int ap1 = map3[ax+delta[0][increment]][ay+delta[1][increment]][az+delta[2][increment]]-totalBraL[i+1];
 
              	int leftindex=noOfBra[j]*a+b;
              	int rightindexA=noOfBra[j-1]*ap1+bm1;
@@ -168,9 +169,9 @@ namespace au {
         double (*V1)[K];
         double (*V2)[K];
         double (*V)[K]; 
-        V1=(double (*)[K])malloc(totalBraL[a+b]*K*sizeof(double));
-        V2=(double (*)[K])malloc(totalBraL[a+b]*K*sizeof(double));
-        V=(double (*)[K])calloc(totalBraL[a+b]*K, sizeof(double));
+        V1=(double (*)[K])malloc(totalBraL[a+b+1]*K*sizeof(double));
+        V2=(double (*)[K])malloc(totalBraL[a+b+1]*K*sizeof(double));
+        V=(double (*)[K])calloc(totalBraL[a+b+1]*K, sizeof(double));
 
         if (V1==NULL || V2==NULL || V ==NULL) exit(1);
 
@@ -203,10 +204,10 @@ namespace au {
                 // lambda[0]=0 is taken care of by separately. (3-term RR & trivial initial conditions)
         	// only p=0 contributes!
                 if (initialn==1 && p==0) {
-                    memset(Va,0.0,sizeof(double)*K*totalBraL[a+b]);
+                    memset(Va,0.0,sizeof(double)*K*totalBraL[a+b+1]);
                     Va[0][0]=JpY00[0]*q[0]*gAB;
 
-                    for (e=0; e<a+b; e++) for (i=0; i<noOfBra[e+1]; i++) {
+                    for (e=1; e<a+b+1; e++) for (i=0; i<noOfBra[e]; i++) {
                         int aplusIndex = totalBraL[e]+i;
                         int j=buildMap[aplusIndex]; // printf("j=%d\n",j);
                         int x=inverseMap3[aplusIndex].x,y=inverseMap3[aplusIndex].y,z=inverseMap3[aplusIndex].z;
@@ -228,7 +229,7 @@ namespace au {
                         }
                     }
                 } else {
-                    memset(Va,0.0,sizeof(double)*K*totalBraL[a+b]);
+                    memset(Va,0.0,sizeof(double)*K*totalBraL[a+b+1]);
                     for (n=initialn; n<=N; n++) {
                         double nfactor=q[n]*gAB*exp(-.25*sqr(lambda[n])/zeta)*pow(-.5*sqr(lambda[n])/zeta,p);
                         Va[0][n*(L+1)*(L+1)] = nfactor*JpY00[p]; // l=m=0 only
@@ -240,7 +241,7 @@ namespace au {
                     int nOffset=n*(L+1)*(L+1);
                     double onelambda=-1.0/lambda[n];
 
-                    for (e=0; e<a+b-p; e++) for (i=0; i<noOfBra[e+1]; i++)  {
+                    for (e=1; e<a+b+1-p; e++) for (i=0; i<noOfBra[e]; i++)  {
                         int aplusIndex = totalBraL[e]+i;
                         int j=buildMap[aplusIndex]; // printf("j=%d\n",j);
                         int x=inverseMap3[aplusIndex].x,y=inverseMap3[aplusIndex].y,z=inverseMap3[aplusIndex].z;
@@ -279,7 +280,7 @@ namespace au {
 
             }
             double (* Va)[K] = swap ? V2 : V1;
-            for (bra=0; bra<totalBraL[a+b]; bra++) for(k=0; k<K; k++) V[bra][k] += Va[bra][k];
+            for (bra=0; bra<totalBraL[a+b+1]; bra++) for(k=0; k<K; k++) V[bra][k] += Va[bra][k];
         }
 
         //printf("[ x y z | n l m ] (a=%d b=%d nof=%d) \n",a,b,noOfBra[a+b]);
@@ -298,7 +299,7 @@ namespace au {
         for (i=a; i<=a+b; i++) {
             HRR[i][0] = (double (*)[K])(malloc(sizeof(double)*K*noOfBra[i]));
             for (bra=0; bra<noOfBra[i]; bra++ ) for (k=0; k<K; k++) {
-                HRR[i][0][bra][k] = V[bra+(i>0?totalBraL[i-1]:0)][k];
+                HRR[i][0][bra][k] = V[bra+totalBraL[i]][k];
             }
         }
 
@@ -318,8 +319,8 @@ namespace au {
         int ind=0;
         for (ii=0; ii<noOfBra[a]; ii++) for (jj=0; jj<noOfBra[b]; jj++){
         	int lindex = ii*noOfBra[b] + jj;
-        	int indexa = ii + (a>0? totalBraL[a-1]:0);
-        	int indexb = jj + (b>0? totalBraL[b-1]:0);
+        	int indexa = ii + totalBraL[a];
+        	int indexb = jj + totalBraL[b];
             for (n=0; n<=N; n++) for (l=0; l<=L; l++) for (m=-l; m<=l; m++) {
                 //printf("[%d,%d,%d %d,%d,%d | %2d %2d %2d] = %25.15e\n",inverseMap3[indexa].x,inverseMap3[indexa].y,inverseMap3[indexa].z,
                 //		inverseMap3[indexb].x,inverseMap3[indexb].y,inverseMap3[indexb].z,n,l,m,HRR[a][b][lindex][n*(L+1)*(L+1)+lm2k(l,m)]);
