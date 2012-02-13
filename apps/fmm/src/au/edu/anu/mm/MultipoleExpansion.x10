@@ -56,11 +56,9 @@ public class MultipoleExpansion extends Expansion {
                 phifac = phifac * phifac0;
 		        val O_lm = phifac / ilm * (q * rfac * pplm(l,m));
                 exp.terms(l,m) = O_lm;
+                exp.terms(l,-m) = O_lm.conjugate() * (1-2*(m%2));
         		//to avoid conjugate if (m != 0) { if (m_sign) exp.terms(l, -m) = Complex(O_lm.re,-O_lm.im); else exp.terms(l, -m) = Complex(-O_lm.re,O_lm.im); }
     	    }
-            for (m in -l..-1) {
-                exp.terms(l,m) = exp.terms(l,-m).conjugate() * (1-2*(-m%2));
-            }
             rfac = rfac * v_pole.r;
         }
 

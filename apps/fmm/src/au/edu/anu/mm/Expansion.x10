@@ -10,6 +10,7 @@
  */
 package au.edu.anu.mm;
 
+import x10.compiler.Inline;
 import x10.util.StringBuilder;
 
 /**
@@ -24,7 +25,7 @@ import x10.util.StringBuilder;
  */
 public class Expansion {
     /** The terms X_{lm} (with m >= 0) in this expansion */
-    public val terms : Array[Complex](2);
+    public val terms : Array[Complex](2){rect}; // TODO it's not really rect, it's dense XTENLANG-3000
 
     /** The number of terms in the expansion. */
     public val p : Int;
@@ -45,25 +46,15 @@ public class Expansion {
      * This operation is atomic and therefore thread-safe.
      */
     public atomic def add(e : Expansion) {
-        // TODO should be just:  for ([l,m] in terms.region) {
-	    for (l in 0..p) {
-	        for (m in -l..l) {
-	            this.terms(l,m) = this.terms(l,m) + e.terms(l,m);
-    	    }
-        }
+        unsafeAdd(e);
     }
 
     /**
      * Add each term of e to this expansion. 
      * This operation is not atomic, therefore not thread-safe.
      */
-    def unsafeAdd(e : Expansion) {
-        // TODO should be just:  for ([l,m] in terms.region) {
-	    for (l in 0..p) {
-	        for (m in -l..l) {
-	            this.terms(l,m) = this.terms(l,m) + e.terms(l,m);
-    	    }
-        }
+    @Inline def unsafeAdd(e : Expansion) {
+        this.terms.map(this.terms, e.terms, (a:Complex, b:Complex)=>a+b);
     }
 
     public def toString() : String {

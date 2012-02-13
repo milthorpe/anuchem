@@ -59,10 +59,8 @@ public class LocalExpansion extends Expansion {
                 phifac = phifac * phifac0;
         		val M_lm = phifac * (rfac * pplm(l,m) * ilm);
                 terms(l,m) = M_lm;
+                terms(l,-m) = M_lm.conjugate() * (1-2*(m%2));
         		m_sign = !m_sign;
-            }
-            for (m in -l..-1) {
-                terms(l,m) = terms(l,-m).conjugate() * (1-2*(-m%2));
             }
             rfac = rfac * rfac0;
         }
@@ -257,6 +255,9 @@ public class LocalExpansion extends Expansion {
             }
         }
         return potential;
+//        return terms.mapReduce[Complex,Double,Double](transform.terms, 
+//                                (a:Complex,b:Complex)=>(a*b).re, 
+//                                (a:Double, b:Double)=>a+b, 0.0);
     }
 
     /**

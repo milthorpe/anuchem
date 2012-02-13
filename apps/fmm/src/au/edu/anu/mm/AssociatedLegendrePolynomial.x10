@@ -25,7 +25,7 @@ public class AssociatedLegendrePolynomial {
      *   J. Chem. Phys. 124 (14) 144115. 14 April 2006.
      *   info:doi/10.1063/1.2194548
      */
-    public static def getPlk(theta: double, p : int) : Array[Double](2) {
+    public static def getPlk(theta: double, p : int) : Array[Double](2){rect} {
         val cosTheta = Math.cos(theta);
         val sinTheta = Math.sin(theta);
 
@@ -55,7 +55,7 @@ public class AssociatedLegendrePolynomial {
      *      "Derivation and efficient implementation of the fast multipole method".
      *      J. Chem. Phys. 101 (8) 15 October 1994.
      */
-    public static def getPlm(x: double, p : int) : Array[Double](2) {
+    public static def getPlm(x: double, p : int) : Array[Double](2){rect} {
         if (Math.abs(x) > 1.0) {
             throw new IllegalArgumentException("abs(x) > 1: Associated Legendre functions are only defined on [-1, 1].");
         }

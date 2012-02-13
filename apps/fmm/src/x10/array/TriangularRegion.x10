@@ -1,8 +1,9 @@
 package x10.array;
 
-public class TriangularRegion extends Region {
+public class TriangularRegion extends Region{rect} {
+// TODO not really rect! should be 'dense' XTENLANG-3000
     // XTENLANG-49
-    static type TriangularRegion(rank:Int) = TriangularRegion{self.rank==rank};
+    static type TriangularRegion(rank:Int) = TriangularRegion{self.rank==rank,rect};
 
     val dim : Int;
     val rowMin : Int;
@@ -14,7 +15,7 @@ public class TriangularRegion extends Region {
      * @param p the dimension of the triangular array
      */
     public def this(rowMin: Int, colMin: Int, size: Int, lower: Boolean): TriangularRegion(2) {
-        super(2, false, true);
+        super(2, true, (rowMin==0&&colMin==0));
         this.dim = size;
         this.rowMin = rowMin;
         this.colMin = colMin;
@@ -31,7 +32,11 @@ public class TriangularRegion extends Region {
 
     public def indexOf(pt:Point) {
         if (pt.rank != 2) return -1;
-        return ((pt(0) * pt(0)) / 2) + pt(1);
+        return indexOf(pt(0), pt(1));
+    }
+
+    public def indexOf(i0:Int, i1:Int) {
+        return ((i0)*(i0+1))/2 + i1;
     }
 
     public def min():(int)=>int = (i:int)=> {
