@@ -66,6 +66,36 @@ public class MultipoleExpansion extends Expansion {
     }
 
     /**
+     * Calculate the multipole-like term O_{lm} (with m >= 0) for a point v
+     * and add to this expansion.
+     */
+    public def addOlm(q : Double, v : Tuple3d, p : Int) {
+        val v_pole = Polar3d.getPolar3d(v);
+        val pplm = AssociatedLegendrePolynomial.getPlk(v_pole.theta, p); 
+
+        terms(0,0) += Complex(q * pplm(0,0), 0.0);
+
+        val phifac0 = Complex(Math.cos(-v_pole.phi), Math.sin(-v_pole.phi));
+        var rfac : Double = v_pole.r;
+        var il : Double = 1.0;
+        for (l in 1..p) {
+            il = il * l;
+            var ilm : Double = il;
+            var phifac : Complex = Complex.ONE;
+            terms(l,0) += phifac / ilm * (q * rfac * pplm(l,0)); 
+            for (m in 1..l) {
+                ilm = ilm*(l+m);
+                phifac = phifac * phifac0;
+		        val O_lm = phifac / ilm * (q * rfac * pplm(l,m));
+                terms(l,m) += O_lm;
+                terms(l,-m) += O_lm.conjugate() * (1-2*(m%2));
+        		//to avoid conjugate if (m != 0) { if (m_sign) terms(l, -m) += Complex(O_lm.re,-O_lm.im); else terms(l, -m) += Complex(-O_lm.re,O_lm.im); }
+    	    }
+            rfac = rfac * v_pole.r;
+        }
+    }
+
+    /**
      * Calculate the chargeless multipole-like term O_{lm} (with m >= 0) for a point v.
      */
     public static def getOlm(v : Tuple3d, p : Int) : MultipoleExpansion {

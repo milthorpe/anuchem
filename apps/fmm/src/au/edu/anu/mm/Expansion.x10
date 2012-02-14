@@ -54,7 +54,12 @@ public class Expansion {
      * This operation is not atomic, therefore not thread-safe.
      */
     @Inline def unsafeAdd(e : Expansion) {
-        this.terms.map(this.terms, e.terms, (a:Complex, b:Complex)=>a+b);
+        //this.terms.map(this.terms, e.terms, (a:Complex, b:Complex)=>a+b);
+        for (l in 0..p) {
+            for (m in -l..l) {
+                this.terms(l,m) += e.terms(l,m);
+            }
+        }
     }
 
     public def toString() : String {
@@ -102,11 +107,10 @@ public class Expansion {
             for (m in 0..l) {
 	            var O_lm : Complex = Complex.ZERO;
                 for (k in -l..l) {
-                    O_lm = O_lm + temp(k) * Dl(m, k); // Eq. 5
+                    O_lm += temp(k) * Dl(m, k); // Eq. 5
                 }
                 terms(l,m) = O_lm;
-
-        	    terms(l, -m) = O_lm.conjugate() * m_sign;
+        	    terms(l,-m) = O_lm.conjugate() * m_sign;
             	m_sign = -m_sign; // instead of doing the conjugate
             }
         }
@@ -131,12 +135,11 @@ public class Expansion {
             for (m in 0..l) {
 	            var O_lm : Complex = Complex.ZERO;
                 for (k in -l..l) {
-                    O_lm = O_lm + temp(k) * Dl(m, k); // Eq. 5
+                    O_lm += temp(k) * Dl(m, k); // Eq. 5
                 }
                 O_lm = O_lm * complexK(m);
                 terms(l,m) = O_lm;
-
-        	    terms(l, -m) = O_lm.conjugate() * m_sign;
+        	    terms(l,-m) = O_lm.conjugate() * m_sign;
             	m_sign = -m_sign; // instead of doing the conjugate
             }
         }

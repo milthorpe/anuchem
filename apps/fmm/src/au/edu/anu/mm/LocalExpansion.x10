@@ -122,7 +122,7 @@ public class LocalExpansion extends Expansion {
     				F_lm = F_lm * b / (j - l + 1);
     			}
     			targetTerms(l, m) = M_lm;
-    			if (m != 0) targetTerms(l, -m) = targetTerms(l, m).conjugate() * m_sign;
+    			if (m != 0) targetTerms(l, -m) = M_lm.conjugate() * m_sign;
     		}
 	    	m_sign = -m_sign;
 	   	}
@@ -201,7 +201,7 @@ public class LocalExpansion extends Expansion {
 				    F_lm = F_lm * (j + l + 1) * inv_b;
 			    }
 			    targetTerms(l, m) = M_lm;
-			    if (m != 0) targetTerms(l, -m) = targetTerms(l, m).conjugate() * m_sign;
+			    if (m != 0) targetTerms(l,-m) = M_lm.conjugate() * m_sign;
                 b_lm1_pow = b_lm1_pow * inv_b;
 		    }
             
@@ -235,29 +235,6 @@ public class LocalExpansion extends Expansion {
         val temp = new Array[Complex](-p..p) as Array[Complex](1){rect,rail==false};
     	target.rotate(temp, genComplexK(phi, p)(0), WignerRotationMatrix.getCCollection(theta, p)(0) );
     	return target;
-    }
-
-    /**
-     * Transforms this local expansion about the origin to the potential
-     * acting on <code>q</code> at point <code>v</code>.
-     * @param q the charge at point v
-     * @param v the location of charge q
-     */
-    public def getPotential(q : Double,
-                                v : Tuple3d) : Double {
-        val transform = MultipoleExpansion.getOlm(q, v, p);
-        var potential : Double = 0.0;
-        // TODO use lift/reduction?
-        // TODO should be just:  for ([j,k] in terms.region) {
-        for (j in 0..p) {
-            for (k in -j..j) {
-                potential += (terms(j,k) * transform.terms(j,k)).re;
-            }
-        }
-        return potential;
-//        return terms.mapReduce[Complex,Double,Double](transform.terms, 
-//                                (a:Complex,b:Complex)=>(a*b).re, 
-//                                (a:Double, b:Double)=>a+b, 0.0);
     }
 
     /**

@@ -243,8 +243,8 @@ public class Fmm3d {
                     for (i in 0..(boxAtoms.size-1)) {
                         val atom = boxAtoms(i);
                         val atomLocation = boxCentre.vector(atom.centre);
-                        val atomExpansion = MultipoleExpansion.getOlm(atom.charge, atomLocation, numTerms);
-                        leafBox.multipoleExp.unsafeAdd(atomExpansion); // only one thread per box, so unsafeAdd is OK
+                        // only one thread per box, so unsafe addOlm is OK
+                        leafBox.multipoleExp.addOlm(atom.charge, atomLocation, numTerms);
                     }
                 }
             }

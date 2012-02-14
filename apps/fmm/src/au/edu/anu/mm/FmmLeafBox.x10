@@ -41,17 +41,40 @@ public class FmmLeafBox extends FmmBox {
         addMultipolesAtSameLevel(size, myOperators, locallyEssentialTree());
         addParentExpansion(size, parentLocalExpansion, myOperators);
 
-        var leafBoxEnergy:Double = 0.0;
+        return getPotential(size);
+        
+    }
+
+    /**
+     * Transforms this local expansion about the origin to the potential
+     * acting on <code>q</code> at point <code>v</code>.
+     * @param q the charge at point v
+     * @param v the location of charge q
+     */
+    private def getPotential(size:Double) : Double {
         val boxAtoms = getAtoms();
         val boxCentre = getCentre(size);
+        val p = localExp.p;
+
+        val chargeExpansion = new MultipoleExpansion(p);
         for (atomIndex in 0..(boxAtoms.size-1)) {
-           val atom = boxAtoms(atomIndex);
-           val locationWithinBox = atom.centre.vector(boxCentre);
-           val farFieldEnergy = localExp.getPotential(atom.charge, locationWithinBox);
-           leafBoxEnergy += farFieldEnergy;
+            val atom = boxAtoms(atomIndex);
+            val locationWithinBox = atom.centre.vector(boxCentre);
+            chargeExpansion.addOlm(atom.charge, locationWithinBox, p);
         }
-        return leafBoxEnergy;
-        
+
+        var potential : Double = 0.0;
+        // TODO use lift/reduction?
+        // TODO should be just:  for ([j,k] in terms.region) {
+        for (j in 0..p) {
+            for (k in -j..j) {
+                potential += (localExp.terms(j,k) * chargeExpansion.terms(j,k)).re;
+            }
+        }
+        return potential;
+//        return terms.mapReduce[Complex,Double,Double](chargeExpansion.terms, 
+//                                (a:Complex,b:Complex)=>(a*b).re, 
+//                                (a:Double, b:Double)=>a+b, 0.0);
     }
 
     public def getUList() = this.uList;
