@@ -6,7 +6,7 @@
  *  You may obtain a copy of the License at
  *      http://www.opensource.org/licenses/eclipse-1.0.php
  *
- * (C) Copyright Josh Milthorpe 2010.
+ * (C) Copyright Josh Milthorpe 2010-2012.
  */
 package au.edu.anu.mm;
 
@@ -86,9 +86,7 @@ public class FmmBox {
     }
 
     protected def downward(size:Double, parentLocalExpansion:LocalExpansion, fmmOperators:PlaceLocalHandle[FmmOperators], locallyEssentialTree:PlaceLocalHandle[LocallyEssentialTree], boxes:Rail[DistArray[FmmBox](3)]):Double {
-        val myOperators = fmmOperators();
-        addMultipolesAtSameLevel(size, myOperators, locallyEssentialTree());
-        addParentExpansion(size, parentLocalExpansion, myOperators);
+        constructLocalExpansion(size, fmmOperators, parentLocalExpansion, locallyEssentialTree);
 
         val childLevel = level+1;
         val childLevelBoxes = boxes(childLevel);
@@ -115,11 +113,13 @@ public class FmmBox {
         return farField;
     }
 
-    protected def addMultipolesAtSameLevel(size:Double, fmmOperators:FmmOperators, locallyEssentialTree:LocallyEssentialTree) {
+    protected def constructLocalExpansion(size:Double, fmmOperators:PlaceLocalHandle[FmmOperators], parentLocalExpansion:LocalExpansion, locallyEssentialTree:PlaceLocalHandle[LocallyEssentialTree]) {
+        val myOperators = fmmOperators();
         val sideLength = size / Math.pow2(level);
-        val myComplexK = fmmOperators.complexK;
-        val myWignerB = fmmOperators.wignerB;
-        val thisLevelMultipoleCopies = locallyEssentialTree.multipoleCopies(level);
+        val myComplexK = myOperators.complexK;
+        val myWignerB = myOperators.wignerB;
+        val myWignerC = myOperators.wignerC;
+        val thisLevelMultipoleCopies = locallyEssentialTree().multipoleCopies(level);
 
         // transform and add multipole expansions from same level
         val numTerms = localExp.p;
@@ -144,12 +144,6 @@ public class FmmBox {
 					myComplexK(dx2,dy2,dz2), box2MultipoleExp, myWignerB(dx2,dy2,dz2) );
             }
         }
-    }
-
-    protected def addParentExpansion(size:Double, parentLocalExpansion:LocalExpansion, fmmOperators:FmmOperators) {
-        val sideLength = size / Math.pow2(level);
-        val myComplexK = fmmOperators.complexK;
-        val myWignerC = fmmOperators.wignerC;
 
         if (parentLocalExpansion != null) {
             // translate and add parent local expansion
@@ -157,10 +151,11 @@ public class FmmBox {
             val dy = 2*(this.y%2)-1;
             val dz = 2*(this.z%2)-1;
 
-            localExp.translateAndAddLocal(
+            localExp.translateAndAddLocal(scratch, scratch_array,
                 Vector3d(dx*0.5*sideLength, dy*0.5*sideLength, dz*0.5*sideLength),
                 myComplexK(dx,dy,dz), parentLocalExpansion, myWignerC((dx+1)/2, (dy+1)/2, (dz+1)/2));
         }
+
     }
 
     public def getVList() = this.vList;

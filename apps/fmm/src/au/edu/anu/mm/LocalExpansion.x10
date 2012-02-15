@@ -6,7 +6,7 @@
  *  You may obtain a copy of the License at
  *      http://www.opensource.org/licenses/eclipse-1.0.php
  *
- * (C) Copyright Josh Milthorpe 2010-2011.
+ * (C) Copyright Josh Milthorpe 2010-2012.
  */
 package au.edu.anu.mm;
 
@@ -96,17 +96,18 @@ public class LocalExpansion extends Expansion {
 
     /** 
      * More efficient version of Operator C (translation and addition) with rotations
+     * @param scratch, a MultipoleExpansion in which to perform temporary calculations
+     * @param temp, a Complex array in which to store temporary results
      * @param v a Tuple representing the shift of the expansion
      * @param wigner a collection of Wigner matrices precalculated to speed up the rotation
      * @param complexK is the pre calculated values of exp(i*k*phi)
      * @param source the source local expansion
      * @see Dachsel 2006, eqn 18
      */
-    public def translateAndAddLocal(v : Vector3d, complexK : Rail[Array[Complex](1){rect,rail==false}], source : LocalExpansion, wigner : Rail[Rail[Array[Double](2){rect}]]) { 
+    public def translateAndAddLocal(scratch:MultipoleExpansion, temp:Array[Complex](1){rect,rail==false}, v:Vector3d, complexK:Rail[Array[Complex](1){rect,rail==false}], source:LocalExpansion, wigner:Rail[Rail[Array[Double](2){rect}]]) { 
 	    val b = v.length();
-	    val temp = new Array[Complex](-p..p) as Array[Complex](1){rect,rail==false};
 
-	    val scratch : LocalExpansion = new LocalExpansion( source );
+        Array.copy(source.terms, scratch.terms);
         scratch.rotate(temp, complexK(1), wigner(0) );
 
     	val targetTerms = scratch.terms;
@@ -137,8 +138,10 @@ public class LocalExpansion extends Expansion {
      * @param source the source local expansion
      */
     public def translateAndAddLocal(v : Vector3d, source : LocalExpansion) {
+        val scratch = new MultipoleExpansion(p);
+        val temp = new Array[Complex](-p..p) as Array[Complex](1){rect,rail==false};
 	    val polar = Polar3d.getPolar3d(v);
-	    translateAndAddLocal(v, genComplexK(polar.phi, p), source, WignerRotationMatrix.getCCollection(polar.theta, p) );
+	    translateAndAddLocal(scratch, temp, v, genComplexK(polar.phi, p), source, WignerRotationMatrix.getCCollection(polar.theta, p) );
     }
 
    /** 

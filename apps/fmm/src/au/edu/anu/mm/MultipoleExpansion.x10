@@ -164,18 +164,19 @@ public class MultipoleExpansion extends Expansion {
 
     /**
      * This is Operator A implementing rotations so that the actual translation occurs parallel with the z-axis
+     * @param scratch, a MultipoleExpansion in which to perform temporary calculations
+     * @param temp, a Complex array in which to store temporary results
      * @param v is the vector through which the source should be translated
      * @param complexK is the pre calculated values of exp(i*-k*phi)
      * @param source is the multipole to add
      * @param wigner is the pre calculated Wigner matrices for the rotation angle theta, indexed first by forwards (0) and backwards (1)
      * @see Dachsel 2006, eqn 9
      */
-    public def translateAndAddMultipole(v : Vector3d, complexK : Rail[Array[Complex](1){rect,rail==false}], source : MultipoleExpansion, wigner : Rail[Rail[Array[Double](2){rect}]]) { 
+    public def translateAndAddMultipole(scratch:MultipoleExpansion, temp:Array[Complex](1){rect,rail==false}, v:Vector3d, complexK:Rail[Array[Complex](1){rect,rail==false}], source:MultipoleExpansion, wigner:Rail[Rail[Array[Double](2){rect}]]) { 
 	    val b = v.length();
 	    val invB = 1 / b;
-	    val temp = new Array[Complex](-p..p) as Array[Complex](1){rect,rail==false}; // temporary space to do calculations in
 
-	    val scratch = new MultipoleExpansion( source );
+        Array.copy(source.terms, scratch.terms);
 	    scratch.rotate(temp, complexK(0), wigner(0) );
 
 	    val targetTerms = scratch.terms;
@@ -210,8 +211,10 @@ public class MultipoleExpansion extends Expansion {
      * @param source is the multipole to add
      */
     public def translateAndAddMultipole(v : Vector3d, source : MultipoleExpansion) {
+        val scratch = new MultipoleExpansion(p);
+        val temp = new Array[Complex](-p..p) as Array[Complex](1){rect,rail==false};
     	val polar = Polar3d.getPolar3d(v);
-    	translateAndAddMultipole(v, genComplexK(polar.phi, p), source, WignerRotationMatrix.getACollection(polar.theta, p) );
+    	translateAndAddMultipole(scratch, temp, v, genComplexK(polar.phi, p), source, WignerRotationMatrix.getACollection(polar.theta, p) );
     }
     /**
      * Rotation of this expansion where Wigner matrices and exp(i*-k*phi) are not precalculated

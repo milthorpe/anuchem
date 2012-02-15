@@ -6,7 +6,7 @@
  *  You may obtain a copy of the License at
  *      http://www.opensource.org/licenses/eclipse-1.0.php
  *
- * (C) Copyright Josh Milthorpe 2010-2011.
+ * (C) Copyright Josh Milthorpe 2010-2012.
  */
 package au.edu.anu.mm;
 
@@ -37,19 +37,16 @@ public class FmmLeafBox extends FmmBox {
     }
 
     protected def downward(size:Double, parentLocalExpansion:LocalExpansion, fmmOperators:PlaceLocalHandle[FmmOperators], locallyEssentialTree:PlaceLocalHandle[LocallyEssentialTree], boxes:Rail[DistArray[FmmBox](3)]):Double {
-        val myOperators = fmmOperators();
-        addMultipolesAtSameLevel(size, myOperators, locallyEssentialTree());
-        addParentExpansion(size, parentLocalExpansion, myOperators);
+        constructLocalExpansion(size, fmmOperators, parentLocalExpansion, locallyEssentialTree);
 
         return getPotential(size);
         
     }
 
     /**
-     * Transforms this local expansion about the origin to the potential
-     * acting on <code>q</code> at point <code>v</code>.
-     * @param q the charge at point v
-     * @param v the location of charge q
+     * Returns the far-field potential of all charges within this box due to
+     * all charges in well-separated boxes.
+     * @param size the side length of the full simulation box
      */
     private def getPotential(size:Double) : Double {
         val boxAtoms = getAtoms();

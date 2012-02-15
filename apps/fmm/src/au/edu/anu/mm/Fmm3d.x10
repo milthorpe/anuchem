@@ -263,6 +263,7 @@ public class Fmm3d {
         val boxes = this.boxes; // TODO shouldn't be necessary XTENLANG-1913
         val numLevels = this.numLevels; // TODO shouldn't be necessary XTENLANG-1913
         val topLevel = this.topLevel; // TODO shouldn't be necessary XTENLANG-1913
+        val numTerms = this.numTerms; // TODO shouldn't be necessary XTENLANG-1913
 
         for (var level: Int = numLevels-1; level >= topLevel; level--) {
             //val timer = new Timer(1);
@@ -284,6 +285,9 @@ public class Fmm3d {
 
                 val lowerLevelMultipoleCopies = myLET.multipoleCopies(thisLevel+1);
 
+                val scratch = new MultipoleExpansion(numTerms);    
+                val scratch_array = new Array[Complex](-numTerms..numTerms) as Array[Complex](1){rect,rail==false};
+
                 for ([x,y,z] in regionHere) {
                     val parent = thisLevelBoxes(x,y,z);
                     // ... and then sequentially sum them together
@@ -295,7 +299,7 @@ public class Fmm3d {
                                     val dx = ((x2+1)%2)*2-1;
                                     val dy = ((y2+1)%2)*2-1;
                                     val dz = ((z2+1)%2)*2-1;
-                                    parent.multipoleExp.translateAndAddMultipole(
+                                    parent.multipoleExp.translateAndAddMultipole(scratch, scratch_array,
                                       Vector3d(dx*halfSideLength, dy*halfSideLength, dz*halfSideLength),
                                       complexK(dx,dy,dz), childExp, wignerA((dx+1)/2, (dy+1)/2, (dz+1)/2));
                                 }
