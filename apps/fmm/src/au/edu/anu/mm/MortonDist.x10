@@ -270,6 +270,9 @@ public final class MortonDist extends Dist(3) {
         }
     } 
 
+    // replicated from superclass to workaround xlC bug with using & itables
+    public operator this(p:Place):Region(rank) = get(p);
+
     public operator this(pt:Point(rank)):Place {
         if (CompilerFlags.checkBounds() && !region.contains(pt)) raiseBoundsError(pt);
         val index = getMortonIndex(pt);
