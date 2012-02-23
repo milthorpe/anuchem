@@ -240,8 +240,10 @@ public class MultipoleExpansion extends Expansion {
      */ 
     public def getMacroscopicParent() : MultipoleExpansion {
         val parentExpansion = new MultipoleExpansion(p);
-        for ([l,m] in terms.region) {
-            parentExpansion.terms(l,m) = terms(l,m) * Math.pow(3.0, l);
+        for (l in 0..p) {
+            for (m in -l..l) {
+                parentExpansion.terms(l,m) = terms(l,m) * Math.pow(3.0, l);
+            }
         }
         return parentExpansion;
     }
