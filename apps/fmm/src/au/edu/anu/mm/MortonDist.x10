@@ -273,11 +273,24 @@ public final class MortonDist extends Dist(3) {
     // replicated from superclass to workaround xlC bug with using & itables
     public operator this(p:Place):Region(rank) = get(p);
 
+    // replicated from superclass to workaround xlC bug with using & itables
+    // These are actually unreachable (due to rank constraints), but the compiler 
+    // isn't smart enough to understand that and supress the using declaration in the generated code
+    public operator this(i0:int):Place { throw new UnsupportedOperationException("Unreachable Code!"); }
+    public operator this(i0:int, i1:int):Place { throw new UnsupportedOperationException("Unreachable Code!"); }
+    public operator this(i0:int, i1:int, i2:int, i3:int):Place { throw new UnsupportedOperationException("Unreachable Code!"); }
+
     public operator this(pt:Point(rank)):Place {
         if (CompilerFlags.checkBounds() && !region.contains(pt)) raiseBoundsError(pt);
         val index = getMortonIndex(pt);
         return getPlaceForIndex(index);
     }
+
+    public operator this(i0:int, i1:int, i2:int){rank==3}:Place {
+        if (CompilerFlags.checkBounds() && !region.contains(i0, i1, 12)) raiseBoundsError(i0,i1,i2);
+        val index = getMortonIndex(i0,i1,i2);
+        return getPlaceForIndex(index);
+    } 
 
     public def offset(pt:Point(rank)):Int {
         // assumes regionForHere is already initialised
