@@ -71,6 +71,7 @@ public class Anumm {
                 val invMass = 1.0 / forceField.getAtomMass(atom.symbol);
                 atom.velocity = atom.velocity + 0.5 * t * invMass * atom.force;
                 atom.centre = atom.centre + atom.velocity * t;
+                Console.OUT.print(atom.centre.i + " " + atom.centre.j + " " + atom.centre.k + " ");
             }
         }
         forceField.getPotentialAndForces(atoms);

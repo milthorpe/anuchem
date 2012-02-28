@@ -6,7 +6,7 @@
  *  You may obtain a copy of the License at
  *      http://www.opensource.org/licenses/eclipse-1.0.php
  *
- * (C) Copyright Josh Milthorpe 2010-2011.
+ * (C) Copyright Josh Milthorpe 2012.
  */
 package au.edu.anu.mm;
 
@@ -14,18 +14,22 @@ import x10.util.Pair;
 import x10x.vector.Vector3d;
 import au.edu.anu.chem.mm.MMAtom;
 
-public class DiatomicForceField implements ForceField {
-    val diatomicPotentials : Rail[DiatomicPotential];
+public class PenningForceField implements ForceField {
 
-    public def this(diatomicPotentials : Rail[DiatomicPotential]) {
-        this.diatomicPotentials = diatomicPotentials;
-    }
+    static magneticField = new Vector3d(100.0, 0.0, 0.0);
+    // static electricField = ??
     
     public def getPotentialAndForces(atoms: DistArray[Rail[MMAtom]](1)) : Double {
-        var V : Double = 0.0;        
-        for (p in 0..(diatomicPotentials.size-1)) {
-            val potential = diatomicPotentials(p);
-            V += potential.getPotentialAndForces();
+        var V : Double = 0.0;
+        finish ateach(place in atoms) {
+            val atomsHere = atoms(place);
+            for ([p] in atomsHere) {
+                val atom = atomsHere(p);
+                //Console.OUT.println("atom.velocity = " + atom.velocity);
+                val F = atom.charge * atom.velocity.cross(magneticField);
+                //Console.OUT.println("F = " + F);
+                atom.force = F;
+            }
         }
         return V;
     }

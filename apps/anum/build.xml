@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE project [<!ENTITY buildfile SYSTEM "file:./build-user.xml">]>
 <project name="X10 application project" default="build" basedir=".">
-	<property name="x10x.lib" location="../../x10x.lib"/>
-	<property name="xla.src" location="${x10x.lib}/xla/src"/>
-	<property name="xla.lib" location="${x10x.lib}/xla/lib/xla.jar"/>
-	<property name="x10.runtime.extensions" location="../../x10.runtime"/>
-	<property name="xre.src" location="${x10.runtime.extensions}/src"/>
-	<property name="xre.lib" location="${x10.runtime.extensions}/lib/x10re.jar"/>
+    <property name="x10rt" value="sockets" />
+    <property name="x10x.xla" location="../../x10x.lib/xla"/>
+	<property name="xla.props" location="${x10x.xla}/xla_${x10rt}.properties"/>
+	<property name="xla.src" location="${x10x.xla}/xla/src"/>
+	<property name="xla.lib" location="${x10x.xla}/xla/lib/xla.jar"/>
     <property name="anuchem" location="../../anu-chem"/>
+    <property name="anuchem.props" location="${anuchem}/anuchem_${x10rt}.properties"/>
 	<property name="anuchem.src" location="${anuchem}/src"/>
 	<property name="anuchem.lib" location="${anuchem}/lib/anu-chem.jar"/>
     <property name="x10.testlib" location="${user.home}/x10-trunk/x10.tests/examples/x10lib"/>
@@ -28,7 +28,7 @@
 	<property name="target-test" location="${target}/test-classes"/>
     <property name="bin" location="${basedir}/bin"/>
 	<property name="exe" value="anumm"/>
-    <property name="testclass" value="src/au/edu/anu/mm/Anumm.x10"/>
+    <property name="testclass" value="test/au/edu/anu/mm/TestCyclotron.x10"/>
 
     <condition property="x10c.optimize" value="-O" else="">
         <istrue value="${optimize}"/>
@@ -102,11 +102,11 @@
         <pathconvert property="src.list" refid="changed.src.files" dirsep="/" pathsep=" ">
             <map from="${basedir}${file.separator}src${file.separator}" to=""/>
         </pathconvert>
-        <echo message="x10c++ -x10rt ${x10rt} ${x10c.debug} ${x10c.profile} ${x10c.optimize} ${x10c.nochecks} -post '# # ${link.mpiPprofile} ${post.cpuprofile}' -sourcepath .:${xre.src}:${xla.src}:${anuchem.src} ${basedir}/${testclass}"/>
+        <echo message="x10c++ -x10rt ${x10rt} ${x10c.debug} ${x10c.profile} ${x10c.optimize} ${x10c.nochecks} -post '# # ${link.mpiPprofile} ${post.cpuprofile}'  -x10lib ${xla.props} -x10lib ${anuchem.props} -sourcepath . ${basedir}/${testclass}"/>
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/src">
             <arg value="-c"/>
-            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.debug} ${x10c.profile} ${x10c.optimize} ${x10c.nochecks} -report postcompile=1 -post '# # ${link.mpiPprofile} ${post.cpuprofile}' -sourcepath .:${xre.src}:${xla.src}:${anuchem.src} -d ${target-src} ${basedir}/${testclass}"/>
+            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.debug} ${x10c.profile} ${x10c.optimize} ${x10c.nochecks} -report postcompile=1 -post '# # ${link.mpiPprofile} ${post.cpuprofile}' -x10lib ${xla.props} -x10lib ${anuchem.props} -sourcepath . -d ${target-src} ${basedir}/${testclass}"/>
         </exec>
     </target>
 
