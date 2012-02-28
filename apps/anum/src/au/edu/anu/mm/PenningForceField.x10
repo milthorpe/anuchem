@@ -16,8 +16,12 @@ import au.edu.anu.chem.mm.MMAtom;
 
 public class PenningForceField implements ForceField {
 
-    static magneticField = new Vector3d(-100.0, 0.0, 0.0);
+    public val magneticField:Vector3d;
     // static electricField = ??
+
+    public def this(B:Vector3d) {
+        this.magneticField = B;
+    }
     
     public def getPotentialAndForces(atoms: DistArray[Rail[MMAtom]](1)) : Double {
         var V : Double = 0.0;

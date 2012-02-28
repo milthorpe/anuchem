@@ -12,6 +12,7 @@ package au.edu.anu.mm;
 
 import x10x.vector.Point3d;
 import x10x.vector.Vector3d;
+import au.edu.anu.mm.SystemProperties;
 import au.edu.anu.chem.mm.MMAtom;
 import au.edu.anu.chem.mm.TestElectrostatic;
 
@@ -24,7 +25,7 @@ import au.edu.anu.chem.mm.TestElectrostatic;
 public class TestCyclotron extends TestElectrostatic {
     public static def main(args : Array[String](1)) {
         var v:Double = 1.0;
-        var timesteps:Int = 4000;
+        var timesteps:Int = 200000;
         if (args.size > 0) {
             v = Double.parseDouble(args(0));
             if (args.size > 1) {
@@ -42,8 +43,9 @@ public class TestCyclotron extends TestElectrostatic {
         val distAtoms = DistArray.make[Rail[MMAtom]](Dist.makeBlock(0..0, 0));
         distAtoms(0) = atoms;
 
-        val anumm = new Anumm(distAtoms, new PenningForceField());
-        anumm.mdRun(0.2, timesteps);
+        val onePFs = [OneParticleFunction("mean_Z", (a:MMAtom) => a.centre.k)];
+        val anumm = new Anumm(distAtoms, new PenningForceField(new Vector3d(-1.0, 0.0, 0.0)), new SystemProperties(onePFs));
+        anumm.mdRun(0.2, timesteps, 100);
     }
 }
 
