@@ -17,42 +17,47 @@ import au.edu.anu.chem.mm.MMAtom;
  * This class manages calculation of dynamical and ensemble system properties.
  */
 public class SystemProperties {
+    public val numAtoms:Int;
     public val oneParticleFunctions:Rail[OneParticleFunction];
     
-    public def this(oneParticleFunctions:Rail[OneParticleFunction]) {
+    public def this(numAtoms:Int, oneParticleFunctions:Rail[OneParticleFunction]) {
+        this.numAtoms = numAtoms;
         this.oneParticleFunctions = oneParticleFunctions;
     }
 
     public def calculateExpectationValues(atoms: DistArray[Rail[MMAtom]](1)):Rail[Pair[String,Double]] {
-        val totals = new Accumulator[Rail[Pair[Int,Double]]](RailSumReducer(oneParticleFunctions.size));
+        val totals = new Accumulator[Rail[Double]](RailSumReducer(oneParticleFunctions.size));
         finish ateach(place in atoms) {
-            val totalHere = new Rail[Pair[Int,Double]](oneParticleFunctions.size);
             val atomsHere = atoms(place);
-            for ([p] in atomsHere) {
-                for ([i] in oneParticleFunctions) {
-                    val atomVal = oneParticleFunctions(i).second(atomsHere(p));
-                    val currentVal = totalHere(i);
-                    totalHere(i) = Pair[Int,Double](currentVal.first+1, currentVal.first+atomVal);
-                }
-            }
+            val totalHere = calculateExpectationValues(atomsHere);
             totals <- totalHere;
         }
         
         val raw = totals();
         val results = new Rail[Pair[String,Double]](raw.size);
         for (i in 0..(results.size-1)) {
-            results(i) = Pair[String,Double](oneParticleFunctions(i).first, raw(i).second / raw(i).first);
+            results(i) = Pair[String,Double](oneParticleFunctions(i).first, raw(i) / numAtoms);
         }
         return results;
     }
 
-    static struct RailSumReducer(size:Int) implements Reducible[Rail[Pair[Int,Double]]] {
+    public def calculateExpectationValues(atoms:Rail[MMAtom]):Rail[Double] {
+        val totals = new Rail[Double](oneParticleFunctions.size);
+        for ([p] in atoms) {
+            for ([i] in oneParticleFunctions) {
+                totals(i) += oneParticleFunctions(i).second(atoms(p));
+            }
+        }
+        return totals;
+    }
+
+    static struct RailSumReducer(size:Int) implements Reducible[Rail[Double]] {
         public def this(size:Int) { property(size); }
-        public def zero() = new Rail[Pair[Int, Double]](size);
-        public operator this(a:Rail[Pair[Int, Double]], b:Rail[Pair[Int, Double]]) {
-            val result = new Rail[Pair[Int, Double]](b.size);
+        public def zero() = new Rail[Double](size);
+        public operator this(a:Rail[Double], b:Rail[Double]) {
+            val result = new Rail[Double](b.size);
             for (i in 0..(b.size-1)) {
-                result(i) = Pair[Int,Double](a(i).first + b(i).first, a(i).second + b(i).second);
+                result(i) = a(i) + b(i);
             }
             return result;
         }

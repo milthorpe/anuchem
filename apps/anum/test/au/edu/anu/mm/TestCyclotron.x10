@@ -24,28 +24,36 @@ import au.edu.anu.chem.mm.TestElectrostatic;
  */
 public class TestCyclotron extends TestElectrostatic {
     public static def main(args : Array[String](1)) {
-        var v:Double = 1.0;
-        var timesteps:Int = 200000;
+        var v:Double = 10.0;
+        var B:Double = 15.0;
+        var timesteps:Int = 40000;
+        var logSteps:Int = 100;
         if (args.size > 0) {
-            v = Double.parseDouble(args(0));
+            B = Double.parseDouble(args(0));
             if (args.size > 1) {
-                timesteps = Int.parseInt(args(1));
+                v = Double.parseDouble(args(1));
+                if (args.size > 2) {
+                    timesteps = Int.parseInt(args(2));
+                    if (args.size > 3) {
+                        logSteps = Int.parseInt(args(3));
+                    }
+                }
             }
         }
 
         Console.OUT.println("Testing cyclotron: initial velocity: + " + v + "");
 
         // start with displacement of 0.01nm
-        val hydrogen = new MMAtom("H", Point3d(0, 0.00, 0.001), 1.0);
+        val hydrogen = new MMAtom("H", Point3d(0.0, 0.0, 0.0), 1.0);
         hydrogen.velocity = Vector3d(0.0, v, 0.0);
         val atoms = new Array[MMAtom](1);
         atoms(0) = hydrogen;
         val distAtoms = DistArray.make[Rail[MMAtom]](Dist.makeBlock(0..0, 0));
         distAtoms(0) = atoms;
 
-        val onePFs = [OneParticleFunction("mean_Z", (a:MMAtom) => a.centre.k)];
-        val anumm = new Anumm(distAtoms, new PenningForceField(new Vector3d(-1.0, 0.0, 0.0)), new SystemProperties(onePFs));
-        anumm.mdRun(0.2, timesteps, 100);
+        val onePFs = [OneParticleFunction("mean_Y", (a:MMAtom) => a.centre.j), OneParticleFunction("mean_Z", (a:MMAtom) => a.centre.k), OneParticleFunction("Ek", (a:MMAtom) => PenningTrap.getAtomMass(a.symbol) * a.velocity.lengthSquared())];
+        val trap = new PenningTrap(1, distAtoms, new Vector3d(B, 0.0, 0.0), new SystemProperties(1, onePFs));
+        trap.mdRun(0.2, timesteps, logSteps);
     }
 }
 
