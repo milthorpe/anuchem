@@ -28,7 +28,7 @@ public class PenningTrap {
     /** The atoms in the simulation, divided up into a distributed array of Arrays, one for each place. */
     private val atoms:DistArray[Rail[MMAtom]](1);
 
-    /** The static homogeneous magnetic field B. */
+    /** The static homogeneous magnetic field B, in Teslas. */
     public val B:Vector3d;
     /** The scalar magnitude of B. */
     private val magB:Double;
@@ -68,12 +68,11 @@ public class PenningTrap {
 
         finish ateach(placeId in atoms) {
             var step : Long = 0;
-            val dt = timestep * 0.001;
             val myAtoms = atoms(placeId);
             printProperties(timestep, step, myAtoms);
             while(step < numSteps) {
                 step++;
-                mdStep(dt, myAtoms);
+                mdStep(timestep, myAtoms);
                 if (step % logSteps == 0L) {
                     printProperties(timestep, step, myAtoms);
                 }
@@ -100,7 +99,7 @@ public class PenningTrap {
     /**
      * Performs a single molecular dynamics timestep
      * using the velocity-Verlet algorithm. 
-     * @param timestep time in fs (=ps/1000)
+     * @param dt time in ps
      */
     public def mdStep(dt:Double, myAtoms:Rail[MMAtom]) {
         for (i in 0..(myAtoms.size-1)) {
@@ -162,6 +161,9 @@ public class PenningTrap {
             return 1.0079;
         } else if (symbol.equals("F")) {
             return 18.9984;
+        } else if (symbol.equals("CH3CO")) {
+            // acetaldehyde cation
+            return 43.04462;
         } else {
             throw new IllegalArgumentException("no atom mass found for symbol " + symbol);
         }

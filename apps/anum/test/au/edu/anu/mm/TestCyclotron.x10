@@ -24,18 +24,22 @@ import au.edu.anu.chem.mm.TestElectrostatic;
  */
 public class TestCyclotron extends TestElectrostatic {
     public static def main(args : Array[String](1)) {
-        var v:Double = 10.0;
-        var B:Double = 15.0;
-        var timesteps:Int = 40000;
+        var v:Double = 0.01;
+        var B:Double = 0.7646;
+        var dt:Double = 50.0; // timestep in ps
+        var timesteps:Int = 80000; // number of timesteps
         var logSteps:Int = 100;
         if (args.size > 0) {
             B = Double.parseDouble(args(0));
             if (args.size > 1) {
-                v = Double.parseDouble(args(1));
+                dt = Double.parseDouble(args(1));
                 if (args.size > 2) {
-                    timesteps = Int.parseInt(args(2));
+                    v = Double.parseDouble(args(2));
                     if (args.size > 3) {
-                        logSteps = Int.parseInt(args(3));
+                        timesteps = Int.parseInt(args(3));
+                        if (args.size > 4) {
+                            logSteps = Int.parseInt(args(4));
+                        }
                     }
                 }
             }
@@ -44,7 +48,7 @@ public class TestCyclotron extends TestElectrostatic {
         Console.OUT.println("Testing cyclotron: initial velocity: + " + v + "");
 
         // start with displacement of 0.01nm
-        val hydrogen = new MMAtom("H", Point3d(0.0, 0.0, 0.0), 1.0);
+        val hydrogen = new MMAtom("CH3CO", Point3d(0.0, 0.0, 0.0), 1.0);
         hydrogen.velocity = Vector3d(0.0, v, 0.0);
         val atoms = new Array[MMAtom](1);
         atoms(0) = hydrogen;
@@ -53,7 +57,7 @@ public class TestCyclotron extends TestElectrostatic {
 
         val onePFs = [OneParticleFunction("mean_Y", (a:MMAtom) => a.centre.j), OneParticleFunction("mean_Z", (a:MMAtom) => a.centre.k), OneParticleFunction("Ek", (a:MMAtom) => PenningTrap.getAtomMass(a.symbol) * a.velocity.lengthSquared())];
         val trap = new PenningTrap(1, distAtoms, new Vector3d(B, 0.0, 0.0), new SystemProperties(1, onePFs));
-        trap.mdRun(0.2, timesteps, logSteps);
+        trap.mdRun(dt, timesteps, logSteps);
     }
 }
 
