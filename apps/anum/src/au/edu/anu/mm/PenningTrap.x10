@@ -23,6 +23,8 @@ import au.edu.anu.util.Timer;
  * Equations of motion are integrated using the Boris scheme.
  */
 public class PenningTrap {
+    static val CHARGE_MASS_FACTOR = 9.64853105e-8; // conversion of q/m from e/Da to C/kg / 1e15
+
     private val numAtoms:Int;
 
     /** The atoms in the simulation, divided up into a distributed array of Arrays, one for each place. */
@@ -54,12 +56,13 @@ public class PenningTrap {
     /**
      * Perform a molecular mechanics run on the system of atoms
      * for the given number and length of timesteps.
-     * @param timestep length in ps
+     * @param timestep length in fs
      * @param numSteps number of timesteps to simulate
      */
     public def mdRun(timestep:Double, numSteps:Long, logSteps:Long) {
         Console.OUT.println("# Timestep = " + timestep + "fs, number of steps = " + numSteps);
 
+        Console.OUT.printf("%12s ", "us");
         val funcs = properties.oneParticleFunctions;
         for (i in 0..(funcs.size-1)) {
             Console.OUT.printf("%16s ", funcs(i).first);
@@ -80,6 +83,12 @@ public class PenningTrap {
         }
     }
 
+    /**
+     * Print current system properties.
+     * @param timestep length in fs
+     * @param currentStep current time in number of steps from start
+     * @param myAtoms for which to calculate properties
+     */
     private def printProperties(timestep:Double, currentStep:Long, myAtoms:Rail[MMAtom]) {
         val propertySums = properties.calculateExpectationValues(myAtoms);
         
@@ -88,7 +97,7 @@ public class PenningTrap {
             propertySums(i) /= (numAtoms as Double);
         }
         if (here == Place.FIRST_PLACE) {
-            Console.OUT.print("" + timestep * currentStep + " ");
+            Console.OUT.printf("%12.6f ", timestep * currentStep / 1e9);
             for (i in 0..(propertySums.size-1)) {
                 Console.OUT.printf("%16.8f ", propertySums(i));
             }
@@ -99,7 +108,7 @@ public class PenningTrap {
     /**
      * Performs a single molecular dynamics timestep
      * using the velocity-Verlet algorithm. 
-     * @param dt time in ps
+     * @param dt time in fs
      */
     public def mdStep(dt:Double, myAtoms:Rail[MMAtom]) {
         for (i in 0..(myAtoms.size-1)) {
@@ -111,8 +120,10 @@ public class PenningTrap {
             //val halfA = 0.5 * dt * atom.charge * E * invMass;
             val vMinus = atom.velocity; // + halfA;
 
-            val larmorFreq = atom.charge * magB * invMass;
-            val t = dt * 0.5 * atom.charge * invMass * B;
+            val chargeMassRatio = atom.charge * invMass * CHARGE_MASS_FACTOR;
+
+            //val larmorFreq = chargeMassRatio * magB;
+            val t = dt * 0.5 * chargeMassRatio * B;
             val vPrime = vMinus + vMinus.cross(t);
 
             val magt2 = t.lengthSquared();
@@ -156,6 +167,7 @@ public class PenningTrap {
         return ((x / (size * 2) + 0.5) * Place.MAX_PLACES) as Int;
     }
 
+    /** @return atomic/molar mass in atomic units */
     public static def getAtomMass(symbol : String) : Double {
         if (symbol.equals("H")) {
             return 1.0079;
@@ -164,6 +176,9 @@ public class PenningTrap {
         } else if (symbol.equals("CH3CO")) {
             // acetaldehyde cation
             return 43.04462;
+        } else if (symbol.equals("HCO")) {
+            // HCO+ cation 
+            return 29.0182;
         } else {
             throw new IllegalArgumentException("no atom mass found for symbol " + symbol);
         }

@@ -1,9 +1,9 @@
-set title "Ion in a penning trap"
+set title "Acetaldehyde cation in a Penning trap"
 
 set output 'penning.ps'
 set term post
 
-set xlabel 'time(ps)'
-set ylabel 'displacement'
+set xlabel 'time(us)'
+set ylabel 'displacement (mm)'
 
-plot 'penning.dat' using 1:2 with lines title "y" lt rgb "red", 'penning.dat' using 1:3 with lines title "z" lt rgb "blue"
+plot 'penning.dat' using 1:($2/1000000) with lines title "x" lt rgb "red", 'penning.dat' using 1:($3/1000000) with lines title "y" lt rgb "blue"

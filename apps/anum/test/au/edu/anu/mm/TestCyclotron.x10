@@ -20,13 +20,18 @@ import au.edu.anu.chem.mm.TestElectrostatic;
  * Simulates an ion packet travelling in a circular path in a Penning trap
  * for the purposes of Fourier Transform Ion Cyclotron Resonance (FT-ICR) mass
  * spectroscopy.
+ * Parameters to match simulation reported in:
+ * @see Seung-Jin Han and Seung Koo Shin (1997)
+ *  "Space-Charge Effects and Fourier transform ion cyclotron resonance signals:
+ *   experimental observations and three-dimensional trajectory simulations"
+ *   J. Am. Soc. Mass Spectrometry 8 (4), 319-326 
  * @author milthorpe
  */
 public class TestCyclotron extends TestElectrostatic {
     public static def main(args : Array[String](1)) {
-        var v:Double = 0.01;
         var B:Double = 0.7646;
-        var dt:Double = 50.0; // timestep in ps
+        var dt:Double = 50000.0; // timestep in fs
+        var v:Double = 1.0;
         var timesteps:Int = 80000; // number of timesteps
         var logSteps:Int = 100;
         if (args.size > 0) {
@@ -55,8 +60,8 @@ public class TestCyclotron extends TestElectrostatic {
         val distAtoms = DistArray.make[Rail[MMAtom]](Dist.makeBlock(0..0, 0));
         distAtoms(0) = atoms;
 
-        val onePFs = [OneParticleFunction("mean_Y", (a:MMAtom) => a.centre.j), OneParticleFunction("mean_Z", (a:MMAtom) => a.centre.k), OneParticleFunction("Ek", (a:MMAtom) => PenningTrap.getAtomMass(a.symbol) * a.velocity.lengthSquared())];
-        val trap = new PenningTrap(1, distAtoms, new Vector3d(B, 0.0, 0.0), new SystemProperties(1, onePFs));
+        val onePFs = [OneParticleFunction("mean_X", (a:MMAtom) => a.centre.i), OneParticleFunction("mean_Y", (a:MMAtom) => a.centre.j), OneParticleFunction("Ek", (a:MMAtom) => PenningTrap.getAtomMass(a.symbol) * a.velocity.lengthSquared())];
+        val trap = new PenningTrap(1, distAtoms, new Vector3d(0.0, 0.0, B), new SystemProperties(1, onePFs));
         trap.mdRun(dt, timesteps, logSteps);
     }
 }
