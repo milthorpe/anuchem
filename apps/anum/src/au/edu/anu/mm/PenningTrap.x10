@@ -23,7 +23,7 @@ import au.edu.anu.util.Timer;
  * Equations of motion are integrated using the Boris scheme.
  */
 public class PenningTrap {
-    static val CHARGE_MASS_FACTOR = 9.64853105e-8; // conversion of q/m from e/Da to C/kg / 1e15
+    static val CHARGE_MASS_FACTOR = 9.64853364e-2; // conversion of q/m from e/Da to C/kg * 1e-9
 
     private val numAtoms:Int;
 
@@ -62,20 +62,21 @@ public class PenningTrap {
     public def mdRun(timestep:Double, numSteps:Long, logSteps:Long) {
         Console.OUT.println("# Timestep = " + timestep + "fs, number of steps = " + numSteps);
 
-        Console.OUT.printf("%12s ", "us");
+        Console.OUT.printf("%12s ", "ns");
         val funcs = properties.oneParticleFunctions;
         for (i in 0..(funcs.size-1)) {
             Console.OUT.printf("%16s ", funcs(i).first);
         }
         Console.OUT.println();
 
+        val dt = timestep * 1e-6;
         finish ateach(placeId in atoms) {
             var step : Long = 0;
             val myAtoms = atoms(placeId);
             printProperties(timestep, step, myAtoms);
             while(step < numSteps) {
                 step++;
-                mdStep(timestep, myAtoms);
+                mdStep(dt, myAtoms);
                 if (step % logSteps == 0L) {
                     printProperties(timestep, step, myAtoms);
                 }
@@ -97,7 +98,7 @@ public class PenningTrap {
             propertySums(i) /= (numAtoms as Double);
         }
         if (here == Place.FIRST_PLACE) {
-            Console.OUT.printf("%12.6f ", timestep * currentStep / 1e9);
+            Console.OUT.printf("%12.6f ", timestep * currentStep * 1e-6);
             for (i in 0..(propertySums.size-1)) {
                 Console.OUT.printf("%16.8f ", propertySums(i));
             }
@@ -108,7 +109,7 @@ public class PenningTrap {
     /**
      * Performs a single molecular dynamics timestep
      * using the velocity-Verlet algorithm. 
-     * @param dt time in fs
+     * @param dt time in ns
      */
     public def mdStep(dt:Double, myAtoms:Rail[MMAtom]) {
         for (i in 0..(myAtoms.size-1)) {
