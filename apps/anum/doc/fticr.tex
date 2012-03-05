@@ -1,0 +1,58 @@
+\documentclass[10pt,conference,onecolumn]{IEEEtran}
+%
+% Use packaged depending on need
+%
+% \usepackage{graphicx}
+% \usepackage{algorithmic}
+% \usepackage{citesort}
+% \usepackage{scs}
+%
+\usepackage{graphicx}
+\usepackage{amssymb,amsmath}
+
+\usepackage[
+pdfauthor={Josh Milthorpe},
+pdftitle={Simulation of Fourier transform ion cyclotron resonance mass spectrometer},
+pdfcreator={pdftex},
+pdfkeywords={Fourier transform ion cyclotron resonance, mass spectrometry, Penning trap},
+pdfpagemode={none},
+pdfstartview={FitH},
+bookmarks={false}
+]{hyperref}
+
+% correct bad hyphenation here
+\hyphenation{net-works}
+
+\begin{document}
+
+\section{Penning trap}
+
+All simulation parameters taken from \cite{Han1997}.
+
+Ions are confined radially by a magnetic field $B$ of 0.7646 T.
+No electric field is currently simulated.
+
+Charges and mass are simulated in atomic units, lengths in nm and time in ns.
+
+To achieve 1\% accuracy for cyclotron frequency $\Omega = {Q|B| \over m}$  requires $\Omega \Delta t \lesssim 0.3$\cite{Birdsall1985}.
+
+\begin{table}[htbp]
+ \centering	  	  
+ \caption{Input, derived and observed simulation parameters}
+\label{tab:params}
+\begin{tabular}{c|c|c|c|c|c|c|c|c|c|c}
+ \hline \hline
+  &  & \multicolumn{3}{|c|}{\textbf{derived}} & \multicolumn{2}{|c|}{\textbf{observed}} & \multicolumn{4}{|c|}{\textbf{error: timestep}} \\ 
+ \hline
+ \textbf{species} & \textbf{charge} & \textbf{mass} & \textbf{$v_0$ (m/s)} & \textbf{$\omega / 2\Pi$ (Hz)} & \textbf{$\omega / 2\Pi$ (Hz)}  & \textbf{$r$ (nm)} & \textbf{$\Delta t$ (ns)} & \textbf{$\epsilon: \Delta t$}& \textbf{$\epsilon: \Delta t$ / 10} & \textbf{$\epsilon: \Delta t$ * 10}\\ 
+ \hline
+ CH3CO & 1 & 43.04 & 10 & 272,770 & 272,851 & 7043 & 175 & \\
+ \hline \hline
+\end{tabular}
+\end{table}
+
+\bibliographystyle{IEEEtran}
+\bibliography{fticr}
+
+\end{document}
+

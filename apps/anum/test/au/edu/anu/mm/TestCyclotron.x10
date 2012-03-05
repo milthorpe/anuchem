@@ -55,7 +55,7 @@ public class TestCyclotron extends TestElectrostatic {
 
         val r = new Random();
         val acetaldehyde = new MMAtom("CH3CO", Point3d(0.0, 0.0, 0.0), 1.0);
-        acetaldehyde.velocity = Vector3d(r.nextDouble()*10, r.nextDouble()*10, 0.0);
+        acetaldehyde.velocity = Vector3d(/*r.nextDouble()**/10, /*r.nextDouble()**/10, 0.0);
         val atoms = new Array[MMAtom](1);
         atoms(0) = acetaldehyde;
         val distAtoms = DistArray.make[Rail[MMAtom]](Dist.makeBlock(0..0, 0));
