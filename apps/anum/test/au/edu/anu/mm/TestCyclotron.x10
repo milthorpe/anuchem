@@ -10,6 +10,7 @@
  */
 package au.edu.anu.mm;
 
+import x10.util.Random;
 import x10x.vector.Point3d;
 import x10x.vector.Vector3d;
 import au.edu.anu.mm.SystemProperties;
@@ -31,7 +32,7 @@ public class TestCyclotron extends TestElectrostatic {
     public static def main(args : Array[String](1)) {
         var B:Double = 0.7646;
         var dt:Double = 50000.0; // timestep in fs
-        var v:Double = 1.0;
+        var V:Double = 1.0;
         var timesteps:Int = 80000; // number of timesteps
         var logSteps:Int = 100;
         if (args.size > 0) {
@@ -39,7 +40,7 @@ public class TestCyclotron extends TestElectrostatic {
             if (args.size > 1) {
                 dt = Double.parseDouble(args(1));
                 if (args.size > 2) {
-                    v = Double.parseDouble(args(2));
+                    V = Double.parseDouble(args(2));
                     if (args.size > 3) {
                         timesteps = Int.parseInt(args(3));
                         if (args.size > 4) {
@@ -50,18 +51,18 @@ public class TestCyclotron extends TestElectrostatic {
             }
         }
 
-        Console.OUT.println("Testing cyclotron: initial velocity: + " + v + "");
+        Console.OUT.println("# Testing cyclotron: trapping potential: + " + V + " magnetic field: " + B);
 
-        // start with displacement of 0.01nm
-        val hydrogen = new MMAtom("CH3CO", Point3d(0.0, 0.0, 0.0), 1.0);
-        hydrogen.velocity = Vector3d(0.0, v, 0.0);
+        val r = new Random();
+        val acetaldehyde = new MMAtom("CH3CO", Point3d(0.0, 0.0, 0.0), 1.0);
+        acetaldehyde.velocity = Vector3d(r.nextDouble()*10, r.nextDouble()*10, 0.0);
         val atoms = new Array[MMAtom](1);
-        atoms(0) = hydrogen;
+        atoms(0) = acetaldehyde;
         val distAtoms = DistArray.make[Rail[MMAtom]](Dist.makeBlock(0..0, 0));
         distAtoms(0) = atoms;
 
         val onePFs = [OneParticleFunction("mean_X", (a:MMAtom) => a.centre.i), OneParticleFunction("mean_Y", (a:MMAtom) => a.centre.j), OneParticleFunction("Ek", (a:MMAtom) => PenningTrap.getAtomMass(a.symbol) * a.velocity.lengthSquared())];
-        val trap = new PenningTrap(1, distAtoms, new Vector3d(0.0, 0.0, B), new SystemProperties(1, onePFs));
+        val trap = new PenningTrap(1, distAtoms, V, new Vector3d(0.0, 0.0, B), new SystemProperties(1, onePFs));
         trap.mdRun(dt, timesteps, logSteps);
     }
 }
