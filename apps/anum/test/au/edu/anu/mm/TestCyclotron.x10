@@ -53,11 +53,19 @@ public class TestCyclotron extends TestElectrostatic {
 
         Console.OUT.println("# Testing cyclotron: trapping potential: + " + V + " magnetic field: " + B);
 
-        val r = new Random();
-        val acetaldehyde = new MMAtom("CH3CO", Point3d(0.0, 0.0, 0.0), 1.0);
-        acetaldehyde.velocity = Vector3d(/*r.nextDouble()**/10, /*r.nextDouble()**/10, 0.0);
+
+        val species = "CH3CO";
+        val v = 10.0;
+        val q = 1.0;
+
+        val f = q * B / PenningTrap.getAtomMass(species) * (PenningTrap.CHARGE_MASS_FACTOR*1e9) / (2.0 * Math.PI);
+        val r = PenningTrap.getAtomMass(species) * v / (q * B) / PenningTrap.CHARGE_MASS_FACTOR;
+        Console.OUT.println("# predicted f = " + f + " r = " + r);
+
+        val ion = new MMAtom(species, Point3d(-r, 0.0, 0.0), q);
+        ion.velocity = Vector3d(0.0, v, 0.0);
         val atoms = new Array[MMAtom](1);
-        atoms(0) = acetaldehyde;
+        atoms(0) = ion;
         val distAtoms = DistArray.make[Rail[MMAtom]](Dist.makeBlock(0..0, 0));
         distAtoms(0) = atoms;
 

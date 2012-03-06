@@ -31,7 +31,7 @@ import au.edu.anu.util.Timer;
  *   J. Am. Soc. Mass Spectrometry 8 (4), 319-326 
  */
 public class PenningTrap {
-    static val CHARGE_MASS_FACTOR = 9.64853364e-2; // conversion of q/m from e/Da to C/kg * 1e-9
+    public static val CHARGE_MASS_FACTOR = 9.64853364e-2; // conversion of q/m from e/Da to C/kg * 1e-9
     static val ALPHA = 2.77373; // geometric factor for a cubic trap
 
     private val numAtoms:Int;
@@ -48,6 +48,9 @@ public class PenningTrap {
     public val B:Vector3d;
     /** The scalar magnitude of B. */
     private val magB:Double;
+
+    /** The maximum calculated error in particle x displacement. */
+    private var maxErrorX:Double = 0.0;
 
     /** The system properties to be calculated at each log timestep. */
     private val properties:SystemProperties;
@@ -87,6 +90,8 @@ public class PenningTrap {
         for (i in 0..(funcs.size-1)) {
             Console.OUT.printf("%16s ", funcs(i).first);
         }
+        // TODO remove error hack
+        Console.OUT.printf("%16s %16s "/*%16s %16s"*/, "xPredicted", "xError"/*, "thetaPredicted", "thetaError"*/);
         Console.OUT.println();
 
         val dt = timestep * 1e-6;
@@ -117,11 +122,27 @@ public class PenningTrap {
         for (i in 0..(propertySums.size-1)) {
             propertySums(i) /= (numAtoms as Double);
         }
+
+
         if (here == Place.FIRST_PLACE) {
             Console.OUT.printf("%12.6f ", timestep * currentStep * 1e-6);
             for (i in 0..(propertySums.size-1)) {
                 Console.OUT.printf("%16.8f ", propertySums(i));
             }
+            // TODO remove error hack
+            val m = PenningTrap.getAtomMass(myAtoms(0).symbol);
+            val q = myAtoms(0).charge;
+            val x = myAtoms(0).centre.i;
+            val v = 10.0;
+            val f = q * B.k / m * (PenningTrap.CHARGE_MASS_FACTOR*1e9);
+            val r = m * v / (q * B.k) / CHARGE_MASS_FACTOR;
+            val thetaPredicted = -f * currentStep * timestep * 1e-15 + Math.PI; // starting position [-r, 0.0, 0.0]
+            val xPredicted = Math.cos(thetaPredicted) * r;
+            val xError = (x - xPredicted);
+            //val theta = Math.acos(x / r);
+            //val thetaError = theta - thetaPredicted;
+            Console.OUT.printf("%16.8f %16.8f "/*%16.8f %16.8f "*/, xPredicted, xError/*, theta, thetaError*/);
+
             Console.OUT.println();
         }
     }

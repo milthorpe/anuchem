@@ -25,29 +25,63 @@ bookmarks={false}
 
 \begin{document}
 
-\section{Penning trap}
+\section{Simulation of ions in a Penning trap}
 
-All simulation parameters taken from \cite{Han1997}.
+All simulation parameters taken from Han and Shin\cite{Han1997}.
 
 Ions are confined radially by a magnetic field $B$ of 0.7646 T.
-No electric field is currently simulated.
+The simulated electric field $E$ is currently 0.
 
 Charges and mass are simulated in atomic units, lengths in nm and time in ns.
 
-To achieve 1\% accuracy for cyclotron frequency $\Omega = {Q|B| \over m}$  requires $\Omega \Delta t \lesssim 0.3$\cite{Birdsall1985}.
+
+
+\subsection{Integration scheme}
+The code uses the Boris integrator\cite{Boris1970} as formulated in Birdsall and Langdon\cite{Birdsall1985}.
+This is a modified leapfrog scheme in which positions are calculated at times $..., n-1, n, n+1, ...$ and velocities at times $..., n^{-1/2}$, $n^{+1/2}, ...$.
+\begin{align}
+\mathbf{v}^- &= \mathbf{v}^{n-1/2} + \frac{q \mathbf{E}}{m} \frac{\Delta t}{2} \\
+\mathbf{v}'  &= \mathbf{v}^- + \mathbf{v}^- \times \mathbf{t} & \mathbf{t}   &= \frac{q\mathbf{B}}{m} \frac{\Delta t}{2} \\
+\mathbf{v}^+ &= \mathbf{v}^- + \mathbf{v}' \times \mathbf{s} & \mathbf{s}   &= \frac{2\mathbf{t}}{1 + t^2} \\
+\mathbf{v}^{n+1/2} &= \mathbf{v}^+ + \frac{q \mathbf{E}}{m} \frac{\Delta t}{2}
+\end{align}
+
+
+\subsection{Simulation results}
+
+The cyclotron frequency $\omega_c$ is predicted by $\omega_c = \frac{q\mathbf{B}}{m}$\cite{Guan1995} and measured by the period between maxima in the $x$ dimension.
+
+The cyclotron radius $r$ is predicted by $r = \frac{m v}{|q| B}$ and measured by the distance between maxima in the $x$ dimension.
+
+To achieve 1\% phase error in cyclotron frequency $\Omega = \frac{Q|B|}{m}$  requires $\Omega \Delta t \lesssim 0.3$\cite{Birdsall1985,Patacchini2009}.
 
 \begin{table}[htbp]
  \centering	  	  
- \caption{Input, derived and observed simulation parameters}
+ \caption{Input, predicted and measured simulation parameters}
 \label{tab:params}
-\begin{tabular}{c|c|c|c|c|c|c|c|c|c|c}
+\begin{tabular}{c|c|c|c|c|c|c|c|c|c|c|c}
  \hline \hline
-  &  & \multicolumn{3}{|c|}{\textbf{derived}} & \multicolumn{2}{|c|}{\textbf{observed}} & \multicolumn{4}{|c|}{\textbf{error: timestep}} \\ 
+ \multicolumn{4}{|c|}{ } & \multicolumn{2}{|c|}{\textbf{predicted}} & \multicolumn{2}{|c|}{\textbf{measured}} & \multicolumn{4}{|c|}{\textbf{error: timestep}} \\ 
  \hline
- \textbf{species} & \textbf{charge} & \textbf{mass} & \textbf{$v_0$ (m/s)} & \textbf{$\omega / 2\Pi$ (Hz)} & \textbf{$\omega / 2\Pi$ (Hz)}  & \textbf{$r$ (nm)} & \textbf{$\Delta t$ (ns)} & \textbf{$\epsilon: \Delta t$}& \textbf{$\epsilon: \Delta t$ / 10} & \textbf{$\epsilon: \Delta t$ * 10}\\ 
+ \textbf{species} & \textbf{charge} & \textbf{mass} & \textbf{$v_0$ (m/s)} & \textbf{$\omega_c / 2\Pi$ (Hz)} & \textbf{$r$ (nm)} & \textbf{$\omega_c' / 2\Pi$ (Hz)}  & \textbf{$r'$ (nm)} & \textbf{$\Delta t$ (ns)} & \textbf{$\epsilon: \Delta t$}& \textbf{$\epsilon: \Delta t$ / 10} & \textbf{$\epsilon: \Delta t$ * 10}\\ 
  \hline
- CH3CO & 1 & 43.04 & 10 & 272,770 & 272,851 & 7043 & 175 & \\
+ $\mathsf{HCO^+}$ & 1 & 29.02 & 10 & 404,618 & 3933 & 404,531 & 3933 & 175 & \\
+ $\mathsf{CH_3CO^+}$ & 1 & 43.04 & 10 & 272,770 & 5835 & 272,777 & 5835 & 118 & \\
  \hline \hline
+\end{tabular}
+\end{table}
+
+\begin{table}[htbp]
+ \centering	  	  
+ \caption{Conversion factors}
+\label{tab:conversion}
+\begin{tabular}{l|l|l}
+\hline \hline
+\textbf{property} & \textbf{unit} & \textbf{SI unit} \\
+\hline
+mass & amu & $1.660538921(73) \times 10^{−27} kg$ \\
+charge & e   & $1.60217653(14) \times 10^{−19} C$ \\
+\hline \hline
 \end{tabular}
 \end{table}
 
