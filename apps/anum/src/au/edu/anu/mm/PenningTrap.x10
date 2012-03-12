@@ -21,6 +21,7 @@ import au.edu.anu.util.Timer;
 /**
  * A simulation of charged ions in cyclotron motion in a cubic Penning trap.
  * Equations of motion are integrated using the Boris scheme.
+ * Lengths are in nm, hence the constant factors 1e-9.
  * @see Shenheng Guan and Alan G Marshall (1995)
  *   "Ion traps for Fourier transform ion cyclotron resonance mass spectrometry:
  *   principles and design of geometric and electric configurations"
@@ -31,8 +32,12 @@ import au.edu.anu.util.Timer;
  *   J. Am. Soc. Mass Spectrometry 8 (4), 319-326 
  */
 public class PenningTrap {
-    public static val CHARGE_MASS_FACTOR = 9.64853364e-2; // conversion of q/m from e/Da to C/kg * 1e-9
-    static val ALPHA = 2.77373; // geometric factor for a cubic trap
+    public static val LENGTH_FACTOR = 1.0e-9;
+    public static val CHARGE_FACTOR = 1.6021765314e-19; // conversion C -> e
+    public static val MASS_FACTOR = 1.66053892173e-27; // conversion kg -> Da
+    public static val CHARGE_MASS_FACTOR = 9.64853364e7; // conversion of q/m from e/Da to C/kg
+    static val ALPHA_PRIME = 2.77373; // geometric factor for a cubic trap (Guan and Marshall eq. 59)
+    static val BETA_PRIME = 0.72167; // electric field constant for detection/excition (Guan and Marshall eq. 66)
 
     private val numAtoms:Int;
 
@@ -40,7 +45,7 @@ public class PenningTrap {
     private val atoms:DistArray[Rail[MMAtom]](1);
 
     /** The edge length of the cubic cell. */
-    private val edgeLength:Double = 0.047 * 10e9; // 4.7cm / 1.85inch
+    private val edgeLength:Double = 0.047; // 4.7cm / 1.85inch
 
     private val V_T:Double; // trapping potential, in V
 
@@ -53,7 +58,7 @@ public class PenningTrap {
     private var maxErrorX:Double = 0.0;
 
     /** The system properties to be calculated at each log timestep. */
-    private val properties:SystemProperties;
+    private var properties:SystemProperties;
 
     /** 
      * Creates a new Penning trap containing the given atoms.
@@ -64,17 +69,19 @@ public class PenningTrap {
     public def this(numAtoms:Int,
                     atoms:DistArray[Rail[MMAtom]](1),
                     trappingPotential:Double,
-                    magneticField:Vector3d,
-                    properties:SystemProperties) {
+                    magneticField:Vector3d) {
         this.numAtoms = numAtoms;
         this.atoms = atoms;
         this.V_T = trappingPotential;
         this.B = magneticField;
         this.magB = magneticField.magnitude();
-        this.properties = properties;
     }
 
     public def getAtoms() = atoms;
+
+    public def setProperties(properties:SystemProperties) {
+        this.properties = properties;
+    }
 
     /**
      * Perform a molecular mechanics run on the system of atoms
@@ -91,10 +98,10 @@ public class PenningTrap {
             Console.OUT.printf("%16s ", funcs(i).first);
         }
         // TODO remove error hack
-        Console.OUT.printf("%16s %16s "/*%16s %16s"*/, "xPredicted", "xError"/*, "thetaPredicted", "thetaError"*/);
+        //Console.OUT.printf("%16s %16s "/*%16s %16s"*/, "xPredicted", "xError"/*, "thetaPredicted", "thetaError"*/);
         Console.OUT.println();
 
-        val dt = timestep * 1e-6;
+        val dt = timestep * 1e-15;
         finish ateach(placeId in atoms) {
             var step : Long = 0;
             val myAtoms = atoms(placeId);
@@ -116,7 +123,7 @@ public class PenningTrap {
      * @param myAtoms for which to calculate properties
      */
     private def printProperties(timestep:Double, currentStep:Long, myAtoms:Rail[MMAtom]) {
-        val propertySums = properties.calculateExpectationValues(myAtoms);
+        val propertySums = properties.calculatePropertySums(myAtoms);
         
         Team.WORLD.allreduce[Double](here.id, propertySums, 0, propertySums, 0, propertySums.size, Team.ADD);
         for (i in 0..(propertySums.size-1)) {
@@ -130,10 +137,11 @@ public class PenningTrap {
                 Console.OUT.printf("%16.8f ", propertySums(i));
             }
             // TODO remove error hack
+            /*
             val m = PenningTrap.getAtomMass(myAtoms(0).symbol);
             val q = myAtoms(0).charge;
             val x = myAtoms(0).centre.i;
-            val v = 10.0;
+            val v = 3.4; // aiming for r ~ 2mm by r = mv/|q|B
             val f = q * B.k / m * (PenningTrap.CHARGE_MASS_FACTOR*1e9);
             val r = m * v / (q * B.k) / CHARGE_MASS_FACTOR;
             val thetaPredicted = -f * currentStep * timestep * 1e-15 + Math.PI; // starting position [-r, 0.0, 0.0]
@@ -141,8 +149,8 @@ public class PenningTrap {
             val xError = (x - xPredicted);
             //val theta = Math.acos(x / r);
             //val thetaError = theta - thetaPredicted;
-            Console.OUT.printf("%16.8f %16.8f "/*%16.8f %16.8f "*/, xPredicted, xError/*, theta, thetaError*/);
-
+            */
+            //Console.OUT.printf("%16.8f %16.8f "/*%16.8f %16.8f "*/, xPredicted, xError/*, theta, thetaError*/);
             Console.OUT.println();
         }
     }
@@ -150,14 +158,14 @@ public class PenningTrap {
     /**
      * Performs a single molecular dynamics timestep
      * using the velocity-Verlet algorithm. 
-     * @param dt time in ns
+     * @param dt time in s
      */
     public def mdStep(dt:Double, myAtoms:Rail[MMAtom]) {
         for (i in 0..(myAtoms.size-1)) {
             val atom = myAtoms(i);
     
             // timestep using Boris integrator
-            val chargeMassRatio = atom.charge / getAtomMass(atom.symbol) * CHARGE_MASS_FACTOR; // C/kg * 1e-9
+            val chargeMassRatio = atom.charge / getAtomMass(atom.symbol) * CHARGE_MASS_FACTOR;
 
             val E = getElectrostaticField(atom.centre);
             val halfA = 0.5 * dt * chargeMassRatio * E;
@@ -179,14 +187,14 @@ public class PenningTrap {
     }
 
     /** 
-     * @return the position-dependent electrostatic field due to trapping potential
+     * @return the position-dependent electrostatic field due to trapping plates
      * @see Guan & Marshall eq. 44
      */
-    private def getElectrostaticField(p:Point3d):Vector3d {
+    public def getElectrostaticField(p:Point3d):Vector3d {
         val l = edgeLength;
 
-        val normField = Vector3d(-p.i, -p.j, 2*p.k);
-        return normField * (ALPHA / (edgeLength*edgeLength));
+        val normalization = -V_T * (ALPHA_PRIME / (edgeLength*edgeLength));
+        return Vector3d(-p.i * normalization, -p.j*normalization, 2.0*p.k*normalization);
 /*
         Han & Shin eq. 7-8
         var sumTerms:Double = 0.0;
@@ -204,6 +212,27 @@ public class PenningTrap {
         val phi = V_0 + 16.0*(V_T - V_0) / Math.PI*Math.PI * sumTerms;
         return phi;
 */
+    }
+
+    /** 
+     * @return the position-dependent electrostatic potential due to trapping plates
+     * @see Guan & Marshall eq. 19
+     */
+    public def getElectrostaticPotential(p:Point3d):Double {
+        val l = edgeLength;
+
+        // TODO why does factor of 2.0 screw up Ek+Ep conservation?
+        val potential = V_T * (/*1.0/3.0*/ -ALPHA_PRIME / (/*2.0**/edgeLength*edgeLength) * (p.i*p.i + p.j*p.j - 2.0*p.k*p.k));
+        return potential;
+    }
+
+    /**
+     * @return the image current induced by the given ion
+     * @see Guan & Marshall eq. 69-70
+     */
+    public static def getImageCurrent(ion:MMAtom):Double {
+        val eImage = -BETA_PRIME / ALPHA_PRIME;
+        return ion.charge * ion.velocity.j * eImage;
     }
 
     /**

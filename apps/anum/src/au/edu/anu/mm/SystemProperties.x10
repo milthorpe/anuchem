@@ -25,11 +25,11 @@ public class SystemProperties {
         this.oneParticleFunctions = oneParticleFunctions;
     }
 
-    public def calculateExpectationValues(atoms: DistArray[Rail[MMAtom]](1)):Rail[Pair[String,Double]] {
+    public def calculatePropertySums(atoms: DistArray[Rail[MMAtom]](1)):Rail[Pair[String,Double]] {
         val totals = new Accumulator[Rail[Double]](RailSumReducer(oneParticleFunctions.size));
         finish ateach(place in atoms) {
             val atomsHere = atoms(place);
-            val totalHere = calculateExpectationValues(atomsHere);
+            val totalHere = calculatePropertySums(atomsHere);
             totals <- totalHere;
         }
         
@@ -41,7 +41,7 @@ public class SystemProperties {
         return results;
     }
 
-    public def calculateExpectationValues(atoms:Rail[MMAtom]):Rail[Double] {
+    public def calculatePropertySums(atoms:Rail[MMAtom]):Rail[Double] {
         val totals = new Rail[Double](oneParticleFunctions.size);
         for ([p] in atoms) {
             for ([i] in oneParticleFunctions) {

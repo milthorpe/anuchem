@@ -30,8 +30,17 @@ bookmarks={false}
 All simulation parameters taken from Han and Shin\cite{Han1997}.
 
 Ions are confined radially by a magnetic field $B$ of 0.7646 T.
-The simulated electric field $E$ is currently 0.
-
+A quadrupolar trapping potential of 1V is used.
+The potential and field near the centre of the trap is approximated as 
+\begin{align}
+\Phi_T(x,y,z) &= V_T (\gamma' - \frac{\alpha'}{2l^2}(x^2 + y^2 - 2z^2)) &
+\mathbf{E} &= - \nabla \Phi_T(x,y,z) = \frac{\alpha}{l^2}(-x\mathbf{i} -y\mathbf{j} +2z\mathbf{k})
+\end{align}
+where $\gamma' = 1/3$ and $\alpha' = 2.77373$ are geometric factors for the cubic trap, and $l$ is the edge length\cite{Guan1995}.
+The force experienced by an ion in the trap is
+\[
+\mathbf{F} = q(\mathbf{E} + \mathbf{v} \times \mathbf{B})
+\]
 Charges and mass are simulated in atomic units, lengths in nm and time in ns.
 
 
@@ -79,8 +88,8 @@ To achieve 1\% phase error in cyclotron frequency $\Omega = \frac{Q|B|}{m}$  req
 \hline \hline
 \textbf{property} & \textbf{unit} & \textbf{SI unit} \\
 \hline
-mass & amu & $1.660538921(73) \times 10^{−27} kg$ \\
-charge & e   & $1.60217653(14) \times 10^{−19} C$ \\
+mass & amu & $1.660538921(73) \times 10^{ - 27} kg$ \\
+charge & e   & $1.60217653(14) \times 10^{ - 19} C$ \\
 \hline \hline
 \end{tabular}
 \end{table}
