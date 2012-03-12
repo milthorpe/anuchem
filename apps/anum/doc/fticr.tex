@@ -38,9 +38,9 @@ The potential and field near the centre of the trap is approximated as
 \end{align}
 where $\gamma' = 1/3$ and $\alpha' = 2.77373$ are geometric factors for the cubic trap, and $l$ is the edge length\cite{Guan1995}.
 The force experienced by an ion in the trap is
-\[
+\begin{equation}
 \mathbf{F} = q(\mathbf{E} + \mathbf{v} \times \mathbf{B})
-\]
+\end{equation}
 Charges and mass are simulated in atomic units, lengths in nm and time in ns.
 
 
@@ -56,7 +56,7 @@ This is a modified leapfrog scheme in which positions are calculated at times $.
 \end{align}
 
 
-\subsection{Simulation results}
+\subsection{Ion motion}
 
 The cyclotron frequency $\omega_c$ is predicted by $\omega_c = \frac{q\mathbf{B}}{m}$\cite{Guan1995} and measured by the period between maxima in the $x$ dimension.
 
@@ -79,6 +79,15 @@ To achieve 1\% phase error in cyclotron frequency $\Omega = \frac{Q|B|}{m}$  req
  \hline \hline
 \end{tabular}
 \end{table}
+
+\subsection{Induced current}
+
+FTICR-MS measures the current induced between detector plates on walls of the cube parallel to the magnetic field.
+In the simulation, current is induced by the movement of the `image charge' associated with each ion, that is, a charge equal in magnitude to the potential that would be produced at the ion position due to a unit potential applied to the detector electrode\cite{Guan1995}.
+\begin{equation}
+I = q\mathbf{v} \cdot \mathbf{E}_{image}(\mathbf{r})
+\end{equation}
+
 
 \begin{table}[htbp]
  \centering	  	  

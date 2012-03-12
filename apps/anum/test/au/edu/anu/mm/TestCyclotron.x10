@@ -54,18 +54,30 @@ public class TestCyclotron extends TestElectrostatic {
         Console.OUT.println("# Testing cyclotron: trapping potential: " + V + " magnetic field: " + B);
 
 
-        val species = "CH3CO";
         val v = 3.4; // aiming for r ~ 2mm by r = mv/|q|B
         val q = 1.0;
 
-        val f = q * B / PenningTrap.getAtomMass(species) * (PenningTrap.CHARGE_MASS_FACTOR) / (2.0 * Math.PI);
-        val r = PenningTrap.getAtomMass(species) * v / (q * B) / PenningTrap.CHARGE_MASS_FACTOR;
-        Console.OUT.printf("# predicted f = %10.2f r = %8.2f nm\n", f, r*1e9);
+        val species1 = "CH3CO";
+        val f1 = q * B / PenningTrap.getAtomMass(species1) * (PenningTrap.CHARGE_MASS_FACTOR) / (2.0 * Math.PI);
+        val r1 = PenningTrap.getAtomMass(species1) * v / (q * B) / PenningTrap.CHARGE_MASS_FACTOR;
+        Console.OUT.printf("# %s predicted f = %10.2f r = %8.2f nm\n", species1, f1, r1*1e9);
 
-        val ion = new MMAtom(species, Point3d(-r, 0.0, 0.0), q);
-        ion.velocity = Vector3d(0.0, v, -0.1);
-        val atoms = new Array[MMAtom](1);
-        atoms(0) = ion;
+        val ion1 = new MMAtom(species1, Point3d(-r1, 0.0, 0.0), q);
+        ion1.velocity = Vector3d(0.0, v, -0.1);
+
+        val species2 = "HCO";
+        val f2 = q * B / PenningTrap.getAtomMass(species2) * (PenningTrap.CHARGE_MASS_FACTOR) / (2.0 * Math.PI);
+        val r2 = PenningTrap.getAtomMass(species2) * v / (q * B) / PenningTrap.CHARGE_MASS_FACTOR;
+        Console.OUT.printf("# %s predicted f = %10.2f r = %8.2f nm\n", species2, f2, r2*1e9);
+
+        val ion2 = new MMAtom(species2, Point3d(-r2, 0.0, 0.0), q);
+        ion2.velocity = Vector3d(0.0, v, -0.1);
+
+
+        val atoms = new Array[MMAtom](2);
+        atoms(0) = ion1;
+        atoms(1) = ion2;
+
         val distAtoms = DistArray.make[Rail[MMAtom]](Dist.makeBlock(0..0, 0));
         distAtoms(0) = atoms;
 
@@ -82,8 +94,8 @@ public class TestCyclotron extends TestElectrostatic {
                       OneParticleFunction("Ek (yJ)", kineticEnergy), 
                       OneParticleFunction("Ep (yJ)", potentialEnergy), 
                       OneParticleFunction("E (yJ)", totalEnergy),
-                      OneParticleFunction("I (aV)", detectorCurrent)];
-        trap.setProperties(new SystemProperties(1, onePFs));
+                      OneParticleFunction("I (aA)", detectorCurrent)];
+        trap.setProperties(new SystemProperties(atoms.size, onePFs));
         trap.mdRun(dt, timesteps, logSteps);
     }
 }
