@@ -35,6 +35,7 @@ public class TestCyclotron extends TestElectrostatic {
         var V:Double = 1.0;
         var timesteps:Int = 80000; // number of timesteps
         var logSteps:Int = 100;
+        var N:Int=3;
         if (args.size > 0) {
             B = Double.parseDouble(args(0));
             if (args.size > 1) {
@@ -45,6 +46,9 @@ public class TestCyclotron extends TestElectrostatic {
                         timesteps = Int.parseInt(args(3));
                         if (args.size > 4) {
                             logSteps = Int.parseInt(args(4));
+                            if (args.size > 5) {
+                                N = Int.parseInt(args(5));
+                            }
                         }
                     }
                 }
@@ -62,21 +66,24 @@ public class TestCyclotron extends TestElectrostatic {
         val r1 = PenningTrap.getAtomMass(species1) * v / (q * B) / PenningTrap.CHARGE_MASS_FACTOR;
         Console.OUT.printf("# %s predicted f = %10.2f r = %8.2f nm\n", species1, f1, r1*1e9);
 
-        val ion1 = new MMAtom(species1, Point3d(-r1, 0.0, 0.0), q);
-        ion1.velocity = Vector3d(0.0, v, -0.1);
-
         val species2 = "HCO";
         val f2 = q * B / PenningTrap.getAtomMass(species2) * (PenningTrap.CHARGE_MASS_FACTOR) / (2.0 * Math.PI);
         val r2 = PenningTrap.getAtomMass(species2) * v / (q * B) / PenningTrap.CHARGE_MASS_FACTOR;
         Console.OUT.printf("# %s predicted f = %10.2f r = %8.2f nm\n", species2, f2, r2*1e9);
 
-        val ion2 = new MMAtom(species2, Point3d(-r2, 0.0, 0.0), q);
-        ion2.velocity = Vector3d(0.0, v, -0.1);
+        val rand = new Random();
 
-
-        val atoms = new Array[MMAtom](2);
-        atoms(0) = ion1;
-        atoms(1) = ion2;
+        val atoms = new Array[MMAtom](N);
+        for (i in 0..(N-1)) {
+            val ion:MMAtom;
+            if (i % 3 == 0) {
+                ion = new MMAtom(species1, Point3d(-r1, perturbation(rand), 0.0), q);
+            } else {
+                ion = new MMAtom(species2, Point3d(-r2, perturbation(rand), 0.0), q);
+            }
+            ion.velocity = Vector3d(0.0, v, perturbation(rand)*10);
+            atoms(i) = ion;
+        }
 
         val distAtoms = DistArray.make[Rail[MMAtom]](Dist.makeBlock(0..0, 0));
         distAtoms(0) = atoms;
@@ -95,8 +102,12 @@ public class TestCyclotron extends TestElectrostatic {
                       OneParticleFunction("Ep (yJ)", potentialEnergy), 
                       OneParticleFunction("E (yJ)", totalEnergy),
                       OneParticleFunction("I (aA)", detectorCurrent)];
-        trap.setProperties(new SystemProperties(atoms.size, onePFs));
+        trap.setProperties(new SystemProperties(N, onePFs));
         trap.mdRun(dt, timesteps, logSteps);
+    }
+
+    private static def perturbation(rand:Random) {
+        return rand.nextDouble()*1.0e-5 - 5.0e-6;
     }
 }
 

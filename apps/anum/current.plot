@@ -1,4 +1,4 @@
-set title "FTICR-MS induced current: single CH_3CO and HCO ions"
+set title "FTICR-MS induced current: packet of 1/3 CH_3CO and 2/3 HCO ions"
 
 set output 'current.ps'
 set term post enhanced
