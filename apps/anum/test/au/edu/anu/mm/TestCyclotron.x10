@@ -64,13 +64,15 @@ public class TestCyclotron {
         val q = 1.0;
 
         val species1 = "CH3CO";
-        val f1 = q * B / PenningTrap.getAtomMass(species1) * (PenningTrap.CHARGE_MASS_FACTOR) / (2.0 * Math.PI);
-        val r1 = PenningTrap.getAtomMass(species1) * v / (q * B) / PenningTrap.CHARGE_MASS_FACTOR;
+        val mass1 = 43.04462;
+        val f1 = q * B / mass1 * (PenningTrap.CHARGE_MASS_FACTOR) / (2.0 * Math.PI);
+        val r1 = mass1 * v / (q * B) / PenningTrap.CHARGE_MASS_FACTOR;
         Console.OUT.printf("# %s predicted f = %10.2f r = %8.2f nm\n", species1, f1, r1*1e9);
 
         val species2 = "HCO";
-        val f2 = q * B / PenningTrap.getAtomMass(species2) * (PenningTrap.CHARGE_MASS_FACTOR) / (2.0 * Math.PI);
-        val r2 = PenningTrap.getAtomMass(species2) * v / (q * B) / PenningTrap.CHARGE_MASS_FACTOR;
+        val mass2 = 29.0182;
+        val f2 = q * B / mass2 * (PenningTrap.CHARGE_MASS_FACTOR) / (2.0 * Math.PI);
+        val r2 = mass2 * v / (q * B) / PenningTrap.CHARGE_MASS_FACTOR;
         Console.OUT.printf("# %s predicted f = %10.2f r = %8.2f nm\n", species2, f2, r2*1e9);
 
         val rand = new Random();
@@ -79,9 +81,9 @@ public class TestCyclotron {
         for (i in 0..(N-1)) {
             val ion:MMAtom;
             if (i % 3 == 0) {
-                ion = new MMAtom(species1, Point3d(-r1+perturbation(rand), perturbation(rand), perturbation(rand)), q);
+                ion = new MMAtom(species1, Point3d(-r1+perturbation(rand), perturbation(rand), perturbation(rand)), mass1, q);
             } else {
-                ion = new MMAtom(species2, Point3d(-r2+perturbation(rand), perturbation(rand), perturbation(rand)), q);
+                ion = new MMAtom(species2, Point3d(-r2+perturbation(rand), perturbation(rand), perturbation(rand)), mass2, q);
             }
             ion.velocity = Vector3d(perturbation(rand), v+perturbation(rand), 1.0);
             atoms(i) = ion;
@@ -90,10 +92,10 @@ public class TestCyclotron {
         val distAtoms = DistArray.make[Rail[MMAtom]](Dist.makeBlock(0..0, 0));
         distAtoms(0) = atoms;
 
-        val trap = new PenningTrap(1, distAtoms, V, new Vector3d(0.0, 0.0, B));
-        val kineticEnergy = (a:MMAtom) => 0.5 * PenningTrap.getAtomMass(a.symbol) * MASS_FACTOR * a.velocity.lengthSquared();
+        val trap = new PenningTrap(N, distAtoms, V, new Vector3d(0.0, 0.0, B));
+        val kineticEnergy = (a:MMAtom) => 0.5 * a.mass * MASS_FACTOR * a.velocity.lengthSquared();
         val potentialEnergy = (a:MMAtom) => a.charge * CHARGE_FACTOR * trap.getElectrostaticPotential(a.centre);
-        val totalEnergy = (a:MMAtom) => 0.5 * PenningTrap.getAtomMass(a.symbol) * MASS_FACTOR * a.velocity.lengthSquared()
+        val totalEnergy = (a:MMAtom) => 0.5 * a.mass * MASS_FACTOR * a.velocity.lengthSquared()
                                         + a.charge * CHARGE_FACTOR * trap.getElectrostaticPotential(a.centre);
         val detectorCurrent = (a:MMAtom) => PenningTrap.getImageCurrent(a) * CHARGE_FACTOR * 1.0e-6;
 

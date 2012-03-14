@@ -83,10 +83,10 @@ To achieve 1\% phase error in cyclotron frequency $\Omega = \frac{Q|B|}{m}$  req
 \subsection{Induced current}
 
 FTICR-MS measures the current induced between detector plates on walls of the cube parallel to the magnetic field.
-In the simulation, current is induced by the movement of the `image charge' associated with each ion, that is, a charge equal in magnitude to the potential that would be produced at the ion position due to a unit potential applied to the detector electrode\cite{Guan1995}.
-\begin{equation}
-I = q\mathbf{v} \cdot \mathbf{E}_{image}(\mathbf{r})
-\end{equation}
+In the simulation, current is induced by the movement of the `image' $\mathbf{E}_{image}(r)$ associated with each ion, that is, a charge equal in magnitude to the potential that would be produced at the ion position due to a unit potential applied to the detector electrode\cite{Guan1995}.
+\begin{align}
+I &= q\mathbf{v} \cdot \mathbf{E}_{image}(\mathbf{r}) & \mathbf{E}_{image} &= - \frac{\beta'}{l} r_j & \beta' &= 0.72167
+\end{align}
 
 
 \begin{table}[htbp]

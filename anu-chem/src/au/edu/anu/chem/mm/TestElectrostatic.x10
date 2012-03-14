@@ -70,7 +70,7 @@ public class TestElectrostatic {
             val charge = i%2==0?1:-1;
             val p = getPlaceId(x, y, z);
             at(Place.place(p)) async {
-                val atom = new MMAtom(Point3d(x, y, z), charge);
+                val atom = new MMAtom(Point3d(x, y, z), 1.0, charge);
                 //Console.OUT.println(atom);
                 atomic { tempAtoms(p).add(atom); }
             }

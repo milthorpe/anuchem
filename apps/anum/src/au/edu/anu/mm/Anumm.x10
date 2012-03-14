@@ -31,15 +31,10 @@ public class Anumm {
     /** The force field applied to the atoms in this simulation. */
     private val forceField:ForceField;
 
-    /** The system properties to be calculated at each log timestep. */
-    private val properties:SystemProperties;
-
     public def this(atoms:DistArray[Rail[MMAtom]](1),
-                    forceField:ForceField,
-                    properties:SystemProperties) {
+                    forceField:ForceField) {
         this.atoms = atoms;
         this.forceField = forceField;
-        this.properties = properties;
     }
 
     public def getAtoms() = atoms;
@@ -50,35 +45,16 @@ public class Anumm {
      * @param timestep length in fs (=ps/1000)
      * @param numSteps number of timesteps to simulate
      */
-    public def mdRun(timestep:Double, numSteps:Long, logSteps:Long) {
+    public def mdRun(timestep:Double, numSteps:Long) {
         Console.OUT.println("# Timestep = " + timestep + "fs, number of steps = " + numSteps);
 
         forceField.getPotentialAndForces(atoms); // get initial forces
-
-        val funcs = properties.oneParticleFunctions;
-        for (i in 0..(funcs.size-1)) {
-            Console.OUT.printf("%16s ", funcs(i).first);
-        }
-        Console.OUT.println();
-        printProperties(timestep, 0);
 
         var step : Long = 0;
         while(step < numSteps) {
             step++;
             mdStep(timestep);
-            if (step % logSteps == 0L) {
-                printProperties(timestep, step);
-            }
         }
-    }
-
-    private def printProperties(timestep:Double, currentStep:Long) {
-        Console.OUT.print("" + timestep * currentStep + " ");
-        val props = properties.calculateExpectationValues(atoms);
-        for (i in 0..(props.size-1)) {
-            Console.OUT.printf("%16.8f ", props(i).second);
-        }
-        Console.OUT.println();
     }
 
     /**
@@ -149,8 +125,8 @@ public class Anumm {
         }
         val molecule = moleculeTemp;
         Console.OUT.println("# MD for " + molecule.getName() + ": " + molecule.getAtoms().size() + " atoms");
-        val anumm = new Anumm(assignAtoms(molecule), new UniversalForceField(), new SystemProperties(new Rail[OneParticleFunction](0)));
-        anumm.mdRun(timestep, numSteps, 100);
+        val anumm = new Anumm(assignAtoms(molecule), new UniversalForceField());
+        anumm.mdRun(timestep, numSteps);
 
         return;
     }

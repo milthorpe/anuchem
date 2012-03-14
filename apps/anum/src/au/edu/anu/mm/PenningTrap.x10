@@ -36,14 +36,15 @@ public class PenningTrap {
     public static val CHARGE_MASS_FACTOR = 9.64853364e7; // conversion of q/m from e/Da to C/kg
     static val ALPHA_PRIME = 2.77373; // geometric factor for a cubic trap (Guan and Marshall eq. 59)
     static val BETA_PRIME = 0.72167; // electric field constant for detection/excition (Guan and Marshall eq. 66)
+    static val EDGE_LENGTH = 0.047; // edge length l = 4.7cm
 
     private val numAtoms:Int;
 
     /** The atoms in the simulation, divided up into a distributed array of Arrays, one for each place. */
     private val atoms:DistArray[Rail[MMAtom]](1);
 
-    /** The edge length of the cubic cell. */
-    private val edgeLength:Double = 0.047; // 4.7cm / 1.85inch
+    /** Normalization factor for electric field. */
+    static val E_NORM = 1255.65; // ALPHA_PRIME / (EDGE_LENGTH^2)
 
     private val V_T:Double; // trapping potential, in V
 
@@ -123,19 +124,16 @@ public class PenningTrap {
         val propertySums = properties.calculatePropertySums(myAtoms);
         
         Team.WORLD.allreduce[Double](here.id, propertySums, 0, propertySums, 0, propertySums.size, Team.ADD);
-        for (i in 0..(propertySums.size-1)) {
-            propertySums(i) /= (numAtoms as Double);
-        }
-
 
         if (here == Place.FIRST_PLACE) {
             Console.OUT.printf("%12.6f ", timestep * currentStep);
             for (i in 0..(propertySums.size-1)) {
+                propertySums(i) /= (numAtoms as Double);
                 Console.OUT.printf("%16.8f ", propertySums(i));
             }
             // TODO remove error hack
             /*
-            val m = PenningTrap.getAtomMass(myAtoms(0).symbol);
+            val m = myAtoms(0).mass;
             val q = myAtoms(0).charge;
             val x = myAtoms(0).centre.i;
             val v = 3.4; // aiming for r ~ 2mm by r = mv/|q|B
@@ -162,7 +160,7 @@ public class PenningTrap {
             val atom = myAtoms(i);
     
             // timestep using Boris integrator
-            val chargeMassRatio = atom.charge / getAtomMass(atom.symbol) * CHARGE_MASS_FACTOR;
+            val chargeMassRatio = atom.charge / atom.mass * CHARGE_MASS_FACTOR;
 
             val E = getElectrostaticField(atom.centre);
             //Console.OUT.println("E = " + E);
@@ -189,10 +187,7 @@ public class PenningTrap {
      * @see Guan & Marshall eq. 44
      */
     public def getElectrostaticField(p:Point3d):Vector3d {
-        val l = edgeLength;
-
-        val normalization = -V_T * (ALPHA_PRIME / (edgeLength*edgeLength));
-        return Vector3d(-p.i * normalization, -p.j*normalization, 2.0*p.k*normalization);
+        return Vector3d(-p.i * E_NORM, -p.j*E_NORM, 2.0*p.k*E_NORM);
 /*
         Han & Shin eq. 7-8
         var sumTerms:Double = 0.0;
@@ -217,9 +212,7 @@ public class PenningTrap {
      * @see Guan & Marshall eq. 19
      */
     public def getElectrostaticPotential(p:Point3d):Double {
-        val l = edgeLength;
-
-        val potential = V_T * (/*1.0/3.0*/ -(ALPHA_PRIME / (2.0*edgeLength*edgeLength)) * (p.i*p.i + p.j*p.j - 2.0*p.k*p.k));
+        val potential = V_T * (/*1.0/3.0*/ -0.5 * E_NORM * (p.i*p.i + p.j*p.j - 2.0*p.k*p.k));
         return potential;
     }
 
@@ -228,7 +221,7 @@ public class PenningTrap {
      * @see Guan & Marshall eq. 69-70
      */
     public static def getImageCurrent(ion:MMAtom):Double {
-        val eImage = -BETA_PRIME / ALPHA_PRIME;
+        val eImage = -BETA_PRIME / EDGE_LENGTH;
         return ion.charge * ion.velocity.j * eImage;
     }
 
@@ -261,23 +254,5 @@ public class PenningTrap {
     private static def getPlaceId(x : Double, y : Double, z : Double, size : Double) : Int {
         return ((x / (size * 2) + 0.5) * Place.MAX_PLACES) as Int;
     }
-
-    /** @return atomic/molar mass in atomic units */
-    public static def getAtomMass(symbol : String) : Double {
-        if (symbol.equals("H")) {
-            return 1.0079;
-        } else if (symbol.equals("F")) {
-            return 18.9984;
-        } else if (symbol.equals("CH3CO")) {
-            // acetaldehyde cation
-            return 43.04462;
-        } else if (symbol.equals("HCO")) {
-            // HCO+ cation 
-            return 29.0182;
-        } else {
-            throw new IllegalArgumentException("no atom mass found for symbol " + symbol);
-        }
-    }
-
 }
 
