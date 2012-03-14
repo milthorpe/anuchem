@@ -15,7 +15,6 @@ import x10x.vector.Point3d;
 import x10x.vector.Vector3d;
 import au.edu.anu.mm.SystemProperties;
 import au.edu.anu.chem.mm.MMAtom;
-import au.edu.anu.chem.mm.TestElectrostatic;
 
 /**
  * Simulates an ion packet travelling in a circular path in a Penning trap
@@ -28,10 +27,13 @@ import au.edu.anu.chem.mm.TestElectrostatic;
  *   J. Am. Soc. Mass Spectrometry 8 (4), 319-326 
  * @author milthorpe
  */
-public class TestCyclotron extends TestElectrostatic {
+public class TestCyclotron {
+    public static MASS_FACTOR = 1.66053892173e-3; // Da->kg * 10^24
+    public static CHARGE_FACTOR = 1.6021765314e5; // e->C * 10^24;
+
     public static def main(args : Array[String](1)) {
         var B:Double = 0.7646;
-        var dt:Double = 50000.0; // timestep in fs
+        var dt:Double = 50.0; // timestep in ns
         var V:Double = 1.0;
         var timesteps:Int = 80000; // number of timesteps
         var logSteps:Int = 100;
@@ -77,11 +79,11 @@ public class TestCyclotron extends TestElectrostatic {
         for (i in 0..(N-1)) {
             val ion:MMAtom;
             if (i % 3 == 0) {
-                ion = new MMAtom(species1, Point3d(-r1, perturbation(rand), 0.0), q);
+                ion = new MMAtom(species1, Point3d(-r1+perturbation(rand), perturbation(rand), perturbation(rand)), q);
             } else {
-                ion = new MMAtom(species2, Point3d(-r2, perturbation(rand), 0.0), q);
+                ion = new MMAtom(species2, Point3d(-r2+perturbation(rand), perturbation(rand), perturbation(rand)), q);
             }
-            ion.velocity = Vector3d(0.0, v, perturbation(rand)*10);
+            ion.velocity = Vector3d(perturbation(rand), v+perturbation(rand), 1.0);
             atoms(i) = ion;
         }
 
@@ -89,11 +91,11 @@ public class TestCyclotron extends TestElectrostatic {
         distAtoms(0) = atoms;
 
         val trap = new PenningTrap(1, distAtoms, V, new Vector3d(0.0, 0.0, B));
-        val kineticEnergy = (a:MMAtom) => PenningTrap.getAtomMass(a.symbol) * PenningTrap.MASS_FACTOR * a.velocity.lengthSquared() * 1e24;
-        val potentialEnergy = (a:MMAtom) => a.charge*PenningTrap.CHARGE_FACTOR*trap.getElectrostaticPotential(a.centre) * 1e24;
-        val totalEnergy = (a:MMAtom) => PenningTrap.getAtomMass(a.symbol) * PenningTrap.MASS_FACTOR * a.velocity.lengthSquared() * 1e24
-                                        + a.charge * PenningTrap.CHARGE_FACTOR * trap.getElectrostaticPotential(a.centre) * 1e24;
-        val detectorCurrent = (a:MMAtom) => PenningTrap.getImageCurrent(a) * PenningTrap.CHARGE_FACTOR * 1e18;
+        val kineticEnergy = (a:MMAtom) => 0.5 * PenningTrap.getAtomMass(a.symbol) * MASS_FACTOR * a.velocity.lengthSquared();
+        val potentialEnergy = (a:MMAtom) => a.charge * CHARGE_FACTOR * trap.getElectrostaticPotential(a.centre);
+        val totalEnergy = (a:MMAtom) => 0.5 * PenningTrap.getAtomMass(a.symbol) * MASS_FACTOR * a.velocity.lengthSquared()
+                                        + a.charge * CHARGE_FACTOR * trap.getElectrostaticPotential(a.centre);
+        val detectorCurrent = (a:MMAtom) => PenningTrap.getImageCurrent(a) * CHARGE_FACTOR * 1.0e-6;
 
         val onePFs = [OneParticleFunction("mean_X (mm)", (a:MMAtom) => a.centre.i*1e6), 
                       OneParticleFunction("mean_Y (mm)", (a:MMAtom) => a.centre.j*1e6), 
@@ -107,7 +109,7 @@ public class TestCyclotron extends TestElectrostatic {
     }
 
     private static def perturbation(rand:Random) {
-        return rand.nextDouble()*1.0e-5 - 5.0e-6;
+        return rand.nextDouble()*1.0e-8 - 5.0e-9;
     }
 }
 

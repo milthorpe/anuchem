@@ -33,8 +33,6 @@ import au.edu.anu.util.Timer;
  */
 public class PenningTrap {
     public static val LENGTH_FACTOR = 1.0e-9;
-    public static val CHARGE_FACTOR = 1.6021765314e-19; // conversion C -> e
-    public static val MASS_FACTOR = 1.66053892173e-27; // conversion kg -> Da
     public static val CHARGE_MASS_FACTOR = 9.64853364e7; // conversion of q/m from e/Da to C/kg
     static val ALPHA_PRIME = 2.77373; // geometric factor for a cubic trap (Guan and Marshall eq. 59)
     static val BETA_PRIME = 0.72167; // electric field constant for detection/excition (Guan and Marshall eq. 66)
@@ -86,11 +84,11 @@ public class PenningTrap {
     /**
      * Perform a molecular mechanics run on the system of atoms
      * for the given number and length of timesteps.
-     * @param timestep length in fs
+     * @param timestep length in ns
      * @param numSteps number of timesteps to simulate
      */
     public def mdRun(timestep:Double, numSteps:Long, logSteps:Long) {
-        Console.OUT.println("# Timestep = " + timestep + "fs, number of steps = " + numSteps);
+        Console.OUT.println("# Timestep = " + timestep + "ns, number of steps = " + numSteps);
 
         Console.OUT.printf("%12s ", "ns");
         val funcs = properties.oneParticleFunctions;
@@ -101,14 +99,13 @@ public class PenningTrap {
         //Console.OUT.printf("%16s %16s "/*%16s %16s"*/, "xPredicted", "xError"/*, "thetaPredicted", "thetaError"*/);
         Console.OUT.println();
 
-        val dt = timestep * 1e-15;
         finish ateach(placeId in atoms) {
             var step : Long = 0;
             val myAtoms = atoms(placeId);
             printProperties(timestep, step, myAtoms);
             while(step < numSteps) {
                 step++;
-                mdStep(dt, myAtoms);
+                mdStep(timestep, myAtoms);
                 if (step % logSteps == 0L) {
                     printProperties(timestep, step, myAtoms);
                 }
@@ -118,7 +115,7 @@ public class PenningTrap {
 
     /**
      * Print current system properties.
-     * @param timestep length in fs
+     * @param timestep length in ns
      * @param currentStep current time in number of steps from start
      * @param myAtoms for which to calculate properties
      */
@@ -132,7 +129,7 @@ public class PenningTrap {
 
 
         if (here == Place.FIRST_PLACE) {
-            Console.OUT.printf("%12.6f ", timestep * currentStep * 1e-6);
+            Console.OUT.printf("%12.6f ", timestep * currentStep);
             for (i in 0..(propertySums.size-1)) {
                 Console.OUT.printf("%16.8f ", propertySums(i));
             }
@@ -158,7 +155,7 @@ public class PenningTrap {
     /**
      * Performs a single molecular dynamics timestep
      * using the velocity-Verlet algorithm. 
-     * @param dt time in s
+     * @param dt time in ns
      */
     public def mdStep(dt:Double, myAtoms:Rail[MMAtom]) {
         for (i in 0..(myAtoms.size-1)) {
@@ -168,11 +165,12 @@ public class PenningTrap {
             val chargeMassRatio = atom.charge / getAtomMass(atom.symbol) * CHARGE_MASS_FACTOR;
 
             val E = getElectrostaticField(atom.centre);
-            val halfA = 0.5 * dt * chargeMassRatio * E;
+            //Console.OUT.println("E = " + E);
+            val halfA = 0.5 * dt * 1.0e-9 * chargeMassRatio * E;
             val vMinus = atom.velocity + halfA; // m
 
             //val larmorFreq = chargeMassRatio * magB;
-            val t = 0.5 * dt * chargeMassRatio * B;
+            val t = 0.5 * dt * 1.0e-9 * chargeMassRatio * B;
             val vPrime = vMinus + vMinus.cross(t);
 
             val magt2 = t.lengthSquared();
@@ -181,7 +179,7 @@ public class PenningTrap {
 
             atom.velocity = vPlus + halfA;
 
-            atom.centre = atom.centre + atom.velocity*dt;
+            atom.centre = atom.centre + atom.velocity * dt * 1.0e-9;
             //Console.OUT.print(atom.centre.i + " " + atom.centre.j + " " + atom.centre.k + " ");
         }
     }
@@ -221,8 +219,7 @@ public class PenningTrap {
     public def getElectrostaticPotential(p:Point3d):Double {
         val l = edgeLength;
 
-        // TODO why does factor of 2.0 screw up Ek+Ep conservation?
-        val potential = V_T * (/*1.0/3.0*/ -ALPHA_PRIME / (/*2.0**/edgeLength*edgeLength) * (p.i*p.i + p.j*p.j - 2.0*p.k*p.k));
+        val potential = V_T * (/*1.0/3.0*/ -(ALPHA_PRIME / (2.0*edgeLength*edgeLength)) * (p.i*p.i + p.j*p.j - 2.0*p.k*p.k));
         return potential;
     }
 
