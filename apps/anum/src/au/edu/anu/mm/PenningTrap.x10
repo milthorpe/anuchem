@@ -10,6 +10,7 @@
  */
 package au.edu.anu.mm;
 
+import x10.compiler.Inline;
 import x10.util.ArrayList;
 import x10.util.Team;
 import x10x.vector.Point3d;
@@ -56,9 +57,6 @@ public class PenningTrap {
     /** The maximum calculated error in particle x displacement. */
     private var maxErrorX:Double = 0.0;
 
-    /** The system properties to be calculated at each log timestep. */
-    private var properties:SystemProperties;
-
     /** 
      * Creates a new Penning trap containing the given atoms.
      * @param trappingPotential the axial confinement potential in V applied to the end plates
@@ -78,10 +76,6 @@ public class PenningTrap {
 
     public def getAtoms() = atoms;
 
-    public def setProperties(properties:SystemProperties) {
-        this.properties = properties;
-    }
-
     /**
      * Perform a molecular mechanics run on the system of atoms
      * for the given number and length of timesteps.
@@ -90,63 +84,30 @@ public class PenningTrap {
      */
     public def mdRun(timestep:Double, numSteps:Long, logSteps:Long) {
         Console.OUT.println("# Timestep = " + timestep + "ns, number of steps = " + numSteps);
-
-        Console.OUT.printf("%12s ", "ns");
-        val funcs = properties.oneParticleFunctions;
-        for (i in 0..(funcs.size-1)) {
-            Console.OUT.printf("%16s ", funcs(i).first);
-        }
-        // TODO remove error hack
-        //Console.OUT.printf("%16s %16s "/*%16s %16s"*/, "xPredicted", "xError"/*, "thetaPredicted", "thetaError"*/);
-        Console.OUT.println();
-
+        val timer = new Timer(2);
+ 
+        SystemProperties.printHeader();
+           
         finish ateach(placeId in atoms) {
             var step : Long = 0;
             val myAtoms = atoms(placeId);
-            printProperties(timestep, step, myAtoms);
+            val props = new SystemProperties();
+            for (i in 0..(myAtoms.size-1)) {
+                props.accumulate(myAtoms(i), this);
+            }
+            if (here == Place.FIRST_PLACE) {
+                props.print(timestep, step, numAtoms);
+            }
             while(step < numSteps) {
                 step++;
-                mdStep(timestep, myAtoms);
+                mdStep(timestep, myAtoms, props);
                 if (step % logSteps == 0L) {
-                    printProperties(timestep, step, myAtoms);
+                    Team.WORLD.allreduce[Double](here.id, props.raw, 0, props.raw, 0, props.raw.size, Team.ADD);
+                    if (here == Place.FIRST_PLACE) {
+                        props.print(timestep, step, numAtoms);
+                    }
                 }
             }
-        }
-    }
-
-    /**
-     * Print current system properties.
-     * @param timestep length in ns
-     * @param currentStep current time in number of steps from start
-     * @param myAtoms for which to calculate properties
-     */
-    private def printProperties(timestep:Double, currentStep:Long, myAtoms:Rail[MMAtom]) {
-        val propertySums = properties.calculatePropertySums(myAtoms);
-        
-        Team.WORLD.allreduce[Double](here.id, propertySums, 0, propertySums, 0, propertySums.size, Team.ADD);
-
-        if (here == Place.FIRST_PLACE) {
-            Console.OUT.printf("%12.6f ", timestep * currentStep);
-            for (i in 0..(propertySums.size-1)) {
-                propertySums(i) /= (numAtoms as Double);
-                Console.OUT.printf("%16.8f ", propertySums(i));
-            }
-            // TODO remove error hack
-            /*
-            val m = myAtoms(0).mass;
-            val q = myAtoms(0).charge;
-            val x = myAtoms(0).centre.i;
-            val v = 3.4; // aiming for r ~ 2mm by r = mv/|q|B
-            val f = q * B.k / m * (PenningTrap.CHARGE_MASS_FACTOR*1e9);
-            val r = m * v / (q * B.k) / CHARGE_MASS_FACTOR;
-            val thetaPredicted = -f * currentStep * timestep * 1e-15 + Math.PI; // starting position [-r, 0.0, 0.0]
-            val xPredicted = Math.cos(thetaPredicted) * r;
-            val xError = (x - xPredicted);
-            //val theta = Math.acos(x / r);
-            //val thetaError = theta - thetaPredicted;
-            */
-            //Console.OUT.printf("%16.8f %16.8f "/*%16.8f %16.8f "*/, xPredicted, xError/*, theta, thetaError*/);
-            Console.OUT.println();
         }
     }
 
@@ -154,8 +115,10 @@ public class PenningTrap {
      * Performs a single molecular dynamics timestep
      * using the velocity-Verlet algorithm. 
      * @param dt time in ns
+     * @param myAtoms the atoms that are stored here
+     * @param props the system properties to evaluate
      */
-    public def mdStep(dt:Double, myAtoms:Rail[MMAtom]) {
+    public def mdStep(dt:Double, myAtoms:Rail[MMAtom], props:SystemProperties) {
         for (i in 0..(myAtoms.size-1)) {
             val atom = myAtoms(i);
     
@@ -179,6 +142,8 @@ public class PenningTrap {
 
             atom.centre = atom.centre + atom.velocity * dt * 1.0e-9;
             //Console.OUT.print(atom.centre.i + " " + atom.centre.j + " " + atom.centre.k + " ");
+
+            props.accumulate(atom, this);
         }
     }
 
@@ -186,8 +151,8 @@ public class PenningTrap {
      * @return the position-dependent electrostatic field due to trapping plates
      * @see Guan & Marshall eq. 44
      */
-    public def getElectrostaticField(p:Point3d):Vector3d {
-        return Vector3d(-p.i * E_NORM, -p.j*E_NORM, 2.0*p.k*E_NORM);
+    public static @Inline def getElectrostaticField(p:Point3d):Vector3d {
+        return Vector3d(-p.i*E_NORM, -p.j*E_NORM, 2.0*p.k*E_NORM);
 /*
         Han & Shin eq. 7-8
         var sumTerms:Double = 0.0;
@@ -211,7 +176,7 @@ public class PenningTrap {
      * @return the position-dependent electrostatic potential due to trapping plates
      * @see Guan & Marshall eq. 19
      */
-    public def getElectrostaticPotential(p:Point3d):Double {
+    public @Inline def getElectrostaticPotential(p:Point3d):Double {
         val potential = V_T * (/*1.0/3.0*/ -0.5 * E_NORM * (p.i*p.i + p.j*p.j - 2.0*p.k*p.k));
         return potential;
     }
@@ -220,7 +185,7 @@ public class PenningTrap {
      * @return the image current induced by the given ion
      * @see Guan & Marshall eq. 69-70
      */
-    public static def getImageCurrent(ion:MMAtom):Double {
+    public @Inline static def getImageCurrent(ion:MMAtom):Double {
         val eImage = -BETA_PRIME / EDGE_LENGTH;
         return ion.charge * ion.velocity.j * eImage;
     }
@@ -253,6 +218,62 @@ public class PenningTrap {
      */
     private static def getPlaceId(x : Double, y : Double, z : Double, size : Double) : Int {
         return ((x / (size * 2) + 0.5) * Place.MAX_PLACES) as Int;
+    }
+
+    static class SystemProperties {
+        public val raw:Rail[Double];
+        public def this() {
+            raw = new Array[Double](6);
+        }
+
+        /**
+         * Sets all properties to zero.
+         */
+        public def reset() {
+            raw.clear();
+        }
+
+        /**
+         * Accumulates the properties for the given atom.
+         */
+        public @Inline def accumulate(atom:MMAtom, trap:PenningTrap) {
+            raw(0) += atom.centre.i;
+            raw(1) += atom.centre.j;
+            raw(2) += atom.centre.k;
+            raw(3) += atom.mass * atom.velocity.lengthSquared();
+            raw(4) += atom.charge * trap.getElectrostaticPotential(atom.centre);
+            raw(5) += getImageCurrent(atom);
+        }
+
+        /**
+         * Prints the system properties.  Called at place 0 after reduction across all places.
+         */
+        public @Inline def print(timestep:Double, currentStep:Long, numAtoms:Int) {
+            Console.OUT.printf("%12.6f ", timestep * currentStep);
+            val meanX = raw(0) / numAtoms;
+            val meanY = raw(1) / numAtoms;
+            val meanZ = raw(2) / numAtoms;
+            val Ek = raw(3) * 0.5 * 1.66053892173e-3; // Da->kg * 10^24
+            val Ep = raw(4) * 1.6021765314e5; // e->C * 10^24;
+            val E = Ek + Ep;
+            val I = raw(5) * 1.6021765314e-1; // e->C * 10^18;
+
+            Console.OUT.printf("%16.8f %16.8f %16.8f ", meanX, meanY, meanZ);
+            Console.OUT.printf("%16.8f %16.8f %16.8f %16.8f\n", Ek, Ep, E, I);
+        }
+
+        public static def printHeader() {
+            Console.OUT.printf("%12s ", "ns");
+            Console.OUT.printf("%16s %16s %16s ",
+                "mean_X (mm)",
+                "mean_Y (mm)",
+                "mean_Z (mm)");
+            Console.OUT.printf("%16s %16s %16s %16s\n",
+                "Ek (yJ)",
+                "Ep (yJ)",
+                "E (yJ)",
+                "I (aA)"); 
+        }
     }
 }
 

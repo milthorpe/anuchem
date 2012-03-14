@@ -13,7 +13,6 @@ package au.edu.anu.mm;
 import x10.util.Random;
 import x10x.vector.Point3d;
 import x10x.vector.Vector3d;
-import au.edu.anu.mm.SystemProperties;
 import au.edu.anu.chem.mm.MMAtom;
 
 /**
@@ -28,9 +27,6 @@ import au.edu.anu.chem.mm.MMAtom;
  * @author milthorpe
  */
 public class TestCyclotron {
-    public static MASS_FACTOR = 1.66053892173e-3; // Da->kg * 10^24
-    public static CHARGE_FACTOR = 1.6021765314e5; // e->C * 10^24;
-
     public static def main(args : Array[String](1)) {
         var B:Double = 0.7646;
         var dt:Double = 50.0; // timestep in ns
@@ -93,20 +89,6 @@ public class TestCyclotron {
         distAtoms(0) = atoms;
 
         val trap = new PenningTrap(N, distAtoms, V, new Vector3d(0.0, 0.0, B));
-        val kineticEnergy = (a:MMAtom) => 0.5 * a.mass * MASS_FACTOR * a.velocity.lengthSquared();
-        val potentialEnergy = (a:MMAtom) => a.charge * CHARGE_FACTOR * trap.getElectrostaticPotential(a.centre);
-        val totalEnergy = (a:MMAtom) => 0.5 * a.mass * MASS_FACTOR * a.velocity.lengthSquared()
-                                        + a.charge * CHARGE_FACTOR * trap.getElectrostaticPotential(a.centre);
-        val detectorCurrent = (a:MMAtom) => PenningTrap.getImageCurrent(a) * CHARGE_FACTOR * 1.0e-6;
-
-        val onePFs = [OneParticleFunction("mean_X (mm)", (a:MMAtom) => a.centre.i*1e6), 
-                      OneParticleFunction("mean_Y (mm)", (a:MMAtom) => a.centre.j*1e6), 
-                      OneParticleFunction("mean_Z (mm)", (a:MMAtom) => a.centre.k*1e6), 
-                      OneParticleFunction("Ek (yJ)", kineticEnergy), 
-                      OneParticleFunction("Ep (yJ)", potentialEnergy), 
-                      OneParticleFunction("E (yJ)", totalEnergy),
-                      OneParticleFunction("I (aA)", detectorCurrent)];
-        trap.setProperties(new SystemProperties(N, onePFs));
         trap.mdRun(dt, timesteps, logSteps);
     }
 
