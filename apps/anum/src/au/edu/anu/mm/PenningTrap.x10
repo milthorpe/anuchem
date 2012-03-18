@@ -11,6 +11,10 @@
 package au.edu.anu.mm;
 
 import x10.compiler.Inline;
+import x10.io.File;
+import x10.io.FileWriter;
+import x10.io.IOException;
+import x10.io.Printer;
 import x10.util.ArrayList;
 import x10.util.Team;
 import x10x.vector.Point3d;
@@ -89,7 +93,7 @@ public class PenningTrap {
         SystemProperties.printHeader();
            
         finish ateach(placeId in atoms) {
-            var step : Long = 0;
+            var step : Long = 0L;
             val myAtoms = atoms(placeId);
             val props = new SystemProperties();
             for (i in 0..(myAtoms.size-1)) {
@@ -100,6 +104,7 @@ public class PenningTrap {
             }
             while(step < numSteps) {
                 step++;
+                props.reset();
                 mdStep(timestep, myAtoms, props);
                 if (step % logSteps == 0L) {
                     Team.WORLD.allreduce[Double](here.id, props.raw, 0, props.raw, 0, props.raw.size, Team.ADD);
@@ -108,6 +113,7 @@ public class PenningTrap {
                     }
                 }
             }
+            printPositions(myAtoms);
         }
     }
 
@@ -152,7 +158,7 @@ public class PenningTrap {
      * @see Guan & Marshall eq. 44
      */
     public static @Inline def getElectrostaticField(p:Point3d):Vector3d {
-        return Vector3d(-p.i*E_NORM, -p.j*E_NORM, 2.0*p.k*E_NORM);
+        return Vector3d(p.i*E_NORM, p.j*E_NORM, -2.0*p.k*E_NORM);
 /*
         Han & Shin eq. 7-8
         var sumTerms:Double = 0.0;
@@ -188,6 +194,14 @@ public class PenningTrap {
     public @Inline static def getImageCurrent(ion:MMAtom):Double {
         val eImage = -BETA_PRIME / EDGE_LENGTH;
         return ion.charge * ion.velocity.j * eImage;
+    }
+
+    private def printPositions(myAtoms:Rail[MMAtom]) {
+        val posFilePrinter = new Printer(new FileWriter(new File("positions.dat")));
+        for ([i] in myAtoms) {
+            val atom = myAtoms(i);
+            posFilePrinter.printf("%i %i %s %12.8f %12.8f %12.8f\n", here.id, i, atom.symbol, atom.centre.i*1.0e6, atom.centre.j*1.0e6, atom.centre.k*1.0e6);
+        }
     }
 
     /**

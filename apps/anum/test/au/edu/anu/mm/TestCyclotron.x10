@@ -73,15 +73,28 @@ public class TestCyclotron {
 
         val rand = new Random();
 
+
+        // initial distribution for each species is uniform cylinder along z dimension
+        // centred at calculated radius for given velocity
         val atoms = new Array[MMAtom](N);
         for (i in 0..(N-1)) {
+            val r = perturbation(rand);
+            val theta = rand.nextDouble() * Math.PI * 2.0;
+            val ex = Math.cos(theta) * r;
+            val ey = Math.sin(theta) * r;
             val ion:MMAtom;
             if (i % 3 == 0) {
-                ion = new MMAtom(species1, Point3d(-r1+perturbation(rand), perturbation(rand), perturbation(rand)), mass1, q);
+                ion = new MMAtom(species1, Point3d(-r1+ex, ey, perturbation(rand)), mass1, q);
             } else {
-                ion = new MMAtom(species2, Point3d(-r2+perturbation(rand), perturbation(rand), perturbation(rand)), mass2, q);
+                ion = new MMAtom(species2, Point3d(-r2+ex, ey, perturbation(rand)), mass2, q);
             }
-            ion.velocity = Vector3d(perturbation(rand), v+perturbation(rand), 1.0);
+
+            // dominant velocity in y direction, slightly perturbed in random direction in X-Y plane
+            // random velocity -1/2..1/2 in z direction
+            val phi = rand.nextDouble() * Math.PI * 2.0;
+            val evx = Math.cos(phi) * 1.0e-1 - 5.0e-2;
+            val evy = Math.sin(phi) * 1.0e-1 - 5.0e-2;
+            ion.velocity = Vector3d(evx, v+evy, rand.nextDouble()-0.5);
             atoms(i) = ion;
         }
 
@@ -93,7 +106,7 @@ public class TestCyclotron {
     }
 
     private static def perturbation(rand:Random) {
-        return rand.nextDouble()*1.0e-8 - 5.0e-9;
+        return rand.nextDouble()*1.0e-6 - 5.0e-7;
     }
 }
 
