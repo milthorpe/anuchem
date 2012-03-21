@@ -88,14 +88,16 @@ public class PenningTrap {
      * @param timestep length in ns
      * @param numSteps number of timesteps to simulate
      */
-    public def mdRun(timestep:Double, numSteps:Long, logSteps:Long) {
+    public def mdRun(timestep:Double, numSteps:Int, logSteps:Int) {
         Console.OUT.println("# Timestep = " + timestep + "ns, number of steps = " + numSteps);
         val timer = new Timer(2);
+
+        val current = new Array[Double](numSteps);
  
         SystemProperties.printHeader();
            
         finish ateach(placeId in atoms) {
-            var step : Long = 0L;
+            var step : Int = 0;
             val myAtoms = atoms(placeId);
             val props = new SystemProperties();
             for (i in 0..(myAtoms.size-1)) {
@@ -110,15 +112,22 @@ public class PenningTrap {
                 step++;
                 props.reset();
                 mdStep(timestep, myAtoms, props);
-                if (step % logSteps == 0L) {
+                if (step % logSteps == 0) {
                     Team.WORLD.allreduce[Double](here.id, props.raw, 0, props.raw, 0, props.raw.size, Team.ADD);
                     if (here == Place.FIRST_PLACE) {
                         props.print(timestep * step, numAtoms);
                     }
                 }
+                if (here == Place.FIRST_PLACE) {
+                    current(step) = props.getCurrent();
+                }
             }
-            printPositions(timestep * step, myAtoms);
+            if (here == Place.FIRST_PLACE) {
+                printPositions(timestep * step, myAtoms);
+                printCurrent(timestep, current);
+            }
         }
+
     }
 
     /**
@@ -243,6 +252,15 @@ public class PenningTrap {
         }
     }
 
+    private def printCurrent(timestep:Double, current:Rail[Double]) {
+        val currentFilePrinter = new Printer(new FileWriter(new File("current.dat")));
+        for ([i] in current) {
+            val I = current(i) * 1.6021765314e-7; // e->C * 10^12; pA
+            currentFilePrinter.printf("%16.8f\n", I);
+            //currentFilePrinter.printf("%10.2f %16.8f\n", i*timestep, I);
+        }
+    }
+
     /**
      * Partitions the molecule amongst all places, returning a distributed
      * array of Array[MMAtom], one Array for each place.  
@@ -273,7 +291,7 @@ public class PenningTrap {
         return ((x / (size * 2) + 0.5) * Place.MAX_PLACES) as Int;
     }
 
-    static class SystemProperties {
+    static class SystemProperties { 
         public val raw:Rail[Double];
         public def this() {
             raw = new Array[Double](6);
@@ -324,9 +342,13 @@ public class PenningTrap {
                 I);
         }
 
+        public def getCurrent() {
+            return raw(5);
+        }
+
         public static def printHeader() {
             Console.OUT.printf("%10s %8s", 
-                "ns", 
+                "time (ns)", 
                 "num_ions");
             Console.OUT.printf("%16s %16s %16s ",
                 "mean_X (mm)",
