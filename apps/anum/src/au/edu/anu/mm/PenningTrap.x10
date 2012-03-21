@@ -39,11 +39,13 @@ import au.edu.anu.util.Timer;
 public class PenningTrap {
     public static val LENGTH_FACTOR = 1.0e-9;
     public static val CHARGE_MASS_FACTOR = 9.64853364e7; // conversion of q/m from e/Da to C/kg
+    public static val MASS_CHARGE_FACTOR = 1.036426941e-8; // conversion of m/q from Da/e to kg/C
     static val ALPHA_PRIME = 2.77373; // geometric factor for a cubic trap (Guan and Marshall eq. 59)
     static val BETA_PRIME = 0.72167; // electric field constant for detection/excition (Guan and Marshall eq. 66)
-    static val EDGE_LENGTH = 0.047; // edge length l = 4.7cm
+    static val EDGE_LENGTH = 0.0508; // edge length l = 5.08
+    static val COULOMB_FACTOR = 3.501233e-27; // 1 / (4 PI e0 * CHARGE_FACTOR^2)
 
-    private val numAtoms:Int;
+    private var numAtoms:Int;
 
     /** The atoms in the simulation, divided up into a distributed array of Arrays, one for each place. */
     private val atoms:DistArray[Rail[MMAtom]](1);
@@ -97,10 +99,12 @@ public class PenningTrap {
             val myAtoms = atoms(placeId);
             val props = new SystemProperties();
             for (i in 0..(myAtoms.size-1)) {
-                props.accumulate(myAtoms(i), this);
+                if (myAtoms(i) != null) {
+                    props.accumulate(myAtoms(i), this);
+                }
             }
             if (here == Place.FIRST_PLACE) {
-                props.print(timestep, step, numAtoms);
+                props.print(0, numAtoms);
             }
             while(step < numSteps) {
                 step++;
@@ -109,11 +113,11 @@ public class PenningTrap {
                 if (step % logSteps == 0L) {
                     Team.WORLD.allreduce[Double](here.id, props.raw, 0, props.raw, 0, props.raw.size, Team.ADD);
                     if (here == Place.FIRST_PLACE) {
-                        props.print(timestep, step, numAtoms);
+                        props.print(timestep * step, numAtoms);
                     }
                 }
             }
-            printPositions(myAtoms);
+            printPositions(timestep * step, myAtoms);
         }
     }
 
@@ -127,29 +131,61 @@ public class PenningTrap {
     public def mdStep(dt:Double, myAtoms:Rail[MMAtom], props:SystemProperties) {
         for (i in 0..(myAtoms.size-1)) {
             val atom = myAtoms(i);
+            if (atom != null) {
     
-            // timestep using Boris integrator
-            val chargeMassRatio = atom.charge / atom.mass * CHARGE_MASS_FACTOR;
+                // timestep using Boris integrator
+                val chargeMassRatio = atom.charge / atom.mass * CHARGE_MASS_FACTOR;
 
-            val E = getElectrostaticField(atom.centre);
-            //Console.OUT.println("E = " + E);
-            val halfA = 0.5 * dt * 1.0e-9 * chargeMassRatio * E;
-            val vMinus = atom.velocity + halfA; // m
+                var E:Vector3d = getElectrostaticField(atom.centre);
+                /*
+                //Console.OUT.println("E(" + i + ") = " + E);
+                for (j in 0..(myAtoms.size-1)) {
+                    if (i == j) continue;
+                    val atomJ = myAtoms(j);
+                    if (atomJ != null) {
+                        val r = atom.centre - atomJ.centre;
+                        val r2 = r.lengthSquared();
+                        val absR = Math.sqrt(r2);
+                        val atomContribution = COULOMB_FACTOR * atom.charge * atomJ.charge / r2 / absR * r;
+                        //Console.OUT.println(j + " => " + i + " = " + atomContribution);
+                        E = E + atomContribution;
+                    }
+                }
+                */
 
-            //val larmorFreq = chargeMassRatio * magB;
-            val t = 0.5 * dt * 1.0e-9 * chargeMassRatio * B;
-            val vPrime = vMinus + vMinus.cross(t);
+                //Console.OUT.println("E = " + E);
+                val halfA = 0.5 * dt * 1.0e-9 * chargeMassRatio * E;
+                val vMinus = atom.velocity + halfA; // m
 
-            val magt2 = t.lengthSquared();
-            val s = t * (2.0 / (1.0 + magt2));
-            val vPlus = vMinus + vPrime.cross(s);
+                //val larmorFreq = chargeMassRatio * magB;
+                val t = 0.5 * dt * 1.0e-9 * chargeMassRatio * B;
+                val vPrime = vMinus + vMinus.cross(t);
 
-            atom.velocity = vPlus + halfA;
+                val magt2 = t.lengthSquared();
+                val s = t * (2.0 / (1.0 + magt2));
+                val vPlus = vMinus + vPrime.cross(s);
 
-            atom.centre = atom.centre + atom.velocity * dt * 1.0e-9;
-            //Console.OUT.print(atom.centre.i + " " + atom.centre.j + " " + atom.centre.k + " ");
+                atom.velocity = vPlus + halfA;
+            }
+        }
 
-            props.accumulate(atom, this);
+        // TODO global barrier
+        for (i in 0..(myAtoms.size-1)) {
+            val atom = myAtoms(i);
+            if (atom != null) {
+                atom.centre = atom.centre + atom.velocity * dt * 1.0e-9;
+                //Console.OUT.print(atom.centre.i + " " + atom.centre.j + " " + atom.centre.k + " ");
+
+                if (Math.abs(atom.centre.i) > EDGE_LENGTH/2.0
+                 || Math.abs(atom.centre.j) > EDGE_LENGTH/2.0
+                 || Math.abs(atom.centre.k) > EDGE_LENGTH/2.0) {
+                    // ion lost to wall
+                    myAtoms(i) = null;
+                    numAtoms--;
+                }
+
+                props.accumulate(atom, this);
+            }
         }
     }
 
@@ -196,11 +232,14 @@ public class PenningTrap {
         return ion.charge * ion.velocity.j * eImage;
     }
 
-    private def printPositions(myAtoms:Rail[MMAtom]) {
-        val posFilePrinter = new Printer(new FileWriter(new File("positions.dat")));
+    private def printPositions(time:Double, myAtoms:Rail[MMAtom]) {
+        val timeInt = time as Int;
+        val posFilePrinter = new Printer(new FileWriter(new File("positions_" + timeInt + ".dat")));
         for ([i] in myAtoms) {
             val atom = myAtoms(i);
-            posFilePrinter.printf("%i %i %s %12.8f %12.8f %12.8f\n", here.id, i, atom.symbol, atom.centre.i*1.0e6, atom.centre.j*1.0e6, atom.centre.k*1.0e6);
+            if (atom != null) {
+                posFilePrinter.printf("%i %i %s %12.8f %12.8f %12.8f\n", here.id, i, atom.symbol, atom.centre.i*1.0e3, atom.centre.j*1.0e3, atom.centre.k*1.0e3);
+            }
         }
     }
 
@@ -262,31 +301,42 @@ public class PenningTrap {
         /**
          * Prints the system properties.  Called at place 0 after reduction across all places.
          */
-        public @Inline def print(timestep:Double, currentStep:Long, numAtoms:Int) {
-            Console.OUT.printf("%12.6f ", timestep * currentStep);
-            val meanX = raw(0) / numAtoms;
-            val meanY = raw(1) / numAtoms;
-            val meanZ = raw(2) / numAtoms;
-            val Ek = raw(3) * 0.5 * 1.66053892173e-3; // Da->kg * 10^24
-            val Ep = raw(4) * 1.6021765314e5; // e->C * 10^24;
+        public @Inline def print(time:Double, numAtoms:Int) {
+            val meanX = raw(0) / numAtoms * 1e3;
+            val meanY = raw(1) / numAtoms * 1e3;
+            val meanZ = raw(2) / numAtoms * 1e3;
+            val Ek = raw(3) * 0.5 * 1.66053892173e-12; // Da->kg * 10^15 fJ
+            val Ep = raw(4) * 1.6021765314e-4; // e->C * 10^15; fJ
             val E = Ek + Ep;
-            val I = raw(5) * 1.6021765314e-1; // e->C * 10^18;
+            val I = raw(5) * 1.6021765314e-7; // e->C * 10^12; pA
 
-            Console.OUT.printf("%16.8f %16.8f %16.8f ", meanX, meanY, meanZ);
-            Console.OUT.printf("%16.8f %16.8f %16.8f %16.8f\n", Ek, Ep, E, I);
+            Console.OUT.printf("%12.6f %8i", 
+                time, 
+                numAtoms);
+            Console.OUT.printf("%16.8f %16.8f %16.8f ", 
+                meanX, 
+                meanY, 
+                meanZ);
+            Console.OUT.printf("%16.8f %16.8f %16.8f %16.8f\n", 
+                Ek, 
+                Ep, 
+                E, 
+                I);
         }
 
         public static def printHeader() {
-            Console.OUT.printf("%12s ", "ns");
+            Console.OUT.printf("%12s %8s", 
+                "ns", 
+                "num_ions");
             Console.OUT.printf("%16s %16s %16s ",
                 "mean_X (mm)",
                 "mean_Y (mm)",
                 "mean_Z (mm)");
             Console.OUT.printf("%16s %16s %16s %16s\n",
-                "Ek (yJ)",
-                "Ep (yJ)",
-                "E (yJ)",
-                "I (aA)"); 
+                "Ek (fJ)",
+                "Ep (fJ)",
+                "E (fJ)",
+                "I (pA)"); 
         }
     }
 }

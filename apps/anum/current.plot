@@ -1,9 +1,11 @@
-set title "FTICR-MS induced current: packet of 1/3 CH_3CO and 2/3 HCO ions"
+set title "FTICR-MS induced current: packet of Cs^+ (m/q = 132.9) and x^+ (m/q = 150)"
 
 set output 'current.ps'
 set term post enhanced
 
 set xlabel 'time({/Symbol m}s)'
-set ylabel 'current (aA)'
+set ylabel 'current (pA)'
 
-plot 'penning.dat' using ($1/1000):($8) with lines notitle lt rgb "blue"
+set xzeroaxis
+
+plot 'penning.dat' using ($1/1000):($9) with lines notitle lt rgb "blue"

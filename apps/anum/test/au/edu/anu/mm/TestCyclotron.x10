@@ -20,15 +20,15 @@ import au.edu.anu.chem.mm.MMAtom;
  * for the purposes of Fourier Transform Ion Cyclotron Resonance (FT-ICR) mass
  * spectroscopy.
  * Parameters to match simulation reported in:
- * @see Seung-Jin Han and Seung Koo Shin (1997)
- *  "Space-Charge Effects and Fourier transform ion cyclotron resonance signals:
- *   experimental observations and three-dimensional trajectory simulations"
- *   J. Am. Soc. Mass Spectrometry 8 (4), 319-326 
+ * @see Leach et al. (2010). "Comparison of Particle-In-Cell simulations with 
+ *   experimentally observed frequency shifts between ions of the same mass-to-
+ *   charge in Fourier Transform Ion Cyclotron Resonance Mass Spectrometry".
+ *   J. Am. Soc. Mass Spectrometry 21 (2), 203-208 
  * @author milthorpe
  */
 public class TestCyclotron {
     public static def main(args : Array[String](1)) {
-        var B:Double = 0.7646;
+        var B:Double = 7.0;
         var dt:Double = 50.0; // timestep in ns
         var V:Double = 1.0;
         var timesteps:Int = 80000; // number of timesteps
@@ -56,45 +56,42 @@ public class TestCyclotron {
         Console.OUT.println("# Testing cyclotron: trapping potential: " + V + " magnetic field: " + B);
 
 
-        val v = 3.4; // aiming for r ~ 2mm by r = mv/|q|B
+        val v = 2.7e4; // aiming for r ~ 6mm by r = mv/|q|B
         val q = 1.0;
 
-        val species1 = "CH3CO";
-        val mass1 = 43.04462;
+        val species1 = "Cs+"; // "CH3CO";
+        val mass1 = 132.9054; // 43.04462;
         val f1 = q * B / mass1 * (PenningTrap.CHARGE_MASS_FACTOR) / (2.0 * Math.PI);
         val r1 = mass1 * v / (q * B) / PenningTrap.CHARGE_MASS_FACTOR;
-        Console.OUT.printf("# %s predicted f = %10.2f r = %8.2f nm\n", species1, f1, r1*1e9);
+        Console.OUT.printf("# %8s predicted f = %12i Hz r = %6.3f mm\n", species1, f1 as Int, r1*1e3);
 
-        val species2 = "HCO";
-        val mass2 = 29.0182;
+        val species2 = "x150"; //"HCO";
+        val mass2 = 150.00; // 29.0182;
         val f2 = q * B / mass2 * (PenningTrap.CHARGE_MASS_FACTOR) / (2.0 * Math.PI);
         val r2 = mass2 * v / (q * B) / PenningTrap.CHARGE_MASS_FACTOR;
-        Console.OUT.printf("# %s predicted f = %10.2f r = %8.2f nm\n", species2, f2, r2*1e9);
+        Console.OUT.printf("# %8s predicted f = %12i Hz r = %6.3f mm\n", species2, f2 as Int, r2*1e3);
 
-        val rand = new Random();
+        val rand = new Random(27178281L);
 
 
         // initial distribution for each species is uniform cylinder along z dimension
         // centred at calculated radius for given velocity
         val atoms = new Array[MMAtom](N);
         for (i in 0..(N-1)) {
-            val r = perturbation(rand);
+            val er = rand.nextDouble() * 5.0e-4;
             val theta = rand.nextDouble() * Math.PI * 2.0;
-            val ex = Math.cos(theta) * r;
-            val ey = Math.sin(theta) * r;
+            val ex = Math.cos(theta) * er;
+            val ey = Math.sin(theta) * er;
             val ion:MMAtom;
             if (i % 3 == 0) {
-                ion = new MMAtom(species1, Point3d(-r1+ex, ey, perturbation(rand)), mass1, q);
+                ion = new MMAtom(species1, Point3d(-r1+ex, ey, perturbation(rand, 1e-3)), mass1, q);
             } else {
-                ion = new MMAtom(species2, Point3d(-r2+ex, ey, perturbation(rand)), mass2, q);
+                ion = new MMAtom(species2, Point3d(-r2+ex, ey, perturbation(rand, 1e-3)), mass2, q);
             }
 
-            // dominant velocity in y direction, slightly perturbed in random direction in X-Y plane
-            // random velocity -1/2..1/2 in z direction
-            val phi = rand.nextDouble() * Math.PI * 2.0;
-            val evx = Math.cos(phi) * 1.0e-1 - 5.0e-2;
-            val evy = Math.sin(phi) * 1.0e-1 - 5.0e-2;
-            ion.velocity = Vector3d(evx, v+evy, rand.nextDouble()-0.5);
+            // velocity is Maxwellian distribution with addition of velocity v in y direction
+            val ev = maxwellianVelocity(rand, ion.mass);
+            ion.velocity = Vector3d(ev.i, v+ev.j, ev.k);
             atoms(i) = ion;
         }
 
@@ -105,8 +102,33 @@ public class TestCyclotron {
         trap.mdRun(dt, timesteps, logSteps);
     }
 
-    private static def perturbation(rand:Random) {
-        return rand.nextDouble()*1.0e-6 - 5.0e-7;
+    private static def perturbation(rand:Random, max:Double) {
+        return rand.nextDouble()*max*2.0 - max;
+    }
+
+    /** 
+     * Returns a velocity vector taken from a Maxwellian distribution at 300K,
+     * i.e. a vector with each component a normal distribution with mean 0 and
+     * variance kT/m
+     * @param rand a uniform random number generator
+     * @param mass the particle mass
+     */
+    private static def maxwellianVelocity(rand:Random, mass:Double):Vector3d {
+        val variance = 8.314462175 * 300 / mass; // (gas constant R) * 300K / (molecular mass m)
+        return Vector3d(randNormal(rand, variance), randNormal(rand, variance), randNormal(rand, variance));
+    }
+
+    /**
+     * Use the Box-Muller transform to generate a pseudo-random number from a normal distribution.
+     * @param rand a uniform random number generator
+     * @param variance distribution variance 
+     * @return a random variable taken from a normal distribution with mean 0
+     */
+    private static def randNormal(rand:Random, variance:Double) {
+        val u1 = rand.nextDouble();
+        val u2 = rand.nextDouble();
+        val z0 = Math.sqrt(-2.0 * Math.log(u1)) * Math.cos(2.0 * Math.PI * u2);
+        return variance * z0;
     }
 }
 
