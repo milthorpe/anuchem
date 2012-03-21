@@ -310,7 +310,7 @@ public class PenningTrap {
             val E = Ek + Ep;
             val I = raw(5) * 1.6021765314e-7; // e->C * 10^12; pA
 
-            Console.OUT.printf("%12.6f %8i", 
+            Console.OUT.printf("%10.2f %8i", 
                 time, 
                 numAtoms);
             Console.OUT.printf("%16.8f %16.8f %16.8f ", 
@@ -325,7 +325,7 @@ public class PenningTrap {
         }
 
         public static def printHeader() {
-            Console.OUT.printf("%12s %8s", 
+            Console.OUT.printf("%10s %8s", 
                 "ns", 
                 "num_ions");
             Console.OUT.printf("%16s %16s %16s ",
