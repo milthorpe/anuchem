@@ -38,8 +38,8 @@ import au.edu.anu.util.Timer;
  */
 public class PenningTrap {
     public static val LENGTH_FACTOR = 1.0e-9;
-    public static val CHARGE_MASS_FACTOR = 9.64853364e7; // conversion of q/m from e/Da to C/kg
-    public static val MASS_CHARGE_FACTOR = 1.036426941e-8; // conversion of m/q from Da/e to kg/C
+    public static val CHARGE_MASS_FACTOR = 9.6485334e7; // conversion of q/m from e/Da to C/kg
+    public static val MASS_CHARGE_FACTOR = 1.03642694e-8; // conversion of m/q from Da/e to kg/C
     static val ALPHA_PRIME = 2.77373; // geometric factor for a cubic trap (Guan and Marshall eq. 59)
     static val BETA_PRIME = 0.72167; // electric field constant for detection/excition (Guan and Marshall eq. 66)
     static val EDGE_LENGTH = 0.0508; // edge length l = 5.08

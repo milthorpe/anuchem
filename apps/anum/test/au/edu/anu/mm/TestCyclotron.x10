@@ -113,7 +113,7 @@ public class TestCyclotron {
      * @param mass the particle mass
      */
     private static def maxwellianVelocity(rand:Random, mass:Double):Vector3d {
-        val variance = 8.314462175 * 300 / mass; // (gas constant R) * 300K / (molecular mass m)
+        val variance = 8.3144621 * 300 / mass; // (gas constant R) * 300K / (molecular mass m)
         return Vector3d(randNormal(rand, variance), randNormal(rand, variance), randNormal(rand, variance));
     }
 
