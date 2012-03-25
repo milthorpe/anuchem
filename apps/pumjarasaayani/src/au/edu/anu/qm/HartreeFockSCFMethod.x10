@@ -130,6 +130,7 @@ public class HartreeFockSCFMethod extends SCFMethod {
                 // ignore the first cycle's timings 
                 // as far fewer integrals are calculated
                 gMatrix.timer.clear(0);
+                gMatrixRO.timer.clear(0);
             }
             Console.OUT.printf("\n----------------------------------------------------------\n");
             // check for convergence
@@ -149,13 +150,12 @@ public class HartreeFockSCFMethod extends SCFMethod {
         Console.OUT.printf("==========================================================\n");
 
         Console.OUT.println("GMatrix construction timings:");
-        Console.OUT.println("iters     mean   stddev      min      max");
-        Console.OUT.printf("%5i %8.4g %8.4g %8.4g %8.4g", 
-                            gMatrix.timer.count(0), 
-                            (gMatrix.timer.mean(0) as Double) / 1e9,
-                            (gMatrix.timer.stdDev(0)) / 1e9,
-                            (gMatrix.timer.min(0) as Double) / 1e9,
-                            (gMatrix.timer.max(0) as Double) / 1e9);
+        gMatrix.timer.printSeconds();
+
+        if (jd.roOn>0) {
+            Console.OUT.println("GMatrixRO construction timings:");
+            gMatrixRO.timer.printSeconds();
+        }
     }
 }
 

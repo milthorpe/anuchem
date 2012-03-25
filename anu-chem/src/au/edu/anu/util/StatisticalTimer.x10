@@ -54,5 +54,15 @@ final public class StatisticalTimer {
         val s2 = sumOfSquares(id);
         return Math.sqrt(s0*s2 - s1*s1) / s0;
     }
+
+    public def printSeconds() {
+        Console.OUT.printf("%5s %8s %8s %8s %8s\n", "iters", "mean", "stddev", "min", "max");
+        Console.OUT.printf("%5i %8.4g %8.4g %8.4g %8.4g\n", 
+                            count(0), 
+                            (mean(0) as Double) / 1e9,
+                            (stdDev(0)) / 1e9,
+                            (min(0) as Double) / 1e9,
+                            (max(0) as Double) / 1e9);
+    }
 }
 
