@@ -109,7 +109,7 @@ public class PumjaRasaayani {
         hfscf.scf();
         timer.stop(0);
 
-        Console.OUT.printf("\n\nTotal time since start: %.3g seconds\n", (timer.total(0) as Double) / 1e9);
+        Console.OUT.printf("\nTotal time since start: %.3g seconds\n", (timer.total(0) as Double) / 1e9);
 
         fragment.energy = hfscf.getEnergy();
     }
