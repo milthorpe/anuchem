@@ -5,7 +5,7 @@
     <property environment="env"/>
     <property name="x10rt" value="sockets"/>
     <property name="x10.testlib" location="${user.home}/x10-trunk/x10.tests/examples/x10lib"/>
-    <property name="bash.exe" value="bash"/>    
+    <property name="bash.exe" value="bash"/>
     <property name="optimize" value="true" />
     <property name="nochecks" value="true" />
     <property name="cpuprofile"  value="false"/>

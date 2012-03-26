@@ -12,7 +12,7 @@
     </target>
 
     <target name="xla" description="Build the X10 Linear Algebra (XLA) shared library">
-        <ant dir="x10x.lib/xla" antfile="build.xml" />
+        <ant dir="xla" antfile="build.xml" />
     </target>
 
     <target name="fmm" description="Build the Fast Multipole Method app code" depends="anuchem,xla">

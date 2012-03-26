@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE project [<!ENTITY buildfile SYSTEM "file:./build-user.xml">]>
 <project name="Pumja Rasaayani" default="build" basedir=".">
-    <property name="x10rt" value="sockets" />
-    <property name="x10x.xla" location="../../x10x.lib/xla"/>
-	<property name="xla.props" location="${x10x.xla}/xla_${x10rt}.properties"/>
+    <property name="x10rt" value="mpi" />
+    <property name="xla" location="../../xla"/>
+	<property name="xla.props" location="${xla}/xla_${x10rt}.properties"/>
     <property name="x10.testlib" location="${user.home}/x10-trunk/x10.tests/examples/x10lib"/>
-    <property name="x10x.xlalib" location="../../x10x.lib/xla/src"/>
+    <property name="xlalib" location="../../xla/src"/>
     <property name="anuchem" location="../../anu-chem"/>
     <property name="anuchem.src" location="${anuchem}/src"/>
     <property name="anuchem.props" location="${anuchem}/anuchem_${x10rt}.properties"/>
@@ -14,7 +14,7 @@
     <property name="nochecks" value="true" />
     <property name="debug" value="false"/>
     <property name="profile"  value="false" />
-    <property name="cpuprofile"  value="false"/>
+    <property name="cpuprofile"  value="true"/>
     <property name="perftoolsHome" location="${user.home}/perftools"/>
     <property name="heapprofile" value="false" />
 
@@ -109,7 +109,7 @@
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/src">
             <arg value="-c"/>
-            <arg value="'x10c' ${x10c.nochecks} ${x10c.optimize} -sourcepath .:${x10x.xlalib}:${anuchem.src} -d ${target-src} '${basedir}/${testclass}'"/>
+            <arg value="'x10c' ${x10c.nochecks} ${x10c.optimize} -sourcepath .:${xlalib}:${anuchem.src} -d ${target-src} '${basedir}/${testclass}'"/>
         </exec>
     </target>
 
@@ -176,7 +176,7 @@
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/test">
             <arg value="-c"/>
-            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.nochecks} ${x10c.optimize} -sourcepath ${x10.testlib}:${basedir}/src:.:${x10x.xlalib}:${anuchem.src} -classpath ${target-src} -d ${target-test} ${test.list}"/>
+            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.nochecks} ${x10c.optimize} -sourcepath ${x10.testlib}:${basedir}/src:.:${xlalib}:${anuchem.src} -classpath ${target-src} -d ${target-test} ${test.list}"/>
         </exec>
     </target>
 

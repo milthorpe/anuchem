@@ -2,7 +2,7 @@
 <!DOCTYPE project [<!ENTITY buildfile SYSTEM "file:./build-user.xml">]>
 <project name="X10 application project" default="build" basedir=".">
     <property name="x10rt" value="sockets" />
-    <property name="x10x.xla" location="../../x10x.lib/xla"/>
+    <property name="x10x.xla" location="../../xla"/>
 	<property name="xla.props" location="${x10x.xla}/xla_${x10rt}.properties"/>
 	<property name="xla.src" location="${x10x.xla}/xla/src"/>
 	<property name="xla.lib" location="${x10x.xla}/xla/lib/xla.jar"/>

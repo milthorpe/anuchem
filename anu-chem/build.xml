@@ -3,11 +3,11 @@
 <project name="X10 Chemistry project" default="build" basedir=".">
     <property environment="env"/>
     <property name="x10rt" value="sockets"/>
-    <property name="x10x.xla" location="../x10x.lib/xla"/>
+    <property name="x10x.xla" location="../xla"/>
 	<property name="xla.props" location="${x10x.xla}/xla_${x10rt}.properties"/>
     <property name="x10home" location="${env.X10HOME}" />
     <property name="x10.testlib" location="${user.home}/x10-trunk/x10.tests/examples/x10lib"/>
-    <property name="bash.exe" value="bash"/>    
+    <property name="bash.exe" value="bash"/>
     <property name="optimize" value="true" />
     <property name="nochecks" value="true" />
     <property name="cpuprofile"  value="true"/>
