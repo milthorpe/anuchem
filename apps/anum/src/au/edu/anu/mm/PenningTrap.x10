@@ -22,6 +22,7 @@ import x10x.vector.Vector3d;
 import au.edu.anu.chem.Molecule;
 import au.edu.anu.chem.mm.MMAtom;
 import au.edu.anu.util.Timer;
+import edu.mit.fftw.FFTW;
 
 /**
  * A simulation of charged ions in cyclotron motion in a cubic Penning trap.
@@ -89,7 +90,7 @@ public class PenningTrap {
      * @param numSteps number of timesteps to simulate
      */
     public def mdRun(timestep:Double, numSteps:Int, logSteps:Int) {
-        Console.OUT.println("# Timestep = " + timestep + "ns, number of steps = " + numSteps);
+        Console.OUT.println("# Timestep = " + timestep + "ns, number of steps = " + numSteps + " logging every " + logSteps);
         val timer = new Timer(2);
 
         val current = new Array[Double](numSteps);
@@ -125,6 +126,7 @@ public class PenningTrap {
             if (here == Place.FIRST_PLACE) {
                 printPositions(timestep * step, myAtoms);
                 printCurrent(timestep, current);
+                printMassSpectrum(timestep, current);
             }
         }
 
@@ -257,6 +259,25 @@ public class PenningTrap {
         for ([i] in current) {
             val I = current(i) * 1.6021765314e-7; // e->C * 10^12; pA
             currentFilePrinter.printf("%16.8f\n", I);
+            //currentFilePrinter.printf("%10.2f %16.8f\n", i*timestep, I);
+        }
+    }
+
+    private def printMassSpectrum(timestep:Double, current:Rail[Double]) {
+        val massSpectrum = new Array[Complex](current.size/2 + 1);
+        val plan : FFTW.FFTWPlan = FFTW.fftwPlan1d(current.size, current, massSpectrum);
+        FFTW.fftwExecute(plan);
+        FFTW.fftwDestroyPlan(plan);
+
+        val mzPrinter = new Printer(new FileWriter(new File("penning.mz")));
+        mzPrinter.printf("#%15s %16f\n", "freq (kHz)", "amplitude");
+        val invN = 1.0e6/(current.size as Double);
+        val sampleFreq = 1.0 / timestep * invN;
+        for ([i] in massSpectrum) {
+            val freq = (i as Double) * sampleFreq; // * CHARGE_MASS_FACTOR * 1e-9;
+            val massCharge = B.magnitude() / freq;
+            val amplitude = massSpectrum(i);
+            mzPrinter.printf("%16.8f %16.8f\n", freq, amplitude.abs());
             //currentFilePrinter.printf("%10.2f %16.8f\n", i*timestep, I);
         }
     }

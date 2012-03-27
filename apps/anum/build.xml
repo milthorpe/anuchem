@@ -10,6 +10,9 @@
     <property name="anuchem.props" location="${anuchem}/anuchem_${x10rt}.properties"/>
 	<property name="anuchem.src" location="${anuchem}/src"/>
 	<property name="anuchem.lib" location="${anuchem}/lib/anu-chem.jar"/>
+    <property name="fftw" location="../../fftw_wrapper"/>
+    <property name="fftw.props" location="${fftw}/fftw_${x10rt}.properties" />
+    <property name="fftw3.include" location="${user.home}/fftw/include" />
     <property name="x10.testlib" location="${user.home}/x10-trunk/x10.tests/examples/x10lib"/>
     <property environment="env"/>
     <property name="bash.exe" value="bash"/>    
@@ -106,11 +109,11 @@
         <pathconvert property="src.list" refid="changed.src.files" dirsep="/" pathsep=" ">
             <map from="${basedir}${file.separator}src${file.separator}" to=""/>
         </pathconvert>
-        <echo message="x10c++ -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} ${x10c.debug} ${x10c.cpuprofile} -post '# ${post.profile} # ${link.mpiPprofile} ${post.cpuprofile}'  -x10lib ${xla.props} -x10lib ${anuchem.props} -sourcepath . ${basedir}/${testclass}"/>
+        <echo message="x10c++ -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} ${x10c.debug} ${x10c.cpuprofile} -post '# &quot;-I${fftw3.include}&quot; ${post.profile} # ${link.mpiPprofile} ${post.cpuprofile}'  -x10lib ${xla.props} -x10lib ${anuchem.props} -x10lib ${fftw.props} -sourcepath . ${basedir}/${testclass}"/>
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/src">
             <arg value="-c"/>
-            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} ${x10c.debug} ${x10c.cpuprofile} -report postcompile=1 -post '# ${post.profile} # ${link.mpiPprofile} ${post.cpuprofile}' -x10lib ${xla.props} -x10lib ${anuchem.props} -sourcepath . -d ${target-src} ${basedir}/${testclass}"/>
+            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} ${x10c.debug} ${x10c.cpuprofile} -report postcompile=1 -post '# &quot;-I${fftw3.include}&quot; ${post.profile} # ${link.mpiPprofile} ${post.cpuprofile}' -x10lib ${xla.props} -x10lib ${anuchem.props} -x10lib ${fftw.props} -sourcepath . -d ${target-src} ${basedir}/${testclass}"/>
         </exec>
     </target>
 

@@ -27,10 +27,7 @@ bookmarks={false}
 
 \section{Simulation of ions in a Penning trap}
 
-All simulation parameters taken from Han and Shin\cite{Han1997}.
-
-Ions are confined radially by a magnetic field $B$ of 0.7646 T.
-A quadrupolar trapping potential of 1V is used.
+Ions are confined radially by a magnetic field $B$, with an ideal quadrupolar trapping potential of $V_T$.
 The potential and field near the centre of the trap is approximated as 
 \begin{align}
 \Phi_T(x,y,z) &= V_T (\gamma' - \frac{\alpha'}{2l^2}(x^2 + y^2 - 2z^2)) &
@@ -64,11 +61,23 @@ The cyclotron radius $r$ is predicted by $r = \frac{m v}{|q| B}$ and measured by
 
 To achieve 1\% phase error in cyclotron frequency $\Omega = \frac{Q|B|}{m}$  requires $\Omega \Delta t \lesssim 0.3$\cite{Birdsall1985,Patacchini2009}.
 
+\subsection{Induced current}
+
+FTICR-MS measures the current induced between detector plates on walls of the cube parallel to the magnetic field.
+In the simulation, current is induced by the movement of the `image' $\mathbf{E}_{image}(r)$ associated with each ion, that is, a charge equal in magnitude to the potential that would be produced at the ion position due to a unit potential applied to the detector electrode\cite{Guan1995}.
+\begin{align}
+I &= q\mathbf{v} \cdot \mathbf{E}_{image}(\mathbf{r}) & \mathbf{E}_{image} &= - \frac{\beta'}{l} r_j & \beta' &= 0.72167
+\end{align}
+
+\subsection{Simulation results}
+
 \begin{table}[htbp]
  \centering	  	  
- \caption{Input, predicted and measured simulation parameters}
+ \caption{Replicating: Han and Shin\cite{Han1997}. Input, predicted and measured simulation parameters}
 \label{tab:params}
 \begin{tabular}{c|c|c|c|c|c|c|c|c|c|c|c}
+ \hline \hline
+  \multicolumn{12}{|c|}{$B = 0.7646 T, V_T = 1.0 V$} \\
  \hline \hline
  \multicolumn{4}{|c|}{ } & \multicolumn{2}{|c|}{\textbf{predicted}} & \multicolumn{2}{|c|}{\textbf{measured}} & \multicolumn{4}{|c|}{\textbf{error: timestep}} \\ 
  \hline
@@ -79,14 +88,6 @@ To achieve 1\% phase error in cyclotron frequency $\Omega = \frac{Q|B|}{m}$  req
  \hline \hline
 \end{tabular}
 \end{table}
-
-\subsection{Induced current}
-
-FTICR-MS measures the current induced between detector plates on walls of the cube parallel to the magnetic field.
-In the simulation, current is induced by the movement of the `image' $\mathbf{E}_{image}(r)$ associated with each ion, that is, a charge equal in magnitude to the potential that would be produced at the ion position due to a unit potential applied to the detector electrode\cite{Guan1995}.
-\begin{align}
-I &= q\mathbf{v} \cdot \mathbf{E}_{image}(\mathbf{r}) & \mathbf{E}_{image} &= - \frac{\beta'}{l} r_j & \beta' &= 0.72167
-\end{align}
 
 
 \begin{table}[htbp]
