@@ -27,7 +27,7 @@ bookmarks={false}
 
 \section{Simulation of ions in a Penning trap}
 
-Ions are confined radially by a magnetic field $B$, with an ideal quadrupolar trapping potential of $V_T$.
+Ions are confined radially by a magnetic field $\mathbf{B}$, with an ideal quadrupolar trapping potential of $V_T$.
 The potential and field near the centre of the trap is approximated as 
 \begin{align}
 \Phi_T(x,y,z) &= V_T (\gamma' - \frac{\alpha'}{2l^2}(x^2 + y^2 - 2z^2)) &
@@ -55,11 +55,16 @@ This is a modified leapfrog scheme in which positions are calculated at times $.
 
 \subsection{Ion motion}
 
-The cyclotron frequency $\omega_c$ is predicted by $\omega_c = \frac{q\mathbf{B}}{m}$\cite{Guan1995} and measured by the period between maxima in the $x$ dimension.
+The cyclotron frequency $\omega_c$ is predicted by $\omega_c = \frac{q B}{m}$\cite{Guan1995}.  
+To achieve 1\% phase error in simulated cyclotron frequency requires $\Omega \Delta t \lesssim 0.3$\cite{Birdsall1985,Patacchini2009}.
+The cyclotron radius $r$ is predicted by $r = \frac{m v}{|q| B}$ and is measured for a single particle simulation by the distance between maxima in the $x$ dimension.
 
-The cyclotron radius $r$ is predicted by $r = \frac{m v}{|q| B}$ and measured by the distance between maxima in the $x$ dimension.
-
-To achieve 1\% phase error in cyclotron frequency $\Omega = \frac{Q|B|}{m}$  requires $\Omega \Delta t \lesssim 0.3$\cite{Birdsall1985,Patacchini2009}.
+In a quadrupolar trapping potential of $V_T$, the modified cyclotron frequency $\omega_+$ is predicted by
+\begin{align}
+\omega_+ & \equiv \frac{\omega_c}{2} + \sqrt{\frac{\omega_c^2}{4} - \frac{\omega_z^2}{2}} &
+\omega_z &= \biggl(\frac{2 \alpha q V_T}{m l^2}\biggr)^{1/2}
+\end{align}
+The modified cyclotron frequency is measured by peaks in the Fourier transform of the induced current time signal.
 
 \subsection{Induced current}
 
@@ -74,7 +79,7 @@ I &= q\mathbf{v} \cdot \mathbf{E}_{image}(\mathbf{r}) & \mathbf{E}_{image} &= - 
 \begin{table}[htbp]
  \centering	  	  
  \caption{Replicating: Han and Shin\cite{Han1997}. Input, predicted and measured simulation parameters}
-\label{tab:params}
+\label{tab:han}
 \begin{tabular}{c|c|c|c|c|c|c|c|c|c|c|c}
  \hline \hline
   \multicolumn{12}{|c|}{$B = 0.7646 T, V_T = 1.0 V$} \\
@@ -83,8 +88,26 @@ I &= q\mathbf{v} \cdot \mathbf{E}_{image}(\mathbf{r}) & \mathbf{E}_{image} &= - 
  \hline
  \textbf{species} & \textbf{charge} & \textbf{mass} & \textbf{$v_0$ (m/s)} & \textbf{$\omega_c / 2\Pi$ (Hz)} & \textbf{$r$ (nm)} & \textbf{$\omega_c' / 2\Pi$ (Hz)}  & \textbf{$r'$ (nm)} & \textbf{$\Delta t$ (ns)} & \textbf{$\epsilon: \Delta t$}& \textbf{$\epsilon: \Delta t$ / 10} & \textbf{$\epsilon: \Delta t$ * 10}\\ 
  \hline
- $\mathsf{HCO^+}$ & 1 & 29.02 & 10 & 404,618 & 3933 & 404,531 & 3933 & 175 & \\
- $\mathsf{CH_3CO^+}$ & 1 & 43.04 & 10 & 272,770 & 5835 & 272,777 & 5835 & 118 & \\
+ $\mathsf{HCO^+}$ & 1 & 29.02 & 10 & 404,618 & 3,933 & 404,531 & 3,933 & 118 & \\
+ $\mathsf{CH_3CO^+}$ & 1 & 43.04 & 10 & 272,770 & 5,835 & 272,777 & 5,835 & 175 & \\
+ \hline \hline
+\end{tabular}
+\end{table}
+
+\begin{table}[htbp]
+ \centering	  	  
+ \caption{Replicating: Leach et al.\cite{Leach2009}. Input, predicted and measured simulation parameters}
+\label{tab:leach}
+\begin{tabular}{c|c|c|c|c|c|c|c|c|c|c|c}
+ \hline \hline
+  \multicolumn{12}{|c|}{$B = 7.0 T, V_T = 1.0 V$} \\
+ \hline \hline
+ \multicolumn{4}{|c|}{ } & \multicolumn{2}{|c|}{\textbf{predicted}} & \multicolumn{2}{|c|}{\textbf{measured}} & \multicolumn{4}{|c|}{\textbf{error: timestep}} \\ 
+ \hline
+ \textbf{species} & \textbf{charge} & \textbf{mass} & \textbf{$v_0$ (m/s)} & \textbf{$\omega_c / 2\Pi$ (Hz)} & \textbf{$r$ (nm)} & \textbf{$\omega_c' / 2\Pi$ (Hz)}  & \textbf{$r'$ (nm)} & \textbf{$\Delta t$ (ns)} & \textbf{$\epsilon: \Delta t$}& \textbf{$\epsilon: \Delta t$ / 10} & \textbf{$\epsilon: \Delta t$ * 10}\\ 
+ \hline
+ $\mathsf{Cs^+}$ & 1 & 132.9 & 2700 & 808,792 & 5,313 & 807,812 & 5,319 & 59 & \\
+ $\mathsf{? (\frac{m}{q} = 150 )}$ & 1 & 150.0 & 2700 & 716,618 & 5,996 & 715,937 & 5,997 & 67 & \\
  \hline \hline
 \end{tabular}
 \end{table}

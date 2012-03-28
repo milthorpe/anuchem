@@ -270,14 +270,33 @@ public class PenningTrap {
         FFTW.fftwDestroyPlan(plan);
 
         val mzPrinter = new Printer(new FileWriter(new File("penning.mz")));
-        mzPrinter.printf("#%15s %16f\n", "freq (kHz)", "amplitude");
-        val invN = 1.0e6/(current.size as Double);
+
+        val invN = 1.0e9/(current.size as Double);
         val sampleFreq = 1.0 / timestep * invN;
+
+        val freq = new Array[Double](massSpectrum.size);
+        val amplitude = new Array[Double](massSpectrum.size);
+        mzPrinter.println("# Mass spectrum for FT-ICR.  Peaks at:");
+        var peak:Double = 0.0;
+        var increasing:Boolean = false;
         for ([i] in massSpectrum) {
-            val freq = (i as Double) * sampleFreq; // * CHARGE_MASS_FACTOR * 1e-9;
-            val massCharge = B.magnitude() / freq;
-            val amplitude = massSpectrum(i);
-            mzPrinter.printf("%16.8f %16.8f\n", freq, amplitude.abs());
+            freq(i) = (i as Double) * sampleFreq;
+            amplitude(i) = massSpectrum(i).abs();
+            if (increasing && amplitude(i) <= peak) {
+                increasing = false;
+                if (i > 1) { // skip 'peak' at zero frequency
+                    mzPrinter.printf("# %10.2f Hz\n", freq(i-1));
+                }
+            } else if (amplitude(i) > peak) {
+                increasing = true;
+            }
+            peak = amplitude(i);
+        }
+        mzPrinter.println("#");
+        mzPrinter.printf("#%9s %12s\n", "freq (Hz)", "amplitude");
+
+        for ([i] in massSpectrum) {
+            mzPrinter.printf("%10.2f %12.4f\n", (freq(i) as Int), amplitude(i));
             //currentFilePrinter.printf("%10.2f %16.8f\n", i*timestep, I);
         }
     }
