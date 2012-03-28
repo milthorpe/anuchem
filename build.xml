@@ -5,9 +5,9 @@
 
     <target name="test" depends="test-fmm,test-pme,test-pumjarasaayani" />
 
-    <target name="build" depends="fmm,pme,pumjarasaayani" />
+    <target name="build" depends="xla,anu-chem,fmm,pme,pumjarasaayani" />
 
-    <target name="anuchem" description="Build the ANUChem shared library" depends="xla">
+    <target name="anu-chem" description="Build the ANUChem shared library" depends="xla">
         <ant dir="anu-chem" antfile="build.xml" />
     </target>
 
@@ -15,7 +15,11 @@
         <ant dir="xla" antfile="build.xml" />
     </target>
 
-    <target name="fmm" description="Build the Fast Multipole Method app code" depends="anuchem,xla">
+    <target name="fftw_wrapper" description="Build the FFTW wrapper shared library">
+        <ant dir="fftw_wrapper" antfile="build.xml" />
+    </target>
+
+    <target name="fmm" description="Build the Fast Multipole Method app code" depends="anu-chem,xla">
         <ant antfile="build.xml" dir="apps/fmm" target="build"/>
     </target>
 
@@ -27,7 +31,7 @@
         </exec>
     </target>
 
-    <target name="pme" description="Build the Particle Mesh Ewald app code" depends="anuchem,xla">
+    <target name="pme" description="Build the Particle Mesh Ewald app code" depends="xla,anu-chem,fftw_wrapper">
         <ant antfile="build.xml" dir="apps/pme" target="build"/>
     </target>
 
@@ -39,7 +43,7 @@
         </exec>
     </target>
 
-    <target name="pumjarasaayani" description="Build the Pumja Rasaayani (Quantum Chemistry) app code" depends="anuchem,xla">
+    <target name="pumjarasaayani" description="Build the Pumja Rasaayani (Quantum Chemistry) app code" depends="anu-chem,xla">
         <ant antfile="build.xml" dir="apps/pumjarasaayani" target="build"/>
     </target>
 
