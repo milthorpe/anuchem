@@ -82,14 +82,14 @@ I &= q\mathbf{v} \cdot \mathbf{E}_{image}(\mathbf{r}) & \mathbf{E}_{image} &= - 
 \label{tab:han}
 \begin{tabular}{c|c|c|c|c|c|c|c|c|c|c|c}
  \hline \hline
-  \multicolumn{12}{|c|}{$B = 0.7646 T, V_T = 1.0 V$} \\
+  \multicolumn{12}{|c|}{$B = 0.7646 T, V_T = 0.0 V, l = 0.047$ TODO rerun with $V_T = 1.0V$} \\
  \hline \hline
  \multicolumn{4}{|c|}{ } & \multicolumn{2}{|c|}{\textbf{predicted}} & \multicolumn{2}{|c|}{\textbf{measured}} & \multicolumn{4}{|c|}{\textbf{error: timestep}} \\ 
  \hline
  \textbf{species} & \textbf{charge} & \textbf{mass} & \textbf{$v_0$ (m/s)} & \textbf{$\omega_c / 2\Pi$ (Hz)} & \textbf{$r$ (nm)} & \textbf{$\omega_c' / 2\Pi$ (Hz)}  & \textbf{$r'$ (nm)} & \textbf{$\Delta t$ (ns)} & \textbf{$\epsilon: \Delta t$}& \textbf{$\epsilon: \Delta t$ / 10} & \textbf{$\epsilon: \Delta t$ * 10}\\ 
  \hline
- $\mathsf{HCO^+}$ & 1 & 29.02 & 10 & 404,618 & 3,933 & 404,531 & 3,933 & 118 & \\
- $\mathsf{CH_3CO^+}$ & 1 & 43.04 & 10 & 272,770 & 5,835 & 272,777 & 5,835 & 175 & \\
+ $\mathsf{HCO^+}$ & 1 & 29.0182 & 10 & 404,618 & 3,933 & 404,531 & 3,933 & 118 & \\
+ $\mathsf{CH_3CO^+}$ & 1 & 43.04462 & 10 & 272,770 & 5,835 & 272,777 & 5,835 & 175 & \\
  \hline \hline
 \end{tabular}
 \end{table}
@@ -100,18 +100,17 @@ I &= q\mathbf{v} \cdot \mathbf{E}_{image}(\mathbf{r}) & \mathbf{E}_{image} &= - 
 \label{tab:leach}
 \begin{tabular}{c|c|c|c|c|c|c|c|c|c|c|c}
  \hline \hline
-  \multicolumn{12}{|c|}{$B = 7.0 T, V_T = 1.0 V$} \\
+  \multicolumn{12}{|c|}{$B = 7.0 T, V_T = 1.0 V, l = 0.0508$} \\
  \hline \hline
  \multicolumn{4}{|c|}{ } & \multicolumn{2}{|c|}{\textbf{predicted}} & \multicolumn{2}{|c|}{\textbf{measured}} & \multicolumn{4}{|c|}{\textbf{error: timestep}} \\ 
  \hline
- \textbf{species} & \textbf{charge} & \textbf{mass} & \textbf{$v_0$ (m/s)} & \textbf{$\omega_c / 2\Pi$ (Hz)} & \textbf{$r$ (nm)} & \textbf{$\omega_c' / 2\Pi$ (Hz)}  & \textbf{$r'$ (nm)} & \textbf{$\Delta t$ (ns)} & \textbf{$\epsilon: \Delta t$}& \textbf{$\epsilon: \Delta t$ / 10} & \textbf{$\epsilon: \Delta t$ * 10}\\ 
+ \textbf{species} & \textbf{charge} & \textbf{mass} & \textbf{$v_0$ (m/s)} & \textbf{$\omega_+ / 2\Pi$ (Hz)} & \textbf{$r$ (nm)} & \textbf{$\omega_+' / 2\Pi$ (Hz)}  & \textbf{$r'$ (nm)} & \textbf{$\Delta t$ (ns)} & \textbf{$\epsilon: \Delta t$}& \textbf{$\epsilon: \Delta t$ / 10} & \textbf{$\epsilon: \Delta t$ * 10}\\ 
  \hline
- $\mathsf{Cs^+}$ & 1 & 132.9 & 2700 & 808,792 & 5,313 & 807,812 & 5,319 & 59 & \\
- $\mathsf{? (\frac{m}{q} = 150 )}$ & 1 & 150.0 & 2700 & 716,618 & 5,996 & 715,937 & 5,997 & 67 & \\
+ $\mathsf{Cs^+}$ & 1 & 132.9 & 27 & 807,826 & 5,313 & 807,656 & 5,319 & 59 & \\
+ $\mathsf{? (\frac{m}{q} = 150 )}$ & 1 & 150.0 & 27 & 715,654 & 5,996 & 715,781 & 5,997 & 67 & \\
  \hline \hline
 \end{tabular}
 \end{table}
-
 
 \begin{table}[htbp]
  \centering	  	  
@@ -121,8 +120,8 @@ I &= q\mathbf{v} \cdot \mathbf{E}_{image}(\mathbf{r}) & \mathbf{E}_{image} &= - 
 \hline \hline
 \textbf{property} & \textbf{unit} & \textbf{SI unit} \\
 \hline
-mass & amu & $1.660538921(73) \times 10^{ - 27} kg$ \\
-charge & e   & $1.60217653(14) \times 10^{ - 19} C$ \\
+mass & amu & $1.660538921 \times 10^{ - 27} kg$ \\
+charge & e   & $1.60217653 \times 10^{ - 19} C$ \\
 \hline \hline
 \end{tabular}
 \end{table}
