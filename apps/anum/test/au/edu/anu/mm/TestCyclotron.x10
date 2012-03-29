@@ -53,23 +53,26 @@ public class TestCyclotron {
             }
         }
 
-        Console.OUT.printf("# Testing cyclotron: trapping potential: %2.1f V magnetic field: %3.1f T\n", V, B);
-
+        Console.OUT.printf("# Testing cyclotron: trapping potential: %2.1f V magnetic field: %5.3f T\n", V, B);
 
         val v = 2.7e4; // aiming for r ~ 6mm by r = mv/|q|B
         val q = 1.0;
 
         val species1 = "Cs+"; // "CH3CO";
         val mass1 = 132.9054; // 43.04462;
-        val f1 = q * B / mass1 * (PenningTrap.CHARGE_MASS_FACTOR) / (2.0 * Math.PI);
+        val omega_c1 = q * B / mass1 * (PenningTrap.CHARGE_MASS_FACTOR) / (2.0 * Math.PI);
+        val omega_z1 = Math.sqrt(2.0 * PenningTrap.ALPHA_PRIME * q * V / (mass1 * PenningTrap.EDGE_LENGTH*PenningTrap.EDGE_LENGTH) * PenningTrap.CHARGE_MASS_FACTOR);
+        val omega_plus1 = omega_c1 / 2.0 + Math.sqrt(omega_c1*omega_c1 / 4 - omega_z1*omega_z1 / 2);
         val r1 = mass1 * v / (q * B) / PenningTrap.CHARGE_MASS_FACTOR;
-        Console.OUT.printf("# %8s predicted f = %8i Hz r = %6.3f mm\n", species1, f1 as Int, r1*1e3);
+        Console.OUT.printf("# %8s predicted omega_c = %8i Hz omega_z = %i Hz omega_+ = %i Hz r = %6.3f mm\n", species1, omega_c1 as Int, omega_z1 as Int, omega_plus1 as Int,r1*1e3);
 
         val species2 = "x150"; //"HCO";
         val mass2 = 150.00; // 29.0182;
-        val f2 = q * B / mass2 * (PenningTrap.CHARGE_MASS_FACTOR) / (2.0 * Math.PI);
+        val omega_c2 = q * B / mass2 * (PenningTrap.CHARGE_MASS_FACTOR) / (2.0 * Math.PI);
+        val omega_z2 = Math.sqrt(2.0 * PenningTrap.ALPHA_PRIME * q * V / (mass2 * PenningTrap.EDGE_LENGTH*PenningTrap.EDGE_LENGTH)* PenningTrap.CHARGE_MASS_FACTOR);
+        val omega_plus2 = omega_c2 / 2.0 + Math.sqrt(omega_c2*omega_c2 / 4 - omega_z2*omega_z2 / 2);
         val r2 = mass2 * v / (q * B) / PenningTrap.CHARGE_MASS_FACTOR;
-        Console.OUT.printf("# %8s predicted f = %8i Hz r = %6.3f mm\n", species2, f2 as Int, r2*1e3);
+        Console.OUT.printf("# %8s predicted omega_c = %8i Hz omega_z = %i Hz omega_+ = %i Hz r = %6.3f mm\n", species2, omega_c2 as Int, omega_z2 as Int, omega_plus2 as Int, r2*1e3);
 
         val rand = new Random(27178281L);
 
