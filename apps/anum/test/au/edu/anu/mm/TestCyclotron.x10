@@ -32,8 +32,6 @@ public class TestCyclotron {
         var timesteps:Int = 16000; // number of timesteps
         var dt:Double = 25.0; // timestep in ns
         var logSteps:Int = 1;
-        var B:Double = 7.0; // magnetic field
-        var V:Double = 1.0; // trapping potential
         if (args.size > 0) {
             N = Int.parseInt(args(0));
             if (args.size > 1) {
@@ -42,26 +40,25 @@ public class TestCyclotron {
                     dt = Double.parseDouble(args(2));
                     if (args.size > 3) {
                         logSteps = Int.parseInt(args(3));
-                        if (args.size > 4) {
-                            B = Double.parseDouble(args(4));
-                            if (args.size > 5) {
-                                V = Double.parseDouble(args(5));
-                            }
-                        }
                     }
                 }
             }
         }
 
-        Console.OUT.printf("# Testing cyclotron: trapping potential: %2.1f V magnetic field: %5.3f T\n", V, B);
+        // fixed parameters
+        val B = 7.0; // magnetic field
+        val V = 1.0; // trapping potential
+        val edgeLength = 0.0508;
 
-        val v = 2.7e4; // aiming for r ~ 6mm by r = mv/|q|B
+        Console.OUT.printf("# Testing cyclotron: trapping potential: %2.1f V magnetic field: %6.4f T\n", V, B);
+
+        val v = 2.7e4; // 1e4; // aiming for r ~ 6mm by r = mv/|q|B
         val q = 1.0;
 
         val species1 = "Cs+"; // "CH3CO";
         val mass1 = 132.9054; // 43.04462;
         val omega_c1 = q * B / mass1 * (PenningTrap.CHARGE_MASS_FACTOR) / (2.0 * Math.PI);
-        val omega_z1 = Math.sqrt(2.0 * PenningTrap.ALPHA_PRIME * q * V / (mass1 * PenningTrap.EDGE_LENGTH*PenningTrap.EDGE_LENGTH) * PenningTrap.CHARGE_MASS_FACTOR);
+        val omega_z1 = Math.sqrt(2.0 * PenningTrap.ALPHA_PRIME * q * V / (mass1 * edgeLength*edgeLength) * PenningTrap.CHARGE_MASS_FACTOR);
         val omega_plus1 = omega_c1 / 2.0 + Math.sqrt(omega_c1*omega_c1 / 4 - omega_z1*omega_z1 / 2);
         val r1 = mass1 * v / (q * B) / PenningTrap.CHARGE_MASS_FACTOR;
         Console.OUT.printf("# %8s predicted omega_c = %8i Hz omega_z = %i Hz omega_+ = %i Hz r = %6.3f mm\n", species1, omega_c1 as Int, omega_z1 as Int, omega_plus1 as Int,r1*1e3);
@@ -69,7 +66,7 @@ public class TestCyclotron {
         val species2 = "x150"; //"HCO";
         val mass2 = 150.00; // 29.0182;
         val omega_c2 = q * B / mass2 * (PenningTrap.CHARGE_MASS_FACTOR) / (2.0 * Math.PI);
-        val omega_z2 = Math.sqrt(2.0 * PenningTrap.ALPHA_PRIME * q * V / (mass2 * PenningTrap.EDGE_LENGTH*PenningTrap.EDGE_LENGTH)* PenningTrap.CHARGE_MASS_FACTOR);
+        val omega_z2 = Math.sqrt(2.0 * PenningTrap.ALPHA_PRIME * q * V / (mass2 * edgeLength*edgeLength)* PenningTrap.CHARGE_MASS_FACTOR);
         val omega_plus2 = omega_c2 / 2.0 + Math.sqrt(omega_c2*omega_c2 / 4 - omega_z2*omega_z2 / 2);
         val r2 = mass2 * v / (q * B) / PenningTrap.CHARGE_MASS_FACTOR;
         Console.OUT.printf("# %8s predicted omega_c = %8i Hz omega_z = %i Hz omega_+ = %i Hz r = %6.3f mm\n", species2, omega_c2 as Int, omega_z2 as Int, omega_plus2 as Int, r2*1e3);
@@ -100,7 +97,7 @@ public class TestCyclotron {
         val distAtoms = DistArray.make[Rail[MMAtom]](Dist.makeBlock(0..0, 0));
         distAtoms(0) = atoms;
 
-        val trap = new PenningTrap(N, distAtoms, V, new Vector3d(0.0, 0.0, B));
+        val trap = new PenningTrap(N, distAtoms, V, new Vector3d(0.0, 0.0, B), edgeLength);
         trap.mdRun(dt, timesteps, logSteps);
     }
 

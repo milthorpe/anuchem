@@ -36,23 +36,26 @@ import edu.mit.fftw.FFTW;
  *   "Space-Charge Effects and Fourier transform ion cyclotron resonance signals:
  *   experimental observations and three-dimensional trajectory simulations"
  *   J. Am. Soc. Mass Spectrometry 8 (4), 319-326 
+ * @see http://physics.nist.gov/cuu/Constants/index.html for physical constants
  */
 public class PenningTrap {
     public static val LENGTH_FACTOR = 1.0e-9;
-    public static val CHARGE_MASS_FACTOR = 9.6485334e7; // conversion of q/m from e/Da to C/kg
-    public static val MASS_CHARGE_FACTOR = 1.03642694e-8; // conversion of m/q from Da/e to kg/C
+    static val CHARGE_FACTOR = 1.602176565e-19; // conversion from e to C
+    public static val CHARGE_MASS_FACTOR = 9.64853365e7; // conversion of q/m from e/Da to C/kg
+    public static val MASS_CHARGE_FACTOR = 1.036426919e-8; // conversion of m/q from Da/e to kg/C
     static val ALPHA_PRIME = 2.77373; // geometric factor for a cubic trap (Guan and Marshall eq. 59)
     static val BETA_PRIME = 0.72167; // electric field constant for detection/excition (Guan and Marshall eq. 66)
-    static val EDGE_LENGTH = 0.0508; // edge length l = 5.08
-    static val COULOMB_FACTOR = 3.501233e-27; // 1 / (4 PI e0 * CHARGE_FACTOR^2)
-
+    static val COULOMB_FACTOR = 1.439964485e-9; // CHARGE_FACTOR / (4 PI e0)
     private var numAtoms:Int;
 
     /** The atoms in the simulation, divided up into a distributed array of Arrays, one for each place. */
     private val atoms:DistArray[Rail[MMAtom]](1);
 
+    /** Side length of cubic trap. */
+    val edgeLength:Double;
+
     /** Normalization factor for electric field. */
-    static val E_NORM = 1255.65; // ALPHA_PRIME / (EDGE_LENGTH^2)
+    val eNorm:Double;
 
     private val V_T:Double; // trapping potential, in V
 
@@ -68,16 +71,19 @@ public class PenningTrap {
      * Creates a new Penning trap containing the given atoms.
      * @param trappingPotential the axial confinement potential in V applied to the end plates
      * @param magneticField the radial confinement field in T
-     * @param properties system properties to print at each timestep
+     * @param edgeLength the side length of the cubic trap
      */
     public def this(numAtoms:Int,
                     atoms:DistArray[Rail[MMAtom]](1),
                     trappingPotential:Double,
-                    magneticField:Vector3d) {
+                    magneticField:Vector3d,
+                    edgeLength:Double) {
         this.numAtoms = numAtoms;
         this.atoms = atoms;
         this.V_T = trappingPotential;
         this.B = magneticField;
+        this.edgeLength = edgeLength;
+        this.eNorm = PenningTrap.ALPHA_PRIME / (edgeLength * edgeLength);
         this.magB = magneticField.magnitude();
     }
 
@@ -147,9 +153,9 @@ public class PenningTrap {
                 // timestep using Boris integrator
                 val chargeMassRatio = atom.charge / atom.mass * CHARGE_MASS_FACTOR;
 
-                var E:Vector3d = getElectrostaticField(atom.centre);
+                // get the electric field at ion centre due to other ions
                 /*
-                //Console.OUT.println("E(" + i + ") = " + E);
+                var E:Vector3d = Vector3d.NULL;
                 for (j in 0..(myAtoms.size-1)) {
                     if (i == j) continue;
                     val atomJ = myAtoms(j);
@@ -157,12 +163,16 @@ public class PenningTrap {
                         val r = atom.centre - atomJ.centre;
                         val r2 = r.lengthSquared();
                         val absR = Math.sqrt(r2);
-                        val atomContribution = COULOMB_FACTOR * atom.charge * atomJ.charge / r2 / absR * r;
+                        val atomContribution = COULOMB_FACTOR * atomJ.charge / r2 / absR * r;
                         //Console.OUT.println(j + " => " + i + " = " + atomContribution);
                         E = E + atomContribution;
                     }
                 }
+                var Ef:Vector3d = getElectrostaticField(atom.centre);
+                //Console.OUT.println("Ef(" + i + ") = " + Ef.length() + " Ej = " + E.length() + " proportion " + Ef.length()/E.length());
+                E += Ef;
                 */
+                val E = getElectrostaticField(atom.centre);
 
                 //Console.OUT.println("E = " + E);
                 val halfA = 0.5 * dt * 1.0e-9 * chargeMassRatio * E;
@@ -187,9 +197,9 @@ public class PenningTrap {
                 atom.centre = atom.centre + atom.velocity * dt * 1.0e-9;
                 //Console.OUT.print(atom.centre.i + " " + atom.centre.j + " " + atom.centre.k + " ");
 
-                if (Math.abs(atom.centre.i) > EDGE_LENGTH/2.0
-                 || Math.abs(atom.centre.j) > EDGE_LENGTH/2.0
-                 || Math.abs(atom.centre.k) > EDGE_LENGTH/2.0) {
+                if (Math.abs(atom.centre.i) > edgeLength/2.0
+                 || Math.abs(atom.centre.j) > edgeLength/2.0
+                 || Math.abs(atom.centre.k) > edgeLength/2.0) {
                     // ion lost to wall
                     myAtoms(i) = null;
                     numAtoms--;
@@ -204,8 +214,8 @@ public class PenningTrap {
      * @return the position-dependent electrostatic field due to trapping plates
      * @see Guan & Marshall eq. 44
      */
-    public static @Inline def getElectrostaticField(p:Point3d):Vector3d {
-        return Vector3d(p.i*E_NORM, p.j*E_NORM, -2.0*p.k*E_NORM);
+    public @Inline def getElectrostaticField(p:Point3d):Vector3d {
+        return Vector3d(p.i*eNorm, p.j*eNorm, -2.0*p.k*eNorm);
 /*
         Han & Shin eq. 7-8
         var sumTerms:Double = 0.0;
@@ -230,7 +240,7 @@ public class PenningTrap {
      * @see Guan & Marshall eq. 19
      */
     public @Inline def getElectrostaticPotential(p:Point3d):Double {
-        val potential = V_T * (/*1.0/3.0*/ -0.5 * E_NORM * (p.i*p.i + p.j*p.j - 2.0*p.k*p.k));
+        val potential = V_T * (/*1.0/3.0*/ -0.5 * eNorm * (p.i*p.i + p.j*p.j - 2.0*p.k*p.k));
         return potential;
     }
 
@@ -238,8 +248,8 @@ public class PenningTrap {
      * @return the image current induced by the given ion
      * @see Guan & Marshall eq. 69-70
      */
-    public @Inline static def getImageCurrent(ion:MMAtom):Double {
-        val eImage = -BETA_PRIME / EDGE_LENGTH;
+    public @Inline def getImageCurrent(ion:MMAtom):Double {
+        val eImage = -BETA_PRIME / edgeLength;
         return ion.charge * ion.velocity.j * eImage;
     }
 
@@ -257,8 +267,8 @@ public class PenningTrap {
     private def printCurrent(timestep:Double, current:Rail[Double]) {
         val currentFilePrinter = new Printer(new FileWriter(new File("current.dat")));
         for ([i] in current) {
-            val I = current(i) * 1.6021765314e-7; // e->C * 10^12; pA
-            currentFilePrinter.printf("%16.8f\n", I);
+            current(i) *= 1.6021765314e-7; // e->C * 10^12; pA
+            currentFilePrinter.printf("%16.8f\n", current(i));
             //currentFilePrinter.printf("%10.2f %16.8f\n", i*timestep, I);
         }
     }
@@ -281,6 +291,7 @@ public class PenningTrap {
         var increasing:Boolean = false;
         for ([i] in massSpectrum) {
             freq(i) = (i as Double) * sampleFreq;
+            Console.OUT.println(massSpectrum(i));
             amplitude(i) = massSpectrum(i).abs();
             if (increasing && amplitude(i) <= peak) {
                 increasing = false;
@@ -295,8 +306,8 @@ public class PenningTrap {
         mzPrinter.println("#");
         mzPrinter.printf("#%9s %12s\n", "freq (Hz)", "amplitude");
 
-        for ([i] in massSpectrum) {
-            mzPrinter.printf("%10.2f %12.4f\n", (freq(i) as Int), amplitude(i));
+        for (i in 0..(massSpectrum.size/4)) {
+            mzPrinter.printf("%10.2f %.4g\n", freq(i), amplitude(i));
             //currentFilePrinter.printf("%10.2f %16.8f\n", i*timestep, I);
         }
     }
@@ -353,7 +364,7 @@ public class PenningTrap {
             raw(2) += atom.centre.k;
             raw(3) += atom.mass * atom.velocity.lengthSquared();
             raw(4) += atom.charge * trap.getElectrostaticPotential(atom.centre);
-            raw(5) += getImageCurrent(atom);
+            raw(5) += trap.getImageCurrent(atom);
         }
 
         /**
