@@ -5,24 +5,18 @@ This program is controlled by the Eclipse Public Licence v1.0 http://www.eclipse
 Introduction:
 ------------
 
-Pumjarasaayani is a very basic quantum chemistry code written in X10 that performs 
-Hartree-Fock (HF) single point energy (SPE) evaluation on a given molecular 
-system using a specified basis set.
+Pumjarasaayani is a very basic quantum chemistry code written in X10 that performs Hartree-Fock (HF) single point energy (SPE) evaluation on a given molecular system using a specified basis set.
 
-Current restrictions: Only closed shell systems with atoms H, C, N and O are supported.
-No geometrical symmetry is employed.
-Convergence acceleration of HF - SCF procedure is applied automatically, but cannot be 
-switched off. 
-Integral calculation is inefficient as it is performed through a horizontal recurrence
-relation with no reuse of intermediate products.
+Current restrictions: Only closed shell systems with atoms H, C, N and O are supported. No geometrical symmetry is employed.
+Convergence acceleration of HF - SCF procedure is applied automatically, but cannot be switched off. 
+Integral calculation is inefficient as it is performed through a horizontal recurrence relation with no reuse of intermediate products.
 
 Integral screening is applied by Schwartz bound as described in Häser & Ahlrichs (1989).
 
-A preliminary framework for a divide and conquer algorithm (specifically the
-Molecular Tailoring Approach - MTA) is also available within Pumjarasaayani. However,
-this is not fully implemented and will only work for simple chain style molecules.
+A preliminary framework for a divide and conquer algorithm (specifically the Molecular Tailoring Approach - MTA) is also available within Pumjarasaayani. However, this is not fully implemented and will only work for simple chain style molecules.
 
 Pumjarasaayani is free software under the Eclipse Public License.
+
 
 Compiling:
 ----------
@@ -40,13 +34,15 @@ To build against the MPI implementation set property ${x10rt} to "mpi".
 For other implementations see 
   http://x10-lang.org/documentation/getting-started/x10rt-implementations.html
 
-Dependency for compiling:
+Compile dependencies:
 ------------------------
-* X10 version 2.2.1 (optionally with x10rt=mpi)
+* X10 version 2.2.2 (optionally with x10rt=mpi)
 * X10 Global Matrix Library (distributed with the X10 release under x10/x10.gml)
 * LAPACK and BLAS libraries (transitive through X10 GML)
   http://www.netlib.org/lapack/
-* anu-chem library
+* XLA library (cd ~/x10-apps/x10x.lib/xla && ant)
+* anu-chem library (cd ~/x10-apps/anuchem && ant)
+
 
 Code organization:
 -----------------
@@ -56,6 +52,7 @@ Code organization:
 * XLA code in: x10x.vector
 * GSL wrapper code in: org.gnu.gsl (unused)
 * ESSL wrapper in: bgp (this is incomplete and not tested) 
+
 
 To run:
 ------
@@ -78,6 +75,7 @@ $ launcher -t <n> bin/pumjarasaayani test/H2O-321g.inp { pgas compiled }
 $ mpiexec -n <n> bin/pumjarasaayani test/H2O-321g.inp { mpi compiled  }
 
 where <n> is number of places
+
 
 Input file format:
 -----------------------------------
@@ -105,8 +103,7 @@ Input file format:
 * scf_print [mo|density] [<filename>]
 * scf_final_print [mo|density] [<filename>]
 
-Lines marked with "+" are optional; lines marked with "*" are optional and may
-be specified for multiple options.
+Lines marked with "+" are optional; lines marked with "*" are optional and may be specified for multiple options.
 
 == conversion ==
 
@@ -114,12 +111,7 @@ Coordinates are assumed to be in a.u. if no conversion factor is supplied.
 
 == fragment mta ==
 
-This invokes the molecular tailoring algorithm, which splits the molecule
-into a series of overlapping fragments and then performs HF on individual
-fragments. The results are finally patched together to give the total energy of
-the molecule.
-Each fragment is run sequentially over multiple places. This is not optimal; it
-is preferred to divide the fragments among places.
+This invokes the molecular tailoring algorithm, which splits the molecule into a series of overlapping fragments and then performs HF on individual fragments. The results are finally patched together to give the total energy of the molecule. Each fragment is run sequentially over multiple places. This is not optimal; it is preferred to divide the fragments among places.
 
 == gmat_parallel_scheme ==
 
@@ -142,24 +134,18 @@ For example, on a cluster of 32 Nehalem nodes with eight cores per node, run:
 mpiexec -bind-to-node -n 32 -x X10_NTHREADS=8 -x X10_STATIC_THREADS=true bin/pumjarasaayani test/aspirin-321g.inp 7
 
 
-A summary of what the code does:
+Purpose and description:
 -----------------------------------
 
 The code solves the Hartree-Fock equations of the form:
 
    FC = eSC
 
-which is a pseudo-eigenvalue problem, solved using a self-consistent
-field (SCF) procedure. The most expensive step is the formation of the 
-Fock (F) matrix, which requires computation of ~O(N^4) two electron integrals. 
-In the code, the F matrix is in turn constructed using Hcore and G matrices. 
-Of these the G matrix computation takes up most of the time and is implemented 
-using X10 parallel constructs in following ways.
+which is a pseudo-eigenvalue problem, solved using a self-consistent field (SCF) procedure. The most expensive step is the formation of the Fock (F) matrix, which requires computation of ~O(N^4) two electron integrals. In the code, the F matrix is in turn constructed using Hcore and G matrices. Of these the G matrix computation takes up most of the time and is implemented using X10 parallel constructs in following ways.
 
 For a reference, see previous work by Bernholdt et al.:
 
-"Programmability of the HPCS Languages: A Case Study with a Quantum
-Chemistry Kernel", Bernholdt et al. HIPS'08.
+"Programmability of the HPCS Languages: A Case Study with a Quantum Chemistry Kernel", Bernholdt et al. HIPS'08.
 
 1. Single place implementation
 ..............................
@@ -205,31 +191,18 @@ For options 4, 5, and 7, part (a) uses a collective broadcast as so scales as th
 2. Multi place implementation
 .............................
 
-Use two level parallelism, the first level over places and the second over the 
-number of threads as indicated above. [ GMatrix.computeDistNoAtomicByBF() ]
+Uses two level parallelism, the first level over places and the second over the number of threads as indicated above. [ GMatrix.computeDistNoAtomicByBF() ]
 
 
 Expected performance
 -------------------
-The computation of each (ij|kl) integral used to construct the G matrix is independent 
-of the others. However, the time it take to compute an (ij|kl) will vary depending
-on the angular momentum.  
+The computation of each (ij|kl) integral used to construct the G matrix is independent of the others. However, the time taken to compute an (ij|kl) will vary depending on the angular momentum.
 
-For a given molecular system and basis set, with proper load balancing there should
-be near-linear reduction in the time to construct the G matrix with increase 
-in number of processors. Scaling will be worse if there are a relatively small number
-of integrals to be evaluated, relative to the number of places, as this results
-in a load imbalance between integrals of small and large angular momentum.
-(TODO quantify)
+For a given molecular system and basis set, with proper load balancing there should be near-linear reduction in the time to construct the G matrix with increase in number of processors. Scaling will be worse if there are a relatively small number of integrals to be evaluated, relative to the number of places, as this results in a load imbalance between integrals of small and large angular momentum. (TODO quantify)
 
-The current implementation seem to have a bottleneck with the task scheduler 
-approach (pseudocode 2 above), as time is spent in spinning to see which place 
-is free to take up a task.
+The current implementation seem to have a bottleneck with the task scheduler approach (pseudocode 2 above), as time is spent in spinning to see which place is free to take up a task.
 
-With Option 5  (shell-based loops) the scaling on larger number of processors
-is reasonable for large problems. However, the time for job setup and G matrix
-summation scale linearly with the number of places, so the overall scaling is
-reduced.
+With Option 5  (shell-based loops) the scaling on larger number of processors is reasonable for large problems. However, the time for job setup and G matrix summation scale linearly with the number of places, so the overall scaling is reduced.
 
 
 Benchmark results
@@ -238,9 +211,12 @@ Benchmark results
 See doc/pr-perform-bgp.ods
 
 
-References
---------------
+Referencing Pumja Rasaayani:
+-----------------------------
 Please cite the following paper when referencing ANUChem in a publication.
 
 J. Milthorpe, V. Ganesh, A.P. Rendell, and D. Grove (2011). X10 as a parallel language for scientific computation: practice and experience, in proceedings of the 25th IEEE International Parallel & Distributed Processing Symposium (ISBN 978-0-7695-4385-7), 1067-1075
 
+Please cite the following paper when referencing Pumja Rasaayani in a publication.
+
+J. Milthorpe, V. Ganesh, A.P. Rendell, and D. Grove (2011). X10 as a parallel language for scientific computation: practice and experience, in proceedings of the 25th IEEE International Parallel & Distributed Processing Symposium (ISBN 978-0-7695-4385-7), 1067-1075

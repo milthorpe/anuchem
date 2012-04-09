@@ -190,6 +190,13 @@ public class GMatrix extends DenseMatrix {
         for([x,y] in 0..(M-1)*0..(N-1)) {
            this(x,y) = jMat(x,y) - (0.25*kMat(x,y));
         }
+
+        //Console.OUT.println("J Mat");
+        //Console.OUT.println(computeThread.getJMat());
+
+        //Console.OUT.println("K Mat");
+        //Console.OUT.println(computeThread.getKMat());
+
     }
 
     private def computeThreadedLowMemNoAtomicByBF(density:Density) : void {

@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE project [<!ENTITY buildfile SYSTEM "file:./build-user.xml">]>
+<project name="FFTW wrapper x10lib" default="build" basedir=".">
+    <property name="x10rt" value="sockets" />
+    <property name="fftw3.include" location="${user.home}/fftw/include" />
+    <property name="fftw3.lib" location="${user.home}/fftw/lib" />
+    <property environment="env"/>
+    <property name="bash.exe" value="bash"/>    
+    <property name="optimize" value="true"/>
+    <property name="nochecks" value="true"/>
+    <property name="debug" value="false"/>
+    <property name="x10lib-cpp" value="fftw_${x10rt}" />
+
+    <condition property="x10c.optimize" value="-O" else="">
+        <istrue value="${optimize}"/>
+    </condition>
+
+    <condition property="x10c.nochecks" value="-NO_CHECKS -VERBOSE_CHECKS=true"  else="-VERBOSE_CHECKS=true">
+        <istrue value="${nochecks}"/>
+    </condition>
+
+    <condition property="x10c.debug" value="-DEBUG" else="">
+        <istrue value="${debug}"/>
+    </condition>
+
+    <target name="build" depends="buildx10lib-cpp"/>
+
+    <target name="buildx10lib-cpp" depends="build-fftw-wrapper">
+        <echo message="Building source tree"/>
+        <mkdir dir="include"/>
+        <mkdir dir="lib"/>
+
+        <fileset id="src.files" dir="${basedir}/src" includes="**/*.x10" />
+
+        <pathconvert property="src.list" refid="src.files" dirsep="/" pathsep=" ">
+            <map from="${basedir}${file.separator}src${file.separator}" to=""/>
+        </pathconvert>
+        <echo message="x10c++ -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} -sourcepath . -buildx10lib ../. ${src.list} -d include -o ${x10lib-cpp}"/>
+
+        <copy todir="include">
+            <fileset id="cpp.files" dir="${basedir}/src" includes="**/*.h,**/*.struct_h,**/*.cc"/>
+        </copy>
+
+        <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/src">
+            <arg value="-c"/>
+            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} -report postcompile=1 -sourcepath . -buildx10lib ../. ${src.list} -d ../include -post '# -echo &quot;-I${fftw3.include}&quot; # &quot;-L${fftw3.lib}&quot; # -lfftw3' -o ${x10lib-cpp}"/>
+        </exec>
+
+        <jar jarfile="${x10lib-cpp}.jar">
+            <fileset dir="${basedir}/src" includes="**/*.x10" />
+        </jar>
+    </target>
+
+    <target name="build-fftw-wrapper">
+        <echo message="Building FFTW wrapper"/>
+
+        <copy todir="../include">
+            <fileset id="cpp.files" dir="${basedir}/src" includes="**/*.h,**/*.cc"/>
+        </copy>
+
+        <exec executable="${bash.exe}" failonerror="true" dir="../include/edu/mit/fftw">
+            <arg value="-c"/>
+            <arg value="'gcc' -c FFTW.cc -I${fftw3.include}"/>
+        </exec>
+    </target>
+
+	<target name="clean">
+        <delete file="${x10lib-cpp}.properties" />
+        <delete file="${x10lib-cpp}.jar" />
+		<delete dir="include" />
+		<delete dir="lib" />
+	</target>
+
+</project>

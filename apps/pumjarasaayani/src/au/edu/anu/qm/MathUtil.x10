@@ -39,7 +39,7 @@ public final class MathUtil {
      * http://blog.plover.com/math/choose.html
      */
     public static def binomial(i:Int, j:Int) : Long {
-        assert (i > j);
+        assert (i >= j);
         var n : Long = i;
         var r : Long = 1;
         for (var d:Long=1; d <= j; d++) {

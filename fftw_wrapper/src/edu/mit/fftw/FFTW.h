@@ -13,6 +13,8 @@ namespace edu {
                     static int fftwInitThreads();
                     static void fftwPlanWithNThreads(int nthreads);
                     static FFTW_FFTWPlan fftwPlanDft1d(int, fftw_complex*, fftw_complex*, bool);
+                    static FFTW_FFTWPlan fftwPlanDft1d(int, double*, fftw_complex*);
+                    static FFTW_FFTWPlan fftwPlanDft1d(int, fftw_complex*, double*);
                     static FFTW_FFTWPlan fftwPlanDft3d(int N1, int N2, int N3, fftw_complex* input, fftw_complex* output, bool forward);
                     static void fftwExecute(FFTW_FFTWPlan);
                     static void fftwDestroyPlan(FFTW_FFTWPlan);

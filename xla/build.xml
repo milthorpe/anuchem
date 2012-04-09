@@ -1,26 +1,34 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE project [<!ENTITY buildfile SYSTEM "file:./build-user.xml">]>
-<project name="X10 runtime extensions" default="build" basedir=".">
+<project name="X10 Linear Algebra project" default="build" basedir=".">
     &buildfile;
     <property environment="env"/>
-    <property name="x10home" location="${env.X10_HOME}" />
+    <property name="x10rt" value="sockets"/>
     <property name="x10.testlib" location="${user.home}/x10-trunk/x10.tests/examples/x10lib"/>
-    <property name="bash.exe" value="bash"/>   
+    <property name="bash.exe" value="bash"/>
     <property name="optimize" value="true" />
     <property name="nochecks" value="true" />
+    <property name="cpuprofile"  value="false"/>
+    <property name="perftoolsHome" location="/scratch/perftools"/>
 	<property name="target" location="${basedir}/target" />
 	<property name="target-src" location="${target}/classes" />
 	<property name="target-test" location="${target}/test-classes" />
 	<property name="lib" location="${basedir}/lib" />
-	<property name="jar" value="x10re.jar"/>
-    <property name="ar" value="x10re.a"/>
+	<property name="jar" value="xla.jar"/>
+    <property name="x10lib-cpp" value="xla_${x10rt}" />
+    <property name="ar" value="xla.a"/>
+    <property name="testclass" value="test/x10x/matrix/BenchmarkMatrix.x10"/>
 
     <condition property="x10c.optimize" value="-O" else="">
         <istrue value="${optimize}" />
     </condition>
 
-    <condition property="x10c.nochecks" value="-NO_CHECKS" else="">
+    <condition property="x10c.nochecks" value="-NO_CHECKS -VERBOSE_CHECKS=true" else="-VERBOSE_CHECKS=true">
         <istrue value="${nochecks}" />
+    </condition>
+
+    <condition property="post.cpuprofile" value="-L${perftoolsHome}/lib -lprofiler" else="">
+        <istrue value="${cpuprofile}"/>
     </condition>
 
 	<target name="init">
@@ -29,19 +37,11 @@
 
     <target name="build" depends="dist"/>
 
-	<target name="dist" depends="jar,ar">
+	<target name="dist" depends="init,buildx10lib-cpp">
         <mkdir dir="${lib}"/>
         <copy todir="${lib}">
             <fileset dir="${target}" includes="${jar}"/>
-            <fileset dir="${target}" includes="${ar}"/>
         </copy>
-    </target>
-
-    <target name="ar" depends="build-src-cpp">
-        <exec executable="${bash.exe}" failonerror="true" dir="${target}">
-            <arg value="-c"/>
-            <arg value="'ar' rcs ${ar} classes/*.o"/>
-        </exec>
     </target>
 
 	<target name="jar" depends="build-src-java">
@@ -53,20 +53,9 @@
     <target name="build-src-java" depends="check-src-java" unless="src.uptodate.java">
         <echo message="Building source tree"/>
 
-        <fileset id="changed.src.files" dir="${basedir}/src" includes="**/*.x10">
-            <depend targetdir="${target-src}">
-                <mapper type="glob" from="*.x10" to="*.java"/>
-            </depend>
-        </fileset>
-
-        <pathconvert property="src.list" refid="changed.src.files" dirsep="/" pathsep=" ">
-            <map from="${basedir}${file.separator}src${file.separator}" to=""/>
-        </pathconvert>
-        <echo message="x10c ${src.list}"/>
-
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/src">
             <arg value="-c"/>
-            <arg value="'x10c' ${x10c.optimize} -sourcepath . -commandlineonly -d '${target-src}' ${src.list}"/>
+            <arg value="'x10c' ${x10c.optimize} -sourcepath . -commandlineonly -d '${target-src}' ${changed.src.files}"/>
         </exec>
     </target>
 
@@ -74,7 +63,7 @@
         <echo message="Building source tree"/>
 
         <fileset id="changed.src.files" dir="${basedir}/src" includes="**/*.x10">
-            <depend targetdir="${target-src}">
+            <depend targetdir="${target}/classes">
                 <mapper type="glob" from="*.x10" to="*.cc"/>
             </depend>
         </fileset>
@@ -82,26 +71,42 @@
         <pathconvert property="src.list" refid="changed.src.files" dirsep="/" pathsep=" ">
             <map from="${basedir}${file.separator}src${file.separator}" to=""/>
         </pathconvert>
-        <echo message="x10c++ ${src.list}"/>
+        <echo message="x10c++ -x10rt ${x10rt} ${x10c.nochecks} ${x10c.optimize} -sourcepath .${path.separator}${x10.testlib} ${basedir}/${testclass}"/>
+
+        <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/src">
+            <arg value="-c"/> 
+            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.nochecks} ${x10c.optimize} -report postcompile=1 -post '# ${post.cpuprofile}' -sourcepath .${path.separator}${x10.testlib} -d ${target-src} ${basedir}/${testclass}"/>
+        </exec>
+    </target>
+
+	<target name="check-lib">
+        <fileset id="src.files" dir="${basedir}/src" includes="**/*.x10"/>
+        <uptodate property="lib.uptodate.cpp">
+            <srcfiles refid="src.files"/>
+            <globmapper from="*.x10" to="include/*.cc" handledirsep="true"/>
+        </uptodate>
+    </target>
+
+    <target name="buildx10lib-cpp" depends="check-lib" unless="lib.uptodate.cpp">
+        <echo message="Building source tree"/>
+        <mkdir dir="include"/>
+        <mkdir dir="lib"/>
+
+        <fileset id="src.files" dir="${basedir}/src" includes="**/*.x10" />
+
+        <pathconvert property="src.list" refid="src.files" dirsep="/" pathsep=" ">
+            <map from="${basedir}${file.separator}src${file.separator}" to=""/>
+        </pathconvert>
+        <echo message="x10c++ -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} -sourcepath . -buildx10lib ../. ${src.list} -d ../include -o ${x10lib-cpp}"/>
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/src">
             <arg value="-c"/>
-            <arg value="'x10c++' ${x10c.optimize} ${x10c.nochecks} -c -report postcompile=1 -sourcepath . -commandlineonly -d '${target-src}' ${src.list}"/>
+            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} -report postcompile=1 -sourcepath . -buildx10lib ../. ${src.list} -d ../include -o ${x10lib-cpp}"/>
         </exec>
 
-        <fileset id="generated.cpp.files" dir="${target-src}">
-            <include name="**/*.cc" />
-        </fileset>
-
-        <pathconvert property="cpp.list" refid="generated.cpp.files" dirsep="/" pathsep=" ">
-            <map from="${target-src}${file.separator}" to=""/>
-        </pathconvert>
-
-        <echo message="'g++' -c -g -I'${x10home}/include' -I. -DX10_USE_BDWGC -O2 -DNDEBUG -finline-functions -DNO_CHECKS -Wno-long-long -Wno-unused-parameter -msse2 -mfpmath=sse ${cpp.list}"/>
-        <exec executable="${bash.exe}" failonerror="true" dir="${target-src}">
-            <arg value="-c"/>
-            <arg value="'g++' -c -g -I'${x10home}/include' -I. -DX10_USE_BDWGC -O2 -DNDEBUG -finline-functions -DNO_CHECKS -Wno-long-long -Wno-unused-parameter -msse2 -mfpmath=sse ${cpp.list}"/>
-        </exec>
+        <jar jarfile="${x10lib-cpp}.jar">
+            <fileset dir="${basedir}/src" includes="**/*.x10" />
+        </jar>
     </target>
 
 	<target name="init-src" depends="init">
@@ -114,6 +119,9 @@
             <srcfiles refid="src.files"/>
             <globmapper from="*.x10" to="${target-src}/*.java" handledirsep="true"/>
         </uptodate>
+        <pathconvert property="changed.src.files" refid="src.files" dirsep="/" pathsep=" ">
+            <map from="${basedir}${file.separator}src${file.separator}" to=""/>
+        </pathconvert>
     </target>
 
     <target name="check-src-cpp" depends="init-src">
@@ -124,7 +132,7 @@
         </uptodate>
     </target>
     
-    <target name="build-test" depends="check-test,build-harness" unless="test.uptodate">
+    <target name="build-test" depends="check-test,build-harness,build-src-java" unless="test.uptodate">
         <echo message="Building tests"/>
 
         <fileset id="changed.test.files" dir="${basedir}/test" includes="**/*.x10">
@@ -183,6 +191,9 @@
     </target>
 
 	<target name="clean">
+        <delete file="${x10lib-cpp}.properties" />
+        <delete file="${x10lib-cpp}.jar" />
+        <delete dir="include" />
 		<delete dir="target" />
 		<delete dir="lib" />
 	</target>

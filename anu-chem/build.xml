@@ -2,22 +2,22 @@
 <!DOCTYPE project [<!ENTITY buildfile SYSTEM "file:./build-user.xml">]>
 <project name="X10 Chemistry project" default="build" basedir=".">
     <property environment="env"/>
-    <property name="x10x.lib" location="../x10x.lib"/>
-	<property name="xla.src" location="${x10x.lib}/xla/src"/>
-	<property name="xla.lib" location="${x10x.lib}/xla/lib/xla.jar"/>
+    <property name="x10rt" value="sockets"/>
+    <property name="x10x.xla" location="../xla"/>
+	<property name="xla.props" location="${x10x.xla}/xla_${x10rt}.properties"/>
     <property name="x10home" location="${env.X10HOME}" />
     <property name="x10.testlib" location="${user.home}/x10-trunk/x10.tests/examples/x10lib"/>
-    <property name="bash.exe" value="bash"/>    
+    <property name="bash.exe" value="bash"/>
     <property name="optimize" value="true" />
     <property name="nochecks" value="true" />
     <property name="cpuprofile"  value="true"/>
     <property name="perftoolsHome" location="/scratch/perftools"/>
-    <property name="x10rt" value="mpi"/>
 	<property name="target" location="${basedir}/target" />
 	<property name="target-src" location="${target}/classes" />
 	<property name="target-test" location="${target}/test-classes" />
 	<property name="lib" location="${basedir}/lib" />
 	<property name="jar" value="anu-chem.jar"/>
+    <property name="x10lib-cpp" value="anuchem_${x10rt}" />
     <property name="bin" location="${basedir}/bin"/>
 	<property name="exe" value="direct"/>
     <property name="testclass" value="test/au/edu/anu/chem/mm/TestDirectElectrostatic.x10"/>
@@ -50,7 +50,7 @@
         </exec>
     </target>
 
-	<target name="dist" depends="jar">
+	<target name="dist" depends="init,buildx10lib-cpp">
         <mkdir dir="${lib}"/>
         <copy todir="${lib}">
             <fileset dir="${target}" includes="${jar}"/>
@@ -107,7 +107,7 @@
         <pathconvert property="src.list" refid="changed.src.files" dirsep="/" pathsep=" ">
             <map from="${basedir}${file.separator}src${file.separator}" to=""/>
         </pathconvert>
-        <echo message="x10c++ -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} -sourcepath '.${path.separator}${xla.src}' '${basedir}/${testclass}'"/>
+        <echo message="x10c++ -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} -x10lib ${xla.props} -sourcepath . '${basedir}/${testclass}'"/>
 
         <copy todir="${target}/classes">
             <fileset id="cpp.files" dir="${basedir}/src" includes="**/*.h,**/*.struct_h,**/*.cc"/>
@@ -115,14 +115,36 @@
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/src">
             <arg value="-c"/>
-            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} -report postcompile=1 -post '# -g ${x10c.optimize} # ${post.cpuprofile} #' -sourcepath '.${path.separator}${xla.src}' -d '${target-src}' '${basedir}/${testclass}'"/>
+            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} -report postcompile=1 -post '# -g ${x10c.optimize} # ${post.cpuprofile} #' -x10lib ${xla.props} -sourcepath . -d '${target-src}' '${basedir}/${testclass}'"/>
         </exec>
     </target>
 
+    <target name="buildx10lib-cpp" depends="check-src-cpp" unless="src.uptodate.cpp">
+        <echo message="Building source tree"/>
+        <mkdir dir="include"/>
+        <mkdir dir="lib"/>
+
+        <fileset id="src.files" dir="${basedir}/src" includes="**/*.x10" />
+
+        <pathconvert property="src.list" refid="src.files" dirsep="/" pathsep=" ">
+            <map from="${basedir}${file.separator}src${file.separator}" to=""/>
+        </pathconvert>
+        <echo message="x10c++ -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} -x10lib ${xla.props} -sourcepath . -buildx10lib ../. ${src.list} -d ../include -o ${x10lib-cpp}"/>
+
+        <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/src">
+            <arg value="-c"/>
+            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} -report postcompile=1 -x10lib ${xla.props} -sourcepath . -buildx10lib ../. ${src.list} -d ../include -o ${x10lib-cpp}"/>
+        </exec>
+
+        <jar jarfile="${x10lib-cpp}.jar">
+            <fileset dir="${basedir}/src" includes="**/*.x10" />
+        </jar>
+    </target>
+
     <target name="check-src-cpp" depends="init-src">
-        <fileset id="src.files" dir="${basedir}/src" includes="**/*.x10"/>
+        <fileset id="changed.src.files" dir="${basedir}/src" includes="**/*.x10"/>
         <uptodate property="src.uptodate.cpp">
-            <srcfiles refid="src.files"/>
+            <srcfiles refid="changed.src.files"/>
             <globmapper from="*.x10" to="${target-src}/*.cc" handledirsep="true"/>
         </uptodate>
     </target>
@@ -186,7 +208,10 @@
     </target>
 
 	<target name="clean">
+        <delete file="${x10lib-cpp}.properties" />
+        <delete file="${x10lib-cpp}.jar" />
 		<delete dir="target" />
+		<delete dir="include" />
 		<delete dir="lib" />
 	</target>
 

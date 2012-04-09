@@ -70,7 +70,11 @@ public class JobInput {
         var conversion:Double = 1.0;
         var charge:Int = 0;
         var multiplicity:Int = 1;
+        jd.roOn=0;
+        jd.roN=10;
+        jd.roL=10;
         jd.roZ=1.0;
+        jd.guess=JobDefaults.GUESS_SAD;
 
         if (line.startsWith("charge")) {
             charge = getIntParam(line);
@@ -136,7 +140,15 @@ public class JobInput {
                     jd.roL = getIntParam(line);
                 } else if (line.startsWith("Center")) {
                     jd.centering = getIntParam(line);
+                } else if (line.startsWith("USE_RO")) {
+                    jd.roOn = getIntParam(line);
+                } else if (line.startsWith("GUESS")) {
+                    jd.guess = getStringParam(line);
+                    if (!(jd.guess.equals(JobDefaults.GUESS_SAD) || jd.guess.equals(JobDefaults.GUESS_CORE))) {
+                        throw new Exception("Invalid input: " + line);
+                    }
                 }
+
                 line = fil.readLine();
             }
         } catch (e:EOFException) {
@@ -148,6 +160,7 @@ public class JobInput {
 
     private static def getIntParam(line:String) = Int.parseInt(StringSplitter.splitOnWhitespace(line)(1));
     private static def getDoubleParam(line:String) = Double.parseDouble(StringSplitter.splitOnWhitespace(line)(1));
+    private static def getStringParam(line:String) = StringSplitter.splitOnWhitespace(line)(1);
 
     public def getMolecule():Molecule[QMAtom] = molecule;
     public def getBasisName():String = basisName;

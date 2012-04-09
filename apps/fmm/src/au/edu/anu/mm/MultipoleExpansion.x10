@@ -56,15 +56,43 @@ public class MultipoleExpansion extends Expansion {
                 phifac = phifac * phifac0;
 		        val O_lm = phifac / ilm * (q * rfac * pplm(l,m));
                 exp.terms(l,m) = O_lm;
+                exp.terms(l,-m) = O_lm.conjugate() * (1-2*(m%2));
         		//to avoid conjugate if (m != 0) { if (m_sign) exp.terms(l, -m) = Complex(O_lm.re,-O_lm.im); else exp.terms(l, -m) = Complex(-O_lm.re,O_lm.im); }
     	    }
-            for (m in -l..-1) {
-                exp.terms(l,m) = exp.terms(l,-m).conjugate() * (1-2*(-m%2));
-            }
             rfac = rfac * v_pole.r;
         }
 
         return exp;
+    }
+
+    /**
+     * Calculate the multipole-like term O_{lm} (with m >= 0) for a point v
+     * and add to this expansion.
+     */
+    public def addOlm(q : Double, v : Tuple3d, p : Int) {
+        val v_pole = Polar3d.getPolar3d(v);
+        val pplm = AssociatedLegendrePolynomial.getPlk(v_pole.theta, p); 
+
+        terms(0,0) += Complex(q * pplm(0,0), 0.0);
+
+        val phifac0 = Complex(Math.cos(-v_pole.phi), Math.sin(-v_pole.phi));
+        var rfac : Double = v_pole.r;
+        var il : Double = 1.0;
+        for (l in 1..p) {
+            il = il * l;
+            var ilm : Double = il;
+            var phifac : Complex = Complex.ONE;
+            terms(l,0) += phifac / ilm * (q * rfac * pplm(l,0)); 
+            for (m in 1..l) {
+                ilm = ilm*(l+m);
+                phifac = phifac * phifac0;
+		        val O_lm = phifac / ilm * (q * rfac * pplm(l,m));
+                terms(l,m) += O_lm;
+                terms(l,-m) += O_lm.conjugate() * (1-2*(m%2));
+        		//to avoid conjugate if (m != 0) { if (m_sign) terms(l, -m) += Complex(O_lm.re,-O_lm.im); else terms(l, -m) += Complex(-O_lm.re,O_lm.im); }
+    	    }
+            rfac = rfac * v_pole.r;
+        }
     }
 
     /**
@@ -136,18 +164,19 @@ public class MultipoleExpansion extends Expansion {
 
     /**
      * This is Operator A implementing rotations so that the actual translation occurs parallel with the z-axis
+     * @param scratch, a MultipoleExpansion in which to perform temporary calculations
+     * @param temp, a Complex array in which to store temporary results
      * @param v is the vector through which the source should be translated
      * @param complexK is the pre calculated values of exp(i*-k*phi)
      * @param source is the multipole to add
      * @param wigner is the pre calculated Wigner matrices for the rotation angle theta, indexed first by forwards (0) and backwards (1)
      * @see Dachsel 2006, eqn 9
      */
-    public def translateAndAddMultipole(v : Vector3d, complexK : Rail[Array[Complex](1){rect,rail==false}], source : MultipoleExpansion, wigner : Rail[Rail[Array[Double](2){rect}]]) { 
+    public def translateAndAddMultipole(scratch:MultipoleExpansion, temp:Array[Complex](1){rect,rail==false}, v:Vector3d, complexK:Rail[Array[Complex](1){rect,rail==false}], source:MultipoleExpansion, wigner:Rail[Rail[Array[Double](2){rect}]]) { 
 	    val b = v.length();
 	    val invB = 1 / b;
-	    val temp = new Array[Complex](-p..p) as Array[Complex](1){rect,rail==false}; // temporary space to do calculations in
 
-	    val scratch = new MultipoleExpansion( source );
+        Array.copy(source.terms, scratch.terms);
 	    scratch.rotate(temp, complexK(0), wigner(0) );
 
 	    val targetTerms = scratch.terms;
@@ -182,8 +211,10 @@ public class MultipoleExpansion extends Expansion {
      * @param source is the multipole to add
      */
     public def translateAndAddMultipole(v : Vector3d, source : MultipoleExpansion) {
+        val scratch = new MultipoleExpansion(p);
+        val temp = new Array[Complex](-p..p) as Array[Complex](1){rect,rail==false};
     	val polar = Polar3d.getPolar3d(v);
-    	translateAndAddMultipole(v, genComplexK(polar.phi, p), source, WignerRotationMatrix.getACollection(polar.theta, p) );
+    	translateAndAddMultipole(scratch, temp, v, genComplexK(polar.phi, p), source, WignerRotationMatrix.getACollection(polar.theta, p) );
     }
     /**
      * Rotation of this expansion where Wigner matrices and exp(i*-k*phi) are not precalculated
@@ -209,8 +240,10 @@ public class MultipoleExpansion extends Expansion {
      */ 
     public def getMacroscopicParent() : MultipoleExpansion {
         val parentExpansion = new MultipoleExpansion(p);
-        for ([l,m] in terms.region) {
-            parentExpansion.terms(l,m) = terms(l,m) * Math.pow(3.0, l);
+        for (l in 0..p) {
+            for (m in -l..l) {
+                parentExpansion.terms(l,m) = terms(l,m) * Math.pow(3.0, l);
+            }
         }
         return parentExpansion;
     }

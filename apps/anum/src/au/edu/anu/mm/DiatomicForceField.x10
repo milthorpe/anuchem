@@ -36,8 +36,7 @@ public class DiatomicForceField implements ForceField {
         } else if (symbol.equals("F")) {
             return 18.9984;
         } else {
-            // TODO
-            return 10000.0;
+            throw new IllegalArgumentException("no atom mass found for symbol " + symbol);
         }
     }
 }

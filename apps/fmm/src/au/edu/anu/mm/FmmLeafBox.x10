@@ -6,7 +6,7 @@
  *  You may obtain a copy of the License at
  *      http://www.opensource.org/licenses/eclipse-1.0.php
  *
- * (C) Copyright Josh Milthorpe 2010-2011.
+ * (C) Copyright Josh Milthorpe 2010-2012.
  */
 package au.edu.anu.mm;
 
@@ -37,21 +37,41 @@ public class FmmLeafBox extends FmmBox {
     }
 
     protected def downward(size:Double, parentLocalExpansion:LocalExpansion, fmmOperators:PlaceLocalHandle[FmmOperators], locallyEssentialTree:PlaceLocalHandle[LocallyEssentialTree], boxes:Rail[DistArray[FmmBox](3)]):Double {
-        val myOperators = fmmOperators();
-        addMultipolesAtSameLevel(size, myOperators, locallyEssentialTree());
-        addParentExpansion(size, parentLocalExpansion, myOperators);
+        constructLocalExpansion(size, fmmOperators, parentLocalExpansion, locallyEssentialTree);
 
-        var leafBoxEnergy:Double = 0.0;
+        return getPotential(size);
+        
+    }
+
+    /**
+     * Returns the far-field potential of all charges within this box due to
+     * all charges in well-separated boxes.
+     * @param size the side length of the full simulation box
+     */
+    private def getPotential(size:Double) : Double {
         val boxAtoms = getAtoms();
         val boxCentre = getCentre(size);
+        val p = localExp.p;
+
+        val chargeExpansion = new MultipoleExpansion(p);
         for (atomIndex in 0..(boxAtoms.size-1)) {
-           val atom = boxAtoms(atomIndex);
-           val locationWithinBox = atom.centre.vector(boxCentre);
-           val farFieldEnergy = localExp.getPotential(atom.charge, locationWithinBox);
-           leafBoxEnergy += farFieldEnergy;
+            val atom = boxAtoms(atomIndex);
+            val locationWithinBox = atom.centre.vector(boxCentre);
+            chargeExpansion.addOlm(atom.charge, locationWithinBox, p);
         }
-        return leafBoxEnergy;
-        
+
+        var potential : Double = 0.0;
+        // TODO use lift/reduction?
+        // TODO should be just:  for ([j,k] in terms.region) {
+        for (j in 0..p) {
+            for (k in -j..j) {
+                potential += (localExp.terms(j,k) * chargeExpansion.terms(j,k)).re;
+            }
+        }
+        return potential;
+//        return terms.mapReduce[Complex,Double,Double](chargeExpansion.terms, 
+//                                (a:Complex,b:Complex)=>(a*b).re, 
+//                                (a:Double, b:Double)=>a+b, 0.0);
     }
 
     public def getUList() = this.uList;

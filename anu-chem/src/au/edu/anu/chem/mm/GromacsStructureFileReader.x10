@@ -42,12 +42,16 @@ public class GromacsStructureFileReader {
             val line = file.readLine();
             val atomType = line.substring(10,15).trim();
             val charge : Double;
+            val mass : Double;
             if (atomType.startsWith("OW")) {
                 charge = -0.82;
+                mass = 15.99491461956;
             } else if (atomType.startsWith("HW")) {
                 charge = 0.41;
+                mass = 1.00794;
             } else {
                 Console.ERR.println("Unknown atom type line " + (i+2) + ": " + atomType);
+                mass = 0.0;
                 charge = 0.0;
             }
             // multiply coords by 10 to convert nm to Angstroms
@@ -56,6 +60,7 @@ public class GromacsStructureFileReader {
                                                  Double.parseDouble(line.substring(28,36)) * 10.0,
                                                  Double.parseDouble(line.substring(36,44)) * 10.0
                                          ),
+                                        mass,
                                         charge
                         ));
         }

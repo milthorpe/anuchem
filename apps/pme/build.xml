@@ -1,15 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE project [<!ENTITY buildfile SYSTEM "file:./build-user.xml">]>
 <project name="Particle Mesh Ewald method" default="build" basedir=".">
-	<property name="x10x.lib" location="../../x10x.lib"/>
-	<property name="xla.src" location="${x10x.lib}/xla/src"/>
-	<property name="xla.lib" location="${x10x.lib}/xla/lib/xla.jar"/>
+    <property name="x10rt" value="sockets" />
+    <property name="x10x.xla" location="../../xla"/>
+	<property name="xla.props" location="${x10x.xla}/xla_${x10rt}.properties"/>
+	<property name="xla.src" location="${x10x.xla}/src"/>
     <property name="anuchem" location="../../anu-chem"/>
+    <property name="anuchem.props" location="${anuchem}/anuchem_${x10rt}.properties"/>
 	<property name="anuchem.src" location="${anuchem}/src"/>
 	<property name="anuchem.lib" location="${anuchem}/lib/anu-chem.jar"/>
     <property name="x10.testlib" location="${user.home}/x10-trunk/x10.tests/examples/x10lib"/>
+    <property name="fftw" location="../../fftw_wrapper"/>
+    <property name="fftw.props" location="${fftw}/fftw_${x10rt}.properties" />
     <property name="fftw3.include" location="${user.home}/fftw/include" />
-    <property name="fftw3.lib" location="${user.home}/fftw/lib" />
     <property environment="env"/>
     <property name="bash.exe" value="bash"/>    
     <property name="optimize" value="true"/>
@@ -22,7 +25,6 @@
     <property name="mpiPprofile"  value="false"/>
     <property name="mpiPHome" location="${user.home}/mpiP"/>
     <property name="binutilsHome" location="${user.home}/binutils"/>
-    <property name="x10rt" value="mpi"/>
 	<property name="target" location="${basedir}/target"/>
 	<property name="target-src" location="${target}/classes"/>
 	<property name="target-test" location="${target}/test-classes"/>
@@ -89,14 +91,14 @@
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/src">
             <arg value="-c"/>
-            <arg value="'x10c' ${x10c.debug} ${x10c.optimize} ${x10c.nochecks} ${x10c.workstealing} -sourcepath '.${path.separator}${path.separator}${xla.src}${path.separator}${anuchem.src}' -classpath '${path.separator}${xla.lib}${path.separator}${anuchem.lib}' -d '${target-src}' ${basedir}/${testclass}"/>
+            <arg value="'x10c' ${x10c.debug} ${x10c.optimize} ${x10c.nochecks} ${x10c.workstealing} -sourcepath '.${path.separator} ${path.separator}${xla.src}${path.separator}${anuchem.src}' -d '${target-src}' ${basedir}/${testclass}"/>
         </exec>
     </target>
 
-    <target name="build-src-cpp" depends="check-src-cpp,build-fftw-wrapper" unless="src.uptodate.cpp">
+    <target name="build-src-cpp" depends="check-src-cpp" unless="src.uptodate.cpp">
         <echo message="Building source tree"/>
 
-        <echo message="x10c++ -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} ${x10c.debug} ${x10c.cpuprofile} ${x10c.profile} ${x10c.workstealing} -sourcepath '.${path.separator}${xla.src}${path.separator}${anuchem.src}' '${basedir}/${testclass}'"/>
+        <echo message="x10c++ -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} ${x10c.debug} ${x10c.cpuprofile} ${x10c.profile} ${x10c.workstealing} -x10lib ${xla.props} -x10lib ${anuchem.props} -x10lib ${fftw.props} -sourcepath . '${basedir}/${testclass}'"/>
 
         <copy todir="${target}/classes">
             <fileset id="cpp.files" dir="${basedir}/src" includes="**/*.h,**/*.struct_h,**/*.cc"/>
@@ -104,20 +106,7 @@
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/src">
             <arg value="-c"/>
-            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} ${x10c.debug} ${x10c.cpuprofile} ${x10c.profile}  ${x10c.workstealing} -report postcompile=1 -post '# -echo &quot;-I${fftw3.include}&quot; # &quot;-L${fftw3.lib}&quot; ${link.mpiPprofile} ${post.cpuprofile} # -lfftw3' -sourcepath '.${path.separator}${xla.src}${path.separator}${anuchem.src}' -d '${target-src}' '${basedir}/${testclass}'"/>
-        </exec>
-    </target>
-
-    <target name="build-fftw-wrapper" depends="check-src-fftw" unless="src.uptodate.fftw">
-        <echo message="Building FFTW wrapper"/>
-
-        <copy todir="${target}/classes">
-            <fileset id="cpp.files" dir="${basedir}/src" includes="**/*.h,**/*.cc"/>
-        </copy>
-
-        <exec executable="${bash.exe}" failonerror="true" dir="${target}/classes/edu/mit/fftw">
-            <arg value="-c"/>
-            <arg value="'gcc' -c FFTW.cc -I${fftw3.include}"/>
+            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} ${x10c.debug} ${x10c.cpuprofile} ${x10c.profile}  ${x10c.workstealing} -report postcompile=1 -post '# -echo &quot;-I${fftw3.include}&quot; ${link.mpiPprofile} ${post.cpuprofile}' -x10lib ${xla.props} -x10lib ${anuchem.props} -x10lib ${fftw.props} -sourcepath . -d '${target-src}' '${basedir}/${testclass}'"/>
         </exec>
     </target>
 
@@ -138,14 +127,6 @@
         <uptodate property="src.uptodate.cpp">
             <srcfiles refid="src.files"/>
             <globmapper from="*.x10" to="${target-src}/*.cc" handledirsep="true"/>
-        </uptodate>
-    </target>
-
-    <target name="check-src-fftw" depends="init-src">
-        <fileset id="fftw.files" dir="${basedir}/src" includes="**/*.h,**/*.cc"/>
-        <uptodate property="src.uptodate.fftw">
-            <srcfiles refid="fftw.files"/>
-            <globmapper from="*" to="${target-src}/*" handledirsep="true"/>
         </uptodate>
     </target>
     

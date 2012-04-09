@@ -21,25 +21,30 @@ import x10.util.Pair;
  * // TODO connectivity for force fields
  * @author milthorpe
  */
-public class MMAtom extends Atom { 
+public class MMAtom extends Atom {
     /** The current force acting upon this atom. */
     public var force : Vector3d;
     
     /** The current velocity of this atom. */
     public var velocity : Vector3d;
 
+    /** The mass in atomic units. */
+    public val mass:Double;
+
     /** The effective charge in atomic units. */
     public val charge : Double;
 
-    public def this(symbol : String, centre : Point3d, charge : Double) {
+    public def this(symbol : String, centre : Point3d, mass:Double, charge : Double) {
         super(symbol, centre);
+        this.mass = mass;
         this.charge = charge;
         this.force = Vector3d.NULL;
         this.velocity = Vector3d.NULL;
     }
 
-    public def this(centre : Point3d, charge : Double) {
+    public def this(centre : Point3d, mass:Double, charge : Double) {
         super(centre);
+        this.mass = mass;
         this.charge = charge;
         this.force = Vector3d.NULL;
         this.velocity = Vector3d.NULL;
@@ -51,13 +56,15 @@ public class MMAtom extends Atom {
      */
     public def this(atom : MMAtom) {
         super(atom);
+        this.mass = atom.mass;
         this.charge = atom.charge;
         this.force = atom.force;
         this.velocity = atom.velocity;
     }
 
+    /** Creates a massless, chargeless "atom" at the given centre. */
     public def this(centre : Point3d) { 
-        this(centre, 0.0);
+        this(centre, 0.0, 0.0);
     }
 
     public def pairEnergy(atom2 : MMAtom) : Double {

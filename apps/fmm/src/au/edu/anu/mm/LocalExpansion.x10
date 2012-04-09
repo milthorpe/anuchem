@@ -6,7 +6,7 @@
  *  You may obtain a copy of the License at
  *      http://www.opensource.org/licenses/eclipse-1.0.php
  *
- * (C) Copyright Josh Milthorpe 2010-2011.
+ * (C) Copyright Josh Milthorpe 2010-2012.
  */
 package au.edu.anu.mm;
 
@@ -59,10 +59,8 @@ public class LocalExpansion extends Expansion {
                 phifac = phifac * phifac0;
         		val M_lm = phifac * (rfac * pplm(l,m) * ilm);
                 terms(l,m) = M_lm;
+                terms(l,-m) = M_lm.conjugate() * (1-2*(m%2));
         		m_sign = !m_sign;
-            }
-            for (m in -l..-1) {
-                terms(l,m) = terms(l,-m).conjugate() * (1-2*(-m%2));
             }
             rfac = rfac * rfac0;
         }
@@ -98,17 +96,18 @@ public class LocalExpansion extends Expansion {
 
     /** 
      * More efficient version of Operator C (translation and addition) with rotations
+     * @param scratch, a MultipoleExpansion in which to perform temporary calculations
+     * @param temp, a Complex array in which to store temporary results
      * @param v a Tuple representing the shift of the expansion
      * @param wigner a collection of Wigner matrices precalculated to speed up the rotation
      * @param complexK is the pre calculated values of exp(i*k*phi)
      * @param source the source local expansion
      * @see Dachsel 2006, eqn 18
      */
-    public def translateAndAddLocal(v : Vector3d, complexK : Rail[Array[Complex](1){rect,rail==false}], source : LocalExpansion, wigner : Rail[Rail[Array[Double](2){rect}]]) { 
+    public def translateAndAddLocal(scratch:MultipoleExpansion, temp:Array[Complex](1){rect,rail==false}, v:Vector3d, complexK:Rail[Array[Complex](1){rect,rail==false}], source:LocalExpansion, wigner:Rail[Rail[Array[Double](2){rect}]]) { 
 	    val b = v.length();
-	    val temp = new Array[Complex](-p..p) as Array[Complex](1){rect,rail==false};
 
-	    val scratch : LocalExpansion = new LocalExpansion( source );
+        Array.copy(source.terms, scratch.terms);
         scratch.rotate(temp, complexK(1), wigner(0) );
 
     	val targetTerms = scratch.terms;
@@ -124,7 +123,7 @@ public class LocalExpansion extends Expansion {
     				F_lm = F_lm * b / (j - l + 1);
     			}
     			targetTerms(l, m) = M_lm;
-    			if (m != 0) targetTerms(l, -m) = targetTerms(l, m).conjugate() * m_sign;
+    			if (m != 0) targetTerms(l, -m) = M_lm.conjugate() * m_sign;
     		}
 	    	m_sign = -m_sign;
 	   	}
@@ -139,8 +138,10 @@ public class LocalExpansion extends Expansion {
      * @param source the source local expansion
      */
     public def translateAndAddLocal(v : Vector3d, source : LocalExpansion) {
+        val scratch = new MultipoleExpansion(p);
+        val temp = new Array[Complex](-p..p) as Array[Complex](1){rect,rail==false};
 	    val polar = Polar3d.getPolar3d(v);
-	    translateAndAddLocal(v, genComplexK(polar.phi, p), source, WignerRotationMatrix.getCCollection(polar.theta, p) );
+	    translateAndAddLocal(scratch, temp, v, genComplexK(polar.phi, p), source, WignerRotationMatrix.getCCollection(polar.theta, p) );
     }
 
    /** 
@@ -203,7 +204,7 @@ public class LocalExpansion extends Expansion {
 				    F_lm = F_lm * (j + l + 1) * inv_b;
 			    }
 			    targetTerms(l, m) = M_lm;
-			    if (m != 0) targetTerms(l, -m) = targetTerms(l, m).conjugate() * m_sign;
+			    if (m != 0) targetTerms(l,-m) = M_lm.conjugate() * m_sign;
                 b_lm1_pow = b_lm1_pow * inv_b;
 		    }
             
@@ -237,26 +238,6 @@ public class LocalExpansion extends Expansion {
         val temp = new Array[Complex](-p..p) as Array[Complex](1){rect,rail==false};
     	target.rotate(temp, genComplexK(phi, p)(0), WignerRotationMatrix.getCCollection(theta, p)(0) );
     	return target;
-    }
-
-    /**
-     * Transforms this local expansion about the origin to the potential
-     * acting on <code>q</code> at point <code>v</code>.
-     * @param q the charge at point v
-     * @param v the location of charge q
-     */
-    public def getPotential(q : Double,
-                                v : Tuple3d) : Double {
-        val transform = MultipoleExpansion.getOlm(q, v, p);
-        var potential : Double = 0.0;
-        // TODO use lift/reduction?
-        // TODO should be just:  for ([j,k] in terms.region) {
-        for (j in 0..p) {
-            for (k in -j..j) {
-                potential += (terms(j,k) * transform.terms(j,k)).re;
-            }
-        }
-        return potential;
     }
 
     /**

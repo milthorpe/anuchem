@@ -25,7 +25,7 @@ public class Overlap extends DenseMatrix {
     }
 
     public def getSHalf():DenseMatrix(this.N, this.N) {
-       if (sHalf == null) sHalf = GMLDiagonalizer.symmetricOrthogonalization(this.clone());
+       if (sHalf == null) sHalf = GMLDiagonalizer.symmetricOrthogonalization(this);
 
        return sHalf;
     }    

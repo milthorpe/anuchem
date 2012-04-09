@@ -12,6 +12,14 @@ public class FFTW {
     @Native("java", "null")
     public native static def fftwPlan1d(n : Int, input : Rail[Complex], output : Rail[Complex], forward : Boolean) : FFTWPlan;
 
+    @Native("c++", "::edu::mit::fftw::FFTWWrapper::fftwPlanDft1d(#1, reinterpret_cast<double*>(#2._val->raw().data), reinterpret_cast<fftw_complex*>(#3._val->raw().data))")
+    @Native("java", "null")
+    public native static def fftwPlan1d(n : Int, input : Rail[Double], output : Rail[Complex]) : FFTWPlan;
+
+    @Native("c++", "::edu::mit::fftw::FFTWWrapper::fftwPlanDft1d(#1, reinterpret_cast<fftw_complex*>(#2._val->raw().data), reinterpret_cast<double*>(#3._val->raw().data))")
+    @Native("java", "null")
+    public native static def fftwPlan1d(n : Int, input : Rail[Complex], output : Rail[Double]) : FFTWPlan;
+
     @Native("c++", "::edu::mit::fftw::FFTWWrapper::fftwPlanDft3d(#1, #2, #3, reinterpret_cast<fftw_complex*>(#4._val->raw().data), reinterpret_cast<fftw_complex*>(#5._val->raw().data), #6)")
     @Native("java", "null")
     public native static def fftwPlan3d(n1 : Int, n2 : Int, n3 : Int, input : DistArray[Complex], output : DistArray[Complex], forward : Boolean) : FFTWPlan;

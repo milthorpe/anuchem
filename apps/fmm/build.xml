@@ -2,13 +2,13 @@
 <!DOCTYPE project [<!ENTITY buildfile SYSTEM "file:./build-user.xml">]>
 <project name="Fast Multipole Method" default="build" basedir=".">
     &buildfile;
-	<property name="x10x.lib" location="../../x10x.lib"/>
-	<property name="xla.src" location="${x10x.lib}/xla/src"/>
-	<property name="xla.lib" location="${x10x.lib}/xla/lib/xla.jar"/>
-	<property name="x10.runtime.extensions" location="../../x10.runtime"/>
-	<property name="xre.src" location="${x10.runtime.extensions}/src"/>
-	<property name="xre.lib" location="${x10.runtime.extensions}/lib/x10re.jar"/>
+    <property name="x10rt" value="sockets" />
+    <property name="x10x.xla" location="../../xla"/>
+	<property name="xla.props" location="${x10x.xla}/xla_${x10rt}.properties"/>
+	<property name="xla.src" location="${x10x.xla}/src"/>
+	<property name="xla.lib" location="${x10x.xla}/lib/xla.jar"/>
     <property name="anuchem" location="../../anu-chem"/>
+    <property name="anuchem.props" location="${anuchem}/anuchem_${x10rt}.properties"/>
 	<property name="anuchem.src" location="${anuchem}/src"/>
 	<property name="anuchem.lib" location="${anuchem}/lib/anu-chem.jar"/>
     <property name="x10.testlib" location="${user.home}/x10-trunk/x10.tests/examples/x10lib"/>
@@ -80,7 +80,7 @@
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/src">
             <arg value="-c"/>
-            <arg value="'x10c' ${x10c.optimize} -sourcepath .${path.separator}${xre.src}${path.separator}${xla.src}${path.separator}${anuchem.src} -classpath ${xre.lib}${path.separator}${xla.lib}${path.separator}${anuchem.lib} -d ${target-src} '${basedir}/${testclass}'"/>
+            <arg value="'x10c' ${x10c.optimize} -sourcepath .${path.separator}${xla.src}${path.separator}${anuchem.src} -classpath ${xla.lib}${path.separator}${anuchem.lib} -d ${target-src} '${basedir}/${testclass}'"/>
         </exec>
     </target>
 
@@ -89,18 +89,18 @@
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/src">
             <arg value="-c"/>
-            <arg value="'x10c' ${x10c.optimize} -sourcepath .${path.separator}${xre.src}${path.separator}${xla.src}${path.separator}${anuchem.src} -classpath ${xre.lib}${path.separator}${xla.lib}${path.separator}${anuchem.lib} -d ${target-src} '${basedir}/${testclass}'"/>
+            <arg value="'x10c' ${x10c.optimize} -sourcepath .${path.separator}${xla.src}${path.separator}${anuchem.src} -classpath ${xla.lib}${path.separator}${anuchem.lib} -d ${target-src} '${basedir}/${testclass}'"/>
         </exec>
     </target>
 
     <target name="build-src-cpp" depends="check-src-cpp" unless="src.uptodate.cpp">
         <echo message="Building source tree"/>
 
-        <echo message="x10c++ -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} ${x10c.debug} ${x10c.cpuprofile} ${x10c.profile} -post '# # ${link.mpiPprofile} ${post.cpuprofile}' -sourcepath '.${path.separator}${xre.src}${path.separator}${xla.src}${path.separator}${anuchem.src}' '${basedir}/${testclass}'"/>
+        <echo message="x10c++ -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} ${x10c.debug} ${x10c.cpuprofile} ${x10c.profile} -post '# # ${link.mpiPprofile} ${post.cpuprofile}' -x10lib ${xla.props} -x10lib ${anuchem.props} -sourcepath . '${basedir}/${testclass}'"/>
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/src">
             <arg value="-c"/>
-            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} ${x10c.debug} ${x10c.cpuprofile} ${x10c.profile} -report postcompile=1 -post '# # ${link.mpiPprofile} ${post.cpuprofile}' -sourcepath '.${path.separator}${xre.src}${path.separator}${xla.src}${path.separator}${anuchem.src}${path.separator}${x10.testlib}' -d '${target-src}' '${basedir}/${testclass}'"/>
+            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} ${x10c.debug} ${x10c.cpuprofile} ${x10c.profile} -report postcompile=1 -post '# # ${link.mpiPprofile} ${post.cpuprofile}' -x10lib ${xla.props} -x10lib ${anuchem.props} -sourcepath . -d '${target-src}' '${basedir}/${testclass}'"/>
         </exec>
     </target>
 
@@ -143,13 +143,13 @@
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/test">
             <arg value="-c"/>
-            <arg value="'x10c' ${x10c.optimize} -sourcepath '.${path.separator}${basedir}/src${path.separator}${xre.src}${path.separator}${xla.src}${path.separator}${anuchem.src}${path.separator}${x10.testlib}' -classpath '${xre.lib}${path.separator}${xla.lib}${path.separator}${anuchem.lib}${path.separator}${target-src}' -commandlineonly -d '${target-test}' ${test.list}"/>
+            <arg value="'x10c' ${x10c.optimize} -sourcepath '.${path.separator}${basedir}/src${path.separator}${xla.src}${path.separator}${anuchem.src}${path.separator}${x10.testlib}' -classpath '${xla.lib}${path.separator}${anuchem.lib}${path.separator}${target-src}' -commandlineonly -d '${target-test}' ${test.list}"/>
         </exec>
     </target>
 
     <target name="test" depends="build-test">
         <apply executable="x10" failonerror="true" dir="${target-test}" relative="true" addsourcefile="false">
-            <arg line="-t -v -mx 128M -classpath '${xre.lib}${path.separator}${xla.lib}${path.separator}${anuchem.lib}${path.separator}${target-src}${path.separator}${target-test}'"/>
+            <arg line="-t -v -mx 128M -classpath '${xla.lib}${path.separator}${anuchem.lib}${path.separator}${target-src}${path.separator}${target-test}'"/>
             <targetfile/>
 
             <fileset dir="${target-test}" includes="**/Test*.java"/>

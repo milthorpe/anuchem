@@ -14,7 +14,8 @@ import x10.util.ArrayList;
 import x10.util.Team;
 import x10.util.concurrent.AtomicInteger;
 
-import x10x.matrix.Matrix;
+import x10.matrix.DenseMatrix;
+
 import x10x.vector.Vector;
 import x10x.vector.Point3d;
 import au.edu.anu.chem.Molecule;
@@ -27,7 +28,7 @@ import au.edu.anu.qm.ro.Integral_Pack;
  * G matrix in HF calculation -- RO 
  */
 
-public class GMatrixRO extends Matrix {
+public class GMatrixRO extends DenseMatrix {
 
     public val timer = new StatisticalTimer(1);
     public static TIMER_IDX_TOTAL = 0;
@@ -39,39 +40,59 @@ public class GMatrixRO extends Matrix {
     val roL:Int;
     val roZ:Double;
     val nBasis:Int;
+    
+    val norm:Rail[Double];
+    val temp:Rail[Double];
+    val dk:Rail[Double];
+    val munuk:Array[Double](3){rect,zeroBased};
+    transient val aux:Integral_Pack;
+    val jMatrix:DenseMatrix;
+    val kMatrix:DenseMatrix;
 
     public def this(N:Int, bfs:BasisFunctions, molecule:Molecule[QMAtom]) {
-        super(N);
+        super(N,N);
         this.bfs = bfs;
         this.mol = molecule;
         this.nBasis=N;
         val jd = JobDefaults.getInstance();
         this.roN=jd.roN;
         this.roL=jd.roL;
-        this.roZ=jd.roZ;  
+        this.roZ=jd.roZ;
+  
+        this.norm = bfs.getNormalizationFactors();
+        jMatrix = new DenseMatrix(N,N);
+        kMatrix = new DenseMatrix(N,N);
+
+        val roK = (roN+1)*(roL+1)*(roL+1);
+        val maxam = bfs.getShellList().getMaximumAngularMomentum();
+        val maxam1 = (maxam+1)*(maxam+2)/2;
+        temp = new Rail[Double](maxam1*maxam1*roK);
+        aux = new Integral_Pack(roN,roL);
+        dk = new Rail[Double](roK); // eqn 15b in RO#7
+ 
+        // Infinite memory code
+        munuk = new Array[Double](0..(nBasis-1)*0..(nBasis-1)*0..(roK-1)); // Auxiliary integrals
     }
 
 
     public def compute(density:Density, mos:MolecularOrbitals) {
         timer.start(0);
 
-        val N = getRowCount();
-
-        val mosMat = mos.getMatrix();
-        val denMat = density.getMatrix();
         val nOrbital = density.getNoOfOccupancies();
         val noOfAtoms = mol.getNumberOfAtoms();
 
         val roK = (roN+1)*(roL+1)*(roL+1);
-        val dk = new Array[Double](0..(roK-1)); // eqn 15b in RO#7
- 
-        // Infinite memory code -- two 3D Arrays
-        val munuk = new Array[Double](0..(nBasis-1)*0..(nBasis-1)*0..(roK-1)); // Auxiliary integrals
+
+        dk.clear();
+
+        // Infinite memory code
         val muak = new Array[Double](0..(nBasis-1)*0..(nOrbital-1)*0..(roK-1)); // half-transformed auxiliary integrals eqn 16b in RO#7
-        val aux = new Integral_Pack(roN,roL);
 
         var mu:Int = 0; 
         var nu:Int = 0; 
+
+        //val diagtwoe = new DenseMatrix(N);
+        //val diagtwoemat = diagtwoe.DenseMatrix();
 
         // centre a
         for(var a:Int=0; a<noOfAtoms; a++) {
@@ -87,90 +108,106 @@ public class GMatrixRO extends Matrix {
                     // basis functions on b
                     for(var j:Int=0; j<nbFunc; j++) {
                         val jbFunc = bFunc.get(j);
-                        Console.OUT.printf("a=%d i=%d b=%d j=%d [naFunc=%d nbFunc=%d]\n", a,i,b,j,naFunc,nbFunc);
-
-                        // swap A and B if B has higher anglular momentum than A                       
+                        //Console.OUT.printf("a=%d i=%d b=%d j=%d [naFunc=%d nbFunc=%d]\n", a,i,b,j,naFunc,nbFunc);
+                        
+                        var aaFunc:ContractedGaussian=iaFunc,bbFunc:ContractedGaussian=jbFunc;
+                        val aa=iaFunc.getTotalAngularMomentum();
+                        val bb=jbFunc.getTotalAngularMomentum();
+                        val maxbraa = (aa+1)*(aa+2)/2; 
+                        val maxbrab = (bb+1)*(bb+2)/2; 
+                        // swap A and B if B has higher anglular momentum than A     
+                        if (aa<bb) {
+                            aaFunc=jbFunc; bbFunc=iaFunc;
+                            //Console.OUT.printf("SWAP ab!\n");
+                        }                  
 
                         // extract info from basisfunctions
                         // Note that iaFunc and jbFunc are ContractedGaussians
                         // val may not work?  must specify the same type as in cpp code?
-                        val aang = iaFunc.getTotalAngularMomentum();
-                        val aprimitive = iaFunc.getPrimitives();
-                        val dConA = aprimitive.size;
-                        val apoint = new Rail[Double](3);
-                        apoint(0) = aprimitive(0).origin.i;
-                        apoint(1) = aprimitive(0).origin.j;
-                        apoint(2) = aprimitive(0).origin.k;
-                        val conA = new Rail[Double](dConA);
-                        val zetaA = new Rail[Double](dConA);
-                        for (ai in 0..(dConA-1)) {
-                           conA(ai)=aprimitive(ai).coefficient;
-                           zetaA(ai)=aprimitive(ai).exponent;
-                           conA(ai)*=aprimitive(ai).normalization;
-                           // normalization problem to be addressed in integral pack cpp code? -- that will slow things down?
-                        }
-                        // do the same for b
+                        val aang = aaFunc.getTotalAngularMomentum();
+                        val aPoint = aaFunc.origin;
+                        val zetaA = aaFunc.exponents;
+                        val conA = aaFunc.coefficients;
+                        val dConA = conA.size;
 
-                        val bang = jbFunc.getTotalAngularMomentum();
-                        val bprimitive = jbFunc.getPrimitives();
-                        val dConB = bprimitive .size; 
-                        val bpoint = new Rail[Double](3); 
-                        bpoint(0) = bprimitive(0).origin.i;
-                        bpoint(1) = bprimitive(0).origin.j;
-                        bpoint(2) = bprimitive(0).origin.k;
-                        val conB = new Rail[Double](dConB); 
-                        val zetaB = new Rail[Double](dConB); 
-                        for (bi in 0..(dConB-1)) {
-                           conB(bi)=bprimitive(bi).coefficient;
-                           zetaB(bi)=bprimitive(bi).exponent;
-                           conB(bi)*=bprimitive(bi).normalization;
-                           // normalization problem to be addressed in integral pack cpp code? -- that will slow things down?
-                        }
+                        val bang = bbFunc.getTotalAngularMomentum();
+                        val bPoint = bbFunc.origin; 
+                        val zetaB = bbFunc.exponents;                        
+                        val conB = bbFunc.coefficients; 
+                        val dConB = conB.size;
 
-                        val maxbraa = (aang+1)*(aang+2)/2; 
-                        val maxbrab = (bang+1)*(bang+2)/2; 
-                        val temp = new Array[Double](0..(maxbraa*maxbrab)*0..(roK-1)); // Result for one batch
+                        //Console.OUT.printf("aang=%d bang=%d\n", aang,bang);
+                        aux.genClass(aang, bang, aPoint, bPoint, zetaA, zetaB, conA, conB, dConA, dConB, temp);      
 
-                        // call genclass (temp, info from basis function)            
-                        // roN, roL should be there during initialization...
-                       
-                        // Segmetation fault?
-                        // aux.genClass(aang, bang, apoint, bpoint, zetaA, zetaB, conA, conB, dConA, dConB, temp);      
+                        // transfer infomation from temp to munuk (Swap A and B again if necessary) and normalise
+                        var ind:Int=0;
+                        if (iaFunc.getTotalAngularMomentum()>=jbFunc.getTotalAngularMomentum())
+                            for (var tmu:Int=mu; tmu<mu+maxbraa; tmu++) for (var tnu:Int=nu; tnu<nu+maxbrab; tnu++) for (var k:Int=0; k<roK; k++) {
+                                //Console.OUT.printf("tmu=%d tnu=%d k=%d ind=%d val=%e\n",tmu,tnu,k,ind,temp(ind));
+                                val m = norm(tmu)*norm(tnu)*temp(ind++);
+                                dk(k) += density(tmu,tnu)*m; // eqn 15b
+                                for(aorb in 0..(nOrbital-1)) {
+                                    muak(tmu,aorb,k) += mos(aorb,tnu) * m; // eqn 16b the most expensive step!!!
+                                }
+                                munuk(tmu,tnu,k) = m;
+                            }                                
+                        else // Be careful... this is tricky ... maxbra are not swap 
+                            for (var tnu:Int=nu; tnu<nu+maxbrab; tnu++) for (var tmu:Int=mu; tmu<mu+maxbraa; tmu++) for (var k:Int=0; k<roK; k++) {
+                                //Console.OUT.printf("(Swap) tmu=%d tnu=%d k=%d ind=%d val=%e\n",tmu,tnu,k,ind,temp(ind));
+                                val m = norm(tmu)*norm(tnu)*temp(ind++);
+                                dk(k) += density(tmu,tnu)*m; // eqn 15b
+                                for(aorb in 0..(nOrbital-1)) {
+                                    muak(tmu,aorb,k) += mos(aorb,tnu) * m; // eqn 16b the most expensive step!!!
+                                }
+                                munuk(tmu,tnu,k) = m;
+                            }
 
-                        // transfer infomation from temp to munuk (Swap A and B again if necessary)
 
-                        for (tmu in mu..(mu+maxbraa-1)) for (tnu in 0..(nu+maxbrab-1)) for (k in 0..(roK-1)) 
-                           dk(k) += denMat(tmu,tnu)*munuk(tmu,tnu,k); // eqn 15b
-                        for (tmu in mu..(mu+maxbraa-1)) for (tnu in 0..(nu+maxbrab-1)) for (aa in 0..(nOrbital-1)) for (k in 0..(roK-1)) 
-                           muak(tmu,aa,k) += mosMat(aa,tnu) * munuk(tmu,tnu,k); // eqn 16b the most expensive step!!!
+                       // test
+                       /* 
+                       for (tmu in mu..(mu+maxbraa-1)) for (tnu in nu..(nu+maxbrab-1))  {
+                            var intval:Double=0.;
+                            for (k in 0..(roK-1)) intval+= munuk(tmu,tnu,k)*munuk(tmu,tnu,k);
+                            Console.OUT.printf("mu=%d nu=%d intval=%e\n", tmu,tnu,intval);
+                            diagtwoemat(tmu,tnu)=intval;
+                       }*/
 
                         if (b!=noOfAtoms-1 || j!=nbFunc-1) nu+=maxbrab;
                         else {mu+=maxbraa; nu=0;}
 
-                        Console.OUT.printf("mu=%d nu=%d\n", mu,nu);
+                        //Console.OUT.printf("mu=%d nu=%d\n", mu,nu);
 
                     }
                 }
             }
         }     
 
-        val jMatrix = new Matrix(N);
-        val kMatrix = new Matrix(N);
-        val jMat = jMatrix.getMatrix();
-        val kMat = kMatrix.getMatrix();
-        val gMat = getMatrix();
-        
-        for (tmu in 0..(nBasis-1)) for (tnu in 0..(nBasis-1)) for (k in 0..(roK-1))  {
-            jMat(tmu,tnu) += munuk(tmu,tnu,k)*dk(k); // eqn 15a
-            for (a in 0..(nOrbital-1))
-                kMat(mu,nu) += muak(tmu,a,k)*munuk(tnu,a,k); // eqn16a 
+        for (tmu in 0..(nBasis-1)) for (tnu in 0..(nBasis-1)) {
+            var jContrib:Double = 0.0;
+            var kContrib:Double = 0.0;
+            for (k in 0..(roK-1))  {
+                jContrib += munuk(tmu,tnu,k)*dk(k); // eqn 15a
+                for (a in 0..(nOrbital-1)) {
+                    kContrib += muak(tmu,a,k)*muak(tnu,a,k); // eqn16a 
+                }
+            }
+            jMatrix(tmu,tnu) = jContrib;
+            kMatrix(tmu,tnu) = kContrib;
+            this(tmu,tnu) = 2.0*jContrib-kContrib;
         }
+/*
+        Console.OUT.println("diag2E RO");
+        Console.OUT.println(diagtwoe);
 
-        for (tmu in 0..(nBasis-1)) for (tnu in 0..(nBasis-1))
-           gMat(tmu,nu) = jMat(tmu,tnu) - 0.5 * kMat(tmu,tnu); // eqn14
+        Console.OUT.println("J Mat RO");
+        Console.OUT.println(jMatrix);
+
+        Console.OUT.println("K Mat RO");
+        Console.OUT.println(kMatrix);
+*/
 
         timer.stop(0);
-        Console.OUT.printf("    Time to construct GMatrix: %.3g seconds\n", (timer.last(0) as Double) / 1e9);
+        Console.OUT.printf("    Time to construct GMatrix with RO: %.3g seconds\n", (timer.last(0) as Double) / 1e9);
     }
  
 }

@@ -34,7 +34,7 @@ import au.edu.anu.chem.Molecule;
  *   J. Comp. Phys, 26 (2) pp. 218-231.
  */
 public class TwoElectronIntegrals {
-    private static val SQ2PI = Math.pow((2.0/Math.PI), 0.5);
+    private static SQ2PI = 0.797884560802865; //Math.pow((2.0/Math.PI), 0.5);
 
     private val gmt:Rail[Double], zeroM:Rail[Double];
 
@@ -89,15 +89,10 @@ public class TwoElectronIntegrals {
                                   shellList:ShellList, 
                                   jMat:DenseMatrix, kMat:DenseMatrix,
                                   dMat:Density):Int {
-        val aPrims = a.getPrimitives();
-        val bPrims = b.getPrimitives();
-        val cPrims = c.getPrimitives();
-        val dPrims = d.getPrimitives();
-
-        val aCen  = a.centre;
-        val bCen  = b.centre;
-        val cCen  = c.centre;
-        val dCen  = d.centre;
+        val aCen  = a.origin;
+        val bCen  = b.origin;
+        val cCen  = c.origin;
+        val dCen  = d.origin;
 
         val dAng  = d.getMaximumAngularMomentum();
         val cAng  = c.getMaximumAngularMomentum();
@@ -128,18 +123,25 @@ public class TwoElectronIntegrals {
         val radiusABSquared = a.distanceSquaredFrom(b); 
         val radiusCDSquared = c.distanceSquaredFrom(d);
 
-        for([ap] in aPrims) {
-            val aPrim = aPrims(ap);
-           val aAlpha = aPrim.exponent;
-           val aCoeff = aPrim.coefficient;
+        val aExps = a.exponents;
+        val aCoeffs = a.coefficients;
+        val bExps = b.exponents;
+        val bCoeffs = b.coefficients;
+        val cExps = c.exponents;
+        val cCoeffs = c.coefficients;
+        val dExps = d.exponents;
+        val dCoeffs = d.coefficients;
 
-           for([bp] in bPrims) {
-             val bPrim = bPrims(bp);
+        for([ap] in aExps) {
+            val aAlpha = aExps(ap);
+            val aCoeff = aCoeffs(ap);
+
+           for([bp] in bExps) {
              pcdint.clear();
-             val bAlpha = bPrim.exponent;
+             val bAlpha = bExps(bp);
              val gamma1 = (aAlpha + bAlpha);
              val sigmaP = 1.0 / gamma1;
-             val bCoeff = bPrim.coefficient;
+             val bCoeff = bCoeffs(bp);
 
              // val p = gaussianProductCentre(aAlpha, aCen, bAlpha, bCen);
 
@@ -155,15 +157,13 @@ public class TwoElectronIntegrals {
              // Console.OUT.println("Coeff: " + aCoeff + " " + bCoeff);
              // Console.OUT.println("sigmaP, Gab, Up: " + sigmaP + " " + Gab + " " + Up);
 
-             for([cp] in cPrims) {
-                val cPrim = cPrims(cp);
-               val cAlpha = cPrim.exponent;
-               val cCoeff = cPrim.coefficient;
+             for([cp] in cExps) {
+               val cAlpha = cExps(cp);
+               val cCoeff = cCoeffs(cp);
 
-               for([dp] in dPrims) {
-                    val dPrim = dPrims(dp);
-                 val dAlpha = dPrim.exponent;
-                 val dCoeff = dPrim.coefficient;
+               for([dp] in dExps) {
+                 val dAlpha = dExps(dp);
+                 val dCoeff = dCoeffs(dp);
 
                  val gamma2 = (cAlpha + dAlpha);
                  val sigmaQ = 1.0 / gamma2;
@@ -209,8 +209,8 @@ public class TwoElectronIntegrals {
                  // form [p|cd]
                  computePcd(angMomAB, sigmaQ, q, dLim, cLim,
                             shellD, shellC, dCen, cCen);
-               } // dPrim
-              } // cPrim
+               } // d
+              } // c
 
               // form [ab|cd], 
               // Console.OUT.println("Computing [ab|cd] ");
@@ -235,15 +235,10 @@ public class TwoElectronIntegrals {
                                   aAng:Int, bAng:Int, cAng:Int, dAng:Int, angMomAB:Int,
                                   aStrt:Int, bStrt:Int, cStrt:Int, dStrt:Int,
                                   aLim:Int, bLim:Int):Int {
-        val aPrims = a.getPrimitives();
-        val bPrims = b.getPrimitives();
-        val cPrims = c.getPrimitives();
-        val dPrims = d.getPrimitives();
-
-        val aCen  = a.centre;
-        val bCen  = b.centre;
-        val cCen  = c.centre;
-        val dCen  = d.centre;
+        val aCen  = a.origin;
+        val bCen  = b.origin;
+        val cCen  = c.origin;
+        val dCen  = d.origin;
 
         val shellA = shellList.getPowers(aAng);
         val shellB = shellList.getPowers(bAng);
@@ -259,18 +254,25 @@ public class TwoElectronIntegrals {
 
         val radiusCDSquared = c.distanceSquaredFrom(d);
 
-        for([ap] in aPrims) {
-          val aPrim = aPrims(ap);
-          val aAlpha = aPrim.exponent;
-          val aCoeff = aPrim.coefficient;
+        val aExps = a.exponents;
+        val aCoeffs = a.coefficients;
+        val bExps = b.exponents;
+        val bCoeffs = b.coefficients;
+        val cExps = c.exponents;
+        val cCoeffs = c.coefficients;
+        val dExps = d.exponents;
+        val dCoeffs = d.coefficients;
 
-          for([bp] in bPrims) {
-             val bPrim = bPrims(bp);
+        for([ap] in aExps) {
+          val aAlpha = aExps(ap);
+          val aCoeff = aCoeffs(ap);
+
+          for([bp] in bExps) {
              pcdint.clear();
-             val bAlpha = bPrim.exponent;
+             val bAlpha = bExps(bp);
              val gamma1 = (aAlpha + bAlpha);
              val sigmaP = 1.0 / gamma1;
-             val bCoeff = bPrim.coefficient;
+             val bCoeff = bCoeffs(bp);
 
              // val p = gaussianProductCentre(aAlpha, aCen, bAlpha, bCen);
 
@@ -286,15 +288,13 @@ public class TwoElectronIntegrals {
              // Console.OUT.println("Coeff: " + aCoeff + " " + bCoeff);
              // Console.OUT.println("sigmaP, Gab, Up: " + sigmaP + " " + Gab + " " + Up);
 
-             for([cp] in cPrims) {
-                val cPrim = cPrims(cp);
-               val cAlpha = cPrim.exponent;
-               val cCoeff = cPrim.coefficient;
+             for([cp] in cExps) {
+               val cAlpha = cExps(cp);
+               val cCoeff = cCoeffs(cp);
 
-               for([dp] in dPrims) {
-                val dPrim = dPrims(dp);
-                 val dAlpha = dPrim.exponent;
-                 val dCoeff = dPrim.coefficient;
+               for([dp] in dExps) {
+                 val dAlpha = dExps(dp);
+                 val dCoeff = dCoeffs(dp);
 
                  val gamma2 = (cAlpha + dAlpha);
                  val sigmaQ = 1.0 / gamma2;
@@ -340,8 +340,8 @@ public class TwoElectronIntegrals {
                  // form [p|cd]
                  computePcd(angMomAB, sigmaQ, q, dLim, cLim,
                             shellD, shellC, dCen, cCen);
-               } // dPrim
-              } // cPrim
+               } // d
+              } // c
 
               // form [ab|cd], 
               // Console.OUT.println("Computing [ab|cd] ");
@@ -640,6 +640,8 @@ public class TwoElectronIntegrals {
                                 val normIntVal = intVal
                                     * normL * normK
                                     * normJ * normI;
+                                // printout twoeint // this is uncontacted. you have to add them algether before compare it with other programs
+                                // Console.OUT.printf("2E %d %d %d %d = %e (norm = %e)\n",ii,jj,kk,ll,normIntVal,normL*normK*normJ*normI);
                                  fillJKMatrices(normIntVal, ii, jj, kk, ll, jMatrix, kMatrix, dMatrix);
                             } // end if
                         } // end if

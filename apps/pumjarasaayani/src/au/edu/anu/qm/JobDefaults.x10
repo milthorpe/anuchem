@@ -28,7 +28,13 @@ public class JobDefaults {
     public var diisSubspaceSize:Int;
     public var gMatrixParallelScheme:Int;
     public var useMta:Boolean;
+
+    public static GUESS_CORE = "core";
+    public static GUESS_SAD = "sad";
+    public var guess:String;
+
 // RO Var
+    public var roOn:Int;
     public var roN:Int;
     public var roL:Int;
     public var roZ:Double;

@@ -47,9 +47,25 @@ public class ElectrostaticDirectMethod {
         this.otherAtoms = DistArray.make[Rail[Rail[PointCharge]]](Dist.makeUnique(), 
             ([p] : Point) => new Rail[Rail[PointCharge]](Place.MAX_PLACES));
     }
+
+    public def expectationValue(twoParticleFunction:(a:PointCharge,b:PointCharge) => Double):Double {
+        var total:Double = 0.0;
+        val a = atoms(here.id);
+        for ([i] in a) {
+            for ([j] in a) {
+                if (i != j) {
+                    total += twoParticleFunction(a(i), a(j));
+                }
+            }
+        }
+        val N = a.size;
+        return total / (N*(N-1));
+    }
 	
     public def getEnergy() : Double {
         timer.start(TIMER_INDEX_TOTAL);
+
+//        val radialDistribution = (a:PointCharge,b:PointCharge) => b.centre.distance(a.centre);
 
         val directEnergy = finish(SumReducer()) {
             val atoms = this.atoms; // TODO shouldn't be necessary XTENLANG-1913

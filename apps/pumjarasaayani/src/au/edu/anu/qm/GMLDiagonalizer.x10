@@ -28,22 +28,22 @@ public class GMLDiagonalizer {
         eigenValuesVec = Vector.make(a.N);
         val scratch = new Rail[Double](3*a.N-1);
 
-        DenseMatrixLAPACK.compEigenVector(a, eigenValuesVec, scratch);
+        val result = DenseMatrixLAPACK.compEigenVector(a, eigenValuesVec, scratch);
 
-        eigenVectorsMat = new DenseMatrix(a.N, A.M);
+        eigenVectorsMat = new DenseMatrix(a.N, a.M);
         a.T(eigenVectorsMat);
     }
 
     public static def symmetricOrthogonalization(A:DenseMatrix):DenseMatrix(A.N,A.N) {
         val diag = new GMLDiagonalizer();
         diag.diagonalize(A);
-        
+
         val eigenValues   = diag.getEigenValues();
         val eigenVectors  = diag.getEigenVectors();
         val sHalf         = new DenseMatrix(A.M, A.N);
 
         // TODO a smarter way to do this...
-        for (i in 0..(eigenValues.N-1)) {
+        for (i in 0..(eigenValues.M-1)) {
             sHalf(i,i) = 1.0 / Math.sqrt(eigenValues(i));
         }
 

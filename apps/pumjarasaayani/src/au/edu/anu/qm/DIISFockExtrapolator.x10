@@ -120,7 +120,7 @@ public class DIISFockExtrapolator {
         } // end if 
 
         val A = new DenseMatrix(noOfIterations+1,noOfIterations+1);
-        val B = new DenseMatrix(noOfIterations+1,1);
+        val B = Vector.make(noOfIterations+1);
 
         // set up A x = B to be solved
         for (var i:Int=0; i < noOfIterations; i++) {
@@ -131,20 +131,20 @@ public class DIISFockExtrapolator {
 
         for (var i:Int=0; i < noOfIterations; i++) {
             A(noOfIterations,i) = A(i,noOfIterations) = -1.0;
-            B(i,0) = 0.0;
+            B(i) = 0.0;
         } // end for
 
         A(noOfIterations,noOfIterations) = 0.0;
-        B(noOfIterations,0) = -1.0;
+        B(noOfIterations) = -1.0;
 
-        val permutation = Vector.make(A.M);
+        val permutation = new Array[Int](A.M);
         val result = DenseMatrixLAPACK.solveLinearEquation(A, B, permutation);
 
         for (var i:Int=0; i < noOfIterations; i++) {
           val prevFock = fockMatrixList.get(i);
           for (var j:Int=0; j < N; j++) {
              for (var k:Int=0; k < N; k++) {
-                 newFock(j,k) += B(i,0) * prevFock(j,k);
+                 newFock(j,k) += B(i) * prevFock(j,k);
              } // end for
           } // end for
         } // end for

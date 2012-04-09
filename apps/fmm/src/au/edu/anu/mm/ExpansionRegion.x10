@@ -6,13 +6,13 @@
  *  You may obtain a copy of the License at
  *      http://www.opensource.org/licenses/eclipse-1.0.php
  *
- * (C) Copyright Josh Milthorpe 2010.
+ * (C) Copyright Josh Milthorpe 2010-2012.
  */
 package au.edu.anu.mm;
 
-public class ExpansionRegion extends Region  {
-    // XTENLANG-49
-    static type ExpansionRegion(rank:Int) = ExpansionRegion{self.rank==rank};
+public class ExpansionRegion extends Region{rect} {
+// TODO not really rect! should be 'dense' XTENLANG-3000
+    static type ExpansionRegion(rank:Int) = ExpansionRegion{self.rank==rank,rect==true};
     val p : Int;
 
     /**
@@ -21,7 +21,7 @@ public class ExpansionRegion extends Region  {
      * @param p the dimension of the expansion
      */
     public def this(p : Int): ExpansionRegion(2) {
-        super(2, false, true);
+        super(2, true, false);
         this.p = p;
     }
 
@@ -112,12 +112,15 @@ public class ExpansionRegion extends Region  {
 
     public def indexOf(pt:Point) {
 	    if (pt.rank != 2) return -1;
-        return (pt(0) * pt(0)) + pt(1);
+        return indexOf(pt(0), pt(1));
+    }
+
+    public final def indexOf(i0:Int, i1:Int) {
+        return i0*(i0+1) + i1;
     }
 
     public def boundingBox(): Region(rank) {
-        val r = ((0..p) * (-p..p)) as Region(2);
-        return r;
+        return computeBoundingBox();
     }
 
     protected def computeBoundingBox(): Region(rank) {

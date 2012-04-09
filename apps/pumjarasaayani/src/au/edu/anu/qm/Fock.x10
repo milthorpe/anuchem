@@ -22,7 +22,7 @@ public class Fock extends DenseMatrix {
         super(n,n);
     }
   
-    public def compute(hCore:HCore{self.M==this.M,self.N==this.N}, gMatrix:GMatrix{self.M==this.M,self.N==this.N}):void {
+    public def compute(hCore:HCore{self.M==this.M,self.N==this.N}, gMatrix:DenseMatrix{self.M==this.M,self.N==this.N}):void {
         hCore.copyTo(this);
         super.cellAdd(gMatrix);
     }
