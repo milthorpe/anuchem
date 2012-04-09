@@ -55,9 +55,9 @@ This is a modified leapfrog scheme in which positions are calculated at times $.
 
 \subsection{Ion motion}
 
-The cyclotron frequency $\omega_c$ is predicted by $\omega_c = \frac{q B}{m}$\cite{Guan1995}.  
+The cyclotron frequency $\omega_c$ is predicted by $\omega_c = \frac{q B}{m}$\cite{Guan1995} (S.I. units - see Table \ref{tab:conversion}).  
 To achieve 1\% phase error in simulated cyclotron frequency requires $\Omega \Delta t \lesssim 0.3$\cite{Birdsall1985,Patacchini2009}.
-The cyclotron radius $r$ is predicted by $r = \frac{m v}{|q| B}$ and is measured for a single particle simulation by the distance between maxima in the $x$ dimension.
+The cyclotron radius $r$ is predicted by $r = \frac{m v}{|q| B}$ and is measured in simulation for a single particle by the distance between maxima in the $x$ dimension.
 
 The electric field gives rise to a magnetron motion of a lower frequency $\omega_z$.
 In a quadrupolar trapping potential of $V_T$, the modified cyclotron frequency $\omega_+$ is predicted by
@@ -74,6 +74,14 @@ In the simulation, current is induced by the movement of the `image' $\mathbf{E}
 \begin{align}
 I &= \sum_{i=1}^N q_i\mathbf{v}_i \cdot \mathbf{E}_{image}(\mathbf{r}_i) & \mathbf{E}_{image}(\mathbf{r}) &= - \frac{\beta'}{l} r_j & \beta' &= 0.72167
 \end{align}
+
+\subsection{Evaluation of electrostatic potential and forces}
+
+In addition to the influence of the trapping field and the ion-image interaction, each ion experiences a repulsive Coulomb force from every other ion in the packet.
+The calculation of these forces is nominally $O(N^2)$, which makes it infeasible for simulation of large ion packets unless some approximation is used to reduce the computational complexity.
+Previous simulations have either used the particle-in-cell approximation\cite{Leach2009} or virtual particles to reduce the number of interactions to be simulated\cite{Fujiwara2010}.
+Particle-in-cell simulations are best suited to uniform particle distributions with a low required accuracy\cite{Greengard1989}.
+In contrast, the adaptive fast multipole algorithm\cite{Cheng1999} provides guaranteed error bounds for highly non-uniform distributions.
 
 \subsection{Simulation results}
 
