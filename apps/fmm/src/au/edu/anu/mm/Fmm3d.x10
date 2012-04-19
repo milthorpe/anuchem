@@ -176,9 +176,56 @@ public class Fmm3d {
             upwardPass();
             farFieldEnergy = downwardPass();
         }
-        val totalEnergy = getDirectEnergy() + farFieldEnergy;
+        val totalEnergy = 0.5 * getDirectEnergy() + farFieldEnergy;
+
         timer.stop(TIMER_INDEX_TOTAL);
         return totalEnergy;
+    }
+
+    public def printForces() {
+        val lowestLevelBoxes = boxes(numLevels);
+        for(p1 in Place.places()) at(p1) {
+            var maxForceError:Double = 0.0;
+            for ([x,y,z] in lowestLevelBoxes.dist(here)) {
+                val leafBox = lowestLevelBoxes(x,y,z) as FmmLeafBox;
+                if (leafBox != null) {
+                    val boxAtoms = leafBox.getAtoms();
+                    for (i in 0..(boxAtoms.size-1)) {
+                        val atom = boxAtoms(i);
+                        var directForce:Vector3d=Vector3d.NULL;
+                        for (j in 0..(boxAtoms.size-1)) {
+		            if (i!=j) {
+                                val atomJ = boxAtoms(j);
+                                  val rVec = atomJ.centre - atom.centre;
+                                val r2 = rVec.lengthSquared();
+                                val r = Math.sqrt(r2);
+                                val pairForce = (atom.charge * atomJ.charge / r2 / r) * rVec;
+                                  directForce += pairForce; 
+                            }
+                        }
+                        for ([x2,y2,z2] in lowestLevelBoxes.dist(here)) {
+                            val box2 = lowestLevelBoxes(x2,y2,z2) as FmmLeafBox;
+                            if ((x != x2 || y != y2 || z != z2) && box2 != null) {
+                                val box2Atoms = box2.getAtoms();
+                                for (j in 0..(box2Atoms.size-1)) {
+                                  val atomJ = box2Atoms(j);
+                                  val rVec = atomJ.centre - atom.centre;
+                                val r2 = rVec.lengthSquared();
+                                val r = Math.sqrt(r2);
+                                val pairForce = (atom.charge * atomJ.charge / r2 / r) * rVec;
+                                  directForce += pairForce;
+                                }
+                            }
+                        }
+                        val forceError = (directForce - atom.force).magnitude() / directForce.magnitude();
+                        maxForceError = Math.max(forceError, maxForceError);
+                     
+                        //Console.OUT.println(atom.symbol + " force = " + atom.force + " magnitude " + atom.force.length() + " forceError = " + forceError);
+                    }
+                }
+            }
+            Console.OUT.println("max force error = " + maxForceError);
+        }
     }
 
 
@@ -189,16 +236,18 @@ public class Fmm3d {
         val offset = this.offset; // TODO shouldn't be necessary XTENLANG-1913
         val lowestLevelDim = this.lowestLevelDim; // TODO shouldn't be necessary XTENLANG-1913
         val size = this.size; // TODO shouldn't be necessary XTENLANG-1913
-        val boxAtomsTemp = DistArray.make[ArrayList[PointCharge]](lowestLevelBoxes.dist, (Point) => new ArrayList[PointCharge]());
+        val boxAtomsTemp = DistArray.make[ArrayList[MMAtom]](lowestLevelBoxes.dist, (Point) => new ArrayList[MMAtom]());
         finish ateach(p1 in atoms) {
             val localAtoms = atoms(p1);
             finish for (i in 0..(localAtoms.size-1)) {
                 val atom = localAtoms(i);
+                val symbol = atom.symbol;
                 val charge = atom.charge;
+                val mass = atom.mass;
                 val offsetCentre = atom.centre + offset;
                 val boxIndex = Fmm3d.getLowestLevelBoxIndex(offsetCentre, lowestLevelDim, size);
                 at(boxAtomsTemp.dist(boxIndex)) async {
-                    val remoteAtom = new PointCharge(offsetCentre, charge);
+                    val remoteAtom = new MMAtom(symbol, offsetCentre, mass, charge);
                     atomic boxAtomsTemp(boxIndex).add(remoteAtom);
                 }
             }
@@ -226,6 +275,7 @@ public class Fmm3d {
     /** 
      * For each atom, creates the multipole expansion and adds it to the
      * lowest level box that contains the atom.
+     * Also set the forces to zero.
      */
     def multipoleLowestLevel() {
         //Console.OUT.println("multipole lowest level");
@@ -245,6 +295,7 @@ public class Fmm3d {
                         val atomLocation = boxCentre.vector(atom.centre);
                         // only one thread per box, so unsafe addOlm is OK
                         leafBox.multipoleExp.addOlm(atom.charge, atomLocation, numTerms);
+                        atom.force = Vector3d.NULL;
                     }
                 }
             }
@@ -334,7 +385,9 @@ public class Fmm3d {
         val farField = finish(SumReducer()) {
             ateach([x,y,z] in topLevelBoxes) {
                 val box = topLevelBoxes(x,y,z);
-                offer box.downward(size, topLevelExp, fmmOperators, locallyEssentialTree, boxes);
+                if (box != null) {
+                    offer box.downward(size, topLevelExp, fmmOperators, locallyEssentialTree, boxes);
+                }
             }
         };
         timer.stop(TIMER_INDEX_DOWNWARD);
@@ -507,8 +560,14 @@ public class Fmm3d {
                             val atom1 = box1Atoms(atomIndex1);
                             for (sameBoxAtomIndex in 0..(atomIndex1-1)) {
                                 val sameBoxAtom = box1Atoms(sameBoxAtomIndex);
-                                val pairEnergy = atom1.charge * sameBoxAtom.charge / atom1.centre.distance(sameBoxAtom.centre);
+                                val rVec = sameBoxAtom.centre - atom1.centre;
+                                val r2 = rVec.lengthSquared();
+                                val r = Math.sqrt(r2);
+                                val pairEnergy = 2.0 * atom1.charge * sameBoxAtom.charge / r;
                                 thisPlaceEnergy += pairEnergy;
+                                val pairForce = (atom1.charge * sameBoxAtom.charge / r2 / r) * rVec;
+                                atom1.force += pairForce;
+                                sameBoxAtom.force -= pairForce;
                             }
                         }
 
@@ -526,7 +585,12 @@ public class Fmm3d {
                                     val atom2 = box2Atoms(otherBoxAtomIndex);
                                     for (atomIndex1 in 0..(box1Atoms.size-1)) {
                                         val atom1 = box1Atoms(atomIndex1);
-                                        thisPlaceEnergy += atom1.charge * atom2.charge / atom1.centre.distance(atom2.centre);
+                                        val rVec = atom2.centre - atom1.centre;
+                                        val r2 = rVec.lengthSquared();
+                                        val r = Math.sqrt(r2);
+                                        thisPlaceEnergy += atom1.charge * atom2.charge / r;
+                                        val pairForce = (atom1.charge * atom2.charge / r2 / r) * rVec;
+                                        atom1.force += pairForce;
                                     }
                                 }
                             }
@@ -681,7 +745,7 @@ public class Fmm3d {
     private static def getAtomsForBox(lowestLevelBoxes : DistArray[FmmBox](3), x : Int, y : Int, z : Int) {
         val box = lowestLevelBoxes(x, y, z) as FmmLeafBox;
         if (box != null) {
-            return box.getAtoms();
+            return box.getAtomCharges();
         } else {
             return null;
         }

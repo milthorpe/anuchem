@@ -6,7 +6,7 @@
  *  You may obtain a copy of the License at
  *      http://www.opensource.org/licenses/eclipse-1.0.php
  *
- * (C) Copyright Josh Milthorpe 2010.
+ * (C) Copyright Josh Milthorpe 2010-2012.
  */
 package au.edu.anu.mm;
 
@@ -93,6 +93,65 @@ public class MultipoleExpansion extends Expansion {
     	    }
             rfac = rfac * v_pole.r;
         }
+    }
+
+    /**
+     * Calculate the multipole-like term O_{lm} (with m >= 0) for a point v
+     * and the derivatives in spherical polar coordinates.
+     * @param localExp local expansion of potential due to distant particles
+     * @return the gradient of the potential
+     */
+    public def addOlmWithGradient(q:Double, v:Tuple3d, p:Int, 
+                                    localExp:LocalExpansion):Vector3d {
+        val v_pole = Polar3d.getPolar3d(v);
+        val pplm = AssociatedLegendrePolynomial.getPlk(v_pole.theta, p+1);
+
+        val localTerms = localExp.terms;
+
+        var dr:Double = 0.0;
+        var dt:Double = 0.0;
+        var dp:Double = 0.0;
+
+        terms(0,0) += Complex(q * pplm(0,0), 0.0);
+
+        val phifac0 = Complex(Math.cos(-v_pole.phi), Math.sin(-v_pole.phi));
+        var rfac : Double = v_pole.r;
+        var rfacPrev : Double = 1.0;
+        var il : Double = 1.0;
+        for (l in 1..p) {
+            val Ml0 = localTerms(l,0);
+            il = il * l;
+            var ilm : Double = il;
+            var phifac : Complex = Complex.ONE;
+            terms(l,0) += phifac / ilm * (q * rfac * pplm(l,0));
+            dr += (Ml0 * phifac / ilm * (q * l * rfacPrev * pplm(l,0))).re;
+            val theta_l0 = phifac / ilm * q * rfacPrev * -pplm(l,1);
+            dt += (Ml0 * theta_l0).re;
+            // phi terms cancel for m=0
+            for (m in 1..l) {
+                val Mlm = localTerms(l,m);
+                val Mlmm = localTerms(l,-m);
+                val sign = (1-2*(m%2));
+                ilm = ilm*(l+m);
+                phifac = phifac * phifac0;
+                val O_lm = phifac / ilm * (q * rfac * pplm(l,m));
+                terms(l,m) += O_lm;
+                terms(l,-m) += O_lm.conjugate() * sign;
+                val r_lm = phifac / ilm * (q * l * rfacPrev * pplm(l,m));
+                dr += (Mlm * r_lm).re;
+                dr += (Mlmm * r_lm.conjugate() * sign).re;
+                val Plm1 = (m<l) ? pplm(l,m+1) : 0.0;
+                val theta_lm = phifac / ilm * 0.5 * q * rfacPrev * ((l-m+1)*(l+m) * pplm(l,m-1) - Plm1);
+                dt += (Mlm * theta_lm).re;
+                dt += (Mlmm * theta_lm.conjugate() * sign).re;
+                val phi_lm = Complex.I * phifac / ilm * 0.5 * q * rfacPrev * ((l-m+1)*(l-m+2) * pplm(l+1,m-1) + pplm(l+1,m+1));
+                dp += (Mlm * phi_lm).re;
+                dp += (Mlmm * phi_lm.conjugate() * sign).re;
+    	    }
+            rfacPrev = rfac;
+            rfac = rfac * v_pole.r;
+        }
+        return v_pole.getGradientVector(dr, -dt, -dp);
     }
 
     /**

@@ -33,7 +33,7 @@ public class ElectrostaticDirectMethod {
     private val asyncComms = true;
 
     /** The charges in the simulation, divided up into an array of ValRails, one for each place. */
-    private val atoms : DistArray[Rail[PointCharge]](1);
+    private val atoms : DistArray[Rail[MMAtom]](1);
     private val otherAtoms : DistArray[Rail[Rail[PointCharge]]](1);
 
     /**
@@ -41,14 +41,12 @@ public class ElectrostaticDirectMethod {
      * @param atoms the atoms in the unit cell, divided into separate Arrays for each place
      */
     public def this(atoms : DistArray[Rail[MMAtom]](1)) {
-		this.atoms = DistArray.make[Rail[PointCharge]](Dist.makeUnique(), 
-			([i] : Point) => new Rail[PointCharge](atoms(i).size,
-												(j : Int) => new PointCharge(atoms(i)(j).centre, atoms(i)(j).charge)));
+		this.atoms = atoms;
         this.otherAtoms = DistArray.make[Rail[Rail[PointCharge]]](Dist.makeUnique(), 
             ([p] : Point) => new Rail[Rail[PointCharge]](Place.MAX_PLACES));
     }
 
-    public def expectationValue(twoParticleFunction:(a:PointCharge,b:PointCharge) => Double):Double {
+    public def expectationValue(twoParticleFunction:(a:MMAtom,b:MMAtom) => Double):Double {
         var total:Double = 0.0;
         val a = atoms(here.id);
         for ([i] in a) {
@@ -74,6 +72,7 @@ public class ElectrostaticDirectMethod {
             if (asyncComms) {
                 ateach([p1] in atoms) {
                     val myAtoms = atoms(p1);
+                    val myCharges = new Array[PointCharge](myAtoms.size, (i:Int)=>PointCharge(myAtoms(i).centre, myAtoms(i).charge));
                     var energyThisPlace : Double = 0.0;
 
                     // before starting computation, send my atoms to next place
@@ -81,7 +80,7 @@ public class ElectrostaticDirectMethod {
                     if (nextPlace != here) {
                         @Uncounted at(nextPlace) async {
                             atomic {
-                                otherAtoms(nextPlace.id)(p1) = myAtoms;
+                                otherAtoms(nextPlace.id)(p1) = myCharges;
                             }
                         }
                     }
@@ -91,7 +90,14 @@ public class ElectrostaticDirectMethod {
 			            val atomI = myAtoms(i);
                         for (j in 0..(i-1)) {
 				            val atomJ = myAtoms(j);
-                            energyThisPlace += 2.0 * atomI.charge * atomJ.charge / atomJ.centre.distance(atomI.centre);
+                            val rVec = atomJ.centre - atomI.centre;
+                            val r2 = rVec.lengthSquared();
+                            val r = Math.sqrt(r2);
+                            val pairForce = (atomI.charge * atomJ.charge / r2 / r) * rVec;
+                            atomI.force += pairForce;
+				            atomJ.force -= pairForce;
+                            val pairEnergy = atomI.charge * atomJ.charge / r;
+                            energyThisPlace += 2.0 * pairEnergy;
                         }
                     }
 
@@ -103,7 +109,7 @@ public class ElectrostaticDirectMethod {
                             val targetPlace = target;
                             @Uncounted at(targetPlace) async {
                                 atomic {
-                                    otherAtoms(targetPlace.id)(p1) = myAtoms;
+                                    otherAtoms(targetPlace.id)(p1) = myCharges;
                                 }
                             }
                         }
@@ -117,7 +123,13 @@ public class ElectrostaticDirectMethod {
                             val atomJ = other(j);
                             for (i in 0..(myAtoms.size-1)) {
                                 val atomI = myAtoms(i);
-                                energyThisPlace += atomI.charge * atomJ.charge / atomJ.centre.distance(atomI.centre);
+                                val rVec = atomJ.centre - atomI.centre;
+                                val r2 = rVec.lengthSquared();
+                                val r = Math.sqrt(r2);
+                                val pairForce = (atomI.charge * atomJ.charge / r2 / r) * rVec;
+                                atomI.force += pairForce;
+                                val pairEnergy = atomI.charge * atomJ.charge / r;
+                                energyThisPlace += pairEnergy;
                             }
                         }
                         target = target.next();
@@ -133,7 +145,11 @@ public class ElectrostaticDirectMethod {
                     for ([p2] in atoms) async {
                         if (p2 != p1) { // TODO region difference
                             var energyWithOther : Double = 0.0;
-                            val otherPlaceAtoms = at(atoms.dist(p2)) {atoms(p2)};
+                            val otherPlaceAtoms = at(atoms.dist(p2)) {
+                                val atomsHere = atoms(p2);
+                                val chargesHere = new Array[PointCharge](atomsHere.size, (i:Int)=>PointCharge(atomsHere(i).centre, atomsHere(i).charge));
+                                chargesHere
+                            };
                             for (j in 0..(otherPlaceAtoms.size-1)) {
                                 val atomJ = otherPlaceAtoms(j);
                                 for (i in 0..(myAtoms.size-1)) {
@@ -151,7 +167,14 @@ public class ElectrostaticDirectMethod {
 					    val atomI = myAtoms(i);
                         for (j in 0..(i-1)) {
 						    val atomJ = myAtoms(j);
-                            energyThisPlace += 2.0 * atomI.charge * atomJ.charge / atomJ.centre.distance(atomI.centre);
+                            val rVec = atomJ.centre - atomI.centre;
+                            val r2 = rVec.lengthSquared();
+                            val r = Math.sqrt(r2);
+                            val pairForce = (atomI.charge * atomJ.charge / r2 / r) * rVec;
+                            atomI.force += pairForce;
+				            atomJ.force -= pairForce;
+                            val pairEnergy = 2.0 * atomI.charge * atomJ.charge / r;
+                            energyThisPlace += pairEnergy;
                         }
                     }
                     offer energyThisPlace;
@@ -160,7 +183,17 @@ public class ElectrostaticDirectMethod {
         };
        
         timer.stop(TIMER_INDEX_TOTAL);
-        return directEnergy / 2.0;
+        return 0.5 * directEnergy;
+    }
+
+    public def printForces() {
+        for(p1 in atoms) at(atoms.dist(p1)) {
+            val atomsHere = atoms(p1);
+            for (i in 0..(atomsHere.size-1)) {
+                val atom = atomsHere(i);
+                Console.OUT.println(atom.symbol + " force = " + atom.force + " magnitude " + atom.force.length());
+            }
+        }
     }
 
     static struct SumReducer implements Reducible[Double] {

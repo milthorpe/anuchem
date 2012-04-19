@@ -6,14 +6,13 @@
  *  You may obtain a copy of the License at
  *      http://www.opensource.org/licenses/eclipse-1.0.php
  *
- * (C) Copyright Josh Milthorpe 2010-2011.
+ * (C) Copyright Josh Milthorpe 2010-2012.
  */
 package au.edu.anu.mm;
 
 import x10.util.ArrayList;
 import x10x.vector.Point3d;
 import x10x.vector.Vector3d;
-import au.edu.anu.chem.PointCharge;
 import au.edu.anu.chem.mm.MMAtom;
 import au.edu.anu.util.Timer;
 
@@ -76,7 +75,7 @@ public class PeriodicFmm3d extends Fmm3d {
             combineMacroscopicExpansions();
             farFieldEnergy = downwardPass();
         }
-        val totalEnergy = getDirectEnergy() + farFieldEnergy;
+        val totalEnergy = 0.5 * getDirectEnergy() + farFieldEnergy;
         timer.stop(TIMER_INDEX_TOTAL);
         return totalEnergy;
     }
@@ -145,7 +144,7 @@ public class PeriodicFmm3d extends Fmm3d {
         val offset = this.offset; // TODO shouldn't be necessary XTENLANG-1913
         val lowestLevelDim = this.lowestLevelDim; // TODO shouldn't be necessary XTENLANG-1913
         val size = this.size; // TODO shouldn't be necessary XTENLANG-1913
-        val boxAtomsTemp = DistArray.make[ArrayList[PointCharge]](lowestLevelBoxes.dist, (Point) => new ArrayList[PointCharge]());
+        val boxAtomsTemp = DistArray.make[ArrayList[MMAtom]](lowestLevelBoxes.dist, (Point) => new ArrayList[MMAtom]());
         val dipole = finish(VectorSumReducer()) {
             ateach(p1 in atoms) {
                 var myDipole : Vector3d = Vector3d.NULL;
@@ -153,6 +152,7 @@ public class PeriodicFmm3d extends Fmm3d {
                 finish for (i in 0..(localAtoms.size-1)) {
                     val atom = localAtoms(i);
                     val charge = atom.charge;
+                    val mass = atom.mass;
                     val offsetCentre = atom.centre + offset;
                     myDipole = myDipole + Vector3d(offsetCentre) * charge;
                     val boxIndex = Fmm3d.getLowestLevelBoxIndex(offsetCentre, lowestLevelDim, size);
@@ -161,7 +161,7 @@ public class PeriodicFmm3d extends Fmm3d {
                     val y = boxIndex(1);
                     val z = boxIndex(2);
                     at(boxAtomsTemp.dist(x,y,z)) async {
-                        val remoteAtom = new PointCharge(offsetCentre, charge);
+                        val remoteAtom = new MMAtom(offsetCentre, mass, charge);
                         atomic boxAtomsTemp(x,y,z).add(remoteAtom);
                     }
                 }
@@ -187,12 +187,12 @@ public class PeriodicFmm3d extends Fmm3d {
         timer.stop(TIMER_INDEX_TREE);
     }
 
-    def addAtomToLowestLevelBoxAsync(boxAtoms : DistArray[ArrayList[PointCharge]](3), boxIndex : Point(3), offsetCentre : Point3d, charge : Double) {
+    def addAtomToLowestLevelBoxAsync(boxAtoms : DistArray[ArrayList[MMAtom]](3), boxIndex : Point(3), offsetCentre : Point3d, mass:Double, charge : Double) {
         val size = this.size; // TODO shouldn't be necessary XTENLANG-1913
         val numTerms = this.numTerms; // TODO shouldn't be necessary XTENLANG-1913
         val lowestLevelBoxes = boxes(numLevels);
         at(lowestLevelBoxes.dist(boxIndex)) async {
-            val remoteAtom = new PointCharge(offsetCentre, charge);
+            val remoteAtom = new MMAtom(offsetCentre, mass, charge);
             val leafBox = lowestLevelBoxes(boxIndex) as FmmLeafBox;
             val boxLocation = leafBox.getCentre(size).vector(offsetCentre);
             val atomExpansion = MultipoleExpansion.getOlm(charge, boxLocation, numTerms);
@@ -207,30 +207,30 @@ public class PeriodicFmm3d extends Fmm3d {
      * to cancel the dipole moment.
      * @see Kudin & Scuseria, section 2.3
      */
-    def cancelDipole(dipole : Vector3d, boxAtoms : DistArray[ArrayList[PointCharge]](3)) : Vector3d {
+    def cancelDipole(dipole : Vector3d, boxAtoms : DistArray[ArrayList[MMAtom]](3)) : Vector3d {
         //Console.OUT.println("dipole = " + dipole);
         var newDipole : Vector3d = dipole;
         finish {
             val p1 = Point3d(size, 0.0, 0.0) + offset;
             val q1 = - dipole.i / size;
-            addAtomToLowestLevelBoxAsync(boxAtoms, Point.make(lowestLevelDim-1, 0, 0), p1, q1);
+            addAtomToLowestLevelBoxAsync(boxAtoms, Point.make(lowestLevelDim-1, 0, 0), p1, 0.0, q1);
             newDipole = newDipole + Vector3d(p1) * q1;
 
             val p2 = Point3d(0.0, size, 0.0) + offset;
             val q2 = - dipole.j / size;
-            addAtomToLowestLevelBoxAsync(boxAtoms, Point.make(0, lowestLevelDim-1, 0), p2, q2);
+            addAtomToLowestLevelBoxAsync(boxAtoms, Point.make(0, lowestLevelDim-1, 0), p2, 0.0, q2);
             newDipole = newDipole + Vector3d(p2) * q2;
 
 
             val p3 = Point3d(0.0, 0.0, size) + offset;
             val q3 = - dipole.k / size;
-            addAtomToLowestLevelBoxAsync(boxAtoms, Point.make(0, 0, lowestLevelDim-1), p3, q3);
+            addAtomToLowestLevelBoxAsync(boxAtoms, Point.make(0, 0, lowestLevelDim-1), p3, 0.0, q3);
             newDipole = newDipole + Vector3d(p3) * q3;
 
 
             val p0 = Point3d(0.0, 0.0, 0.0)  + offset;
             val q0 = -(q1 + q2 + q3);
-            addAtomToLowestLevelBoxAsync(boxAtoms, Point.make(0, 0, 0),                p0, q0);
+            addAtomToLowestLevelBoxAsync(boxAtoms, Point.make(0, 0, 0),                p0, 0.0, q0);
             newDipole = newDipole + Vector3d(p0) * q0;
 /*
             Console.OUT.println(q1 + " at " + p1);
@@ -295,7 +295,7 @@ public class PeriodicFmm3d extends Fmm3d {
                                         val atom1 = box1Atoms(atomIndex1);
                                         val distance = atom1.centre.distance(translatedCentre);
                                         if (distance != 0.0) { // don't include dipole-balancing charges at same point
-                                            thisPlaceEnergy += atom1.charge * atom2.charge / atom1.centre.distance(translatedCentre);
+                                            thisPlaceEnergy += 0.5 * atom1.charge * atom2.charge / atom1.centre.distance(translatedCentre);
                                         }
                                     }
                                 }

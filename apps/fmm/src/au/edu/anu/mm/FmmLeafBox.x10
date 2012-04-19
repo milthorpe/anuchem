@@ -14,6 +14,7 @@ import x10.util.ArrayList;
 
 import x10x.vector.Point3d;
 import au.edu.anu.chem.PointCharge;
+import au.edu.anu.chem.mm.MMAtom;
 
 /**
  * This class represents a leaf node (with no children)
@@ -21,18 +22,27 @@ import au.edu.anu.chem.PointCharge;
  * @author milthorpe
  */
 public class FmmLeafBox extends FmmBox {
-    private var atoms : Rail[PointCharge];
+    private var atoms : Rail[MMAtom];
 
-    /** The U-list consists of all leaf boxes not well-separated to this box. */
+    /** The U-list consists of all leaf boxes not well-separated from this box. */
     private var uList : Rail[Point(3)];
 
     public def this(level : Int, x : Int, y : Int, z : Int, numTerms : Int, parent : GlobalRef[FmmBox]) { 
         super(level, x, y, z, numTerms, parent);
     }
 
+    public def getAtomCharges():Rail[PointCharge] {
+        val charges = new Array[PointCharge](atoms.size);
+        for (i in atoms) {
+            val atom = atoms(i);
+            charges(i) = PointCharge(atom.centre, atom.charge);
+        }
+        return charges;
+    }
+
     public def getAtoms() = atoms;
 
-    public def setAtoms(atoms : Rail[PointCharge]) {
+    public def setAtoms(atoms : Rail[MMAtom]) {
         this.atoms = atoms;
     }
 
@@ -46,6 +56,7 @@ public class FmmLeafBox extends FmmBox {
     /**
      * Returns the far-field potential of all charges within this box due to
      * all charges in well-separated boxes.
+     * Updates forces on each particle due to long-range interactions.
      * @param size the side length of the full simulation box
      */
     private def getPotential(size:Double) : Double {
@@ -53,19 +64,21 @@ public class FmmLeafBox extends FmmBox {
         val boxCentre = getCentre(size);
         val p = localExp.p;
 
+        val vExp = new MultipoleExpansion(p);
         val chargeExpansion = new MultipoleExpansion(p);
         for (atomIndex in 0..(boxAtoms.size-1)) {
             val atom = boxAtoms(atomIndex);
             val locationWithinBox = atom.centre.vector(boxCentre);
-            chargeExpansion.addOlm(atom.charge, locationWithinBox, p);
+            val force = vExp.addOlmWithGradient(atom.charge, locationWithinBox, p, localExp);
+            atom.force += force;
         }
-
-        var potential : Double = 0.0;
+        
+        var potential:Double = 0.0;
         // TODO use lift/reduction?
         // TODO should be just:  for ([j,k] in terms.region) {
         for (j in 0..p) {
             for (k in -j..j) {
-                potential += (localExp.terms(j,k) * chargeExpansion.terms(j,k)).re;
+                potential += (localExp.terms(j,k) * vExp.terms(j,k)).re;
             }
         }
         return potential;
@@ -86,12 +99,11 @@ public class FmmLeafBox extends FmmBox {
      */
     public def createUList(ws : Int) {
         val levelDim = Math.pow2(this.level);
-        // interact with "left half" of uList i.e. only boxes with x<=box.x
         val uList = new ArrayList[Point(3)]();
-        for (x in Math.max(0,this.x-ws)..this.x) {
+        for (x in Math.max(0,this.x-ws)..Math.min(levelDim-1,this.x+ws)) {
             for (y in Math.max(0,this.y-ws)..Math.min(levelDim-1,this.y+ws)) {
                 for (z in Math.max(0,this.z-ws)..Math.min(levelDim-1,this.z+ws)) {
-                    if (x < this.x || (x == this.x && y < this.y) || (x == this.x && y == this.y && z < this.z)) {
+                    if (!(x==this.x && y==this.y && z==this.z)) {
                         uList.add(Point.make(x,y,z));
                     }
                 }
@@ -107,12 +119,11 @@ public class FmmLeafBox extends FmmBox {
      */
     public def createUListPeriodic(ws : Int) {
         val levelDim = Math.pow2(this.level);
-        // interact with "left half" of uList i.e. only boxes with x<=box.x
         val uList = new ArrayList[Point(3)]();
-        for (x in (this.x-ws)..this.x) {
+        for (x in (this.x-ws)..(this.x+ws)) {
             for (y in (this.y-ws)..(this.y+ws)) {
                 for (z in (this.z-ws)..(this.z+ws)) {
-                    if (x < this.x || (x == this.x && y < this.y) || (x == this.x && y == this.y && z < this.z)) {
+                    if (!(x==this.x && y==this.y && z==this.z)) {
                         uList.add(Point.make(x,y,z));
                     }
                 }
