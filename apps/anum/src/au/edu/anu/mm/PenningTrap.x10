@@ -83,7 +83,7 @@ public class PenningTrap {
         this.V_T = trappingPotential;
         this.B = magneticField;
         this.edgeLength = edgeLength;
-        this.eNorm = PenningTrap.ALPHA_PRIME / (edgeLength * edgeLength);
+        this.eNorm = V_T * PenningTrap.ALPHA_PRIME / (edgeLength * edgeLength);
         this.magB = magneticField.magnitude();
     }
 
