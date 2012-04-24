@@ -152,7 +152,6 @@ public class PeriodicFmm3d extends Fmm3d {
                 finish for (i in 0..(localAtoms.size-1)) {
                     val atom = localAtoms(i);
                     val charge = atom.charge;
-                    val mass = atom.mass;
                     val offsetCentre = atom.centre + offset;
                     myDipole = myDipole + Vector3d(offsetCentre) * charge;
                     val boxIndex = Fmm3d.getLowestLevelBoxIndex(offsetCentre, lowestLevelDim, size);
@@ -161,8 +160,8 @@ public class PeriodicFmm3d extends Fmm3d {
                     val y = boxIndex(1);
                     val z = boxIndex(2);
                     at(boxAtomsTemp.dist(x,y,z)) async {
-                        val remoteAtom = new MMAtom(offsetCentre, mass, charge);
-                        atomic boxAtomsTemp(x,y,z).add(remoteAtom);
+                        atomic boxAtomsTemp(x,y,z).add(atom);
+                        atom.centre = offsetCentre; // move centre of copy atom only
                     }
                 }
                 offer myDipole;

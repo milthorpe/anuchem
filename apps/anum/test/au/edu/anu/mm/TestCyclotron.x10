@@ -32,6 +32,8 @@ public class TestCyclotron {
         var timesteps:Int = 16000; // number of timesteps
         var dt:Double = 25.0; // timestep in ns
         var logSteps:Int = 1;
+        var fmmDensity:Double = 60.0;
+        var fmmNumTerms:Int = 10;
         if (args.size > 0) {
             N = Int.parseInt(args(0));
             if (args.size > 1) {
@@ -40,6 +42,12 @@ public class TestCyclotron {
                     dt = Double.parseDouble(args(2));
                     if (args.size > 3) {
                         logSteps = Int.parseInt(args(3));
+                        if (args.size > 4) {
+                            fmmDensity = Double.parseDouble(args(4));
+                            if (args.size > 5) {
+                                fmmNumTerms = Int.parseInt(args(5));
+                            }
+                        }
                     }
                 }
             }
@@ -82,7 +90,7 @@ public class TestCyclotron {
             val ex = Math.cos(theta) * er;
             val ey = Math.sin(theta) * er;
             val ion:MMAtom;
-            if (i % 2 == 0) {
+            if (i % 2 == 1) {
                 ion = new MMAtom(species1, Point3d(-r1+ex, ey, perturbation(rand, 1e-3)), mass1, q);
             } else {
                 ion = new MMAtom(species2, Point3d(-r2+ex, ey, perturbation(rand, 1e-3)), mass2, q);
@@ -97,7 +105,7 @@ public class TestCyclotron {
         val distAtoms = DistArray.make[Rail[MMAtom]](Dist.makeBlock(0..0, 0));
         distAtoms(0) = atoms;
 
-        val trap = new PenningTrap(N, distAtoms, V, new Vector3d(0.0, 0.0, B), edgeLength);
+        val trap = new PenningTrap(N, distAtoms, V, new Vector3d(0.0, 0.0, B), edgeLength, fmmDensity, fmmNumTerms);
         trap.mdRun(dt, timesteps, logSteps);
     }
 

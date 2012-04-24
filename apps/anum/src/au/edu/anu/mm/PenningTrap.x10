@@ -48,14 +48,13 @@ public class PenningTrap {
     static val COULOMB_FACTOR = 1.439964485e-9; // CHARGE_FACTOR / (4 PI e0)
     private var numAtoms:Int;
 
-    /** The atoms in the simulation, divided up into a distributed array of Arrays, one for each place. */
-    private val atoms:DistArray[Rail[MMAtom]](1);
-
     /** Side length of cubic trap. */
     val edgeLength:Double;
 
     /** Normalization factor for electric field. */
     val eNorm:Double;
+
+    val fmm:Fmm3d;
 
     private val V_T:Double; // trapping potential, in V
 
@@ -77,17 +76,19 @@ public class PenningTrap {
                     atoms:DistArray[Rail[MMAtom]](1),
                     trappingPotential:Double,
                     magneticField:Vector3d,
-                    edgeLength:Double) {
+                    edgeLength:Double,
+                    fmmDensity:Double,
+                    fmmNumTerms:Int) {
         this.numAtoms = numAtoms;
-        this.atoms = atoms;
+        val trapRadius = edgeLength / 2.0;
+        this.fmm = new Fmm3d(fmmDensity, fmmNumTerms, 1, Point3d(-trapRadius, -trapRadius, -trapRadius), edgeLength, numAtoms);
+        fmm.assignAtomsToBoxes(atoms);
         this.V_T = trappingPotential;
         this.B = magneticField;
         this.edgeLength = edgeLength;
         this.eNorm = V_T * PenningTrap.ALPHA_PRIME / (edgeLength * edgeLength);
         this.magB = magneticField.magnitude();
     }
-
-    public def getAtoms() = atoms;
 
     /**
      * Perform a molecular mechanics run on the system of atoms
@@ -102,23 +103,35 @@ public class PenningTrap {
         val current = new Array[Double](numSteps);
  
         SystemProperties.printHeader();
-           
-        finish ateach(placeId in atoms) {
-            var step : Int = 0;
-            val myAtoms = atoms(placeId);
+
+        val fmmBoxes = fmm.boxes(fmm.numLevels);
+        val posPrinter = new Printer(new FileWriter(new File("positions_0.dat"), false));
+        posPrinter.println("# positions at time 0");
+        finish ateach(place in Dist.makeUnique()) {
+            var step:Int = 0;
             val props = new SystemProperties();
-            for (i in 0..(myAtoms.size-1)) {
-                if (myAtoms(i) != null) {
-                    props.accumulate(myAtoms(i), this);
+            for ([x,y,z] in fmmBoxes.dist(here)) {
+                val box = fmmBoxes(x,y,z) as FmmLeafBox;
+                if (box != null) {
+                    val myAtoms = box.getAtoms();
+                    for (i in 0..(myAtoms.size-1)) {
+                        if (myAtoms(i) != null) {
+                            props.accumulate(myAtoms(i), this);
+                        }
+                    }
+                    // print start positions
+                    printPositions(timestep * step, box.getAtoms());
                 }
             }
+            Team.WORLD.allreduce[Double](here.id, props.raw, 0, props.raw, 0, props.raw.size, Team.ADD);
             if (here == Place.FIRST_PLACE) {
                 props.print(0, numAtoms);
             }
+
             while(step < numSteps) {
                 step++;
                 props.reset();
-                mdStep(timestep, myAtoms, props);
+                mdStepLocal(timestep, fmmBoxes, props);
                 if (step % logSteps == 0) {
                     Team.WORLD.allreduce[Double](here.id, props.raw, 0, props.raw, 0, props.raw.size, Team.ADD);
                     if (here == Place.FIRST_PLACE) {
@@ -130,9 +143,19 @@ public class PenningTrap {
                 }
             }
             if (here == Place.FIRST_PLACE) {
-                printPositions(timestep * step, myAtoms);
                 printCurrent(timestep, current);
                 printMassSpectrum(timestep, current);
+            }
+
+            // print end positions
+            val timeInt = (timestep * step) as Int;
+            val endPosPrinter = new Printer(new FileWriter(new File("positions_" + timeInt + ".dat"), false));
+            endPosPrinter.println("# positions at time " + timeInt);
+            for ([x,y,z] in fmmBoxes.dist(here)) {
+                val box = fmmBoxes(x,y,z) as FmmLeafBox;
+                if (box != null) {
+                    printPositions(timestep * step, box.getAtoms());
+                }
             }
         }
 
@@ -142,70 +165,128 @@ public class PenningTrap {
      * Performs a single molecular dynamics timestep
      * using the velocity-Verlet algorithm. 
      * @param dt time in ns
-     * @param myAtoms the atoms that are stored here
+     * @param fmmBoxes the lowest level boxes in the FMM tree
      * @param props the system properties to evaluate
      */
-    public def mdStep(dt:Double, myAtoms:Rail[MMAtom], props:SystemProperties) {
-        for (i in 0..(myAtoms.size-1)) {
-            val atom = myAtoms(i);
-            if (atom != null) {
-    
-                // timestep using Boris integrator
-                val chargeMassRatio = atom.charge / atom.mass * CHARGE_MASS_FACTOR;
+    public def mdStepLocal(dt:Double, fmmBoxes:DistArray[FmmBox](3), props:SystemProperties) {
+        finish for ([x,y,z] in fmmBoxes.dist(here)) async {
+            val box = fmmBoxes(x,y,z) as FmmLeafBox;
+            if (box != null) {
+                val myAtoms = box.getAtoms();
+                for (i in 0..(myAtoms.size-1)) {
+                    val atom = myAtoms(i);
+                    if (atom != null) {
+            
+                        // timestep using Boris integrator
+                        val chargeMassRatio = atom.charge / atom.mass * CHARGE_MASS_FACTOR;
 
-                // get the electric field at ion centre due to other ions
-                /*
-                var E:Vector3d = Vector3d.NULL;
-                for (j in 0..(myAtoms.size-1)) {
-                    if (i == j) continue;
-                    val atomJ = myAtoms(j);
-                    if (atomJ != null) {
-                        val r = atom.centre - atomJ.centre;
-                        val r2 = r.lengthSquared();
-                        val absR = Math.sqrt(r2);
-                        val atomContribution = COULOMB_FACTOR * atomJ.charge / r2 / absR * r;
-                        //Console.OUT.println(j + " => " + i + " = " + atomContribution);
-                        E = E + atomContribution;
+                        // get the electric field at ion centre due to other ions
+                        /*
+                        var E:Vector3d = Vector3d.NULL;
+                        for (j in 0..(myAtoms.size-1)) {
+                            if (i == j) continue;
+                            val atomJ = myAtoms(j);
+                            if (atomJ != null) {
+                                val r = atom.centre - atomJ.centre;
+                                val r2 = r.lengthSquared();
+                                val absR = Math.sqrt(r2);
+                                val atomContribution = COULOMB_FACTOR * atomJ.charge / r2 / absR * r;
+                                //Console.OUT.println(j + " => " + i + " = " + atomContribution);
+                                E = E + atomContribution;
+                            }
+                        }
+                        var Ef:Vector3d = getElectrostaticField(atom.centre);
+                        //Console.OUT.println("Ef(" + i + ") = " + Ef.length() + " Ej = " + E.length() + " proportion " + Ef.length()/E.length());
+                        E += Ef;
+                        */
+                        val E = getElectrostaticField(atom.centre);
+
+                        //Console.OUT.println("E = " + E);
+                        val halfA = 0.5 * dt * 1.0e-9 * chargeMassRatio * E;
+                        val vMinus = atom.velocity + halfA; // m
+
+                        //val larmorFreq = chargeMassRatio * magB;
+                        val t = 0.5 * dt * 1.0e-9 * chargeMassRatio * B;
+                        val vPrime = vMinus + vMinus.cross(t);
+
+                        val magt2 = t.lengthSquared();
+                        val s = t * (2.0 / (1.0 + magt2));
+                        val vPlus = vMinus + vPrime.cross(s);
+
+                        atom.velocity = vPlus + halfA;
                     }
                 }
-                var Ef:Vector3d = getElectrostaticField(atom.centre);
-                //Console.OUT.println("Ef(" + i + ") = " + Ef.length() + " Ej = " + E.length() + " proportion " + Ef.length()/E.length());
-                E += Ef;
-                */
-                val E = getElectrostaticField(atom.centre);
-
-                //Console.OUT.println("E = " + E);
-                val halfA = 0.5 * dt * 1.0e-9 * chargeMassRatio * E;
-                val vMinus = atom.velocity + halfA; // m
-
-                //val larmorFreq = chargeMassRatio * magB;
-                val t = 0.5 * dt * 1.0e-9 * chargeMassRatio * B;
-                val vPrime = vMinus + vMinus.cross(t);
-
-                val magt2 = t.lengthSquared();
-                val s = t * (2.0 / (1.0 + magt2));
-                val vPlus = vMinus + vPrime.cross(s);
-
-                atom.velocity = vPlus + halfA;
             }
         }
 
-        // TODO global barrier
-        for (i in 0..(myAtoms.size-1)) {
-            val atom = myAtoms(i);
-            if (atom != null) {
-                atom.centre = atom.centre + atom.velocity * dt * 1.0e-9;
-                //Console.OUT.print(atom.centre.i + " " + atom.centre.j + " " + atom.centre.k + " ");
+        Team.WORLD.barrier(here.id);
 
-                if (Math.abs(atom.centre.i) > edgeLength/2.0
-                 || Math.abs(atom.centre.j) > edgeLength/2.0
-                 || Math.abs(atom.centre.k) > edgeLength/2.0) {
-                    // ion lost to wall
-                    myAtoms(i) = null;
-                    numAtoms--;
+        // TODO async
+        for ([x,y,z] in fmmBoxes.dist(here)) {
+            val box = fmmBoxes(x,y,z) as FmmLeafBox;
+            if (box != null) {
+                val myAtoms = box.getAtoms();
+                var notNull:Int = myAtoms.size;
+                for (i in 0..(myAtoms.size-1)) {
+                    val atom = myAtoms(i);
+                    if (atom != null) {
+                        atom.centre = atom.centre + atom.velocity * dt * 1.0e-9;
+                        //Console.OUT.print(atom.centre.i + " " + atom.centre.j + " " + atom.centre.k + " ");
+
+                        if (Math.abs(atom.centre.i) > edgeLength/2.0
+                         || Math.abs(atom.centre.j) > edgeLength/2.0
+                         || Math.abs(atom.centre.k) > edgeLength/2.0) {
+                            // ion lost to wall
+                            myAtoms(i) = null;
+                            numAtoms--;
+                            notNull--;
+                        } else {
+                            val boxIndex = Fmm3d.getLowestLevelBoxIndex(atom.centre, fmm.lowestLevelDim, fmm.size);
+                            if (boxIndex(0) != x || boxIndex(1) != y || boxIndex(2) != z) {
+                                //Console.OUT.println("moving atom " + atom.centre + " from " + x+","+y+","+z + " to " + boxIndex);
+                                at(fmmBoxes.dist(boxIndex)) {
+                                    var destBox:FmmLeafBox = fmmBoxes(boxIndex) as FmmLeafBox;
+                                    if (destBox == null) {
+                                        destBox = new FmmLeafBox(fmm.numLevels, boxIndex(0), boxIndex(1), boxIndex(2), fmm.numTerms, Fmm3d.getParentForChild(fmm.boxes, fmm.numLevels, fmm.topLevel, x,y,z));
+                                        val newAtoms = new Rail[MMAtom](1);
+                                        newAtoms(0) = atom;
+                                        destBox.setAtoms(newAtoms);
+                                        fmmBoxes(boxIndex) = destBox;
+                                    } else {
+                                        val oldAtoms = destBox.getAtoms();
+                                        val newAtoms = new Rail[MMAtom](oldAtoms.size+1);
+                                        for (j in oldAtoms) {
+                                            newAtoms(j) = oldAtoms(j);
+                                        }
+                                        newAtoms(newAtoms.size-1) = atom;
+                                        destBox.setAtoms(newAtoms);
+                                    }
+                                }
+                                myAtoms(i) = null;
+                                notNull--;
+                            }
+                        }
+
+                        props.accumulate(atom, this);
+                    } else {
+                        notNull--;
+                    }
                 }
-
-                props.accumulate(atom, this);
+                if (notNull == 0) {
+                    //Console.OUT.println("deleting box " + x+","+y+","+z);
+                    fmmBoxes(x,y,z) = null;
+                } else if (notNull < myAtoms.size) {
+                    // resize this box
+                    //Console.OUT.println("resizing box " + x+","+y+","+z + " from " + myAtoms.size + " to " + notNull);
+                    val newAtoms = new Rail[MMAtom](notNull);
+                    var j:Int=0;
+                    for (i in myAtoms) {
+                        if (myAtoms(i) != null) {
+                            newAtoms(j++) = myAtoms(i);
+                        }
+                    }
+                    box.setAtoms(newAtoms);
+                }
             }
         }
     }
@@ -255,7 +336,7 @@ public class PenningTrap {
 
     private def printPositions(time:Double, myAtoms:Rail[MMAtom]) {
         val timeInt = time as Int;
-        val posFilePrinter = new Printer(new FileWriter(new File("positions_" + timeInt + ".dat")));
+        val posFilePrinter = new Printer(new FileWriter(new File("positions_" + timeInt + ".dat"), true));
         for ([i] in myAtoms) {
             val atom = myAtoms(i);
             if (atom != null) {
@@ -291,7 +372,6 @@ public class PenningTrap {
         var increasing:Boolean = false;
         for ([i] in massSpectrum) {
             freq(i) = (i as Double) * sampleFreq;
-            Console.OUT.println(massSpectrum(i));
             amplitude(i) = massSpectrum(i).abs();
             if (increasing && amplitude(i) <= peak) {
                 increasing = false;

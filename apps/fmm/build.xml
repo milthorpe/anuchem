@@ -27,6 +27,7 @@
 	<property name="target" location="${basedir}/target"/>
 	<property name="target-src" location="${target}/classes"/>
 	<property name="target-test" location="${target}/test-classes"/>
+    <property name="x10lib-cpp" value="fmm_${x10rt}" />
     <property name="bin" location="${basedir}/bin"/>
 	<property name="exe" value="periodicFmm3d"/>
     <property name="testclass" value="test/au/edu/anu/mm/TestPeriodicFmm3d.x10"/>
@@ -91,6 +92,28 @@
             <arg value="-c"/>
             <arg value="'x10c' ${x10c.optimize} -sourcepath .${path.separator}${xla.src}${path.separator}${anuchem.src} -classpath ${xla.lib}${path.separator}${anuchem.lib} -d ${target-src} '${basedir}/${testclass}'"/>
         </exec>
+    </target>
+
+    <target name="buildx10lib-cpp" depends="check-src-cpp" unless="src.uptodate.cpp">
+        <echo message="Building source tree"/>
+        <mkdir dir="include"/>
+        <mkdir dir="lib"/>
+
+        <fileset id="src.files" dir="${basedir}/src" includes="**/*.x10" />
+
+        <pathconvert property="src.list" refid="src.files" dirsep="/" pathsep=" ">
+            <map from="${basedir}${file.separator}src${file.separator}" to=""/>
+        </pathconvert>
+        <echo message="x10c++ -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} -x10lib ${xla.props} -x10lib ${anuchem.props} -sourcepath . -buildx10lib ../. ${src.list} -d ../include -o ${x10lib-cpp}"/>
+
+        <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/src">
+            <arg value="-c"/>
+            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} -report postcompile=1 -x10lib ${xla.props} -x10lib ${anuchem.props} -sourcepath . -buildx10lib ../. ${src.list} -d ../include -o ${x10lib-cpp}"/>
+        </exec>
+
+        <jar jarfile="${x10lib-cpp}.jar">
+            <fileset dir="${basedir}/src" includes="**/*.x10" />
+        </jar>
     </target>
 
     <target name="build-src-cpp" depends="check-src-cpp" unless="src.uptodate.cpp">

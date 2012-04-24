@@ -6,7 +6,7 @@
  *  You may obtain a copy of the License at
  *      http://www.opensource.org/licenses/eclipse-1.0.php
  *
- * (C) Copyright Josh Milthorpe 2010-2011.
+ * (C) Copyright Josh Milthorpe 2010-2012.
  */
 package au.edu.anu.mm;
 
@@ -83,7 +83,7 @@ public class Fmm3d {
      * 1: y coordinate
      * 2: z coordinate
      */
-    val boxes : Rail[DistArray[FmmBox](3)];
+    public val boxes : Rail[DistArray[FmmBox](3)];
 
     /** 
      * The locally essential tree at each place. 
@@ -194,13 +194,13 @@ public class Fmm3d {
                         val atom = boxAtoms(i);
                         var directForce:Vector3d=Vector3d.NULL;
                         for (j in 0..(boxAtoms.size-1)) {
-		            if (i!=j) {
+                            if (i!=j) {
                                 val atomJ = boxAtoms(j);
-                                  val rVec = atomJ.centre - atom.centre;
+                                val rVec = atomJ.centre - atom.centre;
                                 val r2 = rVec.lengthSquared();
                                 val r = Math.sqrt(r2);
                                 val pairForce = (atom.charge * atomJ.charge / r2 / r) * rVec;
-                                  directForce += pairForce; 
+                                directForce += pairForce; 
                             }
                         }
                         for ([x2,y2,z2] in lowestLevelBoxes.dist(here)) {
@@ -208,12 +208,12 @@ public class Fmm3d {
                             if ((x != x2 || y != y2 || z != z2) && box2 != null) {
                                 val box2Atoms = box2.getAtoms();
                                 for (j in 0..(box2Atoms.size-1)) {
-                                  val atomJ = box2Atoms(j);
-                                  val rVec = atomJ.centre - atom.centre;
-                                val r2 = rVec.lengthSquared();
-                                val r = Math.sqrt(r2);
-                                val pairForce = (atom.charge * atomJ.charge / r2 / r) * rVec;
-                                  directForce += pairForce;
+                                    val atomJ = box2Atoms(j);
+                                    val rVec = atomJ.centre - atom.centre;
+                                    val r2 = rVec.lengthSquared();
+                                    val r = Math.sqrt(r2);
+                                    val pairForce = (atom.charge * atomJ.charge / r2 / r) * rVec;
+                                    directForce += pairForce;
                                 }
                             }
                         }
@@ -241,14 +241,11 @@ public class Fmm3d {
             val localAtoms = atoms(p1);
             finish for (i in 0..(localAtoms.size-1)) {
                 val atom = localAtoms(i);
-                val symbol = atom.symbol;
-                val charge = atom.charge;
-                val mass = atom.mass;
                 val offsetCentre = atom.centre + offset;
                 val boxIndex = Fmm3d.getLowestLevelBoxIndex(offsetCentre, lowestLevelDim, size);
                 at(boxAtomsTemp.dist(boxIndex)) async {
-                    val remoteAtom = new MMAtom(symbol, offsetCentre, mass, charge);
-                    atomic boxAtomsTemp(boxIndex).add(remoteAtom);
+                    atomic boxAtomsTemp(boxIndex).add(atom);
+                    atom.centre = offsetCentre; // move centre of copy atom only
                 }
             }
         }
@@ -732,7 +729,7 @@ public class Fmm3d {
                                         vListMax);
     }
 
-    protected static def getLowestLevelBoxIndex(offsetCentre : Point3d, lowestLevelDim : Int, size : Double) : Point(3) {
+    public static def getLowestLevelBoxIndex(offsetCentre : Point3d, lowestLevelDim : Int, size : Double) : Point(3) {
         return  Point.make((offsetCentre.i / size * lowestLevelDim + lowestLevelDim / 2) as Int, (offsetCentre.j / size * lowestLevelDim + lowestLevelDim / 2) as Int, (offsetCentre.k / size * lowestLevelDim + lowestLevelDim / 2) as Int);
     }
 
