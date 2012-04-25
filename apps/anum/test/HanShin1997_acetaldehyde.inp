@@ -1,0 +1,16 @@
+# Seung-Jin Han and Seung Koo Shin (1997)
+# "Space-Charge Effects and Fourier transform ion cyclotron resonance signals:
+# experimental observations and three-dimensional trajectory simulations"
+# J. Am. Soc. Mass Spectrometry 8 (4), 319-326 
+acetaldehyde
+B 0.7646
+V 1.0
+edgeLength 0.047
+radius 0.005
+dt 25.0
+steps 50000
+fmmDensity 50
+fmmTerms 15
+species HCO+ 29.0182 1 10
+species CH3CO+ 43.04462 1 10
+

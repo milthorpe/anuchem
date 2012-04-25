@@ -96,8 +96,8 @@ public class PenningTrap {
      * @param timestep length in ns
      * @param numSteps number of timesteps to simulate
      */
-    public def mdRun(timestep:Double, numSteps:Int, logSteps:Int) {
-        Console.OUT.println("# Timestep = " + timestep + "ns, number of steps = " + numSteps + " logging every " + logSteps);
+    public def mdRun(timestep:Double, numSteps:Int) {
+        Console.OUT.println("# Timestep = " + timestep + "ns, number of steps = " + numSteps);
         val timer = new Timer(2);
 
         val current = new Array[Double](numSteps);
@@ -132,11 +132,9 @@ public class PenningTrap {
                 step++;
                 props.reset();
                 mdStepLocal(timestep, fmmBoxes, props);
-                if (step % logSteps == 0) {
-                    Team.WORLD.allreduce[Double](here.id, props.raw, 0, props.raw, 0, props.raw.size, Team.ADD);
-                    if (here == Place.FIRST_PLACE) {
-                        props.print(timestep * step, numAtoms);
-                    }
+                Team.WORLD.allreduce[Double](here.id, props.raw, 0, props.raw, 0, props.raw.size, Team.ADD);
+                if (here == Place.FIRST_PLACE) {
+                    props.print(timestep * step, numAtoms);
                 }
                 if (here == Place.FIRST_PLACE) {
                     current(step) = props.getCurrent();
@@ -244,22 +242,24 @@ public class PenningTrap {
                             val boxIndex = Fmm3d.getLowestLevelBoxIndex(atom.centre, fmm.lowestLevelDim, fmm.size);
                             if (boxIndex(0) != x || boxIndex(1) != y || boxIndex(2) != z) {
                                 //Console.OUT.println("moving atom " + atom.centre + " from " + x+","+y+","+z + " to " + boxIndex);
-                                at(fmmBoxes.dist(boxIndex)) {
-                                    var destBox:FmmLeafBox = fmmBoxes(boxIndex) as FmmLeafBox;
-                                    if (destBox == null) {
-                                        destBox = new FmmLeafBox(fmm.numLevels, boxIndex(0), boxIndex(1), boxIndex(2), fmm.numTerms, Fmm3d.getParentForChild(fmm.boxes, fmm.numLevels, fmm.topLevel, x,y,z));
-                                        val newAtoms = new Rail[MMAtom](1);
-                                        newAtoms(0) = atom;
-                                        destBox.setAtoms(newAtoms);
-                                        fmmBoxes(boxIndex) = destBox;
-                                    } else {
-                                        val oldAtoms = destBox.getAtoms();
-                                        val newAtoms = new Rail[MMAtom](oldAtoms.size+1);
-                                        for (j in oldAtoms) {
-                                            newAtoms(j) = oldAtoms(j);
+                                at(fmmBoxes.dist(boxIndex)) async {
+                                    atomic {
+                                        var destBox:FmmLeafBox = fmmBoxes(boxIndex) as FmmLeafBox;
+                                        if (destBox == null) {
+                                            destBox = new FmmLeafBox(fmm.numLevels, boxIndex(0), boxIndex(1), boxIndex(2), fmm.numTerms, Fmm3d.getParentForChild(fmm.boxes, fmm.numLevels, fmm.topLevel, x,y,z));
+                                            val newAtoms = new Rail[MMAtom](1);
+                                            newAtoms(0) = atom;
+                                            destBox.setAtoms(newAtoms);
+                                            fmmBoxes(boxIndex) = destBox;
+                                        } else {
+                                            val oldAtoms = destBox.getAtoms();
+                                            val newAtoms = new Rail[MMAtom](oldAtoms.size+1);
+                                            for (j in oldAtoms) {
+                                                newAtoms(j) = oldAtoms(j);
+                                            }
+                                            newAtoms(newAtoms.size-1) = atom;
+                                            destBox.setAtoms(newAtoms);
                                         }
-                                        newAtoms(newAtoms.size-1) = atom;
-                                        destBox.setAtoms(newAtoms);
                                     }
                                 }
                                 myAtoms(i) = null;

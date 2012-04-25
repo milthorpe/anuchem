@@ -10,10 +10,16 @@
  */
 package au.edu.anu.mm;
 
+import x10.io.File;
+import x10.io.FileReader;
+import x10.io.EOFException;
+import x10.util.ArrayList;
 import x10.util.Random;
+
 import x10x.vector.Point3d;
 import x10x.vector.Vector3d;
 import au.edu.anu.chem.mm.MMAtom;
+import au.edu.anu.util.StringSplitter;
 
 /**
  * Simulates an ion packet travelling in a circular path in a Penning trap
@@ -28,85 +34,163 @@ import au.edu.anu.chem.mm.MMAtom;
  */
 public class TestCyclotron {
     public static def main(args : Array[String](1)) {
-        var N:Int=100; // number of particles
-        var timesteps:Int = 16000; // number of timesteps
-        var dt:Double = 25.0; // timestep in ns
-        var logSteps:Int = 1;
-        var fmmDensity:Double = 60.0;
-        var fmmNumTerms:Int = 10;
         if (args.size > 0) {
-            N = Int.parseInt(args(0));
-            if (args.size > 1) {
-                timesteps = Int.parseInt(args(1));
-                if (args.size > 2) {
-                    dt = Double.parseDouble(args(2));
-                    if (args.size > 3) {
-                        logSteps = Int.parseInt(args(3));
-                        if (args.size > 4) {
-                            fmmDensity = Double.parseDouble(args(4));
-                            if (args.size > 5) {
-                                fmmNumTerms = Int.parseInt(args(5));
-                            }
-                        }
-                    }
-                }
-            }
+            val inputFile = args(0);
+            runFromInput(inputFile);
+        } else {
+            Console.ERR.println("usage: anum <inputFile>");
+        }
+    }
+
+    /**
+     * Run simulation of FT-ICR experiment according to specifications in an 
+     * input file in the format described below.
+     *
+     * <title>
+     * B <axial magnetic field in T>
+     * V <quadrupolar trapping field in V>
+     * edgeLength <side length of cubic Penning trap>
+     * dt <timestep in ns>
+     * steps <number of timesteps>
+     * + fmmDensity <number of particles per lowest level box>
+     * + fmmTerms <number of terms in FMM expansions>
+     * * species <name> <mass> <charge> <number of ions>
+     */
+    public static def runFromInput(fileName:String) { 
+        val fil = new FileReader(new File(fileName));
+
+        var line:String = fil.readLine();
+
+        while (line.startsWith("#")) line = fil.readLine();
+
+        val title = line;
+
+        var B:Double = 7.0; // magnetic field
+        var V:Double = 1.0; // trapping potential
+        var edgeLength:Double = 0.0508; // trap side length
+        var radius:Double = 0.006; // excitation radius
+        var dt:Double = 0.0;
+        var steps:Int = 0;
+        var fmmDensity:Double = 60.0;
+        var fmmTerms:Int = 10;
+
+        line = fil.readLine();
+        if (line.startsWith("B")) {
+            B = getDoubleParam(line);
+        } else {
+            throw new Exception("Invalid input: must specify magnetic field strength [B]. Next line was:\n"+line);
         }
 
-        // fixed parameters
-        val B = 7.0; // magnetic field
-        val V = 1.0; // trapping potential
-        val edgeLength = 0.0508;
+        line = fil.readLine();
+        if (line.startsWith("V")) {
+            V = getDoubleParam(line);
+        } else {
+            throw new Exception("Invalid input: must specify trapping potential [V]. Next line was:\n"+line);
+        }
 
-        Console.OUT.printf("# Testing cyclotron: trapping potential: %2.1f V magnetic field: %6.4f T\n", V, B);
+        line = fil.readLine();
+        if (line.startsWith("edgeLength")) {
+            edgeLength = getDoubleParam(line);
+        } else {
+            throw new Exception("Invalid input: must specify trap side length [edgeLength]. Next line was:\n"+line);
+        }
 
-        val v = 2.7e4; // 1e4; // aiming for r ~ 6mm by r = mv/|q|B
-        val q = 1.0;
+        line = fil.readLine();
+        if (line.startsWith("radius")) {
+            radius = getDoubleParam(line);
+        } else {
+            throw new Exception("Invalid input: must specify excitation radius [radius]. Next line was:\n"+line);
+        }
 
-        val species1 = "Cs+"; // "CH3CO";
-        val mass1 = 132.9054; // 43.04462;
-        val omega_c1 = q * B / mass1 * (PenningTrap.CHARGE_MASS_FACTOR) / (2.0 * Math.PI);
-        val omega_z1 = Math.sqrt(2.0 * PenningTrap.ALPHA_PRIME * q * V / (mass1 * edgeLength*edgeLength) * PenningTrap.CHARGE_MASS_FACTOR);
-        val omega_plus1 = omega_c1 / 2.0 + Math.sqrt(omega_c1*omega_c1 / 4 - omega_z1*omega_z1 / 2);
-        val r1 = mass1 * v / (q * B) / PenningTrap.CHARGE_MASS_FACTOR;
-        Console.OUT.printf("# %8s predicted omega_c = %8i Hz omega_z = %i Hz omega_+ = %i Hz r = %6.3f mm\n", species1, omega_c1 as Int, omega_z1 as Int, omega_plus1 as Int,r1*1e3);
+        line = fil.readLine();
+        if (line.startsWith("dt")) {
+            dt = getDoubleParam(line);
+        } else {
+            throw new Exception("Invalid input: must specify timestep [dt]. Next line was:\n"+line);
+        }
 
-        val species2 = "x150"; //"HCO";
-        val mass2 = 150.00; // 29.0182;
-        val omega_c2 = q * B / mass2 * (PenningTrap.CHARGE_MASS_FACTOR) / (2.0 * Math.PI);
-        val omega_z2 = Math.sqrt(2.0 * PenningTrap.ALPHA_PRIME * q * V / (mass2 * edgeLength*edgeLength)* PenningTrap.CHARGE_MASS_FACTOR);
-        val omega_plus2 = omega_c2 / 2.0 + Math.sqrt(omega_c2*omega_c2 / 4 - omega_z2*omega_z2 / 2);
-        val r2 = mass2 * v / (q * B) / PenningTrap.CHARGE_MASS_FACTOR;
-        Console.OUT.printf("# %8s predicted omega_c = %8i Hz omega_z = %i Hz omega_+ = %i Hz r = %6.3f mm\n", species2, omega_c2 as Int, omega_z2 as Int, omega_plus2 as Int, r2*1e3);
+        line = fil.readLine();
+        if (line.startsWith("steps")) {
+            steps = getIntParam(line);
+        } else {
+            throw new Exception("Invalid input: must specify number of timesteps [steps]. Next line was:\n"+line);
+        }
+
+        line = fil.readLine();
+        if (line.startsWith("fmmDensity")) {
+            fmmDensity = getDoubleParam(line);
+            line = fil.readLine();
+        }
+
+        if (line.startsWith("fmmTerms")) {
+            fmmTerms = getIntParam(line);
+            line = fil.readLine();
+        }
+
+        var totalIons:Int = 0;
+        val speciesList = new ArrayList[SpeciesSpec]();
+        try {
+            while (line != null && line.startsWith("species")) {
+                val wrd = StringSplitter.splitOnWhitespace(line);
+                val name = wrd(1);
+                val mass = Double.parseDouble(wrd(2));
+                val charge = Int.parseInt(wrd(3));
+                val numIons = Int.parseInt(wrd(4));
+                totalIons += numIons;
+
+                speciesList.add(new SpeciesSpec(name, mass, charge, numIons));
+
+                line = fil.readLine();
+            }
+        } catch (e:EOFException) {
+            // no more species
+        }
+        if (speciesList.isEmpty()) {
+            throw new Exception("Invalid input: expected at least one species. Next line was:\n"+line);
+        }
+
+        Console.OUT.printf("# Testing %s: cyclotron trapping potential: %2.1f V magnetic field: %6.4f T edgeLength %4.1f mm\n", title, V, B, edgeLength*1e3);
+        Console.OUT.println("# species:");
 
         val rand = new Random(27178281L);
 
-        // initial distribution for each species is uniform 1mm cylinder along z dimension
-        // centred at calculated radius for given velocity
-        val atoms = new Array[MMAtom](N);
-        for (i in 0..(N-1)) {
-            val er = rand.nextDouble() * 1.0e-3;
-            val theta = rand.nextDouble() * Math.PI * 2.0;
-            val ex = Math.cos(theta) * er;
-            val ey = Math.sin(theta) * er;
-            val ion:MMAtom;
-            if (i % 2 == 1) {
-                ion = new MMAtom(species1, Point3d(-r1+ex, ey, perturbation(rand, 1e-3)), mass1, q);
-            } else {
-                ion = new MMAtom(species2, Point3d(-r2+ex, ey, perturbation(rand, 1e-3)), mass2, q);
-            }
+        val atoms = new Array[MMAtom](totalIons);
+        var i:Int = 0;
+        for (species in speciesList) {
+            val omega_c = species.charge * B / species.mass * (PenningTrap.CHARGE_MASS_FACTOR) / (2.0 * Math.PI);
+            val omega_z = Math.sqrt(2.0 * PenningTrap.ALPHA_PRIME * species.charge * V / (species.mass * edgeLength*edgeLength) * PenningTrap.CHARGE_MASS_FACTOR);
+            val omega_plus = omega_c / 2.0 + Math.sqrt(omega_c*omega_c / 4 - omega_z*omega_z / 2);
 
-            // velocity is Maxwellian distribution with addition of velocity v in y direction
-            val ev = maxwellianVelocity(rand, ion.mass);
-            ion.velocity = Vector3d(ev.i, v+ev.j, ev.k);
-            atoms(i) = ion;
+            val v = PenningTrap.CHARGE_MASS_FACTOR * B * radius * species.charge / species.mass;
+            val r = species.mass * v / (species.charge * B) / PenningTrap.CHARGE_MASS_FACTOR;
+            Console.OUT.printf("# %6i %8s mass %8.5f charge %i ", species.number, species.name, species.mass, species.charge);
+            Console.OUT.printf("omega_c = %7i Hz omega_z = %6i Hz omega_+ = %7i Hz v = %9.3g m/s\n", omega_c as Int, omega_z as Int, omega_plus as Int, v);
+
+            for (j in 0..(species.number-1)) {
+                // distribution for each species is uniform 1mm cylinder along
+                // z dimension centred at [x=-(excitation radius), y=0, z=0]
+                val er = rand.nextDouble() * 1.0e-3;
+                val theta = rand.nextDouble() * Math.PI * 2.0;
+                val ex = Math.cos(theta) * er;
+                val ey = Math.sin(theta) * er;
+                val ion = new MMAtom(species.name, Point3d(-radius+ex, ey, perturbation(rand, 1e-3)), species.mass, species.charge);
+
+                // velocity is Maxwellian distribution with addition of velocity v in y direction
+                val ev = maxwellianVelocity(rand, species.mass);
+                ion.velocity = Vector3d(ev.i, v+ev.j, ev.k);
+                atoms(i++) = ion;
+            }
         }
+
+        fil.close();
+
+        Console.OUT.printf("# FMM density %4.3f numTerms %i\n", fmmDensity, fmmTerms);
 
         val distAtoms = DistArray.make[Rail[MMAtom]](Dist.makeBlock(0..0, 0));
         distAtoms(0) = atoms;
 
-        val trap = new PenningTrap(N, distAtoms, V, new Vector3d(0.0, 0.0, B), edgeLength, fmmDensity, fmmNumTerms);
-        trap.mdRun(dt, timesteps, logSteps);
+        val trap = new PenningTrap(totalIons, distAtoms, V, new Vector3d(0.0, 0.0, B), edgeLength, fmmDensity, fmmTerms);
+        trap.mdRun(dt, steps);
     }
 
     private static def perturbation(rand:Random, max:Double) {
@@ -137,5 +221,22 @@ public class TestCyclotron {
         val z0 = Math.sqrt(-2.0 * Math.log(u1)) * Math.cos(2.0 * Math.PI * u2);
         return variance * z0;
     }
+
+    private static class SpeciesSpec {
+        public val name:String;
+        public val mass:Double;
+        public val charge:Int;
+        public val number:Int;
+        public def this(name:String, mass:Double, charge:Int, number:Int) {
+            this.name = name;
+            this.mass = mass;
+            this.charge = charge;
+            this.number = number;
+        }
+    }
+
+    private static def getIntParam(line:String) = Int.parseInt(StringSplitter.splitOnWhitespace(line)(1));
+    private static def getDoubleParam(line:String) = Double.parseDouble(StringSplitter.splitOnWhitespace(line)(1));
+
 }
 

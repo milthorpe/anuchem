@@ -1,0 +1,16 @@
+# Leach et al. (2010). "Comparison of Particle-In-Cell simulations with 
+# experimentally observed frequency shifts between ions of the same mass-to-
+# charge in Fourier Transform Ion Cyclotron Resonance Mass Spectrometry".
+# J. Am. Soc. Mass Spectrometry 21 (2), 203-208 
+Caesium + m/q 150
+B 7.0
+V 1.0
+edgeLength 0.0508
+radius 0.006
+dt 25.0
+steps 16000
+fmmDensity 50
+fmmTerms 15
+species Cs+ 132.9054 1 50
+species x150 150.00 1 50
+
