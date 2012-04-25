@@ -51,7 +51,7 @@
         <istrue value="${cpuprofile}"/>
     </condition>
 
-    <condition property="post.cpuprofile" value="-L${perftoolsHome}/lib -lprofiler" else="">
+    <condition property="post.cpuprofile" value="-L${perftoolsHome}/lib -Wl,--no-as-needed -lprofiler -Wl,--as-needed" else="">
         <istrue value="${cpuprofile}"/>
     </condition>
 
