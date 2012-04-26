@@ -1,0 +1,13 @@
+# Two amino acids in ANU FT-ICR Mass Spectrometer, parameters from Thomas Huber
+Two aminos
+B 4.7
+V 1.0
+edgeLength 0.01
+radius 0.003
+dt 25.0
+steps 2097152
+logSteps 2097152
+fmmDensity 60
+fmmTerms 10
+species glutamine 147.07698 1 1
+species lysine 147.11336 1 1

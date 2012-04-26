@@ -96,7 +96,7 @@ public class PenningTrap {
      * @param timestep length in ns
      * @param numSteps number of timesteps to simulate
      */
-    public def mdRun(timestep:Double, numSteps:Int) {
+    public def mdRun(timestep:Double, numSteps:Int, logSteps:Int) {
         Console.OUT.println("# Timestep = " + timestep + "ns, number of steps = " + numSteps);
         val timer = new Timer(2);
 
@@ -133,7 +133,7 @@ public class PenningTrap {
                 props.reset();
                 mdStepLocal(timestep, fmmBoxes, props);
                 Team.WORLD.allreduce[Double](here.id, props.raw, 0, props.raw, 0, props.raw.size, Team.ADD);
-                if (here == Place.FIRST_PLACE) {
+                if (here == Place.FIRST_PLACE && (step % logSteps == 0)) {
                     props.print(timestep * step, numAtoms);
                 }
                 if (here == Place.FIRST_PLACE) {
@@ -272,10 +272,7 @@ public class PenningTrap {
                         notNull--;
                     }
                 }
-                if (notNull == 0) {
-                    //Console.OUT.println("deleting box " + x+","+y+","+z);
-                    fmmBoxes(x,y,z) = null;
-                } else if (notNull < myAtoms.size) {
+                if (notNull < myAtoms.size) {
                     // resize this box
                     //Console.OUT.println("resizing box " + x+","+y+","+z + " from " + myAtoms.size + " to " + notNull);
                     val newAtoms = new Rail[MMAtom](notNull);
@@ -459,13 +456,13 @@ public class PenningTrap {
             val E = Ek + Ep;
             val I = raw(5) * 1.6021765314e-7; // e->C * 10^12; pA
 
-            Console.OUT.printf("%10.2f %8i %16.8f %16.8f %16.8f ", 
+            Console.OUT.printf("%10.1f %8i %15.8f %15.8f %15.8f ", 
                 time, 
                 numAtoms,
                 meanX, 
                 meanY, 
                 meanZ);
-            Console.OUT.printf("%16.8f %16.8f %16.8f %16.8f\n", 
+            Console.OUT.printf("%15.8f %15.8f %15.8f %15.8f\n", 
                 Ek, 
                 Ep, 
                 E, 
@@ -477,13 +474,13 @@ public class PenningTrap {
         }
 
         public static def printHeader() {
-            Console.OUT.printf("%10s %8s %16s %16s %16s ",
+            Console.OUT.printf("%10s %8s %15s %15s %15s ",
                 "time (ns)", 
                 "num_ions",
                 "mean_X (mm)",
                 "mean_Y (mm)",
                 "mean_Z (mm)");
-            Console.OUT.printf("%16s %16s %16s %16s\n",
+            Console.OUT.printf("%15s %15s %15s %15s\n",
                 "Ek (fJ)",
                 "Ep (fJ)",
                 "E (fJ)",

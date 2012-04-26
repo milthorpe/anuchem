@@ -71,6 +71,7 @@ public class TestCyclotron {
         var radius:Double = 0.006; // excitation radius
         var dt:Double = 0.0;
         var steps:Int = 0;
+        var logSteps:Int = 1;
         var fmmDensity:Double = 60.0;
         var fmmTerms:Int = 10;
 
@@ -117,6 +118,11 @@ public class TestCyclotron {
         }
 
         line = fil.readLine();
+        if (line.startsWith("logSteps")) {
+            logSteps = getIntParam(line);
+            line = fil.readLine();
+        }
+
         if (line.startsWith("fmmDensity")) {
             fmmDensity = getDoubleParam(line);
             line = fil.readLine();
@@ -190,7 +196,7 @@ public class TestCyclotron {
         distAtoms(0) = atoms;
 
         val trap = new PenningTrap(totalIons, distAtoms, V, new Vector3d(0.0, 0.0, B), edgeLength, fmmDensity, fmmTerms);
-        trap.mdRun(dt, steps);
+        trap.mdRun(dt, steps, logSteps);
     }
 
     private static def perturbation(rand:Random, max:Double) {
