@@ -54,6 +54,9 @@ public class PenningTrap {
     /** Normalization factor for electric field. */
     val eNorm:Double;
 
+    /** Electric field factor (BETA_PRIME / edgeLength) for detection and excitation. */
+    val eFieldNorm:Double;
+
     val fmm:Fmm3d;
 
     private val V_T:Double; // trapping potential, in V
@@ -87,6 +90,7 @@ public class PenningTrap {
         this.B = magneticField;
         this.edgeLength = edgeLength;
         this.eNorm = V_T * PenningTrap.ALPHA_PRIME / (edgeLength * edgeLength);
+        this.eFieldNorm = -BETA_PRIME / edgeLength;
         this.magB = magneticField.magnitude();
     }
 
@@ -99,8 +103,6 @@ public class PenningTrap {
     public def mdRun(timestep:Double, numSteps:Int, logSteps:Int) {
         Console.OUT.println("# Timestep = " + timestep + "ns, number of steps = " + numSteps);
         val timer = new Timer(2);
-
-        val current = new Array[Double](numSteps);
  
         SystemProperties.printHeader();
 
@@ -120,26 +122,26 @@ public class PenningTrap {
                         }
                     }
                     // print start positions
-                    printPositions(timestep * step, box.getAtoms());
+                    printPositions(0, box.getAtoms());
                 }
             }
-            Team.WORLD.allreduce[Double](here.id, props.raw, 0, props.raw, 0, props.raw.size, Team.ADD);
-            if (here == Place.FIRST_PLACE) {
-                props.print(0, numAtoms);
-            }
+            reduceAndPrintProperties(0, props);
 
+            val current = new Array[Double](numSteps);
+
+            val timeStepSecs = timestep * 1.0e-9;
             while(step < numSteps) {
                 step++;
+                val accumProps = (step % logSteps == 0);
                 props.reset();
-                mdStepLocal(timestep, fmmBoxes, props);
-                Team.WORLD.allreduce[Double](here.id, props.raw, 0, props.raw, 0, props.raw.size, Team.ADD);
-                if (here == Place.FIRST_PLACE && (step % logSteps == 0)) {
-                    props.print(timestep * step, numAtoms);
-                }
-                if (here == Place.FIRST_PLACE) {
-                    current(step) = props.getCurrent();
+                mdStepLocal(step, timeStepSecs, fmmBoxes, current, accumProps, props);
+                if (accumProps) {
+                    reduceAndPrintProperties(timestep * step, props);
                 }
             }
+
+            // gather current data
+            Team.WORLD.allreduce[Double](here.id, current, 0, current, 0, current.size, Team.ADD);
             if (here == Place.FIRST_PLACE) {
                 printCurrent(timestep, current);
                 printMassSpectrum(timestep, current);
@@ -162,11 +164,14 @@ public class PenningTrap {
     /**
      * Performs a single molecular dynamics timestep
      * using the velocity-Verlet algorithm. 
-     * @param dt time in ns
+     * @param step the current step
+     * @param dt time in s
      * @param fmmBoxes the lowest level boxes in the FMM tree
+     * @param current the current array at this place
+     * @param whether to accumulate system properties for this step
      * @param props the system properties to evaluate
      */
-    public def mdStepLocal(dt:Double, fmmBoxes:DistArray[FmmBox](3), props:SystemProperties) {
+    public def mdStepLocal(step:Int, dt:Double, fmmBoxes:DistArray[FmmBox](3), current:Array[Double], accumProps:Boolean, props:SystemProperties) {
         finish for ([x,y,z] in fmmBoxes.dist(here)) async {
             val box = fmmBoxes(x,y,z) as FmmLeafBox;
             if (box != null) {
@@ -200,11 +205,11 @@ public class PenningTrap {
                         val E = getElectrostaticField(atom.centre);
 
                         //Console.OUT.println("E = " + E);
-                        val halfA = 0.5 * dt * 1.0e-9 * chargeMassRatio * E;
+                        val halfA = 0.5 * dt * chargeMassRatio * E;
                         val vMinus = atom.velocity + halfA; // m
 
                         //val larmorFreq = chargeMassRatio * magB;
-                        val t = 0.5 * dt * 1.0e-9 * chargeMassRatio * B;
+                        val t = 0.5 * dt * chargeMassRatio * B;
                         val vPrime = vMinus + vMinus.cross(t);
 
                         val magt2 = t.lengthSquared();
@@ -219,6 +224,8 @@ public class PenningTrap {
 
         Team.WORLD.barrier(here.id);
 
+        var currentLocal:Double = 0.0;
+
         // TODO async
         for ([x,y,z] in fmmBoxes.dist(here)) {
             val box = fmmBoxes(x,y,z) as FmmLeafBox;
@@ -228,7 +235,7 @@ public class PenningTrap {
                 for (i in 0..(myAtoms.size-1)) {
                     val atom = myAtoms(i);
                     if (atom != null) {
-                        atom.centre = atom.centre + atom.velocity * dt * 1.0e-9;
+                        atom.centre = atom.centre + atom.velocity * dt;
                         //Console.OUT.print(atom.centre.i + " " + atom.centre.j + " " + atom.centre.k + " ");
 
                         if (Math.abs(atom.centre.i) > edgeLength/2.0
@@ -238,7 +245,7 @@ public class PenningTrap {
                             myAtoms(i) = null;
                             numAtoms--;
                             notNull--;
-                        } else {
+                        }/* else {
                             val boxIndex = Fmm3d.getLowestLevelBoxIndex(atom.centre, fmm.lowestLevelDim, fmm.size);
                             if (boxIndex(0) != x || boxIndex(1) != y || boxIndex(2) != z) {
                                 //Console.OUT.println("moving atom " + atom.centre + " from " + x+","+y+","+z + " to " + boxIndex);
@@ -265,13 +272,16 @@ public class PenningTrap {
                                 myAtoms(i) = null;
                                 notNull--;
                             }
+                        }*/
+                        currentLocal += getImageCurrent(atom);
+                        if (accumProps) {
+                            props.accumulate(atom, this);
                         }
-
-                        props.accumulate(atom, this);
                     } else {
                         notNull--;
                     }
                 }
+/*
                 if (notNull < myAtoms.size) {
                     // resize this box
                     //Console.OUT.println("resizing box " + x+","+y+","+z + " from " + myAtoms.size + " to " + notNull);
@@ -284,8 +294,10 @@ public class PenningTrap {
                     }
                     box.setAtoms(newAtoms);
                 }
+*/
             }
         }
+        current(step) = currentLocal;
     }
 
     /** 
@@ -327,8 +339,7 @@ public class PenningTrap {
      * @see Guan & Marshall eq. 69-70
      */
     public @Inline def getImageCurrent(ion:MMAtom):Double {
-        val eImage = -BETA_PRIME / edgeLength;
-        return ion.charge * ion.velocity.j * eImage;
+        return ion.charge * ion.velocity.j * eFieldNorm;
     }
 
     private def printPositions(time:Double, myAtoms:Rail[MMAtom]) {
@@ -341,6 +352,14 @@ public class PenningTrap {
             }
         }
     }
+
+    private def reduceAndPrintProperties(time:Double, props:SystemProperties) {
+        Team.WORLD.allreduce[Double](here.id, props.raw, 0, props.raw, 0, props.raw.size, Team.ADD);
+        if (here == Place.FIRST_PLACE) {
+            props.print(time, numAtoms);
+        }
+    }
+
 
     private def printCurrent(timestep:Double, current:Rail[Double]) {
         val currentFilePrinter = new Printer(new FileWriter(new File("current.dat")));

@@ -169,7 +169,7 @@ public class TestCyclotron {
 
             val v = PenningTrap.CHARGE_MASS_FACTOR * B * radius * species.charge / species.mass;
             val r = species.mass * v / (species.charge * B) / PenningTrap.CHARGE_MASS_FACTOR;
-            Console.OUT.printf("# %6i %8s mass %8.5f charge %i ", species.number, species.name, species.mass, species.charge);
+            Console.OUT.printf("# %6i %10s mass %8.5f charge %i ", species.number, species.name, species.mass, species.charge);
             Console.OUT.printf("omega_c = %7i Hz omega_z = %6i Hz omega_+ = %7i Hz v = %9.3g m/s\n", omega_c as Int, omega_z as Int, omega_plus as Int, v);
 
             for (j in 0..(species.number-1)) {
