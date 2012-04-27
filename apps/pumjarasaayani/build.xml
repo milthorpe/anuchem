@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE project [<!ENTITY buildfile SYSTEM "file:./build-user.xml">]>
 <project name="Pumja Rasaayani" default="build" basedir=".">
-    <property name="x10rt" value="mpi" />
+    <property name="x10rt" value="sockets" />
     <property name="xla" location="../../xla"/>
 	<property name="xla.props" location="${xla}/xla_${x10rt}.properties"/>
     <property name="x10.testlib" location="${user.home}/x10-trunk/x10.tests/examples/x10lib"/>
