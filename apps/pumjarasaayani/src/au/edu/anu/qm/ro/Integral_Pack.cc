@@ -203,8 +203,11 @@ namespace au {
 
                 // lambda[0]=0 is taken care of by separately. (3-term RR & trivial initial conditions)
         	// only p=0 contributes!
+
+                memset(Va,0.0,sizeof(double)*K*totalBraL[a+b+1]);
+
                 if (initialn==1 && p==0) {
-                    memset(Va,0.0,sizeof(double)*K*totalBraL[a+b+1]);
+                    //memset(Va,0.0,sizeof(double)*K*totalBraL[a+b+1]);
                     Va[0][0]=JpY00[0]*q[0]*gAB;
 
                     for (e=1; e<a+b+1; e++) for (i=0; i<noOfBra[e]; i++) {
@@ -229,7 +232,7 @@ namespace au {
                         }
                     }
                 } else {
-                    memset(Va,0.0,sizeof(double)*K*totalBraL[a+b+1]);
+                    //memset(Va,0.0,sizeof(double)*K*totalBraL[a+b+1]);
                     for (n=initialn; n<=N; n++) {
                         double nfactor=q[n]*gAB*exp(-.25*sqr(lambda[n])/zeta)*pow(-.5*sqr(lambda[n])/zeta,p);
                         Va[0][n*(L+1)*(L+1)] = nfactor*JpY00[p]; // l=m=0 only

@@ -146,7 +146,7 @@ public class GMatrixRO extends Matrix {
                         var ind:Int=0;
                         if (iaFunc.getTotalAngularMomentum()>=jbFunc.getTotalAngularMomentum())
                             for (var tmu:Int=mu; tmu<mu+maxbraa; tmu++) for (var tnu:Int=nu; tnu<nu+maxbrab; tnu++) for (var k:Int=0; k<roK; k++) {
-                                //Console.OUT.printf("tmu=%d tnu=%d k=%d ind=%d val=%e\n",tmu,tnu,k,ind,temp(ind));
+                                //Console.OUT.printf("GMatrixRO.x10 Ln149 tmu=%d tnu=%d k=%d ind=%d val=%e\n",tmu,tnu,k,ind,temp(ind));
                                 val m = norm(tmu)*norm(tnu)*temp(ind++);
                                 dk(k) += denMat(tmu,tnu)*m; // eqn 15b
                                 for(aorb in 0..(nOrbital-1)) {
