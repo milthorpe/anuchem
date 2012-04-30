@@ -94,7 +94,7 @@ In contrast, the adaptive fast multipole algorithm\cite{Cheng1999} provides guar
 \label{tab:han}
 \begin{tabular}{c|c|c|c|c|c|c|c|c|c|c|c}
  \hline \hline
-  \multicolumn{12}{|c|}{$B = 0.7646 T, V_T = 1.0 V, l = 0.047$} \\
+  \multicolumn{12}{|c|}{$B = 0.7646 T, V_T = 1.0 V, l = 0.047, \Delta t = 25ns$} \\
  \hline \hline
  \multicolumn{4}{|c|}{ } & \multicolumn{2}{|c|}{\textbf{predicted}} & \multicolumn{2}{|c|}{\textbf{measured}} & \multicolumn{4}{|c|}{\textbf{error: timestep}} \\ 
  \hline
@@ -112,7 +112,7 @@ In contrast, the adaptive fast multipole algorithm\cite{Cheng1999} provides guar
 \label{tab:leach}
 \begin{tabular}{c|c|c|c|c|c|c|c|c|c|c|c}
  \hline \hline
-  \multicolumn{12}{|c|}{$B = 7.0 T, V_T = 1.0 V, l = 0.0508$} \\
+  \multicolumn{12}{|c|}{$B = 7.0 T, V_T = 1.0 V, l = 0.0508, \Delta t = 25ns$} \\
  \hline \hline
  \multicolumn{4}{|c|}{ } & \multicolumn{2}{|c|}{\textbf{predicted}} & \multicolumn{2}{|c|}{\textbf{measured}} & \multicolumn{4}{|c|}{\textbf{error: timestep}} \\ 
  \hline
@@ -123,6 +123,55 @@ In contrast, the adaptive fast multipole algorithm\cite{Cheng1999} provides guar
  \hline \hline
 \end{tabular}
 \end{table}
+
+B 4.7
+V 1.0
+edgeLength 0.01
+radius 0.003
+dt 25.0
+steps 2097152
+logSteps 2097152
+fmmDensity 60
+fmmTerms 10
+species glutamine 147.07698 1 1
+species lysine 147.11336 1 1
+
+\subsection{Comparison with experiment: amino acids}
+\label{sec:amino}
+
+We performed a scan of a [TODO mole/volume fraction?] mixture of lysine and glutamine on a Bruker Apex 4.7T FT-ICR mass spectrometer at the ANU.
+The core of this machine is a Penning trap of 4.7T / 1.0V of side length 1cm.
+We performed a molecular dynamics simulation for an equimolar mixture of N singly-charged ions in total.
+The simulation parameters and results are in table \ref{tab:amino}.
+
+\begin{table}[htbp]
+ \centering	  	  
+ \caption{Amino acids in ANU mass spectrometer. Input, predicted and measured simulation parameters}
+\label{tab:amino}
+\begin{tabular}{c|c|c|c|c|c|c|c|c|c|c|c}
+ \hline \hline
+  \multicolumn{12}{|c|}{$B = 4.7 T, V_T = 1.0 V, l = 0.01, \Delta t = 25ns$} \\
+ \hline \hline
+ \multicolumn{4}{|c|}{ } & \multicolumn{2}{|c|}{\textbf{predicted}} & \multicolumn{2}{|c|}{\textbf{measured}} & \multicolumn{4}{|c|}{\textbf{error: timestep}} \\ 
+ \hline
+ \textbf{species} & \textbf{charge} & \textbf{mass} & \textbf{$v_0$ (m/s)} & \textbf{$\omega_+ / 2\Pi$ (Hz)} & \textbf{$r$ (mm)} & \textbf{$\omega_+' / 2\Pi$ (Hz)}  & \textbf{$r'$ (mm)} & \textbf{$\Delta t$ (ns)} & \textbf{$\epsilon: \Delta t$}& \textbf{$\epsilon: \Delta t$ / 10} & \textbf{$\epsilon: \Delta t$ * 10}\\ 
+ \hline
+ $\mathsf{glutamine}$ & 1 & 147.07698 & $9.25 \times 10^3$ & 450,313 & 3.0 & 489,407 & 3.0 & 106 & \\
+ $\mathsf{lysine}$ & 1 & 147.11336 & $9.25 \times 10^3$ & 450,190 & 3.0 & 489540 & 3.0 & 106 & \\
+ \hline \hline
+\end{tabular}
+\end{table}
+
+\subsection{Peak coalescence}
+
+Vladimirov et al.\cite{Vladimirov2011} give an expression for the minimum number of ions required for coalescence of (singly-charged)  clouds of similar masses $m_1$ and $m_2$:
+\begin{align}
+N &= 4.87 \times 10^8 \frac{a^2 R B^2 (m_2 - m_1)}{m^2}
+\end{align}
+
+(For $a,R$ in mm, $m_1 ,m_2, m$ in Da, $B$ in Tesla.)
+
+Applying this formula to the experiment described in section \ref{sec:amino}, where ion cloud major axis $a = 1$ mm, ion cyclotron radius $R \approx 3$ mm, and average mass $m = 147.09517$, we find the minimum number of ions required for coalescence is $\approx 55000$.
 
 \begin{table}[htbp]
  \centering	  	  
