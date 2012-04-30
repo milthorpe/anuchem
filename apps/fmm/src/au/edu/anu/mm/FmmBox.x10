@@ -11,6 +11,7 @@
 package au.edu.anu.mm;
 
 import x10.util.ArrayList;
+import x10.util.HashSet;
 
 import x10x.vector.Point3d;
 import x10x.vector.Vector3d;
@@ -85,6 +86,106 @@ public class FmmBox {
             || Math.abs(z - box2.z) > ws;
     }
 
+    private static def upwardIfNotNull(size:Double, fmmOperators:PlaceLocalHandle[FmmOperators], locallyEssentialTree:PlaceLocalHandle[LocallyEssentialTree], boxes:Rail[DistArray[FmmBox](3)], childLevel:Int, x:Int, y:Int, z:Int, periodic:Boolean) : MultipoleExpansion {
+        val childLevelBoxes = boxes(childLevel);
+        val childBox = childLevelBoxes(x,y,z);
+        if (childBox != null) {
+            return childBox.upward(size, fmmOperators, locallyEssentialTree, boxes, periodic);
+        } else {
+            return null;
+        }
+    }
+
+    /** 
+     * For each non-leaf box, combines multipole expansions for <= 8 child
+     * boxes into a single multipole expansion for the parent box.
+     */
+    protected def upward(size:Double, fmmOperators:PlaceLocalHandle[FmmOperators], locallyEssentialTree:PlaceLocalHandle[LocallyEssentialTree], boxes:Rail[DistArray[FmmBox](3)], periodic:Boolean) {
+        val childLevel = level+1;
+        val childLevelBoxes = boxes(childLevel);
+
+        val childExpansions = new Array[MultipoleExpansion](8);
+        finish {
+            var i:Int=0;
+            for (x2 in (2*x)..(2*x+1)) {
+                for (y2 in (2*y)..(2*y+1)) {
+                    for (z2 in (2*z)..(2*z+1)) {
+                        val childHome = childLevelBoxes.dist(x2,y2,z2);
+                        if (childHome == here) {
+                            childExpansions(i++) = upwardIfNotNull(size, fmmOperators, locallyEssentialTree, boxes, childLevel, x2, y2, z2, periodic);
+                        } else {
+                            childExpansions(i++) = at (childHome) upwardIfNotNull(size, fmmOperators, locallyEssentialTree, boxes, childLevel, x2, y2, z2, periodic);
+                        }
+                    }
+                }
+            }
+        }
+
+        val myOperators = fmmOperators();
+        val myComplexK = myOperators.complexK;
+        val myWignerA = myOperators.wignerA;
+        val halfSideLength = size / Math.pow2(childLevel+1);
+        val numTerms = multipoleExp.p;
+        val scratch = new MultipoleExpansion(numTerms);    
+        val scratch_array = new Array[Complex](-numTerms..numTerms) as Array[Complex](1){rect,rail==false};
+        var i:Int=0;
+        for (x2 in (2*x)..(2*x+1)) {
+            for (y2 in (2*y)..(2*y+1)) {
+                for (z2 in (2*z)..(2*z+1)) {
+                    val childExp = childExpansions(i++);
+                    if (childExp != null) {
+                        val dx = ((x2+1)%2)*2-1;
+                        val dy = ((y2+1)%2)*2-1;
+                        val dz = ((z2+1)%2)*2-1;
+                        this.multipoleExp.translateAndAddMultipole(scratch, scratch_array,
+                          Vector3d(dx*halfSideLength, dy*halfSideLength, dz*halfSideLength),
+                          myComplexK(dx,dy,dz), childExp, myWignerA((dx+1)/2, (dy+1)/2, (dz+1)/2));
+                    }
+                }
+            }
+        }
+
+        sendMultipole(locallyEssentialTree, boxes, periodic);
+
+        return this.multipoleExp;
+    }
+
+    protected def sendMultipole(locallyEssentialTree:PlaceLocalHandle[LocallyEssentialTree], boxes:Rail[DistArray[FmmBox](3)], periodic:Boolean) {
+        // async send this box's multipole expansion to V-list
+        if (vList != null) {
+            val level = this.level;
+            val x = this.x;
+            val y = this.y;
+            val z = this.z;
+            val multipoleExp = this.multipoleExp;
+            val thisLevelBoxes = boxes(level);
+            val vListPlaces = new HashSet[Int]();
+            for ([p] in vList) {
+                vListPlaces.add(thisLevelBoxes.dist(vList(p)).id);
+            }
+            for(placeId in vListPlaces) {
+                at(Place(placeId)) async {
+                    val multipoleCopies = locallyEssentialTree().multipoleCopies(level);
+                    if (periodic) {
+                        val copyRegion = multipoleCopies.region;
+                        val levelDim = Math.pow2(level) as Int;
+                        for (xTrans in -1..1) {
+                            for (yTrans in -1..1) {
+                                for (zTrans in -1..1) {
+                                    if (copyRegion.contains(x+xTrans*levelDim, y+yTrans*levelDim, z+zTrans*levelDim)) {
+                                        multipoleCopies(x+xTrans*levelDim, y+yTrans*levelDim, z+zTrans*levelDim) = multipoleExp;
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        multipoleCopies(x,y,z) = multipoleExp;
+                    }
+                }
+            }
+        }
+    }
+
     protected def downward(size:Double, parentLocalExpansion:LocalExpansion, fmmOperators:PlaceLocalHandle[FmmOperators], locallyEssentialTree:PlaceLocalHandle[LocallyEssentialTree], boxes:Rail[DistArray[FmmBox](3)]):Double {
         constructLocalExpansion(size, fmmOperators, parentLocalExpansion, locallyEssentialTree);
 
@@ -127,6 +228,7 @@ public class FmmBox {
         val scratch_array = new Array[Complex](-numTerms..numTerms) as Array[Complex](1){rect,rail==false};
         val vList = getVList();
         for ([p] in vList) {
+            
             val boxIndex2 = vList(p);
             // TODO - should be able to detect Point rank and inline
             val x2 = boxIndex2(0);

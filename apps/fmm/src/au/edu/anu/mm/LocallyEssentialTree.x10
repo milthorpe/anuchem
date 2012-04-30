@@ -6,7 +6,7 @@
  *  You may obtain a copy of the License at
  *      http://www.opensource.org/licenses/eclipse-1.0.php
  *
- * (C) Copyright Josh Milthorpe 2010-2011.
+ * (C) Copyright Josh Milthorpe 2010-2012.
  */
 package au.edu.anu.mm;
 
@@ -33,7 +33,7 @@ public class LocallyEssentialTree {
      * The Array has one element for each level; each element
      * holds the portion of the combined V-list for that level.
      */
-    public val multipoleCopies : Rail[DistArray[MultipoleExpansion](3)];
+    public val multipoleCopies : Rail[Array[MultipoleExpansion](3)];
 
     /**
      * A cache of PointCharge for the combined U-list of all
@@ -41,7 +41,7 @@ public class LocallyEssentialTree {
      * non-well-separated boxes for use in direct evaluations 
      * with all atoms at a given place.
      */
-    public val cachedAtoms : DistArray[Rail[PointCharge]](3);
+    public val cachedAtoms : Array[Rail[PointCharge]](3);
     
     public def this(combinedUList : Rail[Point(3)],
                 combinedVList : Rail[Rail[Point(3)]],
@@ -55,16 +55,16 @@ public class LocallyEssentialTree {
         this.uListMax = uListMax;
         this.vListMin = vListMin;
         this.vListMax = vListMax;
-        val multipoleCopies = new Array[DistArray[MultipoleExpansion](3)](combinedVList.size);
+        val multipoleCopies = new Array[Array[MultipoleExpansion](3)](combinedVList.size);
         for (i in 0..(combinedVList.size-1)) {
             if (combinedVList(i) != null) {
                 val multipoleCopiesLevelRegion = vListMin(i)(0)..vListMax(i)(0) * vListMin(i)(1)..vListMax(i)(1) * vListMin(i)(2)..vListMax(i)(2);
-                multipoleCopies(i) = DistArray.make[MultipoleExpansion](new PeriodicDist(Dist.makeConstant(multipoleCopiesLevelRegion)));
+                multipoleCopies(i) = new Array[MultipoleExpansion](multipoleCopiesLevelRegion);
             }
         }
         this.multipoleCopies = multipoleCopies;
 
         val cachedAtomsRegion = uListMin(0)..uListMax(0) * uListMin(1)..uListMax(1) * uListMin(2)..uListMax(2);
-        this.cachedAtoms = DistArray.make[Rail[PointCharge]](new PeriodicDist(Dist.makeConstant(cachedAtomsRegion)));
+        this.cachedAtoms = new Array[Rail[PointCharge]](cachedAtomsRegion);
     }
 }

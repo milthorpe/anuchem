@@ -46,6 +46,27 @@ public class FmmLeafBox extends FmmBox {
         this.atoms = atoms;
     }
 
+    /**
+     * Get the multipole representation of this box, which as a leaf box is
+     * simply the sum of the contributions of the particles in the box.
+     * N.B. must only be called once per pass
+     */
+    protected def upward(size:Double, fmmOperators:PlaceLocalHandle[FmmOperators], locallyEssentialTree:PlaceLocalHandle[LocallyEssentialTree], boxes:Rail[DistArray[FmmBox](3)], periodic:Boolean) {
+        val p = multipoleExp.p;
+        val boxCentre = getCentre(size);
+        val boxAtoms = getAtoms();
+        for (i in 0..(boxAtoms.size-1)) {
+            val atom = boxAtoms(i);
+            val atomLocation = boxCentre.vector(atom.centre);
+            // only one thread per box, so unsafe addOlm is OK
+            multipoleExp.addOlm(atom.charge, atomLocation, p);
+        }
+
+        sendMultipole(locallyEssentialTree, boxes, periodic);
+
+        return multipoleExp;
+    }
+
     protected def downward(size:Double, parentLocalExpansion:LocalExpansion, fmmOperators:PlaceLocalHandle[FmmOperators], locallyEssentialTree:PlaceLocalHandle[LocallyEssentialTree], boxes:Rail[DistArray[FmmBox](3)]):Double {
         constructLocalExpansion(size, fmmOperators, parentLocalExpansion, locallyEssentialTree);
 

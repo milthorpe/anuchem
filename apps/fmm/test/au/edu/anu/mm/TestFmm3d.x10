@@ -24,12 +24,13 @@ public class TestFmm3d extends TestElectrostatic {
     public def sizeOfCentralCluster() : Double = 80.0;
 
     public static def main(args : Array[String](1)) {
-        var numAtoms : Int;
-        var density : Double = 60.0;
-        var numTerms : Int = 10;
-        var wellSpaced : Int = 2;
-        var verbose : Boolean = false;
-        var compare : Boolean = false;
+        var numAtoms:Int;
+        var density:Double = 60.0;
+        var numTerms:Int = 10;
+        var wellSpaced:Int = 2;
+        var verbose:Boolean = false;
+        var compare:Boolean = false;
+        var forces:Boolean = false;
         if (args.size > 0) {
             numAtoms = Int.parseInt(args(0));
             if (args.size > 1) {
@@ -45,6 +46,9 @@ public class TestFmm3d extends TestElectrostatic {
                             if (args.size > 5) {
                                 if (args(5).equals("-compare")) {
                                     compare = true;
+                                    if (args(5).equals("-forces")) {
+                                        forces = true;
+                                    }
                                 }
                             }
                         }
@@ -52,14 +56,14 @@ public class TestFmm3d extends TestElectrostatic {
                 }
             }
         } else {
-            Console.ERR.println("usage: TestFmm3d numAtoms [density] [numTerms] [wellSpaced] [-verbose] [-compare]");
+            Console.ERR.println("usage: TestFmm3d numAtoms [density] [numTerms] [wellSpaced] [-verbose] [-compare] [-forces]");
             return;
         }
 
-        new TestFmm3d().test(numAtoms, density, numTerms, wellSpaced, verbose, compare);
+        new TestFmm3d().test(numAtoms, density, numTerms, wellSpaced, verbose, compare, forces);
     }
 
-    public def test(numAtoms : Int, density : Double, numTerms : Int, wellSpaced : Int, verbose : Boolean, compare : Boolean) {
+    public def test(numAtoms:Int, density:Double, numTerms:Int, wellSpaced:Int, verbose:Boolean, compare:Boolean, forces:Boolean) {
         if (verbose) {
             val numLevels = Math.max(2, (Math.log(numAtoms / density) / Math.log(8.0) + 1.0) as Int);
             Console.OUT.println("Testing FMM for " + numAtoms 
@@ -83,8 +87,7 @@ public class TestFmm3d extends TestElectrostatic {
 
             logTime("Prefetch",   Fmm3d.TIMER_INDEX_PREFETCH,  fmm3d.timer);
             logTime("Direct",     Fmm3d.TIMER_INDEX_DIRECT,    fmm3d.timer);
-            logTime("Multipole",  Fmm3d.TIMER_INDEX_MULTIPOLE, fmm3d.timer);
-            logTime("Combine",    Fmm3d.TIMER_INDEX_COMBINE,   fmm3d.timer);
+            logTime("Upward",     Fmm3d.TIMER_INDEX_UPWARD,    fmm3d.timer);
             logTime("Downward",   Fmm3d.TIMER_INDEX_DOWNWARD,  fmm3d.timer);
         }
 
@@ -98,7 +101,9 @@ public class TestFmm3d extends TestElectrostatic {
                 //direct.printForces();
                 val error = directEnergy - energy;
                 Console.OUT.println("direct = " + directEnergy + " error = " + error + " relative error = " + Math.abs(error) / Math.abs(energy));
-                fmm3d.printForces();
+                if (forces) {
+                    fmm3d.printForces();
+                }
             }
         }
     }

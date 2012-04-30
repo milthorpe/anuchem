@@ -272,7 +272,7 @@ public class PeriodicFmm3d extends Fmm3d {
                             for (sameBoxAtomIndex in 0..(atomIndex1-1)) {
                                 val sameBoxAtom = box1Atoms(sameBoxAtomIndex);
                                 val pairEnergy = atom1.charge * sameBoxAtom.charge / atom1.centre.distance(sameBoxAtom.centre);
-                                thisPlaceEnergy += pairEnergy;
+                                thisPlaceEnergy += 2.0 * pairEnergy;
                             }
                         }
 
@@ -294,7 +294,7 @@ public class PeriodicFmm3d extends Fmm3d {
                                         val atom1 = box1Atoms(atomIndex1);
                                         val distance = atom1.centre.distance(translatedCentre);
                                         if (distance != 0.0) { // don't include dipole-balancing charges at same point
-                                            thisPlaceEnergy += 0.5 * atom1.charge * atom2.charge / atom1.centre.distance(translatedCentre);
+                                            thisPlaceEnergy += atom1.charge * atom2.charge / atom1.centre.distance(translatedCentre);
                                         }
                                     }
                                 }
