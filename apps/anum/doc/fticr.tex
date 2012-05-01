@@ -9,6 +9,7 @@
 %
 \usepackage{graphicx}
 \usepackage{amssymb,amsmath}
+\usepackage{wrapfig}
 
 \usepackage[
 pdfauthor={Josh Milthorpe},
@@ -79,12 +80,36 @@ I &= \sum_{i=1}^N q_i\mathbf{v}_i \cdot \mathbf{E}_{image}(\mathbf{r}_i) & \math
 
 In addition to the influence of the trapping field and the ion-image interaction, each ion experiences a repulsive Coulomb force from every other ion in the packet.
 The calculation of these forces is nominally $O(N^2)$, which makes it infeasible for simulation of large ion packets unless some approximation is used to reduce the computational complexity.
+
 Ion excitation and detection is typically performed in a vacuum, or in an environment of low-pressure neutral gas particles.
 To produce a detectable ICR signal, it is necessary to excite the ions so as to produce a highly coherent circular motion.
 Thus the distribution of charged particles within the FT-ICR chamber is highly non-uniform.
 Previous simulations have either used the particle-in-cell approximation\cite{Leach2009} or virtual particles to reduce the number of interactions to be simulated\cite{Fujiwara2010}.
 However, particle-in-cell simulations are best suited to uniform particle distributions with a low required accuracy\cite{Greengard1989}.
 In contrast, the adaptive fast multipole algorithm\cite{Cheng1999} provides guaranteed error bounds for non-uniform distributions.
+
+\subsection{Fast multipole method}
+\label{sec:fmm}
+
+\begin{wraptable}{r}{0.4\columnwidth}
+\label{tab:tree_params}
+\begin{tabular}{l|l|l}
+\hline \hline
+\textbf{N} & \textbf{s} & \textbf{leaf box size} (m) \\
+\hline
+$10^4$ & 3 & $1.95 \times 10^{-6}$ \\
+$10^5$ & 4 & $2.44 \times 10^{-7}$ \\
+$10^6$ & 5 & $3.10 \times 10^{-8}$ \\
+\hline \hline
+\end{tabular}
+ \caption{Octree parameters, $N_0 = 100$}
+\end{wraptable}
+
+The cubic simulation space is divided into an octree of $s$ levels according to a desired mean number of particles per lowest level box $N_0$ such that $s = \left\lceil log_8(N / N_0) \right\rceil$.
+The side length of a \emph{leaf} box at the lowest level is therefore $a / 8^s$.
+Tree parameters are given for sample problem sizes where $N_0 = 100$ in table \ref{tab:tree_params}.
+
+
 
 \subsection{Simulation results}
 
@@ -164,7 +189,7 @@ The simulation parameters and results are in table \ref{tab:amino}.
 
 \subsection{Peak coalescence}
 
-Vladimirov et al.\cite{Vladimirov2011} give an expression for the minimum number of ions required for coalescence of (singly-charged)  clouds of similar masses $m_1$ and $m_2$:
+Vladimirov et al.\cite{Vladimirov2011} give an expression for the minimum number of ions required for coalescence of two clouds of (singly-charged) ions of similar masses $m_1$ and $m_2$:
 \begin{align}
 N &= 4.87 \times 10^8 \frac{a^2 R B^2 (m_2 - m_1)}{m^2}
 \end{align}
