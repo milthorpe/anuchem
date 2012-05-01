@@ -163,14 +163,15 @@ public class TestCyclotron {
         val atoms = new Array[MMAtom](totalIons);
         var i:Int = 0;
         for (species in speciesList) {
-            val omega_c = species.charge * B / species.mass * (PenningTrap.CHARGE_MASS_FACTOR) / (2.0 * Math.PI);
+            val omega_c = species.charge * B / species.mass * (PenningTrap.CHARGE_MASS_FACTOR);
             val omega_z = Math.sqrt(2.0 * PenningTrap.ALPHA_PRIME * species.charge * V / (species.mass * edgeLength*edgeLength) * PenningTrap.CHARGE_MASS_FACTOR);
             val omega_plus = omega_c / 2.0 + Math.sqrt(omega_c*omega_c / 4 - omega_z*omega_z / 2);
+            val nu_plus = omega_plus / (2.0 * Math.PI);
 
             val v = PenningTrap.CHARGE_MASS_FACTOR * B * radius * species.charge / species.mass;
             val r = species.mass * v / (species.charge * B) / PenningTrap.CHARGE_MASS_FACTOR;
             Console.OUT.printf("# %6i %10s mass %8.5f charge %i ", species.number, species.name, species.mass, species.charge);
-            Console.OUT.printf("omega_c = %7i Hz omega_z = %6i Hz omega_+ = %7i Hz v = %9.3g m/s\n", omega_c as Int, omega_z as Int, omega_plus as Int, v);
+            Console.OUT.printf("omega_c = %7i rad/s omega_z = %6i rad/s omega_+ = %7i rad/s nu_+ = %7i v = %9.3g m/s\n", omega_c as Int, omega_z as Int, omega_plus as Int, nu_plus as Int, v);
 
             for (j in 0..(species.number-1)) {
                 // distribution for each species is uniform 1mm cylinder along
