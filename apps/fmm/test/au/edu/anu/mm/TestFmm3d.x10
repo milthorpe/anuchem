@@ -46,8 +46,10 @@ public class TestFmm3d extends TestElectrostatic {
                             if (args.size > 5) {
                                 if (args(5).equals("-compare")) {
                                     compare = true;
-                                    if (args(5).equals("-forces")) {
-                                        forces = true;
+                                    if (args.size > 6) {
+                                        if (args(6).equals("-forces")) {
+                                            forces = true;
+                                        }
                                     }
                                 }
                             }
@@ -83,15 +85,15 @@ public class TestFmm3d extends TestElectrostatic {
         if (verbose) {
             Console.OUT.println("energy = " + energy);
 
-            logTime("(Tree construction)", Fmm3d.TIMER_INDEX_TREE, fmm3d.timer);
+            logTime("(Tree construction)", Fmm3d.TIMER_INDEX_TREE, fmm3d.timer());
 
-            logTime("Prefetch",   Fmm3d.TIMER_INDEX_PREFETCH,  fmm3d.timer);
-            logTime("Direct",     Fmm3d.TIMER_INDEX_DIRECT,    fmm3d.timer);
-            logTime("Upward",     Fmm3d.TIMER_INDEX_UPWARD,    fmm3d.timer);
-            logTime("Downward",   Fmm3d.TIMER_INDEX_DOWNWARD,  fmm3d.timer);
+            logTime("Prefetch",   Fmm3d.TIMER_INDEX_PREFETCH,  fmm3d.timer());
+            logTime("Direct",     Fmm3d.TIMER_INDEX_DIRECT,    fmm3d.timer());
+            logTime("Upward",     Fmm3d.TIMER_INDEX_UPWARD,    fmm3d.timer());
+            logTime("Downward",   Fmm3d.TIMER_INDEX_DOWNWARD,  fmm3d.timer());
         }
 
-        logTime("Total",     Fmm3d.TIMER_INDEX_TOTAL,     fmm3d.timer, verbose);
+        logTime("Total",     Fmm3d.TIMER_INDEX_TOTAL,     fmm3d.timer(), verbose);
 
         if (compare) {
             val direct = new ElectrostaticDirectMethod(atoms);

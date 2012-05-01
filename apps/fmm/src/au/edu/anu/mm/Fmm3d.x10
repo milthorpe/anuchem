@@ -14,6 +14,7 @@ import x10.compiler.Inline;
 import x10.util.ArrayList;
 import x10.util.HashMap;
 import x10.util.HashSet;
+import x10.util.Team;
 import x10x.vector.Point3d;
 import x10x.vector.Vector3d;
 import au.edu.anu.chem.PointCharge;
@@ -73,7 +74,7 @@ public class Fmm3d {
     public static val TIMER_INDEX_TREE : Int = 6;
     public static val TIMER_INDEX_PLACEHOLDER : Int = 7;
     /** A multi-timer for the several segments of a single getEnergy invocation, indexed by the constants above. */
-    public val timer = new Timer(8);
+    public val timer = PlaceLocalHandle.make[Timer](PlaceGroup.WORLD, ()=>new Timer(8));
 
     /** All boxes in the octree division of space. 
      * Array has numLevels elements, for levels [1..numLevels]
@@ -156,30 +157,43 @@ public class Fmm3d {
         this.offset = offset;
         this.size = size;
 
-        timer.start(TIMER_INDEX_TREE);
+        timer().start(TIMER_INDEX_TREE);
         val boxes = constructTree(numLevels, topLevel, numTerms, ws, periodic);
         this.boxes = boxes;
         this.locallyEssentialTree = PlaceLocalHandle.make[LocallyEssentialTree](Dist.makeUnique(), () => Fmm3d.createLocallyEssentialTree(numLevels, topLevel, boxes, periodic));
 
         this.fmmOperators = PlaceLocalHandle.make[FmmOperators](Dist.makeUnique(), () => new FmmOperators(numTerms, ws));
 
-        timer.stop(TIMER_INDEX_TREE);
+        timer().stop(TIMER_INDEX_TREE);
     }
     
     public def calculateEnergy() : Double {
-        timer.start(TIMER_INDEX_TOTAL);
-        val farFieldEnergy:Double;
-        finish {
-            async {
-                prefetchRemoteAtoms();
+        timer().start(TIMER_INDEX_TOTAL);
+        val totalEnergy = finish (SumReducer()) {
+            ateach(p1 in Dist.makeUnique()) {
+                val directEnergy:Double;
+                val farFieldEnergy:Double;
+                finish {
+                    async {
+                        prefetchRemoteAtoms();
+                        directEnergy = getDirectEnergy();
+                    }
+                    upwardPass();
+                    Team.WORLD.barrier(here.id);
+                    farFieldEnergy = downwardPass();
+                }
+                val localEnergy = 0.5 * (farFieldEnergy + directEnergy);
+                offer localEnergy;
             }
-            upwardPass();
-            farFieldEnergy = downwardPass();
-        }
-        val directEnergy = 0.5 * getDirectEnergy();
-        val totalEnergy = directEnergy + farFieldEnergy;
+        };
 
-        timer.stop(TIMER_INDEX_TOTAL);
+        timer().stop(TIMER_INDEX_TOTAL);
+
+        // reduce timer totals
+        finish ateach(p1 in Dist.makeUnique()) {
+            Team.WORLD.allreduce[Long](here.id, timer().total, 0, timer().total, 0, timer().total.size, Team.MAX);
+        }
+
         return totalEnergy;
     }
 
@@ -231,7 +245,7 @@ public class Fmm3d {
 
 
     public def assignAtomsToBoxes(atoms:DistArray[Rail[MMAtom]](1)) {
-        timer.start(TIMER_INDEX_TREE);
+        timer().start(TIMER_INDEX_TREE);
         //Console.OUT.println("assignAtomsToBoxes");
         val lowestLevelBoxes = boxes(numLevels);
         val offset = this.offset; // TODO shouldn't be necessary XTENLANG-1913
@@ -262,53 +276,42 @@ public class Fmm3d {
                 box.setAtoms(boxAtoms.toArray());
             }
         }
-        timer.stop(TIMER_INDEX_TREE);
+        timer().stop(TIMER_INDEX_TREE);
     }
 
     protected def upwardPass() {
-        timer.start(TIMER_INDEX_UPWARD);        
+        timer().start(TIMER_INDEX_UPWARD);
 
         val startingLevel = periodic ? topLevel+1 : topLevel;
-        val numLevels = this.numLevels; // TODO shouldn't be necessary XTENLANG-1913
-        val size = this.size; // TODO shouldn't be necessary XTENLANG-1913
-        val boxes = this.boxes; // TODO shouldn't be necessary XTENLANG-1913
-        val fmmOperators = this.fmmOperators; // TODO shouldn't be necessary XTENLANG-1913
-        val locallyEssentialTree = this.locallyEssentialTree; // TODO shouldn't be necessary XTENLANG-1913
-        val periodic = this.periodic; // TODO shouldn't be necessary XTENLANG-1913
-
-        finish ateach(p1 in Dist.makeUnique()) {
-            val topLevelBoxes = boxes(startingLevel);
-            finish for([x,y,z] in topLevelBoxes.dist(here)) {
-                val box = topLevelBoxes(x,y,z);
-                if (box != null) {
-                    async box.upward(size, fmmOperators, locallyEssentialTree, boxes, periodic);
-                }
+        val topLevelBoxes = boxes(startingLevel);
+        finish for([x,y,z] in topLevelBoxes.dist(here)) {
+            val box = topLevelBoxes(x,y,z);
+            if (box != null) {
+                async box.upward(size, fmmOperators, locallyEssentialTree, boxes, periodic);
             }
         }
-        timer.stop(TIMER_INDEX_UPWARD);
+        timer().stop(TIMER_INDEX_UPWARD);
     }
 
     protected def downwardPass():Double {
-        timer.start(TIMER_INDEX_DOWNWARD);
+        timer().start(TIMER_INDEX_DOWNWARD);
 
         val startingLevel = periodic ? topLevel+1 : topLevel;
         val topLevelExp = periodic ? boxes(0)(0,0,0).localExp : null;
-        val size = this.size; // TODO shouldn't be necessary XTENLANG-1913
-        val boxes = this.boxes; // TODO shouldn't be necessary XTENLANG-1913
-        val fmmOperators = this.fmmOperators; // TODO shouldn't be necessary XTENLANG-1913
-        val locallyEssentialTree = this.locallyEssentialTree; // TODO shouldn't be necessary XTENLANG-1913
         val topLevelBoxes = boxes(startingLevel);
 
         val farField = finish(SumReducer()) {
-            ateach([x,y,z] in topLevelBoxes) {
+            for([x,y,z] in topLevelBoxes.dist(here)) {
                 val box = topLevelBoxes(x,y,z);
                 if (box != null) {
-                    offer box.downward(size, topLevelExp, fmmOperators, locallyEssentialTree, boxes);
+                    async {
+                        offer box.downward(size, topLevelExp, fmmOperators, locallyEssentialTree, boxes);
+                    }
                 }
             }
         };
-        timer.stop(TIMER_INDEX_DOWNWARD);
-        return farField / 2.0;
+        timer().stop(TIMER_INDEX_DOWNWARD);
+        return farField;
     }
 
     /**
@@ -319,7 +322,7 @@ public class Fmm3d {
      * @param boxes the distributed array of boxes at the given level
      */
     protected static def fetchMultipoles(level:Int, myLET:LocallyEssentialTree, boxes:DistArray[FmmBox](3)) {
-        val vListPlaces = new HashMap[Int,ArrayList[Point(3)]](26); // a place may have up to 26 immediate neighbour
+        val vListPlaces = new HashMap[Int,ArrayList[Point(3)]](26); // a place may have up to 26 immediate neighbours
 
         val combinedVList = myLET.combinedVList(level);
         // separate the vList into partial lists stored at each nearby place
@@ -369,46 +372,43 @@ public class Fmm3d {
     }
 
     /**
-     * Fetch all atoms required for direct calculations at each place.
+     * Fetch all atoms required for direct calculations at this place.
      * This is communication-intensive, so can be overlapped with computation.
      */
     def prefetchRemoteAtoms() : void {
-        timer.start(TIMER_INDEX_PREFETCH);
+        timer().start(TIMER_INDEX_PREFETCH);
         val lowestLevelBoxes = boxes(numLevels);
-        val locallyEssentialTree = this.locallyEssentialTree; // TODO shouldn't be necessary XTENLANG-1913
-        finish ateach(p1 in Dist.makeUnique()) {
-            val myLET = locallyEssentialTree();
-            val myCombinedUList = myLET.combinedUList;
-            val cachedAtoms = myLET.cachedAtoms;
+        val myLET = locallyEssentialTree();
+        val myCombinedUList = myLET.combinedUList;
+        val cachedAtoms = myLET.cachedAtoms;
 
-            val uListPlaces = new HashMap[Int,ArrayList[Point(3)]](26); // a place may have up to 26 immediate neighbours
-            
-            // separate the uList into partial lists stored at each nearby place
-            for ([p] in myCombinedUList) {
-                val boxIndex = myCombinedUList(p);
-                val placeId = lowestLevelBoxes.dist(boxIndex).id;
-                var uListForPlace : ArrayList[Point(3)] = uListPlaces.getOrElse(placeId, null);
-                if (uListForPlace == null) {
-                    uListForPlace = new ArrayList[Point(3)]();
-                    uListPlaces.put(placeId, uListForPlace);
-                }
-                uListForPlace.add(boxIndex);
+        val uListPlaces = new HashMap[Int,ArrayList[Point(3)]](26); // a place may have up to 26 immediate neighbours
+        
+        // separate the uList into partial lists stored at each nearby place
+        for ([p] in myCombinedUList) {
+            val boxIndex = myCombinedUList(p);
+            val placeId = lowestLevelBoxes.dist(boxIndex).id;
+            var uListForPlace : ArrayList[Point(3)] = uListPlaces.getOrElse(placeId, null);
+            if (uListForPlace == null) {
+                uListForPlace = new ArrayList[Point(3)]();
+                uListPlaces.put(placeId, uListForPlace);
             }
+            uListForPlace.add(boxIndex);
+        }
 
-            // retrieve the partial list for each place and store into my LET
-            finish for (placeEntry in uListPlaces.entries()) async {
-                val placeId = placeEntry.getKey();
-                val uListForPlace = placeEntry.getValue();
-                val uListArray = uListForPlace.toArray();
-                val atomsForPlace = (placeId == here.id) ?
-                    Fmm3d.getAtomsForBoxList(lowestLevelBoxes, uListArray) :
-                    at(Place.place(placeId)) { Fmm3d.getAtomsForBoxList(lowestLevelBoxes, uListArray)};
-                for (i in 0..(uListArray.size-1)) {
-                    myLET.cachedAtoms(uListArray(i)) = atomsForPlace(i);
-                }
+        // retrieve the partial list for each place and store into my LET
+        finish for (placeEntry in uListPlaces.entries()) async {
+            val placeId = placeEntry.getKey();
+            val uListForPlace = placeEntry.getValue();
+            val uListArray = uListForPlace.toArray();
+            val atomsForPlace = (placeId == here.id) ?
+                Fmm3d.getAtomsForBoxList(lowestLevelBoxes, uListArray) :
+                at(Place.place(placeId)) { Fmm3d.getAtomsForBoxList(lowestLevelBoxes, uListArray)};
+            for (i in 0..(uListArray.size-1)) {
+                myLET.cachedAtoms(uListArray(i)) = atomsForPlace(i);
             }
         }
-        timer.stop(TIMER_INDEX_PREFETCH);
+        timer().stop(TIMER_INDEX_PREFETCH);
     }
 
     /**
@@ -435,67 +435,59 @@ public class Fmm3d {
      */
     def getDirectEnergy() : Double {
         //Console.OUT.println("direct");
-        timer.start(TIMER_INDEX_DIRECT);
+        timer().start(TIMER_INDEX_DIRECT);
 
         val lowestLevelBoxes = boxes(numLevels);
-        val locallyEssentialTree = this.locallyEssentialTree; // TODO shouldn't be necessary XTENLANG-1913
-        val lowestLevelDim = this.lowestLevelDim; // TODO shouldn't be necessary XTENLANG-1913
-        val size = this.size; // TODO shouldn't be necessary XTENLANG-1913
-        val directEnergy = finish (SumReducer()) {
-            ateach(p1 in Dist.makeUnique()) {
-                val myLET = locallyEssentialTree();
-                val cachedAtoms = myLET.cachedAtoms;
-                var thisPlaceEnergy : Double = 0.0;
-                for ([x1,y1,z1] in lowestLevelBoxes.dist(here)) {
-                    val box1 = lowestLevelBoxes(x1,y1,z1) as FmmLeafBox;
-                    if (box1 != null) {
-                        val box1Atoms = box1.getAtoms();
-                        for (atomIndex1 in 0..(box1Atoms.size-1)) {
-                            // direct calculation with all atoms in same box
-                            val atom1 = box1Atoms(atomIndex1);
-                            for (sameBoxAtomIndex in 0..(atomIndex1-1)) {
-                                val sameBoxAtom = box1Atoms(sameBoxAtomIndex);
-                                val rVec = sameBoxAtom.centre - atom1.centre;
+        val myLET = locallyEssentialTree();
+        val cachedAtoms = myLET.cachedAtoms;
+        var directEnergy : Double = 0.0;
+        for ([x1,y1,z1] in lowestLevelBoxes.dist(here)) {
+            val box1 = lowestLevelBoxes(x1,y1,z1) as FmmLeafBox;
+            if (box1 != null) {
+                val box1Atoms = box1.getAtoms();
+                for (atomIndex1 in 0..(box1Atoms.size-1)) {
+                    // direct calculation with all atoms in same box
+                    val atom1 = box1Atoms(atomIndex1);
+                    for (sameBoxAtomIndex in 0..(atomIndex1-1)) {
+                        val sameBoxAtom = box1Atoms(sameBoxAtomIndex);
+                        val rVec = sameBoxAtom.centre - atom1.centre;
+                        val r2 = rVec.lengthSquared();
+                        val r = Math.sqrt(r2);
+                        val pairEnergy = 2.0 * atom1.charge * sameBoxAtom.charge / r;
+                        directEnergy += pairEnergy;
+                        val pairForce = (atom1.charge * sameBoxAtom.charge / r2 / r) * rVec;
+                        atom1.force += pairForce;
+                        sameBoxAtom.force -= pairForce;
+                    }
+                }
+
+                // direct calculation with all atoms in non-well-separated boxes
+                val uList = box1.getUList();
+                for (p in 0..(uList.size-1)) {
+                    val boxIndex2 = uList(p);
+                    // TODO - should be able to detect Point rank and inline
+                    val x2 = boxIndex2(0);
+                    val y2 = boxIndex2(1);
+                    val z2 = boxIndex2(2);
+                    val box2Atoms = cachedAtoms(x2, y2, z2);
+                    if (box2Atoms != null) {
+                        for (otherBoxAtomIndex in 0..(box2Atoms.size-1)) {
+                            val atom2 = box2Atoms(otherBoxAtomIndex);
+                            for (atomIndex1 in 0..(box1Atoms.size-1)) {
+                                val atom1 = box1Atoms(atomIndex1);
+                                val rVec = atom2.centre - atom1.centre;
                                 val r2 = rVec.lengthSquared();
                                 val r = Math.sqrt(r2);
-                                val pairEnergy = 2.0 * atom1.charge * sameBoxAtom.charge / r;
-                                thisPlaceEnergy += pairEnergy;
-                                val pairForce = (atom1.charge * sameBoxAtom.charge / r2 / r) * rVec;
+                                directEnergy += atom1.charge * atom2.charge / r;
+                                val pairForce = (atom1.charge * atom2.charge / r2 / r) * rVec;
                                 atom1.force += pairForce;
-                                sameBoxAtom.force -= pairForce;
-                            }
-                        }
-
-                        // direct calculation with all atoms in non-well-separated boxes
-                        val uList = box1.getUList();
-                        for (p in 0..(uList.size-1)) {
-                            val boxIndex2 = uList(p);
-                            // TODO - should be able to detect Point rank and inline
-                            val x2 = boxIndex2(0);
-                            val y2 = boxIndex2(1);
-                            val z2 = boxIndex2(2);
-                            val box2Atoms = cachedAtoms(x2, y2, z2);
-                            if (box2Atoms != null) {
-                                for (otherBoxAtomIndex in 0..(box2Atoms.size-1)) {
-                                    val atom2 = box2Atoms(otherBoxAtomIndex);
-                                    for (atomIndex1 in 0..(box1Atoms.size-1)) {
-                                        val atom1 = box1Atoms(atomIndex1);
-                                        val rVec = atom2.centre - atom1.centre;
-                                        val r2 = rVec.lengthSquared();
-                                        val r = Math.sqrt(r2);
-                                        thisPlaceEnergy += atom1.charge * atom2.charge / r;
-                                        val pairForce = (atom1.charge * atom2.charge / r2 / r) * rVec;
-                                        atom1.force += pairForce;
-                                    }
-                                }
                             }
                         }
                     }
                 }
-                offer thisPlaceEnergy;
             }
-        };
-        timer.stop(TIMER_INDEX_DIRECT);
+        }
+        timer().stop(TIMER_INDEX_DIRECT);
 
         return directEnergy;
     }
