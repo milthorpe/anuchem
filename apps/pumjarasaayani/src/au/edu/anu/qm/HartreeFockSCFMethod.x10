@@ -36,6 +36,7 @@ public class HartreeFockSCFMethod extends SCFMethod {
            Console.OUT.println("Currently supports only closed shell calculations!");
            return;
         }
+        val noOfOccupancies = noOfElectrons / 2;
 
         val nuclearEnergy = getNuclearEnergy();
         Console.OUT.printf("Nuclear repulsion energy = %.6f a.u.\n", nuclearEnergy);
@@ -57,11 +58,10 @@ public class HartreeFockSCFMethod extends SCFMethod {
         // init memory for the matrices
         val N = hCore.getRowCount();
         val jd = JobDefaults.getInstance();
-        val gMatrixRO = new GMatrixRO(N, bfs, molecule);
+        val gMatrixRO = new GMatrixRO(N, bfs, molecule, noOfOccupancies);
         val gMatrix = new GMatrix(N, bfs, molecule);
 
         val mos = new MolecularOrbitals(N);
-        val noOfOccupancies = noOfElectrons / 2;
         val density = new Density(N, noOfOccupancies); // density.make();
 
         var fock:Fock = new Fock(N);

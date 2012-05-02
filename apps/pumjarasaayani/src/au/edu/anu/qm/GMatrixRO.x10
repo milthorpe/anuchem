@@ -39,20 +39,24 @@ public class GMatrixRO extends Matrix {
     val roL:Int;
     val roZ:Double;
     val nBasis:Int;
+    val nOrbital:Int;
     
     val norm:Rail[Double];
     val temp:Rail[Double];
     val dk:Rail[Double];
     val munuk:Array[Double](3){rect,zeroBased};
+    val muak:Array[Double](3){rect,zeroBased};
     transient val aux:Integral_Pack;
     val jMatrix:Matrix;
     val kMatrix:Matrix;
 
-    public def this(N:Int, bfs:BasisFunctions, molecule:Molecule[QMAtom]) {
+    public def this(N:Int, bfs:BasisFunctions, molecule:Molecule[QMAtom], nOrbital:Int) {
         super(N);
         this.bfs = bfs;
         this.mol = molecule;
         this.nBasis=N;
+        this.nOrbital = nOrbital;
+
         val jd = JobDefaults.getInstance();
         this.roN=jd.roN;
         this.roL=jd.roL;
@@ -68,8 +72,9 @@ public class GMatrixRO extends Matrix {
         temp = new Rail[Double](maxam1*maxam1*roK);
         aux = new Integral_Pack(roN,roL);
         dk = new Rail[Double](roK); // eqn 15b in RO#7
- 
+
         // Infinite memory code
+        muak = new Array[Double](0..(nBasis-1)*0..(nOrbital-1)*0..(roK-1)); // half-transformed auxiliary integrals eqn 16b in RO#7
         munuk = new Array[Double](0..(nBasis-1)*0..(nBasis-1)*0..(roK-1)); // Auxiliary integrals
     }
 
@@ -81,15 +86,13 @@ public class GMatrixRO extends Matrix {
 
         val mosMat = mos.getMatrix();
         val denMat = density.getMatrix();
-        val nOrbital = density.getNoOfOccupancies();
         val noOfAtoms = mol.getNumberOfAtoms();
 
         val roK = (roN+1)*(roL+1)*(roL+1);
 
         dk.clear();
 
-        // Infinite memory code
-        val muak = new Array[Double](0..(nBasis-1)*0..(nOrbital-1)*0..(roK-1)); // half-transformed auxiliary integrals eqn 16b in RO#7
+        muak.clear();
 
         var mu:Int = 0; 
         var nu:Int = 0; 
