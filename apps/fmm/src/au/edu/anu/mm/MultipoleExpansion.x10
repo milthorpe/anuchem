@@ -56,8 +56,6 @@ public class MultipoleExpansion extends Expansion {
                 phifac = phifac * phifac0;
 		        val O_lm = phifac / ilm * (q * rfac * pplm(l,m));
                 exp.terms(l,m) = O_lm;
-                exp.terms(l,-m) = O_lm.conjugate() * (1-2*(m%2));
-        		//to avoid conjugate if (m != 0) { if (m_sign) exp.terms(l, -m) = Complex(O_lm.re,-O_lm.im); else exp.terms(l, -m) = Complex(-O_lm.re,O_lm.im); }
     	    }
             rfac = rfac * v_pole.r;
         }
@@ -88,8 +86,6 @@ public class MultipoleExpansion extends Expansion {
                 phifac = phifac * phifac0;
 		        val O_lm = phifac / ilm * (q * rfac * pplm(l,m));
                 terms(l,m) += O_lm;
-                terms(l,-m) += O_lm.conjugate() * (1-2*(m%2));
-        		//to avoid conjugate if (m != 0) { if (m_sign) terms(l, -m) += Complex(O_lm.re,-O_lm.im); else terms(l, -m) += Complex(-O_lm.re,O_lm.im); }
     	    }
             rfac = rfac * v_pole.r;
         }
@@ -130,23 +126,17 @@ public class MultipoleExpansion extends Expansion {
             // phi terms cancel for m=0
             for (m in 1..l) {
                 val Mlm = localTerms(l,m);
-                val Mlmm = localTerms(l,-m);
-                val sign = (1-2*(m%2));
                 ilm = ilm*(l+m);
                 phifac = phifac * phifac0;
                 val O_lm = phifac / ilm * (q * rfac * pplm(l,m));
                 terms(l,m) += O_lm;
-                terms(l,-m) += O_lm.conjugate() * sign;
                 val r_lm = phifac / ilm * (q * l * rfacPrev * pplm(l,m));
-                dr += (Mlm * r_lm).re;
-                dr += (Mlmm * r_lm.conjugate() * sign).re;
+                dr += 2.0*(Mlm.re * r_lm.re) - 2.0*(Mlm.im * r_lm.im); // avoids conjugate for mirror terms m < 0
                 val Plm1 = (m<l) ? pplm(l,m+1) : 0.0;
                 val theta_lm = phifac / ilm * 0.5 * q * rfacPrev * ((l-m+1)*(l+m) * pplm(l,m-1) - Plm1);
-                dt += (Mlm * theta_lm).re;
-                dt += (Mlmm * theta_lm.conjugate() * sign).re;
+                dt += 2.0*(Mlm.re * theta_lm.re) - 2.0*(Mlm.im * theta_lm.im); // avoids conjugate for mirror terms m < 0
                 val phi_lm = Complex.I * phifac / ilm * 0.5 * q * rfacPrev * ((l-m+1)*(l-m+2) * pplm(l+1,m-1) + pplm(l+1,m+1));
-                dp += (Mlm * phi_lm).re;
-                dp += (Mlmm * phi_lm.conjugate() * sign).re;
+                dp += 2.0*(Mlm.re * phi_lm.re) - 2.0*(Mlm.im * phi_lm.im); // avoids conjugate for mirror terms m < 0
     	    }
             rfacPrev = rfac;
             rfac = rfac * v_pole.r;
@@ -172,53 +162,16 @@ public class MultipoleExpansion extends Expansion {
             var ilm : Double = il;
             var phifac : Complex = Complex.ONE;
             exp.terms(l,0) = phifac / ilm * (rfac * pplm(l,0)); 
-	        var m_sign : boolean = false;
             for (m in 1..l) {
                 ilm = ilm*(l+m);
                 phifac = phifac * phifac0;
         		val O_lm = phifac / ilm * (rfac * pplm(l,m));
                 exp.terms(l,m) = O_lm;
-	        	//to avoid conjugate if (m != 0) { if (m_sign) exp.terms(l, -m) = Complex(O_lm.re,-O_lm.im); else exp.terms(l, -m) = Complex(-O_lm.re,O_lm.im); }
-	        	m_sign = !m_sign;
-            }
-            for (m in -l..-1) {
-                exp.terms(l,m) = exp.terms(l,-m).conjugate() * (1-2*(-m%2));
             }
             rfac = rfac * v_pole.r;
         }
 
         return exp;
-    }
-
-    /** 
-     * Translate a multipole expansion centred around the origin along a vector -b,
-     * and adds to this expansion centred at -b.
-     * This corresponds to "Operator A", Equations 10-11 in White & Head-Gordon.
-     * Note: this defines A^lm_jk(b) = O_l-j,m-k(b); however this is only defined
-     * where abs(m-k) <= l-j, therefore we restrict m to [j-l+k..-j+l+k]
-     * @param b the vector along which to translate the multipole
-     * @param source the source multipole expansion, centred at the origin
-     */
-    public def translateAndAddMultipole(shift : MultipoleExpansion,
-                                         source : MultipoleExpansion) {
-        // TODO this atomic should be around inner loop update.
-        // however as it's "stop the world" it's more efficient to do it out here
-        atomic {
-            // TODO should be just:  for ([j,k] in terms.region) {
-            for (j in 0..p) {
-                for (k in -j..j) {
-                    val O_jk = source.terms(j,k);
-                    for (l in j..p) {
-                        for (m in -l..l) {
-                            if (Math.abs(m-k) <= (l-j)) {
-                                val A_lmjk = shift.terms(l-j, m-k);
-                                this.terms(l,m) = this.terms(l,m) + A_lmjk * O_jk;
-                            }
-                        }
-                    }
-                }
-            }
-        }
     }
 
     /**
@@ -231,7 +184,7 @@ public class MultipoleExpansion extends Expansion {
      * @param wigner is the pre calculated Wigner matrices for the rotation angle theta, indexed first by forwards (0) and backwards (1)
      * @see Dachsel 2006, eqn 9
      */
-    public def translateAndAddMultipole(scratch:MultipoleExpansion, temp:Array[Complex](1){rect,rail==false}, v:Vector3d, complexK:Rail[Array[Complex](1){rect,rail==false}], source:MultipoleExpansion, wigner:Rail[Rail[Array[Double](2){rect}]]) { 
+    public def translateAndAddMultipole(scratch:MultipoleExpansion, temp:Rail[Complex], v:Vector3d, complexK:Rail[Rail[Complex]], source:MultipoleExpansion, wigner:Rail[Rail[Array[Double](2){rect}]]) { 
 	    val b = v.length();
 	    val invB = 1 / b;
 
@@ -239,11 +192,10 @@ public class MultipoleExpansion extends Expansion {
 	    scratch.rotate(temp, complexK(0), wigner(0) );
 
 	    val targetTerms = scratch.terms;
-        var m_sign : int = 1;
 	    for (m in 0..p) {
 		    for (l in m..p) temp(l) = targetTerms(l, m);
 
-            var b_lm_pow : double = 1.0;
+            var b_lm_pow:Double = 1.0;
 		    for (l in m..p) {
 			    var O_lm : Complex = Complex.ZERO;
 			    var F_lm : Double = b_lm_pow / Factorial.getFactorial(l - m); // Factorial are already computed
@@ -252,11 +204,8 @@ public class MultipoleExpansion extends Expansion {
 				    F_lm = F_lm * (l - j) * invB;
 			    }
 			    targetTerms(l, m) = O_lm;
-			    //to avoid conjugate if (m != 0) { if (m_sign) targetTerms(l, -m) = Complex(O_lm.re,-O_lm.im); else targetTerms(l, -m) = Complex(-O_lm.re,O_lm.im); }
-			    if (m != 0) targetTerms(l, -m) = O_lm.conjugate() * m_sign;
                 b_lm_pow = b_lm_pow * b;
 		    }
-		    m_sign = -m_sign;
 	    }
 
 	    scratch.backRotate(temp, complexK(1), wigner(1) ); 
@@ -271,7 +220,7 @@ public class MultipoleExpansion extends Expansion {
      */
     public def translateAndAddMultipole(v : Vector3d, source : MultipoleExpansion) {
         val scratch = new MultipoleExpansion(p);
-        val temp = new Array[Complex](-p..p) as Array[Complex](1){rect,rail==false};
+        val temp = new Array[Complex](p+1);
     	val polar = Polar3d.getPolar3d(v);
     	translateAndAddMultipole(scratch, temp, v, genComplexK(polar.phi, p), source, WignerRotationMatrix.getACollection(polar.theta, p) );
     }
@@ -284,7 +233,7 @@ public class MultipoleExpansion extends Expansion {
      */
     public def rotate(theta : Double, phi : Double) {
     	val target = new MultipoleExpansion(this);
-        val temp = new Array[Complex](-p..p) as Array[Complex](1){rect,rail==false};
+        val temp = new Array[Complex](p+1);
     	target.rotate(temp, genComplexK(phi, p)(1) , WignerRotationMatrix.getACollection(theta, p)(0) );
     	return target;
     }
@@ -300,7 +249,7 @@ public class MultipoleExpansion extends Expansion {
     public def getMacroscopicParent() : MultipoleExpansion {
         val parentExpansion = new MultipoleExpansion(p);
         for (l in 0..p) {
-            for (m in -l..l) {
+            for (m in 0..l) {
                 parentExpansion.terms(l,m) = terms(l,m) * Math.pow(3.0, l);
             }
         }

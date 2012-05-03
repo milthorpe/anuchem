@@ -55,6 +55,7 @@ public class FmmLeafBox extends FmmBox {
         val p = multipoleExp.p;
         val boxCentre = getCentre(size);
         val boxAtoms = getAtoms();
+        multipoleExp.terms.clear();
         for (i in 0..(boxAtoms.size-1)) {
             val atom = boxAtoms(i);
             val atomLocation = boxCentre.vector(atom.centre);
@@ -98,8 +99,11 @@ public class FmmLeafBox extends FmmBox {
         // TODO use lift/reduction?
         // TODO should be just:  for ([j,k] in terms.region) {
         for (j in 0..p) {
-            for (k in -j..j) {
-                potential += (localExp.terms(j,k) * vExp.terms(j,k)).re;
+            potential += (localExp.terms(j,0) * vExp.terms(j,0)).re;
+            for (k in 1..j) {
+                val l_jk = localExp.terms(j,k);
+                val v_jk = vExp.terms(j,k);
+                potential += 2.0*(l_jk.re * v_jk.re) - 2.0*(l_jk.im * v_jk.im); // avoid conjugate/sign for mirror terms m < 0
             }
         }
         return potential;
