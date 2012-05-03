@@ -199,7 +199,7 @@ public class LocalExpansion extends Expansion {
 		    for (l in m..p) {
 			    var M_lm : Complex = Complex.ZERO;
 			    var F_lm : Double = Factorial.getFactorial(l + m) * b_lm1_pow;
-			    for (j in m..(p-l)) {
+			    for (j in m..p) {
 				    M_lm = M_lm + temp(j) * F_lm;
 				    F_lm = F_lm * (j + l + 1) * inv_b;
 			    }
