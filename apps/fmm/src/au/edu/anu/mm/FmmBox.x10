@@ -119,6 +119,7 @@ public class FmmBox {
                     }
                 }
             }
+            multipoleExp.terms.clear();
         }
 
         val myOperators = fmmOperators();
@@ -127,7 +128,7 @@ public class FmmBox {
         val halfSideLength = size / Math.pow2(childLevel+1);
         val numTerms = multipoleExp.p;
         val scratch = new MultipoleExpansion(numTerms);    
-        val scratch_array = new Array[Complex](-numTerms..numTerms) as Array[Complex](1){rect,rail==false};
+        val scratch_array = new Array[Complex](numTerms+1);
         var i:Int=0;
         for (x2 in (2*x)..(2*x+1)) {
             for (y2 in (2*y)..(2*y+1)) {
@@ -223,9 +224,10 @@ public class FmmBox {
         val thisLevelMultipoleCopies = locallyEssentialTree().multipoleCopies(level);
 
         // transform and add multipole expansions from same level
+        localExp.terms.clear();
         val numTerms = localExp.p;
         val scratch = new MultipoleExpansion(numTerms);    
-        val scratch_array = new Array[Complex](-numTerms..numTerms) as Array[Complex](1){rect,rail==false};
+        val scratch_array = new Array[Complex](numTerms+1);
         val vList = getVList();
         for ([p] in vList) {
             

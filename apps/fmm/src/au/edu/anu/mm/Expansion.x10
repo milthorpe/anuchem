@@ -6,9 +6,11 @@
  *  You may obtain a copy of the License at
  *      http://www.opensource.org/licenses/eclipse-1.0.php
  *
- * (C) Copyright Josh Milthorpe 2010-2011.
+ * (C) Copyright Josh Milthorpe 2010-2012.
  */
 package au.edu.anu.mm;
+
+import x10.array.TriangularRegion;
 
 import x10.compiler.Inline;
 import x10.util.StringBuilder;
@@ -18,9 +20,9 @@ import x10.util.StringBuilder;
  * <a href="info:doi/10.1063/1.468354">
  *      Derivation and efficient implementation of the fast multipole method
  * </a>, White and Head-Gordon, 1994.
- * These expansions have a peculiarly shaped region(abs(x0)<=x1 && 0<=x1<=p)
- * (X10 gives it as (x0+x1>=0 && x0-x1>=0 && x0<=3), which is constructed
- * here by subtracting two halfspaces from a rectangular region. 
+ * These expansions have a peculiarly shaped region(abs(x1)<=x0 && 0<=x0<=p)
+ * however only terms with x1>=0 are stored, as the terms with x1<0 are just
+ * complex conjugates of the terms with x1>0.
  * @author milthorpe
  */
 public class Expansion {
@@ -31,8 +33,7 @@ public class Expansion {
     public val p : Int;
 
     public def this(p : Int) {
-        val expRegion = new ExpansionRegion(p);
-        this.terms = new Array[Complex](expRegion);
+        this.terms = new Array[Complex](new TriangularRegion(0,0,p+1,true));
         this.p = p;
     }
 
@@ -56,16 +57,19 @@ public class Expansion {
     @Inline def unsafeAdd(e : Expansion) {
         //this.terms.map(this.terms, e.terms, (a:Complex, b:Complex)=>a+b);
         for (l in 0..p) {
-            for (m in -l..l) {
+            for (m in 0..l) {
                 this.terms(l,m) += e.terms(l,m);
             }
         }
     }
 
+    /**
+     * @return a string representation of this expansion.  does not include terms for m<0
+     */
     public def toString() : String {
         val s = new StringBuilder();
         for (i in 0..p) {
-            for (j in -i..i) {
+            for (j in 0..i) {
 		        s.add("" + terms(i,j) + " ");
             }
             s.add("\n");
@@ -79,11 +83,11 @@ public class Expansion {
      * @return array of Complex first indexed by forward (0), backward (1) then by k
      * @see Dachsel 2006, eqn 4 & 5
      */
-    public static def genComplexK(phi : Double, p : int) : Rail[Array[Complex](1){rect,rail==false}] { 
-    	val complexK = new Array[Array[Complex](1){rect,rail==false}](2);
-    	for (r in 0..1) { 
-	    	complexK(r) = new Array[Complex](-p..p) as Array[Complex](1){rect,rail==false}; 
-    		for (k in -p..p) complexK(r)(k) = Math.exp(Complex.I * k * phi * ((r==0)?1:-1) );
+    public static def genComplexK(phi:Double, p:Int):Rail[Rail[Complex]] { 
+        val complexK = new Array[Rail[Complex]](2);
+    	for (r in 0..1) {
+            complexK(r) = new Array[Complex](p+1);
+            for (k in 0..p) complexK(r)(k) = Math.exp(Complex.I * k * phi * ((r==0)?1:-1) );
 	    }
     	return complexK;
     }
@@ -91,27 +95,27 @@ public class Expansion {
     /** 
      * Rotates this expansion (local and multipole are differentiated by different precalculated wigner matrices) in three dimensions.
      * Performs rotation around z-axis first, THEN rotation around x-axis (for "forwards" rotation)
-     * @param temp an array of complex numbers of size at least (-p..p) to do temporary calculations in
+     * @param temp an Rail[Complex] of size at least p+1 in which to perform temporary calculations
      * @param wigner, precalculated wigner matrices, an array of WignerMatrices, indexed first by p from 0 to max terms in expansion
      * @param complexK, values of exp(i*k*phi)
      * @see Dachsel 2006 eqn 4 & 5
      */
-    public def rotate(temp : Array[Complex](1){rect,rail==false}, complexK : Array[Complex](1){rect,rail==false}, wigner : Rail[Array[Double](2){rect}]) {
-    	//val temp = new Array[Complex](-p..p);
+    public def rotate(temp:Rail[Complex], complexK:Rail[Complex], wigner:Rail[Array[Double](2){rect}]) {
         for (l in 1..p) {
-            val Dl = wigner(l); // avoids calculating matrices directly
+            val Dl = wigner(l);
 
-	        for (k in -l..l) temp(k) = terms(l, k) * complexK(k);
+	        for (k in 0..l) temp(k) = terms(l, k) * complexK(k);
            
-	        var m_sign : int = 1;
             for (m in 0..l) {
-	            var O_lm : Complex = Complex.ZERO;
-                for (k in -l..l) {
-                    O_lm += temp(k) * Dl(m, k); // Eq. 5
+	            var O_lm:Complex = temp(0) * Dl(m, 0);
+                var m_sign:Int = -1;
+                for (k in 1..l) {
+                    val temp_k = temp(k);
+                    O_lm += temp_k * Dl(m, k); // Eq. 5
+                    O_lm += m_sign * temp_k.conjugate() * Dl(m, -k); // k < 0
+                    m_sign = -m_sign;
                 }
                 terms(l,m) = O_lm;
-        	    terms(l,-m) = O_lm.conjugate() * m_sign;
-            	m_sign = -m_sign; // instead of doing the conjugate
             }
         }
     }
@@ -119,28 +123,28 @@ public class Expansion {
     /** 
      * Rotates this expansion (local and multipole are differentiated by different precalculated wigner matrices) in three dimensions.
      * Performs rotation around x-axis first, THEN rotation around z-axis (for "backwards" rotation)
-     * @param temp an array of complex numbers of size at least (-p..p) to do temporary calculations in
+     * @param temp an Rail[Complex] of size at least p+1 in which to perform temporary calculations
      * @param wigner, precalculated wigner matrices, an array of WignerMatrices, indexed first by p from 0 to max terms in expansion
      * @param complexK, values of exp(i*k*phi)
      * @see Dachsel 2006 eqn 4 & 5
      */
-    public def backRotate(temp : Array[Complex](1){rect,rail==false}, complexK : Array[Complex](1){rect,rail==false}, wigner : Rail[Array[Double](2){rect}]) {
-    	//val temp = new Array[Complex](-p..p);
+    public def backRotate(temp:Rail[Complex], complexK:Rail[Complex], wigner:Rail[Array[Double](2){rect}]) {
         for (l in 1..p) {
-            val Dl = wigner(l); // avoids calculating matrices directly
+            val Dl = wigner(l);
 
-	        for (k in -l..l) temp(k) = terms(l, k);
+	        for (k in 0..l) temp(k) = terms(l, k);
            
-	        var m_sign : int = 1;
             for (m in 0..l) {
-	            var O_lm : Complex = Complex.ZERO;
-                for (k in -l..l) {
-                    O_lm += temp(k) * Dl(m, k); // Eq. 5
+	            var O_lm:Complex = temp(0) * Dl(m, 0);
+                var m_sign:Int = -1;
+                for (k in 1..l) {
+                    val temp_k = temp(k);
+                    O_lm += temp_k * Dl(m, k); // Eq. 5
+                    O_lm += m_sign * temp_k.conjugate() * Dl(m, -k); // k < 0
+                    m_sign = -m_sign;
                 }
                 O_lm = O_lm * complexK(m);
                 terms(l,m) = O_lm;
-        	    terms(l,-m) = O_lm.conjugate() * m_sign;
-            	m_sign = -m_sign; // instead of doing the conjugate
             }
         }
     }

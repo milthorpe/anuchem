@@ -36,7 +36,7 @@ public class LocalExpansion extends Expansion {
     /**
      * Calculate the local Taylor-type expansion M_{lm} (with m >= 0) for a single point v.
      */
-    public static def getMlm(v : Tuple3d, p : int) : LocalExpansion {
+    public static def getMlm(v:Tuple3d, p:Int) : LocalExpansion {
         val exp = new LocalExpansion(p);
         val terms = exp.terms;
         val v_pole = Polar3d.getPolar3d(v);
@@ -53,45 +53,16 @@ public class LocalExpansion extends Expansion {
             var ilm : Double = il;
             var phifac : Complex = Complex.ONE;
             terms(l,0) = phifac * (rfac * pplm(l,0) * ilm);
-	        var m_sign : boolean = false;
             for (m in 1..l) {
                 ilm = ilm / (l+1-m);
                 phifac = phifac * phifac0;
         		val M_lm = phifac * (rfac * pplm(l,m) * ilm);
                 terms(l,m) = M_lm;
-                terms(l,-m) = M_lm.conjugate() * (1-2*(m%2));
-        		m_sign = !m_sign;
             }
             rfac = rfac * rfac0;
         }
 
         return exp;
-    }
-
-    /** 
-     * Translate a local expansion centred around the origin along a vector b,
-     * and adds to this expansion centred at b, where shift is the expansion
-     * of the vector b.
-     * This corresponds to "Operator C", Equations 18-21 in White & Head-Gordon.
-     * Note: this defines C^lm_jk(b) = O_j-l,k-m(b); however this is only defined
-     * where abs(k-m) <= j-l, therefore we restrict k to [l-j+m..-l+j+m]
-     * @param shift the multipole expansion of the translation
-     * @param source the source local expansion, centred at the origin
-     */
-    public def translateAndAddLocal(shift : MultipoleExpansion,
-                                         source : LocalExpansion) {
-        // TODO should be just:  for ([l,m] in terms.region) {
-        for (l in 0..p) {
-            for (m in -l..l) {
-                for (j in l..p) {
-                    for (k in (l-j+m)..(-l+j+m)) {
-                        val C_lmjk = shift.terms(j-l, k-m);
-                        val O_jk = source.terms(j,k);
-                        this.terms(l,m) = this.terms(l,m) + C_lmjk * O_jk;
-                    }
-                }
-            }
-        }
     }
 
     /** 
@@ -102,16 +73,15 @@ public class LocalExpansion extends Expansion {
      * @param wigner a collection of Wigner matrices precalculated to speed up the rotation
      * @param complexK is the pre calculated values of exp(i*k*phi)
      * @param source the source local expansion
-     * @see Dachsel 2006, eqn 18
+     * @see Dachsel 2006, eqn 11
      */
-    public def translateAndAddLocal(scratch:MultipoleExpansion, temp:Array[Complex](1){rect,rail==false}, v:Vector3d, complexK:Rail[Array[Complex](1){rect,rail==false}], source:LocalExpansion, wigner:Rail[Rail[Array[Double](2){rect}]]) { 
+    public def translateAndAddLocal(scratch:MultipoleExpansion, temp:Rail[Complex], v:Vector3d, complexK:Rail[Rail[Complex]], source:LocalExpansion, wigner:Rail[Rail[Array[Double](2){rect}]]) { 
 	    val b = v.length();
 
         Array.copy(source.terms, scratch.terms);
         scratch.rotate(temp, complexK(1), wigner(0) );
 
     	val targetTerms = scratch.terms;
-    	var m_sign : int = 1;
     	for (m in 0..p) {
     		for (l in m..p) temp(l) = targetTerms(l, m);
 
@@ -123,9 +93,7 @@ public class LocalExpansion extends Expansion {
     				F_lm = F_lm * b / (j - l + 1);
     			}
     			targetTerms(l, m) = M_lm;
-    			if (m != 0) targetTerms(l, -m) = M_lm.conjugate() * m_sign;
     		}
-	    	m_sign = -m_sign;
 	   	}
 
 	    scratch.backRotate(temp, complexK(0), wigner(1) );
@@ -139,37 +107,9 @@ public class LocalExpansion extends Expansion {
      */
     public def translateAndAddLocal(v : Vector3d, source : LocalExpansion) {
         val scratch = new MultipoleExpansion(p);
-        val temp = new Array[Complex](-p..p) as Array[Complex](1){rect,rail==false};
+        val temp = new Array[Complex](p+1);
 	    val polar = Polar3d.getPolar3d(v);
 	    translateAndAddLocal(scratch, temp, v, genComplexK(polar.phi, p), source, WignerRotationMatrix.getCCollection(polar.theta, p) );
-    }
-
-   /** 
-     * Transform a multipole expansion centred around the origin into a
-     * Taylor expansion centred about b, and adds to this expansion.
-     * This corresponds to "Operator B", Equations 13-15 in White & Head-Gordon.
-     * This operator is inexact due to truncation of the series at <em>p</em> poles.
-     * Note: this defines B^lm_jk(b) = M_j+l,k+m(b), therefore restrict l to [0..p-j]
-     * @param b the vector along which to translate the multipole
-     * @param source the source multipole expansion, centred at the origin
-     */
-    public def transformAndAddToLocal(transform : LocalExpansion,
-                                         source : MultipoleExpansion) {
-        // TODO should be just:  for ([j,k] in terms.region) {
-        for (j in 0..p) {
-            for (k in -j..j) {
-                val O_jk = source.terms(j,k);
-                for (l in 0..(p-j)) {
-                    for (m in -l..l) {
-                        if (Math.abs(k+m) <= (j+l)) {
-                            val B_lmjk = transform.terms(j+l, k+m);
-                            //Console.OUT.println("source.terms.dist(" + j + "," + k + ") = " + source.terms.dist(j,k));
-                            this.terms(l,m) = this.terms(l,m) + B_lmjk * O_jk;
-                        }
-                    }
-                }
-            }
-        }
     }
 
     /** 
@@ -180,22 +120,23 @@ public class LocalExpansion extends Expansion {
      * @param complexK, is the pre calculated values of exp(i*k*phi)
      * @param source, the expansion which should be shifted and added to this one
      * @param wigner, a collection of Wigner matrices precalculated to speed up the rotation
-     * @see Dachsel 2006, eqn 17
+     * @see Dachsel 2006, eqn 10
      */
-    public def transformAndAddToLocal(scratch : MultipoleExpansion, temp : Array[Complex](1){rect,rail==false}, v : Vector3d, complexK : Rail[Array[Complex](1){rect,rail==false}], source : MultipoleExpansion, wigner : Rail[Rail[Array[Double](2){rect}]]) { 
+    public def transformAndAddToLocal(scratch:MultipoleExpansion, temp:Rail[Complex], v:Vector3d, complexK:Rail[Rail[Complex]], source:MultipoleExpansion, wigner:Rail[Rail[Array[Double](2){rect}]]) { 
     	val inv_b = 1 / v.length();
 
         Array.copy(source.terms, scratch.terms);
     	scratch.rotate(temp, complexK(0), wigner(0) );
 
 	    val targetTerms = scratch.terms;
-	    //val temp = new Array[Complex](0..p);
-	    var m_sign : int = 1;
-        var b_m_pow : double = 1.0;
+        var m_sign:Int = 1;
+        var b_m_pow:Double = 1.0;
 	    for (m in 0..p) {
-		    for (l in m..p) temp(l) = targetTerms(l, -m);
+            for (l in m..p) {
+                temp(l) = m_sign * targetTerms(l, m).conjugate();
+            }
 
-            var b_lm1_pow : double = inv_b * b_m_pow * b_m_pow;
+            var b_lm1_pow:Double = inv_b * b_m_pow * b_m_pow;
 		    for (l in m..p) {
 			    var M_lm : Complex = Complex.ZERO;
 			    var F_lm : Double = Factorial.getFactorial(l + m) * b_lm1_pow;
@@ -204,11 +145,9 @@ public class LocalExpansion extends Expansion {
 				    F_lm = F_lm * (j + l + 1) * inv_b;
 			    }
 			    targetTerms(l, m) = M_lm;
-			    if (m != 0) targetTerms(l,-m) = M_lm.conjugate() * m_sign;
                 b_lm1_pow = b_lm1_pow * inv_b;
 		    }
-            
-		    m_sign = -m_sign;
+            m_sign = -m_sign;
             b_m_pow = b_m_pow * inv_b;
 	    }
 
@@ -224,7 +163,7 @@ public class LocalExpansion extends Expansion {
     public def transformAndAddToLocal(v : Vector3d, source : MultipoleExpansion) {
     	val polar = Polar3d.getPolar3d(v);
         val scratch = new MultipoleExpansion(p);
-        val temp = new Array[Complex](-p..p) as Array[Complex](1){rect,rail==false};
+        val temp = new Array[Complex](p+1);
     	transformAndAddToLocal(scratch, temp, v, genComplexK(polar.phi, p), source, WignerRotationMatrix.getBCollection(polar.theta, p) );
     }
     /**
@@ -235,7 +174,7 @@ public class LocalExpansion extends Expansion {
      */
     public def rotate(theta : Double, phi : Double) {
         val target = new LocalExpansion(this);
-        val temp = new Array[Complex](-p..p) as Array[Complex](1){rect,rail==false};
+        val temp = new Array[Complex](p+1);
     	target.rotate(temp, genComplexK(phi, p)(0), WignerRotationMatrix.getCCollection(theta, p)(0) );
     	return target;
     }
@@ -251,7 +190,7 @@ public class LocalExpansion extends Expansion {
     public def getMacroscopicParent() : LocalExpansion {
         val parentExpansion = new LocalExpansion(p);
         for (l in 0..p) {
-            for (m in -l..l) {
+            for (m in 0..l) {
                 parentExpansion.terms(l,m) = terms(l,m) / Math.pow(3.0, l+1);
             }
         }

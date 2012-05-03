@@ -48,7 +48,7 @@ class FmmOperators {
      * which in turn contains an Array indexed by:
      *   0 for +phi and 1 for -phi (for forward, back rotations)
      */
-    public val complexK : Array[Rail[Array[Complex](1){rect,rail==false}]](3){rect};
+    public val complexK : Array[Rail[Rail[Complex]]](3){rect};
 
     /**
      * Initialises the FMM operator arrays.
@@ -98,7 +98,7 @@ class FmmOperators {
      * and replicates to all places using a unique dist
      */
     private def precomputeComplex(numTerms : Int, ws : Int) {
-        val complexK = new Array[Rail[Array[Complex](1){rect,rail==false}]]((-(2*ws+1))..(2*ws+1) * (-(2*ws+1))..(2*ws+1) * (-(2*ws+1))..(2*ws+1));
+        val complexK = new Array[Rail[Rail[Complex]]]((-(2*ws+1))..(2*ws+1) * (-(2*ws+1))..(2*ws+1) * (-(2*ws+1))..(2*ws+1));
         for ([i,j,k] in complexK) {
             val phi = Polar3d.getPolar3d ( Point3d(i, j, k) ).phi;
             complexK(i, j, k) = Expansion.genComplexK(phi, numTerms);
