@@ -58,7 +58,7 @@ public class HartreeFockSCFMethod extends SCFMethod {
         // init memory for the matrices
         val N = hCore.getRowCount();
         val jd = JobDefaults.getInstance();
-        val gMatrixRO = new GMatrixRO(N, bfs, molecule, noOfOccupancies);
+        val GMatrixROmem = new GMatrixROmem(N, bfs, molecule, noOfOccupancies);
         val gMatrix = new GMatrix(N, bfs, molecule);
 
         val mos = new MolecularOrbitals(N);
@@ -91,17 +91,17 @@ public class HartreeFockSCFMethod extends SCFMethod {
                 Console.OUT.println("G Mat");
                 Console.OUT.println(gMatrix);
 
-                gMatrixRO.compute(density, mos);
+                GMatrixROmem.compute(density, mos);
 
                 Console.OUT.println("G Mat RO");
-                Console.OUT.println(gMatrixRO);
+                Console.OUT.println(GMatrixROmem);
             }
 
             //val timer = new Timer(2);
 
             //timer.start(0);
             // make fock matrix
-            if (jd.roOn>0) fock.compute(hCore, gMatrixRO);
+            if (jd.roOn>0) fock.compute(hCore, GMatrixROmem);
             else fock.compute(hCore, gMatrix);
             // SCF_ALGORITHM = DIIS  
             fock = diis.next(fock, overlap, density);
@@ -130,7 +130,7 @@ public class HartreeFockSCFMethod extends SCFMethod {
                 // ignore the first cycle's timings 
                 // as far fewer integrals are calculated
                 gMatrix.timer.clear(0);
-                gMatrixRO.timer.clear(0);
+                GMatrixROmem.timer.clear(0);
             }
             Console.OUT.printf("\n----------------------------------------------------------\n");
             // check for convergence
@@ -153,8 +153,8 @@ public class HartreeFockSCFMethod extends SCFMethod {
         gMatrix.timer.printSeconds();
 
         if (jd.roOn>0) {
-            Console.OUT.println("GMatrixRO construction timings:");
-            gMatrixRO.timer.printSeconds();
+            Console.OUT.println("GMatrixROmem construction timings:");
+            GMatrixROmem.timer.printSeconds();
         }
     }
 }
