@@ -89,12 +89,12 @@ public class HartreeFockSCFMethod extends SCFMethod {
 
             if (jd.roOn>0) {
                 Console.OUT.println("G Mat");
-                Console.OUT.println(gMatrix);
+                //Console.OUT.println(gMatrix);
 
                 GMatrixROmem.compute(density, mos);
 
                 Console.OUT.println("G Mat RO");
-                Console.OUT.println(GMatrixROmem);
+                //Console.OUT.println(GMatrixROmem);
             }
 
             //val timer = new Timer(2);
