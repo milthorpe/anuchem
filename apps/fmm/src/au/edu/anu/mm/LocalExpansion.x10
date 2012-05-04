@@ -166,6 +166,38 @@ public class LocalExpansion extends Expansion {
         val temp = new Array[Complex](p+1);
     	transformAndAddToLocal(scratch, temp, v, genComplexK(polar.phi, p), source, WignerRotationMatrix.getBCollection(polar.theta, p) );
     }
+
+    /** 
+     * Transform a multipole expansion centred around the origin into a
+     * Taylor expansion centred about b, and adds to this expansion.
+     * This corresponds to "Operator B", Equations 13-15 in White & Head-Gordon.
+     * This operator is inexact due to truncation of the series at <em>p</em> poles.
+     * Note: this defines B^lm_jk(b) = M_j+l,k+m(b), therefore restrict l to [0..p-j]
+     * @param b the vector along which to translate the multipole
+     * @param source the source multipole expansion, centred at the origin
+     */
+    public def transformAndAddToLocal(transform : LocalExpansion,
+                                         source : MultipoleExpansion) {
+        // TODO should be just:  for ([j,k] in terms.region) {
+        for (j in 0..p) {
+            var k_sign:Int=1-(2*j%2);
+            for (k in -j..j) {
+                val O_jk = k < 0 ? (k_sign * source.terms(-j,k).conjugate()) : source.terms(j,k);
+                for (l in 0..(p-j)) {
+                    for (m in 0..l) {
+                        val km = k+m;
+                        if (Math.abs(km) <= (j+l)) {
+                            val B_lmjk = km < 0 ? ((1-(2*km%2)) * transform.terms(j+l, k+m).conjugate()) : transform.terms(j+l, k+m);
+                            //Console.OUT.println("source.terms.dist(" + j + "," + k + ") = " + source.terms.dist(j,k));
+                            this.terms(l,m) = this.terms(l,m) + B_lmjk * O_jk;
+                        }
+                    }
+                }
+                k_sign = -k_sign;
+            }
+        }
+    }
+
     /**
      * Different method call for rotate which does the precalculations for the user
      * @param theta, rotation angle

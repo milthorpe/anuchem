@@ -67,14 +67,12 @@ public class Fmm3d {
     // TODO enum - XTENLANG-1118
     public static val TIMER_INDEX_TOTAL : Int = 0;
     public static val TIMER_INDEX_PREFETCH : Int = 1;
-    public static val TIMER_INDEX_DIRECT : Int = 2;
-    public static val TIMER_INDEX_UPWARD : Int = 3;
-    public static val TIMER_INDEX_FETCH_MULTIPOLES : Int = 4;
-    public static val TIMER_INDEX_DOWNWARD : Int = 5;
-    public static val TIMER_INDEX_TREE : Int = 6;
-    public static val TIMER_INDEX_PLACEHOLDER : Int = 7;
+    public static val TIMER_INDEX_UPWARD : Int = 2;
+    public static val TIMER_INDEX_DOWNWARD : Int = 3;
+    public static val TIMER_INDEX_TREE : Int = 4;
+    public static val TIMER_INDEX_PLACEHOLDER : Int = 5;
     /** A multi-timer for the several segments of a single getEnergy invocation, indexed by the constants above. */
-    public val timer = PlaceLocalHandle.make[Timer](PlaceGroup.WORLD, ()=>new Timer(8));
+    public val timer = PlaceLocalHandle.make[Timer](PlaceGroup.WORLD, ()=>new Timer(6));
 
     /** All boxes in the octree division of space. 
      * Array has numLevels elements, for levels [1..numLevels]
@@ -176,13 +174,11 @@ public class Fmm3d {
                 finish {
                     async {
                         prefetchRemoteAtoms();
-                        directEnergy = getDirectEnergy();
                     }
                     upwardPass();
                     Team.WORLD.barrier(here.id);
-                    farFieldEnergy = downwardPass();
                 }
-                val localEnergy = 0.5 * (farFieldEnergy + directEnergy);
+                val localEnergy = 0.5 * downwardPass();
                 offer localEnergy;
             }
         };
@@ -425,71 +421,6 @@ public class Fmm3d {
                                                                              boxList(i)(2))
                                                     );
         return atomList;
-    }
-
-    /**
-     * Gets sum of direct (pairwise) energy for all pairs of atoms
-     * in non-well-separated boxes. This operations requires only
-     * that atoms have already been assigned to boxes, and so can 
-     * be done in parallel with other steps of the algorithm.
-     */
-    def getDirectEnergy() : Double {
-        //Console.OUT.println("direct");
-        timer().start(TIMER_INDEX_DIRECT);
-
-        val lowestLevelBoxes = boxes(numLevels);
-        val myLET = locallyEssentialTree();
-        val cachedAtoms = myLET.cachedAtoms;
-        var directEnergy : Double = 0.0;
-        for ([x1,y1,z1] in lowestLevelBoxes.dist(here)) {
-            val box1 = lowestLevelBoxes(x1,y1,z1) as FmmLeafBox;
-            if (box1 != null) {
-                val box1Atoms = box1.getAtoms();
-                for (atomIndex1 in 0..(box1Atoms.size-1)) {
-                    // direct calculation with all atoms in same box
-                    val atom1 = box1Atoms(atomIndex1);
-                    for (sameBoxAtomIndex in 0..(atomIndex1-1)) {
-                        val sameBoxAtom = box1Atoms(sameBoxAtomIndex);
-                        val rVec = sameBoxAtom.centre - atom1.centre;
-                        val r2 = rVec.lengthSquared();
-                        val r = Math.sqrt(r2);
-                        val pairEnergy = 2.0 * atom1.charge * sameBoxAtom.charge / r;
-                        directEnergy += pairEnergy;
-                        val pairForce = (atom1.charge * sameBoxAtom.charge / r2 / r) * rVec;
-                        atom1.force += pairForce;
-                        sameBoxAtom.force -= pairForce;
-                    }
-                }
-
-                // direct calculation with all atoms in non-well-separated boxes
-                val uList = box1.getUList();
-                for (p in 0..(uList.size-1)) {
-                    val boxIndex2 = uList(p);
-                    // TODO - should be able to detect Point rank and inline
-                    val x2 = boxIndex2(0);
-                    val y2 = boxIndex2(1);
-                    val z2 = boxIndex2(2);
-                    val box2Atoms = cachedAtoms(x2, y2, z2);
-                    if (box2Atoms != null) {
-                        for (otherBoxAtomIndex in 0..(box2Atoms.size-1)) {
-                            val atom2 = box2Atoms(otherBoxAtomIndex);
-                            for (atomIndex1 in 0..(box1Atoms.size-1)) {
-                                val atom1 = box1Atoms(atomIndex1);
-                                val rVec = atom2.centre - atom1.centre;
-                                val r2 = rVec.lengthSquared();
-                                val r = Math.sqrt(r2);
-                                directEnergy += atom1.charge * atom2.charge / r;
-                                val pairForce = (atom1.charge * atom2.charge / r2 / r) * rVec;
-                                atom1.force += pairForce;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        timer().stop(TIMER_INDEX_DIRECT);
-
-        return directEnergy;
     }
 
     static struct SumReducer implements Reducible[Double] {
