@@ -11,6 +11,7 @@
 package au.edu.anu.mm;
 
 import x10.util.ArrayList;
+import x10.util.Team;
 import x10x.vector.Point3d;
 import x10x.vector.Vector3d;
 import au.edu.anu.chem.mm.MMAtom;
@@ -35,7 +36,7 @@ public class PeriodicFmm3d extends Fmm3d {
     /** The number of concentric shells of copies of the unit cell. */
     public val numShells : Int;
 
-    public static val TIMER_INDEX_MACROSCOPIC : Int = 7;
+    public static val TIMER_INDEX_MACROSCOPIC : Int = 5;
 
     /** A region representing a cube of 3x3x3 boxes, used for constructing macroscopic multipoles. */
     static val threeCube : Region(3) = (-1..1)*(-1..1)*(-1..1);
@@ -63,20 +64,35 @@ public class PeriodicFmm3d extends Fmm3d {
         super(density, numTerms, 1, topLeftFront, size, numAtoms, 0, true);
         this.numShells = numShells;
     }
-    
+
     public def calculateEnergy() : Double {
-        timer.start(TIMER_INDEX_TOTAL);
-        val farFieldEnergy:Double;
-        finish {
-            async {
-                prefetchRemoteAtoms();
+        timer().start(TIMER_INDEX_TOTAL);
+        val totalEnergy = finish (SumReducer()) {
+            ateach(p1 in Dist.makeUnique()) {
+                val directEnergy:Double;
+                val farFieldEnergy:Double;
+                finish {
+                    async {
+                        prefetchRemoteAtoms();
+                        directEnergy = getDirectEnergy();
+                    }
+                    upwardPass();
+                    combineMacroscopicExpansions();
+                    Team.WORLD.barrier(here.id);
+                    farFieldEnergy = downwardPass();
+                }
+                val localEnergy = 0.5 * (farFieldEnergy + directEnergy);
+                offer localEnergy;
             }
-            upwardPass();
-            combineMacroscopicExpansions();
-            farFieldEnergy = downwardPass();
+        };
+
+        timer().stop(TIMER_INDEX_TOTAL);
+
+        // reduce timer totals
+        finish ateach(p1 in Dist.makeUnique()) {
+            Team.WORLD.allreduce[Long](here.id, timer().total, 0, timer().total, 0, timer().total.size, Team.MAX);
         }
-        val totalEnergy = 0.5 * getDirectEnergy() + farFieldEnergy;
-        timer.stop(TIMER_INDEX_TOTAL);
+
         return totalEnergy;
     }
 
@@ -85,61 +101,62 @@ public class PeriodicFmm3d extends Fmm3d {
      * of aggregates of copies of the unit cell.
      */
     def combineMacroscopicExpansions() {
-        timer.start(TIMER_INDEX_MACROSCOPIC);
-        // TODO assumes boxes(0)(0,0,0) is at place 0
-        val macroMultipoles = new Array[MultipoleExpansion](numShells+1);
-        val macroLocalTranslations = new Array[LocalExpansion](numShells+1);
-        val topLevelBox = boxes(0)(0,0,0);
-        macroMultipoles(0) = topLevelBox.multipoleExp;
+        timer().start(TIMER_INDEX_MACROSCOPIC);
+        if (boxes(0).dist(0,0,0) == here) {
+            val macroMultipoles = new Array[MultipoleExpansion](numShells+1);
+            val macroLocalTranslations = new Array[LocalExpansion](numShells+1);
+            val topLevelBox = boxes(0)(0,0,0);
+            macroMultipoles(0) = topLevelBox.multipoleExp;
 
-        var macroTranslation : MultipoleExpansion = new MultipoleExpansion(numTerms);
+            var macroTranslation : MultipoleExpansion = new MultipoleExpansion(numTerms);
 
-        // multipoles for shell 1
-        for ([i,j,k] in threeCube) {
-            val translationVector = Vector3d(i * size,
-                                             j * size,
-                                             k * size);
-            val translation = MultipoleExpansion.getOlm(translationVector, numTerms);
-            macroTranslation.unsafeAdd(translation); // only one thread for macro, so this is OK
-        }
-        macroMultipoles(1) = new MultipoleExpansion(numTerms);
-        macroMultipoles(1).translateAndAddMultipole(macroTranslation, macroMultipoles(0));
-        //Console.OUT.println("final for 1 = " + macroMultipoles(1));
-
-        // locals for shell 1
-        macroLocalTranslations(0) = new LocalExpansion(numTerms);
-        for ([i,j,k] in nineCube) {
-            if (Math.abs(i) > 1 || Math.abs(j) > 1 || Math.abs(k) > 1) {
-                // inner 27 boxes done at a lower level
+            // multipoles for shell 1
+            for ([i,j,k] in threeCube) {
                 val translationVector = Vector3d(i * size,
                                                  j * size,
                                                  k * size);
-                val transform = LocalExpansion.getMlm(translationVector, numTerms);
-                macroLocalTranslations(0).unsafeAdd(transform); // only one thread for macro, so this is OK
+                val translation = MultipoleExpansion.getOlm(translationVector, numTerms);
+                macroTranslation.unsafeAdd(translation); // only one thread for macro, so this is OK
             }
-        }
-        macroLocalTranslations(1) = macroLocalTranslations(0).getMacroscopicParent();
+            macroMultipoles(1) = new MultipoleExpansion(numTerms);
+            macroMultipoles(1).translateAndAddMultipole(macroTranslation, macroMultipoles(0));
+            //Console.OUT.println("final for 1 = " + macroMultipoles(1));
 
-        // remaining shells
-        for (var shell: Int = 2; shell <= numShells; shell++) {
-            macroTranslation = macroTranslation.getMacroscopicParent();
-            macroMultipoles(shell) = new MultipoleExpansion(numTerms);
-            macroMultipoles(shell).translateAndAddMultipole(macroTranslation, macroMultipoles(shell-1));
-            //Console.OUT.println("final for " + shell + " = " + macroMultipoles(shell));
-            macroLocalTranslations(shell) = macroLocalTranslations(shell-1).getMacroscopicParent();
-        }
+            // locals for shell 1
+            macroLocalTranslations(0) = new LocalExpansion(numTerms);
+            for ([i,j,k] in nineCube) {
+                if (Math.abs(i) > 1 || Math.abs(j) > 1 || Math.abs(k) > 1) {
+                    // inner 27 boxes done at a lower level
+                    val translationVector = Vector3d(i * size,
+                                                     j * size,
+                                                     k * size);
+                    val transform = LocalExpansion.getMlm(translationVector, numTerms);
+                    macroLocalTranslations(0).unsafeAdd(transform); // only one thread for macro, so this is OK
+                }
+            }
+            macroLocalTranslations(1) = macroLocalTranslations(0).getMacroscopicParent();
 
-        // now transform and add macroscopic multipoles to local expansion for top level box
-        for (var shell: Int = 0; shell <= numShells; shell++) {
-            val localExpansion = macroLocalTranslations(shell);
-            topLevelBox.localExp.transformAndAddToLocal(localExpansion, macroMultipoles(shell));
+            // remaining shells
+            for (var shell: Int = 2; shell <= numShells; shell++) {
+                macroTranslation = macroTranslation.getMacroscopicParent();
+                macroMultipoles(shell) = new MultipoleExpansion(numTerms);
+                macroMultipoles(shell).translateAndAddMultipole(macroTranslation, macroMultipoles(shell-1));
+                //Console.OUT.println("final for " + shell + " = " + macroMultipoles(shell));
+                macroLocalTranslations(shell) = macroLocalTranslations(shell-1).getMacroscopicParent();
+            }
+
+            // now transform and add macroscopic multipoles to local expansion for top level box
+            for (var shell: Int = 0; shell <= numShells; shell++) {
+                val localExpansion = macroLocalTranslations(shell);
+                topLevelBox.localExp.transformAndAddToLocal(localExpansion, macroMultipoles(shell));
+            }
+            //Console.OUT.println("final for topLevel = " + topLevelBox.localExp);
         }
-        //Console.OUT.println("final for topLevel = " + topLevelBox.localExp);
-        timer.stop(TIMER_INDEX_MACROSCOPIC);
+        timer().stop(TIMER_INDEX_MACROSCOPIC);
     }
 
     public def assignAtomsToBoxes(atoms:DistArray[Rail[MMAtom]](1)) {
-        timer.start(TIMER_INDEX_TREE);
+        timer().start(TIMER_INDEX_TREE);
         val lowestLevelBoxes = boxes(numLevels);
         val offset = this.offset; // TODO shouldn't be necessary XTENLANG-1913
         val lowestLevelDim = this.lowestLevelDim; // TODO shouldn't be necessary XTENLANG-1913
@@ -183,7 +200,7 @@ public class PeriodicFmm3d extends Fmm3d {
                 box.setAtoms(boxAtoms.toArray());
             }
         }
-        timer.stop(TIMER_INDEX_TREE);
+        timer().stop(TIMER_INDEX_TREE);
     }
 
     def addAtomToLowestLevelBoxAsync(boxAtoms : DistArray[ArrayList[MMAtom]](3), boxIndex : Point(3), offsetCentre : Point3d, mass:Double, charge : Double) {
@@ -251,61 +268,56 @@ public class PeriodicFmm3d extends Fmm3d {
      */
     def getDirectEnergy() : Double {
         //Console.OUT.println("direct");
-        timer.start(TIMER_INDEX_DIRECT);
+        timer().start(TIMER_INDEX_DIRECT);
 
         val lowestLevelBoxes = boxes(numLevels);
         val locallyEssentialTree = this.locallyEssentialTree; // TODO shouldn't be necessary XTENLANG-1913
         val lowestLevelDim = this.lowestLevelDim; // TODO shouldn't be necessary XTENLANG-1913
         val size = this.size; // TODO shouldn't be necessary XTENLANG-1913
-        val directEnergy = finish (SumReducer()) {
-            ateach(p1 in Dist.makeUnique()) {
-                val myLET = locallyEssentialTree();
-                val cachedAtoms = myLET.cachedAtoms;
-                var thisPlaceEnergy : Double = 0.0;
-                for ([x1,y1,z1] in lowestLevelBoxes.dist(here)) {
-                    val box1 = lowestLevelBoxes(x1,y1,z1) as FmmLeafBox;
-                    if (box1 != null) {
-                        val box1Atoms = box1.getAtoms();
-                        for (atomIndex1 in 0..(box1Atoms.size-1)) {
-                            // direct calculation with all atoms in same box
-                            val atom1 = box1Atoms(atomIndex1);
-                            for (sameBoxAtomIndex in 0..(atomIndex1-1)) {
-                                val sameBoxAtom = box1Atoms(sameBoxAtomIndex);
-                                val pairEnergy = atom1.charge * sameBoxAtom.charge / atom1.centre.distance(sameBoxAtom.centre);
-                                thisPlaceEnergy += 2.0 * pairEnergy;
-                            }
-                        }
+        val myLET = locallyEssentialTree();
+        val cachedAtoms = myLET.cachedAtoms;
+        var directEnergy : Double = 0.0;
+        for ([x1,y1,z1] in lowestLevelBoxes.dist(here)) {
+            val box1 = lowestLevelBoxes(x1,y1,z1) as FmmLeafBox;
+            if (box1 != null) {
+                val box1Atoms = box1.getAtoms();
+                for (atomIndex1 in 0..(box1Atoms.size-1)) {
+                    // direct calculation with all atoms in same box
+                    val atom1 = box1Atoms(atomIndex1);
+                    for (sameBoxAtomIndex in 0..(atomIndex1-1)) {
+                        val sameBoxAtom = box1Atoms(sameBoxAtomIndex);
+                        val pairEnergy = atom1.charge * sameBoxAtom.charge / atom1.centre.distance(sameBoxAtom.centre);
+                        directEnergy += 2.0 * pairEnergy;
+                    }
+                }
 
-                        // direct calculation with all atoms in non-well-separated boxes
-                        val uList = box1.getUList();
-                        for (p in 0..(uList.size-1)) {
-                            val boxIndex2 = uList(p);
-                            // TODO - should be able to detect Point rank and inline
-                            val x2 = boxIndex2(0);
-                            val y2 = boxIndex2(1);
-                            val z2 = boxIndex2(2);
-                            val box2Atoms = cachedAtoms(x2, y2, z2);
-                            if (box2Atoms != null) {
-                                val translation = getTranslation(lowestLevelDim, size, x2, y2, z2);
-                                for (otherBoxAtomIndex in 0..(box2Atoms.size-1)) {
-                                    val atom2 = box2Atoms(otherBoxAtomIndex);
-                                    val translatedCentre = atom2.centre + translation;
-                                    for (atomIndex1 in 0..(box1Atoms.size-1)) {
-                                        val atom1 = box1Atoms(atomIndex1);
-                                        val distance = atom1.centre.distance(translatedCentre);
-                                        if (distance != 0.0) { // don't include dipole-balancing charges at same point
-                                            thisPlaceEnergy += atom1.charge * atom2.charge / atom1.centre.distance(translatedCentre);
-                                        }
-                                    }
+                // direct calculation with all atoms in non-well-separated boxes
+                val uList = box1.getUList();
+                for (p in 0..(uList.size-1)) {
+                    val boxIndex2 = uList(p);
+                    // TODO - should be able to detect Point rank and inline
+                    val x2 = boxIndex2(0);
+                    val y2 = boxIndex2(1);
+                    val z2 = boxIndex2(2);
+                    val box2Atoms = cachedAtoms(x2, y2, z2);
+                    if (box2Atoms != null) {
+                        val translation = getTranslation(lowestLevelDim, size, x2, y2, z2);
+                        for (otherBoxAtomIndex in 0..(box2Atoms.size-1)) {
+                            val atom2 = box2Atoms(otherBoxAtomIndex);
+                            val translatedCentre = atom2.centre + translation;
+                            for (atomIndex1 in 0..(box1Atoms.size-1)) {
+                                val atom1 = box1Atoms(atomIndex1);
+                                val distance = atom1.centre.distance(translatedCentre);
+                                if (distance != 0.0) { // don't include dipole-balancing charges at same point
+                                    directEnergy += atom1.charge * atom2.charge / atom1.centre.distance(translatedCentre);
                                 }
                             }
                         }
                     }
                 }
-                offer thisPlaceEnergy;
             }
-        };
-        timer.stop(TIMER_INDEX_DIRECT);
+        }
+        timer().stop(TIMER_INDEX_DIRECT);
 
         return directEnergy;
     }

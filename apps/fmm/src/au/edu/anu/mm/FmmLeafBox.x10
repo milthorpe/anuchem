@@ -70,8 +70,9 @@ public class FmmLeafBox extends FmmBox {
 
     protected def downward(size:Double, parentLocalExpansion:LocalExpansion, fmmOperators:PlaceLocalHandle[FmmOperators], locallyEssentialTree:PlaceLocalHandle[LocallyEssentialTree], boxes:Rail[DistArray[FmmBox](3)]):Double {
         constructLocalExpansion(size, fmmOperators, parentLocalExpansion, locallyEssentialTree);
+        val myLET = locallyEssentialTree();
 
-        return getPotential(size);
+        return getPotential(size, myLET);
         
     }
 
@@ -81,7 +82,7 @@ public class FmmLeafBox extends FmmBox {
      * Updates forces on each particle due to long-range interactions.
      * @param size the side length of the full simulation box
      */
-    private def getPotential(size:Double) : Double {
+    private def getPotential(size:Double, myLET:LocallyEssentialTree) : Double {
         val boxAtoms = getAtoms();
         val boxCentre = getCentre(size);
         val p = localExp.p;
@@ -106,10 +107,63 @@ public class FmmLeafBox extends FmmBox {
                 potential += 2.0*(l_jk.re * v_jk.re) - 2.0*(l_jk.im * v_jk.im); // avoid conjugate/sign for mirror terms m < 0
             }
         }
+
+        potential += calculateDirectPotentialAndForces(myLET);
+
         return potential;
 //        return terms.mapReduce[Complex,Double,Double](chargeExpansion.terms, 
 //                                (a:Complex,b:Complex)=>(a*b).re, 
 //                                (a:Double, b:Double)=>a+b, 0.0);
+    }
+
+    /** 
+     * Calculates the potential and forces due to atoms in this box and in
+     * all non-well-separated boxes.
+     * @return the potential due to direct interactions
+     */
+    private def calculateDirectPotentialAndForces(myLET:LocallyEssentialTree):Double {
+        val cachedAtoms = myLET.cachedAtoms;
+        var directEnergy:Double = 0.0;
+        for (atomIndex1 in 0..(atoms.size-1)) {
+            // direct calculation between all atoms in this box
+            val atom1 = atoms(atomIndex1);
+            for (sameBoxAtomIndex in 0..(atomIndex1-1)) {
+                val sameBoxAtom = atoms(sameBoxAtomIndex);
+                val rVec = sameBoxAtom.centre - atom1.centre;
+                val r2 = rVec.lengthSquared();
+                val r = Math.sqrt(r2);
+                val pairEnergy = 2.0 * atom1.charge * sameBoxAtom.charge / r;
+                directEnergy += pairEnergy;
+                val pairForce = (atom1.charge * sameBoxAtom.charge / r2 / r) * rVec;
+                atom1.force += pairForce;
+                sameBoxAtom.force -= pairForce;
+            }
+        }
+
+        // direct calculation with all atoms in non-well-separated boxes
+        for (p in 0..(uList.size-1)) {
+            val boxIndex2 = uList(p);
+            // TODO - should be able to detect Point rank and inline
+            val x2 = boxIndex2(0);
+            val y2 = boxIndex2(1);
+            val z2 = boxIndex2(2);
+            val box2Atoms = cachedAtoms(x2, y2, z2);
+            if (box2Atoms != null) {
+                for (otherBoxAtomIndex in 0..(box2Atoms.size-1)) {
+                    val atom2 = box2Atoms(otherBoxAtomIndex);
+                    for (atomIndex1 in 0..(atoms.size-1)) {
+                        val atom1 = atoms(atomIndex1);
+                        val rVec = atom2.centre - atom1.centre;
+                        val r2 = rVec.lengthSquared();
+                        val r = Math.sqrt(r2);
+                        directEnergy += atom1.charge * atom2.charge / r;
+                        val pairForce = (atom1.charge * atom2.charge / r2 / r) * rVec;
+                        atom1.force += pairForce;
+                    }
+                }
+            }
+        }
+        return directEnergy;
     }
 
     public def getUList() = this.uList;

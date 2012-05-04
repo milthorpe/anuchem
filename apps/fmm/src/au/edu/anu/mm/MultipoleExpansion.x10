@@ -224,6 +224,41 @@ public class MultipoleExpansion extends Expansion {
     	val polar = Polar3d.getPolar3d(v);
     	translateAndAddMultipole(scratch, temp, v, genComplexK(polar.phi, p), source, WignerRotationMatrix.getACollection(polar.theta, p) );
     }
+
+    /*
+     * Translate a multipole expansion centred around the origin along a vector -b,
+     * and adds to this expansion centred at -b.
+     * This corresponds to "Operator A", Equations 10-11 in White & Head-Gordon.
+     * Note: this defines A^lm_jk(b) = O_l-j,m-k(b); however this is only defined
+     * where abs(m-k) <= l-j, therefore we restrict m to [j-l+k..-j+l+k]
+     * @param b the vector along which to translate the multipole
+     * @param source the source multipole expansion, centred at the origin
+     */
+    public def translateAndAddMultipole(shift : MultipoleExpansion,
+                                         source : MultipoleExpansion) {
+        // TODO this atomic should be around inner loop update.
+        // however as it's "stop the world" it's more efficient to do it out here
+        atomic {
+            // TODO should be just:  for ([j,k] in terms.region) {
+            for (j in 0..p) {
+                var k_sign:Int=1-(2*j%2);
+                for (k in -j..j) {
+                    val O_jk = k < 0 ? (k_sign * source.terms(-j,k).conjugate()) : source.terms(j,k);
+                    for (l in j..p) {
+                        for (m in 0..l) {
+                            val mk = (m-k);
+                            if (Math.abs(mk) <= (l-j)) {
+                                val A_lmjk = mk < 0 ? ((1-(2*mk%2)) * shift.terms(l-j, mk).conjugate()) : shift.terms(l-j, mk);
+                                this.terms(l,m) = this.terms(l,m) + A_lmjk * O_jk;
+                            }
+                        }
+                    }
+                    k_sign = -k_sign;
+                }
+            }
+        }
+    }
+
     /**
      * Rotation of this expansion where Wigner matrices and exp(i*-k*phi) are not precalculated
      * Different method call for rotate which does the precalculations for the user
