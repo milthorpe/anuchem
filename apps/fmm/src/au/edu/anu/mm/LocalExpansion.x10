@@ -136,16 +136,17 @@ public class LocalExpansion extends Expansion {
                 temp(l) = m_sign * targetTerms(l, m).conjugate();
             }
 
-            var b_lm1_pow:Double = inv_b * b_m_pow * b_m_pow;
+            var F_lm:Double = Factorial.getFactorial(m+m) * inv_b * b_m_pow * b_m_pow;
 		    for (l in m..p) {
 			    var M_lm : Complex = Complex.ZERO;
-			    var F_lm : Double = Factorial.getFactorial(l + m) * b_lm1_pow;
+			    var F_jl : Double = F_lm;
+
 			    for (j in m..p) {
-				    M_lm = M_lm + temp(j) * F_lm;
-				    F_lm = F_lm * (j + l + 1) * inv_b;
+				    M_lm = M_lm + temp(j) * F_jl;
+				    F_jl = (j+l+1) * inv_b * F_jl;
 			    }
 			    targetTerms(l, m) = M_lm;
-                b_lm1_pow = b_lm1_pow * inv_b;
+                F_lm = (m+l+1) * inv_b * F_lm;
 		    }
             m_sign = -m_sign;
             b_m_pow = b_m_pow * inv_b;
