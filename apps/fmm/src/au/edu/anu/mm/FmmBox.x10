@@ -187,7 +187,7 @@ public class FmmBox {
         }
     }
 
-    protected def downward(size:Double, parentLocalExpansion:LocalExpansion, fmmOperators:PlaceLocalHandle[FmmOperators], locallyEssentialTree:PlaceLocalHandle[LocallyEssentialTree], boxes:Rail[DistArray[FmmBox](3)]):Double {
+    protected def downward(size:Double, parentLocalExpansion:LocalExpansion, fmmOperators:PlaceLocalHandle[FmmOperators], locallyEssentialTree:PlaceLocalHandle[LocallyEssentialTree], boxes:Rail[DistArray[FmmBox](3)], numLevels:Int, periodic:Boolean):Double {
         constructLocalExpansion(size, fmmOperators, parentLocalExpansion, locallyEssentialTree);
 
         val childLevel = level+1;
@@ -207,7 +207,7 @@ public class FmmBox {
                 at(childLevelBoxes.dist(childX,childY,childZ)) async {
                     val childBox = boxes(childLevel)(childX,childY,childZ);
                     if (childBox != null) {
-                        offer childBox.downward(size, parentExp, fmmOperators, locallyEssentialTree, boxes);
+                        offer childBox.downward(size, parentExp, fmmOperators, locallyEssentialTree, boxes, numLevels, periodic);
                     }
                 }
             }

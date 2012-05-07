@@ -10,6 +10,7 @@
  */
 package au.edu.anu.mm;
 
+import au.edu.anu.chem.mm.MMAtom;
 import x10x.vector.*;
 import x10x.polar.Polar3d;
 
@@ -136,16 +137,17 @@ public class LocalExpansion extends Expansion {
                 temp(l) = m_sign * targetTerms(l, m).conjugate();
             }
 
-            var b_lm1_pow:Double = inv_b * b_m_pow * b_m_pow;
+            var F_lm:Double = Factorial.getFactorial(m+m) * inv_b * b_m_pow * b_m_pow;
 		    for (l in m..p) {
 			    var M_lm : Complex = Complex.ZERO;
-			    var F_lm : Double = Factorial.getFactorial(l + m) * b_lm1_pow;
+			    var F_jl : Double = F_lm;
+
 			    for (j in m..p) {
-				    M_lm = M_lm + temp(j) * F_lm;
-				    F_lm = F_lm * (j + l + 1) * inv_b;
+				    M_lm = M_lm + temp(j) * F_jl;
+				    F_jl = (j+l+1) * inv_b * F_jl;
 			    }
 			    targetTerms(l, m) = M_lm;
-                b_lm1_pow = b_lm1_pow * inv_b;
+                F_lm = (m+l+1) * inv_b * F_lm;
 		    }
             m_sign = -m_sign;
             b_m_pow = b_m_pow * inv_b;
@@ -166,6 +168,91 @@ public class LocalExpansion extends Expansion {
         val temp = new Array[Complex](p+1);
     	transformAndAddToLocal(scratch, temp, v, genComplexK(polar.phi, p), source, WignerRotationMatrix.getBCollection(polar.theta, p) );
     }
+
+    /** 
+     * Transform a multipole expansion centred around the origin into a
+     * Taylor expansion centred about b, and adds to this expansion.
+     * This corresponds to "Operator B", Equations 13-15 in White & Head-Gordon.
+     * This operator is inexact due to truncation of the series at <em>p</em> poles.
+     * Note: this defines B^lm_jk(b) = M_j+l,k+m(b), therefore restrict l to [0..p-j]
+     * @param b the vector along which to translate the multipole
+     * @param source the source multipole expansion, centred at the origin
+     */
+    public def transformAndAddToLocal(transform : LocalExpansion,
+                                         source : MultipoleExpansion) {
+        // TODO should be just:  for ([j,k] in terms.region) {
+        for (j in 0..p) {
+            var k_sign:Int=1-(2*j%2);
+            for (k in -j..j) {
+                val O_jk = k < 0 ? (k_sign * source.terms(-j,k).conjugate()) : source.terms(j,k);
+                for (l in 0..(p-j)) {
+                    for (m in 0..l) {
+                        val km = k+m;
+                        if (Math.abs(km) <= (j+l)) {
+                            val B_lmjk = km < 0 ? ((1-(2*km%2)) * transform.terms(j+l, k+m).conjugate()) : transform.terms(j+l, k+m);
+                            //Console.OUT.println("source.terms.dist(" + j + "," + k + ") = " + source.terms.dist(j,k));
+                            this.terms(l,m) = this.terms(l,m) + B_lmjk * O_jk;
+                        }
+                    }
+                }
+                k_sign = -k_sign;
+            }
+        }
+    }
+
+    /**
+     * Calculate the potential and forces for an atom due to this expansion,
+     * and add the forces to the atom.
+     * @param atom the atom for which to calculate the potential
+     * @param v the vector from the box centre to the atom centre
+     * @param localExp local expansion of potential due to distant particles
+     * @return the potential due to distant particles
+     */
+    public def calculatePotentialAndForces(atom:MMAtom, v:Tuple3d):Double {
+        val v_pole = Polar3d.getPolar3d(v);
+        val q = atom.charge;
+        val pplm = AssociatedLegendrePolynomial.getPlk(v_pole.theta, p+1);
+
+        var dr:Double = 0.0;
+        var dt:Double = 0.0;
+        var dp:Double = 0.0;
+
+        var potential:Double = q * pplm(0,0) * terms(0,0).re;
+
+        val phifac0 = Complex(Math.cos(-v_pole.phi), Math.sin(-v_pole.phi));
+        var rfac : Double = v_pole.r;
+        var rfacPrev : Double = 1.0;
+        var il : Double = 1.0;
+        for (l in 1..p) {
+            val Ml0 = terms(l,0);
+            il = il * l;
+            var F_lm:Complex = Complex(1.0/il, 0.0); // e^{-i m phi} / (l+|m|)!
+            potential += (Ml0 * F_lm * (q * rfac * pplm(l,0))).re;
+            dr += (Ml0 * F_lm * (q * l * rfacPrev * pplm(l,0))).re;
+            dt += (Ml0 * F_lm * (q * rfacPrev * -pplm(l,1))).re;
+            // phi terms cancel for m=0
+            for (m in 1..l) {
+                F_lm = F_lm * phifac0 / (l+m);
+                val Olm = F_lm * (q * rfac * pplm(l,m));
+                val Mlm = terms(l,m);
+
+                potential += 2.0*(Mlm.re * Olm.re) - 2.0*(Mlm.im * Olm.im);
+
+                val r_lm = F_lm * (q * l * rfacPrev * pplm(l,m));
+                dr += 2.0*(Mlm.re * r_lm.re) - 2.0*(Mlm.im * r_lm.im); // avoids conjugate for mirror terms m < 0
+                val Plm1 = (m<l) ? pplm(l,m+1) : 0.0;
+                val theta_lm = F_lm * 0.5 * q * rfacPrev * ((l-m+1)*(l+m) * pplm(l,m-1) - Plm1);
+                dt += 2.0*(Mlm.re * theta_lm.re) - 2.0*(Mlm.im * theta_lm.im); // avoids conjugate for mirror terms m < 0
+                val phi_lm = Complex.I * F_lm * 0.5 * q * rfacPrev * ((l-m+1)*(l-m+2) * pplm(l+1,m-1) + pplm(l+1,m+1));
+                dp += 2.0*(Mlm.re * phi_lm.re) - 2.0*(Mlm.im * phi_lm.im); // avoids conjugate for mirror terms m < 0
+    	    }
+            rfacPrev = rfac;
+            rfac = rfac * v_pole.r;
+        }
+        atom.force += v_pole.getGradientVector(dr, -dt, -dp);
+        return potential;
+    }
+
     /**
      * Different method call for rotate which does the precalculations for the user
      * @param theta, rotation angle

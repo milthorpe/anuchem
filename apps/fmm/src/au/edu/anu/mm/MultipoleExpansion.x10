@@ -92,59 +92,6 @@ public class MultipoleExpansion extends Expansion {
     }
 
     /**
-     * Calculate the multipole-like term O_{lm} (with m >= 0) for a point v
-     * and the derivatives in spherical polar coordinates.
-     * @param localExp local expansion of potential due to distant particles
-     * @return the gradient of the potential
-     */
-    public def addOlmWithGradient(q:Double, v:Tuple3d, p:Int, 
-                                    localExp:LocalExpansion):Vector3d {
-        val v_pole = Polar3d.getPolar3d(v);
-        val pplm = AssociatedLegendrePolynomial.getPlk(v_pole.theta, p+1);
-
-        val localTerms = localExp.terms;
-
-        var dr:Double = 0.0;
-        var dt:Double = 0.0;
-        var dp:Double = 0.0;
-
-        terms(0,0) += Complex(q * pplm(0,0), 0.0);
-
-        val phifac0 = Complex(Math.cos(-v_pole.phi), Math.sin(-v_pole.phi));
-        var rfac : Double = v_pole.r;
-        var rfacPrev : Double = 1.0;
-        var il : Double = 1.0;
-        for (l in 1..p) {
-            val Ml0 = localTerms(l,0);
-            il = il * l;
-            var ilm : Double = il;
-            var phifac : Complex = Complex.ONE;
-            terms(l,0) += phifac / ilm * (q * rfac * pplm(l,0));
-            dr += (Ml0 * phifac / ilm * (q * l * rfacPrev * pplm(l,0))).re;
-            val theta_l0 = phifac / ilm * q * rfacPrev * -pplm(l,1);
-            dt += (Ml0 * theta_l0).re;
-            // phi terms cancel for m=0
-            for (m in 1..l) {
-                val Mlm = localTerms(l,m);
-                ilm = ilm*(l+m);
-                phifac = phifac * phifac0;
-                val O_lm = phifac / ilm * (q * rfac * pplm(l,m));
-                terms(l,m) += O_lm;
-                val r_lm = phifac / ilm * (q * l * rfacPrev * pplm(l,m));
-                dr += 2.0*(Mlm.re * r_lm.re) - 2.0*(Mlm.im * r_lm.im); // avoids conjugate for mirror terms m < 0
-                val Plm1 = (m<l) ? pplm(l,m+1) : 0.0;
-                val theta_lm = phifac / ilm * 0.5 * q * rfacPrev * ((l-m+1)*(l+m) * pplm(l,m-1) - Plm1);
-                dt += 2.0*(Mlm.re * theta_lm.re) - 2.0*(Mlm.im * theta_lm.im); // avoids conjugate for mirror terms m < 0
-                val phi_lm = Complex.I * phifac / ilm * 0.5 * q * rfacPrev * ((l-m+1)*(l-m+2) * pplm(l+1,m-1) + pplm(l+1,m+1));
-                dp += 2.0*(Mlm.re * phi_lm.re) - 2.0*(Mlm.im * phi_lm.im); // avoids conjugate for mirror terms m < 0
-    	    }
-            rfacPrev = rfac;
-            rfac = rfac * v_pole.r;
-        }
-        return v_pole.getGradientVector(dr, -dt, -dp);
-    }
-
-    /**
      * Calculate the chargeless multipole-like term O_{lm} (with m >= 0) for a point v.
      */
     public static def getOlm(v : Tuple3d, p : Int) : MultipoleExpansion {
@@ -224,6 +171,41 @@ public class MultipoleExpansion extends Expansion {
     	val polar = Polar3d.getPolar3d(v);
     	translateAndAddMultipole(scratch, temp, v, genComplexK(polar.phi, p), source, WignerRotationMatrix.getACollection(polar.theta, p) );
     }
+
+    /*
+     * Translate a multipole expansion centred around the origin along a vector -b,
+     * and adds to this expansion centred at -b.
+     * This corresponds to "Operator A", Equations 10-11 in White & Head-Gordon.
+     * Note: this defines A^lm_jk(b) = O_l-j,m-k(b); however this is only defined
+     * where abs(m-k) <= l-j, therefore we restrict m to [j-l+k..-j+l+k]
+     * @param b the vector along which to translate the multipole
+     * @param source the source multipole expansion, centred at the origin
+     */
+    public def translateAndAddMultipole(shift : MultipoleExpansion,
+                                         source : MultipoleExpansion) {
+        // TODO this atomic should be around inner loop update.
+        // however as it's "stop the world" it's more efficient to do it out here
+        atomic {
+            // TODO should be just:  for ([j,k] in terms.region) {
+            for (j in 0..p) {
+                var k_sign:Int=1-(2*j%2);
+                for (k in -j..j) {
+                    val O_jk = k < 0 ? (k_sign * source.terms(-j,k).conjugate()) : source.terms(j,k);
+                    for (l in j..p) {
+                        for (m in 0..l) {
+                            val mk = (m-k);
+                            if (Math.abs(mk) <= (l-j)) {
+                                val A_lmjk = mk < 0 ? ((1-(2*mk%2)) * shift.terms(l-j, mk).conjugate()) : shift.terms(l-j, mk);
+                                this.terms(l,m) = this.terms(l,m) + A_lmjk * O_jk;
+                            }
+                        }
+                    }
+                    k_sign = -k_sign;
+                }
+            }
+        }
+    }
+
     /**
      * Rotation of this expansion where Wigner matrices and exp(i*-k*phi) are not precalculated
      * Different method call for rotate which does the precalculations for the user

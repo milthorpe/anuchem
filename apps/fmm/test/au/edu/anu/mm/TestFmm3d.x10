@@ -73,6 +73,22 @@ public class TestFmm3d extends TestElectrostatic {
                       + " numTerms = " + numTerms
                       + " wellSpaced = " + wellSpaced
                       + " numLevels = " + numLevels);
+
+            val q = 1.0; // absolute value of charges
+            val d = SIZE / Math.pow(8.0, numLevels) / 2.0;
+            val e_terms:Double;
+            if (wellSpaced == 1) {
+                e_terms = q / ( (3.0 - Math.sqrt(3.0)) * d) * Math.pow((1.0 / Math.sqrt(3.0)), numTerms+1);
+            } else if (wellSpaced == 2) {
+                e_terms = q / ( (5.0 - Math.sqrt(3.0)) * d) * Math.pow((Math.sqrt(3.0) / 5.0), numTerms+1);
+            } else {
+                e_terms = 0.0;
+            }
+            Console.OUT.println("error bound in potential due to truncation: " + e_terms);
+            if (wellSpaced == 1 && numTerms > 10) {
+                val e_b_shift = q / ( (4.0 - 2.0*Math.sqrt(3.0)) * d) * Math.pow((Math.sqrt(3.0) / 2.0), numTerms+1);
+                Console.OUT.println("error bound in potential due to B-shift: " + e_b_shift);
+            }
         } else {
             Console.OUT.print(numAtoms + " atoms: ");
         }
@@ -91,7 +107,6 @@ public class TestFmm3d extends TestElectrostatic {
             logTime("(Tree construction)", Fmm3d.TIMER_INDEX_TREE, fmm3d.timer());
 
             logTime("Prefetch",   Fmm3d.TIMER_INDEX_PREFETCH,  fmm3d.timer());
-            logTime("Direct",     Fmm3d.TIMER_INDEX_DIRECT,    fmm3d.timer());
             logTime("Upward",     Fmm3d.TIMER_INDEX_UPWARD,    fmm3d.timer());
             logTime("Downward",   Fmm3d.TIMER_INDEX_DOWNWARD,  fmm3d.timer());
         }
