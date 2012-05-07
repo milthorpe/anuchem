@@ -69,19 +69,15 @@ public class PeriodicFmm3d extends Fmm3d {
         timer().start(TIMER_INDEX_TOTAL);
         val totalEnergy = finish (SumReducer()) {
             ateach(p1 in Dist.makeUnique()) {
-                val directEnergy:Double;
-                val farFieldEnergy:Double;
                 finish {
                     async {
                         prefetchRemoteAtoms();
-                        directEnergy = getDirectEnergy();
                     }
                     upwardPass();
                     combineMacroscopicExpansions();
                     Team.WORLD.barrier(here.id);
-                    farFieldEnergy = downwardPass();
                 }
-                val localEnergy = 0.5 * (farFieldEnergy + directEnergy);
+                val localEnergy = 0.5 * downwardPass();
                 offer localEnergy;
             }
         };
@@ -258,96 +254,6 @@ public class PeriodicFmm3d extends Fmm3d {
 
         //Console.OUT.println("after cancelling, dipole = " + newDipole);
         return newDipole; 
-    }
-
-    /**
-     * Gets sum of direct (pairwise) energy for all pairs of atoms
-     * in non-well-separated boxes. This operations requires only
-     * that atoms have already been assigned to boxes, and so can 
-     * be done in parallel with other steps of the algorithm.
-     */
-    def getDirectEnergy() : Double {
-        //Console.OUT.println("direct");
-        timer().start(TIMER_INDEX_DIRECT);
-
-        val lowestLevelBoxes = boxes(numLevels);
-        val locallyEssentialTree = this.locallyEssentialTree; // TODO shouldn't be necessary XTENLANG-1913
-        val lowestLevelDim = this.lowestLevelDim; // TODO shouldn't be necessary XTENLANG-1913
-        val size = this.size; // TODO shouldn't be necessary XTENLANG-1913
-        val myLET = locallyEssentialTree();
-        val cachedAtoms = myLET.cachedAtoms;
-        var directEnergy : Double = 0.0;
-        for ([x1,y1,z1] in lowestLevelBoxes.dist(here)) {
-            val box1 = lowestLevelBoxes(x1,y1,z1) as FmmLeafBox;
-            if (box1 != null) {
-                val box1Atoms = box1.getAtoms();
-                for (atomIndex1 in 0..(box1Atoms.size-1)) {
-                    // direct calculation with all atoms in same box
-                    val atom1 = box1Atoms(atomIndex1);
-                    for (sameBoxAtomIndex in 0..(atomIndex1-1)) {
-                        val sameBoxAtom = box1Atoms(sameBoxAtomIndex);
-                        val pairEnergy = atom1.charge * sameBoxAtom.charge / atom1.centre.distance(sameBoxAtom.centre);
-                        directEnergy += 2.0 * pairEnergy;
-                    }
-                }
-
-                // direct calculation with all atoms in non-well-separated boxes
-                val uList = box1.getUList();
-                for (p in 0..(uList.size-1)) {
-                    val boxIndex2 = uList(p);
-                    // TODO - should be able to detect Point rank and inline
-                    val x2 = boxIndex2(0);
-                    val y2 = boxIndex2(1);
-                    val z2 = boxIndex2(2);
-                    val box2Atoms = cachedAtoms(x2, y2, z2);
-                    if (box2Atoms != null) {
-                        val translation = getTranslation(lowestLevelDim, size, x2, y2, z2);
-                        for (otherBoxAtomIndex in 0..(box2Atoms.size-1)) {
-                            val atom2 = box2Atoms(otherBoxAtomIndex);
-                            val translatedCentre = atom2.centre + translation;
-                            for (atomIndex1 in 0..(box1Atoms.size-1)) {
-                                val atom1 = box1Atoms(atomIndex1);
-                                val distance = atom1.centre.distance(translatedCentre);
-                                if (distance != 0.0) { // don't include dipole-balancing charges at same point
-                                    directEnergy += atom1.charge * atom2.charge / atom1.centre.distance(translatedCentre);
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        timer().stop(TIMER_INDEX_DIRECT);
-
-        return directEnergy;
-    }
-
-    /**
-     * Gets the atom centre translation vector due to a lowest-level box 
-     * being in a neighbouring image, rather than the central unit cell.
-     */
-    private static def getTranslation(lowestLevelDim : Int, size : Double, x:  Int, y : Int, z : Int) : Vector3d {
-        var translationX : Double = 0.0;
-        if (x >= lowestLevelDim) {
-            translationX = size;
-        } else if (x < 0) {
-            translationX = -size;
-        }
-
-        var translationY : Double = 0;
-        if (y >= lowestLevelDim) {
-            translationY = size;
-        } else if (y < 0) {
-            translationY = -size;
-        }
-
-        var translationZ : Double = 0;
-        if (z >= lowestLevelDim) {
-            translationZ = size;
-        } else if (z < 0) {
-            translationZ = -size;
-        }
-        return Vector3d(translationX, translationY, translationZ);
     }
 
     static struct VectorSumReducer implements Reducible[Vector3d] {

@@ -13,6 +13,7 @@ package au.edu.anu.mm;
 import x10.util.ArrayList;
 
 import x10x.vector.Point3d;
+import x10x.vector.Vector3d;
 import au.edu.anu.chem.PointCharge;
 import au.edu.anu.chem.mm.MMAtom;
 
@@ -68,11 +69,12 @@ public class FmmLeafBox extends FmmBox {
         return multipoleExp;
     }
 
-    protected def downward(size:Double, parentLocalExpansion:LocalExpansion, fmmOperators:PlaceLocalHandle[FmmOperators], locallyEssentialTree:PlaceLocalHandle[LocallyEssentialTree], boxes:Rail[DistArray[FmmBox](3)]):Double {
+    protected def downward(size:Double, parentLocalExpansion:LocalExpansion, fmmOperators:PlaceLocalHandle[FmmOperators], locallyEssentialTree:PlaceLocalHandle[LocallyEssentialTree], boxes:Rail[DistArray[FmmBox](3)], numLevels:Int, periodic:Boolean):Double {
         constructLocalExpansion(size, fmmOperators, parentLocalExpansion, locallyEssentialTree);
         val myLET = locallyEssentialTree();
 
-        return getPotential(size, myLET);
+
+        return getPotential(size, myLET, numLevels, periodic);
         
     }
 
@@ -82,7 +84,7 @@ public class FmmLeafBox extends FmmBox {
      * Updates forces on each particle due to long-range interactions.
      * @param size the side length of the full simulation box
      */
-    private def getPotential(size:Double, myLET:LocallyEssentialTree) : Double {
+    private def getPotential(size:Double, myLET:LocallyEssentialTree, numLevels:Int, periodic:Boolean) : Double {
         val boxCentre = getCentre(size);
 
         val boxAtoms = getAtoms();
@@ -93,7 +95,7 @@ public class FmmLeafBox extends FmmBox {
             potential += localExp.calculatePotentialAndForces(atom, locationWithinBox);
         }
 
-        potential += calculateDirectPotentialAndForces(myLET);
+        potential += calculateDirectPotentialAndForces(size, myLET, numLevels, periodic);
 
         return potential;
     }
@@ -103,7 +105,7 @@ public class FmmLeafBox extends FmmBox {
      * all non-well-separated boxes.
      * @return the potential due to direct interactions
      */
-    private def calculateDirectPotentialAndForces(myLET:LocallyEssentialTree):Double {
+    private def calculateDirectPotentialAndForces(size:Double, myLET:LocallyEssentialTree, numLevels:Int, periodic:Boolean):Double {
         val cachedAtoms = myLET.cachedAtoms;
         var directEnergy:Double = 0.0;
         for (atomIndex1 in 0..(atoms.size-1)) {
@@ -123,28 +125,59 @@ public class FmmLeafBox extends FmmBox {
         }
 
         // direct calculation with all atoms in non-well-separated boxes
-        for (p in 0..(uList.size-1)) {
-            val boxIndex2 = uList(p);
-            // TODO - should be able to detect Point rank and inline
-            val x2 = boxIndex2(0);
-            val y2 = boxIndex2(1);
-            val z2 = boxIndex2(2);
-            val box2Atoms = cachedAtoms(x2, y2, z2);
-            if (box2Atoms != null) {
-                for (otherBoxAtomIndex in 0..(box2Atoms.size-1)) {
-                    val atom2 = box2Atoms(otherBoxAtomIndex);
-                    for (atomIndex1 in 0..(atoms.size-1)) {
-                        val atom1 = atoms(atomIndex1);
-                        val rVec = atom2.centre - atom1.centre;
-                        val r2 = rVec.lengthSquared();
-                        val r = Math.sqrt(r2);
-                        directEnergy += atom1.charge * atom2.charge / r;
-                        val pairForce = (atom1.charge * atom2.charge / r2 / r) * rVec;
-                        atom1.force += pairForce;
+        if (periodic) {
+            val lowestLevelDim = Math.pow2(numLevels);
+            for (p in 0..(uList.size-1)) {
+                val boxIndex2 = uList(p);
+                // TODO - should be able to detect Point rank and inline
+                val x2 = boxIndex2(0);
+                val y2 = boxIndex2(1);
+                val z2 = boxIndex2(2);
+                val box2Atoms = cachedAtoms(x2, y2, z2);
+                if (box2Atoms != null) {
+                    val translation = getTranslation(lowestLevelDim, size, x2, y2, z2);
+                    for (otherBoxAtomIndex in 0..(box2Atoms.size-1)) {
+                        val atom2 = box2Atoms(otherBoxAtomIndex);
+                        val translatedCentre = atom2.centre + translation;
+                        for (atomIndex1 in 0..(atoms.size-1)) {
+                            val atom1 = atoms(atomIndex1);
+                            val rVec = translatedCentre - atom1.centre;
+                            val r2 = rVec.lengthSquared();
+                            val r = Math.sqrt(r2);
+                            if (r != 0.0) { // don't include dipole-balancing charges at same point
+                                directEnergy += atom1.charge * atom2.charge / r;
+                                val pairForce = (atom1.charge * atom2.charge / r2 / r) * rVec;
+                                atom1.force += pairForce;
+                            }
+                        }
+                    }
+                }
+            }
+        } else {
+            for (p in 0..(uList.size-1)) {
+                val boxIndex2 = uList(p);
+                // TODO - should be able to detect Point rank and inline
+                val x2 = boxIndex2(0);
+                val y2 = boxIndex2(1);
+                val z2 = boxIndex2(2);
+                val box2Atoms = cachedAtoms(x2, y2, z2);
+                if (box2Atoms != null) {
+                    for (otherBoxAtomIndex in 0..(box2Atoms.size-1)) {
+                        val atom2 = box2Atoms(otherBoxAtomIndex);
+                        for (atomIndex1 in 0..(atoms.size-1)) {
+                            val atom1 = atoms(atomIndex1);
+                            val rVec = atom2.centre - atom1.centre;
+                            val r2 = rVec.lengthSquared();
+                            val r = Math.sqrt(r2);
+                            directEnergy += atom1.charge * atom2.charge / r;
+                            val pairForce = (atom1.charge * atom2.charge / r2 / r) * rVec;
+                            atom1.force += pairForce;
+                        }
                     }
                 }
             }
         }
+
         return directEnergy;
     }
 
@@ -191,6 +224,34 @@ public class FmmLeafBox extends FmmBox {
             }
         }
         this.uList = uList.toArray();
+    }
+
+    /**
+     * Gets the atom centre translation vector due to a lowest-level box 
+     * being in a neighbouring image, rather than the central unit cell.
+     */
+    private static def getTranslation(lowestLevelDim : Int, size : Double, x:  Int, y : Int, z : Int) : Vector3d {
+        var translationX : Double = 0.0;
+        if (x >= lowestLevelDim) {
+            translationX = size;
+        } else if (x < 0) {
+            translationX = -size;
+        }
+
+        var translationY : Double = 0;
+        if (y >= lowestLevelDim) {
+            translationY = size;
+        } else if (y < 0) {
+            translationY = -size;
+        }
+
+        var translationZ : Double = 0;
+        if (z >= lowestLevelDim) {
+            translationZ = size;
+        } else if (z < 0) {
+            translationZ = -size;
+        }
+        return Vector3d(translationX, translationY, translationZ);
     }
 }
 

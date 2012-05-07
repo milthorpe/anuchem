@@ -169,8 +169,6 @@ public class Fmm3d {
         timer().start(TIMER_INDEX_TOTAL);
         val totalEnergy = finish (SumReducer()) {
             ateach(p1 in Dist.makeUnique()) {
-                val directEnergy:Double;
-                val farFieldEnergy:Double;
                 finish {
                     async {
                         prefetchRemoteAtoms();
@@ -301,7 +299,7 @@ public class Fmm3d {
                 val box = topLevelBoxes(x,y,z);
                 if (box != null) {
                     async {
-                        offer box.downward(size, topLevelExp, fmmOperators, locallyEssentialTree, boxes);
+                        offer box.downward(size, topLevelExp, fmmOperators, locallyEssentialTree, boxes, numLevels, periodic);
                     }
                 }
             }
