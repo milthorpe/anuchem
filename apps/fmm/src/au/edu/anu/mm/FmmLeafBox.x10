@@ -83,37 +83,19 @@ public class FmmLeafBox extends FmmBox {
      * @param size the side length of the full simulation box
      */
     private def getPotential(size:Double, myLET:LocallyEssentialTree) : Double {
-        val boxAtoms = getAtoms();
         val boxCentre = getCentre(size);
-        val p = localExp.p;
 
-        val vExp = new MultipoleExpansion(p);
-        val chargeExpansion = new MultipoleExpansion(p);
+        val boxAtoms = getAtoms();
+        var potential:Double = 0.0;
         for (atomIndex in 0..(boxAtoms.size-1)) {
             val atom = boxAtoms(atomIndex);
             val locationWithinBox = atom.centre.vector(boxCentre);
-            val force = vExp.addOlmWithGradient(atom.charge, locationWithinBox, p, localExp);
-            atom.force += force;
-        }
-        
-        var potential:Double = 0.0;
-        // TODO use lift/reduction?
-        // TODO should be just:  for ([j,k] in terms.region) {
-        for (j in 0..p) {
-            potential += (localExp.terms(j,0) * vExp.terms(j,0)).re;
-            for (k in 1..j) {
-                val l_jk = localExp.terms(j,k);
-                val v_jk = vExp.terms(j,k);
-                potential += 2.0*(l_jk.re * v_jk.re) - 2.0*(l_jk.im * v_jk.im); // avoid conjugate/sign for mirror terms m < 0
-            }
+            potential += localExp.calculatePotentialAndForces(atom, locationWithinBox);
         }
 
         potential += calculateDirectPotentialAndForces(myLET);
 
         return potential;
-//        return terms.mapReduce[Complex,Double,Double](chargeExpansion.terms, 
-//                                (a:Complex,b:Complex)=>(a*b).re, 
-//                                (a:Double, b:Double)=>a+b, 0.0);
     }
 
     /** 

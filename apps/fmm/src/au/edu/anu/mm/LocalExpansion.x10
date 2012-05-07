@@ -10,6 +10,7 @@
  */
 package au.edu.anu.mm;
 
+import au.edu.anu.chem.mm.MMAtom;
 import x10x.vector.*;
 import x10x.polar.Polar3d;
 
@@ -197,6 +198,59 @@ public class LocalExpansion extends Expansion {
                 k_sign = -k_sign;
             }
         }
+    }
+
+    /**
+     * Calculate the potential and forces for an atom due to this expansion,
+     * and add the forces to the atom.
+     * @param atom the atom for which to calculate the potential
+     * @param v the vector from the box centre to the atom centre
+     * @param localExp local expansion of potential due to distant particles
+     * @return the potential due to distant particles
+     */
+    public def calculatePotentialAndForces(atom:MMAtom, v:Tuple3d):Double {
+        val v_pole = Polar3d.getPolar3d(v);
+        val q = atom.charge;
+        val pplm = AssociatedLegendrePolynomial.getPlk(v_pole.theta, p+1);
+
+        var dr:Double = 0.0;
+        var dt:Double = 0.0;
+        var dp:Double = 0.0;
+
+        var potential:Double = q * pplm(0,0) * terms(0,0).re;
+
+        val phifac0 = Complex(Math.cos(-v_pole.phi), Math.sin(-v_pole.phi));
+        var rfac : Double = v_pole.r;
+        var rfacPrev : Double = 1.0;
+        var il : Double = 1.0;
+        for (l in 1..p) {
+            val Ml0 = terms(l,0);
+            il = il * l;
+            var F_lm:Complex = Complex(1.0/il, 0.0); // e^{-i m phi} / (l+|m|)!
+            potential += (Ml0 * F_lm * (q * rfac * pplm(l,0))).re;
+            dr += (Ml0 * F_lm * (q * l * rfacPrev * pplm(l,0))).re;
+            dt += (Ml0 * F_lm * (q * rfacPrev * -pplm(l,1))).re;
+            // phi terms cancel for m=0
+            for (m in 1..l) {
+                F_lm = F_lm * phifac0 / (l+m);
+                val Olm = F_lm * (q * rfac * pplm(l,m));
+                val Mlm = terms(l,m);
+
+                potential += 2.0*(Mlm.re * Olm.re) - 2.0*(Mlm.im * Olm.im);
+
+                val r_lm = F_lm * (q * l * rfacPrev * pplm(l,m));
+                dr += 2.0*(Mlm.re * r_lm.re) - 2.0*(Mlm.im * r_lm.im); // avoids conjugate for mirror terms m < 0
+                val Plm1 = (m<l) ? pplm(l,m+1) : 0.0;
+                val theta_lm = F_lm * 0.5 * q * rfacPrev * ((l-m+1)*(l+m) * pplm(l,m-1) - Plm1);
+                dt += 2.0*(Mlm.re * theta_lm.re) - 2.0*(Mlm.im * theta_lm.im); // avoids conjugate for mirror terms m < 0
+                val phi_lm = Complex.I * F_lm * 0.5 * q * rfacPrev * ((l-m+1)*(l-m+2) * pplm(l+1,m-1) + pplm(l+1,m+1));
+                dp += 2.0*(Mlm.re * phi_lm.re) - 2.0*(Mlm.im * phi_lm.im); // avoids conjugate for mirror terms m < 0
+    	    }
+            rfacPrev = rfac;
+            rfac = rfac * v_pole.r;
+        }
+        atom.force += v_pole.getGradientVector(dr, -dt, -dp);
+        return potential;
     }
 
     /**
