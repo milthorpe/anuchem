@@ -240,37 +240,69 @@ public class Fmm3d {
 
     public def assignAtomsToBoxes(atoms:DistArray[Rail[MMAtom]](1)) {
         timer().start(TIMER_INDEX_TREE);
-        //Console.OUT.println("assignAtomsToBoxes");
-        val lowestLevelBoxes = boxes(numLevels);
-        val offset = this.offset; // TODO shouldn't be necessary XTENLANG-1913
-        val lowestLevelDim = this.lowestLevelDim; // TODO shouldn't be necessary XTENLANG-1913
-        val size = this.size; // TODO shouldn't be necessary XTENLANG-1913
-        val boxAtomsTemp = DistArray.make[ArrayList[MMAtom]](lowestLevelBoxes.dist, (Point) => new ArrayList[MMAtom]());
         finish ateach(p1 in atoms) {
             val localAtoms = atoms(p1);
-            finish for (i in 0..(localAtoms.size-1)) {
-                val atom = localAtoms(i);
-                val offsetCentre = atom.centre + offset;
-                val boxIndex = Fmm3d.getLowestLevelBoxIndex(offsetCentre, lowestLevelDim, size);
-                at(boxAtomsTemp.dist(boxIndex)) async {
-                    atomic boxAtomsTemp(boxIndex).add(atom);
-                    atom.centre = offsetCentre; // move centre of copy atom only
+            assignAtomsToBoxesLocal(localAtoms);
+            Team.WORLD.barrier(here.id);
+            //pruneTreeLocal();
+        }
+        timer().stop(TIMER_INDEX_TREE);
+    }
+
+    public def assignAtomsToBoxesLocal(localAtoms:Rail[MMAtom]) {
+        val lowestLevelBoxes = boxes(numLevels);
+        finish for (i in 0..(localAtoms.size-1)) {
+            val atom = localAtoms(i);
+            val offsetCentre = atom.centre + offset;
+            val boxIndex = Fmm3d.getLowestLevelBoxIndex(offsetCentre, lowestLevelDim, size);
+            val atomPlace = lowestLevelBoxes.dist(boxIndex);
+            if (atomPlace == here) {
+                val box = lowestLevelBoxes(boxIndex) as FmmLeafBox;
+                val copyAtom = new MMAtom(atom);
+                atomic box.atomList.add(copyAtom);
+                copyAtom.centre = offsetCentre; // move centre of copy atom only
+            } else {
+                at(atomPlace) async {
+                    val box = lowestLevelBoxes(boxIndex) as FmmLeafBox;
+                    atomic box.atomList.add(atom);
+                    atom.centre = offsetCentre; // implicit copy in 'at'
                 }
             }
         }
 
-        finish ateach(boxIndex in lowestLevelBoxes) {
-            val boxAtoms = boxAtomsTemp(boxIndex);
-            if (boxAtoms.size() == 0) {
+    }
+
+    public def pruneTreeLocal() {
+        val lowestLevelBoxes = boxes(numLevels);
+        for(boxIndex in lowestLevelBoxes.dist(here)) {
+            val box = lowestLevelBoxes(boxIndex) as FmmLeafBox;
+            if (box.atomList.size() == 0) {
                 // post-prune leaf boxes
                 // TODO prune intermediate empty boxes as well
                 lowestLevelBoxes(boxIndex) = null;
             } else {
-                val box = lowestLevelBoxes(boxIndex) as FmmLeafBox;
-                box.setAtoms(boxAtoms.toArray());
+                box.setAtoms(box.atomList.toArray());
+                box.atomList = new ArrayList[MMAtom](); // clear for next iteration
             }
         }
-        timer().stop(TIMER_INDEX_TREE);
+    }
+
+    /** @return a Rail containing all atoms held at this place */
+    public def getAtomsLocal() {
+        val guessNumAtoms = (Math.pow(8.0, numLevels) * 50) as Int;
+        val atomList = new ArrayList[MMAtom](guessNumAtoms);
+        val lowestLevelBoxes = boxes(numLevels);
+        for([x,y,z] in lowestLevelBoxes.dist(here)) {
+            val box = lowestLevelBoxes(x,y,z) as FmmLeafBox;
+            if (box != null) {
+                val atoms = box.getAtoms();
+                for (i in atoms) {
+                    val atom = atoms(i);
+                    atomList.add(atom);
+                }
+            }
+        }
+        return atomList.toArray();
     }
 
     protected def upwardPass() {

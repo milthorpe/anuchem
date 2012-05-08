@@ -172,6 +172,11 @@ public class PenningTrap {
      * @param props the system properties to evaluate
      */
     public def mdStepLocal(step:Int, dt:Double, fmmBoxes:DistArray[FmmBox](3), current:Array[Double], accumProps:Boolean, props:SystemProperties) {
+        val localAtoms = fmm.getAtomsLocal();
+        fmm.assignAtomsToBoxesLocal(localAtoms);
+        Team.WORLD.barrier(here.id);
+        //fmm.pruneTreeLocal();
+
         finish for ([x,y,z] in fmmBoxes.dist(here)) async {
             val box = fmmBoxes(x,y,z) as FmmLeafBox;
             if (box != null) {
