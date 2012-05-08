@@ -291,7 +291,7 @@ public class Fmm3d {
         timer().start(TIMER_INDEX_DOWNWARD);
 
         val startingLevel = periodic ? topLevel+1 : topLevel;
-        val topLevelExp = periodic ? boxes(0)(0,0,0).localExp : null;
+        val topLevelExp = periodic ? (at (boxes(0).dist(0,0,0)) {boxes(0)(0,0,0).localExp}) : null;
         val topLevelBoxes = boxes(startingLevel);
 
         val farField = finish(SumReducer()) {

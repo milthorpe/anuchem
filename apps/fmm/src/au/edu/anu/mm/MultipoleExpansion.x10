@@ -190,12 +190,12 @@ public class MultipoleExpansion extends Expansion {
             for (j in 0..p) {
                 var k_sign:Int=1-(2*j%2);
                 for (k in -j..j) {
-                    val O_jk = k < 0 ? (k_sign * source.terms(-j,k).conjugate()) : source.terms(j,k);
+                    val O_jk = k < 0 ? (k_sign * source.terms(j,-k).conjugate()) : source.terms(j,k);
                     for (l in j..p) {
                         for (m in 0..l) {
                             val mk = (m-k);
                             if (Math.abs(mk) <= (l-j)) {
-                                val A_lmjk = mk < 0 ? ((1-(2*mk%2)) * shift.terms(l-j, mk).conjugate()) : shift.terms(l-j, mk);
+                                val A_lmjk = mk < 0 ? ((1-(2*mk%2)) * shift.terms(l-j, -mk).conjugate()) : shift.terms(l-j, mk);
                                 this.terms(l,m) = this.terms(l,m) + A_lmjk * O_jk;
                             }
                         }
