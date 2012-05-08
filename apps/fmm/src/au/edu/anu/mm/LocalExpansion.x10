@@ -184,12 +184,12 @@ public class LocalExpansion extends Expansion {
         for (j in 0..p) {
             var k_sign:Int=1-(2*j%2);
             for (k in -j..j) {
-                val O_jk = k < 0 ? (k_sign * source.terms(-j,k).conjugate()) : source.terms(j,k);
+                val O_jk = k < 0 ? (k_sign * source.terms(j,-k).conjugate()) : source.terms(j,k);
                 for (l in 0..(p-j)) {
                     for (m in 0..l) {
                         val km = k+m;
                         if (Math.abs(km) <= (j+l)) {
-                            val B_lmjk = km < 0 ? ((1-(2*km%2)) * transform.terms(j+l, k+m).conjugate()) : transform.terms(j+l, k+m);
+                            val B_lmjk = km < 0 ? ((1-(2*km%2)) * transform.terms(j+l, -km).conjugate()) : transform.terms(j+l, km);
                             //Console.OUT.println("source.terms.dist(" + j + "," + k + ") = " + source.terms.dist(j,k));
                             this.terms(l,m) = this.terms(l,m) + B_lmjk * O_jk;
                         }

@@ -287,7 +287,7 @@ public final class MortonDist extends Dist(3) {
     }
 
     public operator this(i0:int, i1:int, i2:int){rank==3}:Place {
-        if (CompilerFlags.checkBounds() && !region.contains(i0, i1, 12)) raiseBoundsError(i0,i1,i2);
+        if (CompilerFlags.checkBounds() && !region.contains(i0, i1, i2)) raiseBoundsError(i0,i1,i2);
         val index = getMortonIndex(i0,i1,i2);
         return getPlaceForIndex(index);
     } 
