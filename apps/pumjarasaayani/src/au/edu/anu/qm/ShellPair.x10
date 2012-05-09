@@ -45,9 +45,11 @@ public struct ShellPair {
     public val N : Int;
     public val L : Int;
 
+    public val contrib : Double;
+
 
     public def this(a:Int, b:Int, A:Point3d, B:Point3d, zetaA:Rail[Double], zetaB:Rail[Double], conA:Rail[Double], conB:Rail[Double], 
-                    dconA:Int, dconB:Int, norm:Double, mu:Int, nu:Int, N:Int, L:Int) {
+                    dconA:Int, dconB:Int, mu:Int, nu:Int, N:Int, L:Int, contrib:Double) {
         this.aang=a;
         this.bang=b;
 
@@ -55,10 +57,10 @@ public struct ShellPair {
         this.bPoint=B;
 
         this.zetaA=zetaA; // What does this mean? address or data assigment?
-        this.zetaB=zetaB; // What does this mean? address or data assigment?
+        this.zetaB=zetaB; // 
 
-        this.conA=conA; // Multiply this by norm
-        this.conB=conB; // norm already included in A
+        this.conA=conA; // 
+        this.conB=conB; // 
 
         this.dconA=dconA; 
         this.dconB=dconB; 
@@ -70,21 +72,9 @@ public struct ShellPair {
         this.N=N;
         this.L=L;
 
+        this.contrib = contrib;
+
     }
 
-/*
-    public def this(origin:Point3d, pwr:Power, exponents:Rail[Double], coefficients:Rail[Double], intIndex:Int, normalize:Boolean) { 
-        this.origin = origin;
-        this.power = pwr;
-        this.exponents = exponents;
-        this.coefficients = coefficients;
-        this.intIndex = intIndex;
-        if (normalize) {
-            normalization = 1.0 / Math.sqrt(selfOverlap());
-        } else {
-            normalization = 1.0; 
-        }
-    } 
-*/
 }
 

@@ -17,6 +17,7 @@ import x10.util.concurrent.AtomicInteger;
 import x10x.matrix.Matrix;
 import x10x.vector.Vector;
 import x10x.vector.Point3d;
+
 import au.edu.anu.chem.Molecule;
 import au.edu.anu.qm.ShellPair; // New
 import au.edu.anu.util.SharedCounter;
@@ -45,8 +46,10 @@ public class GMatrixROmem extends Matrix {
     val norm:Rail[Double];
     val temp:Rail[Double];
     val dk:Rail[Double];
-//  val munuk:Array[Double](3){rect,zeroBased};
     val muk:Array[Double](2){rect,zeroBased};
+
+    val shellPairs:Array[ShellPair];
+
     transient val aux:Integral_Pack;
     val jMatrix:Matrix;
     val kMatrix:Matrix;
@@ -73,12 +76,80 @@ public class GMatrixROmem extends Matrix {
         temp = new Rail[Double](maxam1*maxam1*roK);
         aux = new Integral_Pack(roN,roL);
         dk = new Rail[Double](roK); // eqn 15b in RO#7
+        muk = new Array[Double](0..(nBasis-1)*0..(roK-1)); // Biggest RO array stored in Memory
 
-        muk = new Array[Double](0..(nBasis-1)*0..(roK-1));
+        // Gen Shellpair
+        var nShell:Int=0;
+        val noOfAtoms = mol.getNumberOfAtoms();
 
-        // Infinite memory code
-        // muak = new Array[Double](0..(nBasis-1)*0..(nOrbital-1)*0..(roK-1)); // half-transformed auxiliary integrals eqn 16b in RO#7
-        // munuk = new Array[Double](0..(nBasis-1)*0..(nBasis-1)*0..(roK-1)); // Auxiliary integrals
+        for(var a:Int=0; a<noOfAtoms; a++) {
+            val aFunc = mol.getAtom(a).getBasisFunctions();
+            nShell+=aFunc.size();
+        }
+
+        shellPairs = new Array[ShellPair](nShell*(nShell+1)/2); 
+
+        var mu:Int = 0; 
+        var nu:Int = 0; 
+        // centre a
+        var ind:Int=0;
+        for(var a:Int=0; a<noOfAtoms; a++) {
+            val aFunc = mol.getAtom(a).getBasisFunctions();
+            val naFunc = aFunc.size();
+            // basis functions on a
+            for(var i:Int=0; i<naFunc; i++) {
+                val iaFunc = aFunc.get(i);
+                // centre b
+                for(var b:Int=0; b<noOfAtoms; b++) {
+                    val bFunc = mol.getAtom(b).getBasisFunctions();
+                    val nbFunc = bFunc.size();
+                    // basis functions on b
+                    for(var j:Int=0; j<nbFunc; j++) {
+                        val jbFunc = bFunc.get(j);
+                        //Console.OUT.printf("a=%d i=%d b=%d j=%d [naFunc=%d nbFunc=%d]\n", a,i,b,j,naFunc,nbFunc);
+
+                        var aaFunc:ContractedGaussian=iaFunc,bbFunc:ContractedGaussian=jbFunc;
+                        val aa=iaFunc.getTotalAngularMomentum();
+                        val bb=jbFunc.getTotalAngularMomentum();
+                        val maxbraa = (aa+1)*(aa+2)/2; 
+                        val maxbrab = (bb+1)*(bb+2)/2;                  
+
+                        if (aa>bb || (aa==bb && mu>=nu)) {                        
+                            // extract info from basisfunctions
+                            // Note that iaFunc and jbFunc are ContractedGaussians
+                            // val may not work?  must specify the same type as in cpp code?
+                            val aang = aaFunc.getTotalAngularMomentum();
+                            val aPoint = aaFunc.origin;
+                            val zetaA = aaFunc.exponents;
+                            val conA = aaFunc.coefficients;
+                            val dConA = conA.size;
+
+                            val bang = bbFunc.getTotalAngularMomentum();
+                            val bPoint = bbFunc.origin; 
+                            val zetaB = bbFunc.exponents;                        
+                            val conB = bbFunc.coefficients; 
+                            val dConB = conB.size;
+                        
+                            var contrib : Double = 0.; // S = conservative estimate
+                            val R = Math.sqrt(Math.pow(aPoint.i-bPoint.i,2.)+Math.pow(aPoint.j-bPoint.j,2.)+Math.pow(aPoint.k-bPoint.k,2.));
+                            for (var ii:Int=0; ii<dConA; ii++) for (var jj:Int=0; jj<dConA; jj++) 
+                                contrib+=conA(ii)*conB(jj)*Math.exp(-zetaA(ii)*zetaB(jj)/(zetaA(ii)+zetaB(jj))*Math.pow(R,2.));
+                            Console.OUT.printf("mu=%d nu=%d contrib=%f\n",mu,nu,contrib);  
+
+                            // TODO: Call genclass to find N and L appropriate to THRESH
+
+                            shellPairs(ind++) = new ShellPair(aang, bang, aPoint, bPoint, zetaA, zetaB, conA, conB, dConA, dConB, mu, nu, roN, roL,contrib);
+                        }
+                        if (b!=noOfAtoms-1 || j!=nbFunc-1) nu+=maxbrab;
+                        else {mu+=maxbraa; nu=0;}
+                    }    
+                }
+            }   
+        }  
+    Console.OUT.printf("nShell=%d ind=%d\n",nShell,ind);    
+
+    // TODO: Sort ShellPairs by their contribution
+    
     }
 
 
