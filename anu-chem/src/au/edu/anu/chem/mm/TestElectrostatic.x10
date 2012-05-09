@@ -51,14 +51,14 @@ public class TestElectrostatic {
      * Generate an array of local Arrays of MMAtoms, one Array for each
      * place.  FMM assumes that the atoms have already been distributed.
      * Locate all particles within a small displacement from points on 
-     * a cbrt(N)-SIZE grid.
+     * a cbrt(N) grid of size SIZE, centered at the origin.
      */
     public def generateAtoms(numAtoms : Int) : DistArray[Rail[MMAtom]](1) {
         //Console.OUT.println("size of cluster =  " + sizeOfCentralCluster());
         val tempAtoms = DistArray.make[ArrayList[MMAtom]](Dist.makeUnique(), (Point) => new ArrayList[MMAtom]());
         val gridSize = (Math.ceil(Math.cbrt(numAtoms)) as Int);
         // assign atoms to a central cluster of size "sizeOfCentralCluster()"
-        val clusterStart = SIZE / 2.0 - sizeOfCentralCluster() / 2.0;
+        val clusterStart = -sizeOfCentralCluster() / 2.0;
         var gridPoint : Int = 0; // running total of assigned grid points
         finish for (var i : Int = 0; i < numAtoms; i++) {
             val gridX = gridPoint / (gridSize * gridSize);

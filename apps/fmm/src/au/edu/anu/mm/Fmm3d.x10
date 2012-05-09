@@ -40,16 +40,12 @@ public class Fmm3d {
     /** The number of lowest level boxes along one side of the cube. */
     public val lowestLevelDim : Int;
 
-    /** 
+    /**
+     * The side length of the cube. 
      * To ensure balanced rounding errors within the multipole and local 
      * calculations, all force/energy calculations are performed within 
-     * an offset cube with top-left-front corner (-size/2, -size/2, -size/2).
-     * This is the offset vector from the "real" (input) cube top-left-front
-     * corner to the FMM top-left-front corner. 
+     * an origin-centred cube.
      */
-    public val offset : Vector3d;
-
-    /** The side length of the cube. */
     public val size : Double; 
 
     /** The number of terms to use in the multipole and local expansions. */
@@ -110,11 +106,10 @@ public class Fmm3d {
     public def this(density : Double, 
                     numTerms : Int,
                     ws : Int,
-                    topLeftFront : Point3d,
                     size : Double,  
                     numAtoms : Int) {
         // topLevel in regular FMM is 2 (boxes higher than this cannot be well-spaced)
-        this(density, numTerms, ws, topLeftFront, size, numAtoms, 2, false);
+        this(density, numTerms, ws, size, numAtoms, 2, false);
     }
 
     /**
@@ -130,7 +125,6 @@ public class Fmm3d {
     protected def this(density : Double, 
                     numTerms : Int,
                     ws : Int,
-                    topLeftFront : Point3d,
                     size : Double,  
                     numAtoms : Int,
                     topLevel : Int,
@@ -151,8 +145,6 @@ public class Fmm3d {
         this.numTerms = numTerms;
         this.ws = ws;
 
-        val offset = Point3d(-size/2.0, -size/2.0, -size/2.0) - topLeftFront;
-        this.offset = offset;
         this.size = size;
 
         timer().start(TIMER_INDEX_TREE);
@@ -244,7 +236,7 @@ public class Fmm3d {
             val localAtoms = atoms(p1);
             assignAtomsToBoxesLocal(localAtoms);
             Team.WORLD.barrier(here.id);
-            //pruneTreeLocal();
+            pruneTreeLocal();
         }
         timer().stop(TIMER_INDEX_TREE);
     }
@@ -253,19 +245,16 @@ public class Fmm3d {
         val lowestLevelBoxes = boxes(numLevels);
         finish for (i in 0..(localAtoms.size-1)) {
             val atom = localAtoms(i);
-            val offsetCentre = atom.centre + offset;
-            val boxIndex = Fmm3d.getLowestLevelBoxIndex(offsetCentre, lowestLevelDim, size);
+            val boxIndex = Fmm3d.getLowestLevelBoxIndex(atom.centre, lowestLevelDim, size);
             val atomPlace = lowestLevelBoxes.dist(boxIndex);
             if (atomPlace == here) {
                 val box = lowestLevelBoxes(boxIndex) as FmmLeafBox;
                 val copyAtom = new MMAtom(atom);
                 atomic box.atomList.add(copyAtom);
-                copyAtom.centre = offsetCentre; // move centre of copy atom only
             } else {
                 at(atomPlace) async {
                     val box = lowestLevelBoxes(boxIndex) as FmmLeafBox;
                     atomic box.atomList.add(atom);
-                    atom.centre = offsetCentre; // implicit copy in 'at'
                 }
             }
         }
@@ -580,8 +569,8 @@ public class Fmm3d {
                                         vListMax);
     }
 
-    public static def getLowestLevelBoxIndex(offsetCentre : Point3d, lowestLevelDim : Int, size : Double) : Point(3) {
-        return  Point.make((offsetCentre.i / size * lowestLevelDim + lowestLevelDim / 2) as Int, (offsetCentre.j / size * lowestLevelDim + lowestLevelDim / 2) as Int, (offsetCentre.k / size * lowestLevelDim + lowestLevelDim / 2) as Int);
+    public static def getLowestLevelBoxIndex(atomCentre : Point3d, lowestLevelDim : Int, size : Double) : Point(3) {
+        return  Point.make((atomCentre.i / size * lowestLevelDim + lowestLevelDim / 2) as Int, (atomCentre.j / size * lowestLevelDim + lowestLevelDim / 2) as Int, (atomCentre.k / size * lowestLevelDim + lowestLevelDim / 2) as Int);
     }
 
     protected static def getParentForChild(boxes : Rail[DistArray[FmmBox](3)], level : Int, topLevel : Int, x : Int, y : Int, z : Int) : GlobalRef[FmmBox] {
