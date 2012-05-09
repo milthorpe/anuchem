@@ -274,6 +274,7 @@ public class PME {
         val halfCutoff = (cutoff / 2.0);
         val subCellsTemp = DistArray.make[ArrayList[PointCharge]](subCells.dist, (Point) => new ArrayList[PointCharge]());
         val atoms = this.atoms; // TODO shouldn't be necessary XTENLANG-1913
+        val halfNumSubCells = this.numSubCells / 2;
         finish ateach(p in atoms) {
             val localAtoms = atoms(p);
             for (l in 0..(localAtoms.size-1)) {
@@ -281,9 +282,9 @@ public class PME {
                 val centre = atom.centre;
                 val charge = atom.charge;
                 // get subcell i,j,k
-                val i = (centre.i / halfCutoff) as Int;
-                val j = (centre.j / halfCutoff) as Int;
-                val k = (centre.k / halfCutoff) as Int;
+                val i = (centre.i / halfCutoff) as Int + halfNumSubCells;
+                val j = (centre.j / halfCutoff) as Int + halfNumSubCells;
+                val k = (centre.k / halfCutoff) as Int + halfNumSubCells;
                 at(subCellsTemp.dist(i,j,k)) async {
                     atomic subCellsTemp(i,j,k).add(new PointCharge(centre, charge));
                 }
@@ -501,7 +502,7 @@ public class PME {
                     for (atomIndex in 0..(thisCell.size-1)) {
                         val atom = thisCell(atomIndex);
                         val q = atom.charge;
-                        val u = atom.centre.scale(scalingVector); // TODO general non-cubic
+                        val u = atom.centre.scale(scalingVector) + Vector3d(K1, K2, K3); // Eq. 3.1 TODO general non-cubic
                         val u1i = u.i as Int;
                         val u2i = u.j as Int;
                         val u3i = u.k as Int;
@@ -735,12 +736,6 @@ public class PME {
         } else {
             return 1.0 - Math.abs(u - 1.0);
         }
-    }
-    
-    /** Gets scaled fractional coordinate u as per Eq. 3.1 - general rectangular */
-    public static @Inline def getScaledFractionalCoordinates(K1 : Double, K2 : Double, K3 : Double, edgeReciprocals : Rail[Vector3d], r : Vector3d) : Vector3d {
-        // this method allows general non-rectangular cells
-        return Vector3d(edgeReciprocals(0).mul(K1).dot(r), edgeReciprocals(1).mul(K2).dot(r), edgeReciprocals(2).mul(K3).dot(r));
     }
 
     /**

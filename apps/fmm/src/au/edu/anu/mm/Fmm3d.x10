@@ -40,16 +40,12 @@ public class Fmm3d {
     /** The number of lowest level boxes along one side of the cube. */
     public val lowestLevelDim : Int;
 
-    /** 
+    /**
+     * The side length of the cube. 
      * To ensure balanced rounding errors within the multipole and local 
      * calculations, all force/energy calculations are performed within 
-     * an offset cube with top-left-front corner (-size/2, -size/2, -size/2).
-     * This is the offset vector from the "real" (input) cube top-left-front
-     * corner to the FMM top-left-front corner. 
+     * an origin-centred cube.
      */
-    public val offset : Vector3d;
-
-    /** The side length of the cube. */
     public val size : Double; 
 
     /** The number of terms to use in the multipole and local expansions. */
@@ -110,11 +106,10 @@ public class Fmm3d {
     public def this(density : Double, 
                     numTerms : Int,
                     ws : Int,
-                    topLeftFront : Point3d,
                     size : Double,  
                     numAtoms : Int) {
         // topLevel in regular FMM is 2 (boxes higher than this cannot be well-spaced)
-        this(density, numTerms, ws, topLeftFront, size, numAtoms, 2, false);
+        this(density, numTerms, ws, size, numAtoms, 2, false);
     }
 
     /**
@@ -130,7 +125,6 @@ public class Fmm3d {
     protected def this(density : Double, 
                     numTerms : Int,
                     ws : Int,
-                    topLeftFront : Point3d,
                     size : Double,  
                     numAtoms : Int,
                     topLevel : Int,
@@ -151,8 +145,6 @@ public class Fmm3d {
         this.numTerms = numTerms;
         this.ws = ws;
 
-        val offset = Point3d(-size/2.0, -size/2.0, -size/2.0) - topLeftFront;
-        this.offset = offset;
         this.size = size;
 
         timer().start(TIMER_INDEX_TREE);
@@ -240,37 +232,66 @@ public class Fmm3d {
 
     public def assignAtomsToBoxes(atoms:DistArray[Rail[MMAtom]](1)) {
         timer().start(TIMER_INDEX_TREE);
-        //Console.OUT.println("assignAtomsToBoxes");
-        val lowestLevelBoxes = boxes(numLevels);
-        val offset = this.offset; // TODO shouldn't be necessary XTENLANG-1913
-        val lowestLevelDim = this.lowestLevelDim; // TODO shouldn't be necessary XTENLANG-1913
-        val size = this.size; // TODO shouldn't be necessary XTENLANG-1913
-        val boxAtomsTemp = DistArray.make[ArrayList[MMAtom]](lowestLevelBoxes.dist, (Point) => new ArrayList[MMAtom]());
         finish ateach(p1 in atoms) {
             val localAtoms = atoms(p1);
-            finish for (i in 0..(localAtoms.size-1)) {
-                val atom = localAtoms(i);
-                val offsetCentre = atom.centre + offset;
-                val boxIndex = Fmm3d.getLowestLevelBoxIndex(offsetCentre, lowestLevelDim, size);
-                at(boxAtomsTemp.dist(boxIndex)) async {
-                    atomic boxAtomsTemp(boxIndex).add(atom);
-                    atom.centre = offsetCentre; // move centre of copy atom only
+            assignAtomsToBoxesLocal(localAtoms);
+            Team.WORLD.barrier(here.id);
+            pruneTreeLocal();
+        }
+        timer().stop(TIMER_INDEX_TREE);
+    }
+
+    public def assignAtomsToBoxesLocal(localAtoms:Rail[MMAtom]) {
+        val lowestLevelBoxes = boxes(numLevels);
+        finish for (i in 0..(localAtoms.size-1)) {
+            val atom = localAtoms(i);
+            val boxIndex = Fmm3d.getLowestLevelBoxIndex(atom.centre, lowestLevelDim, size);
+            val atomPlace = lowestLevelBoxes.dist(boxIndex);
+            if (atomPlace == here) {
+                val box = lowestLevelBoxes(boxIndex) as FmmLeafBox;
+                val copyAtom = new MMAtom(atom);
+                atomic box.atomList.add(copyAtom);
+            } else {
+                at(atomPlace) async {
+                    val box = lowestLevelBoxes(boxIndex) as FmmLeafBox;
+                    atomic box.atomList.add(atom);
                 }
             }
         }
 
-        finish ateach(boxIndex in lowestLevelBoxes) {
-            val boxAtoms = boxAtomsTemp(boxIndex);
-            if (boxAtoms.size() == 0) {
+    }
+
+    public def pruneTreeLocal() {
+        val lowestLevelBoxes = boxes(numLevels);
+        for(boxIndex in lowestLevelBoxes.dist(here)) {
+            val box = lowestLevelBoxes(boxIndex) as FmmLeafBox;
+            if (box.atomList.size() == 0) {
                 // post-prune leaf boxes
                 // TODO prune intermediate empty boxes as well
                 lowestLevelBoxes(boxIndex) = null;
             } else {
-                val box = lowestLevelBoxes(boxIndex) as FmmLeafBox;
-                box.setAtoms(boxAtoms.toArray());
+                box.setAtoms(box.atomList.toArray());
+                box.atomList = new ArrayList[MMAtom](); // clear for next iteration
             }
         }
-        timer().stop(TIMER_INDEX_TREE);
+    }
+
+    /** @return a Rail containing all atoms held at this place */
+    public def getAtomsLocal() {
+        val guessNumAtoms = (Math.pow(8.0, numLevels) * 50) as Int;
+        val atomList = new ArrayList[MMAtom](guessNumAtoms);
+        val lowestLevelBoxes = boxes(numLevels);
+        for([x,y,z] in lowestLevelBoxes.dist(here)) {
+            val box = lowestLevelBoxes(x,y,z) as FmmLeafBox;
+            if (box != null) {
+                val atoms = box.getAtoms();
+                for (i in atoms) {
+                    val atom = atoms(i);
+                    atomList.add(atom);
+                }
+            }
+        }
+        return atomList.toArray();
     }
 
     protected def upwardPass() {
@@ -291,7 +312,7 @@ public class Fmm3d {
         timer().start(TIMER_INDEX_DOWNWARD);
 
         val startingLevel = periodic ? topLevel+1 : topLevel;
-        val topLevelExp = periodic ? boxes(0)(0,0,0).localExp : null;
+        val topLevelExp = periodic ? (at (boxes(0).dist(0,0,0)) {boxes(0)(0,0,0).localExp}) : null;
         val topLevelBoxes = boxes(startingLevel);
 
         val farField = finish(SumReducer()) {
@@ -548,8 +569,8 @@ public class Fmm3d {
                                         vListMax);
     }
 
-    public static def getLowestLevelBoxIndex(offsetCentre : Point3d, lowestLevelDim : Int, size : Double) : Point(3) {
-        return  Point.make((offsetCentre.i / size * lowestLevelDim + lowestLevelDim / 2) as Int, (offsetCentre.j / size * lowestLevelDim + lowestLevelDim / 2) as Int, (offsetCentre.k / size * lowestLevelDim + lowestLevelDim / 2) as Int);
+    public static def getLowestLevelBoxIndex(atomCentre : Point3d, lowestLevelDim : Int, size : Double) : Point(3) {
+        return  Point.make((atomCentre.i / size * lowestLevelDim + lowestLevelDim / 2) as Int, (atomCentre.j / size * lowestLevelDim + lowestLevelDim / 2) as Int, (atomCentre.k / size * lowestLevelDim + lowestLevelDim / 2) as Int);
     }
 
     protected static def getParentForChild(boxes : Rail[DistArray[FmmBox](3)], level : Int, topLevel : Int, x : Int, y : Int, z : Int) : GlobalRef[FmmBox] {

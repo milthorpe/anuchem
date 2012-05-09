@@ -23,13 +23,15 @@ import au.edu.anu.chem.mm.MMAtom;
  * @author milthorpe
  */
 public class FmmLeafBox extends FmmBox {
-    private var atoms : Rail[MMAtom];
+    private var atoms:Rail[MMAtom];
+    public var atomList:ArrayList[MMAtom];
 
     /** The U-list consists of all leaf boxes not well-separated from this box. */
     private var uList : Rail[Point(3)];
 
     public def this(level : Int, x : Int, y : Int, z : Int, numTerms : Int, parent : GlobalRef[FmmBox]) { 
         super(level, x, y, z, numTerms, parent);
+        atomList = new ArrayList[MMAtom]();
     }
 
     public def getAtomCharges():Rail[PointCharge] {
