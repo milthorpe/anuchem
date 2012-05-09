@@ -134,9 +134,9 @@ public class GMatrixROmem extends Matrix {
                         
                             var contrib : Double = 0.; // S = conservative estimate
                             val R = Math.sqrt(Math.pow(aPoint.i-bPoint.i,2.)+Math.pow(aPoint.j-bPoint.j,2.)+Math.pow(aPoint.k-bPoint.k,2.));
-                            for (var ii:Int=0; ii<dConA; ii++) for (var jj:Int=0; jj<dConA; jj++) 
+                            for (var ii:Int=0; ii<dConA; ii++) for (var jj:Int=0; jj<dConB; jj++) 
                                 contrib+=conA(ii)*conB(jj)*Math.exp(-zetaA(ii)*zetaB(jj)/(zetaA(ii)+zetaB(jj))*Math.pow(R,2.));
-                            Console.OUT.printf("mu=%d nu=%d contrib=%f\n",mu,nu,contrib);  
+                            Console.OUT.printf("mu=%4d nu=%4d contrib=%15.10f\n",mu,nu,contrib);  
 
                             // TODO: Call genclass to find N and L appropriate to THRESH
 
