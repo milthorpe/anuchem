@@ -18,6 +18,7 @@ import x10x.matrix.Matrix;
 import x10x.vector.Vector;
 import x10x.vector.Point3d;
 import au.edu.anu.chem.Molecule;
+import au.edu.anu.qm.ShellPair; // New
 import au.edu.anu.util.SharedCounter;
 import au.edu.anu.util.Timer;
 import au.edu.anu.util.StatisticalTimer;
