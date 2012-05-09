@@ -54,6 +54,8 @@ public class GMatrixROmem extends Matrix {
     val jMatrix:Matrix;
     val kMatrix:Matrix;
 
+    val nSigShellPairs:Int;
+
     public def this(N:Int, bfs:BasisFunctions, molecule:Molecule[QMAtom], nOrbital:Int) {
         super(N);
         this.bfs = bfs;
@@ -147,6 +149,7 @@ public class GMatrixROmem extends Matrix {
             }   
         }  
     Console.OUT.printf("nShell=%d ind=%d\n",nShell,ind);    
+    nSigShellPairs=ind; // TODO: Change to smaller number
 
     // TODO: Sort ShellPairs by their contribution
     
@@ -169,83 +172,16 @@ public class GMatrixROmem extends Matrix {
         var mu:Int = 0; 
         var nu:Int = 0; 
 
-        // centre a
-        for(var a:Int=0; a<noOfAtoms; a++) {
-            val aFunc = mol.getAtom(a).getBasisFunctions();
-            val naFunc = aFunc.size();
-            // basis functions on a
-            for(var i:Int=0; i<naFunc; i++) {
-                val iaFunc = aFunc.get(i);
-                // centre b
-                for(var b:Int=0; b<noOfAtoms; b++) {
-                    val bFunc = mol.getAtom(b).getBasisFunctions();
-                    val nbFunc = bFunc.size();
-                    // basis functions on b
-                    for(var j:Int=0; j<nbFunc; j++) {
-                        val jbFunc = bFunc.get(j);
-                        //Console.OUT.printf("a=%d i=%d b=%d j=%d [naFunc=%d nbFunc=%d]\n", a,i,b,j,naFunc,nbFunc);
-                        
-                        var aaFunc:ContractedGaussian=iaFunc,bbFunc:ContractedGaussian=jbFunc;
-                        val aa=iaFunc.getTotalAngularMomentum();
-                        val bb=jbFunc.getTotalAngularMomentum();
-                        val maxbraa = (aa+1)*(aa+2)/2; 
-                        val maxbrab = (bb+1)*(bb+2)/2; 
-                        // swap A and B if B has higher anglular momentum than A     
-                        if (aa<bb) {
-                            aaFunc=jbFunc; bbFunc=iaFunc;
-                            //Console.OUT.printf("SWAP ab!\n");
-                        }                  
+        // Form dk
+        for (var spInd:Int=0; spInd<nSigShellPairs; spInd++) {
+            val sp=shellPairs(spInd);
+            aux.genClass(sp.aang, sp.bang, sp.aPoint, sp.bPoint, sp.zetaA, sp.zetaB, sp.conA, sp.conB, sp.dconA, sp.dconB, temp);      
 
-                        // extract info from basisfunctions
-                        // Note that iaFunc and jbFunc are ContractedGaussians
-                        // val may not work?  must specify the same type as in cpp code?
-                        val aang = aaFunc.getTotalAngularMomentum();
-                        val aPoint = aaFunc.origin;
-                        val zetaA = aaFunc.exponents;
-                        val conA = aaFunc.coefficients;
-                        val dConA = conA.size;
-
-                        val bang = bbFunc.getTotalAngularMomentum();
-                        val bPoint = bbFunc.origin; 
-                        val zetaB = bbFunc.exponents;                        
-                        val conB = bbFunc.coefficients; 
-                        val dConB = conB.size;
-
-                        //Console.OUT.printf("aang=%d bang=%d\n", aang,bang);
-                        aux.genClass(aang, bang, aPoint, bPoint, zetaA, zetaB, conA, conB, dConA, dConB, temp);      
-
-                        // transfer infomation from temp to munuk (Swap A and B again if necessary) and normalise
-                        var ind:Int=0;
-                        if (iaFunc.getTotalAngularMomentum()>=jbFunc.getTotalAngularMomentum())
-                            for (var tmu:Int=mu; tmu<mu+maxbraa; tmu++) for (var tnu:Int=nu; tnu<nu+maxbrab; tnu++) for (var k:Int=0; k<roK; k++) {
-                                //Console.OUT.printf("GMatrixRO.x10 Ln149 tmu=%d tnu=%d k=%d ind=%d val=%e\n",tmu,tnu,k,ind,temp(ind));
-                                val m = norm(tmu)*norm(tnu)*temp(ind++);
-                                dk(k) += denMat(tmu,tnu)*m; // eqn 15b
-                                //for(aorb in 0..(nOrbital-1)) {
-                                //    muak(tmu,aorb,k) += mosMat(aorb,tnu) * m; // eqn 16b the most expensive step!!!
-                                //}
-                                //munuk(tmu,tnu,k) = m;
-                            }                                
-                        else // Be careful... this is tricky ... maxbra are not swap 
-                            for (var tnu:Int=nu; tnu<nu+maxbrab; tnu++) for (var tmu:Int=mu; tmu<mu+maxbraa; tmu++) for (var k:Int=0; k<roK; k++) {
-                                //Console.OUT.printf("(Swap) tmu=%d tnu=%d k=%d ind=%d val=%e\n",tmu,tnu,k,ind,temp(ind));
-                                val m = norm(tmu)*norm(tnu)*temp(ind++);
-                                dk(k) += denMat(tmu,tnu)*m; // eqn 15b
-                                //for(aorb in 0..(nOrbital-1)) {
-                                //    muak(tmu,aorb,k) += mosMat(aorb,tnu) * m; // eqn 16b the most expensive step!!!
-                                //}
-                                //munuk(tmu,tnu,k) = m;
-                            }
-
-
-                        if (b!=noOfAtoms-1 || j!=nbFunc-1) nu+=maxbrab;
-                        else {mu+=maxbraa; nu=0;}
-
-                        //Console.OUT.printf("Ln172 mu=%d nu=%d\n", mu,nu);
-
-                    }
-                }
-            }
+            // transfer infomation from temp to munuk (Swap A and B again if necessary) and normalise
+            var ind:Int=0; var fac:Double=1.;
+            if (sp.mu!=sp.nu) fac=2.0;
+            for (var tmu:Int=sp.mu; tmu<sp.mu+sp.maxbraa; tmu++) for (var tnu:Int=sp.nu; tnu<sp.nu+sp.maxbrab; tnu++) for (var k:Int=0; k<roK; k++) 
+               dk(k) += denMat(tmu,tnu)*fac*norm(tmu)*norm(tnu)*temp(ind++); // eqn 15b                   
         }     
 
         val jMat = jMatrix.getMatrix();
