@@ -135,12 +135,12 @@ public class GMatrixROmem extends Matrix {
                             var contrib : Double = 0.; // S = conservative estimate
                             val R = Math.sqrt(Math.pow(aPoint.i-bPoint.i,2.)+Math.pow(aPoint.j-bPoint.j,2.)+Math.pow(aPoint.k-bPoint.k,2.));
                             for (var ii:Int=0; ii<dConA; ii++) for (var jj:Int=0; jj<dConB; jj++) 
-                                contrib+=conA(ii)*conB(jj)*Math.exp(-zetaA(ii)*zetaB(jj)/(zetaA(ii)+zetaB(jj))*Math.pow(R,2.));
-                            Console.OUT.printf("mu=%4d nu=%4d contrib=%15.10f\n",mu,nu,contrib);  
+                                contrib+=conA(ii)*conB(jj)*Math.exp(-zetaA(ii)*zetaB(jj)/(zetaA(ii)+zetaB(jj))*Math.pow(R,2.)); // norm already included in con coef
+                            Console.OUT.printf("mu=%4d nu=%4d contrib=%17.10f\n",mu,nu,contrib);  
 
                             // TODO: Call genclass to find N and L appropriate to THRESH
 
-                            shellPairs(ind++) = new ShellPair(aang, bang, aPoint, bPoint, zetaA, zetaB, conA, conB, dConA, dConB, mu, nu, roN, roL,contrib);
+                            shellPairs(ind++) = new ShellPair(aang, bang, aPoint, bPoint, zetaA, zetaB, conA, conB, dConA, dConB, mu, nu, roN, roL,Math.abs(contrib));
                         }
                         if (b!=noOfAtoms-1 || j!=nbFunc-1) nu+=maxbrab;
                         else {mu+=maxbraa; nu=0;}
