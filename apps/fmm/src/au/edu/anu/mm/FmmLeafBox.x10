@@ -57,10 +57,9 @@ public class FmmLeafBox extends FmmBox {
     protected def upward(size:Double, fmmOperators:PlaceLocalHandle[FmmOperators], locallyEssentialTree:PlaceLocalHandle[LocallyEssentialTree], boxes:Rail[DistArray[FmmBox](3)], periodic:Boolean) {
         val p = multipoleExp.p;
         val boxCentre = getCentre(size);
-        val boxAtoms = getAtoms();
         multipoleExp.terms.clear();
-        for (i in 0..(boxAtoms.size-1)) {
-            val atom = boxAtoms(i);
+        for (i in 0..(atoms.size-1)) {
+            val atom = atoms(i);
             val atomLocation = boxCentre.vector(atom.centre);
             // only one thread per box, so unsafe addOlm is OK
             multipoleExp.addOlm(atom.charge, atomLocation, p);
@@ -72,12 +71,15 @@ public class FmmLeafBox extends FmmBox {
     }
 
     protected def downward(size:Double, parentLocalExpansion:LocalExpansion, fmmOperators:PlaceLocalHandle[FmmOperators], locallyEssentialTree:PlaceLocalHandle[LocallyEssentialTree], boxes:Rail[DistArray[FmmBox](3)], numLevels:Int, periodic:Boolean):Double {
-        constructLocalExpansion(size, fmmOperators, parentLocalExpansion, locallyEssentialTree);
-        val myLET = locallyEssentialTree();
+        if (atoms.size > 0) {
+            constructLocalExpansion(size, fmmOperators, parentLocalExpansion, locallyEssentialTree);
+            val myLET = locallyEssentialTree();
 
 
-        return getPotential(size, myLET, numLevels, periodic);
-        
+            return getPotential(size, myLET, numLevels, periodic);
+        } else {
+            return 0.0;
+        }        
     }
 
     /**
@@ -89,10 +91,9 @@ public class FmmLeafBox extends FmmBox {
     private def getPotential(size:Double, myLET:LocallyEssentialTree, numLevels:Int, periodic:Boolean) : Double {
         val boxCentre = getCentre(size);
 
-        val boxAtoms = getAtoms();
         var potential:Double = 0.0;
-        for (atomIndex in 0..(boxAtoms.size-1)) {
-            val atom = boxAtoms(atomIndex);
+        for (atomIndex in 0..(atoms.size-1)) {
+            val atom = atoms(atomIndex);
             val locationWithinBox = atom.centre.vector(boxCentre);
             potential += localExp.calculatePotentialAndForces(atom, locationWithinBox);
         }

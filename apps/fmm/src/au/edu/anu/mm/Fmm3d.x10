@@ -14,6 +14,7 @@ import x10.compiler.Inline;
 import x10.util.ArrayList;
 import x10.util.HashMap;
 import x10.util.HashSet;
+import x10.util.Pair;
 import x10.util.Team;
 import x10x.vector.Point3d;
 import x10x.vector.Vector3d;
@@ -229,71 +230,6 @@ public class Fmm3d {
         }
     }
 
-
-    public def assignAtomsToBoxes(atoms:DistArray[Rail[MMAtom]](1)) {
-        timer().start(TIMER_INDEX_TREE);
-        finish ateach(p1 in atoms) {
-            val localAtoms = atoms(p1);
-            assignAtomsToBoxesLocal(localAtoms);
-            Team.WORLD.barrier(here.id);
-            pruneTreeLocal();
-        }
-        timer().stop(TIMER_INDEX_TREE);
-    }
-
-    public def assignAtomsToBoxesLocal(localAtoms:Rail[MMAtom]) {
-        val lowestLevelBoxes = boxes(numLevels);
-        finish for (i in 0..(localAtoms.size-1)) {
-            val atom = localAtoms(i);
-            val boxIndex = Fmm3d.getLowestLevelBoxIndex(atom.centre, lowestLevelDim, size);
-            val atomPlace = lowestLevelBoxes.dist(boxIndex);
-            if (atomPlace == here) {
-                val box = lowestLevelBoxes(boxIndex) as FmmLeafBox;
-                val copyAtom = new MMAtom(atom);
-                atomic box.atomList.add(copyAtom);
-            } else {
-                at(atomPlace) async {
-                    val box = lowestLevelBoxes(boxIndex) as FmmLeafBox;
-                    atomic box.atomList.add(atom);
-                }
-            }
-        }
-
-    }
-
-    public def pruneTreeLocal() {
-        val lowestLevelBoxes = boxes(numLevels);
-        for(boxIndex in lowestLevelBoxes.dist(here)) {
-            val box = lowestLevelBoxes(boxIndex) as FmmLeafBox;
-            if (box.atomList.size() == 0) {
-                // post-prune leaf boxes
-                // TODO prune intermediate empty boxes as well
-                lowestLevelBoxes(boxIndex) = null;
-            } else {
-                box.setAtoms(box.atomList.toArray());
-                box.atomList = new ArrayList[MMAtom](); // clear for next iteration
-            }
-        }
-    }
-
-    /** @return a Rail containing all atoms held at this place */
-    public def getAtomsLocal() {
-        val guessNumAtoms = (Math.pow(8.0, numLevels) * 50) as Int;
-        val atomList = new ArrayList[MMAtom](guessNumAtoms);
-        val lowestLevelBoxes = boxes(numLevels);
-        for([x,y,z] in lowestLevelBoxes.dist(here)) {
-            val box = lowestLevelBoxes(x,y,z) as FmmLeafBox;
-            if (box != null) {
-                val atoms = box.getAtoms();
-                for (i in atoms) {
-                    val atom = atoms(i);
-                    atomList.add(atom);
-                }
-            }
-        }
-        return atomList.toArray();
-    }
-
     protected def upwardPass() {
         timer().start(TIMER_INDEX_UPWARD);
 
@@ -445,6 +381,120 @@ public class Fmm3d {
     static struct SumReducer implements Reducible[Double] {
         public def zero() = 0.0;
         public operator this(a:Double, b:Double) = (a + b);
+    }
+
+    public def initialAssignment(atoms:DistArray[Rail[MMAtom]](1)) {
+        timer().start(TIMER_INDEX_TREE);
+        val lowestLevelBoxes = boxes(numLevels);
+        finish ateach(p1 in atoms) {
+            val localAtoms = atoms(p1);
+            val placeLists = new HashMap[Int,ArrayList[MMAtom]](26); // a place may have up to 26 immediate neighbours
+            placeLists.put(here.id, new ArrayList[MMAtom]());
+            for (i in localAtoms) {
+                val atom = localAtoms(i);
+                val boxIndex = getLowestLevelBoxIndex(atom.centre, lowestLevelDim, size);
+                val placeId = lowestLevelBoxes.dist(boxIndex).id;
+                var atomsForPlace : ArrayList[MMAtom] = placeLists.getOrElse(placeId, null);
+                if (atomsForPlace == null) {
+                    atomsForPlace = new ArrayList[MMAtom]();
+                    placeLists.put(placeId, atomsForPlace);
+                }
+                atomsForPlace.add(atom);
+            }
+
+            // send atoms to other places
+            val placeEntries = placeLists.entries();
+            val atomLists = new Rail[Pair[Int,Rail[MMAtom]]](placeEntries.size());
+            for (placeEntry in placeEntries) {
+                val placeId = placeEntry.getKey();
+                if (placeId != here.id) {
+                    val atomsForPlace = placeEntry.getValue().toArray();
+                    //Console.OUT.println("initial at " + here + " sending " + atomsForPlace.size + " to " + Place(placeId));
+                    at (Place(placeId)) async {
+                        assignAtomsToBoxesLocal(atomsForPlace);
+                    }
+                }
+            }
+
+            val atomsHere = placeLists.getOrElse(here.id, null).toArray();
+            //Console.OUT.println("initial " + atomsHere.size + " atoms stayed at " + here);
+            assignAtomsToBoxesLocal(atomsHere);
+
+            Team.WORLD.barrier(here.id);
+            createAtomArraysLocal();
+        }
+        timer().stop(TIMER_INDEX_TREE);
+    }
+
+    /** 
+     * As atoms move within the simulation box, their owning place
+     * will change.  Send any atoms held at this place to their new
+     * owning place.
+     */
+    public def reassignAtoms() {
+        val placeLists = new HashMap[Int,ArrayList[MMAtom]](26); // a place may have up to 26 immediate neighbours
+        val lowestLevelBoxes = boxes(numLevels);
+        for([x,y,z] in lowestLevelBoxes.dist(here)) {
+            val box = lowestLevelBoxes(x,y,z) as FmmLeafBox;
+            if (box != null) {
+                val atoms = box.getAtoms();
+                for (i in atoms) {
+                    val atom = atoms(i);
+                    val boxIndex = getLowestLevelBoxIndex(atom.centre, lowestLevelDim, size);
+                    val placeId = lowestLevelBoxes.dist(boxIndex).id;
+                    var atomsForPlace : ArrayList[MMAtom] = placeLists.getOrElse(placeId, null);
+                    if (atomsForPlace == null) {
+                        atomsForPlace = new ArrayList[MMAtom]();
+                        placeLists.put(placeId, atomsForPlace);
+                    }
+                    atomsForPlace.add(atom);
+                }
+            }
+        }
+
+        // send atoms to other places
+        val placeEntries = placeLists.entries();
+        val atomLists = new Rail[Pair[Int,Rail[MMAtom]]](placeEntries.size());
+        for (placeEntry in placeEntries) {
+            val placeId = placeEntry.getKey();
+            if (placeId != here.id) {
+                val atomsForPlace = placeEntry.getValue().toArray();
+                //Console.OUT.println("reassign at " + here + " sending " + atomsForPlace.size + " to " + Place(placeId));
+                at (Place(placeId)) async {
+                    assignAtomsToBoxesLocal(atomsForPlace);
+                }
+            }
+        }
+
+        val atomsHere = placeLists.getOrElse(here.id, null).toArray();
+        //Console.OUT.println("reassign " + atomsHere.size + " atoms stayed at " + here);
+        assignAtomsToBoxesLocal(atomsHere);
+
+        Team.WORLD.barrier(here.id);
+        createAtomArraysLocal();
+    }
+
+    public def assignAtomsToBoxesLocal(localAtoms:Rail[MMAtom]) {
+        val lowestLevelBoxes = boxes(numLevels);
+        for (i in 0..(localAtoms.size-1)) {
+            val atom = localAtoms(i);
+            val boxIndex = Fmm3d.getLowestLevelBoxIndex(atom.centre, lowestLevelDim, size);
+            val box = lowestLevelBoxes(boxIndex) as FmmLeafBox;
+            atomic box.atomList.add(atom);
+        }
+    }
+
+    public def createAtomArraysLocal() {
+        val lowestLevelBoxes = boxes(numLevels);
+        for(boxIndex in lowestLevelBoxes.dist(here)) {
+            val box = lowestLevelBoxes(boxIndex) as FmmLeafBox;
+            if (box.atomList.size() == 0) {
+                lowestLevelBoxes(boxIndex) = null;
+            } else {
+                box.setAtoms(box.atomList.toArray());
+                box.atomList = new ArrayList[MMAtom](); // clear for next iteration
+            }
+        }
     }
 
     private def constructTree(numLevels : Int, topLevel : Int, numTerms : Int, ws : Int, periodic : boolean) 
