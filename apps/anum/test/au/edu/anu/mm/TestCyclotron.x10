@@ -193,8 +193,8 @@ public class TestCyclotron {
 
         Console.OUT.printf("# FMM density %4.3f numTerms %i\n", fmmDensity, fmmTerms);
 
-        val distAtoms = DistArray.make[Rail[MMAtom]](Dist.makeBlock(0..0, 0));
-        distAtoms(0) = atoms;
+        val distAtoms = DistArray.make[Rail[MMAtom]](Dist.makeUnique(), (Point) => new Array[MMAtom](0));
+        distAtoms(0) = atoms; // assign all atoms to place 0 to start - they will be reassigned
 
         val trap = new PenningTrap(totalIons, distAtoms, V, new Vector3d(0.0, 0.0, B), edgeLength, fmmDensity, fmmTerms);
         trap.mdRun(dt, steps, logSteps);

@@ -83,9 +83,9 @@ public class PenningTrap {
                     fmmDensity:Double,
                     fmmNumTerms:Int) {
         this.numAtoms = numAtoms;
-        val trapRadius = edgeLength / 2.0;
-        this.fmm = new Fmm3d(fmmDensity, fmmNumTerms, 1, Point3d(-trapRadius, -trapRadius, -trapRadius), edgeLength, numAtoms);
-        fmm.assignAtomsToBoxes(atoms);
+        val wellSeparatedParam = 2;
+        this.fmm = new Fmm3d(fmmDensity, fmmNumTerms, wellSeparatedParam, edgeLength, numAtoms);
+        fmm.initialAssignment(atoms);
         this.V_T = trappingPotential;
         this.B = magneticField;
         this.edgeLength = edgeLength;
@@ -133,10 +133,16 @@ public class PenningTrap {
             while(step < numSteps) {
                 step++;
                 val accumProps = (step % logSteps == 0);
-                props.reset();
+                timer.start(0);
                 mdStepLocal(step, timeStepSecs, fmmBoxes, current, accumProps, props);
                 if (accumProps) {
+                    timer.stop(0);
+                    timer.start(1);
                     reduceAndPrintProperties(timestep * step, props);
+                    timer.stop(1);
+                } else {
+                    Team.WORLD.barrier(here.id); // TODO is this really required?
+                    timer.stop(0);
                 }
             }
 
@@ -157,6 +163,12 @@ public class PenningTrap {
                     printPositions(timestep * step, box.getAtoms());
                 }
             }
+
+            Team.WORLD.allreduce[Long](here.id, timer.total, 0, timer.total, 0, timer.total.size, Team.MAX);
+            if (here == Place.FIRST_PLACE) {
+                logTime("MD calculation", 0, timer);
+                logTime("properties", 1, timer);
+            }
         }
 
     }
@@ -172,57 +184,51 @@ public class PenningTrap {
      * @param props the system properties to evaluate
      */
     public def mdStepLocal(step:Int, dt:Double, fmmBoxes:DistArray[FmmBox](3), current:Array[Double], accumProps:Boolean, props:SystemProperties) {
-        val localAtoms = fmm.getAtomsLocal();
-        fmm.assignAtomsToBoxesLocal(localAtoms);
-        Team.WORLD.barrier(here.id);
-        //fmm.pruneTreeLocal();
+        fmm.reassignAtoms(step);
 
         finish for ([x,y,z] in fmmBoxes.dist(here)) async {
             val box = fmmBoxes(x,y,z) as FmmLeafBox;
             if (box != null) {
-                val myAtoms = box.getAtoms();
-                for (i in 0..(myAtoms.size-1)) {
-                    val atom = myAtoms(i);
-                    if (atom != null) {
-            
-                        // timestep using Boris integrator
-                        val chargeMassRatio = atom.charge / atom.mass * CHARGE_MASS_FACTOR;
+                val boxAtoms = box.getAtoms();
+                for (i in 0..(boxAtoms.size-1)) {
+                    val atom = boxAtoms(i);
+                    // timestep using Boris integrator
+                    val chargeMassRatio = atom.charge / atom.mass * CHARGE_MASS_FACTOR;
 
-                        // get the electric field at ion centre due to other ions
-                        /*
-                        var E:Vector3d = Vector3d.NULL;
-                        for (j in 0..(myAtoms.size-1)) {
-                            if (i == j) continue;
-                            val atomJ = myAtoms(j);
-                            if (atomJ != null) {
-                                val r = atom.centre - atomJ.centre;
-                                val r2 = r.lengthSquared();
-                                val absR = Math.sqrt(r2);
-                                val atomContribution = COULOMB_FACTOR * atomJ.charge / r2 / absR * r;
-                                //Console.OUT.println(j + " => " + i + " = " + atomContribution);
-                                E = E + atomContribution;
-                            }
+                    // get the electric field at ion centre due to other ions
+                    /*
+                    var E:Vector3d = Vector3d.NULL;
+                    for (j in 0..(boxAtoms.size-1)) {
+                        if (i == j) continue;
+                        val atomJ = boxAtoms(j);
+                        if (atomJ != null) {
+                            val r = atom.centre - atomJ.centre;
+                            val r2 = r.lengthSquared();
+                            val absR = Math.sqrt(r2);
+                            val atomContribution = COULOMB_FACTOR * atomJ.charge / r2 / absR * r;
+                            //Console.OUT.println(j + " => " + i + " = " + atomContribution);
+                            E = E + atomContribution;
                         }
-                        var Ef:Vector3d = getElectrostaticField(atom.centre);
-                        //Console.OUT.println("Ef(" + i + ") = " + Ef.length() + " Ej = " + E.length() + " proportion " + Ef.length()/E.length());
-                        E += Ef;
-                        */
-                        val E = getElectrostaticField(atom.centre);
-
-                        //Console.OUT.println("E = " + E);
-                        val halfA = 0.5 * dt * chargeMassRatio * E;
-                        val vMinus = atom.velocity + halfA; // m
-
-                        //val larmorFreq = chargeMassRatio * magB;
-                        val t = 0.5 * dt * chargeMassRatio * B;
-                        val vPrime = vMinus + vMinus.cross(t);
-
-                        val magt2 = t.lengthSquared();
-                        val s = t * (2.0 / (1.0 + magt2));
-                        val vPlus = vMinus + vPrime.cross(s);
-
-                        atom.velocity = vPlus + halfA;
                     }
+                    var Ef:Vector3d = getElectrostaticField(atom.centre);
+                    //Console.OUT.println("Ef(" + i + ") = " + Ef.length() + " Ej = " + E.length() + " proportion " + Ef.length()/E.length());
+                    E += Ef;
+                    */
+                    val E = getElectrostaticField(atom.centre);
+
+                    //Console.OUT.println("E = " + E);
+                    val halfA = 0.5 * dt * chargeMassRatio * E;
+                    val vMinus = atom.velocity + halfA; // m
+
+                    //val larmorFreq = chargeMassRatio * magB;
+                    val t = 0.5 * dt * chargeMassRatio * B;
+                    val vPrime = vMinus + vMinus.cross(t);
+
+                    val magt2 = t.lengthSquared();
+                    val s = t * (2.0 / (1.0 + magt2));
+                    val vPlus = vMinus + vPrime.cross(s);
+
+                    atom.velocity = vPlus + halfA;
                 }
             }
         }
@@ -235,71 +241,24 @@ public class PenningTrap {
         for ([x,y,z] in fmmBoxes.dist(here)) {
             val box = fmmBoxes(x,y,z) as FmmLeafBox;
             if (box != null) {
-                val myAtoms = box.getAtoms();
-                var notNull:Int = myAtoms.size;
-                for (i in 0..(myAtoms.size-1)) {
-                    val atom = myAtoms(i);
-                    if (atom != null) {
-                        atom.centre = atom.centre + atom.velocity * dt;
-                        //Console.OUT.print(atom.centre.i + " " + atom.centre.j + " " + atom.centre.k + " ");
+                val boxAtoms = box.getAtoms();
+                for (i in 0..(boxAtoms.size-1)) {
+                    val atom = boxAtoms(i);
+                    atom.centre = atom.centre + atom.velocity * dt;
+                    //Console.OUT.print(atom.centre.i + " " + atom.centre.j + " " + atom.centre.k + " ");
 
-                        if (Math.abs(atom.centre.i) > edgeLength/2.0
-                         || Math.abs(atom.centre.j) > edgeLength/2.0
-                         || Math.abs(atom.centre.k) > edgeLength/2.0) {
-                            // ion lost to wall
-                            myAtoms(i) = null;
-                            numAtoms--;
-                            notNull--;
-                        }/* else {
-                            val boxIndex = Fmm3d.getLowestLevelBoxIndex(atom.centre, fmm.lowestLevelDim, fmm.size);
-                            if (boxIndex(0) != x || boxIndex(1) != y || boxIndex(2) != z) {
-                                //Console.OUT.println("moving atom " + atom.centre + " from " + x+","+y+","+z + " to " + boxIndex);
-                                at(fmmBoxes.dist(boxIndex)) async {
-                                    atomic {
-                                        var destBox:FmmLeafBox = fmmBoxes(boxIndex) as FmmLeafBox;
-                                        if (destBox == null) {
-                                            destBox = new FmmLeafBox(fmm.numLevels, boxIndex(0), boxIndex(1), boxIndex(2), fmm.numTerms, Fmm3d.getParentForChild(fmm.boxes, fmm.numLevels, fmm.topLevel, x,y,z));
-                                            val newAtoms = new Rail[MMAtom](1);
-                                            newAtoms(0) = atom;
-                                            destBox.setAtoms(newAtoms);
-                                            fmmBoxes(boxIndex) = destBox;
-                                        } else {
-                                            val oldAtoms = destBox.getAtoms();
-                                            val newAtoms = new Rail[MMAtom](oldAtoms.size+1);
-                                            for (j in oldAtoms) {
-                                                newAtoms(j) = oldAtoms(j);
-                                            }
-                                            newAtoms(newAtoms.size-1) = atom;
-                                            destBox.setAtoms(newAtoms);
-                                        }
-                                    }
-                                }
-                                myAtoms(i) = null;
-                                notNull--;
-                            }
-                        }*/
+                    if (Math.abs(atom.centre.i) > edgeLength/2.0
+                     || Math.abs(atom.centre.j) > edgeLength/2.0
+                     || Math.abs(atom.centre.k) > edgeLength/2.0) {
+                        // ion lost to wall
+                        boxAtoms(i) = null;
+                    } else {
                         currentLocal += getImageCurrent(atom);
                         if (accumProps) {
                             props.accumulate(atom, this);
                         }
-                    } else {
-                        notNull--;
                     }
                 }
-/*
-                if (notNull < myAtoms.size) {
-                    // resize this box
-                    //Console.OUT.println("resizing box " + x+","+y+","+z + " from " + myAtoms.size + " to " + notNull);
-                    val newAtoms = new Rail[MMAtom](notNull);
-                    var j:Int=0;
-                    for (i in myAtoms) {
-                        if (myAtoms(i) != null) {
-                            newAtoms(j++) = myAtoms(i);
-                        }
-                    }
-                    box.setAtoms(newAtoms);
-                }
-*/
             }
         }
         current(step) = currentLocal;
@@ -361,8 +320,9 @@ public class PenningTrap {
     private def reduceAndPrintProperties(time:Double, props:SystemProperties) {
         Team.WORLD.allreduce[Double](here.id, props.raw, 0, props.raw, 0, props.raw.size, Team.ADD);
         if (here == Place.FIRST_PLACE) {
-            props.print(time, numAtoms);
+            props.print(time);
         }
+        props.reset();
     }
 
 
@@ -413,40 +373,15 @@ public class PenningTrap {
         }
     }
 
-    /**
-     * Partitions the molecule amongst all places, returning a distributed
-     * array of Array[MMAtom], one Array for each place.  
-     * MD requires that the atoms have already been distributed. 
-     */
-    public static def assignAtoms(molecule : Molecule[MMAtom]) : DistArray[Rail[MMAtom]](1) {
-        val tempAtoms = DistArray.make[ArrayList[MMAtom]](Dist.makeUnique(), (Point) => new ArrayList[MMAtom]());
-        val atomList = molecule.getAtoms();
-        val maxExtent = molecule.getMaxExtent();
-        finish for (var i : Int = 0; i < atomList.size(); i++) {
-            val atom = atomList(i);
-            val p = getPlaceId(atom.centre.i, atom.centre.j, atom.centre.k, maxExtent);
-            //Console.OUT.println(atom + " to " + p);
-            at(Place.place(p)) async {
-                val remoteAtom = new MMAtom(atom);
-                atomic { tempAtoms(p).add(remoteAtom); }
-            }
-        }
-        val atoms = DistArray.make[Rail[MMAtom]](Dist.makeUnique(), ([p] : Point) => tempAtoms(p).toArray());
-        return atoms;
-    }
 
-    /** 
-     * Gets the place ID to which to assign the given atom coordinates.
-     * Currently just splits them up into slices by X coordinate.
-     */
-    private static def getPlaceId(x : Double, y : Double, z : Double, size : Double) : Int {
-        return ((x / (size * 2) + 0.5) * Place.MAX_PLACES) as Int;
+    public def logTime(desc : String, timerIndex : Int, timer : Timer) {
+        Console.OUT.printf("# %s: %g seconds\n", desc, (timer.mean(timerIndex) as Double) / 1e9);
     }
 
     static class SystemProperties { 
         public val raw:Rail[Double];
         public def this() {
-            raw = new Array[Double](6);
+            raw = new Array[Double](7);
         }
 
         /**
@@ -460,29 +395,31 @@ public class PenningTrap {
          * Accumulates the properties for the given atom.
          */
         public @Inline def accumulate(atom:MMAtom, trap:PenningTrap) {
-            raw(0) += atom.centre.i;
-            raw(1) += atom.centre.j;
-            raw(2) += atom.centre.k;
-            raw(3) += atom.mass * atom.velocity.lengthSquared();
-            raw(4) += atom.charge * trap.getElectrostaticPotential(atom.centre);
-            raw(5) += trap.getImageCurrent(atom);
+            raw(0)++;
+            raw(1) += atom.centre.i;
+            raw(2) += atom.centre.j;
+            raw(3) += atom.centre.k;
+            raw(4) += atom.mass * atom.velocity.lengthSquared();
+            raw(5) += atom.charge * trap.getElectrostaticPotential(atom.centre);
+            raw(6) += trap.getImageCurrent(atom);
         }
 
         /**
          * Prints the system properties.  Called at place 0 after reduction across all places.
          */
-        public @Inline def print(time:Double, numAtoms:Int) {
-            val meanX = raw(0) / numAtoms * 1e3;
-            val meanY = raw(1) / numAtoms * 1e3;
-            val meanZ = raw(2) / numAtoms * 1e3;
-            val Ek = raw(3) * 0.5 * 1.66053892173e-12; // Da->kg * 10^15 fJ
-            val Ep = raw(4) * 1.6021765314e-4; // e->C * 10^15; fJ
+        public @Inline def print(time:Double) {
+            val numAtoms = raw(0);
+            val meanX = raw(1) / numAtoms * 1e3;
+            val meanY = raw(2) / numAtoms * 1e3;
+            val meanZ = raw(3) / numAtoms * 1e3;
+            val Ek = raw(4) * 0.5 * 1.66053892173e-12; // Da->kg * 10^15 fJ
+            val Ep = raw(5) * 1.6021765314e-4; // e->C * 10^15; fJ
             val E = Ek + Ep;
-            val I = raw(5) * 1.6021765314e-7; // e->C * 10^12; pA
+            val I = raw(6) * 1.6021765314e-7; // e->C * 10^12; pA
 
             Console.OUT.printf("%10.1f %8i %15.8f %15.8f %15.8f ", 
                 time, 
-                numAtoms,
+                numAtoms as Int,
                 meanX, 
                 meanY, 
                 meanZ);
@@ -494,7 +431,7 @@ public class PenningTrap {
         }
 
         public def getCurrent() {
-            return raw(5);
+            return raw(6);
         }
 
         public static def printHeader() {
