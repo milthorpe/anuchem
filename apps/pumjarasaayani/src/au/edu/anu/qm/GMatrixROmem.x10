@@ -11,6 +11,7 @@
 package au.edu.anu.qm;
 
 import x10.util.ArrayList;
+import x10.util.ArrayUtils;
 import x10.util.Team;
 import x10.util.concurrent.AtomicInteger;
 
@@ -54,7 +55,7 @@ public class GMatrixROmem extends Matrix {
     val jMatrix:Matrix;
     val kMatrix:Matrix;
 
-    val nSigShellPairs:Int;
+    var nSigShellPairs:Int;
 
     public def this(N:Int, bfs:BasisFunctions, molecule:Molecule[QMAtom], nOrbital:Int) {
         super(N);
@@ -136,7 +137,7 @@ public class GMatrixROmem extends Matrix {
                             val R = Math.sqrt(Math.pow(aPoint.i-bPoint.i,2.)+Math.pow(aPoint.j-bPoint.j,2.)+Math.pow(aPoint.k-bPoint.k,2.));
                             for (var ii:Int=0; ii<dConA; ii++) for (var jj:Int=0; jj<dConB; jj++) 
                                 contrib+=conA(ii)*conB(jj)*Math.exp(-zetaA(ii)*zetaB(jj)/(zetaA(ii)+zetaB(jj))*Math.pow(R,2.)); // norm already included in con coef
-                            Console.OUT.printf("mu=%4d nu=%4d contrib=%17.10f\n",mu,nu,contrib);  
+                            // Console.OUT.printf("mu=%4d nu=%4d contrib=%17.10f\n",mu,nu,contrib);  
 
                             // TODO: Call genclass to find N and L appropriate to THRESH
 
@@ -147,12 +148,12 @@ public class GMatrixROmem extends Matrix {
                     }    
                 }
             }   
-        }  
-    Console.OUT.printf("nShell=%d ind=%d\n",nShell,ind);    
-    nSigShellPairs=ind; // TODO: Change to smaller number
+        }   
 
-    // TODO: Sort ShellPairs by their contribution
-    
+        new ArrayUtils[ShellPair]().sort(shellPairs, (y:ShellPair,x:ShellPair) => x.contrib.compareTo(y.contrib));
+        for (nSigShellPairs=0; nSigShellPairs<=ind && shellPairs(nSigShellPairs).contrib > 1.0e-8; ) nSigShellPairs++;
+
+        Console.OUT.printf("nShell=%d nShellPairs=%d nSigShellPairs=%d\n",nShell,ind,nSigShellPairs); 
     }
 
 
