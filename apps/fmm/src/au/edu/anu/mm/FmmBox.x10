@@ -130,11 +130,13 @@ public class FmmBox {
         val scratch = new MultipoleExpansion(numTerms);    
         val scratch_array = new Array[Complex](numTerms+1);
         var i:Int=0;
+        var nonNullChildren:Boolean = false;
         for (x2 in (2*x)..(2*x+1)) {
             for (y2 in (2*y)..(2*y+1)) {
                 for (z2 in (2*z)..(2*z+1)) {
                     val childExp = childExpansions(i++);
                     if (childExp != null) {
+                        nonNullChildren = true;
                         val dx = ((x2+1)%2)*2-1;
                         val dy = ((y2+1)%2)*2-1;
                         val dz = ((z2+1)%2)*2-1;
@@ -146,9 +148,13 @@ public class FmmBox {
             }
         }
 
-        sendMultipole(locallyEssentialTree, boxes, periodic);
+        if (nonNullChildren) {
+            sendMultipole(locallyEssentialTree, boxes, periodic);
 
-        return this.multipoleExp;
+            return this.multipoleExp;
+        } else {
+            return null;
+        }
     }
 
     protected def sendMultipole(locallyEssentialTree:PlaceLocalHandle[LocallyEssentialTree], boxes:Rail[DistArray[FmmBox](3)], periodic:Boolean) {

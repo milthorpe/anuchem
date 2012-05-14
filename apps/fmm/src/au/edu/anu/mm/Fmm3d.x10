@@ -158,30 +158,30 @@ public class Fmm3d {
         timer().stop(TIMER_INDEX_TREE);
     }
     
-    public def calculateEnergy() : Double {
-        timer().start(TIMER_INDEX_TOTAL);
+    public def calculateEnergy():Double {
         val totalEnergy = finish (SumReducer()) {
             ateach(p1 in Dist.makeUnique()) {
-                finish {
-                    async {
-                        prefetchRemoteAtoms();
-                    }
-                    upwardPass();
-                    Team.WORLD.barrier(here.id);
-                }
-                val localEnergy = 0.5 * downwardPass();
-                offer localEnergy;
+                offer calculateEnergyLocal();
             }
         };
 
-        timer().stop(TIMER_INDEX_TOTAL);
-
-        // reduce timer totals
-        finish ateach(p1 in Dist.makeUnique()) {
-            Team.WORLD.allreduce[Long](here.id, timer().total, 0, timer().total, 0, timer().total.size, Team.MAX);
-        }
-
         return totalEnergy;
+    }
+
+    public def calculateEnergyLocal():Double {
+        timer().start(TIMER_INDEX_TOTAL);
+        finish {
+            async {
+                prefetchRemoteAtoms();
+            }
+            upwardPass();
+            Team.WORLD.barrier(here.id);
+        }
+        val localEnergy = 0.5 * downwardPass();
+        timer().stop(TIMER_INDEX_TOTAL);
+        Team.WORLD.allreduce[Long](here.id, timer().total, 0, timer().total, 0, timer().total.size, Team.MAX);
+
+        return localEnergy;
     }
 
     public def printForces() {
