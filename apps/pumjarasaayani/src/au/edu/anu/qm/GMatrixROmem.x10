@@ -139,8 +139,37 @@ public class GMatrixROmem extends Matrix {
                                 contrib+=conA(ii)*conB(jj)*Math.exp(-zetaA(ii)*zetaB(jj)/(zetaA(ii)+zetaB(jj))*Math.pow(R,2.)); // norm already included in con coef
                             // Console.OUT.printf("mu=%4d nu=%4d contrib=%17.10f\n",mu,nu,contrib);  
 
-                            // TODO: Call genclass to find N and L appropriate to THRESH
+                            // Call genclass to find N and L appropriate to THRESH
+                            aux.genClass(aang, bang, aPoint, bPoint, zetaA, zetaB, conA, conB, dConA, dConB, temp);
+                            // Find Max N & Max L
+                            var maxl:Int=0,maxn:Int=0; val THRESH=1.0e-7;var ron:Int; var rol:Int;
+                           
+                            var auxint:Double=0.;
+                            for (var tmu:Int=0; tmu<maxbraa; tmu++) for (var tnu:Int=0; tnu<maxbrab; tnu++) {
+                                for (ron=roN; ron>=0 && auxint<THRESH; ron--)                                    
+                                    for (rol=0; rol<=roL; rol++) for (var rom:Int=-rol; rom<=rol; rom++) {
+                                        val ml=rol*(rol+1)+rom;
+                                        val mn=ron*(roL+1)*(roL+1)+ml;
+                                        val mnu=tnu*(roN+1)*(roL+1)*(roL+1)+mn;
+                                        val mmu=tmu*(roN+1)*(roL+1)*(roL+1)*maxbrab+mnu;
+                                        if (Math.abs(temp(mmu))>auxint) auxint=Math.abs(temp(mmu));
+                                    }
+                                if (ron+1>maxn) maxn=ron+1; if (maxn==roN+1) maxn--;
+                            }
 
+                            auxint=0.;
+                            for (var tmu:Int=0; tmu<maxbraa; tmu++) for (var tnu:Int=0; tnu<maxbrab; tnu++) {
+                                for (rol=roL; rol>=0 && auxint<THRESH; rol--)                                    
+                                    for (ron=0; ron<=roN; ron++) for (var rom:Int=-rol; rom<=rol; rom++) {
+                                        val ml=rol*(rol+1)+rom;
+                                        val mn=ron*(roL+1)*(roL+1)+ml;
+                                        val mnu=tnu*(roN+1)*(roL+1)*(roL+1)+mn;
+                                        val mmu=tmu*(roN+1)*(roL+1)*(roL+1)*maxbrab+mnu;
+                                        if (Math.abs(temp(mmu))>auxint) auxint=Math.abs(temp(mmu));
+                                    }
+                                if (rol+1>maxl) maxl=rol+1;  if (maxl==roL+1) maxl--;
+                            }
+                            Console.OUT.printf("mu=%4d nu=%4d maxn=%4d maxl=%4d thresh=%e\n",mu,nu,maxn,maxl,THRESH);
                             shellPairs(ind++) = new ShellPair(aang, bang, aPoint, bPoint, zetaA, zetaB, conA, conB, dConA, dConB, mu, nu, roN, roL,Math.abs(contrib));
                         }
                         if (b!=noOfAtoms-1 || j!=nbFunc-1) nu+=maxbrab;
@@ -151,8 +180,11 @@ public class GMatrixROmem extends Matrix {
         }   
 
         new ArrayUtils[ShellPair]().sort(shellPairs, (y:ShellPair,x:ShellPair) => x.contrib.compareTo(y.contrib));
-        for (nSigShellPairs=0; nSigShellPairs<=ind && shellPairs(nSigShellPairs).contrib > 1.0e-8; ) nSigShellPairs++;
-
+        for (nSigShellPairs=0; nSigShellPairs<=ind && shellPairs(nSigShellPairs).contrib > 1.0e-5; ) {
+             val sh = shellPairs(nSigShellPairs);
+             Console.OUT.printf("mu=%4d nu=%4d contrib=%17.10f\n",sh.mu,sh.nu,sh.contrib);
+             nSigShellPairs++;
+        }
         Console.OUT.printf("nShell=%d nShellPairs=%d nSigShellPairs=%d\n",nShell,ind,nSigShellPairs); 
     }
 
