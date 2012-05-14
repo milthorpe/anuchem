@@ -21,7 +21,7 @@ import x10x.vector.Point3d;
 import x10x.vector.Vector3d;
 import au.edu.anu.chem.Molecule;
 import au.edu.anu.chem.mm.MMAtom;
-import au.edu.anu.util.Timer;
+import au.edu.anu.util.StatisticalTimer;
 import edu.mit.fftw.FFTW;
 
 /**
@@ -102,16 +102,24 @@ public class PenningTrap {
      */
     public def mdRun(timestep:Double, numSteps:Int, logSteps:Int) {
         Console.OUT.println("# Timestep = " + timestep + "ns, number of steps = " + numSteps);
-        val timer = new Timer(2);
+        val timer = new StatisticalTimer(2);
  
         SystemProperties.printHeader();
 
         val fmmBoxes = fmm.boxes(fmm.numLevels);
-        val posPrinter = new Printer(new FileWriter(new File("positions_0.dat"), false));
-        posPrinter.println("# positions at time 0");
+
+        // initialise position files
+        val startPosHeaderPrinter = new Printer(new FileWriter(new File("positions_0.dat"), false));
+        startPosHeaderPrinter.println("# positions at time 0");
+
+        val endTime = (timestep * numSteps) as Int;
+        val endPosHeaderPrinter = new Printer(new FileWriter(new File("positions_" + endTime + ".dat"), false));
+        endPosHeaderPrinter.println("# positions at time " + endTime);
+
         finish ateach(place in Dist.makeUnique()) {
             var step:Int = 0;
             val props = new SystemProperties();
+            val startPosPrinter = new Printer(new FileWriter(new File("positions_0.dat"), false));
             for ([x,y,z] in fmmBoxes.dist(here)) {
                 val box = fmmBoxes(x,y,z) as FmmLeafBox;
                 if (box != null) {
@@ -122,7 +130,7 @@ public class PenningTrap {
                         }
                     }
                     // print start positions
-                    printPositions(0, box.getAtoms());
+                    printPositions(0, box.getAtoms(), startPosPrinter);
                 }
             }
             reduceAndPrintProperties(0, props);
@@ -155,19 +163,21 @@ public class PenningTrap {
 
             // print end positions
             val timeInt = (timestep * step) as Int;
-            val endPosPrinter = new Printer(new FileWriter(new File("positions_" + timeInt + ".dat"), false));
-            endPosPrinter.println("# positions at time " + timeInt);
+            val endPosPrinter = new Printer(new FileWriter(new File("positions_" + timeInt + ".dat"), true));
             for ([x,y,z] in fmmBoxes.dist(here)) {
                 val box = fmmBoxes(x,y,z) as FmmLeafBox;
                 if (box != null) {
-                    printPositions(timestep * step, box.getAtoms());
+                    printPositions(timestep * step, box.getAtoms(), endPosPrinter);
                 }
             }
 
-            Team.WORLD.allreduce[Long](here.id, timer.total, 0, timer.total, 0, timer.total.size, Team.MAX);
+            Team.WORLD.allreduce[Long](here.id, timer.count, 0, timer.count, 0, timer.count.size, Team.ADD);
+            Team.WORLD.allreduce[Long](here.id, timer.total, 0, timer.total, 0, timer.total.size, Team.ADD);
+            Team.WORLD.allreduce[Long](here.id, timer.min, 0, timer.min, 0, timer.min.size, Team.MIN);
+            Team.WORLD.allreduce[Long](here.id, timer.max, 0, timer.max, 0, timer.max.size, Team.MAX);
+            Team.WORLD.allreduce[Double](here.id, timer.sumOfSquares, 0, timer.sumOfSquares, 0, timer.sumOfSquares.size, Team.ADD);
             if (here == Place.FIRST_PLACE) {
-                logTime("MD calculation", 0, timer);
-                logTime("properties", 1, timer);
+                timer.printSeconds();
             }
         }
 
@@ -185,6 +195,7 @@ public class PenningTrap {
      */
     public def mdStepLocal(step:Int, dt:Double, fmmBoxes:DistArray[FmmBox](3), current:Array[Double], accumProps:Boolean, props:SystemProperties) {
         fmm.reassignAtoms(step);
+        fmm.calculateEnergyLocal();
 
         finish for ([x,y,z] in fmmBoxes.dist(here)) async {
             val box = fmmBoxes(x,y,z) as FmmLeafBox;
@@ -306,13 +317,12 @@ public class PenningTrap {
         return ion.charge * ion.velocity.j * eFieldNorm;
     }
 
-    private def printPositions(time:Double, myAtoms:Rail[MMAtom]) {
+    private def printPositions(time:Double, myAtoms:Rail[MMAtom], printer:Printer) {
         val timeInt = time as Int;
-        val posFilePrinter = new Printer(new FileWriter(new File("positions_" + timeInt + ".dat"), true));
         for ([i] in myAtoms) {
             val atom = myAtoms(i);
             if (atom != null) {
-                posFilePrinter.printf("%i %i %s %12.8f %12.8f %12.8f\n", here.id, i, atom.symbol, atom.centre.i*1.0e3, atom.centre.j*1.0e3, atom.centre.k*1.0e3);
+                printer.printf("%i %i %s %12.8f %12.8f %12.8f\n", here.id, i, atom.symbol, atom.centre.i*1.0e3, atom.centre.j*1.0e3, atom.centre.k*1.0e3);
             }
         }
     }
@@ -371,11 +381,6 @@ public class PenningTrap {
             mzPrinter.printf("%10.2f %.4g\n", freq(i), amplitude(i));
             //currentFilePrinter.printf("%10.2f %16.8f\n", i*timestep, I);
         }
-    }
-
-
-    public def logTime(desc : String, timerIndex : Int, timer : Timer) {
-        Console.OUT.printf("# %s: %g seconds\n", desc, (timer.mean(timerIndex) as Double) / 1e9);
     }
 
     static class SystemProperties { 
