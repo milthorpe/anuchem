@@ -154,7 +154,7 @@ public class GMatrixROmem extends Matrix {
                                         val mmu=tmu*(roN+1)*(roL+1)*(roL+1)*maxbrab+mnu;
                                         if (Math.abs(temp(mmu))>auxint) auxint=Math.abs(temp(mmu));
                                     }
-                                if (ron+1>maxn) maxn=ron+1; if (maxn==roN+1) { maxn--; Console.OUT.printf("auxint=%e\n",auxint); }
+                                if (ron+1>maxn) maxn=ron+1; if (maxn==roN+1) { maxn--; /*Console.OUT.printf("auxint=%e\n",auxint);*/ }
                             }
 
                             auxint=0.;
@@ -167,10 +167,10 @@ public class GMatrixROmem extends Matrix {
                                         val mmu=tmu*(roN+1)*(roL+1)*(roL+1)*maxbrab+mnu;
                                         if (Math.abs(temp(mmu))>auxint) auxint=Math.abs(temp(mmu)); 
                                     }
-                                if (rol+1>maxl) maxl=rol+1;  if (maxl==roL+1) { maxl--; Console.OUT.printf("auxint=%e\n",auxint); }
+                                if (rol+1>maxl) maxl=rol+1;  if (maxl==roL+1) { maxl--; /*Console.OUT.printf("auxint=%e\n",auxint);*/ }
                             }
                             Console.OUT.printf("mu=%4d nu=%4d maxn=%4d maxl=%4d thresh=%e\n",mu,nu,maxn,maxl,THRESH);
-                            shellPairs(ind++) = new ShellPair(aang, bang, aPoint, bPoint, zetaA, zetaB, conA, conB, dConA, dConB, mu, nu, maxn, maxl,Math.abs(contrib));
+                            shellPairs(ind++) = new ShellPair(aang, bang, aPoint, bPoint, zetaA, zetaB, conA, conB, dConA, dConB, mu, nu, maxn, maxl ,Math.abs(contrib));
                         }
                         if (b!=noOfAtoms-1 || j!=nbFunc-1) nu+=maxbrab;
                         else {mu+=maxbraa; nu=0;}
@@ -201,12 +201,11 @@ public class GMatrixROmem extends Matrix {
         dk.clear();
         for (var spInd:Int=0; spInd<nSigShellPairs; spInd++) {
             val sp=shellPairs(spInd);
-            ///*transient*/ val aux1:Integral_Pack = new Integral_Pack(sp.N,sp.L); //
-            aux.genClass(sp.aang, sp.bang, sp.aPoint, sp.bPoint, sp.zetaA, sp.zetaB, sp.conA, sp.conB, sp.dconA, sp.dconB, temp, roN, roL);      
+            aux.genClass(sp.aang, sp.bang, sp.aPoint, sp.bPoint, sp.zetaA, sp.zetaB, sp.conA, sp.conB, sp.dconA, sp.dconB, temp, sp.N, sp.L);      
             var ind:Int=0; var fac:Double=1.; var ron:Int; var rol:Int;
             if (sp.mu!=sp.nu) fac=2.0; 
             for (var tmu:Int=sp.mu; tmu<sp.mu+sp.maxbraa; tmu++) for (var tnu:Int=sp.nu; tnu<sp.nu+sp.maxbrab; tnu++) //for (var k:Int=0; k<roK; k++) 
-                for (ron=0; ron<=roN; ron++) for (rol=0; rol<=roL ; rol++) for (var rom:Int=-rol; rom<=rol; rom++) {
+                for (ron=0; ron<=sp.N; ron++) for (rol=0; rol<=sp.L ; rol++) for (var rom:Int=-rol; rom<=rol; rom++) {
                     val ml=rol*(rol+1)+rom;
                     val mn=ron*(roL+1)*(roL+1)+ml;
                     dk(mn) += denMat(tmu,tnu)*fac*norm(tmu)*norm(tnu)*temp(ind++); // eqn 15b // skip some k's                 
@@ -217,14 +216,14 @@ public class GMatrixROmem extends Matrix {
         val jMat = jMatrix.getMatrix();
         for (var spInd:Int=0; spInd<nSigShellPairs; spInd++) {
             val sp=shellPairs(spInd);
-            aux.genClass(sp.aang, sp.bang, sp.aPoint, sp.bPoint, sp.zetaA, sp.zetaB, sp.conA, sp.conB, sp.dconA, sp.dconB, temp, roN, roL); 
+            aux.genClass(sp.aang, sp.bang, sp.aPoint, sp.bPoint, sp.zetaA, sp.zetaB, sp.conA, sp.conB, sp.dconA, sp.dconB, temp, sp.N, sp.L); 
     
             var ind:Int=0; var ron:Int; var rol:Int;
             for (var tmu:Int=sp.mu; tmu<sp.mu+sp.maxbraa; tmu++) for (var tnu:Int=sp.nu; tnu<sp.nu+sp.maxbrab; tnu++) {
                 var jContrib:Double = 0.0;  
                 // for (var k:Int=0; k<roK; k++) 
                 //     jContrib+=dk(k)* norm(tmu)*norm(tnu)*temp(ind++); // skip some k's
-                for (ron=0; ron<=roN; ron++) for (rol=0; rol<=roL ; rol++) for (var rom:Int=-rol; rom<=rol; rom++) {
+                for (ron=0; ron<=sp.N; ron++) for (rol=0; rol<=sp.L ; rol++) for (var rom:Int=-rol; rom<=rol; rom++) {
                     val ml=rol*(rol+1)+rom;
                     val mn=ron*(roL+1)*(roL+1)+ml;
                     jContrib+=dk(mn)* norm(tmu)*norm(tnu)*temp(ind++);
@@ -241,11 +240,11 @@ public class GMatrixROmem extends Matrix {
             muk.clear();
             for (var spInd:Int=0; spInd<nSigShellPairs; spInd++) {
                 val sp=shellPairs(spInd);
-                aux.genClass(sp.aang, sp.bang, sp.aPoint, sp.bPoint, sp.zetaA, sp.zetaB, sp.conA, sp.conB, sp.dconA, sp.dconB, temp, roN, roL); 
+                aux.genClass(sp.aang, sp.bang, sp.aPoint, sp.bPoint, sp.zetaA, sp.zetaB, sp.conA, sp.conB, sp.dconA, sp.dconB, temp, sp.N, sp.L); 
                 var ind:Int=0; var ron:Int; var rol:Int;         
                 
                 for (var tmu:Int=sp.mu; tmu<sp.mu+sp.maxbraa; tmu++) for (var tnu:Int=sp.nu; tnu<sp.nu+sp.maxbrab; tnu++) //for (var k:Int=0; k<roK; k++) 
-                    for (ron=0; ron<=roN; ron++) for (rol=0; rol<=roL ; rol++) for (var rom:Int=-rol; rom<=rol; rom++) {
+                    for (ron=0; ron<=sp.N; ron++) for (rol=0; rol<=sp.L ; rol++) for (var rom:Int=-rol; rom<=rol; rom++) {
                         val ml=rol*(rol+1)+rom;
                         val mn=ron*(roL+1)*(roL+1)+ml;
                         muk(tmu,mn) += mosMat(aorb,tnu) *norm(tmu)*norm(tnu)*temp(ind++); // skip some k's    
@@ -253,7 +252,7 @@ public class GMatrixROmem extends Matrix {
                 if (sp.mu!=sp.nu) {
                 ind=0;
                 for (var tmu:Int=sp.mu; tmu<sp.mu+sp.maxbraa; tmu++) for (var tnu:Int=sp.nu; tnu<sp.nu+sp.maxbrab; tnu++) //for (var k:Int=0; k<roK; k++) 
-                    for (ron=0; ron<=roN; ron++) for (rol=0; rol<=roL ; rol++) for (var rom:Int=-rol; rom<=rol; rom++) {
+                    for (ron=0; ron<=sp.N; ron++) for (rol=0; rol<=sp.L ; rol++) for (var rom:Int=-rol; rom<=rol; rom++) {
                         val ml=rol*(rol+1)+rom;
                         val mn=ron*(roL+1)*(roL+1)+ml;
                         muk(tnu,mn) += mosMat(aorb,tmu) *norm(tmu)*norm(tnu)*temp(ind++); // skip some k's    
