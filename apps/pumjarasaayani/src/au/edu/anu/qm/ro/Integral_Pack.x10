@@ -33,8 +33,8 @@ public class Integral_Pack {
     /**
      * Generate a class of auxiliary integrals for the given parameters
      */
-    @Native("c++", "(#this)->Genclass((#1), (#2), (double*)&((#3).x10__i), (double*)&((#4).x10__i), (#5)._val->raw().raw(), (#6)._val->raw().raw(), (#7)._val->raw().raw(), (#8)._val->raw().raw(), (#9), (#10), (#11)._val->raw().raw())")
-    public native def genClass(a:Int, b:Int, A:Point3d, B:Point3d, zetaA:Rail[Double], zetaB:Rail[Double], conA:Rail[Double], conB:Rail[Double], dconA:Int, dconB:Int, temp:Rail[Double]):Int;
+    @Native("c++", "(#this)->Genclass((#1), (#2), (double*)&((#3).x10__i), (double*)&((#4).x10__i), (#5)._val->raw().raw(), (#6)._val->raw().raw(), (#7)._val->raw().raw(), (#8)._val->raw().raw(), (#9), (#10), (#11)._val->raw().raw(), (#12), (#13))")
+    public native def genClass(a:Int, b:Int, A:Point3d, B:Point3d, zetaA:Rail[Double], zetaB:Rail[Double], conA:Rail[Double], conB:Rail[Double], dconA:Int, dconB:Int, temp:Rail[Double], N:Int, L:Int):Int;
 
 }
 

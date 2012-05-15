@@ -21,7 +21,7 @@ namespace au {
                             static Integral_Pack* _make(int N,int L);
                             Integral_Pack(int N, int L);
                             ~Integral_Pack();
-                            int Genclass(int a, int b, double *A, double *B, double *zetaA, double *zetaB, double *conA, double *conB, int dconA, int dconB, double* temp);
+                            int Genclass(int a, int b, double *A, double *B, double *zetaA, double *zetaB, double *conA, double *conB, int dconA, int dconB, double* temp, int N, int L);
 
                         private:
                             int N,L;
