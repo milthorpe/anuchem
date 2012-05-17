@@ -132,9 +132,9 @@ public class GMatrixROmem extends Matrix {
                             val dConB = conB.size;
                         
                             var contrib : Double = 0.; // S = conservative estimate
-                            val R = Math.sqrt(Math.pow(aPoint.i-bPoint.i,2.)+Math.pow(aPoint.j-bPoint.j,2.)+Math.pow(aPoint.k-bPoint.k,2.));
+                            val R2 = Math.pow(aPoint.i-bPoint.i,2.)+Math.pow(aPoint.j-bPoint.j,2.)+Math.pow(aPoint.k-bPoint.k,2.);
                             for (var ii:Int=0; ii<dConA; ii++) for (var jj:Int=0; jj<dConB; jj++) 
-                                contrib+=conA(ii)*conB(jj)*Math.exp(-zetaA(ii)*zetaB(jj)/(zetaA(ii)+zetaB(jj))*Math.pow(R,2.)); // norm already included in con coef
+                                contrib+=conA(ii)*conB(jj)*Math.exp(-zetaA(ii)*zetaB(jj)/(zetaA(ii)+zetaB(jj))*R2); // norm already included in con coef
                             // Console.OUT.printf("mu=%4d nu=%4d contrib=%17.10f\n",mu,nu,contrib);  
 
                             // Call genclass to find N and L appropriate to THRESH
@@ -190,8 +190,8 @@ public class GMatrixROmem extends Matrix {
 
         shellPairs = new Array[ShellPair](numSigShellPairs);
         for (i in 0..(numSigShellPairs-1)) {
-             val sh = rawShellPairs(i);
-             Console.OUT.printf("mu=%4d nu=%4d contrib=%17.10f\n",sh.mu,sh.nu,sh.contrib);
+            val sh = rawShellPairs(i);
+            Console.OUT.printf("mu=%4d nu=%4d contrib=%17.10f\n",sh.mu,sh.nu,sh.contrib);
             shellPairs(i) = sh;
         }
         Console.OUT.printf("nShell=%d nShellPairs=%d nSigShellPairs=%d\n",nShell,ind,numSigShellPairs);
