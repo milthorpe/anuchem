@@ -49,13 +49,11 @@ public class GMatrixROmem extends Matrix {
     val dk:Rail[Double];
     val muk:Array[Double](2){rect,zeroBased};
 
-    val shellPairs:Array[ShellPair];
+    val shellPairs:Rail[ShellPair];
 
     transient val aux:Integral_Pack;
     val jMatrix:Matrix;
     val kMatrix:Matrix;
-
-    var nSigShellPairs:Int;
 
     public def this(N:Int, bfs:BasisFunctions, molecule:Molecule[QMAtom], nOrbital:Int) {
         super(N);
@@ -90,7 +88,7 @@ public class GMatrixROmem extends Matrix {
             nShell+=aFunc.size();
         }
 
-        shellPairs = new Array[ShellPair](nShell*(nShell+1)/2); 
+        val rawShellPairs = new Array[ShellPair](nShell*(nShell+1)/2); 
 
         var mu:Int = 0; 
         var nu:Int = 0; 
@@ -170,7 +168,7 @@ public class GMatrixROmem extends Matrix {
                                 if (rol+1>maxl) maxl=rol+1;  if (maxl==roL+1) { maxl--; /*Console.OUT.printf("auxint=%e\n",auxint);*/ }
                             }
                             Console.OUT.printf("mu=%4d nu=%4d maxn=%4d maxl=%4d thresh=%e\n",mu,nu,maxn,maxl,THRESH);
-                            shellPairs(ind++) = new ShellPair(aang, bang, aPoint, bPoint, zetaA, zetaB, conA, conB, dConA, dConB, mu, nu, maxn, maxl ,Math.abs(contrib));
+                            rawShellPairs(ind++) = new ShellPair(aang, bang, aPoint, bPoint, zetaA, zetaB, conA, conB, dConA, dConB, mu, nu, maxn, maxl ,Math.abs(contrib));
                         }
                         if (b!=noOfAtoms-1 || j!=nbFunc-1) nu+=maxbrab;
                         else {mu+=maxbraa; nu=0;}
@@ -179,13 +177,24 @@ public class GMatrixROmem extends Matrix {
             }   
         }   
 
-        new ArrayUtils[ShellPair]().sort(shellPairs, (y:ShellPair,x:ShellPair) => x.contrib.compareTo(y.contrib));
-        for (nSigShellPairs=0; nSigShellPairs<=ind && shellPairs(nSigShellPairs).contrib > 1.0e-5; ) {
-             val sh = shellPairs(nSigShellPairs);
+        val compareShellPairContribs = (y:ShellPair,x:ShellPair) => x.contrib.compareTo(y.contrib);
+        ArrayUtils.sort[ShellPair](rawShellPairs, compareShellPairContribs);
+        val threshold = 1.0e-5;
+
+        val zeroPoint = Point3d(0.0, 0.0, 0.0);
+        val emptyRail = new Rail[Double](0);
+        val dummySignificantPair = new ShellPair(0, 0, zeroPoint, zeroPoint, emptyRail, emptyRail, emptyRail, emptyRail, 0, 0, 0, 0, 0, 0, threshold);
+
+        val numSigShellPairs = Math.abs(ArrayUtils.binarySearch[ShellPair](rawShellPairs, dummySignificantPair, compareShellPairContribs));
+        Console.OUT.println("found " + numSigShellPairs + " significant from " + rawShellPairs.size + " total");
+
+        shellPairs = new Array[ShellPair](numSigShellPairs);
+        for (i in 0..(numSigShellPairs-1)) {
+             val sh = rawShellPairs(i);
              Console.OUT.printf("mu=%4d nu=%4d contrib=%17.10f\n",sh.mu,sh.nu,sh.contrib);
-             nSigShellPairs++;
+            shellPairs(i) = sh;
         }
-        Console.OUT.printf("nShell=%d nShellPairs=%d nSigShellPairs=%d\n",nShell,ind,nSigShellPairs); 
+        Console.OUT.printf("nShell=%d nShellPairs=%d nSigShellPairs=%d\n",nShell,ind,numSigShellPairs);
     }
 
 
@@ -199,7 +208,7 @@ public class GMatrixROmem extends Matrix {
 
         // Form dk vector
         dk.clear();
-        for (var spInd:Int=0; spInd<nSigShellPairs; spInd++) {
+        for (spInd in 0..(shellPairs.size-1)) {
             val sp=shellPairs(spInd);
             aux.genClass(sp.aang, sp.bang, sp.aPoint, sp.bPoint, sp.zetaA, sp.zetaB, sp.conA, sp.conB, sp.dconA, sp.dconB, temp, sp.N, sp.L);      
             var ind:Int=0; var fac:Double=1.; var ron:Int; var rol:Int;
@@ -214,7 +223,7 @@ public class GMatrixROmem extends Matrix {
     
         // Form J matrix
         val jMat = jMatrix.getMatrix();
-        for (var spInd:Int=0; spInd<nSigShellPairs; spInd++) {
+        for (spInd in 0..(shellPairs.size-1)) {
             val sp=shellPairs(spInd);
             aux.genClass(sp.aang, sp.bang, sp.aPoint, sp.bPoint, sp.zetaA, sp.zetaB, sp.conA, sp.conB, sp.dconA, sp.dconB, temp, sp.N, sp.L); 
     
@@ -238,7 +247,7 @@ public class GMatrixROmem extends Matrix {
 
         for(aorb in 0..(nOrbital-1)) { // To save mem
             muk.clear();
-            for (var spInd:Int=0; spInd<nSigShellPairs; spInd++) {
+            for (spInd in 0..(shellPairs.size-1)) {
                 val sp=shellPairs(spInd);
                 aux.genClass(sp.aang, sp.bang, sp.aPoint, sp.bPoint, sp.zetaA, sp.zetaB, sp.conA, sp.conB, sp.dconA, sp.dconB, temp, sp.N, sp.L); 
                 var ind:Int=0; var ron:Int; var rol:Int;         
