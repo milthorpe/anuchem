@@ -11,8 +11,9 @@
 package au.edu.anu.qm;
 
 import x10.util.ArrayList;
-import x10x.matrix.Matrix;
-import x10x.vector.Vector;
+import x10.matrix.DenseMatrix;
+import x10.matrix.Vector;
+import x10.matrix.lapack.DenseMatrixLAPACK;
 
 /**
  * DIIS based fock extrapolation
@@ -62,17 +63,16 @@ public class DIISFockExtrapolator {
     }
 
     /** Generate a new Fock by extrapolating from previous recorded Fock and their difference vectors */
-    public def next(currentFock:Fock, overlap:Overlap, density:Density) : Fock {
-        val N = currentFock.getRowCount();
-        var newFock:Fock = new Fock(N);
+    public def next(currentFock:Fock, 
+                    overlap:Overlap{self.M==currentFock.M,self.N==currentFock.N},
+                    density:Density{self.M==currentFock.M,self.N==currentFock.N}):Fock{self.N==currentFock.N} {
+        val N = currentFock.N;
+        val newFock = new Fock(N);
 
-        val newFockMat = newFock.getMatrix();
-        val curFockMat = currentFock.getMatrix();
-        
-        val FPS = currentFock.mul(density).mul(overlap);
-        val SPF = overlap.mul(density).mul(currentFock);
+        val FPS = (currentFock as DenseMatrix % density) % overlap;
+        val SPF = (overlap as DenseMatrix % density) % currentFock;
 
-        val errorVector = new Vector(FPS.sub(SPF));
+        val errorVector = new Vector((FPS - SPF).d);
         val mxerr = errorVector.maxNorm();
         val errorVectorSize = errorVectorList.size();
 
@@ -107,10 +107,9 @@ public class DIISFockExtrapolator {
 
                 return currentFock;
             } else {
-                val oldFockMat = oldFock.getMatrix();
                 for(var i:Int=0; i<N; i++) {
                    for(var j:Int=0; j<N; j++) {
-                      newFockMat(i, j) = oldFockMat(i,j) * 0.5 + curFockMat(i,j) * 0.5;
+                      newFock(i, j) = oldFock(i,j) * 0.5 + currentFock(i,j) * 0.5;
                    }
                 }
 
@@ -120,39 +119,32 @@ public class DIISFockExtrapolator {
             } // end if
         } // end if 
 
-
-
-        val A = new Matrix(noOfIterations+1);
-        val B = new Vector(noOfIterations+1);
-
-        val aMatrix = A.getMatrix();
-        val bVector = B.getVector();
+        val A = new DenseMatrix(noOfIterations+1,noOfIterations+1);
+        val B = Vector.make(noOfIterations+1);
 
         // set up A x = B to be solved
         for (var i:Int=0; i < noOfIterations; i++) {
             for (var j:Int=0; j < noOfIterations; j++) {
-                aMatrix(i,j) = errorVectorList.get(i).dot(errorVectorList.get(j));
+                A(i,j) = errorVectorList.get(i).blasTransProduct(errorVectorList.get(j));
             } // end for
         } // end for
 
         for (var i:Int=0; i < noOfIterations; i++) {
-            aMatrix(noOfIterations,i) = aMatrix(i,noOfIterations) = -1.0;
-            bVector(i) = 0.0;
+            A(noOfIterations,i) = A(i,noOfIterations) = -1.0;
+            B(i) = 0.0;
         } // end for
 
-        aMatrix(noOfIterations,noOfIterations) = 0.0;
-        bVector(noOfIterations) = -1.0;
+        A(noOfIterations,noOfIterations) = 0.0;
+        B(noOfIterations) = -1.0;
 
-        // val gele = new GaussianElimination();
-        val gele = new NativeLinearEquationSolver();
-
-        val solVec = gele.findSolution(A, B).getVector();
+        val permutation = new Array[Int](A.M);
+        val result = DenseMatrixLAPACK.solveLinearEquation(A, B, permutation);
 
         for (var i:Int=0; i < noOfIterations; i++) {
-          val prevFockMat = fockMatrixList.get(i).getMatrix();
+          val prevFock = fockMatrixList.get(i);
           for (var j:Int=0; j < N; j++) {
              for (var k:Int=0; k < N; k++) {
-                 newFockMat(j,k) += solVec(i) * prevFockMat(j,k);
+                 newFock(j,k) += B(i) * prevFock(j,k);
              } // end for
           } // end for
         } // end for

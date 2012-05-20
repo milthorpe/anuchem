@@ -56,23 +56,27 @@ public class HartreeFockSCFMethod extends SCFMethod {
         val overlap = oneE.getOverlap();
 
         // init memory for the matrices
-        val N = hCore.getRowCount();
+        val N = hCore.N;
         val jd = JobDefaults.getInstance();
-        val GMatrixROmem = new GMatrixROmem(N, bfs, molecule, noOfOccupancies);
+        val gMatrixRo:GMatrixROmem;
+        if (jd.roOn>0) {
+            gMatrixRo = new GMatrixROmem(N, bfs, molecule, noOfOccupancies);
+        } else {
+            gMatrixRo = null;
+        }
         val gMatrix = new GMatrix(N, bfs, molecule);
 
         val mos = new MolecularOrbitals(N);
         val density = new Density(N, noOfOccupancies); // density.make();
 
-        var fock:Fock = new Fock(N);
+        var fock:Fock{self.M==N,self.N==N} = new Fock(N);
 
-        if (jd.guess==1) { // GUESS = SAD
+        if (jd.guess.equals(JobDefaults.GUESS_SAD)) {
             density.applyGuess(bfs.getSAD());
-        } else if (jd.guess==0) { // GUESS = CORE 
+        } else { // if (jd.guess.equals(JobDefaults.GUESS_CORE)) {
             mos.compute(hCore, overlap);
             density.compute(mos);
         }
-
         Console.OUT.printf("----------------------------------------------------------\n");      
 
         val diis = new DIISFockExtrapolator();
@@ -85,29 +89,32 @@ public class HartreeFockSCFMethod extends SCFMethod {
             }
             
             // make the G matrix
-            gMatrix.compute(density);
-
             if (jd.roOn>0) {
-                Console.OUT.println("G Mat");
-                //Console.OUT.println(gMatrix);
+                gMatrixRo.compute(density, mos);
 
-                GMatrixROmem.compute(density, mos);
+                if (jd.compareRo) {
+                    gMatrix.compute(density);
+                    Console.OUT.println("G Mat");
+                    Console.OUT.println(gMatrix);
 
-                Console.OUT.println("G Mat RO");
-                //Console.OUT.println(GMatrixROmem);
+                    Console.OUT.println("G Mat RO");
+                    Console.OUT.println(gMatrixRo);
+                }
+            } else {
+                gMatrix.compute(density);
             }
 
             //val timer = new Timer(2);
 
             //timer.start(0);
             // make fock matrix
-            if (jd.roOn>0) fock.compute(hCore, GMatrixROmem);
+            if (jd.roOn>0) fock.compute(hCore, gMatrixRo);
             else fock.compute(hCore, gMatrix);
             // SCF_ALGORITHM = DIIS  
             fock = diis.next(fock, overlap, density);
             //timer.stop(0);
             //Console.OUT.println ("    Time to construct Fock: " + (timer.total(0) as Double) / 1e9 + " seconds");
-     
+
             //timer.start(1);
             // compute the new MOs
             mos.compute(fock, overlap);
@@ -115,10 +122,10 @@ public class HartreeFockSCFMethod extends SCFMethod {
             //Console.OUT.println ("    Time to form MOS: " + (timer.total(1) as Double) / 1e9 + " seconds");
          
             // compute the total energy at this point
-            val eOne = density.mul(hCore).trace();
+            val eOne = density.clone().mult(density, hCore).trace();
             // Console.OUT.printf("  Nuclear electron attraction energy = %.6f a.u.\n", eOne);
 
-            val eTwo = density.mul(fock).trace();
+            val eTwo = density.clone().mult(density, fock).trace();
             // Console.OUT.printf("  Electron repulsion energy = %.6f a.u.\n", eTwo);
             
             energy = eOne + eTwo + nuclearEnergy;
@@ -130,7 +137,9 @@ public class HartreeFockSCFMethod extends SCFMethod {
                 // ignore the first cycle's timings 
                 // as far fewer integrals are calculated
                 gMatrix.timer.clear(0);
-                GMatrixROmem.timer.clear(0);
+                if (jd.roOn>0) {
+                    gMatrixRo.timer.clear(0);
+                }
             }
             Console.OUT.printf("\n----------------------------------------------------------\n");
             // check for convergence
@@ -149,12 +158,14 @@ public class HartreeFockSCFMethod extends SCFMethod {
 
         Console.OUT.printf("==========================================================\n");
 
-        Console.OUT.println("GMatrix construction timings:");
-        gMatrix.timer.printSeconds();
+        if (jd.roOn == 0 || jd.compareRo) {
+            Console.OUT.println("GMatrix construction timings:");
+            gMatrix.timer.printSeconds();
+        }
 
         if (jd.roOn>0) {
             Console.OUT.println("GMatrixROmem construction timings:");
-            GMatrixROmem.timer.printSeconds();
+            gMatrixRo.timer.printSeconds();
         }
     }
 }

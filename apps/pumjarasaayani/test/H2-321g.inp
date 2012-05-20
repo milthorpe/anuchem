@@ -5,7 +5,8 @@ molecule
 H 0.0 0.0 0.0
 H 1.0 0.0 0.0
 end
-USE_RO 1
+use_RO 1
+compare_RO
 RO_N 150
 RO_L 13
 gmat_parallel_scheme 0

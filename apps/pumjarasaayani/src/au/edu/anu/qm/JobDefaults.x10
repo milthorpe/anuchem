@@ -28,10 +28,14 @@ public class JobDefaults {
     public var diisSubspaceSize:Int;
     public var gMatrixParallelScheme:Int;
     public var useMta:Boolean;
-    public var guess:Int; // 0=core hamiltonian; 1=SAD
+
+    public static GUESS_CORE = "core";
+    public static GUESS_SAD = "sad";
+    public var guess:String;
 
 // RO Var
     public var roOn:Int;
+    public var compareRo:Boolean;
     public var roN:Int;
     public var roL:Int;
     public var roZ:Double;
@@ -45,6 +49,7 @@ public class JobDefaults {
         diisSubspaceSize = 15; // Q-CHEM default
         gMatrixParallelScheme = GMatrix.DEFAULT_GMATTYPE;
         useMta = false;
+        compareRo = false;
     }
 
     private static _theInstance = new JobDefaults();

@@ -37,8 +37,9 @@ For other implementations see
 Compile dependencies:
 ------------------------
 * X10 version 2.2.2 (optionally with x10rt=mpi)
-* GSL or equivalent BLAS library, will require rewrite of native wrappers for any library other than GSL. However, the code can be compiled without any native wrappers. GSL is required for diagonalization and DIIS.
-  http://www.gnu.org/software/gsl/
+* X10 Global Matrix Library (distributed with the X10 release under x10/x10.gml)
+* LAPACK and BLAS libraries (transitive through X10 GML)
+  http://www.netlib.org/lapack/
 * XLA library (cd ~/x10-apps/x10x.lib/xla && ant)
 * anu-chem library (cd ~/x10-apps/anuchem && ant)
 
@@ -46,10 +47,11 @@ Compile dependencies:
 Code organization:
 -----------------
 * QM code in: au.edu.anu.qm  (Pumjarasaayani.x10 is the main entry point)
-* XLA code in: x10x.xla, x10x.matrix and x10x.vector
-* GSL wrapper code in: org.gnu.gsl
-* ESSL wrapper in: bgp (this is incomplete and not tested)
-* anu-chem code in: au.edu.anu.chem, au.edu.anu.util 
+* molecular tailoring code in au.edu.anu.qm.mta
+* anu-chem code in: au.edu.anu.chem, au.edu.anu.util
+* XLA code in: x10x.vector
+* GSL wrapper code in: org.gnu.gsl (unused)
+* ESSL wrapper in: bgp (this is incomplete and not tested) 
 
 
 To run:
@@ -211,6 +213,9 @@ See doc/pr-perform-bgp.ods
 
 Referencing Pumja Rasaayani:
 -----------------------------
+Please cite the following paper when referencing ANUChem in a publication.
+
+J. Milthorpe, V. Ganesh, A.P. Rendell, and D. Grove (2011). X10 as a parallel language for scientific computation: practice and experience, in proceedings of the 25th IEEE International Parallel & Distributed Processing Symposium (ISBN 978-0-7695-4385-7), 1067-1075
 
 Please cite the following paper when referencing Pumja Rasaayani in a publication.
 

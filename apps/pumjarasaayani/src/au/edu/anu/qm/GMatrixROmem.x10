@@ -15,10 +15,10 @@ import x10.util.ArrayUtils;
 import x10.util.Team;
 import x10.util.concurrent.AtomicInteger;
 
-import x10x.matrix.Matrix;
+import x10.matrix.DenseMatrix;
+
 import x10x.vector.Vector;
 import x10x.vector.Point3d;
-
 import au.edu.anu.chem.Molecule;
 import au.edu.anu.qm.ShellPair; // New
 import au.edu.anu.util.SharedCounter;
@@ -30,7 +30,7 @@ import au.edu.anu.qm.ro.Integral_Pack;
  * G matrix in HF calculation -- RO 
  */
 
-public class GMatrixROmem extends Matrix {
+public class GMatrixROmem extends DenseMatrix {
 
     public val timer = new StatisticalTimer(1);
     public static TIMER_IDX_TOTAL = 0;
@@ -52,11 +52,11 @@ public class GMatrixROmem extends Matrix {
     val shellPairs:Rail[ShellPair];
 
     transient val aux:Integral_Pack;
-    val jMatrix:Matrix;
-    val kMatrix:Matrix;
+    val jMatrix:DenseMatrix;
+    val kMatrix:DenseMatrix;
 
     public def this(N:Int, bfs:BasisFunctions, molecule:Molecule[QMAtom], nOrbital:Int) {
-        super(N);
+        super(N, N);
         this.bfs = bfs;
         this.mol = molecule;
         this.nBasis=N;
@@ -68,8 +68,8 @@ public class GMatrixROmem extends Matrix {
         this.roZ=jd.roZ;
   
         this.norm = bfs.getNormalizationFactors();
-        jMatrix = new Matrix(N);
-        kMatrix = new Matrix(N);
+        jMatrix = new DenseMatrix(N, N);
+        kMatrix = new DenseMatrix(N, N);
 
         val roK = (roN+1)*(roL+1)*(roL+1);
         val maxam = bfs.getShellList().getMaximumAngularMomentum();
@@ -201,9 +201,6 @@ public class GMatrixROmem extends Matrix {
     public def compute(density:Density, mos:MolecularOrbitals) {
         timer.start(0);
 
-        val N = getRowCount();
-        val mosMat = mos.getMatrix();
-        val denMat = density.getMatrix();
         val roK = (roN+1)*(roL+1)*(roL+1);
 
         // Form dk vector
@@ -217,12 +214,11 @@ public class GMatrixROmem extends Matrix {
                 for (ron=0; ron<=sp.N; ron++) for (rol=0; rol<=sp.L ; rol++) for (var rom:Int=-rol; rom<=rol; rom++) {
                     val ml=rol*(rol+1)+rom;
                     val mn=ron*(roL+1)*(roL+1)+ml;
-                    dk(mn) += denMat(tmu,tnu)*fac*norm(tmu)*norm(tnu)*temp(ind++); // eqn 15b // skip some k's                 
+                    dk(mn) += density(tmu,tnu)*fac*norm(tmu)*norm(tnu)*temp(ind++); // eqn 15b // skip some k's                 
                 }
         }     
     
         // Form J matrix
-        val jMat = jMatrix.getMatrix();
         for (spInd in 0..(shellPairs.size-1)) {
             val sp=shellPairs(spInd);
             aux.genClass(sp.aang, sp.bang, sp.aPoint, sp.bPoint, sp.zetaA, sp.zetaB, sp.conA, sp.conB, sp.dconA, sp.dconB, temp, sp.N, sp.L); 
@@ -237,13 +233,12 @@ public class GMatrixROmem extends Matrix {
                     val mn=ron*(roL+1)*(roL+1)+ml;
                     jContrib+=dk(mn)* norm(tmu)*norm(tnu)*temp(ind++);
                 }
-                jMat(tmu,tnu) = jMat(tnu,tmu) = jContrib;   
+                jMatrix(tmu,tnu) = jMatrix(tnu,tmu) = jContrib;   
             }            
         }     
 
         // Form K matrix
-        val kMat = kMatrix.getMatrix();
-        kMat.clear();
+        kMatrix.reset();
 
         for(aorb in 0..(nOrbital-1)) { // To save mem
             muk.clear();
@@ -256,7 +251,7 @@ public class GMatrixROmem extends Matrix {
                     for (ron=0; ron<=sp.N; ron++) for (rol=0; rol<=sp.L ; rol++) for (var rom:Int=-rol; rom<=rol; rom++) {
                         val ml=rol*(rol+1)+rom;
                         val mn=ron*(roL+1)*(roL+1)+ml;
-                        muk(tmu,mn) += mosMat(aorb,tnu) *norm(tmu)*norm(tnu)*temp(ind++); // skip some k's    
+                        muk(tmu,mn) += mos(aorb,tnu) *norm(tmu)*norm(tnu)*temp(ind++); // skip some k's    
                     }                                      
                 if (sp.mu!=sp.nu) {
                 ind=0;
@@ -264,20 +259,19 @@ public class GMatrixROmem extends Matrix {
                     for (ron=0; ron<=sp.N; ron++) for (rol=0; rol<=sp.L ; rol++) for (var rom:Int=-rol; rom<=rol; rom++) {
                         val ml=rol*(rol+1)+rom;
                         val mn=ron*(roL+1)*(roL+1)+ml;
-                        muk(tnu,mn) += mosMat(aorb,tmu) *norm(tmu)*norm(tnu)*temp(ind++); // skip some k's    
+                        muk(tnu,mn) += mos(aorb,tmu) *norm(tmu)*norm(tnu)*temp(ind++); // skip some k's    
                     }                              
-                   // muk(tnu,k) += mosMat(aorb,tmu) *norm(tmu)*norm(tnu)*temp(ind++); // skip some k's
+                   // muk(tnu,k) += mos(aorb,tmu) *norm(tmu)*norm(tnu)*temp(ind++); // skip some k's
                 }                
             }
             for (tmu in 0..(nBasis-1)) for (tnu in 0..(nBasis-1)) for (var k:Int=0; k<roK; k++) {
                 //var kContrib:Double = 0.0;
-                kMat(tmu,tnu) += muk(tmu,k)*muk(tnu,k); // check this statement
+                kMatrix(tmu,tnu) += muk(tmu,k)*muk(tnu,k); // check this statement
             }
         }   
         
         // Form G matrix
-        val gMat = getMatrix();
-        jMat.map(gMat, kMat, (j:Double,k:Double)=>(2.0*j-k)); // eqn 14
+        jMatrix.d.map(this.d, kMatrix.d, (j:Double,k:Double)=>(2.0*j-k)); // eqn 14
 
         timer.stop(0);
         Console.OUT.printf("    Time to construct GMatrix with RO: %.3g seconds\n", (timer.last(0) as Double) / 1e9);

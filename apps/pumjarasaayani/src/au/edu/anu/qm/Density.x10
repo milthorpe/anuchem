@@ -10,47 +10,48 @@
  */
 package au.edu.anu.qm;
 
-import x10x.matrix.Matrix;
+import x10.matrix.DenseMatrix;
 
 /**
  * The density matrix in the HF calculation
  *
  * @author: V.Ganesh
  */
-public class Density extends Matrix {
+public class Density extends DenseMatrix {
     private val noOfOccupancies:Int;
 
-    public def this(n:Int, noOfOccupancies:Int) {
-        super(n);
+    public def this(n:Int, noOfOccupancies:Int):Density{self.M==n,self.N==n} {
+        super(n, n);
         this.noOfOccupancies = noOfOccupancies;
     }
 
+    /**
+     * Creates a density matrix with each element initialised to v.
+     */
+    public def this(n:Int, noOfOccupancies:Int, v:Double):Density{self.M==n,self.N==n} {
+        // TODO GML new constructor for DenseMatrix
+        super(n, n, new Array[Double](n*n, (Int)=> v));
+        this.noOfOccupancies = noOfOccupancies;
+    }
+/* TODO needed?
     public def this(d:Density) {
-        super(d);
+        super(d.M, d.N, d);
         this.noOfOccupancies = d.getNoOfOccupancies();
     }
-
+*/
     public def getNoOfOccupancies() = noOfOccupancies;
 
-    public def compute(mos:MolecularOrbitals) : void {
+    public def compute(mos:MolecularOrbitals{self.N==this.N}) : void {
         // construct it from the MOs .. C*C'
-        val N = mos.getRowCount();
-        val dVector = new Matrix(noOfOccupancies, N);
+        val dVector = new DenseMatrix(noOfOccupancies, this.N);
 
-        val dMat = dVector.getMatrix();
-        val mosMat = mos.getMatrix();
-        for(var i:Int=0; i<noOfOccupancies; i++)
-            for(var j:Int=0; j<N; j++) 
-              dMat(i, j) = mosMat(i, j);
+        DenseMatrix.copyRows(mos, 0, dVector, 0, noOfOccupancies);
 
-        this.mulInPlace(dVector.transpose(), dVector);
+        super.transMult(dVector, dVector, false);
     }
 
-    public def applyGuess(SAD:Matrix)  {
-        val N = SAD.getRowCount();
-        val dMat = SAD.getMatrix();
-        val thisMat = getMatrix();
-        Array.copy[Double](dMat, thisMat);
+    public def applyGuess(SAD:DenseMatrix)  {
+        DenseMatrix.copy(SAD, this);
     }
 }
 

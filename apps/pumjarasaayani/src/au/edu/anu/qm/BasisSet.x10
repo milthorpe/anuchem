@@ -17,7 +17,7 @@ import x10.util.ArrayList;
 import x10.util.HashMap;
 import au.edu.anu.chem.Atom;
 import au.edu.anu.util.StringSplitter;
-import x10x.matrix.Matrix;
+import x10.matrix.DenseMatrix;
 
 /**
  * Represents a basis set, used for setting up basis functions (by BasisFunctions)
@@ -29,14 +29,14 @@ import x10x.matrix.Matrix;
 public class BasisSet { 
     val name:String;
     val basisInfo:HashMap[String, AtomicBasis];
-    val basisAtomicDensity:HashMap[String, Matrix];
+    val basisAtomicDensity:HashMap[String, DenseMatrix];
     val roZ:Double;
 
     public def this(name:String, basisDir:String) {
         Console.OUT.println("\tReading in basis info. for " + name + " from " + basisDir);
 
         basisInfo = new HashMap[String, AtomicBasis]();
-        basisAtomicDensity = new HashMap[String, Matrix]();
+	    basisAtomicDensity = new HashMap[String, DenseMatrix]();
  
         this.name = name;
         val jd = JobDefaults.getInstance();
@@ -47,7 +47,7 @@ public class BasisSet {
             throw new Exception("Unable to read basis from : "+basisDir, e);
         }
 
-        if (jd.guess==1) {
+        if (jd.guess.equals(JobDefaults.GUESS_SAD)) {
             try {
                 initDensity(name, basisDir);
             } catch(e:Exception) {
@@ -150,12 +150,11 @@ public class BasisSet {
             val symbol = words(0);
             val noOfFunctions = Int.parseInt(words(1));
 
-            val density = new Matrix(noOfFunctions, noOfFunctions);
-	        val aDensity = density.getMatrix();
+            val density = new DenseMatrix(noOfFunctions, noOfFunctions);
             for(var j:Int=0; j<noOfFunctions; j++) {
                 val words1 = StringSplitter.splitOnWhitespace(fil.readLine());
                 for(var k:Int=0; k<noOfFunctions; k++) {
-                    aDensity(j,k) = Double.parseDouble(words1(k));
+                    density(j,k) = Double.parseDouble(words1(k));
                 }
             }
 

@@ -5,10 +5,11 @@
     <property name="xla" location="../../xla"/>
 	<property name="xla.props" location="${xla}/xla_${x10rt}.properties"/>
     <property name="x10.testlib" location="${user.home}/x10-trunk/x10.tests/examples/x10lib"/>
-    <property name="xlalib" location="../../xla/src"/>
     <property name="anuchem" location="../../anu-chem"/>
     <property name="anuchem.src" location="${anuchem}/src"/>
     <property name="anuchem.props" location="${anuchem}/anuchem_${x10rt}.properties"/>
+    <property name="gml.lib" location="${user.home}/x10-trunk/x10.gml/lib/native_gml.jar"/>
+    <property name="gml.props" location="${user.home}/x10-trunk/x10.gml/native_gml.properties"/>
     <property name="bash.exe" value="bash"/>    
     <property name="optimize" value="true" />
     <property name="nochecks" value="true" />
@@ -22,8 +23,6 @@
 
     <property name="gsl.include" location="${user.home}/gsl/include" />
     <property name="gsl.lib" location="${user.home}/gsl/lib" />
-
-    <property name="usenativegsl" value="true" />
 
     <property name="target" location="${basedir}/target" />
     <property name="target-src" location="${target}/classes" />
@@ -57,10 +56,6 @@
         <istrue value="${heapprofile}" />
     </condition>
     
-    <condition property="post.usenativegsl" value="-I${gsl.include} # # -L${gsl.lib} -lgsl -lgslcblas" else="">
-        <istrue value="${usenativegsl}" />
-    </condition>
-
     <target name="init">
         <mkdir dir="${target}"/>
     </target>
@@ -109,7 +104,7 @@
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/src">
             <arg value="-c"/>
-            <arg value="'x10c' ${x10c.nochecks} ${x10c.optimize} -sourcepath .:${xlalib}:${anuchem.src} -d ${target-src} '${basedir}/${testclass}'"/>
+            <arg value="'x10c' ${x10c.nochecks} ${x10c.optimize} -x10lib ${gml.props} -x10lib ${xla.props} -x10lib ${anuchem.props} -sourcepath . -d ${target-src} '${basedir}/${testclass}'"/>
         </exec>
     </target>
 
@@ -125,11 +120,11 @@
         <pathconvert property="src.list" refid="changed.src.files" dirsep="/" pathsep=" ">
             <map from="${basedir}${file.separator}src${file.separator}" to=""/>
         </pathconvert>
-        <echo message="x10c++ -x10rt ${x10rt} -x10lib ${xla.props} -x10lib ${anuchem.props} -sourcepath . ${basedir}/${testclass}"/>
+        <echo message="x10c++ -x10rt ${x10rt} -classpath ${gml.lib} -x10lib ${gml.props} -x10lib ${xla.props} -x10lib ${anuchem.props} -sourcepath . ${basedir}/${testclass}"/>
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/src">
             <arg value="-c"/> 
-            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.debug} ${x10c.profile} ${x10c.optimize} ${x10c.nochecks} -report postcompile=1 -post '# ${post.cpuprofile} ${post.heapprofile} ${post.usenativegsl}' -x10lib ${anuchem.props} -x10lib ${xla.props} -sourcepath . -d ${target-src} ${basedir}/${testclass}"/>
+            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.debug} ${x10c.profile} ${x10c.optimize} ${x10c.nochecks} -report postcompile=1 -post '# ${post.cpuprofile} ${post.heapprofile} # -L/usr/lib # -lblas -L/scratch/lapack -llapack' -classpath ${gml.lib} -x10lib ${gml.props} -x10lib ${xla.props} -x10lib ${anuchem.props} -sourcepath . -d ${target-src} ${basedir}/${testclass}"/>
         </exec>
     </target>
 
@@ -176,7 +171,7 @@
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/test">
             <arg value="-c"/>
-            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.nochecks} ${x10c.optimize} -sourcepath ${x10.testlib}:${basedir}/src:.:${xlalib}:${anuchem.src} -classpath ${target-src} -d ${target-test} ${test.list}"/>
+            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.nochecks} ${x10c.optimize} -x10lib ${gml.props} -x10lib ${xla.props} -x10lib ${anuchem.props} -sourcepath ${x10.testlib}:${basedir}/src:. -classpath ${target-src} -d ${target-test} ${test.list}"/>
         </exec>
     </target>
 

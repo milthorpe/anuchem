@@ -13,7 +13,7 @@ package au.edu.anu.qm;
 import x10.compiler.Inline;
 import x10.util.ArrayList;
 
-import x10x.matrix.Matrix;
+import x10.matrix.DenseMatrix;
 import x10x.vector.Point3d;
 import x10x.vector.Vector3d;
 import au.edu.anu.chem.Molecule;
@@ -87,7 +87,7 @@ public class TwoElectronIntegrals {
     public def compute2EAndRecord(a:ContractedGaussian, b:ContractedGaussian, 
                                   c:ContractedGaussian, d:ContractedGaussian, 
                                   shellList:ShellList, 
-                                  jMat:Matrix, kMat:Matrix,
+                                  jMat:DenseMatrix, kMat:DenseMatrix,
                                   dMat:Density):Int {
         val aCen  = a.origin;
         val bCen  = b.origin;
@@ -122,10 +122,6 @@ public class TwoElectronIntegrals {
 
         val radiusABSquared = a.distanceSquaredFrom(b); 
         val radiusCDSquared = c.distanceSquaredFrom(d);
-
-        val jMatrix = jMat.getMatrix();
-        val kMatrix = kMat.getMatrix();
-        val dMatrix = dMat.getMatrix();
 
         val aExps = a.exponents;
         val aCoeffs = a.coefficients;
@@ -223,7 +219,7 @@ public class TwoElectronIntegrals {
                           dStrt, cStrt, bStrt, aStrt,
                           shellB, shellA,
                           aCen, bCen, p, sigmaP,
-                          jMatrix, kMatrix, dMatrix); 
+                          jMat, kMat, dMat); 
            }
         }
         return nTot;
@@ -233,7 +229,7 @@ public class TwoElectronIntegrals {
     public def compute2EAndRecord2(a:ContractedGaussian, b:ContractedGaussian, 
                                   c:ContractedGaussian, d:ContractedGaussian, 
                                   shellList:ShellList, 
-                                  jMat:Matrix, kMat:Matrix,
+                                  jMat:DenseMatrix, kMat:DenseMatrix,
                                   dMat:Density,
                                   radiusABSquared:Double, 
                                   aAng:Int, bAng:Int, cAng:Int, dAng:Int, angMomAB:Int,
@@ -257,10 +253,6 @@ public class TwoElectronIntegrals {
         val angMomABCD = angMomAB+angMomCD;
 
         val radiusCDSquared = c.distanceSquaredFrom(d);
-
-        val jMatrix = jMat.getMatrix();
-        val kMatrix = kMat.getMatrix();
-        val dMatrix = dMat.getMatrix();
 
         val aExps = a.exponents;
         val aCoeffs = a.coefficients;
@@ -358,7 +350,7 @@ public class TwoElectronIntegrals {
                           dStrt, cStrt, bStrt, aStrt,
                           shellB, shellA,
                           aCen, bCen, p, sigmaP,
-                          jMatrix, kMatrix, dMatrix); 
+                          jMat, kMat, dMat); 
            }
         }
         return nTot;
@@ -596,9 +588,9 @@ public class TwoElectronIntegrals {
                             dStrt:Int, cStrt:Int, bStrt:Int, aStrt:Int,
                             shellB:Rail[Power], shellA:Rail[Power], 
                             aCen:Point3d, bCen:Point3d, p:Point3d, sigmaP:Double,
-                            jMatrix:Array[Double](2){rect,zeroBased}, 
-                            kMatrix:Array[Double](2){rect,zeroBased},
-                            dMatrix:Array[Double](2){rect,zeroBased}) {
+                            jMatrix:DenseMatrix, 
+                            kMatrix:DenseMatrix,
+                            dMatrix:DenseMatrix) {
         val pbi = p.i-bCen.i;
         val pbj = p.j-bCen.j;
         val pbk = p.k-bCen.k;
@@ -661,9 +653,9 @@ public class TwoElectronIntegrals {
 
     private @Inline def fillJKMatrices(twoEIntVal:Double,
                                 ii:Int, jj:Int, kk:Int, ll:Int,
-                                jMatrix:Array[Double](2){rect,zeroBased}, 
-                                kMatrix:Array[Double](2){rect,zeroBased},
-                                dMatrix:Array[Double](2){rect,zeroBased}) {
+                                jMatrix:DenseMatrix, 
+                                kMatrix:DenseMatrix,
+                                dMatrix:DenseMatrix) {
         jMatrix(ii,jj) += dMatrix(kk,ll) * twoEIntVal;
         jMatrix(kk,ll) += dMatrix(ii,jj) * twoEIntVal;
         kMatrix(ii,kk) += dMatrix(jj,ll) * twoEIntVal;

@@ -158,6 +158,7 @@ public class PumjaRasaayani {
         Console.OUT.println("diis_start " + jd.diisStartThreshold);
         Console.OUT.println("diis_converge " + jd.diisConvergenceThreshold);
         Console.OUT.println("diis_subspace_size " + jd.diisSubspaceSize);
+        Console.OUT.println("guess " + jd.guess);
         if (jd.gMatrixParallelScheme != GMatrix.DEFAULT_GMATTYPE) {
             Console.OUT.println("gmat_parallel_scheme " + jd.gMatrixParallelScheme);
         }

@@ -74,7 +74,7 @@ public class JobInput {
         jd.roN=10;
         jd.roL=10;
         jd.roZ=1.0;
-        jd.guess=0;
+        jd.guess=JobDefaults.GUESS_SAD;
 
         if (line.startsWith("charge")) {
             charge = getIntParam(line);
@@ -138,12 +138,17 @@ public class JobInput {
                     jd.roN = getIntParam(line);
                 } else if (line.startsWith("RO_L")) {
                     jd.roL = getIntParam(line);
-                } else if (line.startsWith("Center")) {
+                } else if (line.startsWith("center")) {
                     jd.centering = getIntParam(line);
-                } else if (line.startsWith("USE_RO")) {
+                } else if (line.startsWith("use_RO")) {
                     jd.roOn = getIntParam(line);
-                } else if (line.startsWith("GUESS")) {
-                    jd.guess = getIntParam(line);
+                } else if (line.startsWith("compare_RO")) {
+                    jd.compareRo = true;
+                } else if (line.startsWith("guess")) {
+                    jd.guess = getStringParam(line);
+                    if (!(jd.guess.equals(JobDefaults.GUESS_SAD) || jd.guess.equals(JobDefaults.GUESS_CORE))) {
+                        throw new Exception("Invalid input: " + line);
+                    }
                 }
 
                 line = fil.readLine();
@@ -157,6 +162,7 @@ public class JobInput {
 
     private static def getIntParam(line:String) = Int.parseInt(StringSplitter.splitOnWhitespace(line)(1));
     private static def getDoubleParam(line:String) = Double.parseDouble(StringSplitter.splitOnWhitespace(line)(1));
+    private static def getStringParam(line:String) = StringSplitter.splitOnWhitespace(line)(1);
 
     public def getMolecule():Molecule[QMAtom] = molecule;
     public def getBasisName():String = basisName;

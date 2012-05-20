@@ -6,26 +6,26 @@
  *  You may obtain a copy of the License at
  *      http://www.opensource.org/licenses/eclipse-1.0.php
  *
- * (C) Copyright Australian National University 2010.
+ * (C) Copyright Australian National University 2010-2011.
  */
 package au.edu.anu.qm;
 
-import x10x.matrix.Matrix;
+import x10.matrix.DenseMatrix;
 
 /**
  * Represents the overlap matrix
  *
  * @author: V.Ganesh
  */
-public class Overlap extends Matrix {
-    var sHalf:Matrix = null;
+public class Overlap extends DenseMatrix {
+    var sHalf:DenseMatrix = null;
 
-    public def this(n:Int) {
-        super(n);
+    public def this(n:Int):Overlap{self.M==n,self.N==n} {
+        super(n, n);
     }
 
-    public def getSHalf() : Matrix {
-       if (sHalf == null) sHalf = this.symmetricOrthogonalization();
+    public def getSHalf():DenseMatrix(this.N, this.N) {
+       if (sHalf == null) sHalf = GMLDiagonalizer.symmetricOrthogonalization(this);
 
        return sHalf;
     }    
