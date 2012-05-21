@@ -41,13 +41,12 @@ public class GMatrixROmem extends DenseMatrix {
     val roN:Int;
     val roL:Int;
     val roZ:Double;
-    val nBasis:Int;
     val nOrbital:Int;
     
     val norm:Rail[Double];
     val temp:Rail[Double];
     val dk:Rail[Double];
-    val muk:Array[Double](2){rect,zeroBased};
+    val muk:DenseMatrix;
 
     val shellPairs:Rail[ShellPair];
 
@@ -59,7 +58,6 @@ public class GMatrixROmem extends DenseMatrix {
         super(N, N);
         this.bfs = bfs;
         this.mol = molecule;
-        this.nBasis=N;
         this.nOrbital = nOrbital;
 
         val jd = JobDefaults.getInstance();
@@ -77,7 +75,7 @@ public class GMatrixROmem extends DenseMatrix {
         temp = new Rail[Double](maxam1*maxam1*roK);
         aux = new Integral_Pack(roN,roL);
         dk = new Rail[Double](roK); // eqn 15b in RO#7
-        muk = new Array[Double](0..(nBasis-1)*0..(roK-1)); // Biggest RO array stored in Memory
+        muk = new DenseMatrix(N, roK); // Biggest RO array stored in Memory
 
         // Gen Shellpair
         var nShell:Int=0;
@@ -241,7 +239,7 @@ public class GMatrixROmem extends DenseMatrix {
         kMatrix.reset();
 
         for(aorb in 0..(nOrbital-1)) { // To save mem
-            muk.clear();
+            muk.reset();
             for (spInd in 0..(shellPairs.size-1)) {
                 val sp=shellPairs(spInd);
                 aux.genClass(sp.aang, sp.bang, sp.aPoint, sp.bPoint, sp.zetaA, sp.zetaB, sp.conA, sp.conB, sp.dconA, sp.dconB, temp, sp.N, sp.L); 
@@ -264,10 +262,8 @@ public class GMatrixROmem extends DenseMatrix {
                    // muk(tnu,k) += mos(aorb,tmu) *norm(tmu)*norm(tnu)*temp(ind++); // skip some k's
                 }                
             }
-            for (tmu in 0..(nBasis-1)) for (tnu in 0..(nBasis-1)) for (var k:Int=0; k<roK; k++) {
-                //var kContrib:Double = 0.0;
-                kMatrix(tmu,tnu) += muk(tmu,k)*muk(tnu,k); // check this statement
-            }
+
+            kMatrix.multTrans(muk, muk, true);
         }   
         
         // Form G matrix

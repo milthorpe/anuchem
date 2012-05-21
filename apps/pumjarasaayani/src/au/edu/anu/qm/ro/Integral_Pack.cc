@@ -168,12 +168,18 @@ namespace au {
 
         double (*V1)[K];
         double (*V2)[K];
-        double (*V)[K]; 
+        //double (*V)[K]; 
         V1=(double (*)[K])malloc(totalBraL[a+b+1]*K*sizeof(double));
         V2=(double (*)[K])malloc(totalBraL[a+b+1]*K*sizeof(double));
-        V=(double (*)[K])calloc(totalBraL[a+b+1]*K, sizeof(double));
+        //V=(double (*)[K])calloc(totalBraL[a+b+1]*K, sizeof(double));
+        if (V1==NULL || V2==NULL /*|| V ==NULL*/) exit(1);
 
-        if (V1==NULL || V2==NULL || V ==NULL) exit(1);
+        double (*HRR[MAX_BRA_L+1][MAX_BRA_L+1])[K];
+        for (i=a; i<=a+b; i++) {
+            HRR[i][0] = (double (*)[K])(malloc(sizeof(double)*K*noOfBra[i]));
+            if (HRR[i][0]==NULL /*|| V ==NULL*/) exit(1);
+            memset(HRR[i][0],0.0,sizeof(double)*K*noOfBra[i]);
+        }
 
         double Y[(L+1)*(L+1)],J[(L+a+b+1)*(N+1)],JpY00[9]={0.28209479177387814, 0.09403159725795937, 0.018806319451591877,
         		0.0026866170645131254, 0.000298513007168125,0.000027137546106193183, 2.087503546630245e-6,1.39166903108683e-7, 8.186288418157823e-9};
@@ -276,15 +282,19 @@ namespace au {
                                         //printf("[%d %d %d | %2d %2d %2d] = %.15e j=%d cy+ =%e aj=%d\n",inverseMap3[aplusIndex].x,inverseMap3[aplusIndex].y,inverseMap3[aplusIndex].z,
                                        //		n,l,m,vapk,j,cxminus[lm]*Vb[aIndex][kxminus], aj );
                             }
-                            Va[aplusIndex][k] = vapk;
+                            Va[aplusIndex][k] = vapk; // check if we can write
                         }
                     }
                 }
 
             }
             double (* Va)[K] = swap ? V2 : V1;
-            for (bra=0; bra<totalBraL[a+b+1]; bra++) for(k=0; k<K; k++) V[bra][k] += Va[bra][k];
+            //for (bra=0; bra<totalBraL[a+b+1]; bra++) for(k=0; k<K; k++) V[bra][k] += Va[bra][k];
+            for (i=a; i<=a+b; i++) for (bra=0; bra<noOfBra[i]; bra++ ) for (k=0; k<K; k++) 
+                HRR[i][0][bra][k] += Va[bra+totalBraL[i]][k];
         }
+
+        free(V1);free(V2);//free(V);
 
         //printf("[ x y z | n l m ] (a=%d b=%d nof=%d) \n",a,b,noOfBra[a+b]);
         /*bra=-1;
@@ -297,16 +307,15 @@ namespace au {
         // HRR
         // Initialization - copy contracted integrals to HRR 
         double dd[3]={A[0]-B[0],A[1]-B[1],A[2]-B[2]};
-        double (*HRR[MAX_BRA_L+1][MAX_BRA_L+1])[K];
    
-        for (i=a; i<=a+b; i++) {
+  /*      for (i=a; i<=a+b; i++) {
             HRR[i][0] = (double (*)[K])(malloc(sizeof(double)*K*noOfBra[i]));
             for (bra=0; bra<noOfBra[i]; bra++ ) for (k=0; k<K; k++) {
                 HRR[i][0][bra][k] = V[bra+totalBraL[i]][k];
             }
-        }
+        }*/
 
-        free(V1);free(V2);free(V);
+        
 
         for (i=a; i<=a+b; i++) for (j=1; j<=i-a; j++) {
             HRR[i-j][j] = (double (*)[K])(malloc(sizeof(double)*K*noOfBra[i-j]*noOfBra[j]));
