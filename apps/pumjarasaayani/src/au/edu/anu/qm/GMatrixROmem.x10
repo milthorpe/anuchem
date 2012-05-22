@@ -268,21 +268,25 @@ public class GMatrixROmem extends DenseMatrix {
                 aux.genClass(sp.aang, sp.bang, sp.aPoint, sp.bPoint, sp.zetaA, sp.zetaB, sp.conA, sp.conB, sp.dconA, sp.dconB, temp, sp.N, sp.L); 
                 var ind:Int=0; var ron:Int; var rol:Int;         
                 
-                for (var tmu:Int=sp.mu; tmu<sp.mu+sp.maxbraa; tmu++) for (var tnu:Int=sp.nu; tnu<sp.nu+sp.maxbrab; tnu++) //for (var k:Int=0; k<roK; k++) 
+                for (var tmu:Int=sp.mu; tmu<sp.mu+sp.maxbraa; tmu++) for (var tnu:Int=sp.nu; tnu<sp.nu+sp.maxbrab; tnu++) { //for (var k:Int=0; k<roK; k++)
+                    val normMo = mos(aorb,tnu) * norm(tmu) * norm(tnu);
                     for (ron=0; ron<=sp.N; ron++) for (rol=0; rol<=sp.L ; rol++) for (var rom:Int=-rol; rom<=rol; rom++) {
                         val ml=rol*(rol+1)+rom;
                         val mn=ron*(roL+1)*(roL+1)+ml;
-                        muk(tmu,mn) += mos(aorb,tnu) *norm(tmu)*norm(tnu)*temp(ind++); // skip some k's    
-                    }                                      
+                        muk(tmu,mn) += normMo * temp(ind++); // skip some k's    
+                    }
+                }                                   
                 if (sp.mu!=sp.nu) {
-                ind=0;
-                for (var tmu:Int=sp.mu; tmu<sp.mu+sp.maxbraa; tmu++) for (var tnu:Int=sp.nu; tnu<sp.nu+sp.maxbrab; tnu++) //for (var k:Int=0; k<roK; k++) 
-                    for (ron=0; ron<=sp.N; ron++) for (rol=0; rol<=sp.L ; rol++) for (var rom:Int=-rol; rom<=rol; rom++) {
-                        val ml=rol*(rol+1)+rom;
-                        val mn=ron*(roL+1)*(roL+1)+ml;
-                        muk(tnu,mn) += mos(aorb,tmu) *norm(tmu)*norm(tnu)*temp(ind++); // skip some k's    
-                    }                              
-                   // muk(tnu,k) += mos(aorb,tmu) *norm(tmu)*norm(tnu)*temp(ind++); // skip some k's
+                    ind=0;
+                    for (var tmu:Int=sp.mu; tmu<sp.mu+sp.maxbraa; tmu++) for (var tnu:Int=sp.nu; tnu<sp.nu+sp.maxbrab; tnu++) { //for (var k:Int=0; k<roK; k++) 
+                        val normMo = mos(aorb,tmu) * norm(tmu) * norm(tnu);
+                        for (ron=0; ron<=sp.N; ron++) for (rol=0; rol<=sp.L ; rol++) for (var rom:Int=-rol; rom<=rol; rom++) {
+                            val ml=rol*(rol+1)+rom;
+                            val mn=ron*(roL+1)*(roL+1)+ml;
+                            muk(tnu,mn) += normMo * temp(ind++); // skip some k's    
+                        }                              
+                       // muk(tnu,k) += mos(aorb,tmu) *norm(tmu)*norm(tnu)*temp(ind++); // skip some k's
+                    }
                 }                
             }
 

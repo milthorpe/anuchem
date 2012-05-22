@@ -4,18 +4,18 @@
     <property name="x10rt" value="sockets" />
     <property name="xla" location="../../xla"/>
 	<property name="xla.props" location="${xla}/xla_${x10rt}.properties"/>
-    <property name="x10.testlib" location="${user.home}/Desktop/x10/x10-trunk/x10.tests/examples/x10lib"/>
+    <property name="x10.testlib" location="${user.home}/x10-trunk/x10.tests/examples/x10lib"/>
     <property name="anuchem" location="../../anu-chem"/>
     <property name="anuchem.src" location="${anuchem}/src"/>
     <property name="anuchem.props" location="${anuchem}/anuchem_${x10rt}.properties"/>
-    <property name="gml.lib" location="${user.home}/Desktop/x10/x10-trunk/x10.gml/lib/native_gml.jar"/>
-    <property name="gml.props" location="${user.home}/Desktop/x10/x10-trunk/x10.gml/native_gml.properties"/>
+    <property name="gml.lib" location="${user.home}/x10-trunk/x10.gml/lib/native_gml.jar"/>
+    <property name="gml.props" location="${user.home}/x10-trunk/x10.gml/native_gml.properties"/>
     <property name="bash.exe" value="bash"/>    
     <property name="optimize" value="true" />
     <property name="nochecks" value="true" />
-    <property name="debug" value="true"/>
-    <property name="profile"  value="true" />
-    <property name="cpuprofile"  value="true"/>
+    <property name="debug" value="false"/>
+    <property name="profile"  value="false" />
+    <property name="cpuprofile"  value="false"/>
     <property name="perftoolsHome" location="${user.home}/perftools"/>
     <property name="heapprofile" value="false" />
 
