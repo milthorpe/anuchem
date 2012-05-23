@@ -4,6 +4,7 @@
 #include <string.h>
 #include "bessel4.h"
 #include "Integral_Pack.h"
+#include "cblas.h"
 
 #define sqr(x) ((x)*(x))
 #define SQRT2 1.4142135623730951
@@ -316,19 +317,24 @@ namespace au {
             }
         }*/
 
-        
-
         for (i=a; i<=a+b; i++) for (j=1; j<=i-a; j++) {
             HRR[i-j][j] = (double (*)[K])(malloc(sizeof(double)*K*noOfBra[i-j]*noOfBra[j]));
             for (ii=0; ii<noOfBra[i-j]; ii++) for (jj=0; jj<noOfBra[j]; jj++) {
             	int lindex = ii*noOfBra[j] + jj;
             	int rindex1=HRRMAP[i-j][j][lindex].x;
             	int rindex2=HRRMAP[i-j][j][lindex].y;
+
+                double* lhs = HRR[i-j][j][lindex];
+                double* rhs1 = HRR[i-j+1][j-1][rindex1];
+                double* rhs2 = HRR[i-j][j-1][rindex2];
+
             	double factor = dd[HRRMAP[i-j][j][lindex].z];
-            	for (k=0; k<K; k++)
-                    HRR[i-j][j][lindex][k] = HRR[i-j+1][j-1][rindex1][k]+factor*HRR[i-j][j-1][rindex2][k];
+
+                cblas_dcopy(K, rhs1, 1, lhs, 1);
+                cblas_daxpy(K, factor, rhs2, 1, lhs, 1);
         	}
         }
+
         int ind=0;
         for (ii=0; ii<noOfBra[a]; ii++) for (jj=0; jj<noOfBra[b]; jj++){
         	int lindex = ii*noOfBra[b] + jj;
