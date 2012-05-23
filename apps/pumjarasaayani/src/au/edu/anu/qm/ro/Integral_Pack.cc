@@ -267,8 +267,8 @@ namespace au {
                                 kyplus=nOffset+lm2k(l-1,-(m+1)),
                                 kyminus=nOffset+lm2k(l-1,-(m-1)),
                                 kzero=nOffset+lm2k(l-1,m);
-
-                            double vapk = paj*Va[aIndex][k]+P[j]*Vb[aIndex][k];
+                            if (aIndex>=totalBraL[a+b+1] || aIndex<0 || k<0 || k>K) printf("aIndex=%d k=%d\n",aIndex,k);
+                            double vapk = paj*Va[aIndex][k]+P[j]*Vb[aIndex][k]; 
                             if (aj>0) vapk += aj*one2zeta*(Va[aminusIndex][k]+Vb[aminusIndex][k]);
                             //printf("[%d %d %d | %2d %2d %2d] = %f ainx=%d\n",inverseMap3[aplusIndex].x,inverseMap3[aplusIndex].y,inverseMap3[aplusIndex].z,
                             //		n,l,m,vapk,aIndex);
@@ -282,7 +282,8 @@ namespace au {
                                         //printf("[%d %d %d | %2d %2d %2d] = %.15e j=%d cy+ =%e aj=%d\n",inverseMap3[aplusIndex].x,inverseMap3[aplusIndex].y,inverseMap3[aplusIndex].z,
                                        //		n,l,m,vapk,j,cxminus[lm]*Vb[aIndex][kxminus], aj );
                             }
-                            Va[aplusIndex][k] = vapk; // check if we can write
+                            if (aplusIndex>=totalBraL[a+b+1] || aplusIndex<0 || k<0 || k>K) printf("aplusIndex=%d k=%d\n",aplusIndex,k);
+                            Va[aplusIndex][k] = vapk; 
                         }
                     }
                 }

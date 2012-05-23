@@ -196,7 +196,16 @@ public class GMatrix extends DenseMatrix {
 
         //Console.OUT.println("K Mat");
         //Console.OUT.println(computeThread.getKMat());
+// vvvv For development purpose vvvvvv
+        val jMatrix=computeThread.getJMat();
+        val kMatrix=computeThread.getKMat();
 
+        val eJ = density.clone().mult(density, jMatrix).trace();
+        Console.OUT.printf("  EJ = %.6f a.u.\n", eJ);
+
+        val eK = density.clone().mult(density, kMatrix).trace();
+        Console.OUT.printf("  EK = %.6f a.u.\n", eK);
+// ^^^^ It is not required for normal calculation ^^^^^
     }
 
     private def computeThreadedLowMemNoAtomicByBF(density:Density) : void {
