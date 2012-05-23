@@ -92,6 +92,7 @@ public class PenningTrap {
         this.eNorm = V_T * PenningTrap.ALPHA_PRIME / (edgeLength * edgeLength);
         this.eFieldNorm = -BETA_PRIME / edgeLength;
         this.magB = magneticField.magnitude();
+        Console.OUT.println("fmm num levels = " + fmm.numLevels);
     }
 
     /**
@@ -141,16 +142,11 @@ public class PenningTrap {
             while(step < numSteps) {
                 step++;
                 val accumProps = (step % logSteps == 0);
-                timer.start(0);
-                mdStepLocal(step, timeStepSecs, fmmBoxes, current, accumProps, props);
+                mdStepLocal(step, timeStepSecs, fmmBoxes, current, accumProps, props, timer);
                 if (accumProps) {
-                    timer.stop(0);
-                    timer.start(1);
                     reduceAndPrintProperties(timestep * step, props);
-                    timer.stop(1);
                 } else {
                     Team.WORLD.barrier(here.id); // TODO is this really required?
-                    timer.stop(0);
                 }
             }
 
@@ -178,6 +174,8 @@ public class PenningTrap {
             Team.WORLD.allreduce[Double](here.id, timer.sumOfSquares, 0, timer.sumOfSquares, 0, timer.sumOfSquares.size, Team.ADD);
             if (here == Place.FIRST_PLACE) {
                 timer.printSeconds();
+                Console.OUT.println("reassign:");
+                timer.printSeconds(1);
             }
         }
 
@@ -193,8 +191,11 @@ public class PenningTrap {
      * @param whether to accumulate system properties for this step
      * @param props the system properties to evaluate
      */
-    public def mdStepLocal(step:Int, dt:Double, fmmBoxes:DistArray[FmmBox](3), current:Array[Double], accumProps:Boolean, props:SystemProperties) {
+    public def mdStepLocal(step:Int, dt:Double, fmmBoxes:DistArray[FmmBox](3), current:Array[Double], accumProps:Boolean, props:SystemProperties, timer:StatisticalTimer) {
+        timer.start(1);
         fmm.reassignAtoms(step);
+        timer.stop(1);
+        timer.start(0);
         fmm.calculateEnergyLocal();
 
         finish for ([x,y,z] in fmmBoxes.dist(here)) async {
@@ -249,10 +250,12 @@ public class PenningTrap {
         var currentLocal:Double = 0.0;
 
         // TODO async
+        //var placeAtoms:Int = 0;
         for ([x,y,z] in fmmBoxes.dist(here)) {
             val box = fmmBoxes(x,y,z) as FmmLeafBox;
             if (box != null) {
                 val boxAtoms = box.getAtoms();
+                //placeAtoms += boxAtoms.size;
                 for (i in 0..(boxAtoms.size-1)) {
                     val atom = boxAtoms(i);
                     atom.centre = atom.centre + atom.velocity * dt;
@@ -272,7 +275,9 @@ public class PenningTrap {
                 }
             }
         }
+        //Console.OUT.println("at " + here + " placeAtoms: " + placeAtoms);
         current(step) = currentLocal;
+        timer.stop(0);
     }
 
     /** 

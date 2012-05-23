@@ -12,6 +12,7 @@ package au.edu.anu.mm;
 
 import x10.util.ArrayList;
 import x10.util.HashSet;
+import x10.util.Pair;
 
 import x10x.vector.Point3d;
 import x10x.vector.Vector3d;
@@ -29,6 +30,9 @@ public class FmmBox {
     public val y : Int;
     public val z : Int;
 
+    /** The number of atoms in all boxes below this box. */
+    public var numAtoms:Int;
+
     /** 
      * The V-list consists of the children of those boxes 
      * not well-separated from this box's parent.
@@ -36,7 +40,7 @@ public class FmmBox {
     private var vList : Rail[Point(3)];
 
     /** The multipole expansion of the charges within this box. */
-    public val multipoleExp : MultipoleExpansion;
+    public var multipoleExp : MultipoleExpansion;
 
     /** The Taylor expansion of the potential within this box due to particles in well separated boxes. */
     public val localExp : LocalExpansion;
@@ -86,13 +90,13 @@ public class FmmBox {
             || Math.abs(z - box2.z) > ws;
     }
 
-    private static def upwardIfNotNull(size:Double, fmmOperators:PlaceLocalHandle[FmmOperators], locallyEssentialTree:PlaceLocalHandle[LocallyEssentialTree], boxes:Rail[DistArray[FmmBox](3)], childLevel:Int, x:Int, y:Int, z:Int, periodic:Boolean) : MultipoleExpansion {
+    private static def upwardIfNotNull(size:Double, fmmOperators:PlaceLocalHandle[FmmOperators], locallyEssentialTree:PlaceLocalHandle[LocallyEssentialTree], boxes:Rail[DistArray[FmmBox](3)], childLevel:Int, x:Int, y:Int, z:Int, periodic:Boolean):Pair[Int,MultipoleExpansion] {
         val childLevelBoxes = boxes(childLevel);
         val childBox = childLevelBoxes(x,y,z);
         if (childBox != null) {
             return childBox.upward(size, fmmOperators, locallyEssentialTree, boxes, periodic);
         } else {
-            return null;
+            return Pair[Int,MultipoleExpansion](0, null);
         }
     }
 
@@ -100,11 +104,12 @@ public class FmmBox {
      * For each non-leaf box, combines multipole expansions for <= 8 child
      * boxes into a single multipole expansion for the parent box.
      */
-    protected def upward(size:Double, fmmOperators:PlaceLocalHandle[FmmOperators], locallyEssentialTree:PlaceLocalHandle[LocallyEssentialTree], boxes:Rail[DistArray[FmmBox](3)], periodic:Boolean) {
+    protected def upward(size:Double, fmmOperators:PlaceLocalHandle[FmmOperators], locallyEssentialTree:PlaceLocalHandle[LocallyEssentialTree], boxes:Rail[DistArray[FmmBox](3)], periodic:Boolean):Pair[Int,MultipoleExpansion] {
+        numAtoms = 0; // reset
         val childLevel = level+1;
         val childLevelBoxes = boxes(childLevel);
 
-        val childExpansions = new Array[MultipoleExpansion](8);
+        val childExpansions = new Array[Pair[Int,MultipoleExpansion]](8);
         finish {
             var i:Int=0;
             for (x2 in (2*x)..(2*x+1)) {
@@ -135,14 +140,15 @@ public class FmmBox {
             for (y2 in (2*y)..(2*y+1)) {
                 for (z2 in (2*z)..(2*z+1)) {
                     val childExp = childExpansions(i++);
-                    if (childExp != null) {
+                    numAtoms = numAtoms + childExp.first;
+                    if (childExp.second != null) {
                         nonNullChildren = true;
                         val dx = ((x2+1)%2)*2-1;
                         val dy = ((y2+1)%2)*2-1;
                         val dz = ((z2+1)%2)*2-1;
                         this.multipoleExp.translateAndAddMultipole(scratch, scratch_array,
                           Vector3d(dx*halfSideLength, dy*halfSideLength, dz*halfSideLength),
-                          myComplexK(dx,dy,dz), childExp, myWignerA((dx+1)/2, (dy+1)/2, (dz+1)/2));
+                          myComplexK(dx,dy,dz), childExp.second, myWignerA((dx+1)/2, (dy+1)/2, (dz+1)/2));
                     }
                 }
             }
@@ -150,11 +156,10 @@ public class FmmBox {
 
         if (nonNullChildren) {
             sendMultipole(locallyEssentialTree, boxes, periodic);
-
-            return this.multipoleExp;
         } else {
-            return null;
+            return Pair[Int,MultipoleExpansion](0, null);
         }
+        return Pair[Int,MultipoleExpansion](numAtoms, this.multipoleExp);
     }
 
     protected def sendMultipole(locallyEssentialTree:PlaceLocalHandle[LocallyEssentialTree], boxes:Rail[DistArray[FmmBox](3)], periodic:Boolean) {
@@ -194,31 +199,37 @@ public class FmmBox {
     }
 
     protected def downward(size:Double, parentLocalExpansion:LocalExpansion, fmmOperators:PlaceLocalHandle[FmmOperators], locallyEssentialTree:PlaceLocalHandle[LocallyEssentialTree], boxes:Rail[DistArray[FmmBox](3)], numLevels:Int, periodic:Boolean):Double {
-        constructLocalExpansion(size, fmmOperators, parentLocalExpansion, locallyEssentialTree);
+        if (numAtoms > 0) {
+            constructLocalExpansion(size, fmmOperators, parentLocalExpansion, locallyEssentialTree);
 
-        val childLevel = level+1;
-        val childLevelBoxes = boxes(childLevel);
+            val childLevel = level+1;
+            val childLevelBoxes = boxes(childLevel);
 
-        val parentExp = localExp;
+            val parentExp = localExp;
 
-        val farField = finish (SumReducer()) {
-            for (i in 0..7) {
-                val dx = i / 4;
-                val dy = i % 4 / 2;
-                val dz = i % 2;
-                val childX = 2*this.x + dx;
-                val childY = 2*this.y + dy;
-                val childZ = 2*this.z + dz;
+            val farField = finish (SumReducer()) {
+                for (i in 0..7) {
+                    val dx = i / 4;
+                    val dy = i % 4 / 2;
+                    val dz = i % 2;
+                    val childX = 2*this.x + dx;
+                    val childY = 2*this.y + dy;
+                    val childZ = 2*this.z + dz;
 
-                at(childLevelBoxes.dist(childX,childY,childZ)) async {
-                    val childBox = boxes(childLevel)(childX,childY,childZ);
-                    if (childBox != null) {
-                        offer childBox.downward(size, parentExp, fmmOperators, locallyEssentialTree, boxes, numLevels, periodic);
+                    at(childLevelBoxes.dist(childX,childY,childZ)) async {
+                        val childBox = boxes(childLevel)(childX,childY,childZ);
+                        if (childBox != null) {
+                            offer childBox.downward(size, parentExp, fmmOperators, locallyEssentialTree, boxes, numLevels, periodic);
+                        }
                     }
                 }
-            }
-        };
-        return farField;
+            };
+
+            return farField;
+
+        } else {
+            return 0.0;
+        }
     }
 
     protected def constructLocalExpansion(size:Double, fmmOperators:PlaceLocalHandle[FmmOperators], parentLocalExpansion:LocalExpansion, locallyEssentialTree:PlaceLocalHandle[LocallyEssentialTree]) {
