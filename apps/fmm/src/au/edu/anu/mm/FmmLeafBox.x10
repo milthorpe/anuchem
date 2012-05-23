@@ -11,6 +11,7 @@
 package au.edu.anu.mm;
 
 import x10.util.ArrayList;
+import x10.util.Pair;
 
 import x10x.vector.Point3d;
 import x10x.vector.Vector3d;
@@ -47,6 +48,7 @@ public class FmmLeafBox extends FmmBox {
 
     public def setAtoms(atoms : Rail[MMAtom]) {
         this.atoms = atoms;
+        numAtoms = atoms.size;
     }
 
     /**
@@ -54,7 +56,7 @@ public class FmmLeafBox extends FmmBox {
      * simply the sum of the contributions of the particles in the box.
      * N.B. must only be called once per pass
      */
-    protected def upward(size:Double, fmmOperators:PlaceLocalHandle[FmmOperators], locallyEssentialTree:PlaceLocalHandle[LocallyEssentialTree], boxes:Rail[DistArray[FmmBox](3)], periodic:Boolean) {
+    protected def upward(size:Double, fmmOperators:PlaceLocalHandle[FmmOperators], locallyEssentialTree:PlaceLocalHandle[LocallyEssentialTree], boxes:Rail[DistArray[FmmBox](3)], periodic:Boolean):Pair[Int,MultipoleExpansion] {
         if (atoms.size > 0) {
             val p = multipoleExp.p;
             val boxCentre = getCentre(size);
@@ -68,14 +70,14 @@ public class FmmLeafBox extends FmmBox {
 
             sendMultipole(locallyEssentialTree, boxes, periodic);
 
-            return multipoleExp;
+            return Pair[Int,MultipoleExpansion](numAtoms, this.multipoleExp);
         } else {
-            return null;
+            return Pair[Int,MultipoleExpansion](0, null);
         }
     }
 
     protected def downward(size:Double, parentLocalExpansion:LocalExpansion, fmmOperators:PlaceLocalHandle[FmmOperators], locallyEssentialTree:PlaceLocalHandle[LocallyEssentialTree], boxes:Rail[DistArray[FmmBox](3)], numLevels:Int, periodic:Boolean):Double {
-        if (atoms.size > 0) {
+        if (numAtoms > 0) {
             constructLocalExpansion(size, fmmOperators, parentLocalExpansion, locallyEssentialTree);
             val myLET = locallyEssentialTree();
 
