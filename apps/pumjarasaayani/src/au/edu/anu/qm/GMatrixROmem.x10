@@ -200,7 +200,7 @@ public class GMatrixROmem extends DenseMatrix {
 
         val compareShellPairContribs = (y:ShellPair,x:ShellPair) => x.contrib.compareTo(y.contrib);
         ArrayUtils.sort[ShellPair](rawShellPairs, compareShellPairContribs);
-        val threshold = 1.0e-5;
+        val threshold = 1.0e-10;
 
         val zeroPoint = Point3d(0.0, 0.0, 0.0);
         val emptyRail = new Rail[Double](0);
@@ -221,10 +221,10 @@ public class GMatrixROmem extends DenseMatrix {
 
     public def compute(density:Density, mos:MolecularOrbitals) {
         timer.start(0);
-
         val roK = (roN+1)*(roL+1)*(roL+1);
 
         // Form dk vector
+        timer.start(1);
         dk.clear();
         for (spInd in 0..(shellPairs.size-1)) {
             val sp=shellPairs(spInd);
@@ -258,7 +258,15 @@ public class GMatrixROmem extends DenseMatrix {
             }            
         }     
 
+        timer.stop(1);
+// vvvv For development purpose vvvvvv
+        val eJ = density.clone().mult(density, jMatrix).trace();
+        Console.OUT.printf("  EJ = %.6f a.u.\n", eJ);
+// ^^^^ It is not required for normal calculation ^^^^^
+        Console.OUT.printf("    Time to construct JMatrix with RO: %.3g seconds\n", (timer.last(1) as Double) / 1e9);
+
         // Form K matrix
+        timer.start(2);
         kMatrix.reset();
 
         for(aorb in 0..(nOrbital-1)) { // To save mem
@@ -293,11 +301,18 @@ public class GMatrixROmem extends DenseMatrix {
             kMatrix.multTrans(muk, muk, true);
         }   
         
+        timer.stop(2);
+// vvvv For development purpose vvvvvv
+        val eK = density.clone().mult(density, kMatrix).trace();
+        Console.OUT.printf("  EK = %.6f a.u.\n", eK);
+// ^^^^ It is not required for normal calculation ^^^^^
+        Console.OUT.printf("    Time to construct KMatrix with RO: %.3g seconds\n", (timer.last(2) as Double) / 1e9);
+
         // Form G matrix
         jMatrix.d.map(this.d, kMatrix.d, (j:Double,k:Double)=>(2.0*j-k)); // eqn 14
-
         timer.stop(0);
         Console.OUT.printf("    Time to construct GMatrix with RO: %.3g seconds\n", (timer.last(0) as Double) / 1e9);
+
     }
  
 }
