@@ -17,7 +17,7 @@ import x10.matrix.DenseMatrix;
  *
  * @author: V.Ganesh
  */
-public class Density extends DenseMatrix {
+public class Density extends DenseMatrix{self.M==self.N} {
     private val noOfOccupancies:Int;
 
     public def this(n:Int, noOfOccupancies:Int):Density{self.M==n,self.N==n} {

@@ -58,7 +58,7 @@ public class HartreeFockSCFMethod extends SCFMethod {
         // init memory for the matrices
         val N = hCore.N;
         val jd = JobDefaults.getInstance();
-        val gMatrixRo:GMatrixROmem;
+        val gMatrixRo:GMatrixROmem{self.N==N};
         if (jd.roOn>0) {
             gMatrixRo = new GMatrixROmem(N, bfs, molecule, noOfOccupancies);
         } else {

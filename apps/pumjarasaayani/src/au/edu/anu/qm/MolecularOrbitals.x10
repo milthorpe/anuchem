@@ -17,16 +17,16 @@ import x10.matrix.DenseMatrix;
  *
  * @author: V.Ganesh
  */
-public class MolecularOrbitals extends DenseMatrix {
+public class MolecularOrbitals extends DenseMatrix{self.M==self.N} {
     private var orbitalEnergies:Rail[Double];
 
-    public def this(n:Int) {
+    public def this(n:Int):MolecularOrbitals{self.M==n,self.N==n} {
         super(n, n);
     }
 
     public def getOrbitalEnergies() : Rail[Double] = orbitalEnergies;
  
-    public def compute(theMat:DenseMatrix(this.N,this.N), overlap:Overlap{self.M==this.M,self.N==this.N}) : void {
+    public def compute(theMat:DenseMatrix(this.N,this.N), overlap:Overlap{self.N==this.N}) : void {
         val x = overlap.getSHalf();
         val a = new DenseMatrix(x.M, theMat.N);
         a.multTrans((x % theMat), x); // a = x.theMat.x^T

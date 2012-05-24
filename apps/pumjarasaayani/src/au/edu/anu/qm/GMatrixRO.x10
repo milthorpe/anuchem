@@ -14,7 +14,8 @@ import x10.util.ArrayList;
 import x10.util.Team;
 import x10.util.concurrent.AtomicInteger;
 
-import x10x.matrix.Matrix;
+import x10.matrix.DenseMatrix;
+
 import x10x.vector.Vector;
 import x10x.vector.Point3d;
 import au.edu.anu.chem.Molecule;
@@ -27,7 +28,7 @@ import au.edu.anu.qm.ro.Integral_Pack;
  * G matrix in HF calculation -- RO 
  */
 
-public class GMatrixRO extends Matrix {
+public class GMatrixRO extends DenseMatrix{self.M==self.N} {
 
     public val timer = new StatisticalTimer(1);
     public static TIMER_IDX_TOTAL = 0;
@@ -50,7 +51,7 @@ public class GMatrixRO extends Matrix {
     val jMatrix:Matrix;
     val kMatrix:Matrix;
 
-    public def this(N:Int, bfs:BasisFunctions, molecule:Molecule[QMAtom], nOrbital:Int) {
+    public def this(N:Int, bfs:BasisFunctions, molecule:Molecule[QMAtom], nOrbital:Int):GMatrixRO{self.M==N,self.N==N} {
         super(N);
         this.bfs = bfs;
         this.mol = molecule;

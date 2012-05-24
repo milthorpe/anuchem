@@ -28,7 +28,7 @@ import au.edu.anu.util.StatisticalTimer;
  *
  * @author: V.Ganesh
  */
-public class GMatrix extends DenseMatrix {
+public class GMatrix extends DenseMatrix{self.M==self.N} {
     public static DEFAULT_GMATTYPE=4;
 
     public val timer = new StatisticalTimer(1);

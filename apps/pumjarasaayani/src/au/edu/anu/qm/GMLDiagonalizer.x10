@@ -21,25 +21,25 @@ import x10.matrix.lapack.DenseMatrixLAPACK;
  */
 public class GMLDiagonalizer {
     var eigenValuesVec:Vector;
-    var eigenVectorsMat:DenseMatrix;
+    var eigenVectorsMat:DenseMatrix{self.M==self.N};
 
-    public def diagonalize(A:DenseMatrix):void {
+    public def diagonalize(A:DenseMatrix{self.M==self.N}):void {
         val a = A.clone();
         eigenValuesVec = Vector.make(a.N);
         val scratch = new Rail[Double](3*a.N-1);
 
         val result = DenseMatrixLAPACK.compEigenVector(a, eigenValuesVec, scratch);
 
-        eigenVectorsMat = new DenseMatrix(a.N, a.M);
+        eigenVectorsMat = new DenseMatrix(a.N,a.N);
         a.T(eigenVectorsMat);
     }
 
-    public static def symmetricOrthogonalization(A:DenseMatrix):DenseMatrix(A.N,A.N) {
+    public static def symmetricOrthogonalization(A:DenseMatrix{self.M==self.N}):DenseMatrix(A.N,A.N) {
         val diag = new GMLDiagonalizer();
         diag.diagonalize(A);
 
         val eigenValues   = diag.getEigenValues();
-        val eigenVectors  = diag.getEigenVectors();
+        val eigenVectors  = diag.getEigenVectors() as DenseMatrix(A.N,A.M);
         val sHalf         = new DenseMatrix(A.M, A.N);
 
         // TODO a smarter way to do this...

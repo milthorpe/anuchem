@@ -65,12 +65,12 @@ public class DIISFockExtrapolator {
     /** Generate a new Fock by extrapolating from previous recorded Fock and their difference vectors */
     public def next(currentFock:Fock, 
                     overlap:Overlap{self.M==currentFock.M,self.N==currentFock.N},
-                    density:Density{self.M==currentFock.M,self.N==currentFock.N}):Fock{self.N==currentFock.N} {
+                    density:Density{self.M==currentFock.M,self.N==currentFock.N}):Fock{self.M==self.N,self.N==currentFock.N} {
         val N = currentFock.N;
         val newFock = new Fock(N);
 
-        val FPS = (currentFock as DenseMatrix % density) % overlap;
-        val SPF = (overlap as DenseMatrix % density) % currentFock;
+        val FPS = (currentFock as DenseMatrix(N,N) % density) % overlap;
+        val SPF = (overlap as DenseMatrix(N,N) % density) % currentFock;
 
         val errorVector = new Vector((FPS - SPF).d);
         val mxerr = errorVector.maxNorm();
@@ -119,8 +119,9 @@ public class DIISFockExtrapolator {
             } // end if
         } // end if 
 
-        val A = new DenseMatrix(noOfIterations+1,noOfIterations+1);
-        val B = Vector.make(noOfIterations+1);
+        val M = noOfIterations+1;
+        val A = new DenseMatrix(M,M);
+        val B = Vector.make(M);
 
         // set up A x = B to be solved
         for (var i:Int=0; i < noOfIterations; i++) {
@@ -137,7 +138,7 @@ public class DIISFockExtrapolator {
         A(noOfIterations,noOfIterations) = 0.0;
         B(noOfIterations) = -1.0;
 
-        val permutation = new Array[Int](A.M);
+        val permutation = new Array[Int](M);
         val result = DenseMatrixLAPACK.solveLinearEquation(A, B, permutation);
 
         for (var i:Int=0; i < noOfIterations; i++) {

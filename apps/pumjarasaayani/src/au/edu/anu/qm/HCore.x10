@@ -17,7 +17,7 @@ import x10.matrix.DenseMatrix;
  *
  * @author: V.Ganesh
  */
-public class HCore extends DenseMatrix { 
+public class HCore extends DenseMatrix{self.M==self.N} { 
     public def this(n:Int):HCore{self.M==n,self.N==n} {
         super(n, n);
     }

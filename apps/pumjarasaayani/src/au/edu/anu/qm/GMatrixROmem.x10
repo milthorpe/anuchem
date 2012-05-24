@@ -30,7 +30,7 @@ import au.edu.anu.qm.ro.Integral_Pack;
  * G matrix in HF calculation -- RO 
  */
 
-public class GMatrixROmem extends DenseMatrix {
+public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
 
     public val timer = new StatisticalTimer(1);
     public static TIMER_IDX_TOTAL = 0;
@@ -46,15 +46,15 @@ public class GMatrixROmem extends DenseMatrix {
     val norm:Rail[Double];
     val temp:Rail[Double];
     val dk:Rail[Double];
-    val muk:DenseMatrix;
+    val muk:DenseMatrix{self.M==this.N};
 
     val shellPairs:Rail[ShellPair];
 
     transient val aux:Integral_Pack;
-    val jMatrix:DenseMatrix;
-    val kMatrix:DenseMatrix;
+    val jMatrix:DenseMatrix{self.M==self.N,self.N==this.N};
+    val kMatrix:DenseMatrix{self.M==self.N,self.N==this.N};
 
-    public def this(N:Int, bfs:BasisFunctions, molecule:Molecule[QMAtom], nOrbital:Int) {
+    public def this(N:Int, bfs:BasisFunctions, molecule:Molecule[QMAtom], nOrbital:Int):GMatrixROmem{self.M==N,self.N==N} {
         super(N, N);
         this.bfs = bfs;
         this.mol = molecule;
@@ -219,7 +219,7 @@ public class GMatrixROmem extends DenseMatrix {
     }
 
 
-    public def compute(density:Density, mos:MolecularOrbitals) {
+    public def compute(density:Density{self.N==this.N}, mos:MolecularOrbitals{self.N==this.N}) {
         timer.start(0);
         val roK = (roN+1)*(roL+1)*(roL+1);
 
