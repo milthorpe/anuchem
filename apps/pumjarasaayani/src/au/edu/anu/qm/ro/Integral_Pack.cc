@@ -169,10 +169,8 @@ namespace au {
 
         double (*V1)[K];
         double (*V2)[K];
-        //double (*V)[K]; 
         V1=(double (*)[K])malloc(totalBraL[a+b+1]*K*sizeof(double));
         V2=(double (*)[K])malloc(totalBraL[a+b+1]*K*sizeof(double));
-        //V=(double (*)[K])calloc(totalBraL[a+b+1]*K, sizeof(double));
         if (V1==NULL || V2==NULL /*|| V ==NULL*/) {printf("Integral_Pack.cc ln176-%d\n",totalBraL[a+b+1]*K); exit(1);}
 
         double (*HRR[MAX_BRA_L+1][MAX_BRA_L+1])[K];
@@ -296,7 +294,7 @@ namespace au {
                 HRR[i][0][bra][k] += Va[bra+totalBraL[i]][k];
         }
 
-        free(V1);free(V2);//free(V);
+        free(V1);free(V2);
 
         //printf("[ x y z | n l m ] (a=%d b=%d nof=%d) \n",a,b,noOfBra[a+b]);
         /*bra=-1;
@@ -307,33 +305,32 @@ namespace au {
                 printf("%.15e\n",V[bra][n*(L+1)*(L+1)+lm2k(l,m)]);
         }*/
         // HRR
-        // Initialization - copy contracted integrals to HRR 
+
         double dd[3]={A[0]-B[0],A[1]-B[1],A[2]-B[2]};
    
-  /*      for (i=a; i<=a+b; i++) {
-            HRR[i][0] = (double (*)[K])(malloc(sizeof(double)*K*noOfBra[i]));
-            for (bra=0; bra<noOfBra[i]; bra++ ) for (k=0; k<K; k++) {
-                HRR[i][0][bra][k] = V[bra+totalBraL[i]][k];
-            }
-        }*/
-
-        for (i=a; i<=a+b; i++) for (j=1; j<=i-a; j++) {
-            HRR[i-j][j] = (double (*)[K])(malloc(sizeof(double)*K*noOfBra[i-j]*noOfBra[j]));
-            if (HRR[i-j][j]==NULL) {printf("Integral_Pack.cc ln322-%d %d %d\n",i,j,K*noOfBra[i-j]*noOfBra[j]); exit(1);}
-            for (ii=0; ii<noOfBra[i-j]; ii++) for (jj=0; jj<noOfBra[j]; jj++) {
+        for (j=1; j<=b; j++) for (i=a; i<=a+b-j; i++)  {
+            HRR[i][j] = (double (*)[K])(malloc(sizeof(double)*K*noOfBra[i]*noOfBra[j]));
+            if (HRR[i][j]==NULL) {printf("Integral_Pack.cc ln322-%d %d %d\n",i,j,K*noOfBra[i]*noOfBra[j]); exit(1);}
+            for (ii=0; ii<noOfBra[i]; ii++) for (jj=0; jj<noOfBra[j]; jj++) {
             	int lindex = ii*noOfBra[j] + jj;
-            	int rindex1=HRRMAP[i-j][j][lindex].x;
-            	int rindex2=HRRMAP[i-j][j][lindex].y;
+            	int rindex1=HRRMAP[i][j][lindex].x;
+            	int rindex2=HRRMAP[i][j][lindex].y;
 
-                double* lhs = HRR[i-j][j][lindex];
-                double* rhs1 = HRR[i-j+1][j-1][rindex1];
-                double* rhs2 = HRR[i-j][j-1][rindex2];
+                double* lhs = HRR[i][j][lindex];
+                double* rhs1 = HRR[i+1][j-1][rindex1];
+                double* rhs2 = HRR[i][j-1][rindex2];
 
-            	double factor = dd[HRRMAP[i-j][j][lindex].z];
+            	double factor = dd[HRRMAP[i][j][lindex].z];
 
                 cblas_dcopy(K, rhs1, 1, lhs, 1);
                 cblas_daxpy(K, factor, rhs2, 1, lhs, 1);
         	}
+            if (HRR[i][j-1]==NULL) {printf("Integral_Pack.cc ln337\n"); exit(1);}
+            free(HRR[i][j-1]);
+            if (i==a+b-j) {
+                if (HRR[i+1][j-1]==NULL) {printf("Integral_Pack.cc ln340\n"); exit(1);}
+                free(HRR[i+1][j-1]);
+            }
         }
 
         int ind=0;
@@ -348,15 +345,8 @@ namespace au {
             }
         }
 
-        for (i=a; i<=a+b; i++)  {
-           if (HRR[i][0]==NULL) {printf("Integral_Pack.cc ln352\n"); exit(1);}
-           free(HRR[i][0]);
-           for (j=1; j<=i-a; j++) {
-               if (HRR[i-j][j]==NULL) {printf("Integral_Pack.cc ln355\n"); exit(1);}
-               free(HRR[i-j][j]);
-           }
-        }
-
+        if (HRR[a][b]==NULL) {printf("Integral_Pack.cc ln362\n"); exit(1);}
+            free(HRR[a][b]);
     }
 
     int Integral_Pack::initializeCoulomb(int N){
