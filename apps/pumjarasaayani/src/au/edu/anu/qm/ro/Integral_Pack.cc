@@ -173,12 +173,12 @@ namespace au {
         V1=(double (*)[K])malloc(totalBraL[a+b+1]*K*sizeof(double));
         V2=(double (*)[K])malloc(totalBraL[a+b+1]*K*sizeof(double));
         //V=(double (*)[K])calloc(totalBraL[a+b+1]*K, sizeof(double));
-        if (V1==NULL || V2==NULL /*|| V ==NULL*/) exit(1);
+        if (V1==NULL || V2==NULL /*|| V ==NULL*/) {printf("Integral_Pack.cc ln176-%d\n",totalBraL[a+b+1]*K); exit(1);}
 
         double (*HRR[MAX_BRA_L+1][MAX_BRA_L+1])[K];
         for (i=a; i<=a+b; i++) {
             HRR[i][0] = (double (*)[K])(malloc(sizeof(double)*K*noOfBra[i]));
-            if (HRR[i][0]==NULL /*|| V ==NULL*/) exit(1);
+            if (HRR[i][0]==NULL /*|| V ==NULL*/) {printf("Integral_Pack.cc ln181-%d %d\n",i,K*noOfBra[i]); exit(1);}
             memset(HRR[i][0],0.0,sizeof(double)*K*noOfBra[i]);
         }
 
@@ -268,7 +268,7 @@ namespace au {
                                 kyplus=nOffset+lm2k(l-1,-(m+1)),
                                 kyminus=nOffset+lm2k(l-1,-(m-1)),
                                 kzero=nOffset+lm2k(l-1,m);
-                            if (aIndex>=totalBraL[a+b+1] || aIndex<0 || k<0 || k>K) printf("aIndex=%d k=%d\n",aIndex,k);
+                            //if (aIndex>=totalBraL[a+b+1] || aIndex<0 || k<0 || k>K) printf("aIndex=%d k=%d\n",aIndex,k);
                             double vapk = paj*Va[aIndex][k]+P[j]*Vb[aIndex][k]; 
                             if (aj>0) vapk += aj*one2zeta*(Va[aminusIndex][k]+Vb[aminusIndex][k]);
                             //printf("[%d %d %d | %2d %2d %2d] = %f ainx=%d\n",inverseMap3[aplusIndex].x,inverseMap3[aplusIndex].y,inverseMap3[aplusIndex].z,
@@ -283,7 +283,7 @@ namespace au {
                                         //printf("[%d %d %d | %2d %2d %2d] = %.15e j=%d cy+ =%e aj=%d\n",inverseMap3[aplusIndex].x,inverseMap3[aplusIndex].y,inverseMap3[aplusIndex].z,
                                        //		n,l,m,vapk,j,cxminus[lm]*Vb[aIndex][kxminus], aj );
                             }
-                            if (aplusIndex>=totalBraL[a+b+1] || aplusIndex<0 || k<0 || k>K) printf("aplusIndex=%d k=%d\n",aplusIndex,k);
+                            //if (aplusIndex>=totalBraL[a+b+1] || aplusIndex<0 || k<0 || k>K) printf("aplusIndex=%d k=%d\n",aplusIndex,k);
                             Va[aplusIndex][k] = vapk; 
                         }
                     }
@@ -319,6 +319,7 @@ namespace au {
 
         for (i=a; i<=a+b; i++) for (j=1; j<=i-a; j++) {
             HRR[i-j][j] = (double (*)[K])(malloc(sizeof(double)*K*noOfBra[i-j]*noOfBra[j]));
+            if (HRR[i-j][j]==NULL) {printf("Integral_Pack.cc ln322-%d %d %d\n",i,j,K*noOfBra[i-j]*noOfBra[j]); exit(1);}
             for (ii=0; ii<noOfBra[i-j]; ii++) for (jj=0; jj<noOfBra[j]; jj++) {
             	int lindex = ii*noOfBra[j] + jj;
             	int rindex1=HRRMAP[i-j][j][lindex].x;
@@ -348,8 +349,12 @@ namespace au {
         }
 
         for (i=a; i<=a+b; i++)  {
+           if (HRR[i][0]==NULL) {printf("Integral_Pack.cc ln352\n"); exit(1);}
            free(HRR[i][0]);
-           for (j=1; j<=i-a; j++) free(HRR[i-j][j]);
+           for (j=1; j<=i-a; j++) {
+               if (HRR[i-j][j]==NULL) {printf("Integral_Pack.cc ln355\n"); exit(1);}
+               free(HRR[i-j][j]);
+           }
         }
 
     }
