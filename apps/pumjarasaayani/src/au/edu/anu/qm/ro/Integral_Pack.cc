@@ -290,8 +290,8 @@ namespace au {
             }
             double (* Va)[K] = swap ? V2 : V1;
             //for (bra=0; bra<totalBraL[a+b+1]; bra++) for(k=0; k<K; k++) V[bra][k] += Va[bra][k];
-            for (i=a; i<=a+b; i++) for (bra=0; bra<noOfBra[i]; bra++ ) for (k=0; k<K; k++) 
-                HRR[i][0][bra][k] += Va[bra+totalBraL[i]][k];
+            for (i=a; i<=a+b; i++) for (bra=0; bra<noOfBra[i]; bra++) 
+                cblas_daxpy(K, 1.0, Va[bra+totalBraL[i]], 1, HRR[i][0][bra], 1);
         }
 
         free(V1);free(V2);
