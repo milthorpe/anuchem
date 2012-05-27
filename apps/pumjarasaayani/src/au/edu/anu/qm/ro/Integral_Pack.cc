@@ -333,17 +333,8 @@ namespace au {
             }
         }
 
-        int ind=0;
-        for (ii=0; ii<noOfBra[a]; ii++) for (jj=0; jj<noOfBra[b]; jj++){
-        	int lindex = ii*noOfBra[b] + jj;
-        	int indexa = ii + totalBraL[a];
-        	int indexb = jj + totalBraL[b];
-            for (n=0; n<=N; n++) for (l=0; l<=L; l++) for (m=-l; m<=l; m++) {
-                //printf("[%d,%d,%d %d,%d,%d | %2d %2d %2d] = %25.15e\n",inverseMap3[indexa].x,inverseMap3[indexa].y,inverseMap3[indexa].z,
-                //		inverseMap3[indexb].x,inverseMap3[indexb].y,inverseMap3[indexb].z,n,l,m,HRR[a][b][lindex][n*(L+1)*(L+1)+lm2k(l,m)]);
-                temp[ind++]=HRR[a][b][lindex][n*(L+1)*(L+1)+lm2k(l,m)];
-            }
-        }
+        int totalInt = noOfBra[a]*noOfBra[b]*K;
+        memcpy(temp, HRR[a][b], totalInt*sizeof(double));
 
         if (HRR[a][b]==NULL) {printf("Integral_Pack.cc ln362\n"); exit(1);}
             free(HRR[a][b]);
