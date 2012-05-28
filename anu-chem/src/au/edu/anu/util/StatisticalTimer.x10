@@ -47,8 +47,12 @@ final public class StatisticalTimer {
     }
 
     public def last(id:Int) = current(id);
-    public def mean(id:Int) = total(id) / count(id);
+    public def mean(id:Int) {
+        if (count(id) == 0) return 0.0;
+        return total(id) / count(id);
+    }
     public def stdDev(id:Int):Double {
+        if (count(id) == 0) return 0.0;
         val s0 = count(id) as Double;
         val s1 = total(id) as Double;
         val s2 = sumOfSquares(id);
