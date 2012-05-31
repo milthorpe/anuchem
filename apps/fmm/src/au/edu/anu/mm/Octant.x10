@@ -1,0 +1,165 @@
+/*
+ * This file is part of ANUChem.
+ *
+ *  This file is licensed to You under the Eclipse Public License (EPL);
+ *  You may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *      http://www.opensource.org/licenses/eclipse-1.0.php
+ *
+ * (C) Copyright Josh Milthorpe 2012.
+ */
+package au.edu.anu.mm;
+
+import x10.util.ArrayList;
+import x10.util.HashSet;
+import x10.util.Pair;
+
+import x10x.vector.Point3d;
+import x10x.vector.Vector3d;
+
+/**
+ * This class represents an octant in the 3D division of space
+ * for the fast multipole method.
+ * @author milthorpe
+ */
+public abstract class Octant implements Comparable[Octant] {
+    public id:OctantId;
+
+    public var parent:Octant;
+
+    /** The number of atoms in all boxes below this box. */
+    public var numAtoms:Int;
+
+    /** 
+     * The V-list consists of the children of those boxes 
+     * not well-separated from this box's parent.
+     */
+    private var vList:Rail[OctantId];
+
+    /** The multipole expansion of the charges within this box. */
+    public var multipoleExp:MultipoleExpansion;
+
+    /** The Taylor expansion of the potential within this box due to particles in well separated boxes. */
+    public var localExp:LocalExpansion;
+
+    /**
+     * Creates a new FmmBox with multipole and local expansions
+     * of the given number of terms.
+     */
+    public def this(id:OctantId, numTerms:Int) {
+        this.id = id;
+        this.multipoleExp = new MultipoleExpansion(numTerms);
+        this.localExp = new LocalExpansion(numTerms);
+    }
+
+    public def compareTo(b:Octant):Int = id.compareTo(b.id);
+
+    public def getCentre(size:Double):Point3d {
+        dim:Int = Math.pow2(id.level);
+        sideLength:Double = size / dim;
+        offset:Double = 0.5 * size;
+        return Point3d( (id.x + 0.5) * sideLength - offset,
+                        (id.y + 0.5) * sideLength - offset,
+                        (id.z + 0.5) * sideLength - offset);
+    }
+
+    abstract protected def downward(size:Double, parentLocalExpansion:LocalExpansion, fmmOperators:FmmOperators, locallyEssentialTree:LET, numLevels:Int, periodic:Boolean):Double;
+
+    abstract protected def upward(size:Double, fmmOperators:FmmOperators, locallyEssentialTree:LET, periodic:Boolean):Pair[Int,MultipoleExpansion];
+
+    protected def constructLocalExpansion(size:Double, fmmOperators:FmmOperators, parentLocalExpansion:LocalExpansion, locallyEssentialTree:LET) {
+        val sideLength = size / Math.pow2(id.level);
+        val myComplexK = fmmOperators.complexK;
+        val myWignerB = fmmOperators.wignerB;
+        val myWignerC = fmmOperators.wignerC;
+        val multipoleCopies = locallyEssentialTree.multipoleCopies;
+
+        // transform and add multipole expansions from same level
+        localExp.terms.clear();
+        val numTerms = localExp.p;
+        val scratch = new MultipoleExpansion(numTerms);    
+        val scratch_array = new Array[Complex](numTerms+1);
+        val vList = getVList();
+        for ([p] in vList) {
+            val octantIndex2 = vList(p);
+            val box2MultipoleExp = multipoleCopies.getOrElse(octantIndex2, null);
+           
+            if (box2MultipoleExp != null) {
+                val dx2 = octantIndex2.x-id.x;
+                val dy2 = octantIndex2.y-id.y;
+                val dz2 = octantIndex2.z-id.z;
+                localExp.transformAndAddToLocal(scratch, scratch_array,
+			        Vector3d(dx2*sideLength, dy2*sideLength, dz2*sideLength), 
+					myComplexK(dx2,dy2,dz2), box2MultipoleExp, myWignerB(dx2,dy2,dz2) );
+            }
+        }
+
+        if (parentLocalExpansion != null) {
+            // translate and add parent local expansion
+            val dx = 2*(id.x%2)-1;
+            val dy = 2*(id.y%2)-1;
+            val dz = 2*(id.z%2)-1;
+
+            localExp.translateAndAddLocal(scratch, scratch_array,
+                Vector3d(dx*0.5*sideLength, dy*0.5*sideLength, dz*0.5*sideLength),
+                myComplexK(dx,dy,dz), parentLocalExpansion, myWignerC((dx+1)/2, (dy+1)/2, (dz+1)/2));
+        }
+
+    }
+
+    /**
+     * Creates the V-list for this box.
+     * The V-list consists of the children of those boxes not 
+     * well-separated from the parent.
+     */
+    public def createVList(ws:Int) {
+        val levelDim = Math.pow2(id.level);
+        val xOffset = id.x%2 == 1US ? -1 : 0;
+        val yOffset = id.y%2 == 1US ? -1 : 0;
+        val zOffset = id.z%2 == 1US ? -1 : 0;
+        val vList = new ArrayList[OctantId]();
+        for (x in Math.max(0,id.x-2*ws+xOffset)..Math.min(levelDim-1,id.x+2*ws+1+xOffset)) {
+            val x2 = x as UShort;
+            for (y in Math.max(0,id.y-2*ws+yOffset)..Math.min(levelDim-1,id.y+2*ws+1+yOffset)) {
+                val y2 = y as UShort;
+                for (z in Math.max(0,id.z-2*ws+zOffset)..Math.min(levelDim-1,id.z+2*ws+1+zOffset)) {
+                    val z2 = z as UShort;
+                    if (wellSeparated(ws, x2, y2, z2)) {
+                        vList.add(OctantId(x2,y2,z2,id.level));
+                    }
+                }
+            }
+        }
+        this.vList = vList.toArray();
+    }
+
+    public def getVList() = this.vList;
+
+    public def addToCombinedVSet(combinedVSet:HashSet[OctantId], ws:Int) {
+        createVList(ws);
+        for ([p] in vList) {
+            combinedVSet.add(vList(p));
+        }
+    }
+
+    /**
+     * Returns true if this box is well-separated from <code>x,y,z</code>
+     * on the same level, i.e. if there are at least <code>ws</code>
+     * boxes separating them.
+     */
+    public def wellSeparated(ws:Int, x2:Int, y2:Int, z2:Int) : Boolean {
+        return Math.abs(id.x - x2) > ws 
+            || Math.abs(id.y - y2) > ws 
+            || Math.abs(id.z - z2) > ws;
+    }
+
+    static struct SumReducer implements Reducible[Double] {
+        public def zero() = 0.0;
+        public operator this(a:Double, b:Double) = (a + b);
+    }
+
+    public def toString(): String {
+        return "Octant " + id;
+    }
+}
+
