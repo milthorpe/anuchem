@@ -54,6 +54,8 @@ public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
     val jMatrix:DenseMatrix{self.M==self.N,self.N==this.N};
     val kMatrix:DenseMatrix{self.M==self.N,self.N==this.N};
 
+    var counter:Int=0;
+
     public def this(N:Int, bfs:BasisFunctions, molecule:Molecule[QMAtom], nOrbital:Int):GMatrixROmem{self.M==N,self.N==N} {
         super(N, N);
         this.bfs = bfs;
@@ -87,6 +89,22 @@ public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
         }
 
         val rawShellPairs = new Array[ShellPair](nShell*(nShell+1)/2); 
+
+
+        val F1 = new Array[Int](0..maxam);
+        val F2 = new Array[Int](0..maxam);
+        val F3 = new Array[Int](0..maxam*0..maxam);
+        val F4 = new Array[Int](0..maxam*0..maxam);
+        
+        for (var a:Int=0; a<=maxam; a++) for (var b:Int=0; b<=a; b++) {
+            F1(a+b)=3*(a+b+1);
+            F2(a+b)=4*nCr(a+b+4,4);
+            F3(a,b)=nCr(a+b+3,3)-nCr(a+2,3);
+            F4(a,b)=0;
+            for (var f:Int=1; f<=b; f++) for (var e:Int=a; e<=a+b-f; e++)  
+                F4(a,b)+=nCr(e+2,2)*nCr(f+2,2);
+            Console.OUT.printf("%2d %2d %5d %5d %5d %5d\n",a,b,F1(a+b),F2(a+b),F3(a,b),F4(a,b));          
+        }
 
         var mu:Int = 0; 
         var nu:Int = 0; 
@@ -210,14 +228,28 @@ public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
         Console.OUT.println("found " + numSigShellPairs + " significant from " + rawShellPairs.size + " total");
 
         shellPairs = new Array[ShellPair](numSigShellPairs);
+        var cost:Double=0.;
         for (i in 0..(numSigShellPairs-1)) {
             val sh = rawShellPairs(i);
-            Console.OUT.printf("mu=%4d nu=%4d contrib=%17.10f\n",sh.mu,sh.nu,sh.contrib);
+            //Console.OUT.printf("mu=%4d nu=%4d contrib=%17.10f\n",sh.mu,sh.nu,sh.contrib);
+            val a=sh.aang; val b=sh.bang; val ka=sh.dconA; val kb=sh.dconB;
+            val c=(F1(a+b)+F2(a+b)+F3(a,b))*ka*kb+F4(a,b);
+            Console.OUT.printf("a=%4d b=%4d ConA=%4d ConB=%4d Cost=%4d\n",a,b,ka,kb,c);
+            cost+=c;
             shellPairs(i) = sh;
         }
-        Console.OUT.printf("nShell=%d nShellPairs=%d nSigShellPairs=%d\n",nShell,ind,numSigShellPairs);
+        Console.OUT.printf("nShell=%d nShellPairs=%d nSigShellPairs=%d Cost=%e\n",nShell,ind,numSigShellPairs,cost);
     }
 
+    private def nCr(a:Int,b:Int):Int {
+        //return 1; 
+        var re:Int=1;
+        for (var temp:Int=b+1; temp<=a; temp++)
+            re*=temp; // this can overflow easily - be careful
+        for (var temp:Int=2; temp<=a-b; temp++)
+            re/=temp; // this is always an integer - don't worry
+        return re;
+    }
 
     public def compute(density:Density{self.N==this.N}, mos:MolecularOrbitals{self.N==this.N}) {
         timer.start(0);
@@ -268,7 +300,7 @@ public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
         // Form K matrix
         timer.start(2);
         kMatrix.reset();
-
+        if (counter++!=0) // First cycle gives EK=0 
         for(aorb in 0..(nOrbital-1)) { // To save mem
             muk.reset();
             for (spInd in 0..(shellPairs.size-1)) {
