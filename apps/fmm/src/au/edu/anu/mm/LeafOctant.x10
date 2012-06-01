@@ -53,13 +53,22 @@ public class LeafOctant extends Octant implements Comparable[LeafOctant] {
 
     public def compareTo(b:LeafOctant):Int = id.compareTo(b.id);
 
+    public def getDescendant(id:OctantId):Octant {
+        if (this.id == id) {
+            return this;
+        } else {
+            return null;
+        }
+    }
+
     /**
      * Get the multipole representation of this octant, which is
      * simply the sum of the contributions of the particles in the octant.
      * N.B. must only be called once per pass
      */
-    protected def upward(size:Double, fmmOperators:FmmOperators, locallyEssentialTree:LET, periodic:Boolean):Pair[Int,MultipoleExpansion] {
-        if (atoms.size > 0) {
+    protected def upward(localData:PlaceLocalHandle[FmmLocalData], size:Double, periodic:Boolean):Pair[Int,MultipoleExpansion] {
+        Console.OUT.println("LeafOctant.upward for " + id + " numAtoms = " + numAtoms);
+        if (numAtoms > 0) {
             val p = multipoleExp.p;
             val centre = getCentre(size);
             multipoleExp.terms.clear();
@@ -70,7 +79,7 @@ public class LeafOctant extends Octant implements Comparable[LeafOctant] {
                 multipoleExp.addOlm(atom.charge, atomLocation, p);
             }
 
-            // TODO sendMultipole(locallyEssentialTree, boxes, periodic);
+            sendMultipole(localData, periodic);
 
             return Pair[Int,MultipoleExpansion](numAtoms, this.multipoleExp);
         } else {
@@ -78,11 +87,12 @@ public class LeafOctant extends Octant implements Comparable[LeafOctant] {
         }
     }
 
-    protected def downward(size:Double, parentLocalExpansion:LocalExpansion, fmmOperators:FmmOperators, locallyEssentialTree:LET, numLevels:Int, periodic:Boolean):Double {
+    protected def downward(localData:PlaceLocalHandle[FmmLocalData], size:Double, parentLocalExpansion:LocalExpansion, numLevels:Int, periodic:Boolean):Double {
+        Console.OUT.println("LeafOctant.downward for " + id + " numAtoms = " + numAtoms);
         if (numAtoms > 0) {
-            constructLocalExpansion(size, fmmOperators, parentLocalExpansion, locallyEssentialTree);
+            constructLocalExpansion(localData, size, parentLocalExpansion);
 
-            return getPotential(size, locallyEssentialTree, numLevels, periodic);
+            return getPotential(size, localData().locallyEssentialTree, numLevels, periodic);
         } else {
             return 0.0;
         }        
@@ -138,12 +148,12 @@ public class LeafOctant extends Octant implements Comparable[LeafOctant] {
         if (periodic) {
             val lowestLevelDim = Math.pow2(numLevels);
             for (p in 0..(uList.size-1)) {
-                val box2Atoms = cachedAtoms(p);
-                if (box2Atoms != null) {
+                val octant2Atoms = cachedAtoms.getOrElse(uList(p), null);
+                if (octant2Atoms != null) {
                     val octantIndex2 = uList(p);
                     val translation = getTranslation(lowestLevelDim, size, octantIndex2.x, octantIndex2.y, octantIndex2.z);
-                    for (otherBoxAtomIndex in 0..(box2Atoms.size-1)) {
-                        val atom2 = box2Atoms(otherBoxAtomIndex);
+                    for (octant2AtomsIndex in 0..(octant2Atoms.size-1)) {
+                        val atom2 = octant2Atoms(octant2AtomsIndex);
                         val translatedCentre = atom2.centre + translation;
                         for (atomIndex1 in 0..(atoms.size-1)) {
                             val atom1 = atoms(atomIndex1);
@@ -161,10 +171,10 @@ public class LeafOctant extends Octant implements Comparable[LeafOctant] {
             }
         } else {
             for (p in 0..(uList.size-1)) {
-                val box2Atoms = cachedAtoms(p);
-                if (box2Atoms != null) {
-                    for (otherBoxAtomIndex in 0..(box2Atoms.size-1)) {
-                        val atom2 = box2Atoms(otherBoxAtomIndex);
+                val octant2Atoms = cachedAtoms.getOrElse(uList(p), null);
+                if (octant2Atoms != null) {
+                    for (octant2AtomsIndex in 0..(octant2Atoms.size-1)) {
+                        val atom2 = octant2Atoms(octant2AtomsIndex);
                         for (atomIndex1 in 0..(atoms.size-1)) {
                             val atom1 = atoms(atomIndex1);
                             val rVec = atom2.centre - atom1.centre;

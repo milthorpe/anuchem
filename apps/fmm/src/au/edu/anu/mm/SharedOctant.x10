@@ -39,24 +39,25 @@ public class SharedOctant extends Octant implements Comparable[SharedOctant] {
      * For each shared octant, combines multipole expansions for <= 8 child
      * octants into a single multipole expansion for the parent octant.
      */
-    protected def upward(size:Double, fmmOperators:FmmOperators, locallyEssentialTree:LET, periodic:Boolean):Pair[Int,MultipoleExpansion] {
+    protected def upward(localData:PlaceLocalHandle[FmmLocalData], size:Double, periodic:Boolean):Pair[Int,MultipoleExpansion] {
+        Console.OUT.println("SharedOctant.upward for " + id);
         numAtoms = 0; // reset
-        val childLevel = id.level+1;
 
         val childExpansions = new Array[Pair[Int,MultipoleExpansion]](8);
         finish {
             for (i in 0..(children.size-1)) {
                 val childOctant = children(i);
                 if (childOctant != null) {
-                    async childExpansions(i) = childOctant.upward(size, fmmOperators, locallyEssentialTree, periodic);
+                    async childExpansions(i) = childOctant.upward(localData, size, periodic);
                 }
                 multipoleExp.terms.clear();
             }
         }
 
+        val fmmOperators = localData().fmmOperators;
         val myComplexK = fmmOperators.complexK;
         val myWignerA = fmmOperators.wignerA;
-        val halfSideLength = size / Math.pow2(childLevel+1);
+        val halfSideLength = size / Math.pow2(id.level+2);
         val numTerms = multipoleExp.p;
         val scratch = new MultipoleExpansion(numTerms);    
         val scratch_array = new Array[Complex](numTerms+1);
@@ -81,18 +82,17 @@ public class SharedOctant extends Octant implements Comparable[SharedOctant] {
         }
 
         if (nonNullChildren) {
-            // TODO sendMultipole(locallyEssentialTree, periodic);
+            sendMultipole(localData, periodic);
         } else {
             return Pair[Int,MultipoleExpansion](0, null);
         }
         return Pair[Int,MultipoleExpansion](numAtoms, this.multipoleExp);
     }
 
-    protected def downward(size:Double, parentLocalExpansion:LocalExpansion, fmmOperators:FmmOperators, locallyEssentialTree:LET, numLevels:Int, periodic:Boolean):Double {
+    protected def downward(localData:PlaceLocalHandle[FmmLocalData], size:Double, parentLocalExpansion:LocalExpansion, numLevels:Int, periodic:Boolean):Double {
+        Console.OUT.println("SharedOctant.downward for " + id + " numAtoms = " + numAtoms);
         if (numAtoms > 0) {
-            constructLocalExpansion(size, fmmOperators, parentLocalExpansion, locallyEssentialTree);
-
-            val childLevel = id.level+1;
+            constructLocalExpansion(localData, size, parentLocalExpansion);
 
             val parentExp = localExp;
 
@@ -107,7 +107,7 @@ public class SharedOctant extends Octant implements Comparable[SharedOctant] {
 
                     val childOctant = children(i);
                     if (childOctant != null) {
-                        offer childOctant.downward(size, parentExp, fmmOperators, locallyEssentialTree, numLevels, periodic);
+                        offer childOctant.downward(localData, size, parentExp, numLevels, periodic);
                     }
                 }
             };
@@ -127,6 +127,19 @@ public class SharedOctant extends Octant implements Comparable[SharedOctant] {
                 childOctant.addToCombinedVSet(combinedVSet, ws);
             }
         }
+    }
+
+    public def getDescendant(id:OctantId):Octant {
+        for (i in 0..(children.size-1)) {
+            val childOctant = children(i);
+            if (childOctant != null) {
+                val desc = childOctant.getDescendant(id);
+                if (desc != null) {
+                    return desc;
+                }
+            }
+        }
+        return null;
     }
 
     public def toString(): String {
