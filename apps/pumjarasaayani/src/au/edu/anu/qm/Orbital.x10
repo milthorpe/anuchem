@@ -31,7 +31,9 @@ public struct Orbital {
        else if (shape.equals("D")) angularMomentum = 2;
        else if (shape.equals("F")) angularMomentum = 3;
        else if (shape.equals("G")) angularMomentum = 4;
-       else {Console.OUT.printf("unknown orbital '%s'.\n",shape); angularMomentum = 0;}
+       else if (shape.equals("H")) angularMomentum = 5;
+//     else if (shape.equals("I")) angularMomentum = 6;
+       else {Console.OUT.printf("Orbital.x10 support SPDFGH: unknown orbital '%s'.\n",shape); angularMomentum = 0;}
     }
 }
 
