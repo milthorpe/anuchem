@@ -90,21 +90,46 @@ public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
 
         val rawShellPairs = new Array[ShellPair](nShell*(nShell+1)/2); 
 
+        // The following code is to reconstruct Table IV in LHG2012 paper
+        Console.OUT.printf("maxam=%d\n",maxam);
 
-        val F1 = new Array[Int](0..maxam);
-        val F2 = new Array[Int](0..maxam);
+        val F1 = new Array[Int](0..(2*maxam));
+        val F2 = new Array[Int](0..(2*maxam));
         val F3 = new Array[Int](0..maxam*0..maxam);
         val F4 = new Array[Int](0..maxam*0..maxam);
-        
+
+        val F2e = new Array[Int](0..(2*maxam));
+        for (var a:Int=1; a<=2*maxam; a++) {
+            F2e(a)=0;
+            for (var i:Int=0; i<=a; i++) 
+                for (var j:Int=0; j<=a-i; j++) {
+                    val k=a-i-j;
+                    if (k==1) F2e(a)+=3;
+                    else if (j==1) F2e(a)+=4;
+                    else if (i==1) F2e(a)+=4;
+                    else if (k>=2) F2e(a)+=5;
+                    else /* */ F2e(a)+=6;
+                }
+            Console.OUT.printf("F2e(%d)=%d\n",a,F2e(a));
+        }        
+
+
         for (var a:Int=0; a<=maxam; a++) for (var b:Int=0; b<=a; b++) {
             F1(a+b)=3*(a+b+1);
-            F2(a+b)=4*nCr(a+b+4,4);
+
+            F2(a+b)=0;
+            for (var f:Int=1; f<=a+b; f++)
+                F2(a+b)+=(a+b-f+1)*F2e(f);
+
             F3(a,b)=nCr(a+b+3,3)-nCr(a+2,3);
             F4(a,b)=0;
             for (var f:Int=1; f<=b; f++) for (var e:Int=a; e<=a+b-f; e++)  
                 F4(a,b)+=nCr(e+2,2)*nCr(f+2,2);
+            F4(a,b)*=2;
+
             Console.OUT.printf("%2d %2d %5d %5d %5d %5d\n",a,b,F1(a+b),F2(a+b),F3(a,b),F4(a,b));          
         }
+        // The cost factor here will be used later
 
         var mu:Int = 0; 
         var nu:Int = 0; 
