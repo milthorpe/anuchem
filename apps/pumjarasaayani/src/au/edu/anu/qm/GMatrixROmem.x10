@@ -253,17 +253,22 @@ public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
         Console.OUT.println("found " + numSigShellPairs + " significant from " + rawShellPairs.size + " total");
 
         shellPairs = new Array[ShellPair](numSigShellPairs);
-        var cost:Double=0.;
+        var fhCost:Double=0.;
+        var pAuxCount:Double=0.;
+        var AuxCount:Double=0.;
         for (i in 0..(numSigShellPairs-1)) {
             val sh = rawShellPairs(i);
-            //Console.OUT.printf("mu=%4d nu=%4d contrib=%17.10f\n",sh.mu,sh.nu,sh.contrib);
             val a=sh.aang; val b=sh.bang; val ka=sh.dconA; val kb=sh.dconB;
             val c=(F1(a+b)+F2(a+b)+F3(a,b))*ka*kb+F4(a,b);
-            Console.OUT.printf("a=%4d b=%4d ConA=%4d ConB=%4d Cost=%4d\n",a,b,ka,kb,c);
-            cost+=c;
+            val K=(sh.N+1)*Math.pow(sh.L+1,2);
+            fhCost+=c*K;
+            val bracount=(a+1)*(a+2)/2*(b+1)*(b+2)/2;
+            pAuxCount+=ka*kb*bracount*K;
+            AuxCount+=bracount*K;
+
             shellPairs(i) = sh;
         }
-        Console.OUT.printf("nShell=%d nShellPairs=%d nSigShellPairs=%d Cost=%e\n",nShell,ind,numSigShellPairs,cost);
+        Console.OUT.printf("nShell=%d nShellPairs=%d nSigShellPairs=%d fhCost=%e pAuxCount=%e AuxCount=%e\n",nShell,ind,numSigShellPairs,fhCost,pAuxCount,AuxCount);
     }
 
     private def nCr(a:Int,b:Int):Int {
