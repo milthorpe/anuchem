@@ -71,15 +71,14 @@ public class TestFastMultipoleMethod extends TestElectrostatic {
 
     public def test(numAtoms:Int, density:Double, dMax:Int, numTerms:Int, wellSpaced:Int, verbose:Boolean, compare:Boolean, forces:Boolean) {
         if (verbose) {
-            val numLevels = Math.max(2, (Math.log(numAtoms / density) / Math.log(8.0) + 1.0) as Int);
             Console.OUT.println("Testing FMM for " + numAtoms 
                       + " atoms, target density = " + density
                       + " numTerms = " + numTerms
                       + " wellSpaced = " + wellSpaced
-                      + " numLevels = " + numLevels);
+                      + " dMax = " + dMax);
 
             val q = 1.0; // absolute value of charges
-            val d = SIZE / Math.pow(8.0, numLevels) / 2.0;
+            val d = SIZE / Math.pow(8.0, dMax) / 2.0;
             val e_terms:Double;
             if (wellSpaced == 1) {
                 e_terms = q / ( (3.0 - Math.sqrt(3.0)) * d) * Math.pow((1.0 / Math.sqrt(3.0)), numTerms+1);

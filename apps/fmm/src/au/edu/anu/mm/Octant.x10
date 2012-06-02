@@ -67,6 +67,11 @@ public abstract class Octant implements Comparable[Octant] {
 
     abstract protected def downward(localData:PlaceLocalHandle[FmmLocalData], size:Double, parentLocalExpansion:LocalExpansion, numLevels:Int, periodic:Boolean):Double;
 
+    /** 
+     * Generates and combines multipole expansions for all descendants into an
+     * expansion for this box. Note: non-blocking - the top-level call to this 
+     * method must be enclosed in a finish statement.
+     */
     abstract protected def upward(localData:PlaceLocalHandle[FmmLocalData], size:Double, periodic:Boolean):Pair[Int,MultipoleExpansion];
 
     protected def constructLocalExpansion(localData:PlaceLocalHandle[FmmLocalData], size:Double, parentLocalExpansion:LocalExpansion) {
@@ -88,6 +93,7 @@ public abstract class Octant implements Comparable[Octant] {
             val box2MultipoleExp = multipoleCopies.getOrElse(octantIndex2, null);
            
             if (box2MultipoleExp != null) {
+                //Console.OUT.println("add multipole for " + octantIndex2 + " to " + id);
                 val dx2 = (octantIndex2.x as Int)-id.x;
                 val dy2 = (octantIndex2.y as Int)-id.y;
                 val dz2 = (octantIndex2.z as Int)-id.z;
@@ -112,6 +118,7 @@ public abstract class Octant implements Comparable[Octant] {
 
     protected def sendMultipole(localData:PlaceLocalHandle[FmmLocalData], periodic:Boolean) {
         // async send this box's multipole expansion to V-list
+        //Console.OUT.println("sending multipole for " + id);
         if (vList != null) {
             val id = this.id;
             val multipoleExp = this.multipoleExp;
@@ -147,7 +154,7 @@ public abstract class Octant implements Comparable[Octant] {
                 val y2 = y as UShort;
                 for (z in Math.max(0,id.z-2*ws+zOffset)..Math.min(levelDim-1,id.z+2*ws+1+zOffset)) {
                     val z2 = z as UShort;
-                    if (wellSeparated(ws, x2, y2, z2)) {
+                    if (wellSeparated(ws, x, y, z)) {
                         vList.add(OctantId(x2,y2,z2,id.level));
                     }
                 }

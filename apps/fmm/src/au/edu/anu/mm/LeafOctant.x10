@@ -67,7 +67,7 @@ public class LeafOctant extends Octant implements Comparable[LeafOctant] {
      * N.B. must only be called once per pass
      */
     protected def upward(localData:PlaceLocalHandle[FmmLocalData], size:Double, periodic:Boolean):Pair[Int,MultipoleExpansion] {
-        Console.OUT.println("LeafOctant.upward for " + id + " numAtoms = " + numAtoms);
+        //Console.OUT.println("LeafOctant.upward for " + id + " numAtoms = " + numAtoms);
         if (numAtoms > 0) {
             val p = multipoleExp.p;
             val centre = getCentre(size);
@@ -88,7 +88,7 @@ public class LeafOctant extends Octant implements Comparable[LeafOctant] {
     }
 
     protected def downward(localData:PlaceLocalHandle[FmmLocalData], size:Double, parentLocalExpansion:LocalExpansion, numLevels:Int, periodic:Boolean):Double {
-        Console.OUT.println("LeafOctant.downward for " + id + " numAtoms = " + numAtoms);
+        //Console.OUT.println("LeafOctant.downward for " + id + " numAtoms = " + numAtoms);
         if (numAtoms > 0) {
             constructLocalExpansion(localData, size, parentLocalExpansion);
 

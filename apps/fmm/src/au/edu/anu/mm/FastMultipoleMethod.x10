@@ -192,7 +192,7 @@ public class FastMultipoleMethod {
 
     protected def upwardPass() {
         localData().timer.start(FmmLocalData.TIMER_INDEX_UPWARD);
-        localData().parentOctant.upward(localData, size, periodic);
+        finish localData().parentOctant.upward(localData, size, periodic);
         localData().timer.stop(FmmLocalData.TIMER_INDEX_UPWARD);
     }
 
@@ -254,6 +254,7 @@ public class FastMultipoleMethod {
             if (octant == null) {
                 octant = new LeafOctant(octantId, numTerms);
                 octants.put(octantId, octant);
+
             }
             octant.atomList.add(atom);
         }
@@ -269,7 +270,7 @@ public class FastMultipoleMethod {
         leafOctantList.sort();
         val firstId = leafOctantList.getFirst().id;
         val lastId = leafOctantList.getLast().id;
-        Console.OUT.println("at " + here + " first leaf = " + firstId + " last = " + lastId);
+        //Console.OUT.println("at " + here + " first leaf = " + firstId + " last = " + lastId);
         localData().leafOctants = leafOctantList;
 
         // set atom lists for leaves
@@ -289,14 +290,17 @@ public class FastMultipoleMethod {
         while (level >= 1US) {
             val sharedOctants = new HashMap[OctantId,SharedOctant]();
             for (octant in octantList) {
-                val parentId = octant.id.getParentId(dMax);
+                val parentId = octant.id.getParentId();
+                //Console.OUT.println("parent for " + octant.id + " = " + parentId);
                 var parentOctant:SharedOctant = sharedOctants.getOrElse(parentId, null) as SharedOctant;
                 if (parentOctant == null) {
                     parentOctant = new SharedOctant(parentId, numTerms);
                     sharedOctants.put(parentId, parentOctant);
                 }
                 octant.parent = parentOctant;
-                parentOctant.children(parentId.getChildIndex(dMax, octant.id)) = octant;
+                val childIndex = parentId.getChildIndex(dMax, octant.id);
+                //Console.OUT.println("childIndex for " + octant.id + " = " + childIndex);
+                parentOctant.children(childIndex) = octant;
             }
 
             octantList.clear();
@@ -308,13 +312,14 @@ public class FastMultipoleMethod {
             octantList.sort(); // TODO remove - only useful for logging
 
             level--;
-            Console.OUT.println("shared octants for level " + level + ":");
-            for (sharedOctant in octantList) {
-                Console.OUT.println(sharedOctant);
-            }
+            //Console.OUT.println("shared octants for level " + level + ":");
+            //for (sharedOctant in octantList) {
+            //    Console.OUT.println(sharedOctant);
+            //}
         }
         // now the octant list only contains one octant - the parent of all other octants
         localData().parentOctant = octantList(0) as SharedOctant;
+        //Console.OUT.println("parent octant: " + localData().parentOctant);
 
         createLET();
     }

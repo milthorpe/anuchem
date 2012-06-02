@@ -40,7 +40,7 @@ public class SharedOctant extends Octant implements Comparable[SharedOctant] {
      * octants into a single multipole expansion for the parent octant.
      */
     protected def upward(localData:PlaceLocalHandle[FmmLocalData], size:Double, periodic:Boolean):Pair[Int,MultipoleExpansion] {
-        Console.OUT.println("SharedOctant.upward for " + id);
+        //Console.OUT.println("SharedOctant.upward for " + id);
         numAtoms = 0; // reset
 
         val childExpansions = new Array[Pair[Int,MultipoleExpansion]](8);
@@ -90,7 +90,7 @@ public class SharedOctant extends Octant implements Comparable[SharedOctant] {
     }
 
     protected def downward(localData:PlaceLocalHandle[FmmLocalData], size:Double, parentLocalExpansion:LocalExpansion, numLevels:Int, periodic:Boolean):Double {
-        Console.OUT.println("SharedOctant.downward for " + id + " numAtoms = " + numAtoms);
+        //Console.OUT.println("SharedOctant.downward for " + id + " numAtoms = " + numAtoms);
         if (numAtoms > 0) {
             constructLocalExpansion(localData, size, parentLocalExpansion);
 
