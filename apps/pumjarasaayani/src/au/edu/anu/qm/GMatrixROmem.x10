@@ -284,7 +284,7 @@ public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
                     for (var rol:Int=0; rol<=sp.L ; rol++) for (var rom:Int=-rol; rom<=rol; rom++)
                         jContrib+=dk(rol*(rol+1)+rom)*norm(tmu)*norm(tnu)*temp(ind++);
                     jMatrix(tmu,tnu) += jContrib;   
-                    if (tmu!=tnu) jMatrix(tnu,tmu) += jContrib;  
+                    if (sp.mu!=sp.nu) jMatrix(tnu,tmu) += jContrib;  
                 }
             }            
         }     
