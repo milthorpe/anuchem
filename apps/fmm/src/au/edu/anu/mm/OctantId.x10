@@ -38,16 +38,22 @@ public struct OctantId(x:UShort, y:UShort, z:UShort, level:UShort) implements Co
         return id;
     }
 
-    /** @return the anchor of the parent of this octant */
-    public def getParentId(dMax:UShort):OctantId {
-        val d = (Math.pow2(dMax) as UShort) / (Math.pow2(level-1) as UShort); 
-        return new OctantId(x-x%d, y-y%d, z-z%d, level-1);
+    /** @return the octant ID of the parent of this octant */
+    public def getParentId():OctantId {
+        return new OctantId(x/2, y/2, z/2, level-1);
+    }
+
+    /** @return the anchor of this octant */
+    public def getAnchor(dMax:UShort):OctantId {
+        val d = (Math.pow2(dMax) as UShort) / (Math.pow2(level) as UShort); 
+        return new OctantId(x*d, y*d, z*d, dMax);
     }
 
     /** @return the index of the given child octant in this (shared) octant's child array */
     public def getChildIndex(dMax:UShort, childId:OctantId):Int {
-        val d = (Math.pow2(dMax) as UShort) / (Math.pow2(childId.level) as UShort); 
-        return (((childId.x/d)%2) << 2) | (((childId.y/d)%2) << 1) | ((childId.z/d)%2);
+        return (childId.x%2 << 2) | (childId.y%2 << 1) | (childId.z%2);
+        //val d = (Math.pow2(dMax) as UShort) / (Math.pow2(childId.level) as UShort); 
+        //return (((childId.x/d)%2) << 2) | (((childId.y/d)%2) << 1) | ((childId.z/d)%2);
     }
 
     public def toString(): String {

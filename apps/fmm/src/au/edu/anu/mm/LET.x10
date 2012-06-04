@@ -37,7 +37,7 @@ public class LET {
      * non-well-separated boxes for use in direct evaluations 
      * with all atoms at a given place.
      */
-    public val cachedAtoms : Rail[Rail[PointCharge]];
+    public val cachedAtoms : HashMap[OctantId,Rail[PointCharge]];
     
     public def this(combinedUList:Rail[OctantId],
                 combinedVList:Rail[OctantId]) {
@@ -45,6 +45,6 @@ public class LET {
         this.combinedVList = combinedVList;
         this.multipoleCopies = new HashMap[OctantId,MultipoleExpansion](combinedVList.size);
 
-        this.cachedAtoms = new Array[Rail[PointCharge]](combinedUList.size);
+        this.cachedAtoms = new HashMap[OctantId,Rail[PointCharge]](combinedUList.size);
     }
 }

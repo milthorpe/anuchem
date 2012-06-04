@@ -71,15 +71,14 @@ public class TestFastMultipoleMethod extends TestElectrostatic {
 
     public def test(numAtoms:Int, density:Double, dMax:Int, numTerms:Int, wellSpaced:Int, verbose:Boolean, compare:Boolean, forces:Boolean) {
         if (verbose) {
-            val numLevels = Math.max(2, (Math.log(numAtoms / density) / Math.log(8.0) + 1.0) as Int);
             Console.OUT.println("Testing FMM for " + numAtoms 
                       + " atoms, target density = " + density
                       + " numTerms = " + numTerms
                       + " wellSpaced = " + wellSpaced
-                      + " numLevels = " + numLevels);
+                      + " dMax = " + dMax);
 
             val q = 1.0; // absolute value of charges
-            val d = SIZE / Math.pow(8.0, numLevels) / 2.0;
+            val d = SIZE / Math.pow(8.0, dMax) / 2.0;
             val e_terms:Double;
             if (wellSpaced == 1) {
                 e_terms = q / ( (3.0 - Math.sqrt(3.0)) * d) * Math.pow((1.0 / Math.sqrt(3.0)), numTerms+1);
@@ -108,14 +107,14 @@ public class TestFastMultipoleMethod extends TestElectrostatic {
         if (verbose) {
             Console.OUT.println("energy = " + energy);
 
-            logTime("(Tree construction)", FastMultipoleMethod.TIMER_INDEX_TREE, fmm.localData().timer);
+            logTime("(Tree construction)", FmmLocalData.TIMER_INDEX_TREE, fmm.localData().timer);
 
-            logTime("Prefetch",   FastMultipoleMethod.TIMER_INDEX_PREFETCH,  fmm.localData().timer);
-            logTime("Upward",     FastMultipoleMethod.TIMER_INDEX_UPWARD,    fmm.localData().timer);
-            logTime("Downward",   FastMultipoleMethod.TIMER_INDEX_DOWNWARD,  fmm.localData().timer);
+            logTime("Prefetch",   FmmLocalData.TIMER_INDEX_PREFETCH,  fmm.localData().timer);
+            logTime("Upward",     FmmLocalData.TIMER_INDEX_UPWARD,    fmm.localData().timer);
+            logTime("Downward",   FmmLocalData.TIMER_INDEX_DOWNWARD,  fmm.localData().timer);
         }
 
-        logTime("Total",     FastMultipoleMethod.TIMER_INDEX_TOTAL,     fmm.localData().timer, verbose);
+        logTime("Total",     FmmLocalData.TIMER_INDEX_TOTAL,     fmm.localData().timer, verbose);
 
         if (compare) {
             val direct = new ElectrostaticDirectMethod(atoms);
