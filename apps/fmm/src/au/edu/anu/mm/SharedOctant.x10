@@ -47,8 +47,8 @@ public class SharedOctant extends Octant implements Comparable[SharedOctant] {
         finish {
             for (i in 0..(children.size-1)) {
                 val childOctant = children(i);
-                if (childOctant != null) {
-                    async childExpansions(i) = childOctant.upward(localData, size, periodic);
+                if (childOctant != null) async {
+                    childExpansions(i) = childOctant.upward(localData, size, periodic);
                 }
                 multipoleExp.terms.clear();
             }
@@ -98,15 +98,14 @@ public class SharedOctant extends Octant implements Comparable[SharedOctant] {
 
             val farField = finish (SumReducer()) {
                 for (i in 0..(children.size-1)) {
-                    val dx = i / 4;
-                    val dy = i % 4 / 2;
-                    val dz = i % 2;
-                    val childX = 2*id.x + dx;
-                    val childY = 2*id.y + dy;
-                    val childZ = 2*id.z + dz;
-
                     val childOctant = children(i);
-                    if (childOctant != null) {
+                    if (childOctant != null) async {
+                        val dx = i / 4;
+                        val dy = i % 4 / 2;
+                        val dz = i % 2;
+                        val childX = 2*id.x + dx;
+                        val childY = 2*id.y + dy;
+                        val childZ = 2*id.z + dz;
                         offer childOctant.downward(localData, size, parentExp, numLevels, periodic);
                     }
                 }

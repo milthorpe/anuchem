@@ -66,7 +66,7 @@ public class FastMultipoleMethod {
      */
     val periodic:boolean;
 
-    val localData:PlaceLocalHandle[FmmLocalData];
+    public val localData:PlaceLocalHandle[FmmLocalData];
 
     /**
      * Initialises a fast multipole method electrostatics calculation
@@ -390,7 +390,7 @@ public class FastMultipoleMethod {
         }
 
         // retrieve the partial list for each place and store into my LET
-        finish for (placeEntry in uListPlaces.entries()) async {
+        for (placeEntry in uListPlaces.entries()) {
             val placeId = placeEntry.getKey();
             val uListForPlace = placeEntry.getValue();
             val uListArray = uListForPlace.toArray();
