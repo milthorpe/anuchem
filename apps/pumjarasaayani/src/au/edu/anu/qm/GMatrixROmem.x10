@@ -71,7 +71,6 @@ public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
         jMatrix = new DenseMatrix(N, N);
         kMatrix = new DenseMatrix(N, N);
 
-        //val roK = (roN+1)*(roL+1)*(roL+1);
         val roLm = (roL+1)*(roL+1);
         val maxam = bfs.getShellList().getMaximumAngularMomentum();
         val maxam1 = (maxam+1)*(maxam+2)/2;
@@ -179,7 +178,7 @@ public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
                                 contrib+=conA(ii)*conB(jj)*Math.exp(-zetaA(ii)*zetaB(jj)/(zetaA(ii)+zetaB(jj))*R2); // norm already included in con coef
                             // Console.OUT.printf("mu=%4d nu=%4d contrib=%17.10f\n",mu,nu,contrib);  
                             rawShellPairs(ind++) = new ShellPair(aang, bang, aPoint, bPoint, zetaA, zetaB, conA, conB, dConA, dConB, mu, nu, roN, roL ,Math.abs(contrib));
-                            Console.OUT.printf("mu=%4d nu=%4d contrib=%e \n",mu,nu,contrib);
+                            //Console.OUT.printf("mu=%4d nu=%4d contrib=%e \n",mu,nu,contrib);
                             // Find Max N & Max L
                             /* var maxl:Int=0,maxn:Int=0; val THRESH=1.0e-10;                        
                             var auxint:Double=0.; var count1:Int=0;
@@ -268,26 +267,22 @@ public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
                 fac=1.; 
                 if (sp.mu!=sp.nu) fac=2.0;          
                 ind=0;
+                //Console.OUT.printf("J1 %d %d %d\n",sp.mu,sp.nu,ron);
                 aux.genClass(sp.aang, sp.bang, sp.aPoint, sp.bPoint, sp.zetaA, sp.zetaB, sp.conA, sp.conB, sp.dconA, sp.dconB, temp, ron, sp.L);      
                 for (var tmu:Int=sp.mu; tmu<sp.mu+sp.maxbraa; tmu++) for (var tnu:Int=sp.nu; tnu<sp.nu+sp.maxbrab; tnu++)  
-                for (var rol:Int=0; rol<=sp.L ; rol++) for (var rom:Int=-rol; rom<=rol; rom++) {
-                    val ml=rol*(rol+1)+rom;
-                    val mn=0*(roL+1)*(roL+1)+ml;
-                    dk(mn) += density(tmu,tnu)*fac*norm(tmu)*norm(tnu)*temp(ind++); // eqn 15b // skip some k's                 
-                }
+                for (var rol:Int=0; rol<=sp.L ; rol++) for (var rom:Int=-rol; rom<=rol; rom++)
+                    dk(rol*(rol+1)+rom) += density(tmu,tnu)*fac*norm(tmu)*norm(tnu)*temp(ind++); // eqn 15b // skip some k's                 
             }
              
             for (spInd in 0..(shellPairs.size-1)) {
                 val sp=shellPairs(spInd);
                 ind=0; 
+                //Console.OUT.printf("J2 %d %d %d\n",sp.mu,sp.nu,ron);
                 aux.genClass(sp.aang, sp.bang, sp.aPoint, sp.bPoint, sp.zetaA, sp.zetaB, sp.conA, sp.conB, sp.dconA, sp.dconB, temp, ron, sp.L); 
                 for (var tmu:Int=sp.mu; tmu<sp.mu+sp.maxbraa; tmu++) for (var tnu:Int=sp.nu; tnu<sp.nu+sp.maxbrab; tnu++) {
                     var jContrib:Double = 0.0;  
-                    for (var rol:Int=0; rol<=sp.L ; rol++) for (var rom:Int=-rol; rom<=rol; rom++) {
-                        val ml=rol*(rol+1)+rom;
-                        val mn=0*(roL+1)*(roL+1)+ml;
-                        jContrib+=dk(mn)* norm(tmu)*norm(tnu)*temp(ind++);
-                    }
+                    for (var rol:Int=0; rol<=sp.L ; rol++) for (var rom:Int=-rol; rom<=rol; rom++)
+                        jContrib+=dk(rol*(rol+1)+rom)*norm(tmu)*norm(tnu)*temp(ind++);
                     jMatrix(tmu,tnu) += jContrib;   
                     if (tmu!=tnu) jMatrix(tnu,tmu) += jContrib;  
                 }
@@ -313,21 +308,15 @@ public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
                 ind=0;                   
                 for (var tmu:Int=sp.mu; tmu<sp.mu+sp.maxbraa; tmu++) for (var tnu:Int=sp.nu; tnu<sp.nu+sp.maxbrab; tnu++) { 
                     val normMo = mos(aorb,tnu) * norm(tmu) * norm(tnu);
-                     for (var rol:Int=0; rol<=sp.L ; rol++) for (var rom:Int=-rol; rom<=rol; rom++) {
-                        val ml=rol*(rol+1)+rom;
-                        val mn=0*(roL+1)*(roL+1)+ml;
-                        muk(tmu,mn) += normMo * temp(ind++); // skip some k's    
-                    }
+                     for (var rol:Int=0; rol<=sp.L ; rol++) for (var rom:Int=-rol; rom<=rol; rom++)
+                        muk(tmu,rol*(rol+1)+rom) += normMo * temp(ind++); // skip some k's    
                 }                                   
                 if (sp.mu!=sp.nu) {
                     ind=0;
                     for (var tmu:Int=sp.mu; tmu<sp.mu+sp.maxbraa; tmu++) for (var tnu:Int=sp.nu; tnu<sp.nu+sp.maxbrab; tnu++) { 
-                        val normMo = mos(aorb,tmu) * norm(tmu) * norm(tnu);
-                        for (var rol:Int=0; rol<=sp.L ; rol++) for (var rom:Int=-rol; rom<=rol; rom++) {
-                            val ml=rol*(rol+1)+rom;
-                            val mn=0*(roL+1)*(roL+1)+ml;
-                            muk(tnu,mn) += normMo * temp(ind++); // skip some k's    
-                        }                              
+                        val normMo = mos(aorb,tmu)*norm(tmu)*norm(tnu);
+                        for (var rol:Int=0; rol<=sp.L ; rol++) for (var rom:Int=-rol; rom<=rol; rom++) 
+                            muk(tnu,rol*(rol+1)+rom) += normMo * temp(ind++); // skip some k's    
                     }
                 }                
             }
