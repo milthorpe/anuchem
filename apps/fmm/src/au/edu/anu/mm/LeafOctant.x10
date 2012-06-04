@@ -136,9 +136,9 @@ public class LeafOctant extends Octant implements Comparable[LeafOctant] {
                 val rVec = sameBoxAtom.centre - atom1.centre;
                 val r2 = rVec.lengthSquared();
                 val r = Math.sqrt(r2);
-                val pairEnergy = 2.0 * atom1.charge * sameBoxAtom.charge / r;
-                directEnergy += pairEnergy;
-                val pairForce = (atom1.charge * sameBoxAtom.charge / r2 / r) * rVec;
+                val e = atom1.charge * sameBoxAtom.charge / r;
+                directEnergy += 2.0 * e;
+                val pairForce = (e / r2) * rVec;
                 atom1.force += pairForce;
                 sameBoxAtom.force -= pairForce;
             }
@@ -161,8 +161,9 @@ public class LeafOctant extends Octant implements Comparable[LeafOctant] {
                             val r2 = rVec.lengthSquared();
                             val r = Math.sqrt(r2);
                             if (r != 0.0) { // don't include dipole-balancing charges at same point
-                                directEnergy += atom1.charge * atom2.charge / r;
-                                val pairForce = (atom1.charge * atom2.charge / r2 / r) * rVec;
+                                val e = atom1.charge * atom2.charge / r;
+                                directEnergy += e;
+                                val pairForce = (e / r2) * rVec;
                                 atom1.force += pairForce;
                             }
                         }
@@ -180,8 +181,9 @@ public class LeafOctant extends Octant implements Comparable[LeafOctant] {
                             val rVec = atom2.centre - atom1.centre;
                             val r2 = rVec.lengthSquared();
                             val r = Math.sqrt(r2);
-                            directEnergy += atom1.charge * atom2.charge / r;
-                            val pairForce = (atom1.charge * atom2.charge / r2 / r) * rVec;
+                            val e = atom1.charge * atom2.charge / r;
+                            directEnergy += e;
+                            val pairForce = (e / r2) * rVec;
                             atom1.force += pairForce;
                         }
                     }

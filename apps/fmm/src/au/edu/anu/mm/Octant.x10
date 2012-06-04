@@ -131,7 +131,7 @@ public abstract class Octant implements Comparable[Octant] {
             for(placeId in vListPlaces) {
                 at(Place(placeId)) async {
                     val multipoleCopies = localData().locallyEssentialTree.multipoleCopies;
-                    multipoleCopies.put(id, multipoleExp);
+                    atomic multipoleCopies.put(id, multipoleExp);
                 }
             }
         }
