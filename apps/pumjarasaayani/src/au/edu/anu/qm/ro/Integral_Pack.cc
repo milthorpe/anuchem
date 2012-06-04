@@ -163,9 +163,9 @@ namespace au {
         }
     }
 
-    int Integral_Pack::Genclass(int a, int b, double *A, double *B, double *zetaA, double *zetaB, double *conA, double *conB, int dconA, int dconB, double* temp, int N, int L){
-        int bra,K = (N+1)*(L+1)*(L+1),p,e,i,ii,j,jj,k,n,l,m,initialn=lambda[0]==0.?1:0; // more rigorous check / cut-off required
-        bool swap = false;
+    int Integral_Pack::Genclass(int a, int b, double *A, double *B, double *zetaA, double *zetaB, double *conA, double *conB, int dconA, int dconB, double* temp, int n, int L){
+        int bra,K = (L+1)*(L+1),p,e,i,ii,j,jj,k,l,m,initialn=lambda[0]==0.?1:0; // more rigorous check / cut-off required
+        bool swap;
 
         double (*V1)[K];
         double (*V2)[K];
@@ -181,7 +181,7 @@ namespace au {
         }
 
         double Y[(L+1)*(L+1)],J[(L+a+b+1)*(N+1)],JpY00[9]={0.28209479177387814, 0.09403159725795937, 0.018806319451591877,
-        		0.0026866170645131254, 0.000298513007168125,0.000027137546106193183, 2.087503546630245e-6,1.39166903108683e-7, 8.186288418157823e-9};
+       		0.0026866170645131254, 0.000298513007168125,0.000027137546106193183, 2.087503546630245e-6,1.39166903108683e-7, 8.186288418157823e-9};
         //printf("A %e %e %e B %e %e %e\n",A[0],A[1],A[2],B[0],B[1],B[2]);
         for (ii=0; ii<dconA; ii++) for (jj=0; jj<dconB; jj++) {
             double zeta=zetaA[ii]+zetaB[jj];
@@ -196,7 +196,7 @@ namespace au {
 
             if (r!=0.0) { // should be replace by r>1e-y 
                 GenY(Y,X,phi,L);
-                for (n=0; n<=N; n++) GenJ(&J[(L+a+b+1)*n],r*lambda[n],L+a+b);
+                GenJ(&J[(L+a+b+1)*n],r*lambda[n],L+a+b);
             }
 
             swap = false;
@@ -212,9 +212,7 @@ namespace au {
                 memset(Va,0.0,sizeof(double)*K*totalBraL[a+b+1]);
 
                 if (initialn==1 && p==0) {
-                    //memset(Va,0.0,sizeof(double)*K*totalBraL[a+b+1]);
                     Va[0][0]=JpY00[0]*q[0]*gAB;
-
                     for (e=1; e<a+b+1; e++) for (i=0; i<noOfBra[e]; i++) {
                         int aplusIndex = totalBraL[e]+i;
                         int j=buildMap[aplusIndex]; // printf("j=%d\n",j);
@@ -229,24 +227,23 @@ namespace au {
 
                 // Fill e=0
                 if (r!=0.0) {
-                    for (n=initialn; n<=N; n++) {
+                    if(n) {
                         double nfactor=q[n]*gAB*exp(-.25*sqr(lambda[n])/zeta)*pow(-.5*lambda[n]/zeta/r,p);
                         for (l=0; l<=L; l++) for (m=-l; m<=l; m++) {
-                            Va[0][n*(L+1)*(L+1)+lm2k(l,m)] = nfactor*J[(L+a+b+1)*n+l+p]*Y[lm2k(l,m)]; // eqn (23)
+                            Va[0][0*(L+1)*(L+1)+lm2k(l,m)] = nfactor*J[(L+a+b+1)*n+l+p]*Y[lm2k(l,m)]; // eqn (23)
                             //printf("[0 0 0 | %2d %2d %2d] ^%d = %15.8e J= %15.8e Y=%15.8e\n",n,l,m,p, Va[0][n*(L+1)*(L+1)+lm2k(l,m)],J[(L+a+b+1)*n+l+p],Y[lm2k(l,m)]);
                         }
                     }
                 } else {
-                    //memset(Va,0.0,sizeof(double)*K*totalBraL[a+b+1]);
-                    for (n=initialn; n<=N; n++) {
+                    if (n) {
                         double nfactor=q[n]*gAB*exp(-.25*sqr(lambda[n])/zeta)*pow(-.5*sqr(lambda[n])/zeta,p);
-                        Va[0][n*(L+1)*(L+1)] = nfactor*JpY00[p]; // l=m=0 only
+                        Va[0][0*(L+1)*(L+1)] = nfactor*JpY00[p]; // l=m=0 only
                     }
                 }
 
                 // Fill higher e
-            	for (n=initialn; n<=N; n++) {
-                    int nOffset=n*(L+1)*(L+1);
+            	if (n) {
+                    int nOffset=0*(L+1)*(L+1);
                     double onelambda=-1.0/lambda[n];
 
                     for (e=1; e<a+b+1-p; e++) for (i=0; i<noOfBra[e]; i++)  {

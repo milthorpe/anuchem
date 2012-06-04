@@ -5,7 +5,7 @@ molecule
 H 0.0 0.0 0.0
 H 1.0 0.0 0.0
 end
-use_RO 1
+use_RO 0
 guess core
 RO_N 150
 RO_L 13

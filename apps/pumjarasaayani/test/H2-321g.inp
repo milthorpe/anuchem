@@ -10,4 +10,4 @@ compare_RO
 RO_N 150
 RO_L 13
 gmat_parallel_scheme 0
-scf_max 1
+scf_max 10
