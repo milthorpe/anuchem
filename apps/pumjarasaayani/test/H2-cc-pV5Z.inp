@@ -1,0 +1,13 @@
+H2
+basis cc-pV5Z
+RO_Z 1.0
+molecule
+H 0.0 0.0 0.0
+H 1.0 0.0 0.0
+end
+use_RO 1
+guess core
+RO_N 150
+RO_L 13
+gmat_parallel_scheme 0
+scf_max 10

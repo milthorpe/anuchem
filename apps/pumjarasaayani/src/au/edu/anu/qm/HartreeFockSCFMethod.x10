@@ -77,22 +77,21 @@ public class HartreeFockSCFMethod extends SCFMethod {
             mos.compute(hCore, overlap);
             density.compute(mos);
         }
-        Console.OUT.printf("----------------------------------------------------------\n");      
+        Console.OUT.printf("Starting SCF procedure...\n");      
 
         val diis = new DIISFockExtrapolator();
 
         // start the SCF cycle
         for(var scfIteration:Int=0; scfIteration<maxIteration; scfIteration++) {
             // make or guess density
-	        if (scfIteration>0) {
+	    if (scfIteration>0) {
                 density.compute(mos);
             }
             
             // make the G matrix
             if (jd.roOn>0) {
-                gMatrixRo.compute(density, mos);
-
-                if (jd.compareRo) {
+                gMatrixRo.compute(density, mos);           
+                if (jd.compareRo==true) {
                     gMatrix.compute(density);
                     Console.OUT.println("G Mat");
                     Console.OUT.println(gMatrix);
