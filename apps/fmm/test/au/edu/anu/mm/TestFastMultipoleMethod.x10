@@ -117,6 +117,9 @@ public class TestFastMultipoleMethod extends TestElectrostatic {
         logTime("Total",     FmmLocalData.TIMER_INDEX_TOTAL,     fmm.localData().timer, verbose);
 
         if (compare) {
+            if (forces) {
+                fmm.printForces();
+            }
             val direct = new ElectrostaticDirectMethod(atoms);
             val directEnergy = direct.getEnergy();
             logTime(" cf. Direct electrostatic ", ElectrostaticDirectMethod.TIMER_INDEX_TOTAL, direct.timer);
@@ -124,9 +127,6 @@ public class TestFastMultipoleMethod extends TestElectrostatic {
                 //direct.printForces();
                 val error = directEnergy - energy;
                 Console.OUT.println("direct = " + directEnergy + " error = " + error + " relative error = " + Math.abs(error) / Math.abs(energy));
-                if (forces) {
-                    fmm.printForces();
-                }
             }
         }
     }
