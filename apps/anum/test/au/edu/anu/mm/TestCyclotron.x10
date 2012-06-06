@@ -73,6 +73,7 @@ public class TestCyclotron {
         var steps:Int = 0;
         var logSteps:Int = 1;
         var fmmDensity:Double = 60.0;
+        var fmmDMax:Int = 4;
         var fmmTerms:Int = 10;
 
         line = fil.readLine();
@@ -125,6 +126,11 @@ public class TestCyclotron {
 
         if (line.startsWith("fmmDensity")) {
             fmmDensity = getDoubleParam(line);
+            line = fil.readLine();
+        }
+
+        if (line.startsWith("fmmDMax")) {
+            fmmDMax = getIntParam(line);
             line = fil.readLine();
         }
 
@@ -196,7 +202,7 @@ public class TestCyclotron {
         val distAtoms = DistArray.make[Rail[MMAtom]](Dist.makeUnique(), (Point) => new Array[MMAtom](0));
         distAtoms(0) = atoms; // assign all atoms to place 0 to start - they will be reassigned
 
-        val trap = new PenningTrap(totalIons, distAtoms, V, new Vector3d(0.0, 0.0, B), edgeLength, fmmDensity, fmmTerms);
+        val trap = new PenningTrap(totalIons, distAtoms, V, new Vector3d(0.0, 0.0, B), edgeLength, fmmDensity, fmmDMax, fmmTerms);
         trap.mdRun(dt, steps, logSteps);
     }
 

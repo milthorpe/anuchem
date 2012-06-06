@@ -51,10 +51,10 @@ static double getEnergy() {
     int firstSource = (myRank+nTasks-1)%nTasks;
     if (nTasks > 1) {
         // asynchronously send first set of atoms to next task
-        MPI_Isend(atoms, (atomsPerPlace+1)*4, MPI_DOUBLE, firstTarget, 1, MPI_COMM_WORLD, &sendAtoms);
+        MPI_Isend(atoms, (atomsPerPlace+1)*7, MPI_DOUBLE, firstTarget, 1, MPI_COMM_WORLD, &sendAtoms);
 
         // asynchronously receive first set of atoms from previous task
-        MPI_Irecv(otherAtoms, (atomsPerPlace+1)*4, MPI_DOUBLE, firstSource, 1, MPI_COMM_WORLD, &recvAtoms);
+        MPI_Irecv(otherAtoms, (atomsPerPlace+1)*7, MPI_DOUBLE, firstSource, 1, MPI_COMM_WORLD, &recvAtoms);
     }
 
     // energy for all interactions within this place
@@ -64,9 +64,17 @@ static double getEnergy() {
             double yDist = atoms[i].centre.j -atoms[j].centre.j;
             double zDist = atoms[i].centre.k -atoms[j].centre.k;
 
-            double distance = sqrt(xDist * xDist + yDist * yDist + zDist * zDist);
+            double r2 = xDist * xDist + yDist * yDist + zDist * zDist;
+            double r = sqrt(r2);
 
-            energy += 2.0 * (atoms[i].charge * atoms[j].charge) / distance;
+            double e = (atoms[i].charge * atoms[j].charge) / r;
+            energy += 2.0 * e;
+            atoms[i].force.i += e / r2 * xDist;
+            atoms[j].force.i -= e / r2 * xDist;
+            atoms[i].force.j += e / r2 * yDist;
+            atoms[j].force.j -= e / r2 * yDist;
+            atoms[i].force.k += e / r2 * zDist;
+            atoms[j].force.k -= e / r2 * zDist;
         }
     }
 
@@ -82,8 +90,8 @@ static double getEnergy() {
         int source = (myRank+nTasks-jump)%nTasks;
         if (jump < nTasks) {
             int target = (myRank+jump)%nTasks;
-            MPI_Isend(atoms, (atomsPerPlace+1)*4, MPI_DOUBLE, target, 2, MPI_COMM_WORLD, &sendAtoms);
-            MPI_Irecv(nextAtoms, (atomsPerPlace+1)*4, MPI_DOUBLE, source, 2, MPI_COMM_WORLD, &recvAtoms);
+            MPI_Isend(atoms, (atomsPerPlace+1)*7, MPI_DOUBLE, target, 2, MPI_COMM_WORLD, &sendAtoms);
+            MPI_Irecv(nextAtoms, (atomsPerPlace+1)*7, MPI_DOUBLE, source, 2, MPI_COMM_WORLD, &recvAtoms);
         }
 
         // energy for all interactions with other atoms at other place
@@ -93,9 +101,15 @@ static double getEnergy() {
                 double xDist = otherAtoms[i].centre.i - atoms[j].centre.i;
                 double yDist = otherAtoms[i].centre.j - atoms[j].centre.j;
                 double zDist = otherAtoms[i].centre.k - atoms[j].centre.k;
-                double distance = sqrt(xDist * xDist + yDist * yDist + zDist * zDist);
 
-                energy += (otherAtoms[i].charge * atoms[j].charge) / distance;
+                double r2 = xDist * xDist + yDist * yDist + zDist * zDist;
+                double r = sqrt(r2);
+
+                double e = (otherAtoms[i].charge * atoms[j].charge) / r;
+                energy += e;
+                atoms[i].force.i += e / r2 * xDist;
+                atoms[i].force.j += e / r2 * yDist;
+                atoms[i].force.k += e / r2 * zDist;
             }
         }
 

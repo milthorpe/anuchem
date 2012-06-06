@@ -6,6 +6,7 @@
 struct Atom {
 	Point3d centre;
 	double charge;
+    Point3d force;
 };
 #endif // ATOM_H
 
