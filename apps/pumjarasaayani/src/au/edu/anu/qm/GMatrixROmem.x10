@@ -20,7 +20,7 @@ import x10.matrix.DenseMatrix;
 import x10x.vector.Vector;
 import x10x.vector.Point3d;
 import au.edu.anu.chem.Molecule;
-import au.edu.anu.qm.ShellPair; // New
+import au.edu.anu.qm.ShellPair; 
 import au.edu.anu.util.SharedCounter;
 import au.edu.anu.util.Timer;
 import au.edu.anu.util.StatisticalTimer;
@@ -79,25 +79,21 @@ public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
         dk = new Rail[Double](roLm); // eqn 15b in RO#7
         muk = new DenseMatrix(N, roLm); // Biggest RO array stored in Memory
 
-        // Gen Shellpair
+        // Shell/Shellpair counting & allocation 
         var nShell:Int=0;
         val noOfAtoms = mol.getNumberOfAtoms();
-
         for(var a:Int=0; a<noOfAtoms; a++) {
             val aFunc = mol.getAtom(a).getBasisFunctions();
             nShell+=aFunc.size();
         }
-
         val rawShellPairs = new Array[ShellPair](nShell*(nShell+1)/2); 
 
-        // The following code is to reconstruct Table IV in LHG2012 paper
+        // Reconstruct Table IV in LHG2012 paper
         Console.OUT.printf("maxam=%d\n",maxam);
-
         val F1 = new Array[Int](0..(2*maxam));
         val F2 = new Array[Int](0..(2*maxam));
         val F3 = new Array[Int](0..maxam*0..maxam);
         val F4 = new Array[Int](0..maxam*0..maxam);
-
         val F2e = new Array[Int](0..(2*maxam));
         for (var a:Int=1; a<=2*maxam; a++) {
             F2e(a)=0;
@@ -112,29 +108,22 @@ public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
                 }
             Console.OUT.printf("F2e(%d)=%d\n",a,F2e(a));
         }        
-
-
         for (var a:Int=0; a<=maxam; a++) for (var b:Int=0; b<=a; b++) {
             F1(a+b)=3*(a+b+1);
-
             F2(a+b)=0;
             for (var f:Int=1; f<=a+b; f++)
                 F2(a+b)+=(a+b-f+1)*F2e(f);
-
             F3(a,b)=nCr(a+b+3,3)-nCr(a+2,3);
             F4(a,b)=0;
             for (var f:Int=1; f<=b; f++) for (var e:Int=a; e<=a+b-f; e++)  
                 F4(a,b)+=nCr(e+2,2)*nCr(f+2,2);
             F4(a,b)*=2;
-
             Console.OUT.printf("%2d %2d %5d %5d %5d %5d\n",a,b,F1(a+b),F2(a+b),F3(a,b),F4(a,b));          
         }
         // The cost factor here will be used later
 
-        var mu:Int = 0; 
-        var nu:Int = 0; 
-        // centre a
-        var ind:Int=0;
+        var mu:Int=0,nu:Int=0,ind:Int=0; 
+        // centre a       
         for(var a:Int=0; a<noOfAtoms; a++) {
             val aFunc = mol.getAtom(a).getBasisFunctions();
             val naFunc = aFunc.size();
@@ -149,13 +138,11 @@ public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
                     for(var j:Int=0; j<nbFunc; j++) {
                         val jbFunc = bFunc.get(j);
                         //Console.OUT.printf("a=%d i=%d b=%d j=%d [naFunc=%d nbFunc=%d]\n", a,i,b,j,naFunc,nbFunc);
-
                         var aaFunc:ContractedGaussian=iaFunc,bbFunc:ContractedGaussian=jbFunc;
                         val aa=iaFunc.getTotalAngularMomentum();
                         val bb=jbFunc.getTotalAngularMomentum();
                         val maxbraa = (aa+1)*(aa+2)/2; 
                         val maxbrab = (bb+1)*(bb+2)/2;                  
-
                         if (aa>bb || (aa==bb && mu>=nu)) {                        
                             // extract info from basisfunctions
                             // Note that iaFunc and jbFunc are ContractedGaussians
@@ -165,43 +152,43 @@ public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
                             val zetaA = aaFunc.exponents;
                             val conA = aaFunc.coefficients;
                             val dConA = conA.size;
-
                             val bang = bbFunc.getTotalAngularMomentum();
                             val bPoint = bbFunc.origin; 
                             val zetaB = bbFunc.exponents;                        
                             val conB = bbFunc.coefficients; 
                             val dConB = conB.size;
-                        
                             var contrib : Double = 0.; // S = conservative estimate
                             val R2 = Math.pow(aPoint.i-bPoint.i,2.)+Math.pow(aPoint.j-bPoint.j,2.)+Math.pow(aPoint.k-bPoint.k,2.);
                             for (var ii:Int=0; ii<dConA; ii++) for (var jj:Int=0; jj<dConB; jj++) 
                                 contrib+=conA(ii)*conB(jj)*Math.exp(-zetaA(ii)*zetaB(jj)/(zetaA(ii)+zetaB(jj))*R2); // norm already included in con coef
-                            // Console.OUT.printf("mu=%4d nu=%4d contrib=%17.10f\n",mu,nu,contrib);  
-                            rawShellPairs(ind++) = new ShellPair(aang, bang, aPoint, bPoint, zetaA, zetaB, conA, conB, dConA, dConB, mu, nu, roN, roL ,Math.abs(contrib));
-                            //Console.OUT.printf("mu=%4d nu=%4d contrib=%e \n",mu,nu,contrib);
-                            // Find Max N & Max L
-                            /* var maxl:Int=0,maxn:Int=0; val THRESH=1.0e-10;                        
-                            var auxint:Double=0.; var count1:Int=0;
 
-                           // Call genclass to find N and L appropriate to THRESH
-                                aux.genClass(aang, bang, aPoint, bPoint, zetaA, zetaB, conA, conB, dConA, dConB, temp, ron, roL);
-                           
-                            for (rol=0; rol<=roL; rol++) {
-                                auxint=0.;
-                                for (ron=roN; ron>=0 && auxint<THRESH; ron--)  {
-                                    for (var rom:Int=-rol; rom<=rol; rom++) for (var tmu:Int=0; tmu<maxbraa; tmu++) for (var tnu:Int=0; tnu<maxbrab; tnu++) {
+                            // Find MaxL(n)
+                            var maxl:Int=0; val THRESH=1.0e-10;                        
+                            var count1:Int=0; val maxL = new Rail[Int](roN);
+                            for (var ron:Int=0; ron<=roN; ron++) {                           
+                                aux.genClass(aang, bang, aPoint, bPoint, zetaA, zetaB, conA, conB, dConA, dConB, temp, ron, roL);  
+
+                                var auxint:Double=0.,rol:Int=roL;                               
+                                for (; rol>=0 && auxint<THRESH; rol--) { 
+                                    for (var rom:Int=-rol; rom<=rol; rom++)  for (var tmu:Int=0; tmu<maxbraa; tmu++) for (var tnu:Int=0; tnu<maxbrab; tnu++) {
                                         val ml=rol*(rol+1)+rom;
-                                        val mn=ron*(roL+1)*(roL+1)+ml;
-                                        val mnu=tnu*(roN+1)*(roL+1)*(roL+1)+mn;
-                                        val mmu=tmu*(roN+1)*(roL+1)*(roL+1)*maxbrab+mnu;
+                                        val mnu=tnu*(roL+1)*(roL+1)+ml;
+                                        val mmu=tmu*(roL+1)*(roL+1)*maxbrab+mnu;
                                         if (Math.abs(temp(mmu))>auxint) auxint=Math.abs(temp(mmu));
                                     }
                                 }
-                                if (ron!=roN) maxn=ron+1; else maxn=roN; 
-                                Console.OUT.printf("L=%d N=%d\n",rol,maxn);
-                                count1+=(maxn+1)*Math.pow(rol+1,2);
+                                if (auxint<THRESH) maxl=-1; 
+                                else {
+                                     maxl=rol+1;
+                                     Console.OUT.printf("L(n=%d)=%d\n",ron,maxl);
+                                     count1+=Math.pow(maxl+1,2);
+                                }
+                                maxL(ron)=maxl;
                             }
-                            Console.OUT.printf("K=%d\n",count1);*/
+                            Console.OUT.printf("K=%d\n",count1);
+                            //Console.OUT.printf("mu=%4d nu=%4d contrib=%17.10f\n",mu,nu,contrib);  
+                            //Console.OUT.printf("mu=%4d nu=%4d contrib=%e \n",mu,nu,contrib);
+                            rawShellPairs(ind++) = new ShellPair(aang, bang, aPoint, bPoint, zetaA, zetaB, conA, conB, dConA, dConB, mu, nu, maxL, Math.abs(contrib));
                             
                         }
                         if (b!=noOfAtoms-1 || j!=nbFunc-1) nu+=maxbrab;
@@ -216,8 +203,8 @@ public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
         val threshold = 1.0e-10;
 
         val zeroPoint = Point3d(0.0, 0.0, 0.0);
-        val emptyRail = new Rail[Double](0);
-        val dummySignificantPair = new ShellPair(0, 0, zeroPoint, zeroPoint, emptyRail, emptyRail, emptyRail, emptyRail, 0, 0, 0, 0, 0, 0, threshold);
+        val emptyRailD = new Rail[Double](0),emptyRailI = new Rail[Int](0); 
+        val dummySignificantPair = new ShellPair(0, 0, zeroPoint, zeroPoint, emptyRailD, emptyRailD, emptyRailD, emptyRailD, 0, 0, 0, 0, emptyRailI, threshold);
 
         val numSigShellPairs = Math.abs(ArrayUtils.binarySearch[ShellPair](rawShellPairs, dummySignificantPair, compareShellPairContribs));
         Console.OUT.println("found " + numSigShellPairs + " significant from " + rawShellPairs.size + " total");
@@ -228,13 +215,13 @@ public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
         var AuxCount:Double=0.;
         for (i in 0..(numSigShellPairs-1)) {
             val sh = rawShellPairs(i);
-            val a=sh.aang; val b=sh.bang; val ka=sh.dconA; val kb=sh.dconB;
+         /*   val a=sh.aang; val b=sh.bang; val ka=sh.dconA; val kb=sh.dconB;
             val c=(F1(a+b)+F2(a+b)+F3(a,b))*ka*kb+F4(a,b);
             val K=(sh.N+1)*Math.pow(sh.L+1,2);
             fhCost+=c*K;
             val bracount=(a+1)*(a+2)/2*(b+1)*(b+2)/2;
             pAuxCount+=ka*kb*bracount*K;
-            AuxCount+=bracount*K;
+            AuxCount+=bracount*K; */
 
             shellPairs(i) = sh;
         }
@@ -268,9 +255,9 @@ public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
                 if (sp.mu!=sp.nu) fac=2.0;          
                 ind=0;
                 //Console.OUT.printf("J1 %d %d %d\n",sp.mu,sp.nu,ron);
-                aux.genClass(sp.aang, sp.bang, sp.aPoint, sp.bPoint, sp.zetaA, sp.zetaB, sp.conA, sp.conB, sp.dconA, sp.dconB, temp, ron, sp.L);      
+                aux.genClass(sp.aang, sp.bang, sp.aPoint, sp.bPoint, sp.zetaA, sp.zetaB, sp.conA, sp.conB, sp.dconA, sp.dconB, temp, ron, sp.maxL(ron));      
                 for (var tmu:Int=sp.mu; tmu<sp.mu+sp.maxbraa; tmu++) for (var tnu:Int=sp.nu; tnu<sp.nu+sp.maxbrab; tnu++)  
-                for (var rol:Int=0; rol<=sp.L ; rol++) for (var rom:Int=-rol; rom<=rol; rom++)
+                for (var rol:Int=0; rol<=sp.maxL(ron) ; rol++) for (var rom:Int=-rol; rom<=rol; rom++)
                     dk(rol*(rol+1)+rom) += density(tmu,tnu)*fac*norm(tmu)*norm(tnu)*temp(ind++); // eqn 15b // skip some k's                 
             }
              
@@ -278,10 +265,10 @@ public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
                 val sp=shellPairs(spInd);
                 ind=0; 
                 //Console.OUT.printf("J2 %d %d %d\n",sp.mu,sp.nu,ron);
-                aux.genClass(sp.aang, sp.bang, sp.aPoint, sp.bPoint, sp.zetaA, sp.zetaB, sp.conA, sp.conB, sp.dconA, sp.dconB, temp, ron, sp.L); 
+                aux.genClass(sp.aang, sp.bang, sp.aPoint, sp.bPoint, sp.zetaA, sp.zetaB, sp.conA, sp.conB, sp.dconA, sp.dconB, temp, ron, sp.maxL(ron)); 
                 for (var tmu:Int=sp.mu; tmu<sp.mu+sp.maxbraa; tmu++) for (var tnu:Int=sp.nu; tnu<sp.nu+sp.maxbrab; tnu++) {
                     var jContrib:Double = 0.0;  
-                    for (var rol:Int=0; rol<=sp.L ; rol++) for (var rom:Int=-rol; rom<=rol; rom++)
+                    for (var rol:Int=0; rol<=sp.maxL(ron) ; rol++) for (var rom:Int=-rol; rom<=rol; rom++)
                         jContrib+=dk(rol*(rol+1)+rom)*norm(tmu)*norm(tnu)*temp(ind++);
                     jMatrix(tmu,tnu) += jContrib;   
                     if (sp.mu!=sp.nu) jMatrix(tnu,tmu) += jContrib;  
@@ -304,18 +291,18 @@ public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
             muk.reset();
             for (spInd in 0..(shellPairs.size-1)) {
                 val sp=shellPairs(spInd);
-                aux.genClass(sp.aang, sp.bang, sp.aPoint, sp.bPoint, sp.zetaA, sp.zetaB, sp.conA, sp.conB, sp.dconA, sp.dconB, temp, ron, sp.L); 
+                aux.genClass(sp.aang, sp.bang, sp.aPoint, sp.bPoint, sp.zetaA, sp.zetaB, sp.conA, sp.conB, sp.dconA, sp.dconB, temp, ron, sp.maxL(ron)); 
                 ind=0;                   
                 for (var tmu:Int=sp.mu; tmu<sp.mu+sp.maxbraa; tmu++) for (var tnu:Int=sp.nu; tnu<sp.nu+sp.maxbrab; tnu++) { 
                     val normMo = mos(aorb,tnu) * norm(tmu) * norm(tnu);
-                     for (var rol:Int=0; rol<=sp.L ; rol++) for (var rom:Int=-rol; rom<=rol; rom++)
+                     for (var rol:Int=0; rol<=sp.maxL(ron); rol++) for (var rom:Int=-rol; rom<=rol; rom++)
                         muk(tmu,rol*(rol+1)+rom) += normMo * temp(ind++); // skip some k's    
                 }                                   
                 if (sp.mu!=sp.nu) {
                     ind=0;
                     for (var tmu:Int=sp.mu; tmu<sp.mu+sp.maxbraa; tmu++) for (var tnu:Int=sp.nu; tnu<sp.nu+sp.maxbrab; tnu++) { 
                         val normMo = mos(aorb,tmu)*norm(tmu)*norm(tnu);
-                        for (var rol:Int=0; rol<=sp.L ; rol++) for (var rom:Int=-rol; rom<=rol; rom++) 
+                        for (var rol:Int=0; rol<=sp.maxL(ron); rol++) for (var rom:Int=-rol; rom<=rol; rom++) 
                             muk(tnu,rol*(rol+1)+rom) += normMo * temp(ind++); // skip some k's    
                     }
                 }                
