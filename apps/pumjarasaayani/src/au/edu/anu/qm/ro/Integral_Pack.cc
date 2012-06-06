@@ -10,9 +10,11 @@
 #define SQRT2 1.4142135623730951
 
 int delta[3][3]={{1,0,0},{0,1,0},{0,0,1}};
-double JpY00[9]={0.28209479177387814, 0.09403159725795937, 0.018806319451591877,
-       		0.0026866170645131254, 0.000298513007168125,0.000027137546106193183, 2.087503546630245e-6,1.39166903108683e-7, 8.186288418157823e-9}; 
-//need more for higer angular momentum
+double JpY00[11]={0.28209479177387814, 0.09403159725795937, 0.018806319451591877,
+       		0.0026866170645131254, 0.000298513007168125,0.000027137546106193183, 
+                2.087503546630245e-6,1.39166903108683e-7, 8.186288418157823e-9,
+                4.308572851662012e-10, 2.0517013579342914e-11}; 
+// 0-10 accomodate (hh|phi) - need more for higer angular momentum - see RO#7 eqn 6b 
 
 namespace au {
     namespace edu {
@@ -34,9 +36,9 @@ namespace au {
     Integral_Pack::~Integral_Pack() {
         free(lambda);
         free(q);
-        //for (int i=1; i<=MAX_BRA_L; i++) for (int j=1; j<=i; j++) {
-        //    free(HRRMAP[i][j]);
-        //}
+        for (int i=1; i<=MAX_BRA_L; i++) for (int j=1; j<=i; j++) {
+            free(HRRMAP[i][j]);
+        }
     }
 
     void Integral_Pack::initialize() {
@@ -299,17 +301,17 @@ namespace au {
                 cblas_dcopy(K, rhs1, 1, lhs, 1);
                 cblas_daxpy(K, factor, rhs2, 1, lhs, 1);
         	}
-            if (HRR[i][j-1]==NULL) {printf("Integral_Pack.cc ln337\n"); exit(1);}
+            //if (HRR[i][j-1]==NULL) {printf("Integral_Pack.cc ln337\n"); exit(1);}
             free(HRR[i][j-1]);
             if (i==a+b-j) {
-                if (HRR[i+1][j-1]==NULL) {printf("Integral_Pack.cc ln340\n"); exit(1);}
+                //if (HRR[i+1][j-1]==NULL) {printf("Integral_Pack.cc ln340\n"); exit(1);}
                 free(HRR[i+1][j-1]);
             }
         }
 
         int totalInt = noOfBra[a]*noOfBra[b]*K;
         memcpy(temp, HRR[a][b], totalInt*sizeof(double));
-        if (HRR[a][b]==NULL) {printf("Integral_Pack.cc ln362\n"); exit(1);}
+        //if (HRR[a][b]==NULL) {printf("Integral_Pack.cc ln362\n"); exit(1);}
         free(HRR[a][b]);
     }
 
