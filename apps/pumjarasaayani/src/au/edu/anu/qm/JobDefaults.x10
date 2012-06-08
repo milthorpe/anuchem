@@ -37,6 +37,7 @@ public class JobDefaults {
     public var roOn:Int;
     public var compareRo:Boolean;
     public var roN:Int;
+    public var roNK:Int;
     public var roL:Int;
     public var roZ:Double;
     public var centering:Int; // See Q-CHEM Job description

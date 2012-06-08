@@ -72,6 +72,7 @@ public class JobInput {
         var multiplicity:Int = 1;
         jd.roOn=0;
         jd.roN=10;
+        jd.roNK=-1; // see GmatrixRoMem.x10
         jd.roL=10;
         jd.roZ=1.0;
         jd.guess=JobDefaults.GUESS_SAD;
@@ -136,6 +137,8 @@ public class JobInput {
                     jd.useMta = true;
                 } else if (line.startsWith("RO_N")) {
                     jd.roN = getIntParam(line);
+                } else if (line.startsWith("RO_NK")) {
+                    jd.roNK = getIntParam(line);
                 } else if (line.startsWith("RO_L")) {
                     jd.roL = getIntParam(line);
                 } else if (line.startsWith("center")) {

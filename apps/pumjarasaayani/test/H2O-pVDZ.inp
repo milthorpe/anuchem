@@ -9,5 +9,6 @@ end
 guess sad
 use_RO 1
 RO_N 250
+RO_NK 250
 RO_L 25
 gmat_parallel_scheme 0

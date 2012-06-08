@@ -39,6 +39,7 @@ public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
     private val mol : Molecule[QMAtom];
 
     val roN:Int;
+    val roNK:Int;
     val roL:Int;
     val roZ:Double;
     val nOrbital:Int;
@@ -64,6 +65,8 @@ public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
 
         val jd = JobDefaults.getInstance();
         this.roN=jd.roN;
+        if (jd.roNK==-1) this.roNK=jd.roN;
+        else this.roNK=jd.roNK;
         this.roL=jd.roL;
         this.roZ=jd.roZ;
   
@@ -120,8 +123,9 @@ public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
             F4(a,b)*=2;
             Console.OUT.printf("%2d %2d %5d %5d %5d %5d\n",a,b,F1(a+b),F2(a+b),F3(a,b),F4(a,b));          
         }
-        // The cost factor here will be used later
 
+        // The cost factor here will be used later
+        Console.OUT.printf("roN=%d roL=%d roNK=%d\n",roN,roL,roNK); 
         var mu:Int=0,nu:Int=0,ind:Int=0; 
         // centre a       
         for(var a:Int=0; a<noOfAtoms; a++) {
@@ -163,7 +167,7 @@ public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
                                 contrib+=conA(ii)*conB(jj)*Math.exp(-zetaA(ii)*zetaB(jj)/(zetaA(ii)+zetaB(jj))*R2); // norm already included in con coef
 
                             // Find MaxL(n)
-                            var maxl:Int=0,maxn:Int=0; val THRESH=1.0e-8;                        
+                            var maxl:Int=0,maxn:Int=0,maxmaxl:Int=0; val THRESH=1.0e-8;                        
                             var count1:Int=0; val maxL = new Rail[Int](roN);
                             for (var ron:Int=0; ron<=roN; ron++) {                           
                                 aux.genClass(aang, bang, aPoint, bPoint, zetaA, zetaB, conA, conB, dConA, dConB, temp, ron, roL);  
@@ -183,10 +187,11 @@ public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
                                      //Console.OUT.printf("L(n=%d)=%d\n",ron,maxl);
                                      count1+=Math.pow(maxl+1,2);
                                      maxn=ron;
+                                     if (maxl>maxmaxl) maxmaxl=maxl;
                                 }
                                 maxL(ron)=maxl;
                             }
-                            Console.OUT.printf("maxn=%d K=%d\n",maxn,count1);
+                            Console.OUT.printf("maxn=%d maxl=%d K=%d K1=%d\n",maxn,maxmaxl,(maxn+1)*(maxmaxl+1)*(maxmaxl+1),count1);
                             //Console.OUT.printf("mu=%4d nu=%4d contrib=%17.10f\n",mu,nu,contrib);  
                             //Console.OUT.printf("mu=%4d nu=%4d contrib=%e \n",mu,nu,contrib);
                             rawShellPairs(ind++) = new ShellPair(aang, bang, aPoint, bPoint, zetaA, zetaB, conA, conB, dConA, dConB, mu, nu, maxL, Math.abs(contrib));
@@ -292,7 +297,7 @@ public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
         timer.start(2);
 
         if (counter++!=0) // First cycle gives EK=0 
-        for(aorb in 0..(nOrbital-1)) for (var ron:Int=0; ron<=roN; ron++){ // To save mem
+        for(aorb in 0..(nOrbital-1)) for (var ron:Int=0; ron<=roNK; ron++){ // To save mem
             muk.reset();
             for (spInd in 0..(shellPairs.size-1)) {
                 val sp=shellPairs(spInd);
