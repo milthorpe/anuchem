@@ -191,7 +191,7 @@ public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
                                 }
                                 maxL(ron)=maxl;
                             }
-                            Console.OUT.printf("maxn=%d maxl=%d K=%d K1=%d\n",maxn,maxmaxl,(maxn+1)*(maxmaxl+1)*(maxmaxl+1),count1);
+                            Console.OUT.printf("mu=%d nu=%d maxn=%d maxl=%d K=%d K1=%d\n",mu,nu,maxn,maxmaxl,(maxn+1)*(maxmaxl+1)*(maxmaxl+1),count1);
                             //Console.OUT.printf("mu=%4d nu=%4d contrib=%17.10f\n",mu,nu,contrib);  
                             //Console.OUT.printf("mu=%4d nu=%4d contrib=%e \n",mu,nu,contrib);
                             rawShellPairs(ind++) = new ShellPair(aang, bang, aPoint, bPoint, zetaA, zetaB, conA, conB, dConA, dConB, mu, nu, maxL, Math.abs(contrib));
