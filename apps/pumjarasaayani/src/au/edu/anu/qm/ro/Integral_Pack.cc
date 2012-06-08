@@ -72,8 +72,8 @@ namespace au {
         int i,j,a,b;
         for (i=1; i<=MAX_BRA_L; i++) for (j=1; j<=i; j++) {
             HRRMAP[i][j] = (Point *) malloc(sizeof(Point)*noOfBra[i]*noOfBra[j]);
+            if (HRRMAP[i][j]==NULL) {printf("Integral_Pack.cc malloc failed at ln75\n"); exit(1);}
             for (a=0; a<noOfBra[i]; a++) for (b=0; b<noOfBra[j]; b++) {
-
              	int aInt=totalBraL[i]+a,bInt=totalBraL[j]+b;
              	int ax=inverseMap3[aInt].x, ay=inverseMap3[aInt].y, az=inverseMap3[aInt].z,
              		bx=inverseMap3[bInt].x,	by=inverseMap3[bInt].y,	bz=inverseMap3[bInt].z;
@@ -137,7 +137,7 @@ namespace au {
         //if (ncalc!=L+1) printf("bessel %d %f\n",ncalc,x); // Check what happens? Zero out the rest?
         double fac = sqrt(PI*.5/x); 
         for (l=0; l<ncalc; l++) B[l]*=fac;
-        for (; l<=L; l++) B[l]=0;
+        for (; l<=L; l++) B[l]=0.;
     }
 
     int Integral_Pack::GenY(double *Y, double X, double phi, int L) {
