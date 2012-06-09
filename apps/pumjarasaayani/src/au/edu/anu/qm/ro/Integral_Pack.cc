@@ -249,32 +249,41 @@ namespace au {
                         double paj = P[j]-A[j];
 
                         for (l=0; l<=Ln; l++) for (m=-l; m<=l; m++) {
-                   	    int lm=lm2k(l,m),
-                                k=lm,
-                                kxplus=lm2k(l-1,m+1),
-                                kxminus=lm2k(l-1,m-1),
-                                kyplus=lm2k(l-1,-(m+1)),
-                                kyminus=lm2k(l-1,-(m-1)),
-                                kzero=lm2k(l-1,m);
-                            if (aIndex>=totalBraL[a+b+1] || aIndex<0 || k<0 || k>K) printf("aIndex=%d k=%d\n",aIndex,k);
-                            double vapk = paj*Va[aIndex][k]+P[j]*Vb[aIndex][k]; 
-                            if (aj>0) vapk += aj*one2zeta*(Va[aminusIndex][k]+Vb[aminusIndex][k]);
-                            //printf("[%d %d %d | %2d %2d %2d] = %f ainx=%d\n",inverseMap3[aplusIndex].x,inverseMap3[aplusIndex].y,inverseMap3[aplusIndex].z,
-                            //		n,l,m,vapk,aIndex);
+                            int k=lm2k(l,m);
+                            Va[aplusIndex][k] = paj*Va[aIndex][k]+P[j]*Vb[aIndex][k];
+                        }
+                        if (aj>0) for (l=0; l<=Ln; l++) for (m=-l; m<=l; m++) {
+                            int k=lm2k(l,m);
+                            Va[aplusIndex][k] += aj*one2zeta*(Va[aminusIndex][k]+Vb[aminusIndex][k]);
+                        }
 
-                            if (l!=0) {
-                                // no extra term for l=0 
-                              if (j==2 && kzero>=0) vapk += onelambda*cz[lm]*Vb[aIndex][kzero];
-                              else if (j==1) { if (kyminus>=0) vapk += onelambda*(cyminus[lm]*Vb[aIndex][kyminus]); if (kyplus>=0) vapk +=onelambda*cyplus[lm]*Vb[aIndex][kyplus]; }
-                              else if (j==0) {
-                                    if (kxminus>=0) vapk += onelambda*(cxminus[lm]*Vb[aIndex][kxminus]);
-                                    if (kxplus>=0) vapk += onelambda*cxplus[lm]*Vb[aIndex][kxplus]; }
-                                        // It's better to get the if statement out of the loop
-                                        //printf("[%d %d %d | %2d %2d %2d] = %.15e j=%d cy+ =%e aj=%d\n",inverseMap3[aplusIndex].x,inverseMap3[aplusIndex].y,inverseMap3[aplusIndex].z,
-                                       //		n,l,m,vapk,j,cxminus[lm]*Vb[aIndex][kxminus], aj );*/
+                        switch (j) {
+                        case 2: //z
+                            for (l=1; l<=Ln; l++) for (m=-l+1; m<l; m++) {
+                                int k=lm2k(l,m);
+                                Va[aplusIndex][k] += onelambda*cz[k]*Vb[aIndex][lm2k(l-1,m)];
                             }
-                            if (aplusIndex>=totalBraL[a+b+1] || aplusIndex<0 || k<0 || k>K) printf("aplusIndex=%d k=%d\n",aplusIndex,k);
-                            Va[aplusIndex][k] = vapk; 
+                        break;
+                        case 1: //y
+                            for (l=1; l<=Ln; l++) for (m=-l; m<l-1; m++) {
+                                int k=lm2k(l,m);
+                                Va[aplusIndex][k] += onelambda*cyplus[k]*Vb[aIndex][lm2k(l-1,-(m+1))];
+                            }
+                            for (l=1; l<=Ln; l++) for (m=-l+2; m<=l; m++) {
+                                int k=lm2k(l,m);
+                                Va[aplusIndex][k] += onelambda*cyminus[k]*Vb[aIndex][lm2k(l-1,-(m-1))];
+                            }     
+                        break;
+                        //case 0:
+                        default: //x
+                            for (l=1; l<=Ln; l++) for (m=-l; m<l-1; m++) {
+                                int k=lm2k(l,m);
+                                Va[aplusIndex][k] += onelambda*cxplus[k]*Vb[aIndex][lm2k(l-1,m+1)];
+                            }
+                            for (l=1; l<=Ln; l++) for (m=-l+2; m<=l; m++) {
+                                int k=lm2k(l,m);
+                                Va[aplusIndex][k] += onelambda*cxminus[k]*Vb[aIndex][lm2k(l-1,m-1)];
+                            }
                         }
                     }
                 }
@@ -306,12 +315,8 @@ namespace au {
                 cblas_dcopy(K, rhs1, 1, lhs, 1);
                 cblas_daxpy(K, factor, rhs2, 1, lhs, 1);
         	}
-            //if (HRR[i][j-1]==NULL) {printf("Integral_Pack.cc ln337\n"); exit(1);}
             free(HRR[i][j-1]);
-            if (i==a+b-j) {
-                //if (HRR[i+1][j-1]==NULL) {printf("Integral_Pack.cc ln340\n"); exit(1);}
-                free(HRR[i+1][j-1]);
-            }
+            if (i==a+b-j) free(HRR[i+1][j-1]);
         }
 
         int totalInt = noOfBra[a]*noOfBra[b]*K;
