@@ -248,14 +248,12 @@ namespace au {
                         int aj = delta[0][j]*(x-1) + delta[1][j]*(y-1) + delta[2][j]*(z-1);
                         double paj = P[j]-A[j];
 
-                        for (l=0; l<=Ln; l++) for (m=-l; m<=l; m++) {
-                            int k=lm2k(l,m);
-                            Va[aplusIndex][k] = paj*Va[aIndex][k]+P[j]*Vb[aIndex][k];
-                        }
-                        if (aj>0) for (l=0; l<=Ln; l++) for (m=-l; m<=l; m++) {
-                            int k=lm2k(l,m);
-                            Va[aplusIndex][k] += aj*one2zeta*(Va[aminusIndex][k]+Vb[aminusIndex][k]);
-                        }
+                        cblas_dcopy(K, Va[aIndex], 1, Va[aplusIndex], 1);
+                        cblas_dscal(K, paj, Va[aplusIndex], 1);
+                        cblas_daxpy(K, P[j], Vb[aIndex], 1, Va[aplusIndex], 1);
+
+                        cblas_daxpy(K, aj*one2zeta, Va[aminusIndex], 1, Va[aplusIndex], 1);
+                        cblas_daxpy(K, aj*one2zeta, Vb[aminusIndex], 1, Va[aplusIndex], 1);
 
                         switch (j) {
                         case 2: //z

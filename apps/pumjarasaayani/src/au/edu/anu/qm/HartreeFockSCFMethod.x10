@@ -58,13 +58,19 @@ public class HartreeFockSCFMethod extends SCFMethod {
         // init memory for the matrices
         val N = hCore.N;
         val jd = JobDefaults.getInstance();
+
+        val gMatrix:GMatrix{self.N==N};
         val gMatrixRo:GMatrixROmem{self.N==N};
         if (jd.roOn>0) {
             gMatrixRo = new GMatrixROmem(N, bfs, molecule, noOfOccupancies);
         } else {
             gMatrixRo = null;
         }
-        val gMatrix = new GMatrix(N, bfs, molecule);
+        if (jd.roOn==0 || jd.compareRo==true) {
+            gMatrix = new GMatrix(N, bfs, molecule);
+        } else {
+            gMatrix = null;
+        }
 
         val mos = new MolecularOrbitals(N);
         val density = new Density(N, noOfOccupancies); // density.make();
@@ -135,7 +141,9 @@ public class HartreeFockSCFMethod extends SCFMethod {
             } else {
                 // ignore the first cycle's timings 
                 // as far fewer integrals are calculated
-                gMatrix.timer.clear(0);
+                if (jd.roOn==0 || jd.compareRo==true) {
+                    gMatrix.timer.clear(0);
+                }
                 if (jd.roOn>0) {
                     gMatrixRo.timer.clear(0);
                 }
