@@ -178,7 +178,7 @@ public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
                                         val ml=rol*(rol+1)+rom;
                                         val mnu=tnu*(roL+1)*(roL+1)+ml;
                                         val mmu=tmu*(roL+1)*(roL+1)*maxbrab+mnu;
-                                        if (Math.abs(temp(mmu))>auxint) auxint=Math.abs(temp(mmu));
+                                        auxint = Math.max(Math.abs(temp(mmu)), auxint);
                                     }
                                 }
                                 if (auxint<THRESH) maxl=-1; 
