@@ -85,7 +85,7 @@ public class HartreeFockSCFMethod extends SCFMethod {
         }
         Console.OUT.printf("Starting SCF procedure...\n");      
 
-        val diis = new DIISFockExtrapolator();
+        val diis = new DIISFockExtrapolator(N);
 
         // start the SCF cycle
         for(var scfIteration:Int=0; scfIteration<maxIteration; scfIteration++) {

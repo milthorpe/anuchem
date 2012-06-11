@@ -25,7 +25,7 @@ import x10.matrix.lapack.DenseMatrixLAPACK;
  *
  * @author: V.Ganesh
  */
-public class DIISFockExtrapolator {
+public class DIISFockExtrapolator(N:Int) {
     static MIN_NON_DIIS_STEP:Int = 0;
     static MAX_NON_DIIS_STEP:Int = 2;
 
@@ -35,6 +35,9 @@ public class DIISFockExtrapolator {
 
     val fockMatrixList:ArrayList[Fock];
     val errorVectorList:ArrayList[Vector];
+    val FPS:DenseMatrix{self.M==self.N,self.N==this.N};
+    val SPF:DenseMatrix{self.M==self.N,self.N==this.N};
+    val scratch:DenseMatrix{self.M==self.N,self.N==this.N};
 
     var diisStep:Int = 0;
     var nondiisStep:Int = 0;
@@ -44,9 +47,14 @@ public class DIISFockExtrapolator {
 
     var oldFock:Fock;
 
-    public def this() {
+    public def this(N:Int) {
+        property(N);
         fockMatrixList  = new ArrayList[Fock]();
         errorVectorList = new ArrayList[Vector]();
+
+        FPS = new DenseMatrix(N,N);
+        SPF = new DenseMatrix(N,N);
+        scratch = new DenseMatrix(N,N);
 
         val jd = JobDefaults.getInstance();
         diisStartThreshold = jd.diisStartThreshold;
@@ -63,14 +71,15 @@ public class DIISFockExtrapolator {
     }
 
     /** Generate a new Fock by extrapolating from previous recorded Fock and their difference vectors */
-    public def next(currentFock:Fock, 
+    public def next(currentFock:Fock{self.M==this.N,self.N==this.N}, 
                     overlap:Overlap{self.M==currentFock.M,self.N==currentFock.N},
                     density:Density{self.M==currentFock.M,self.N==currentFock.N}):Fock{self.M==self.N,self.N==currentFock.N} {
-        val N = currentFock.N;
         val newFock = new Fock(N);
 
-        val FPS = (currentFock as DenseMatrix(N,N) % density) % overlap;
-        val SPF = (overlap as DenseMatrix(N,N) % density) % currentFock;
+        scratch.mult(currentFock, density);
+        FPS.mult(scratch, overlap);
+        scratch.mult(overlap, density);
+        SPF.mult(scratch, currentFock);
 
         val errorVector = new Vector((FPS - SPF).d);
         val mxerr = errorVector.maxNorm();

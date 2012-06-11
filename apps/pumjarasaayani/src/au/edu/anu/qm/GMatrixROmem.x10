@@ -55,6 +55,9 @@ public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
     val jMatrix:DenseMatrix{self.M==self.N,self.N==this.N};
     val kMatrix:DenseMatrix{self.M==self.N,self.N==this.N};
 
+    // used for calculating eJ, eK
+    val scratch:DenseMatrix{self.M==self.N,self.N==this.N};
+
     var counter:Int=0;
 
     public def this(N:Int, bfs:BasisFunctions, molecule:Molecule[QMAtom], nOrbital:Int):GMatrixROmem{self.M==N,self.N==N} {
@@ -73,6 +76,7 @@ public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
         this.norm = bfs.getNormalizationFactors();
         jMatrix = new DenseMatrix(N, N);
         kMatrix = new DenseMatrix(N, N);
+        scratch = new DenseMatrix(N, N);
 
         val roLm = (roL+1)*(roL+1);
         val maxam = bfs.getShellList().getMaximumAngularMomentum();
@@ -288,7 +292,7 @@ public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
 
         timer.stop(1);
 // vvvv For development purpose vvvvvv
-        val eJ = density.clone().mult(density, jMatrix).trace();
+        val eJ = scratch.mult(density, jMatrix).trace();
         Console.OUT.printf("  EJ = %.6f a.u.\n", eJ);
 // ^^^^ It is not required for normal calculation ^^^^^
         Console.OUT.printf("    Time to construct JMatrix with RO: %.3g seconds\n", (timer.last(1) as Double) / 1e9);
@@ -326,7 +330,7 @@ public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
         
         timer.stop(2);
 // vvvv For development purpose vvvvvv
-        val eK = density.clone().mult(density, kMatrix).trace();
+        val eK = scratch.mult(density, kMatrix).trace();
         Console.OUT.printf("  EK = %.6f a.u.\n", eK);
 // ^^^^ It is not required for normal calculation ^^^^^
         Console.OUT.printf("    Time to construct KMatrix with RO: %.3g seconds\n", (timer.last(2) as Double) / 1e9);
