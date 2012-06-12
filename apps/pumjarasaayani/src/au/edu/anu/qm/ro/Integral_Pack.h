@@ -21,6 +21,7 @@ namespace au {
                             static Integral_Pack* _make(int N,int L);
                             Integral_Pack(int N, int L);
                             ~Integral_Pack();
+                            //int GenclassY(double *A, double *B, double *zetaA, double *zetaB, double *conA, double *conB, int dconA, int dconB);
                             int Genclass(int a, int b, double *A, double *B, double *zetaA, double *zetaB, double *conA, double *conB, int dconA, int dconB, double* temp, int N, int L);
 
                         private:
@@ -28,6 +29,7 @@ namespace au {
                             // BRA
                             #define MAX_BRA_L 10 //for hh
                             #define MAX_TOTAL_BRA_L (MAX_BRA_L+1)*(MAX_BRA_L+2)*(MAX_BRA_L+3)/6
+                            // #define MAX_C 10 // Contraction - for 5Z
                             int map3[MAX_BRA_L+1][MAX_BRA_L+1][MAX_BRA_L+1];
                             Point inverseMap3[MAX_TOTAL_BRA_L];
                             int buildMap[MAX_TOTAL_BRA_L];

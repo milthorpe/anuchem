@@ -50,6 +50,7 @@ public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
     val muk:DenseMatrix{self.M==this.N};
 
     val shellPairs:Rail[ShellPair];
+    val numSigShellPairs:Int;
 
     transient val aux:Integral_Pack;
     val jMatrix:DenseMatrix{self.M==self.N,self.N==this.N};
@@ -60,8 +61,9 @@ public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
 
     var counter:Int=0;
 
-    public def this(N:Int, bfs:BasisFunctions, molecule:Molecule[QMAtom], nOrbital:Int):GMatrixROmem{self.M==N,self.N==N} {
-        super(N, N);
+    public def this(N:Int, bfs:BasisFunctions, molecule:Molecule[QMAtom], nOrbital:Int):GMatrixROmem{self.M==N,self.N==N} {     
+        super(N, N); // DO NOT PUT ANYTHING BEFORE THIS LINE!!!
+        Console.OUT.printf("GMatrixROmem.x10 initialization\n");
         this.bfs = bfs;
         this.mol = molecule;
         this.nOrbital = nOrbital;
@@ -93,7 +95,7 @@ public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
             val aFunc = mol.getAtom(a).getBasisFunctions();
             nShell+=aFunc.size();
         }
-        val rawShellPairs = new Array[ShellPair](nShell*(nShell+1)/2); 
+
 
         // Reconstruct Table IV in LHG2012 paper
         Console.OUT.printf("maxam=%d\n",maxam);
@@ -129,6 +131,14 @@ public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
         }
 
         // The cost factor here will be used later
+
+
+        val threshold = 1.0e-8;
+        val rawShellPairs = new Array[ShellPair](nShell*(nShell+1)/2); 
+        val zeroPoint = Point3d(0.0, 0.0, 0.0);
+        val emptyRailD = new Rail[Double](0),emptyRailI = new Rail[Int](0); 
+        val dummySignificantPair = new ShellPair(0, 0, zeroPoint, zeroPoint, emptyRailD, emptyRailD, emptyRailD, emptyRailD, 0, 0, 0, 0, emptyRailI, threshold);
+
         Console.OUT.printf("roN=%d roL=%d roNK=%d\n",roN,roL,roNK); 
         var mu:Int=0,nu:Int=0,ind:Int=0; 
         // centre a       
@@ -169,36 +179,9 @@ public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
                             val R2 = Math.pow(aPoint.i-bPoint.i,2.)+Math.pow(aPoint.j-bPoint.j,2.)+Math.pow(aPoint.k-bPoint.k,2.);
                             for (var ii:Int=0; ii<dConA; ii++) for (var jj:Int=0; jj<dConB; jj++) 
                                 contrib+=conA(ii)*conB(jj)*Math.exp(-zetaA(ii)*zetaB(jj)/(zetaA(ii)+zetaB(jj))*R2); // norm already included in con coef
-
-                            // Find MaxL(n)
-                            var maxl:Int=0,maxn:Int=0,maxmaxl:Int=0; val THRESH=1.0e-8;                        
-                            var count1:Int=0; val maxL = new Rail[Int](roN);
-                            for (var ron:Int=0; ron<=roN; ron++) {                           
-                                aux.genClass(aang, bang, aPoint, bPoint, zetaA, zetaB, conA, conB, dConA, dConB, temp, ron, roL);  
-
-                                var auxint:Double=0.,rol:Int=roL;                               
-                                for (; rol>=0 && auxint<THRESH; rol--) { 
-                                    for (var rom:Int=-rol; rom<=rol; rom++)  for (var tmu:Int=0; tmu<maxbraa; tmu++) for (var tnu:Int=0; tnu<maxbrab; tnu++) {
-                                        val ml=rol*(rol+1)+rom;
-                                        val mnu=tnu*(roL+1)*(roL+1)+ml;
-                                        val mmu=tmu*(roL+1)*(roL+1)*maxbrab+mnu;
-                                        auxint = Math.max(Math.abs(temp(mmu)), auxint);
-                                    }
-                                }
-                                if (auxint<THRESH) maxl=-1; 
-                                else {
-                                     maxl=rol+1;
-                                     //Console.OUT.printf("L(n=%d)=%d\n",ron,maxl);
-                                     count1+=Math.pow(maxl+1,2);
-                                     maxn=ron;
-                                     if (maxl>maxmaxl) maxmaxl=maxl;
-                                }
-                                maxL(ron)=maxl;
-                            }
-                            Console.OUT.printf("mu=%d nu=%d maxn=%d maxl=%d K=%d K1=%d\n",mu,nu,maxn,maxmaxl,(maxn+1)*(maxmaxl+1)*(maxmaxl+1),count1);
-                            //Console.OUT.printf("mu=%4d nu=%4d contrib=%17.10f\n",mu,nu,contrib);  
-                            //Console.OUT.printf("mu=%4d nu=%4d contrib=%e \n",mu,nu,contrib);
-                            rawShellPairs(ind++) = new ShellPair(aang, bang, aPoint, bPoint, zetaA, zetaB, conA, conB, dConA, dConB, mu, nu, maxL, Math.abs(contrib));
+                            val maxL = new Rail[Int](roN);
+                            if (Math.abs(contrib)>threshold) 
+                                rawShellPairs(ind++) = new ShellPair(aang, bang, aPoint, bPoint, zetaA, zetaB, conA, conB, dConA, dConB, mu, nu, maxL, Math.abs(contrib));
                             
                         }
                         if (b!=noOfAtoms-1 || j!=nbFunc-1) nu+=maxbrab;
@@ -207,25 +190,52 @@ public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
                 }
             }   
         }   
+        numSigShellPairs = ind;
+        shellPairs = new Array[ShellPair](numSigShellPairs); 
+        for (i in 0..(numSigShellPairs-1))
+            shellPairs(i)=rawShellPairs(i);
 
         val compareShellPairContribs = (y:ShellPair,x:ShellPair) => x.contrib.compareTo(y.contrib);
-        ArrayUtils.sort[ShellPair](rawShellPairs, compareShellPairContribs);
-        val threshold = 1.0e-8;
+        ArrayUtils.sort[ShellPair](shellPairs, compareShellPairContribs);
 
-        val zeroPoint = Point3d(0.0, 0.0, 0.0);
-        val emptyRailD = new Rail[Double](0),emptyRailI = new Rail[Int](0); 
-        val dummySignificantPair = new ShellPair(0, 0, zeroPoint, zeroPoint, emptyRailD, emptyRailD, emptyRailD, emptyRailD, 0, 0, 0, 0, emptyRailI, threshold);
+        // numSigShellPairs = Math.abs(ArrayUtils.binarySearch[ShellPair](rawShellPairs, dummySignificantPair, compareShellPairContribs));
+        Console.OUT.println("found " +/*+ numSigShellPairs + " significant from " + raw*/shellPairs.size /*+ " total"*/);
 
-        val numSigShellPairs = Math.abs(ArrayUtils.binarySearch[ShellPair](rawShellPairs, dummySignificantPair, compareShellPairContribs));
-        Console.OUT.println("found " + numSigShellPairs + " significant from " + rawShellPairs.size + " total");
-
-        shellPairs = new Array[ShellPair](numSigShellPairs);
+//      shellPairs = new Array[ShellPair](numSigShellPairs);
         var fhCost:Double=0.;
         var pAuxCount:Double=0.;
         var AuxCount:Double=0.;
         for (i in 0..(numSigShellPairs-1)) {
-            val sh = rawShellPairs(i);
+
+            val sh = /*raw*/shellPairs(i);
             val a=sh.aang; val b=sh.bang; val ka=sh.dconA; val kb=sh.dconB;
+
+            // Find MaxL(n)
+            var maxl:Int=0,maxn:Int=0,maxmaxl:Int=0; val THRESH=1.0e-8;                        
+            var count1:Int=0; //sh.maxL = new Rail[Int](roN);
+            for (var ron:Int=0; ron<=roN; ron++) {                           
+                aux.genClass(sh.aang, sh.bang, sh.aPoint, sh.bPoint, sh.zetaA, sh.zetaB, sh.conA, sh.conB, sh.dconA, sh.dconB, temp, ron, roL);  
+
+                var auxint:Double=0.,rol:Int=roL;                               
+                for (; rol>=0 && auxint<THRESH; rol--) { 
+                    for (var rom:Int=-rol; rom<=rol; rom++)  for (var tmu:Int=0; tmu<sh.maxbraa; tmu++) for (var tnu:Int=0; tnu<sh.maxbrab; tnu++) {
+                        val ml=rol*(rol+1)+rom;
+                        val mnu=tnu*(roL+1)*(roL+1)+ml;
+                        val mmu=tmu*(roL+1)*(roL+1)*sh.maxbrab+mnu;
+                        auxint = Math.max(Math.abs(temp(mmu)), auxint);
+                    }
+                }
+                if (auxint<THRESH) maxl=-1; 
+                else {
+                    maxl=rol+1;
+                    //Console.OUT.printf("L(n=%d)=%d\n",ron,maxl);
+                    count1+=Math.pow(maxl+1,2);
+                    maxn=ron;
+                    if (maxl>maxmaxl) maxmaxl=maxl;
+                }
+                sh.maxL(ron)=maxl;
+            }
+
             val c=(F1(a+b)+F2(a+b)+F3(a,b))*ka*kb+F4(a,b); 
             var K:Double=0;
             for (var ron:Int=0; ron<roN; ron++)
@@ -234,7 +244,6 @@ public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
             val bracount=(a+1)*(a+2)/2*(b+1)*(b+2)/2;
             pAuxCount+=ka*kb*bracount*K;
             AuxCount+=bracount*K; 
-            shellPairs(i) = sh;
         }
         Console.OUT.printf("nShell=%d nShellPairs=%d nSigShellPairs=%d fhCost=%e pAuxCount=%e AuxCount=%e\n",nShell,ind,numSigShellPairs,fhCost,pAuxCount,AuxCount);
     }
@@ -250,6 +259,7 @@ public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
     }
 
     public def compute(density:Density{self.N==this.N}, mos:MolecularOrbitals{self.N==this.N}) {
+        Console.OUT.printf("GMatrixROmem.x10 compute\n");
         timer.start(0);
         jMatrix.reset();
         kMatrix.reset();
@@ -261,7 +271,7 @@ public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
             // Form dk vector
             dk.clear();
        
-            for (spInd in 0..(shellPairs.size-1)) {
+            for (spInd in 0..(numSigShellPairs-1)) {
                 val sp=shellPairs(spInd);
                 val maxLron=sp.maxL(ron);
                 if (maxLron>=0) {
@@ -273,7 +283,7 @@ public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
                 }
             }
              
-            for (spInd in 0..(shellPairs.size-1)) {
+            for (spInd in 0..(numSigShellPairs-1)) {
                 val sp=shellPairs(spInd);
                 val maxLron=sp.maxL(ron);
                 if (sp.maxL(ron)>=0) { 
@@ -303,7 +313,7 @@ public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
         if (counter++!=0) // First cycle gives EK=0 
         for(aorb in 0..(nOrbital-1)) for (var ron:Int=0; ron<=roNK; ron++){ // To save mem
             muk.reset();
-            for (spInd in 0..(shellPairs.size-1)) {
+            for (spInd in 0..(numSigShellPairs-1)) {
                 val sp=shellPairs(spInd);
                 val maxLron=sp.maxL(ron);
                 if (maxLron>=0) {

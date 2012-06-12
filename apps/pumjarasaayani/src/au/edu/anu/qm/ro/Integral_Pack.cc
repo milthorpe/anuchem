@@ -15,6 +15,7 @@ double JpY00[11]={0.28209479177387814, 0.09403159725795937, 0.018806319451591877
                 2.087503546630245e-6,1.39166903108683e-7, 8.186288418157823e-9,
                 4.308572851662012e-10, 2.0517013579342914e-11}; 
 // 0-10 accomodate (hh|phi) - need more for higer angular momentum - see RO#7 eqn 6b 
+// double *YCon[MAX_C*MAX_C];
 
 namespace au {
     namespace edu {
@@ -122,6 +123,12 @@ namespace au {
             cz[index] = sqrt((l*l-m*m)*(2.0*l+1.0)/(2.0*l-1.0));
             //printf("%2d %2d : %15.6e %15.6e %15.6e %15.6e %15.6e : %15.6e %15.6e %d\n",l,m,cxplus[index],cxminus[index],cyplus[index],cyminus[index],cz[index],cplus,cminus,index);
         }
+
+/*        for (i=0; i<MAX_C*MAX_C; i++) {
+            YCon[i]=(double *)malloc((L+1)*(L+1)*sizeof(double));
+            if (YCon[i]==NULL) {printf("Integral_Pack.cc allocation failed at ln128\n"); exit(1);}
+        }*/
+        
     }
 
     int Integral_Pack::GenJ(double *B, double x, int L) {
@@ -168,10 +175,24 @@ namespace au {
             }
         }
     }
-
+/*
+    int Integral_Pack::GenclassY(double *A, double *B, double *zetaA, double *zetaB, double *conA, double *conB, int dconA, int dconB){      
+        int ii,jj;
+        for (ii=0; ii<dconA; ii++) for (jj=0; jj<dconB; jj++) {
+            double zeta=zetaA[ii]+zetaB[jj];
+            double P[3]={(zetaA[ii]*A[0]+zetaB[jj]*B[0])/zeta,(zetaA[ii]*A[1]+zetaB[jj]*B[1])/zeta,(zetaA[ii]*A[2]+zetaB[jj]*B[2])/zeta};
+            double r=sqrt(sqr(P[0])+sqr(P[1])+sqr(P[2]));
+            if (r<=1e-14) continue; // CHECK 
+            double *Y=YCon[ii*dconB+jj],phi=atan2(P[1],P[0]),X=P[2]/r;
+            GenY(Y,X,phi,L); 
+        }
+    } 
+*/
     int Integral_Pack::Genclass(int a, int b, double *A, double *B, double *zetaA, double *zetaB, double *conA, double *conB, int dconA, int dconB, double* temp, int n, int Ln){
         int bra,K=(Ln+1)*(Ln+1),p,e,i,ii,j,jj,k,l,m; 
-        bool swap,lzero=(lambda[n]==0.); // should be replace by lambda[n]<1e-y 
+        double ldn=lambda[n],onelambda;
+        bool swap,lzero=(ldn==0.); // should be replace by ldn<1e-y 
+        if (!lzero) onelambda=-1.0/ldn;
         double (*V1)[K]=(double (*)[K])malloc(totalBraL[a+b+1]*K*sizeof(double));
         double (*V2)[K]=(double (*)[K])malloc(totalBraL[a+b+1]*K*sizeof(double));
         if (V1==NULL || V2==NULL) {printf("Integral_Pack.cc V1/V2 allocation failed size=%d*sizeof(double)\n",totalBraL[a+b+1]*K); exit(1);}
@@ -182,8 +203,6 @@ namespace au {
             memset(HRR[i][0],0,sizeof(double)*K*noOfBra[i]);
         }
         double J[Ln+a+b+1], Y[(Ln+1)*(Ln+1)], rAB2=sqr(A[0]-B[0])+sqr(A[1]-B[1])+sqr(A[2]-B[2]);
-        double onelambda;
-        if (!lzero) onelambda=-1.0/lambda[n];
 
         // printf("A %e %e %e B %e %e %e\n",A[0],A[1],A[2],B[0],B[1],B[2]); 
         for (ii=0; ii<dconA; ii++) for (jj=0; jj<dconB; jj++) {
@@ -193,16 +212,17 @@ namespace au {
             double one2zeta=.5/zeta;
 
             double r=sqrt(sqr(P[0])+sqr(P[1])+sqr(P[2]));
-            bool rzero=(r==0.); // should be replace by r<1e-y 
+            bool rzero=(r<=1e-14); // CHECK
 
             //printf("ii=%d jj=%d zetaA=%e zetaB=%e zeta=%e conA=%e conB=%e rAB2=%e gAB=%e\n",ii,jj,zetaA[ii],zetaB[jj],zeta,conA[ii],conB[jj],rAB2,gAB);
 
             if (!rzero) { 
-                if (r<1e-14) printf("small r\n");
+                // if (r<1e-14) printf("small r\n");
+                // Y=YCon[ii*dconB+jj];
                 double phi=atan2(P[1],P[0]),X=P[2]/r;
-                GenY(Y,X,phi,Ln);
-                //if (Ln<10) printf("IntegralPack ln204 J(%f,%d)\n",r*lambda[n],Ln+a+b); 
-                GenJ(J,r*lambda[n],Ln+a+b); 
+                GenY(Y,X,phi,Ln);                 
+                // if (Ln<10) printf("IntegralPack ln204 J(%f,%d)\n",r*ldn,Ln+a+b); 
+                GenJ(J,r*ldn,Ln+a+b); 
                 //if (Ln<10) printf("OK\n");
             } 
 
@@ -213,7 +233,7 @@ namespace au {
                 double (* Vb)[K] = swap ? V1 : V2;
                 memset(Va,0,sizeof(double)*K*totalBraL[a+b+1]);
 
-                // lambda[n]=0.0 is taken care of by separately. (3-term RR & trivial initial conditions) only p=0 contributes! RO#7 eqn11
+                // ldn=0.0 is taken care of by separately. (3-term RR & trivial initial conditions) only p=0 contributes! RO#7 eqn11
                 if (lzero && p==0) {
                     Va[0][0]=JpY00[0]*q[0]*gAB;
                     for (e=1; e<a+b+1; e++) for (i=0; i<noOfBra[e]; i++) {
@@ -230,12 +250,12 @@ namespace au {
 
                 // Fill e=0
                 if (!rzero && !lzero) {
-                    double nfactor=q[n]*gAB*exp(-.25*sqr(lambda[n])/zeta)*pow(-.5*lambda[n]/zeta/r,p);
+                    double nfactor=q[n]*gAB*exp(-.25*sqr(ldn)/zeta)*pow(-.5*ldn/zeta/r,p);
                     for (l=0; l<=Ln; l++) for (m=-l; m<=l; m++) 
                             Va[0][lm2k(l,m)] = nfactor*J[l+p]*Y[lm2k(l,m)]; // eqn (23) //6a
                 }
                 else if (rzero && !lzero) 
-                    Va[0][0] = q[n]*gAB*exp(-.25*sqr(lambda[n])/zeta)*pow(-.5*sqr(lambda[n])/zeta,p)*JpY00[p]; // l=m=0 only //6b   
+                    Va[0][0] = q[n]*gAB*exp(-.25*sqr(ldn)/zeta)*pow(-.5*sqr(ldn)/zeta,p)*JpY00[p]; // l=m=0 only //6b   
 
                 // Fill higher e
             	if (!lzero) {
@@ -251,10 +271,10 @@ namespace au {
                         cblas_dcopy(K, Va[aIndex], 1, Va[aplusIndex], 1);
                         cblas_dscal(K, paj, Va[aplusIndex], 1);
                         cblas_daxpy(K, P[j], Vb[aIndex], 1, Va[aplusIndex], 1);
-
-                        cblas_daxpy(K, aj*one2zeta, Va[aminusIndex], 1, Va[aplusIndex], 1);
-                        cblas_daxpy(K, aj*one2zeta, Vb[aminusIndex], 1, Va[aplusIndex], 1);
-
+                        if (aj>0) {
+                            cblas_daxpy(K, aj*one2zeta, Va[aminusIndex], 1, Va[aplusIndex], 1);
+                            cblas_daxpy(K, aj*one2zeta, Vb[aminusIndex], 1, Va[aplusIndex], 1);
+                        }
                         switch (j) {
                         case 2: //z
                             for (l=1; l<=Ln; l++) for (m=-l+1; m<l; m++) {

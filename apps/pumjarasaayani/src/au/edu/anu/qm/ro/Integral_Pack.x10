@@ -30,6 +30,10 @@ public class Integral_Pack {
 
     public native def this(N:Int,L:Int);
 
+/*   @Native("c++", "(#this)->Genclass((double*)&((#1).x10__i), (double*)&((#2).x10__i), (#3)._val->raw().raw(), (#4)._val->raw().raw(), (#5)._val->raw().raw(), (#6)._val->raw().raw(), (#7), (#8))")
+    public native def genClass(A:Point3d, B:Point3d, zetaA:Rail[Double], zetaB:Rail[Double], conA:Rail[Double], conB:Rail[Double], dconA:Int, dconB:Int):Int;
+*/
+
     /**
      * Generate a class of auxiliary integrals for the given parameters
      */
