@@ -132,7 +132,6 @@ public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
 
         // The cost factor here will be used later
 
-
         val threshold = 1.0e-8;
         val rawShellPairs = new Array[ShellPair](nShell*(nShell+1)/2); 
         val zeroPoint = Point3d(0.0, 0.0, 0.0);
@@ -181,8 +180,7 @@ public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
                                 contrib+=conA(ii)*conB(jj)*Math.exp(-zetaA(ii)*zetaB(jj)/(zetaA(ii)+zetaB(jj))*R2); // norm already included in con coef
                             val maxL = new Rail[Int](roN);
                             if (Math.abs(contrib)>threshold) 
-                                rawShellPairs(ind++) = new ShellPair(aang, bang, aPoint, bPoint, zetaA, zetaB, conA, conB, dConA, dConB, mu, nu, maxL, Math.abs(contrib));
-                            
+                                rawShellPairs(ind++) = new ShellPair(aang, bang, aPoint, bPoint, zetaA, zetaB, conA, conB, dConA, dConB, mu, nu, maxL, Math.abs(contrib));                            
                         }
                         if (b!=noOfAtoms-1 || j!=nbFunc-1) nu+=maxbrab;
                         else {mu+=maxbraa; nu=0;}
@@ -228,13 +226,13 @@ public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
                 if (auxint<THRESH) maxl=-1; 
                 else {
                     maxl=rol+1;
-                    //Console.OUT.printf("L(n=%d)=%d\n",ron,maxl);
                     count1+=Math.pow(maxl+1,2);
                     maxn=ron;
                     if (maxl>maxmaxl) maxmaxl=maxl;
                 }
                 sh.maxL(ron)=maxl;
             }
+            Console.OUT.printf("L(n=%d)=%d\n",ron,maxl);
 
             val c=(F1(a+b)+F2(a+b)+F3(a,b))*ka*kb+F4(a,b); 
             var K:Double=0;

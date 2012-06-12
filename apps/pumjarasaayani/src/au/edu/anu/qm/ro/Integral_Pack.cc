@@ -216,7 +216,7 @@ namespace au {
 
             //printf("ii=%d jj=%d zetaA=%e zetaB=%e zeta=%e conA=%e conB=%e rAB2=%e gAB=%e\n",ii,jj,zetaA[ii],zetaB[jj],zeta,conA[ii],conB[jj],rAB2,gAB);
 
-            if (!rzero) { 
+            if (!lzero && !rzero) { 
                 // if (r<1e-14) printf("small r\n");
                 // Y=YCon[ii*dconB+jj];
                 double phi=atan2(P[1],P[0]),X=P[2]/r;
