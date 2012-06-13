@@ -21,6 +21,7 @@ import x10x.vector.Vector;
 import x10x.vector.Point3d;
 import au.edu.anu.chem.Molecule;
 import au.edu.anu.qm.ShellPair; 
+import au.edu.anu.qm.Ylm; 
 import au.edu.anu.util.SharedCounter;
 import au.edu.anu.util.Timer;
 import au.edu.anu.util.StatisticalTimer;
@@ -47,9 +48,9 @@ public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
     val norm:Rail[Double];
     val temp:Rail[Double];
     val dk:Rail[Double];
-    val muk:DenseMatrix{self.M==this.N};
-
-    val shellPairs:Rail[ShellPair];
+    val muk:DenseMatrix{self.M==this.N}; // Biggest RO array stored in Memory
+    val ylms:Rail[Ylm];
+    val shellPairs:Rail[ShellPair]; 
     val numSigShellPairs:Int;
 
     transient val aux:Integral_Pack;
@@ -86,7 +87,8 @@ public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
         temp = new Rail[Double](maxam1*maxam1*roLm);
         aux = new Integral_Pack(roN,roL);
         dk = new Rail[Double](roLm); // eqn 15b in RO#7
-        muk = new DenseMatrix(N,roLm); // Biggest RO array stored in Memory
+
+        muk = new DenseMatrix(N,roLm); 
 
         // Shell/Shellpair counting & allocation 
         var nShell:Int=0;
@@ -190,6 +192,7 @@ public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
         }   
         numSigShellPairs = ind;
         shellPairs = new Array[ShellPair](numSigShellPairs); 
+        ylms = new Array[Ylm](numSigShellPairs);
         for (i in 0..(numSigShellPairs-1))
             shellPairs(i)=rawShellPairs(i);
 
@@ -231,8 +234,12 @@ public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
                     if (maxl>maxmaxl) maxmaxl=maxl;
                 }
                 sh.maxL(ron)=maxl;
+                Console.OUT.printf("L(n=%d)=%d\n",ron,maxl);
+
             }
-            Console.OUT.printf("L(n=%d)=%d\n",ron,maxl);
+            val y = new Rail[Double](ka*kb*(maxmaxl+1)*(maxmaxl+1));
+            // cal y
+            ylms(i) = new Ylm(y,maxmaxl+1);
 
             val c=(F1(a+b)+F2(a+b)+F3(a,b))*ka*kb+F4(a,b); 
             var K:Double=0;
