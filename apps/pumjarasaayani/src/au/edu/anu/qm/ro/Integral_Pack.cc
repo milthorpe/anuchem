@@ -203,7 +203,7 @@ namespace au {
             memset(HRR[i][0],0,sizeof(double)*K*noOfBra[i]);
         }
         double J[Ln+a+b+1], *Y, rAB2=sqr(A[0]-B[0])+sqr(A[1]-B[1])+sqr(A[2]-B[2]);
-        /*if (Ylm==NULL)*/ Y=(double *)malloc(sizeof(double)*(Ln+1)*(Ln+1)); 
+        if (Ylm==NULL) Y=(double *)malloc(sizeof(double)*(Ln+1)*(Ln+1)); 
         // printf("A %e %e %e B %e %e %e\n",A[0],A[1],A[2],B[0],B[1],B[2]); 
         for (ii=0; ii<dconA; ii++) for (jj=0; jj<dconB; jj++) {
             double zeta=zetaA[ii]+zetaB[jj];

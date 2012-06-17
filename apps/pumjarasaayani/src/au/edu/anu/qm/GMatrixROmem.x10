@@ -208,7 +208,7 @@ public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
         var AuxCount:Double=0.;
 
         val emptyYlm = new Ylm(emptyRailD,-1);
-
+        var memcost:Int=0;
         for (i in 0..(numSigShellPairs-1)) {
 
             val sh = /*raw*/shellPairs(i);
@@ -240,7 +240,7 @@ public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
                 if (maxl!=-1) Console.OUT.printf("L(n=%d)=%d\n",ron,maxl);
 
             }
-            val y = new Rail[Double](ka*kb*(maxmaxl+1)*(maxmaxl+1));
+            val y = new Rail[Double](ka*kb*(maxmaxl+1)*(maxmaxl+1)); memcost+=ka*kb*(maxmaxl+1)*(maxmaxl+1);
             aux.genClassY(sh.aPoint, sh.bPoint, sh.zetaA, sh.zetaB, sh.conA, sh.conB, sh.dconA, sh.dconB, maxmaxl, y);
             ylms(i) = new Ylm(y,maxmaxl);
 
@@ -254,6 +254,7 @@ public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
             AuxCount+=bracount*K; 
         }
         Console.OUT.printf("nShell=%d nShellPairs=%d nSigShellPairs=%d fhCost=%e pAuxCount=%e AuxCount=%e\n",nShell,ind,numSigShellPairs,fhCost,pAuxCount,AuxCount);
+        Console.OUT.printf("memcost=%d\n", memcost);
     }
 
     private def nCr(a:Int,b:Int):Int {
