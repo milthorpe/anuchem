@@ -195,7 +195,7 @@ public class FastMultipoleMethod {
         localData().timer.start(FmmLocalData.TIMER_INDEX_UPWARD);
         finish {
             for (topLevelOctant in localData().topLevelOctants) async {
-                topLevelOctant.upward(localData, size, dMax, periodic);
+                topLevelOctant.upward(localData, size, dMax);
             }
         }
         localData().timer.stop(FmmLocalData.TIMER_INDEX_UPWARD);
@@ -206,8 +206,10 @@ public class FastMultipoleMethod {
 
         val topLevelExp = null; // TODO periodic ? (at (boxes(0).dist(0,0,0)) {boxes(0)(0,0,0).localExp}) : null;
         val farField = finish(SumReducer()) {
-            for (topLevelOctant in localData().topLevelOctants) async {
-                offer topLevelOctant.downward(localData, size, topLevelExp, dMax, periodic);
+            for (topLevelOctant in localData().topLevelOctants) {
+                if (topLevelOctant.id.level == OctantId.TOP_LEVEL) async {
+                    offer topLevelOctant.downward(localData, size, topLevelExp, dMax);
+                }
             }
         };
         localData().timer.stop(FmmLocalData.TIMER_INDEX_DOWNWARD);

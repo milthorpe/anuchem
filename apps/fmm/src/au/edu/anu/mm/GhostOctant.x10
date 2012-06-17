@@ -35,7 +35,7 @@ public class GhostOctant extends Octant implements Comparable[Octant] {
     /** 
      * Go to home place of this octant and return multipole expansion (once computed).
      */
-    protected def upward(localData:PlaceLocalHandle[FmmLocalData], size:Double, dMax:UByte, periodic:Boolean):Pair[Int,MultipoleExpansion] {
+    protected def upward(localData:PlaceLocalHandle[FmmLocalData], size:Double, dMax:UByte):Pair[Int,MultipoleExpansion] {
         val result = at(Place(placeId)) getRemoteMultipole(localData, id);
         numAtoms = result.first;
         //Console.OUT.println("at " + here + " GhostOctant.upward for " + id + " held at " + placeId + " numAtoms = " + numAtoms);
@@ -55,19 +55,21 @@ public class GhostOctant extends Octant implements Comparable[Octant] {
         }
     }
 
-    protected def downward(localData:PlaceLocalHandle[FmmLocalData], size:Double, parentLocalExpansion:LocalExpansion, dMax:UByte, periodic:Boolean):Double {
+    protected def downward(localData:PlaceLocalHandle[FmmLocalData], size:Double, parentLocalExpansion:LocalExpansion, dMax:UByte):Double {
         //Console.OUT.println("at " + here + " GhostOctant.downward for " + id + " held at " + placeId); 
         if (numAtoms > 0) {
-            async at(Place(placeId)) addParentRemote(localData, size, parentLocalExpansion);
+            return at(Place(placeId)) downwardRemote(localData, size, parentLocalExpansion, dMax);
         }
         return 0.0;
     }
 
 
-    private def addParentRemote(localData:PlaceLocalHandle[FmmLocalData], size:Double, parentLocalExpansion:LocalExpansion) {
+    private def downwardRemote(localData:PlaceLocalHandle[FmmLocalData], size:Double, parentLocalExpansion:LocalExpansion, dMax:UByte):Double {
         val octant = localData().getDescendant(id);
         if (octant != null) {
-            octant.addParentExpansion(localData, size, parentLocalExpansion);
+            return octant.downward(localData, size, parentLocalExpansion, dMax);
+        } else {
+            return 0.0;
         }
     }
      

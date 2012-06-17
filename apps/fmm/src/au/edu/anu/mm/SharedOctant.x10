@@ -55,17 +55,16 @@ public class SharedOctant extends Octant implements Comparable[SharedOctant] {
      * For each shared octant, combines multipole expansions for <= 8 child
      * octants into a single multipole expansion for the parent octant.
      */
-    protected def upward(localData:PlaceLocalHandle[FmmLocalData], size:Double, dMax:UByte, periodic:Boolean):Pair[Int,MultipoleExpansion] {
+    protected def upward(localData:PlaceLocalHandle[FmmLocalData], size:Double, dMax:UByte):Pair[Int,MultipoleExpansion] {
         //Console.OUT.println("at " + here + " SharedOctant.upward for " + id + " children.size = " + children.size);
         numAtoms = 0; // reset
-        this.parentAdded = false;
 
         val childExpansions = new Array[Pair[Int,MultipoleExpansion]](8);
         finish {
             for (i in children) {
                 val child = children(i);
                 if (child != null) async {
-                    childExpansions(i) = child.upward(localData, size, dMax, periodic);
+                    childExpansions(i) = child.upward(localData, size, dMax);
                 }
             }
             multipoleExp.terms.clear();
@@ -102,14 +101,14 @@ public class SharedOctant extends Octant implements Comparable[SharedOctant] {
         atomic this.multipoleReady = true;
 
         if (nonNullChildren) {
-            sendMultipole(localData, dMax, periodic);
+            sendMultipole(localData, dMax);
         } else {
             return Pair[Int,MultipoleExpansion](0, null);
         }
         return Pair[Int,MultipoleExpansion](numAtoms, this.multipoleExp);
     }
 
-    protected def downward(localData:PlaceLocalHandle[FmmLocalData], size:Double, parentLocalExpansion:LocalExpansion, dMax:UByte, periodic:Boolean):Double {
+    protected def downward(localData:PlaceLocalHandle[FmmLocalData], size:Double, parentLocalExpansion:LocalExpansion, dMax:UByte):Double {
         //Console.OUT.println("at " + here + " SharedOctant.downward for " + id + " numAtoms = " + numAtoms);
 
         this.multipoleReady = false; // reset
@@ -129,7 +128,7 @@ public class SharedOctant extends Octant implements Comparable[SharedOctant] {
                         val childX = 2*id.x + dx;
                         val childY = 2*id.y + dy;
                         val childZ = 2*id.z + dz;
-                        offer childOctant.downward(localData, size, parentExp, dMax, periodic);
+                        offer childOctant.downward(localData, size, parentExp, dMax);
                     }
                 }
             };
