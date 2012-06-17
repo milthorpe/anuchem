@@ -206,6 +206,9 @@ public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
         var fhCost:Double=0.;
         var pAuxCount:Double=0.;
         var AuxCount:Double=0.;
+
+        val emptyYlm = new Ylm(emptyRailD,-1);
+
         for (i in 0..(numSigShellPairs-1)) {
 
             val sh = /*raw*/shellPairs(i);
@@ -215,7 +218,7 @@ public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
             var maxl:Int=0,maxn:Int=0,maxmaxl:Int=0; val THRESH=1.0e-8;                        
             var count1:Int=0; //sh.maxL = new Rail[Int](roN);
             for (var ron:Int=0; ron<=roN; ron++) {                           
-                aux.genClass(sh.aang, sh.bang, sh.aPoint, sh.bPoint, sh.zetaA, sh.zetaB, sh.conA, sh.conB, sh.dconA, sh.dconB, temp, ron, roL);  
+                aux.genClass(sh.aang, sh.bang, sh.aPoint, sh.bPoint, sh.zetaA, sh.zetaB, sh.conA, sh.conB, sh.dconA, sh.dconB, temp, ron, roL, emptyYlm.y, emptyYlm.maxL);  
 
                 var auxint:Double=0.,rol:Int=roL;                               
                 for (; rol>=0 && auxint<THRESH; rol--) { 
@@ -234,12 +237,12 @@ public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
                     if (maxl>maxmaxl) maxmaxl=maxl;
                 }
                 sh.maxL(ron)=maxl;
-                Console.OUT.printf("L(n=%d)=%d\n",ron,maxl);
+                if (maxl!=-1) Console.OUT.printf("L(n=%d)=%d\n",ron,maxl);
 
             }
             val y = new Rail[Double](ka*kb*(maxmaxl+1)*(maxmaxl+1));
-            // cal y
-            ylms(i) = new Ylm(y,maxmaxl+1);
+            aux.genClassY(sh.aPoint, sh.bPoint, sh.zetaA, sh.zetaB, sh.conA, sh.conB, sh.dconA, sh.dconB, maxmaxl, y);
+            ylms(i) = new Ylm(y,maxmaxl);
 
             val c=(F1(a+b)+F2(a+b)+F3(a,b))*ka*kb+F4(a,b); 
             var K:Double=0;
@@ -281,7 +284,7 @@ public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
                 val maxLron=sp.maxL(ron);
                 if (maxLron>=0) {
                     ind=0; fac=1.; if (sp.mu!=sp.nu) fac=2.0;
-                    aux.genClass(sp.aang, sp.bang, sp.aPoint, sp.bPoint, sp.zetaA, sp.zetaB, sp.conA, sp.conB, sp.dconA, sp.dconB, temp, ron, maxLron);      
+                    aux.genClass(sp.aang, sp.bang, sp.aPoint, sp.bPoint, sp.zetaA, sp.zetaB, sp.conA, sp.conB, sp.dconA, sp.dconB, temp, ron, maxLron,ylms(spInd).y, ylms(spInd).maxL);      
                     for (var tmu:Int=sp.mu; tmu<sp.mu+sp.maxbraa; tmu++) for (var tnu:Int=sp.nu; tnu<sp.nu+sp.maxbrab; tnu++)  
                     for (var rol:Int=0; rol<=maxLron ; rol++) for (var rom:Int=-rol; rom<=rol; rom++)
                         dk(rol*(rol+1)+rom) += density(tmu,tnu)*fac*norm(tmu)*norm(tnu)*temp(ind++); // eqn 15b // skip some k's                 
@@ -293,7 +296,7 @@ public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
                 val maxLron=sp.maxL(ron);
                 if (sp.maxL(ron)>=0) { 
                     ind=0; 
-                    aux.genClass(sp.aang, sp.bang, sp.aPoint, sp.bPoint, sp.zetaA, sp.zetaB, sp.conA, sp.conB, sp.dconA, sp.dconB, temp, ron, maxLron); 
+                    aux.genClass(sp.aang, sp.bang, sp.aPoint, sp.bPoint, sp.zetaA, sp.zetaB, sp.conA, sp.conB, sp.dconA, sp.dconB, temp, ron, maxLron,ylms(spInd).y, ylms(spInd).maxL); 
                     for (var tmu:Int=sp.mu; tmu<sp.mu+sp.maxbraa; tmu++) for (var tnu:Int=sp.nu; tnu<sp.nu+sp.maxbrab; tnu++) {
                         var jContrib:Double = 0.0;  
                         for (var rol:Int=0; rol<=maxLron ; rol++) for (var rom:Int=-rol; rom<=rol; rom++)
@@ -322,7 +325,7 @@ public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
                 val sp=shellPairs(spInd);
                 val maxLron=sp.maxL(ron);
                 if (maxLron>=0) {
-                    aux.genClass(sp.aang, sp.bang, sp.aPoint, sp.bPoint, sp.zetaA, sp.zetaB, sp.conA, sp.conB, sp.dconA, sp.dconB, temp, ron, maxLron); 
+                    aux.genClass(sp.aang, sp.bang, sp.aPoint, sp.bPoint, sp.zetaA, sp.zetaB, sp.conA, sp.conB, sp.dconA, sp.dconB, temp, ron, maxLron,ylms(spInd).y, ylms(spInd).maxL); 
                     ind=0;                   
                     for (var tmu:Int=sp.mu; tmu<sp.mu+sp.maxbraa; tmu++) for (var tnu:Int=sp.nu; tnu<sp.nu+sp.maxbrab; tnu++) { 
                         val normMo = mos(aorb,tnu) * norm(tmu) * norm(tnu);

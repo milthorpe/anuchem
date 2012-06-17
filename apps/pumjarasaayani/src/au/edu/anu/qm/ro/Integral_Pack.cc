@@ -175,20 +175,20 @@ namespace au {
             }
         }
     }
-/*
-    int Integral_Pack::GenclassY(double *A, double *B, double *zetaA, double *zetaB, double *conA, double *conB, int dconA, int dconB){      
+
+    int Integral_Pack::GenclassY(double *A, double *B, double *zetaA, double *zetaB, double *conA, double *conB, int dconA, int dconB, int Ln, double *Ylm){      
         int ii,jj;
         for (ii=0; ii<dconA; ii++) for (jj=0; jj<dconB; jj++) {
             double zeta=zetaA[ii]+zetaB[jj];
             double P[3]={(zetaA[ii]*A[0]+zetaB[jj]*B[0])/zeta,(zetaA[ii]*A[1]+zetaB[jj]*B[1])/zeta,(zetaA[ii]*A[2]+zetaB[jj]*B[2])/zeta};
             double r=sqrt(sqr(P[0])+sqr(P[1])+sqr(P[2]));
             if (r<=1e-14) continue; // CHECK 
-            double *Y=YCon[ii*dconB+jj],phi=atan2(P[1],P[0]),X=P[2]/r;
-            GenY(Y,X,phi,L); 
+            double *Y=&Ylm[(ii*dconB+jj)*(Ln+1)*(Ln+1)],phi=atan2(P[1],P[0]),X=P[2]/r;
+            GenY(Y,X,phi,Ln); 
         }
     } 
-*/
-    int Integral_Pack::Genclass(int a, int b, double *A, double *B, double *zetaA, double *zetaB, double *conA, double *conB, int dconA, int dconB, double* temp, int n, int Ln){
+
+    int Integral_Pack::Genclass(int a, int b, double *A, double *B, double *zetaA, double *zetaB, double *conA, double *conB, int dconA, int dconB, double* temp, int n, int Ln, double *Ylm, int maxL){
         int bra,K=(Ln+1)*(Ln+1),p,e,i,ii,j,jj,k,l,m; 
         double ldn=lambda[n],onelambda;
         bool swap,lzero=(ldn==0.); // should be replace by ldn<1e-y 
@@ -202,8 +202,8 @@ namespace au {
             if (HRR[i][0]==NULL) {printf("Integral_Pack.cc HRR[%d][0] allocation failed sized=%d*sizeof(double)\n",i,K*noOfBra[i]); exit(1);}
             memset(HRR[i][0],0,sizeof(double)*K*noOfBra[i]);
         }
-        double J[Ln+a+b+1], Y[(Ln+1)*(Ln+1)], rAB2=sqr(A[0]-B[0])+sqr(A[1]-B[1])+sqr(A[2]-B[2]);
-
+        double J[Ln+a+b+1], *Y, rAB2=sqr(A[0]-B[0])+sqr(A[1]-B[1])+sqr(A[2]-B[2]);
+        /*if (Ylm==NULL)*/ Y=(double *)malloc(sizeof(double)*(Ln+1)*(Ln+1)); 
         // printf("A %e %e %e B %e %e %e\n",A[0],A[1],A[2],B[0],B[1],B[2]); 
         for (ii=0; ii<dconA; ii++) for (jj=0; jj<dconB; jj++) {
             double zeta=zetaA[ii]+zetaB[jj];
@@ -218,9 +218,12 @@ namespace au {
 
             if (!lzero && !rzero) { 
                 // if (r<1e-14) printf("small r\n");
-                // Y=YCon[ii*dconB+jj];
-                double phi=atan2(P[1],P[0]),X=P[2]/r;
-                GenY(Y,X,phi,Ln);                 
+                if (Ylm!=NULL)
+                    Y=&Ylm[(ii*dconB+jj)*(maxL+1)*(maxL+1)];
+                else {                
+                    double phi=atan2(P[1],P[0]),X=P[2]/r;
+                    GenY(Y,X,phi,Ln);                 
+                }
                 // if (Ln<10) printf("IntegralPack ln204 J(%f,%d)\n",r*ldn,Ln+a+b); 
                 GenJ(J,r*ldn,Ln+a+b); 
                 //if (Ln<10) printf("OK\n");
@@ -313,6 +316,7 @@ namespace au {
         }
 
         free(V1);free(V2);
+        if (Ylm==NULL) free(Y);
 
         double dd[3]={A[0]-B[0],A[1]-B[1],A[2]-B[2]};
    
