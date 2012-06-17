@@ -2,7 +2,7 @@
 <!DOCTYPE project [<!ENTITY buildfile SYSTEM "file:./build-user.xml">]>
 <project name="Fast Multipole Method" default="build" basedir=".">
     &buildfile;
-    <property name="x10rt" value="sockets" />
+    <property name="x10rt" value="mpi" />
     <property name="x10x.xla" location="../../xla"/>
 	<property name="xla.props" location="${x10x.xla}/xla_${x10rt}.properties"/>
 	<property name="xla.src" location="${x10x.xla}/src"/>
@@ -29,8 +29,8 @@
 	<property name="target-test" location="${target}/test-classes"/>
     <property name="x10lib-cpp" value="fmm_${x10rt}" />
     <property name="bin" location="${basedir}/bin"/>
-	<property name="exe" value="periodicFmm3d"/>
-    <property name="testclass" value="test/au/edu/anu/mm/TestPeriodicFmm3d.x10"/>
+	<property name="exe" value="fmm"/>
+    <property name="testclass" value="test/au/edu/anu/mm/TestFastMultipoleMethod.x10"/>
 
     <condition property="x10c.optimize" value="-O" else="">
         <istrue value="${optimize}"/>

@@ -11,6 +11,7 @@
 package au.edu.anu.mm;
 
 import x10.util.ArrayList;
+import x10.util.ArrayUtils;
 import x10.util.HashSet;
 import x10.util.Pair;
 
@@ -37,10 +38,23 @@ public abstract class Octant implements Comparable[Octant] {
     private var vList:Rail[OctantId];
 
     /** The multipole expansion of the charges within this box. */
-    public var multipoleExp:MultipoleExpansion;
+    public val multipoleExp:MultipoleExpansion;
 
     /** The Taylor expansion of the potential within this box due to particles in well separated boxes. */
-    public var localExp:LocalExpansion;
+    public val localExp:LocalExpansion;
+
+    /** 
+     * Flag set to true when octant multipole expansion is consistent i.e.
+     * completed in upward pass, and set to false again during downward pass.
+     */
+    public var multipoleReady:Boolean = false;
+
+    /**
+     * Flag set to true when parent local expansion has been added to this
+     * octant's local expansion in downward pass, and set to false again during
+     * upward pass.
+     */
+    public var parentAdded:Boolean = false;
 
     /**
      * Creates a new FmmBox with multipole and local expansions
@@ -65,14 +79,14 @@ public abstract class Octant implements Comparable[Octant] {
 
     public abstract def getDescendant(id:OctantId):Octant;
 
-    abstract protected def downward(localData:PlaceLocalHandle[FmmLocalData], size:Double, parentLocalExpansion:LocalExpansion, numLevels:Int, periodic:Boolean):Double;
+    abstract protected def downward(localData:PlaceLocalHandle[FmmLocalData], size:Double, parentLocalExpansion:LocalExpansion, dMax:UByte, periodic:Boolean):Double;
 
     /** 
      * Generates and combines multipole expansions for all descendants into an
      * expansion for this box. Note: non-blocking - the top-level call to this 
      * method must be enclosed in a finish statement.
      */
-    abstract protected def upward(localData:PlaceLocalHandle[FmmLocalData], size:Double, periodic:Boolean):Pair[Int,MultipoleExpansion];
+    abstract protected def upward(localData:PlaceLocalHandle[FmmLocalData], size:Double, dMax:UByte, periodic:Boolean):Pair[Int,MultipoleExpansion];
 
     protected def constructLocalExpansion(localData:PlaceLocalHandle[FmmLocalData], size:Double, parentLocalExpansion:LocalExpansion) {
         val local = localData();
@@ -83,7 +97,6 @@ public abstract class Octant implements Comparable[Octant] {
         val multipoleCopies = local.locallyEssentialTree.multipoleCopies;
 
         // transform and add multipole expansions from same level
-        localExp.terms.clear();
         val numTerms = localExp.p;
         val scratch = new MultipoleExpansion(numTerms);    
         val scratch_array = new Array[Complex](numTerms+1);
@@ -93,11 +106,11 @@ public abstract class Octant implements Comparable[Octant] {
             val box2MultipoleExp = multipoleCopies.getOrElse(octantIndex2, null);
            
             if (box2MultipoleExp != null) {
-                //Console.OUT.println("add multipole for " + octantIndex2 + " to " + id);
+                //Console.OUT.println("at " + here + " added multipole for " + octantIndex2 + " to " + id);
                 val dx2 = (octantIndex2.x as Int)-id.x;
                 val dy2 = (octantIndex2.y as Int)-id.y;
                 val dz2 = (octantIndex2.z as Int)-id.z;
-                localExp.transformAndAddToLocal(scratch, scratch_array,
+                atomic localExp.transformAndAddToLocal(scratch, scratch_array,
 			        Vector3d(dx2*sideLength, dy2*sideLength, dz2*sideLength), 
 					myComplexK(dx2,dy2,dz2), box2MultipoleExp, myWignerB(dx2,dy2,dz2) );
             }
@@ -109,27 +122,60 @@ public abstract class Octant implements Comparable[Octant] {
             val dy = 2*(id.y%2)-1;
             val dz = 2*(id.z%2)-1;
 
+            atomic {
+            localExp.translateAndAddLocal(scratch, scratch_array,
+                Vector3d(dx*0.5*sideLength, dy*0.5*sideLength, dz*0.5*sideLength),
+                myComplexK(dx,dy,dz), parentLocalExpansion, myWignerC((dx+1)/2, (dy+1)/2, (dz+1)/2));
+                this.parentAdded = true;
+            }
+        } else if (id.level > OctantId.TOP_LEVEL) {
+            // wait for add parent from another activity
+            //Console.OUT.println("at " + here + " waiting on parent for " + id);
+            when(this.parentAdded);
+            //Console.OUT.println("at " + here + " progressed on parent for " + id);
+        }
+    }
+
+    /** Translate and add parent local expansion */
+    protected atomic def addParentExpansion(localData:PlaceLocalHandle[FmmLocalData], size:Double, parentLocalExpansion:LocalExpansion) {
+        if (parentLocalExpansion != null) {
+            val local = localData();
+            val sideLength = size / Math.pow2(id.level);
+            val numTerms = localExp.p;
+            val myComplexK = local.fmmOperators.complexK;
+            val myWignerB = local.fmmOperators.wignerB;
+            val myWignerC = local.fmmOperators.wignerC;
+            val scratch = new MultipoleExpansion(numTerms);    
+            val scratch_array = new Array[Complex](numTerms+1);
+            val dx = 2*(id.x%2)-1;
+            val dy = 2*(id.y%2)-1;
+            val dz = 2*(id.z%2)-1;
+
             localExp.translateAndAddLocal(scratch, scratch_array,
                 Vector3d(dx*0.5*sideLength, dy*0.5*sideLength, dz*0.5*sideLength),
                 myComplexK(dx,dy,dz), parentLocalExpansion, myWignerC((dx+1)/2, (dy+1)/2, (dz+1)/2));
         }
-
+         parentAdded = true;
     }
 
-    protected def sendMultipole(localData:PlaceLocalHandle[FmmLocalData], periodic:Boolean) {
+    protected def sendMultipole(localData:PlaceLocalHandle[FmmLocalData], dMax:UByte, periodic:Boolean) {
         // async send this box's multipole expansion to V-list
-        //Console.OUT.println("sending multipole for " + id);
+        //Console.OUT.println("at " + here + " sending multipole for " + id);
         if (vList != null) {
+            val local = localData();
             val id = this.id;
             val multipoleExp = this.multipoleExp;
             val vListPlaces = new HashSet[Int]();
-            vListPlaces.add(here.id);
-            // TODO
-            //for ([p] in vList) {
-            //    vListPlaces.add(thisLevelBoxes.dist(vList(p)).id);
-            //}
+            for ([p] in vList) {
+                val placeId = local.getPlaceId(vList(p).getAnchor(dMax));
+                if (placeId >= 0 && placeId < Place.MAX_PLACES) {
+                    //Console.OUT.println("at " + here + " sending multipole for " + id + " " + vList(p) + " held at " + placeId);
+                    vListPlaces.add(placeId);
+                }
+            }
             for(placeId in vListPlaces) {
                 at(Place(placeId)) async {
+                    //Console.OUT.println("at " + here + " sending multipole for " + id + " to place " + placeId);
                     val multipoleCopies = localData().locallyEssentialTree.multipoleCopies;
                     atomic multipoleCopies.put(id, multipoleExp);
                 }
@@ -144,16 +190,16 @@ public abstract class Octant implements Comparable[Octant] {
      */
     public def createVList(ws:Int) {
         val levelDim = Math.pow2(id.level);
-        val xOffset = id.x%2 == 1US ? -1 : 0;
-        val yOffset = id.y%2 == 1US ? -1 : 0;
-        val zOffset = id.z%2 == 1US ? -1 : 0;
+        val xOffset = id.x%2 == 1UY ? -1 : 0;
+        val yOffset = id.y%2 == 1UY ? -1 : 0;
+        val zOffset = id.z%2 == 1UY ? -1 : 0;
         val vList = new ArrayList[OctantId]();
         for (x in Math.max(0,id.x-2*ws+xOffset)..Math.min(levelDim-1,id.x+2*ws+1+xOffset)) {
-            val x2 = x as UShort;
+            val x2 = x as UByte;
             for (y in Math.max(0,id.y-2*ws+yOffset)..Math.min(levelDim-1,id.y+2*ws+1+yOffset)) {
-                val y2 = y as UShort;
+                val y2 = y as UByte;
                 for (z in Math.max(0,id.z-2*ws+zOffset)..Math.min(levelDim-1,id.z+2*ws+1+zOffset)) {
-                    val z2 = z as UShort;
+                    val z2 = z as UByte;
                     if (wellSeparated(ws, x, y, z)) {
                         vList.add(OctantId(x2,y2,z2,id.level));
                     }
