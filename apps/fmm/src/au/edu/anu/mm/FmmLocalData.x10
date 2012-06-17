@@ -12,6 +12,7 @@
 package au.edu.anu.mm;
 
 import x10.util.ArrayList;
+import x10.util.ArrayUtils;
 
 import au.edu.anu.util.Timer;
 
@@ -27,8 +28,14 @@ public class FmmLocalData {
     /** All leaf octants held at this place. */
     var leafOctants:ArrayList[LeafOctant];
 
-    /** The top-level shared octant at this place. */
-    var parentOctant:SharedOctant;
+    /** The top-level octants at this place. */
+    var topLevelOctants:ArrayList[Octant];
+
+    /** 
+     * An array holding the Octant ID of the first leaf octant at each place.
+     * The final elements is the ID of the last leaf octant plus one.
+     */
+    val firstLeafOctant:Rail[UInt] = new Array[UInt](Place.MAX_PLACES+1);
 
     /** 
      * The locally essential tree at this place. 
@@ -46,6 +53,21 @@ public class FmmLocalData {
         fmmOperators = new FmmOperators(numTerms, ws);
         timer = new Timer(6);
         // TODO construct LET
+    }
+
+    /** @return the ID of the place to which the given leaf octant is assigned */
+    public def getPlaceId(leafOctantId:OctantId) {
+        var placeId:Int = ArrayUtils.binarySearch[UInt](firstLeafOctant, leafOctantId.getLeafMortonId());
+        if (placeId < 0) placeId = -placeId - 1;
+        return placeId;
+    }
+
+    public def getDescendant(octantId:OctantId) {
+        for (topLevelOctant in topLevelOctants) {
+            val descendant = topLevelOctant.getDescendant(octantId);
+            if (descendant != null) return descendant;
+        }
+        return null;
     }
 
 }

@@ -1,0 +1,87 @@
+/*
+ * This file is part of ANUChem.
+ *
+ *  This file is licensed to You under the Eclipse Public License (EPL);
+ *  You may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *      http://www.opensource.org/licenses/eclipse-1.0.php
+ *
+ * (C) Copyright Josh Milthorpe 2012.
+ */
+package au.edu.anu.mm;
+
+import x10.util.ArrayList;
+import x10.util.HashSet;
+import x10.util.Pair;
+
+/**
+ * This class represents a ghost octant, i.e. an octant for which data are held
+ * at another place, in the 3D division of space for the Fast Multipole Method.
+ * @author milthorpe
+ */
+public class GhostOctant extends Octant implements Comparable[Octant] {
+    val placeId:Int;
+
+    /**
+     * Creates a new GhostOctant for an octant at the given place.
+     */
+    public def this(id:OctantId, placeId:Int) {
+        super(id, 0);
+        this.placeId = placeId;
+    }
+
+    public def compareTo(b:Octant):Int = id.compareTo(b.id);
+
+    /** 
+     * Go to home place of this octant and return multipole expansion (once computed).
+     */
+    protected def upward(localData:PlaceLocalHandle[FmmLocalData], size:Double, dMax:UByte, periodic:Boolean):Pair[Int,MultipoleExpansion] {
+        val result = at(Place(placeId)) getRemoteMultipole(localData, id);
+        numAtoms = result.first;
+        //Console.OUT.println("at " + here + " GhostOctant.upward for " + id + " held at " + placeId + " numAtoms = " + numAtoms);
+        return result;
+    }
+
+    private def getRemoteMultipole(localData:PlaceLocalHandle[FmmLocalData], id:OctantId):Pair[Int,MultipoleExpansion] {
+        val octant = localData().getDescendant(id);
+        if (octant != null) {
+            //Console.OUT.println("at " + here + " waiting on multipole " + id);
+            when(octant.multipoleReady) {
+                //Console.OUT.println("at " + here + " progressed on multipole " + id + " numAtoms = " + octant.numAtoms);
+                return Pair[Int,MultipoleExpansion](octant.numAtoms, octant.multipoleExp);
+            }
+        } else {
+            return Pair[Int,MultipoleExpansion](0, null);
+        }
+    }
+
+    protected def downward(localData:PlaceLocalHandle[FmmLocalData], size:Double, parentLocalExpansion:LocalExpansion, dMax:UByte, periodic:Boolean):Double {
+        //Console.OUT.println("at " + here + " GhostOctant.downward for " + id + " held at " + placeId); 
+        if (numAtoms > 0) {
+            async at(Place(placeId)) addParentRemote(localData, size, parentLocalExpansion);
+        }
+        return 0.0;
+    }
+
+
+    private def addParentRemote(localData:PlaceLocalHandle[FmmLocalData], size:Double, parentLocalExpansion:LocalExpansion) {
+        val octant = localData().getDescendant(id);
+        if (octant != null) {
+            octant.addParentExpansion(localData, size, parentLocalExpansion);
+        }
+    }
+     
+
+    public def addToCombinedVSet(combinedVSet:HashSet[OctantId], ws:Int) {
+        super.addToCombinedVSet(combinedVSet, ws);
+    }
+
+    public def getDescendant(octantId:OctantId):Octant {
+        return null;
+    }
+
+    public def toString(): String {
+        return "GhostOctant " + id;
+    }
+}
+
