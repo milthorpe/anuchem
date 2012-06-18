@@ -142,12 +142,12 @@ public class Molecule[T]{T <: Atom} {
         // TODO rotation
     }
 
-    public def getRadius():Double {
+    public def getRadius(roZ:Double):Double {
         var rad:Double=0.;
         val ai = AtomInfo.getInstance();
         for(atm:T in atomList) {
             val atmvec= Vector3d(atm.centre.i,atm.centre.j,atm.centre.k);
-            val distance=atmvec.magnitude()+ai.getVdwRadius(atm);
+            val distance=atmvec.magnitude()+ai.getVdwRadius(atm)/roZ;
             if (rad<distance) rad=distance;
         }
         Console.OUT.printf("Radius = %f\n",rad);

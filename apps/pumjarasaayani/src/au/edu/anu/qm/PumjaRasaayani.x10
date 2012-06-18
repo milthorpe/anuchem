@@ -44,15 +44,20 @@ public class PumjaRasaayani {
     } 
 
     public def runHF() {
+        val jd = JobDefaults.getInstance();
         Console.OUT.println("PumjaRasaayani shunya.tri, Quantum Chemistry program in x10, v0.4");
         Console.OUT.println("" + Place.MAX_PLACES + " places, " + Runtime.NTHREADS + " threads per place");
 
         mol.transformToSNO();
-        val rad=mol.getRadius();
+
+        val rad=mol.getRadius(jd.roZ);
+        val PI=3.1415926535;
+        Console.OUT.printf("rad/PI=%f\n",rad/PI);
+        if (rad>PI) Console.OUT.printf("WARNING: RO is not valid for rad>PI\n");
 
         printInput();
 
-        val jd = JobDefaults.getInstance();
+
 
         if (jd.useMta) { runMTA(); return; }
 
