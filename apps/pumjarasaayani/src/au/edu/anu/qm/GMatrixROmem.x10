@@ -240,7 +240,7 @@ public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
                     if (maxl>maxmaxl) maxmaxl=maxl;
                 }
                 sh.maxL(ron)=maxl;
-                if (maxl!=-1) Console.OUT.printf("L(n=%d)=%d\n",ron,maxl);
+                //if (maxl!=-1) Console.OUT.printf("L(n=%d)=%d\n",ron,maxl);
             }
             val y = new Rail[Double](ka*kb*(maxmaxl+1)*(maxmaxl+1)); mCost+=ka*kb*(maxmaxl+1)*(maxmaxl+1);
             aux.genClassY(sh.aPoint, sh.bPoint, sh.zetaA, sh.zetaB, sh.conA, sh.conB, sh.dconA, sh.dconB, maxmaxl, y);
@@ -256,6 +256,7 @@ public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
             val bracount=(a+1)*(a+2)/2*(b+1)*(b+2)/2;
             pAuxCount+=ka*kb*bracount*K;
             AuxCount+=bracount*K; 
+            Console.OUT.printf("mu=%d nu=%d | maxmaxl=%d\n",sh.mu,sh.nu,maxmaxl);
         }
         Console.OUT.printf("nShell=%d nShellPairs=%d nSigShellPairs=%d pAuxCount=%e (primitive) AuxCount=%e (contracted)\n",nShell,ind,numSigShellPairs,pAuxCount,AuxCount);
         Console.OUT.printf("mCost=%e\n", mCost);
