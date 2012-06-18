@@ -10,7 +10,7 @@
  */
 package au.edu.anu.mm;
 
-import x10.util.HashMap;
+import x10.util.ArrayUtils;
 
 import au.edu.anu.chem.PointCharge;
 
@@ -29,7 +29,7 @@ public class LET {
      * boxes at this place.  Used to overlap fetching of the multipole
      * expansions with other computation.
      */
-    public val multipoleCopies:HashMap[OctantId,MultipoleExpansion];
+    public val multipoleCopies:Rail[MultipoleExpansion];
 
     /**
      * A cache of PointCharge for the combined U-list of all
@@ -37,14 +37,38 @@ public class LET {
      * non-well-separated boxes for use in direct evaluations 
      * with all atoms at a given place.
      */
-    public val cachedAtoms : HashMap[OctantId,Rail[PointCharge]];
+    public val cachedAtoms : Rail[Rail[PointCharge]];
     
     public def this(combinedUList:Rail[OctantId],
                 combinedVList:Rail[OctantId]) {
         this.combinedUList = combinedUList;
         this.combinedVList = combinedVList;
-        this.multipoleCopies = new HashMap[OctantId,MultipoleExpansion](combinedVList.size);
+        this.multipoleCopies = new Array[MultipoleExpansion](combinedVList.size);
 
-        this.cachedAtoms = new HashMap[OctantId,Rail[PointCharge]](combinedUList.size);
+        this.cachedAtoms = new Array[Rail[PointCharge]](combinedUList.size);
+    }
+
+    public def getMultipoleForOctant(id:OctantId) {
+        val cacheIndex = ArrayUtils.binarySearch(combinedVList, id);
+        assert cacheIndex >= 0;
+        return multipoleCopies(cacheIndex);
+    }
+
+    public def setMultipoleForOctant(id:OctantId, multipoleExp:MultipoleExpansion) {
+        val cacheIndex = ArrayUtils.binarySearch(combinedVList, id);
+        assert cacheIndex >= 0;
+        multipoleCopies(cacheIndex) = multipoleExp;
+    }
+
+    public def getAtomsForOctant(id:OctantId) {
+        val cacheIndex = ArrayUtils.binarySearch(combinedUList, id);
+        assert cacheIndex >= 0;
+        return cachedAtoms(cacheIndex);
+    }
+
+    public def setAtomsForOctant(id:OctantId, atoms:Rail[PointCharge]) {
+        val cacheIndex = ArrayUtils.binarySearch(combinedUList, id);
+        assert cacheIndex >= 0;
+        cachedAtoms(cacheIndex) = atoms;
     }
 }

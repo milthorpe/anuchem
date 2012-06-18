@@ -236,6 +236,7 @@ public class FastMultipoleMethod {
      * owning place.
      */
     public def reassignAtoms(step:Int) {
+        localData().timer.start(FmmLocalData.TIMER_INDEX_TREE);
         val localAtoms = new ArrayList[MMAtom]();
         val leafOctants = localData().leafOctants;
         var numAtoms:Int = 0;
@@ -253,6 +254,7 @@ public class FastMultipoleMethod {
         assignAtomsToOctantsLocal(localAtoms.toArray());
 
         Team.WORLD.barrier(here.id);
+        localData().timer.start(FmmLocalData.TIMER_INDEX_TREE);
     }
 
     public def assignAtomsToOctantsLocal(localAtoms:Rail[MMAtom]) {
@@ -493,6 +495,7 @@ public class FastMultipoleMethod {
             combinedUList(j++) = octantId;
             //Console.OUT.println(octantId);
         }
+        ArrayUtils.sort(combinedUList);
 
         val combinedVSet = new HashSet[OctantId]();
         for (topLevelOctant in localData().topLevelOctants) {
@@ -507,6 +510,7 @@ public class FastMultipoleMethod {
             combinedVList(i++) = octantId;
             //Console.OUT.println(octantId);
         }
+        ArrayUtils.sort(combinedVList);
         localData().locallyEssentialTree = new LET(combinedUList, combinedVList);
     }
 
@@ -543,7 +547,6 @@ public class FastMultipoleMethod {
         }
 
         // retrieve the partial list for each place and store into my LET
-
         for (placeEntry in uListPlaces.entries()) {
             val placeId = placeEntry.getKey();
             val uListForPlace = placeEntry.getValue();
@@ -552,7 +555,7 @@ public class FastMultipoleMethod {
                 FastMultipoleMethod.getAtomsForOctantList(local, uListArray) :
                 at(Place.place(placeId)) { FastMultipoleMethod.getAtomsForOctantList(localData(), uListArray)};
             for (i in 0..(uListArray.size-1)) {
-                myLET.cachedAtoms.put(uListArray(i), atomsForPlace(i));
+                myLET.setAtomsForOctant(uListArray(i), atomsForPlace(i));
             }
         }
         local.timer.stop(FmmLocalData.TIMER_INDEX_PREFETCH);

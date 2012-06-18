@@ -96,7 +96,7 @@ public abstract class Octant implements Comparable[Octant] {
         val vList = getVList();
         for ([p] in vList) {
             val octantIndex2 = vList(p);
-            val box2MultipoleExp = multipoleCopies.getOrElse(octantIndex2, null);
+            val box2MultipoleExp = localData().locallyEssentialTree.getMultipoleForOctant(octantIndex2);
            
             if (box2MultipoleExp != null) {
                 //Console.OUT.println("at " + here + " added multipole for " + octantIndex2 + " to " + id);
@@ -139,8 +139,7 @@ public abstract class Octant implements Comparable[Octant] {
             for(placeId in vListPlaces) {
                 at(Place(placeId)) async {
                     //Console.OUT.println("at " + here + " sending multipole for " + id + " to place " + placeId);
-                    val multipoleCopies = localData().locallyEssentialTree.multipoleCopies;
-                    atomic multipoleCopies.put(id, multipoleExp);
+                    localData().locallyEssentialTree.setMultipoleForOctant(id, multipoleExp);
                 }
             }
         }
