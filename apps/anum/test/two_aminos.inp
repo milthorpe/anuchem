@@ -5,10 +5,10 @@ V 1.0
 edgeLength 0.01
 radius 0.003
 dt 25.0
-steps 32
+steps 16
 logSteps 1
 fmmDensity 60
-fmmDMax 5
+fmmDMax 6
 fmmTerms 10
 species glutamine 147.07698 1 30000
 species lysine 147.11336 1 30000

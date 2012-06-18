@@ -18,11 +18,11 @@ import x10x.vector.Point3d;
 import x10x.vector.Vector3d;
 
 /**
- * This class represents a shared octant in the 3D division of space for the
+ * This class represents a parent octant in the 3D division of space for the
  * Fast Multipole Method.
  * @author milthorpe
  */
-public class SharedOctant extends Octant implements Comparable[SharedOctant] {
+public class ParentOctant extends Octant implements Comparable[ParentOctant] {
     public val children:Rail[Octant] = new Array[Octant](8);
 
     /**
@@ -49,14 +49,14 @@ public class SharedOctant extends Octant implements Comparable[SharedOctant] {
         }
     }
 
-    public def compareTo(b:SharedOctant):Int = id.compareTo(b.id);
+    public def compareTo(b:ParentOctant):Int = id.compareTo(b.id);
 
     /** 
      * For each shared octant, combines multipole expansions for <= 8 child
      * octants into a single multipole expansion for the parent octant.
      */
     protected def upward(localData:PlaceLocalHandle[FmmLocalData], size:Double, dMax:UByte):Pair[Int,MultipoleExpansion] {
-        //Console.OUT.println("at " + here + " SharedOctant.upward for " + id + " children.size = " + children.size);
+        //Console.OUT.println("at " + here + " ParentOctant.upward for " + id + " children.size = " + children.size);
         numAtoms = 0; // reset
 
         val childExpansions = new Array[Pair[Int,MultipoleExpansion]](8);
@@ -109,7 +109,7 @@ public class SharedOctant extends Octant implements Comparable[SharedOctant] {
     }
 
     protected def downward(localData:PlaceLocalHandle[FmmLocalData], size:Double, parentLocalExpansion:LocalExpansion, dMax:UByte):Double {
-        //Console.OUT.println("at " + here + " SharedOctant.downward for " + id + " numAtoms = " + numAtoms);
+        //Console.OUT.println("at " + here + " ParentOctant.downward for " + id + " numAtoms = " + numAtoms);
 
         this.multipoleReady = false; // reset
 
@@ -151,7 +151,7 @@ public class SharedOctant extends Octant implements Comparable[SharedOctant] {
     }
 
     public def getDescendant(octantId:OctantId):Octant {
-        //Console.OUT.println("at " + here + " SharedOctant.getDescendant(" + octantId + ") on " + this.id);
+        //Console.OUT.println("at " + here + " ParentOctant.getDescendant(" + octantId + ") on " + this.id);
         if (octantId == this.id) return this;
         for (i in 0..(children.size-1)) {
             val childOctant = children(i);
@@ -166,7 +166,7 @@ public class SharedOctant extends Octant implements Comparable[SharedOctant] {
     }
 
     public def toString(): String {
-        return "SharedOctant " + id;
+        return "ParentOctant " + id;
     }
 }
 
