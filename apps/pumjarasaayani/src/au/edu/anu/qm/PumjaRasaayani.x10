@@ -48,6 +48,7 @@ public class PumjaRasaayani {
         Console.OUT.println("" + Place.MAX_PLACES + " places, " + Runtime.NTHREADS + " threads per place");
 
         mol.transformToSNO();
+        val rad=mol.getRadius();
 
         printInput();
 

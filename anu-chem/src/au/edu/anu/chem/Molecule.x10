@@ -146,9 +146,11 @@ public class Molecule[T]{T <: Atom} {
         var rad:Double=0.;
         val ai = AtomInfo.getInstance();
         for(atm:T in atomList) {
-            val distance=atm.centre.magnitude()+ai.getVdwRadius(atm.symbol);
+            val atmvec= Vector3d(atm.centre.i,atm.centre.j,atm.centre.k);
+            val distance=atmvec.magnitude()+ai.getVdwRadius(atm);
             if (rad<distance) rad=distance;
         }
+        Console.OUT.printf("Radius = %f\n",rad);
         return rad; 
     }
 
