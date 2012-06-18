@@ -12,6 +12,7 @@ package au.edu.anu.mm;
 
 import x10.compiler.Inline;
 import x10.util.ArrayList;
+import x10.util.ArrayUtils;
 import x10.util.HashMap;
 import x10.util.HashSet;
 import x10.util.Pair;
@@ -36,13 +37,13 @@ import au.edu.anu.util.Timer;
  */
 public class FastMultipoleMethod {
     /** The maximum number of levels in the octree. */
-    public val dMax:UShort;
+    public val dMax:UByte;
 
     /** 
      * Return the top level of octants actually used in the method.
      * This is 0 for the periodic FMM and 2 for the non-periodic FMM.
      */
-    protected val topLevel:UShort;
+    protected val topLevel:UByte;
 
     /** The number of lowest level octants along one side of the cube. */
     public val lowestLevelDim:Int;
@@ -105,9 +106,9 @@ public class FastMultipoleMethod {
                     numAtoms:Int,
                     topLevel:Int,
                     periodic:boolean) {
-        this.topLevel = topLevel as UShort;
+        this.topLevel = topLevel as UByte;
         this.periodic = periodic;
-        this.dMax = dMax as UShort;
+        this.dMax = dMax as UByte;
 
         val lowestLevelDim = Math.pow2(dMax);
         this.lowestLevelDim = lowestLevelDim;
@@ -192,7 +193,11 @@ public class FastMultipoleMethod {
 
     protected def upwardPass() {
         localData().timer.start(FmmLocalData.TIMER_INDEX_UPWARD);
-        finish localData().parentOctant.upward(localData, size, periodic);
+        finish {
+            for (topLevelOctant in localData().topLevelOctants) async {
+                topLevelOctant.upward(localData, size, dMax);
+            }
+        }
         localData().timer.stop(FmmLocalData.TIMER_INDEX_UPWARD);
     }
 
@@ -200,7 +205,13 @@ public class FastMultipoleMethod {
         localData().timer.start(FmmLocalData.TIMER_INDEX_DOWNWARD);
 
         val topLevelExp = null; // TODO periodic ? (at (boxes(0).dist(0,0,0)) {boxes(0)(0,0,0).localExp}) : null;
-        val farField = localData().parentOctant.downward(localData, size, topLevelExp, dMax, periodic);
+        val farField = finish(SumReducer()) {
+            for (topLevelOctant in localData().topLevelOctants) {
+                if (topLevelOctant.id.level == OctantId.TOP_LEVEL) async {
+                    offer topLevelOctant.downward(localData, size, topLevelExp, dMax);
+                }
+            }
+        };
         localData().timer.stop(FmmLocalData.TIMER_INDEX_DOWNWARD);
         return farField;
     }
@@ -242,7 +253,6 @@ public class FastMultipoleMethod {
         assignAtomsToOctantsLocal(localAtoms.toArray());
 
         Team.WORLD.barrier(here.id);
-
     }
 
     public def assignAtomsToOctantsLocal(localAtoms:Rail[MMAtom]) {
@@ -261,46 +271,157 @@ public class FastMultipoleMethod {
 
         val octantEntries = octants.entries();
         val leafOctantList = new ArrayList[LeafOctant]();
-        val octantList = new ArrayList[Octant]();
         for (octantEntry in octantEntries) {
             val octant = octantEntry.getValue();
             leafOctantList.add(octant);
-            octantList.add(octant);
         }
         leafOctantList.sort();
-        val firstId = leafOctantList.getFirst().id;
-        val lastId = leafOctantList.getLast().id;
-        //Console.OUT.println("at " + here + " first leaf = " + firstId + " last = " + lastId);
-        localData().leafOctants = leafOctantList;
-
-        // set atom lists for leaves
-        //Console.OUT.println("octants at this place:");
-        for(octant in leafOctantList) {
-            //Console.OUT.println(octant);
-            octant.setAtoms(octant.atomList.toArray());
-            octant.atomList = new ArrayList[MMAtom](); // clear for next iteration
+        val local = localData();
+        local.leafOctants = leafOctantList;
+        val maxLeafOctants = Math.pow(8.0, dMax) as Int;
+        val octantLoads = new Array[Int](maxLeafOctants);
+        if (leafOctantList.size() > 0) {
+            for(octant in leafOctantList) {
+                val mortonId = octant.id.getLeafMortonId() as Int;
+                octantLoads(mortonId) = octant.atomList.size();
+                //Console.OUT.println("at " + here + " octant " + mortonId + "(" + octant.id + ") has " + octantLoads(mortonId));
+            }
         }
 
-        // TODO sort and distribute octants
+        // sort and redistribute octants
+        Team.WORLD.allreduce[Int](here.id, octantLoads, 0, octantLoads, 0, maxLeafOctants, Team.ADD);
+        val total = octantLoads.reduce[Int]((a:Int,b:Int)=>a+b, 0);
+        val placeShare = total / Place.MAX_PLACES;
+        val leftOver = total % Place.MAX_PLACES;
+        if (here == Place.FIRST_PLACE) {
+            Console.OUT.println("total = " + total + " placeShare = " + placeShare + " leftOver = " + leftOver);
+        }
+
+        val firstLeafOctant = local.firstLeafOctant;
+
+        firstLeafOctant(0) = 0U;
+        var i:Int=0;
+        for (p in 1..Place.MAX_PLACES) {
+            val share = p <= leftOver ? placeShare+1 : placeShare;
+            var load:Int = 0;
+            while(load < share && i < maxLeafOctants) {
+                load += octantLoads(i++);
+                if (load >= share) {
+                    break;
+                }
+            }
+            firstLeafOctant(p) = i as UInt;
+            if (here == Place.FIRST_PLACE) {
+                Console.OUT.println("place " + (p-1) + " first " + firstLeafOctant(p-1) + " last " + (firstLeafOctant(p)-1) + " load " + load);
+            }
+        }
+
+        Team.WORLD.barrier(here.id);
+
+        for (var p:Int=Place.MAX_PLACES; p>0; p--) {
+            val destPlace = p-1;
+            if (destPlace != here.id && leafOctantList.size() > 0) {
+               //Console.OUT.println("at " + here + " sending octants between " + firstLeafOctant(p-1) + " and " + (firstLeafOctant(p)-1) + " to " + destPlace);
+
+                // redistribute octant atoms
+                val atomsToSend = new ArrayList[Pair[OctantId,ArrayList[MMAtom]]]();
+                atomic {
+                    var j:Int = leafOctantList.size()-1;
+                    while(leafOctantList(j) != null && leafOctantList(j).id.getLeafMortonId() >= firstLeafOctant(p)) j--;
+                    while(leafOctantList(j) != null && leafOctantList(j).id.getLeafMortonId() >= firstLeafOctant(p-1)) {
+                        val octant = leafOctantList.removeAt(j);
+                        atomsToSend.addBefore(0, new Pair[OctantId,ArrayList[MMAtom]](octant.id, octant.atomList));
+                        j--;
+                    }
+                }
+                if (atomsToSend.size() > 0) {
+                   //Console.OUT.println("at " + here + " sending " + atomsToSend.size() + " octants to place " + destPlace);
+                   at(Place(destPlace)) {
+                        val octantListHere = localData().leafOctants;
+                        atomic {
+                            var k:Int = 0;
+                            for(octantPair in atomsToSend) {
+                                val octantId = octantPair.first;
+                                val atoms = octantPair.second;
+                                //Console.OUT.println("at " + here + " adding " + atoms.size() + " to octant " + octantId + " " + octantId.getLeafMortonId() + " k = " + k + " octantListHere.size() = " + octantListHere.size());
+                                var targetOctant:LeafOctant = null;
+                                while(k < octantListHere.size()) {
+                                    val compareOctant = octantListHere(k);
+                                    val diff = compareOctant.id.compareTo(octantId);
+                                    if (diff == 0) {
+                                        targetOctant = compareOctant;
+                                        //Console.OUT.println("at " + here + " found octant to expand " + targetOctant.id);
+                                        break;
+                                    } else if (diff > 0) {
+                                        // found insertion point
+                                        //Console.OUT.println("inserting " + octantId + " " + octantId.getLeafMortonId() + " before " + compareOctant.id + " " + compareOctant.id.getLeafMortonId());
+                                        break;
+                                    }
+                                    k++;
+                                }
+                                if (targetOctant == null) {
+                                    // target octant has not yet been created at this place
+                                    //Console.OUT.println("at " + here + " creating octant " + octantId.getLeafMortonId());
+                                    targetOctant = new LeafOctant(octantId, numTerms);
+                                    octantListHere.addBefore(k, targetOctant);
+                                }
+                                for (atom in atoms) {
+                                    targetOctant.atomList.add(atom);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        Team.WORLD.barrier(here.id);
 
         // TODO coarsening and balancing
 
+        leafOctantList.sort();
+        if (leafOctantList.size() > 0) {
+            val firstId = leafOctantList.getFirst().id;
+            val lastId = leafOctantList.getLast().id;
+            //Console.OUT.println("at " + here + " first leaf = " + firstId + " " + firstId.getLeafMortonId() + " last = " + lastId + " " + lastId.getLeafMortonId());
+        }
+
+        val octantList = new ArrayList[Octant](leafOctantList.size());
+        var prevOctantId:OctantId = OctantId(0UY,0UY,0UY,dMax);
+        for(octant in leafOctantList) {
+             //Console.OUT.println("at " + here + ": " + octant.id);
+             octantList.add(octant);
+             if (octant.id > prevOctantId.next()) {
+                 //Console.OUT.println("at " + here + " skipped octants from " + prevOctantId + " " + prevOctantId.getLeafMortonId() + " to " + octant.id + " " + octant.id.getLeafMortonId());
+             }
+             prevOctantId = octant.id;
+        }
+
+        local.topLevelOctants = new ArrayList[Octant](octantList.size());
+
         // create shared octants in higher levels
-        var level:UShort=dMax;
-        while (level >= 1US) {
+        var level:UByte=dMax;
+        while (level > OctantId.TOP_LEVEL) {
             val sharedOctants = new HashMap[OctantId,SharedOctant]();
             for (octant in octantList) {
                 val parentId = octant.id.getParentId();
-                //Console.OUT.println("parent for " + octant.id + " = " + parentId);
-                var parentOctant:SharedOctant = sharedOctants.getOrElse(parentId, null) as SharedOctant;
-                if (parentOctant == null) {
-                    parentOctant = new SharedOctant(parentId, numTerms);
-                    sharedOctants.put(parentId, parentOctant);
+                val parentAnchorId = parentId.getAnchor(dMax);
+                val placeId = local.getPlaceId(parentAnchorId);
+                if (placeId == here.id) {
+                    //Console.OUT.println("at " + here + " parent for " + octant.id + " = " + parentId);
+                    var parentOctant:SharedOctant = sharedOctants.getOrElse(parentId, null) as SharedOctant;
+                    if (parentOctant == null) {
+                        parentOctant = new SharedOctant(parentId, numTerms, local, dMax);
+                        sharedOctants.put(parentId, parentOctant);
+                    }
+                    octant.parent = parentOctant;
+                    val childIndex = parentId.getChildIndex(dMax, octant.id);
+                    //Console.OUT.println("at " + here + " childIndex for " + octant.id + " = " + childIndex);
+                    parentOctant.children(childIndex) = octant;
+                } else {
+                    //Console.OUT.println("at " + here + " parent for " + octant.id + " = " + parentId + " anchor " + parentAnchorId + " held at " + placeId);
+                    local.topLevelOctants.add(octant);
                 }
-                octant.parent = parentOctant;
-                val childIndex = parentId.getChildIndex(dMax, octant.id);
-                //Console.OUT.println("childIndex for " + octant.id + " = " + childIndex);
-                parentOctant.children(childIndex) = octant;
             }
 
             octantList.clear();
@@ -311,15 +432,38 @@ public class FastMultipoleMethod {
             }
             octantList.sort(); // TODO remove - only useful for logging
 
+            if (octantList.size() > 0) {
+                //Console.OUT.println("at " + here + " level " + level + " first " + octantList.getFirst().id + " last " + octantList.getLast().id);
+                var lastOctantId:OctantId = octantList.getLast().id.next();
+                //Console.OUT.println("at " + here + " lastOctantId " + lastOctantId);
+                while (local.getPlaceId(lastOctantId.getAnchor(dMax)) == here.id) {
+                    //Console.OUT.println("at " + here + " filling in octant " + lastOctantId);
+                    val fillerOctant = new SharedOctant(lastOctantId, numTerms, local, dMax);
+                    octantList.add(fillerOctant);
+                    lastOctantId = lastOctantId.next();
+                }
+            }
+
             level--;
             //Console.OUT.println("shared octants for level " + level + ":");
             //for (sharedOctant in octantList) {
             //    Console.OUT.println(sharedOctant);
             //}
         }
-        // now the octant list only contains one octant - the parent of all other octants
-        localData().parentOctant = octantList(0) as SharedOctant;
-        //Console.OUT.println("parent octant: " + localData().parentOctant);
+
+        // add remaining octants to top level
+        //Console.OUT.println("at " + here + " topLevelOctants:");
+        for (octant in octantList) {
+            local.topLevelOctants.add(octant);
+            //Console.OUT.println("at " + here + "==>" + octant);
+        }
+
+        for(octant in leafOctantList) {
+            if (octant != null) {
+                octant.setAtoms(octant.atomList.toArray());
+                octant.atomList = new ArrayList[MMAtom](); // clear for next iteration
+            }
+        }
 
         createLET();
     }
@@ -351,12 +495,14 @@ public class FastMultipoleMethod {
         }
 
         val combinedVSet = new HashSet[OctantId]();
-        localData().parentOctant.addToCombinedVSet(combinedVSet, ws);
+        for (topLevelOctant in localData().topLevelOctants) {
+            topLevelOctant.addToCombinedVSet(combinedVSet, ws);
+        }
         //Console.OUT.println("done " + combinedVSet.size());
 
         //Console.OUT.println("at " + here + " combined V-list:");
         val combinedVList = new Rail[OctantId](combinedVSet.size());
-        var i : Int = 0;
+        var i:Int = 0;
         for (octantId in combinedVSet) {
             combinedVList(i++) = octantId;
             //Console.OUT.println(octantId);
@@ -369,39 +515,47 @@ public class FastMultipoleMethod {
      * This is communication-intensive, so can be overlapped with computation.
      */
     def prefetchRemoteAtoms() : void {
-        localData().timer.start(FmmLocalData.TIMER_INDEX_PREFETCH);
-        val myLET = localData().locallyEssentialTree;
+        val local = localData();
+        local.timer.start(FmmLocalData.TIMER_INDEX_PREFETCH);
+
+        val myLET = local.locallyEssentialTree;
+        val firstLeafOctant = local.firstLeafOctant;
         val myCombinedUList = myLET.combinedUList;
         val cachedAtoms = myLET.cachedAtoms;
-        val parentOctant = localData().parentOctant;
 
         val uListPlaces = new HashMap[Int,ArrayList[OctantId]](26); // a place may have up to 26 immediate neighbours
         
         // separate the uList into partial lists stored at each nearby place
         for ([p] in myCombinedUList) {
             val octantId = myCombinedUList(p);
-            val placeId = here.id; // TODO lowestLevelBoxes.dist(octantId).id;
-            var uListForPlace : ArrayList[OctantId] = uListPlaces.getOrElse(placeId, null);
-            if (uListForPlace == null) {
-                uListForPlace = new ArrayList[OctantId]();
-                uListPlaces.put(placeId, uListForPlace);
+            if (octantId.level > 0UY) { // TODO why is octant 0:(0,0,0) in the list?
+            val placeId = local.getPlaceId(octantId.getAnchor(dMax));
+            if (placeId >= 0 && placeId < Place.MAX_PLACES) {
+                // leaf octant exists at Place(placeId)
+                var uListForPlace : ArrayList[OctantId] = uListPlaces.getOrElse(placeId, null);
+                if (uListForPlace == null) {
+                    uListForPlace = new ArrayList[OctantId]();
+                    uListPlaces.put(placeId, uListForPlace);
+                }
+                uListForPlace.add(octantId);
             }
-            uListForPlace.add(octantId);
+            }
         }
 
         // retrieve the partial list for each place and store into my LET
+
         for (placeEntry in uListPlaces.entries()) {
             val placeId = placeEntry.getKey();
             val uListForPlace = placeEntry.getValue();
             val uListArray = uListForPlace.toArray();
             val atomsForPlace = (placeId == here.id) ?
-                FastMultipoleMethod.getAtomsForOctantList(parentOctant, uListArray) :
-                at(Place.place(placeId)) { FastMultipoleMethod.getAtomsForOctantList(localData().parentOctant, uListArray)};
+                FastMultipoleMethod.getAtomsForOctantList(local, uListArray) :
+                at(Place.place(placeId)) { FastMultipoleMethod.getAtomsForOctantList(localData(), uListArray)};
             for (i in 0..(uListArray.size-1)) {
                 myLET.cachedAtoms.put(uListArray(i), atomsForPlace(i));
             }
         }
-        localData().timer.stop(FmmLocalData.TIMER_INDEX_PREFETCH);
+        local.timer.stop(FmmLocalData.TIMER_INDEX_PREFETCH);
     }
 
     /**
@@ -409,10 +563,10 @@ public class FastMultipoleMethod {
      * place, returns an Rail, each element of which is in turn
      * a Rail[PointCharge] containing the atoms for each octant.
      */
-    private static def getAtomsForOctantList(parentOctant:SharedOctant, octantList:Rail[OctantId]) {
+    private static def getAtomsForOctantList(localData:FmmLocalData, octantList:Rail[OctantId]) {
         val atomList = new Rail[Rail[PointCharge]](octantList.size);
         for (i in 0..(octantList.size-1)) {
-            val octant = parentOctant.getDescendant(octantList(i)) as LeafOctant;
+            val octant = localData.getDescendant(octantList(i)) as LeafOctant;
             if (octant != null) {
                 atomList(i) = octant.getAtomCharges();
             }
@@ -422,7 +576,7 @@ public class FastMultipoleMethod {
 
     /** @return the octant ID for the leaf octant at the maximum depth in the tree */
     public def getLeafOctantId(atomCentre:Point3d):OctantId {
-        return new OctantId((atomCentre.i / size * lowestLevelDim + lowestLevelDim / 2) as UShort, (atomCentre.j / size * lowestLevelDim + lowestLevelDim / 2) as UShort, (atomCentre.k / size * lowestLevelDim + lowestLevelDim / 2) as UShort, dMax as UShort);
+        return new OctantId((atomCentre.i / size * lowestLevelDim + lowestLevelDim / 2) as UByte, (atomCentre.j / size * lowestLevelDim + lowestLevelDim / 2) as UByte, (atomCentre.k / size * lowestLevelDim + lowestLevelDim / 2) as UByte, dMax as UByte);
     }
 }
 

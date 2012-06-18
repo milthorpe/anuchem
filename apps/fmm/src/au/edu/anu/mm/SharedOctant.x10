@@ -29,8 +29,24 @@ public class SharedOctant extends Octant implements Comparable[SharedOctant] {
      * Creates a new FmmBox with multipole and local expansions
      * of the given number of terms.
      */
-    public def this(id:OctantId, numTerms:Int) {
+    public def this(id:OctantId, numTerms:Int, localData:FmmLocalData, dMax:UByte) {
         super(id, numTerms);
+        val levelDim = (Math.pow2(dMax) / Math.pow2(id.level));
+        var i:Int = 0;
+        for (x2 in (2*id.x)..(2*id.x+1)) {
+            for (y2 in (2*id.y)..(2*id.y+1)) {
+                for (z2 in (2*id.z)..(2*id.z+1)) {
+                    val childOctantId = OctantId(x2 as UByte, y2 as UByte, z2 as UByte, id.level+1UY);
+                    val placeId = localData.getPlaceId(childOctantId.getAnchor(dMax));
+                    if (placeId != here.id && placeId >= 0 && placeId < Place.MAX_PLACES) {
+                        // the child octant is not held at this place
+                        //Console.OUT.println("at " + here + " octant " + id + " creating ghost for octant " + childOctantId + " held at " + placeId);
+                        children(i) = new GhostOctant(childOctantId, placeId);
+                    }
+                    i++;
+                 }
+            }
+        }
     }
 
     public def compareTo(b:SharedOctant):Int = id.compareTo(b.id);
@@ -39,19 +55,20 @@ public class SharedOctant extends Octant implements Comparable[SharedOctant] {
      * For each shared octant, combines multipole expansions for <= 8 child
      * octants into a single multipole expansion for the parent octant.
      */
-    protected def upward(localData:PlaceLocalHandle[FmmLocalData], size:Double, periodic:Boolean):Pair[Int,MultipoleExpansion] {
-        //Console.OUT.println("SharedOctant.upward for " + id);
+    protected def upward(localData:PlaceLocalHandle[FmmLocalData], size:Double, dMax:UByte):Pair[Int,MultipoleExpansion] {
+        //Console.OUT.println("at " + here + " SharedOctant.upward for " + id + " children.size = " + children.size);
         numAtoms = 0; // reset
 
         val childExpansions = new Array[Pair[Int,MultipoleExpansion]](8);
         finish {
-            for (i in 0..(children.size-1)) {
-                val childOctant = children(i);
-                if (childOctant != null) async {
-                    childExpansions(i) = childOctant.upward(localData, size, periodic);
+            for (i in children) {
+                val child = children(i);
+                if (child != null) async {
+                    childExpansions(i) = child.upward(localData, size, dMax);
                 }
-                multipoleExp.terms.clear();
             }
+            multipoleExp.terms.clear();
+            localExp.terms.clear();
         }
 
         val fmmOperators = localData().fmmOperators;
@@ -81,16 +98,21 @@ public class SharedOctant extends Octant implements Comparable[SharedOctant] {
             }
         }
 
+        atomic this.multipoleReady = true;
+
         if (nonNullChildren) {
-            sendMultipole(localData, periodic);
+            sendMultipole(localData, dMax);
         } else {
             return Pair[Int,MultipoleExpansion](0, null);
         }
         return Pair[Int,MultipoleExpansion](numAtoms, this.multipoleExp);
     }
 
-    protected def downward(localData:PlaceLocalHandle[FmmLocalData], size:Double, parentLocalExpansion:LocalExpansion, numLevels:Int, periodic:Boolean):Double {
-        //Console.OUT.println("SharedOctant.downward for " + id + " numAtoms = " + numAtoms);
+    protected def downward(localData:PlaceLocalHandle[FmmLocalData], size:Double, parentLocalExpansion:LocalExpansion, dMax:UByte):Double {
+        //Console.OUT.println("at " + here + " SharedOctant.downward for " + id + " numAtoms = " + numAtoms);
+
+        this.multipoleReady = false; // reset
+
         if (numAtoms > 0) {
             constructLocalExpansion(localData, size, parentLocalExpansion);
 
@@ -106,7 +128,7 @@ public class SharedOctant extends Octant implements Comparable[SharedOctant] {
                         val childX = 2*id.x + dx;
                         val childY = 2*id.y + dy;
                         val childZ = 2*id.z + dz;
-                        offer childOctant.downward(localData, size, parentExp, numLevels, periodic);
+                        offer childOctant.downward(localData, size, parentExp, dMax);
                     }
                 }
             };
@@ -128,11 +150,13 @@ public class SharedOctant extends Octant implements Comparable[SharedOctant] {
         }
     }
 
-    public def getDescendant(id:OctantId):Octant {
+    public def getDescendant(octantId:OctantId):Octant {
+        //Console.OUT.println("at " + here + " SharedOctant.getDescendant(" + octantId + ") on " + this.id);
+        if (octantId == this.id) return this;
         for (i in 0..(children.size-1)) {
             val childOctant = children(i);
             if (childOctant != null) {
-                val desc = childOctant.getDescendant(id);
+                val desc = childOctant.getDescendant(octantId);
                 if (desc != null) {
                     return desc;
                 }

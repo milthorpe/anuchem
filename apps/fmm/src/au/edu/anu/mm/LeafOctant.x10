@@ -27,7 +27,7 @@ public class LeafOctant extends Octant implements Comparable[LeafOctant] {
     private var atoms:Rail[MMAtom];
     public var atomList:ArrayList[MMAtom];
 
-    /** The U-list consists of all leaf boxes not well-separated from this box. */
+    /** The U-list consists of all leaf octants not well-separated from this octant. */
     private var uList:Rail[OctantId];
 
     public def this(id:OctantId, numTerms:Int) {
@@ -53,12 +53,10 @@ public class LeafOctant extends Octant implements Comparable[LeafOctant] {
 
     public def compareTo(b:LeafOctant):Int = id.compareTo(b.id);
 
-    public def getDescendant(id:OctantId):Octant {
-        if (this.id == id) {
-            return this;
-        } else {
-            return null;
-        }
+    public def getDescendant(octantId:OctantId):Octant {
+        //Console.OUT.println("at " + here + " LeafOctant.getDescendant(" + octantId + ") on " + this.id);
+        if (octantId == this.id) return this;
+        else return null;
     }
 
     /**
@@ -66,12 +64,14 @@ public class LeafOctant extends Octant implements Comparable[LeafOctant] {
      * simply the sum of the contributions of the particles in the octant.
      * N.B. must only be called once per pass
      */
-    protected def upward(localData:PlaceLocalHandle[FmmLocalData], size:Double, periodic:Boolean):Pair[Int,MultipoleExpansion] {
-        //Console.OUT.println("LeafOctant.upward for " + id + " numAtoms = " + numAtoms);
+    protected def upward(localData:PlaceLocalHandle[FmmLocalData], size:Double, dMax:UByte):Pair[Int,MultipoleExpansion] {
+        //Console.OUT.println("at " + here + " LeafOctant.upward for " + id + " numAtoms = " + numAtoms);
         if (numAtoms > 0) {
+            multipoleExp.terms.clear();
+            localExp.terms.clear();
+
             val p = multipoleExp.p;
             val centre = getCentre(size);
-            multipoleExp.terms.clear();
             for (i in 0..(atoms.size-1)) {
                 val atom = atoms(i);
                 val atomLocation = centre.vector(atom.centre);
@@ -79,7 +79,9 @@ public class LeafOctant extends Octant implements Comparable[LeafOctant] {
                 multipoleExp.addOlm(atom.charge, atomLocation, p);
             }
 
-            sendMultipole(localData, periodic);
+            atomic this.multipoleReady = true;
+
+            sendMultipole(localData, dMax);
 
             return Pair[Int,MultipoleExpansion](numAtoms, this.multipoleExp);
         } else {
@@ -87,24 +89,26 @@ public class LeafOctant extends Octant implements Comparable[LeafOctant] {
         }
     }
 
-    protected def downward(localData:PlaceLocalHandle[FmmLocalData], size:Double, parentLocalExpansion:LocalExpansion, numLevels:Int, periodic:Boolean):Double {
-        //Console.OUT.println("LeafOctant.downward for " + id + " numAtoms = " + numAtoms);
+    protected def downward(localData:PlaceLocalHandle[FmmLocalData], size:Double, parentLocalExpansion:LocalExpansion, dMax:UByte):Double {
+        //Console.OUT.println("at " + here + " LeafOctant.downward for " + id + " numAtoms = " + numAtoms);
+        this.multipoleReady = false; // reset
+
         if (numAtoms > 0) {
             constructLocalExpansion(localData, size, parentLocalExpansion);
 
-            return getPotential(size, localData().locallyEssentialTree, numLevels, periodic);
+            return getPotential(size, localData().locallyEssentialTree, dMax);
         } else {
             return 0.0;
         }        
     }
 
     /**
-     * Returns the far-field potential of all charges within this box due to
-     * all charges in well-separated boxes.
+     * Returns the far-field potential of all charges within this octant due to
+     * all charges in well-separated octant.
      * Updates forces on each particle due to long-range interactions.
      * @param size the side length of the full simulation box
      */
-    private def getPotential(size:Double, myLET:LET, numLevels:Int, periodic:Boolean):Double {
+    private def getPotential(size:Double, myLET:LET, dMax:UByte):Double {
         val boxCentre = getCentre(size);
 
         var potential:Double = 0.0;
@@ -115,21 +119,21 @@ public class LeafOctant extends Octant implements Comparable[LeafOctant] {
             potential += localExp.calculatePotentialAndForces(atom, locationWithinBox);
         }
 
-        potential += calculateDirectPotentialAndForces(size, myLET, numLevels, periodic);
+        potential += calculateDirectPotentialAndForces(size, myLET, dMax);
 
         return potential;
     }
 
     /** 
-     * Calculates the potential and forces due to atoms in this box and in
-     * all non-well-separated boxes.
+     * Calculates the potential and forces due to atoms in this octant and in
+     * all non-well-separated octants.
      * @return the potential due to direct interactions
      */
-    private def calculateDirectPotentialAndForces(size:Double, myLET:LET, numLevels:Int, periodic:Boolean):Double {
+    private def calculateDirectPotentialAndForces(size:Double, myLET:LET, dMax:UByte):Double {
         val cachedAtoms = myLET.cachedAtoms;
         var directEnergy:Double = 0.0;
         for (atomIndex1 in 0..(atoms.size-1)) {
-            // direct calculation between all atoms in this box
+            // direct calculation between all atoms in this octant
             val atom1 = atoms(atomIndex1);
             for (sameBoxAtomIndex in 0..(atomIndex1-1)) {
                 val sameBoxAtom = atoms(sameBoxAtomIndex);
@@ -144,9 +148,10 @@ public class LeafOctant extends Octant implements Comparable[LeafOctant] {
             }
         }
 
-        // direct calculation with all atoms in non-well-separated boxes
+        val periodic = false; // TODO
+        // direct calculation with all atoms in non-well-separated octants
         if (periodic) {
-            val lowestLevelDim = Math.pow2(numLevels);
+            val lowestLevelDim = Math.pow2(dMax);
             for (p in 0..(uList.size-1)) {
                 val octant2Atoms = cachedAtoms.getOrElse(uList(p), null);
                 if (octant2Atoms != null) {
@@ -174,6 +179,7 @@ public class LeafOctant extends Octant implements Comparable[LeafOctant] {
             for (p in 0..(uList.size-1)) {
                 val octant2Atoms = cachedAtoms.getOrElse(uList(p), null);
                 if (octant2Atoms != null) {
+                    //Console.OUT.println("at " + here + " calculating direct for " + id + " against " + uList(p));
                     for (octant2AtomsIndex in 0..(octant2Atoms.size-1)) {
                         val atom2 = octant2Atoms(octant2AtomsIndex);
                         for (atomIndex1 in 0..(atoms.size-1)) {
@@ -223,8 +229,8 @@ public class LeafOctant extends Octant implements Comparable[LeafOctant] {
     }
 
     /**
-     * Creates the U-list for this box.
-     * The U-list consists of all leaf boxes not well-separated from this box.
+     * Creates the U-list for this octant.
+     * The U-list consists of all leaf octants not well-separated from this octant.
      */
     public def createUList(ws:Int) {
         val levelDim = Math.pow2(id.level);
@@ -232,11 +238,11 @@ public class LeafOctant extends Octant implements Comparable[LeafOctant] {
         uList = new Array[OctantId](w*w*w-1);
         var i:Int = 0;
         for (x in Math.max(0,id.x-ws)..Math.min(levelDim-1,id.x+ws)) {
-            val x2 = x as UShort;
+            val x2 = x as UByte;
             for (y in Math.max(0,id.y-ws)..Math.min(levelDim-1,id.y+ws)) {
-                val y2 = y as UShort;
+                val y2 = y as UByte;
                 for (z in Math.max(0,id.z-ws)..Math.min(levelDim-1,id.z+ws)) {
-                    val z2 = z as UShort;
+                    val z2 = z as UByte;
                     if (!(x2==id.x && y2==id.y && z2==id.z)) {
                         uList(i++) = OctantId(x2,y2,z2,id.level);
                     }
