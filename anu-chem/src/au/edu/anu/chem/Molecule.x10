@@ -142,6 +142,16 @@ public class Molecule[T]{T <: Atom} {
         // TODO rotation
     }
 
+    public def getRadius():Double {
+        var rad:Double=0.;
+        val ai = AtomInfo.getInstance();
+        for(atm:T in atomList) {
+            val distance=atm.centre.magnitude()+ai.getVdwRadius(atm.symbol);
+            if (rad<distance) rad=distance;
+        }
+        return rad; 
+    }
+
     public def toString() : String {
         var str:String = "";
 

@@ -66,6 +66,7 @@ public class AtomInfo {
         vdWRadii.put("O",  2.8724);
         vdWRadii.put("F",  2.7779);
         vdWRadii.put("Ne", 2.7779);
+// see test/basis/atomrad.txt
 
         atomicMass.put("H",  1.0079);
         atomicMass.put("He", 4.0026);
