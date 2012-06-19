@@ -17,5 +17,5 @@ H 2.2445919193 -4.0382491576 -0.5444515439
 end
 use_RO 1
 RO_N 100
-RO_L 90
+RO_L 110
 gmat_parallel_scheme 0

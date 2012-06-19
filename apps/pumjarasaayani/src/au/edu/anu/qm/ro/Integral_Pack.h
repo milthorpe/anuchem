@@ -37,7 +37,7 @@ namespace au {
                             Point *HRRMAP[MAX_BRA_L+1][MAX_BRA_L+1];
 
                             // KET
-                            #define MAX_KET_L 100
+                            #define MAX_KET_L 200
                             #define MAX_KET_LM (MAX_KET_L+1)*(MAX_KET_L+1)
                             #define lm2k(l,m) ((l)*(l)+(l)+(m))
                             double cxminus[MAX_KET_LM],cxplus[MAX_KET_LM],cyminus[MAX_KET_LM],cyplus[MAX_KET_LM],cz[MAX_KET_LM];
