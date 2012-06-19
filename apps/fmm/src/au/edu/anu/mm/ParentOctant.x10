@@ -63,7 +63,7 @@ public class ParentOctant extends Octant implements Comparable[ParentOctant] {
         finish {
             for (i in children) {
                 val child = children(i);
-                if (child != null) async {
+                if (child != null) /*async*/ {
                     childExpansions(i) = child.upward(localData, size, dMax);
                 }
             }

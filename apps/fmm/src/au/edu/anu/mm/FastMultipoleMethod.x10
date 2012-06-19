@@ -207,7 +207,7 @@ public class FastMultipoleMethod {
         val topLevelExp = null; // TODO periodic ? (at (boxes(0).dist(0,0,0)) {boxes(0)(0,0,0).localExp}) : null;
         val farField = finish(SumReducer()) {
             for (topLevelOctant in localData().topLevelOctants) {
-                if (topLevelOctant.id.level == OctantId.TOP_LEVEL) async {
+                if (topLevelOctant != null && topLevelOctant.id.level == OctantId.TOP_LEVEL) async {
                     offer topLevelOctant.downward(localData, size, topLevelExp, dMax);
                 }
             }
@@ -237,6 +237,7 @@ public class FastMultipoleMethod {
      */
     public def reassignAtoms(step:Int) {
         localData().timer.start(FmmLocalData.TIMER_INDEX_TREE);
+
         val localAtoms = new ArrayList[MMAtom]();
         val leafOctants = localData().leafOctants;
         var numAtoms:Int = 0;
@@ -254,7 +255,7 @@ public class FastMultipoleMethod {
         assignAtomsToOctantsLocal(localAtoms.toArray());
 
         Team.WORLD.barrier(here.id);
-        localData().timer.start(FmmLocalData.TIMER_INDEX_TREE);
+        localData().timer.stop(FmmLocalData.TIMER_INDEX_TREE);
     }
 
     public def assignAtomsToOctantsLocal(localAtoms:Rail[MMAtom]) {
@@ -278,8 +279,6 @@ public class FastMultipoleMethod {
             leafOctantList.add(octant);
         }
         leafOctantList.sort();
-        val local = localData();
-        local.leafOctants = leafOctantList;
         val maxLeafOctants = Math.pow(8.0, dMax) as Int;
         val octantLoads = new Array[Int](maxLeafOctants);
         if (leafOctantList.size() > 0) {
@@ -289,6 +288,9 @@ public class FastMultipoleMethod {
                 //Console.OUT.println("at " + here + " octant " + mortonId + "(" + octant.id + ") has " + octantLoads(mortonId));
             }
         }
+
+        val local = localData();
+        local.leafOctants = leafOctantList;
 
         // sort and redistribute octants
         Team.WORLD.allreduce[Int](here.id, octantLoads, 0, octantLoads, 0, maxLeafOctants, Team.ADD);
@@ -314,7 +316,7 @@ public class FastMultipoleMethod {
             }
             firstLeafOctant(p) = i as UInt;
             if (here == Place.FIRST_PLACE) {
-                Console.OUT.println("place " + (p-1) + " first " + firstLeafOctant(p-1) + " last " + (firstLeafOctant(p)-1) + " load " + load);
+                //Console.OUT.println("place " + (p-1) + " first " + firstLeafOctant(p-1) + " last " + (firstLeafOctant(p)-1) + " load " + load);
             }
         }
 
@@ -338,7 +340,7 @@ public class FastMultipoleMethod {
                 }
                 if (atomsToSend.size() > 0) {
                    //Console.OUT.println("at " + here + " sending " + atomsToSend.size() + " octants to place " + destPlace);
-                   at(Place(destPlace)) {
+                   at(Place(destPlace)) async {
                         val octantListHere = localData().leafOctants;
                         atomic {
                             var k:Int = 0;
