@@ -3,7 +3,7 @@ basis sto3g
 charge 1
 multiplicity 1
 units 0.5291772108
-RO_Z 1.35
+RO_Z 1.40
 molecule
 O 0.00000000 -0.00000100 0.06877900
 H -0.62768300 -0.71249700 -0.18341100
@@ -11,7 +11,7 @@ H 0.93089000 -0.18733000 -0.18341100
 H -0.30321000 0.89983200 -0.18341000
 end
 use_RO 1
-RO_N 90
-RO_L 13
+RO_N 110
+RO_L 20
 gmat_parallel_scheme 0
 
