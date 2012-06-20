@@ -51,6 +51,8 @@ final public class StatisticalTimer {
         if (count(id) == 0L) return 0L;
         return total(id) / count(id);
     }
+    public def tot(id:Int) = total(id) ;
+    
     public def stdDev(id:Int):Double {
         if (count(id) == 0L) return 0L;
         val s0 = count(id) as Double;
