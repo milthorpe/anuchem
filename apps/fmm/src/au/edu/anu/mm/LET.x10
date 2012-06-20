@@ -21,8 +21,8 @@ import au.edu.anu.chem.PointCharge;
  * @author milthorpe
  */
 public class LET {
-    public val combinedUList:Rail[OctantId];
-    public val combinedVList:Rail[OctantId];
+    public val combinedUList:Rail[UInt];
+    public val combinedVList:Rail[UInt];
 
     /**
      * A cache of multipole copies for the combined V-list of all
@@ -39,8 +39,8 @@ public class LET {
      */
     public val cachedAtoms : Rail[Rail[PointCharge]];
     
-    public def this(combinedUList:Rail[OctantId],
-                combinedVList:Rail[OctantId]) {
+    public def this(combinedUList:Rail[UInt],
+                combinedVList:Rail[UInt]) {
         this.combinedUList = combinedUList;
         this.combinedVList = combinedVList;
         this.multipoleCopies = new Array[MultipoleExpansion](combinedVList.size);
@@ -48,26 +48,26 @@ public class LET {
         this.cachedAtoms = new Array[Rail[PointCharge]](combinedUList.size);
     }
 
-    public def getMultipoleForOctant(id:OctantId) {
-        val cacheIndex = ArrayUtils.binarySearch(combinedVList, id);
+    public def getMultipoleForOctant(mortonId:UInt) {
+        val cacheIndex = ArrayUtils.binarySearch(combinedVList, mortonId);
         assert cacheIndex >= 0;
         return multipoleCopies(cacheIndex);
     }
 
-    public def setMultipoleForOctant(id:OctantId, multipoleExp:MultipoleExpansion) {
-        val cacheIndex = ArrayUtils.binarySearch(combinedVList, id);
+    public def setMultipoleForOctant(mortonId:UInt, multipoleExp:MultipoleExpansion) {
+        val cacheIndex = ArrayUtils.binarySearch(combinedVList, mortonId);
         assert cacheIndex >= 0;
         multipoleCopies(cacheIndex) = multipoleExp;
     }
 
-    public def getAtomsForOctant(id:OctantId) {
-        val cacheIndex = ArrayUtils.binarySearch(combinedUList, id);
+    public def getAtomsForOctant(mortonId:UInt) {
+        val cacheIndex = ArrayUtils.binarySearch(combinedUList, mortonId);
         assert cacheIndex >= 0;
         return cachedAtoms(cacheIndex);
     }
 
-    public def setAtomsForOctant(id:OctantId, atoms:Rail[PointCharge]) {
-        val cacheIndex = ArrayUtils.binarySearch(combinedUList, id);
+    public def setAtomsForOctant(mortonId:UInt, atoms:Rail[PointCharge]) {
+        val cacheIndex = ArrayUtils.binarySearch(combinedUList, mortonId);
         assert cacheIndex >= 0;
         cachedAtoms(cacheIndex) = atoms;
     }
