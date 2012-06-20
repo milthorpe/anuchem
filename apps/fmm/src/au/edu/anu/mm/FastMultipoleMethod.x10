@@ -259,11 +259,11 @@ public class FastMultipoleMethod {
     }
 
     public def assignAtomsToOctantsLocal(localAtoms:Rail[MMAtom]) {
-        val octants = new HashMap[OctantId,LeafOctant]();
+        val octants = new HashMap[OctantId,Octant]();
         for (i in localAtoms) {
             val atom = localAtoms(i);
             val octantId = getLeafOctantId(atom.centre);
-            var octant:LeafOctant = octants.getOrElse(octantId, null);
+            var octant:LeafOctant = octants.getOrElse(octantId, null) as LeafOctant;
             if (octant == null) {
                 octant = new LeafOctant(octantId, numTerms);
                 octants.put(octantId, octant);
@@ -276,7 +276,7 @@ public class FastMultipoleMethod {
         val leafOctantList = new ArrayList[LeafOctant]();
         for (octantEntry in octantEntries) {
             val octant = octantEntry.getValue();
-            leafOctantList.add(octant);
+            leafOctantList.add(octant as LeafOctant);
         }
         leafOctantList.sort();
         val maxLeafOctants = Math.pow(8.0, dMax) as Int;
@@ -290,6 +290,7 @@ public class FastMultipoleMethod {
         }
 
         val local = localData();
+        local.octants = octants;
         local.leafOctants = leafOctantList;
 
         // sort and redistribute octants
@@ -341,16 +342,17 @@ public class FastMultipoleMethod {
                 if (atomsToSend.size() > 0) {
                    //Console.OUT.println("at " + here + " sending " + atomsToSend.size() + " octants to place " + destPlace);
                    at(Place(destPlace)) async {
-                        val octantListHere = localData().leafOctants;
+                        val octantsHere = localData().octants;
+                        val leafOctantsHere = localData().leafOctants;
                         atomic {
                             var k:Int = 0;
                             for(octantPair in atomsToSend) {
                                 val octantId = octantPair.first;
                                 val atoms = octantPair.second;
-                                //Console.OUT.println("at " + here + " adding " + atoms.size() + " to octant " + octantId + " " + octantId.getLeafMortonId() + " k = " + k + " octantListHere.size() = " + octantListHere.size());
+                                //Console.OUT.println("at " + here + " adding " + atoms.size() + " to octant " + octantId + " " + octantId.getLeafMortonId() + " k = " + k + " leafOctantsHere.size() = " + leafOctantsHere.size());
                                 var targetOctant:LeafOctant = null;
-                                while(k < octantListHere.size()) {
-                                    val compareOctant = octantListHere(k);
+                                while(k < leafOctantsHere.size()) {
+                                    val compareOctant = leafOctantsHere(k);
                                     val diff = compareOctant.id.compareTo(octantId);
                                     if (diff == 0) {
                                         targetOctant = compareOctant;
@@ -367,7 +369,8 @@ public class FastMultipoleMethod {
                                     // target octant has not yet been created at this place
                                     //Console.OUT.println("at " + here + " creating octant " + octantId.getLeafMortonId());
                                     targetOctant = new LeafOctant(octantId, numTerms);
-                                    octantListHere.addBefore(k, targetOctant);
+                                    leafOctantsHere.addBefore(k, targetOctant);
+                                    octantsHere.put(octantId, targetOctant);
                                 }
                                 for (atom in atoms) {
                                     targetOctant.atomList.add(atom);
@@ -417,6 +420,7 @@ public class FastMultipoleMethod {
                     if (parentOctant == null) {
                         parentOctant = new ParentOctant(parentId, numTerms, local, dMax);
                         parentOctants.put(parentId, parentOctant);
+                        octants.put(parentId, parentOctant);
                     }
                     octant.parent = parentOctant;
                     val childIndex = parentId.getChildIndex(dMax, octant.id);
@@ -444,6 +448,7 @@ public class FastMultipoleMethod {
                     //Console.OUT.println("at " + here + " filling in octant " + lastOctantId);
                     val fillerOctant = new ParentOctant(lastOctantId, numTerms, local, dMax);
                     octantList.add(fillerOctant);
+                    octants.put(lastOctantId, fillerOctant);
                     lastOctantId = lastOctantId.next();
                 }
             }
@@ -571,7 +576,7 @@ public class FastMultipoleMethod {
     private static def getAtomsForOctantList(localData:FmmLocalData, octantList:Rail[OctantId]) {
         val atomList = new Rail[Rail[PointCharge]](octantList.size);
         for (i in 0..(octantList.size-1)) {
-            val octant = localData.getDescendant(octantList(i)) as LeafOctant;
+            val octant = localData.getOctant(octantList(i)) as LeafOctant;
             if (octant != null) {
                 atomList(i) = octant.getAtomCharges();
             }

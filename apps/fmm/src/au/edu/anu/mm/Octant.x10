@@ -70,8 +70,6 @@ public abstract class Octant implements Comparable[Octant] {
                         (id.z + 0.5) * sideLength - offset);
     }
 
-    public abstract def getDescendant(id:OctantId):Octant;
-
     abstract protected def downward(localData:PlaceLocalHandle[FmmLocalData], size:Double, parentLocalExpansion:LocalExpansion, dMax:UByte):Double;
 
     /** 

@@ -13,6 +13,7 @@ package au.edu.anu.mm;
 
 import x10.util.ArrayList;
 import x10.util.ArrayUtils;
+import x10.util.HashMap;
 
 import au.edu.anu.util.Timer;
 
@@ -24,6 +25,9 @@ public class FmmLocalData {
     public static val TIMER_INDEX_DOWNWARD:Int = 3;
     public static val TIMER_INDEX_TREE:Int = 4;
     public static val TIMER_INDEX_PLACEHOLDER:Int = 5;
+
+    /** All octants held at this place. */
+    var octants:HashMap[OctantId,Octant];
 
     /** All leaf octants held at this place. */
     var leafOctants:ArrayList[LeafOctant];
@@ -62,12 +66,8 @@ public class FmmLocalData {
         return placeId;
     }
 
-    public def getDescendant(octantId:OctantId) {
-        for (topLevelOctant in topLevelOctants) {
-            val descendant = topLevelOctant.getDescendant(octantId);
-            if (descendant != null) return descendant;
-        }
-        return null;
+    public def getOctant(octantId:OctantId) {
+        return octants.getOrElse(octantId, null);
     }
 
 }

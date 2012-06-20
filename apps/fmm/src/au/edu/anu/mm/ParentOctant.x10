@@ -150,21 +150,6 @@ public class ParentOctant extends Octant implements Comparable[ParentOctant] {
         }
     }
 
-    public def getDescendant(octantId:OctantId):Octant {
-        //Console.OUT.println("at " + here + " ParentOctant.getDescendant(" + octantId + ") on " + this.id);
-        if (octantId == this.id) return this;
-        for (i in 0..(children.size-1)) {
-            val childOctant = children(i);
-            if (childOctant != null) {
-                val desc = childOctant.getDescendant(octantId);
-                if (desc != null) {
-                    return desc;
-                }
-            }
-        }
-        return null;
-    }
-
     public def toString(): String {
         return "ParentOctant " + id;
     }

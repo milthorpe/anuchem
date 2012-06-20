@@ -43,7 +43,7 @@ public class GhostOctant extends Octant implements Comparable[Octant] {
     }
 
     private def getRemoteMultipole(localData:PlaceLocalHandle[FmmLocalData], id:OctantId):Pair[Int,MultipoleExpansion] {
-        val octant = localData().getDescendant(id);
+        val octant = localData().getOctant(id);
         if (octant != null) {
             //Console.OUT.println("at " + here + " waiting on multipole " + id);
             when(octant.multipoleReady) {
@@ -65,7 +65,7 @@ public class GhostOctant extends Octant implements Comparable[Octant] {
 
 
     private def downwardRemote(localData:PlaceLocalHandle[FmmLocalData], size:Double, parentLocalExpansion:LocalExpansion, dMax:UByte):Double {
-        val octant = localData().getDescendant(id);
+        val octant = localData().getOctant(id);
         if (octant != null) {
             return octant.downward(localData, size, parentLocalExpansion, dMax);
         } else {
@@ -76,10 +76,6 @@ public class GhostOctant extends Octant implements Comparable[Octant] {
 
     public def addToCombinedVSet(combinedVSet:HashSet[OctantId], ws:Int) {
         super.addToCombinedVSet(combinedVSet, ws);
-    }
-
-    public def getDescendant(octantId:OctantId):Octant {
-        return null;
     }
 
     public def toString(): String {

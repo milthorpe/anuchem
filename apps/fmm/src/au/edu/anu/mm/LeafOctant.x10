@@ -53,12 +53,6 @@ public class LeafOctant extends Octant implements Comparable[LeafOctant] {
 
     public def compareTo(b:LeafOctant):Int = id.compareTo(b.id);
 
-    public def getDescendant(octantId:OctantId):Octant {
-        //Console.OUT.println("at " + here + " LeafOctant.getDescendant(" + octantId + ") on " + this.id);
-        if (octantId == this.id) return this;
-        else return null;
-    }
-
     /**
      * Get the multipole representation of this octant, which is
      * simply the sum of the contributions of the particles in the octant.
