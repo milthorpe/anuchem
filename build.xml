@@ -35,7 +35,7 @@
     description="Test the Fast Multipole Method app code">
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/apps/fmm/bin">
             <arg value="-c"/>
-            <arg value="./periodicFmm3d 51396"/>
+            <arg value="./fmm 51396"/>
         </exec>
     </target>
 

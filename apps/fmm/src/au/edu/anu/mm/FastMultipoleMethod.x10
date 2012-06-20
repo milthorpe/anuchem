@@ -322,7 +322,7 @@ public class FastMultipoleMethod {
             }
         }
 
-        for (var p:Int=Place.MAX_PLACES; p>0; p--) {
+        finish for (var p:Int=Place.MAX_PLACES; p>0; p--) {
             val destPlace = p-1;
             if (destPlace != here.id && leafOctantList.size() > 0) {
                //Console.OUT.println("at " + here + " sending octants between " + firstLeafOctant(p-1) + " and " + (firstLeafOctant(p)-1) + " to " + destPlace);
