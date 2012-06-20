@@ -26,7 +26,7 @@ public class TestFastMultipoleMethod extends TestElectrostatic {
     public static def main(args : Array[String](1)) {
         var numAtoms:Int;
         var density:Double = 60.0;
-        var dMax:Int = 5;
+        var dMax:Int = 3;
         var numTerms:Int = 10;
         var wellSpaced:Int = 2;
         var verbose:Boolean = false;
