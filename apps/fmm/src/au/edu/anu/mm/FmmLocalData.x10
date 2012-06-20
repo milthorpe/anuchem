@@ -27,7 +27,7 @@ public class FmmLocalData {
     public static val TIMER_INDEX_PLACEHOLDER:Int = 5;
 
     /** All octants held at this place. */
-    var octants:HashMap[OctantId,Octant];
+    var octants:HashMap[UInt,Octant];
 
     /** All leaf octants held at this place. */
     var leafOctants:ArrayList[LeafOctant];
@@ -66,8 +66,12 @@ public class FmmLocalData {
         return placeId;
     }
 
+    public def getOctant(mortonId:UInt) {
+        return octants.getOrElse(mortonId, null);
+    }
+
     public def getOctant(octantId:OctantId) {
-        return octants.getOrElse(octantId, null);
+        return octants.getOrElse(octantId.getMortonId(), null);
     }
 
 }

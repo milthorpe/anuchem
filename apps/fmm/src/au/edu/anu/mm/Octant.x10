@@ -94,7 +94,7 @@ public abstract class Octant implements Comparable[Octant] {
         val vList = getVList();
         for ([p] in vList) {
             val octantIndex2 = vList(p);
-            val box2MultipoleExp = locallyEssentialTree.getMultipoleForOctant(octantIndex2);
+            val box2MultipoleExp = locallyEssentialTree.getMultipoleForOctant(octantIndex2.getMortonId());
            
             if (box2MultipoleExp != null) {
                 //Console.OUT.println("at " + here + " adding multipole for " + octantIndex2 + " to " + id);
@@ -125,7 +125,7 @@ public abstract class Octant implements Comparable[Octant] {
         //Console.OUT.println("at " + here + " sending multipole for " + id);
         if (vList != null) {
             val local = localData();
-            val id = this.id;
+            val mortonId = id.getMortonId();
             val multipoleExp = this.multipoleExp;
             val vListPlaces = new HashSet[Int]();
             for ([p] in vList) {
@@ -138,7 +138,7 @@ public abstract class Octant implements Comparable[Octant] {
             for(placeId in vListPlaces) {
                 at(Place(placeId)) async {
                     //Console.OUT.println("at " + here + " sending multipole for " + id + " to place " + placeId);
-                    localData().locallyEssentialTree.setMultipoleForOctant(id, multipoleExp);
+                    localData().locallyEssentialTree.setMultipoleForOctant(mortonId, multipoleExp);
                 }
             }
         }
@@ -172,10 +172,10 @@ public abstract class Octant implements Comparable[Octant] {
 
     public def getVList() = this.vList;
 
-    public def addToCombinedVSet(combinedVSet:HashSet[OctantId], ws:Int) {
+    public def addToCombinedVSet(combinedVSet:HashSet[UInt], ws:Int) {
         createVList(ws);
         for ([p] in vList) {
-            combinedVSet.add(vList(p));
+            combinedVSet.add(vList(p).getMortonId());
         }
     }
 

@@ -140,7 +140,7 @@ public class ParentOctant extends Octant implements Comparable[ParentOctant] {
         }
     }
 
-    public def addToCombinedVSet(combinedVSet:HashSet[OctantId], ws:Int) {
+    public def addToCombinedVSet(combinedVSet:HashSet[UInt], ws:Int) {
         super.addToCombinedVSet(combinedVSet, ws);
         for (i in 0..(children.size-1)) {
             val childOctant = children(i);

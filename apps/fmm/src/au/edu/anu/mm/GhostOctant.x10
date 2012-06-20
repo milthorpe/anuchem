@@ -36,18 +36,19 @@ public class GhostOctant extends Octant implements Comparable[Octant] {
      * Go to home place of this octant and return multipole expansion (once computed).
      */
     protected def upward(localData:PlaceLocalHandle[FmmLocalData], size:Double, dMax:UByte):Pair[Int,MultipoleExpansion] {
-        val result = at(Place(placeId)) getRemoteMultipole(localData, id);
+        val mortonId = id.getMortonId();
+        val result = at(Place(placeId)) getRemoteMultipole(localData, mortonId);
         numAtoms = result.first;
         //Console.OUT.println("at " + here + " GhostOctant.upward for " + id + " held at " + placeId + " numAtoms = " + numAtoms);
         return result;
     }
 
-    private def getRemoteMultipole(localData:PlaceLocalHandle[FmmLocalData], id:OctantId):Pair[Int,MultipoleExpansion] {
-        val octant = localData().getOctant(id);
+    private def getRemoteMultipole(localData:PlaceLocalHandle[FmmLocalData], mortonId:UInt):Pair[Int,MultipoleExpansion] {
+        val octant = localData().getOctant(mortonId);
         if (octant != null) {
-            //Console.OUT.println("at " + here + " waiting on multipole " + id);
+            //Console.OUT.println("at " + here + " waiting on multipole " + mortonId);
             when(octant.multipoleReady) {
-                //Console.OUT.println("at " + here + " progressed on multipole " + id + " numAtoms = " + octant.numAtoms);
+                //Console.OUT.println("at " + here + " progressed on multipole " + mortonId + " numAtoms = " + octant.numAtoms);
                 return Pair[Int,MultipoleExpansion](octant.numAtoms, octant.multipoleExp);
             }
         } else {
@@ -74,7 +75,7 @@ public class GhostOctant extends Octant implements Comparable[Octant] {
     }
      
 
-    public def addToCombinedVSet(combinedVSet:HashSet[OctantId], ws:Int) {
+    public def addToCombinedVSet(combinedVSet:HashSet[UInt], ws:Int) {
         super.addToCombinedVSet(combinedVSet, ws);
     }
 
