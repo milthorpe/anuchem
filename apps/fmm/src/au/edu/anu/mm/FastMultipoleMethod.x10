@@ -322,8 +322,6 @@ public class FastMultipoleMethod {
             }
         }
 
-        Team.WORLD.barrier(here.id);
-
         for (var p:Int=Place.MAX_PLACES; p>0; p--) {
             val destPlace = p-1;
             if (destPlace != here.id && leafOctantList.size() > 0) {
