@@ -63,7 +63,7 @@ public class ParentOctant extends Octant implements Comparable[ParentOctant] {
         finish {
             for (i in children) {
                 val child = children(i);
-                if (child != null) async {
+                if (child != null) /*async*/ {
                     childExpansions(i) = child.upward(localData, size, dMax);
                 }
             }
@@ -140,7 +140,7 @@ public class ParentOctant extends Octant implements Comparable[ParentOctant] {
         }
     }
 
-    public def addToCombinedVSet(combinedVSet:HashSet[OctantId], ws:Int) {
+    public def addToCombinedVSet(combinedVSet:HashSet[UInt], ws:Int) {
         super.addToCombinedVSet(combinedVSet, ws);
         for (i in 0..(children.size-1)) {
             val childOctant = children(i);
@@ -148,21 +148,6 @@ public class ParentOctant extends Octant implements Comparable[ParentOctant] {
                 childOctant.addToCombinedVSet(combinedVSet, ws);
             }
         }
-    }
-
-    public def getDescendant(octantId:OctantId):Octant {
-        //Console.OUT.println("at " + here + " ParentOctant.getDescendant(" + octantId + ") on " + this.id);
-        if (octantId == this.id) return this;
-        for (i in 0..(children.size-1)) {
-            val childOctant = children(i);
-            if (childOctant != null) {
-                val desc = childOctant.getDescendant(octantId);
-                if (desc != null) {
-                    return desc;
-                }
-            }
-        }
-        return null;
     }
 
     public def toString(): String {

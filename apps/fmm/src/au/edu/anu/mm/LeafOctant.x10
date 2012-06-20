@@ -53,12 +53,6 @@ public class LeafOctant extends Octant implements Comparable[LeafOctant] {
 
     public def compareTo(b:LeafOctant):Int = id.compareTo(b.id);
 
-    public def getDescendant(octantId:OctantId):Octant {
-        //Console.OUT.println("at " + here + " LeafOctant.getDescendant(" + octantId + ") on " + this.id);
-        if (octantId == this.id) return this;
-        else return null;
-    }
-
     /**
      * Get the multipole representation of this octant, which is
      * simply the sum of the contributions of the particles in the octant.
@@ -152,9 +146,9 @@ public class LeafOctant extends Octant implements Comparable[LeafOctant] {
         if (periodic) {
             val lowestLevelDim = Math.pow2(dMax);
             for (p in 0..(uList.size-1)) {
-                val octant2Atoms = myLET.getAtomsForOctant(uList(p));
+                val octantIndex2 = uList(p);
+                val octant2Atoms = myLET.getAtomsForOctant(uList(p).getMortonId());
                 if (octant2Atoms != null) {
-                    val octantIndex2 = uList(p);
                     val translation = getTranslation(lowestLevelDim, size, octantIndex2.x, octantIndex2.y, octantIndex2.z);
                     for (octant2AtomsIndex in 0..(octant2Atoms.size-1)) {
                         val atom2 = octant2Atoms(octant2AtomsIndex);
@@ -176,7 +170,7 @@ public class LeafOctant extends Octant implements Comparable[LeafOctant] {
             }
         } else {
             for (p in 0..(uList.size-1)) {
-                val octant2Atoms = myLET.getAtomsForOctant(uList(p));
+                val octant2Atoms = myLET.getAtomsForOctant(uList(p).getMortonId());
                 if (octant2Atoms != null) {
                     //Console.OUT.println("at " + here + " calculating direct for " + id + " against " + uList(p));
                     for (octant2AtomsIndex in 0..(octant2Atoms.size-1)) {
