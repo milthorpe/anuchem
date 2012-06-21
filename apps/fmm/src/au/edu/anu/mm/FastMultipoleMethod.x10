@@ -154,37 +154,33 @@ public class FastMultipoleMethod {
             val leafOctants = localData().leafOctants;
             var maxForceError:Double = 0.0;
             for (leafOctant in leafOctants) {
-                val atoms = leafOctant.getAtoms();
-                for (i in 0..(atoms.size-1)) {
-                    val atom = atoms(i);
+                val atoms = leafOctant.atoms;
+                for (atomI in atoms) {
                     var directForce:Vector3d=Vector3d.NULL;
-                    for (j in 0..(atoms.size-1)) {
-                        if (i!=j) {
-                            val atomJ = atoms(j);
-                            val rVec = atomJ.centre - atom.centre;
+                    for (atomJ in atoms) {
+                        if (atomI != atomJ) {
+                            val rVec = atomJ.centre - atomI.centre;
                             val r2 = rVec.lengthSquared();
                             val r = Math.sqrt(r2);
-                            val pairForce = (atom.charge * atomJ.charge / r2 / r) * rVec;
+                            val pairForce = (atomI.charge * atomJ.charge / r2 / r) * rVec;
                             directForce += pairForce; 
                         }
                     }
                     for (leafOctant2 in leafOctants) {
                         if (leafOctant2 != leafOctant) {
-                            val atoms2 = leafOctant2.getAtoms();
-                            for (j in 0..(atoms2.size-1)) {
-                                val atomJ = atoms2(j);
-                                val rVec = atomJ.centre - atom.centre;
+                            for (atomJ in leafOctant2.atoms) {
+                                val rVec = atomJ.centre - atomI.centre;
                                 val r2 = rVec.lengthSquared();
                                 val r = Math.sqrt(r2);
-                                val pairForce = (atom.charge * atomJ.charge / r2 / r) * rVec;
+                                val pairForce = (atomI.charge * atomJ.charge / r2 / r) * rVec;
                                 directForce += pairForce;
                             }
                         }
                     }
-                    val forceError = (directForce - atom.force).magnitude() / directForce.magnitude();
+                    val forceError = (directForce - atomI.force).magnitude() / directForce.magnitude();
                     maxForceError = Math.max(forceError, maxForceError);
                  
-                    //Console.OUT.println(atom.symbol + " force = " + atom.force + " magnitude " + atom.force.length() + " forceError = " + forceError);
+                    //Console.OUT.println(atomI.symbol + " force = " + atomI.force + " magnitude " + atomI.force.length() + " forceError = " + forceError);
                 }
             }
             Console.OUT.println("max force error = " + maxForceError);
@@ -242,9 +238,7 @@ public class FastMultipoleMethod {
         val leafOctants = localData().leafOctants;
         var numAtoms:Int = 0;
         for (leafOctant in leafOctants) {
-            val atoms = leafOctant.getAtoms();
-            for (i in atoms) {
-                val atom = atoms(i);
+            for (atom in leafOctant.atoms) {
                 if (atom != null) {
                     numAtoms++;
                     localAtoms.add(atom);
@@ -270,7 +264,7 @@ public class FastMultipoleMethod {
                 octants.put(mortonId, octant);
 
             }
-            octant.atomList.add(atom);
+            octant.atoms.add(atom);
         }
 
         val octantEntries = octants.entries();
@@ -285,7 +279,7 @@ public class FastMultipoleMethod {
         if (leafOctantList.size() > 0) {
             for(octant in leafOctantList) {
                 val mortonId = octant.id.getLeafMortonId() as Int;
-                octantLoads(mortonId) = octant.atomList.size();
+                octantLoads(mortonId) = octant.atoms.size();
                 //Console.OUT.println("at " + here + " octant " + mortonId + "(" + octant.id + ") has " + octantLoads(mortonId));
             }
         }
@@ -334,7 +328,7 @@ public class FastMultipoleMethod {
                     while(leafOctantList(j) != null && leafOctantList(j).id.getLeafMortonId() >= firstLeafOctant(p)) j--;
                     while(leafOctantList(j) != null && leafOctantList(j).id.getLeafMortonId() >= firstLeafOctant(p-1)) {
                         val octant = leafOctantList.removeAt(j);
-                        atomsToSend.addBefore(0, new Pair[OctantId,ArrayList[MMAtom]](octant.id, octant.atomList));
+                        atomsToSend.addBefore(0, new Pair[OctantId,ArrayList[MMAtom]](octant.id, octant.atoms));
                         j--;
                     }
                 }
@@ -371,7 +365,7 @@ public class FastMultipoleMethod {
                                     localData().octants.put(octantId.getMortonId(), targetOctant);
                                 }
                                 for (atom in atoms) {
-                                    targetOctant.atomList.add(atom);
+                                    targetOctant.atoms.add(atom);
                                 }
                             }
                         }
@@ -463,13 +457,6 @@ public class FastMultipoleMethod {
         for (octant in octantList) {
             local.topLevelOctants.add(octant);
             //Console.OUT.println("at " + here + "==>" + octant);
-        }
-
-        for(octant in leafOctantList) {
-            if (octant != null) {
-                octant.setAtoms(octant.atomList.toArray());
-                octant.atomList = new ArrayList[MMAtom](); // clear for next iteration
-            }
         }
 
         createLET();

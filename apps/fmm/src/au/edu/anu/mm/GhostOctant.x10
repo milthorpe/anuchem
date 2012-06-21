@@ -22,6 +22,9 @@ import x10.util.Pair;
 public class GhostOctant extends Octant implements Comparable[Octant] {
     val placeId:Int;
 
+    /** The number of atoms in all boxes below this box. */
+    private var numAtoms:Int;
+
     /**
      * Creates a new GhostOctant for an octant at the given place.
      */
@@ -31,6 +34,8 @@ public class GhostOctant extends Octant implements Comparable[Octant] {
     }
 
     public def compareTo(b:Octant):Int = id.compareTo(b.id);
+
+    public def numAtoms() = numAtoms;
 
     /** 
      * Go to home place of this octant and return multipole expansion (once computed).
@@ -49,7 +54,7 @@ public class GhostOctant extends Octant implements Comparable[Octant] {
             //Console.OUT.println("at " + here + " waiting on multipole " + mortonId);
             when(octant.multipoleReady) {
                 //Console.OUT.println("at " + here + " progressed on multipole " + mortonId + " numAtoms = " + octant.numAtoms);
-                return Pair[Int,MultipoleExpansion](octant.numAtoms, octant.multipoleExp);
+                return Pair[Int,MultipoleExpansion](octant.numAtoms(), octant.multipoleExp);
             }
         } else {
             return Pair[Int,MultipoleExpansion](0, null);

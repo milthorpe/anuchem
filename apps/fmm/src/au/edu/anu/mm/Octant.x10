@@ -28,9 +28,6 @@ public abstract class Octant implements Comparable[Octant] {
 
     public var parent:Octant;
 
-    /** The number of atoms in all boxes below this box. */
-    public var numAtoms:Int;
-
     /** 
      * The V-list consists of the children of those boxes 
      * not well-separated from this box's parent.
@@ -61,6 +58,8 @@ public abstract class Octant implements Comparable[Octant] {
 
     public def compareTo(b:Octant):Int = id.compareTo(b.id);
 
+    public abstract def numAtoms():Int;
+    
     public def getCentre(size:Double):Point3d {
         dim:Int = Math.pow2(id.level);
         sideLength:Double = size / dim;

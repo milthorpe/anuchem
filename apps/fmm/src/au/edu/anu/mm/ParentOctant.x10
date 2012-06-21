@@ -23,7 +23,11 @@ import x10x.vector.Vector3d;
  * @author milthorpe
  */
 public class ParentOctant extends Octant implements Comparable[ParentOctant] {
+
     public val children:Rail[Octant] = new Array[Octant](8);
+
+    /** The number of atoms in all boxes below this box. */
+    private var numAtoms:Int;
 
     /**
      * Creates a new FmmBox with multipole and local expansions
@@ -50,6 +54,8 @@ public class ParentOctant extends Octant implements Comparable[ParentOctant] {
     }
 
     public def compareTo(b:ParentOctant):Int = id.compareTo(b.id);
+
+    public def numAtoms() = numAtoms;
 
     /** 
      * For each shared octant, combines multipole expansions for <= 8 child
