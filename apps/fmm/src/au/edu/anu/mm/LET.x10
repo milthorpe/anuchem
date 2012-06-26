@@ -50,7 +50,7 @@ public class LET {
 
     public def getMultipoleForOctant(mortonId:UInt) {
         val cacheIndex = ArrayUtils.binarySearch(combinedVList, mortonId);
-        if (cacheIndex > 0) {
+        if (cacheIndex >= 0) {
             return multipoleCopies(cacheIndex);
         } else {
             return null;
@@ -59,14 +59,14 @@ public class LET {
 
     public def setMultipoleForOctant(mortonId:UInt, multipoleExp:MultipoleExpansion) {
         val cacheIndex = ArrayUtils.binarySearch(combinedVList, mortonId);
-        if (cacheIndex > 0) {
+        if (cacheIndex >= 0) {
             multipoleCopies(cacheIndex) = multipoleExp;
         }
     }
 
     public def getAtomsForOctant(mortonId:UInt) {
         val cacheIndex = ArrayUtils.binarySearch(combinedUList, mortonId);
-        if (cacheIndex > 0) {
+        if (cacheIndex >= 0) {
             return cachedAtoms(cacheIndex);
         } else {
             return null;
@@ -75,7 +75,7 @@ public class LET {
 
     public def setAtomsForOctant(mortonId:UInt, atoms:Rail[PointCharge]) {
         val cacheIndex = ArrayUtils.binarySearch(combinedUList, mortonId);
-        if (cacheIndex > 0) {
+        if (cacheIndex >= 0) {
             cachedAtoms(cacheIndex) = atoms;
         }
     }
