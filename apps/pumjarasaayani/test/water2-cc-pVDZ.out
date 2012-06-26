@@ -1,0 +1,467 @@
+PumjaRasaayani shunya.tri, Quantum Chemistry program in x10, v0.4
+1 places, 1 threads per place
+
+translated molecule by [6.299e-08, -1.89e-07, -0]
+
+Radius = 2.071927
+rad/PI=0.659515
+----------------------------------------------------------
+Input (including defaults):
+----------------------------------------------------------
+2water
+basis cc-pVDZ
+molecule
+H   -1.23395   -0.02020    0.45703
+H   -0.38266    0.00690    0.03538
+O   -0.96941    0.00286   -0.07391
+H    1.08823    0.48007   -0.22166
+H    1.07356   -0.47101   -0.25143
+O    0.90126   -0.00233    0.07149
+end
+scf_method diis
+scf_max 15
+scf_converge 1.0E-5
+diis_start 0.1
+diis_converge 1.0E-5
+diis_subspace_size 15
+guess sad
+gmat_parallel_scheme 0
+----------------------------------------------------------
+Number of atoms: 6
+	Reading in basis info. for cc-pVDZ from test/basis
+
+Using 50 basis functions.
+    Time for setting up basis functions: 3.17 milliseconds
+
+    Time for computing 1E integrals: 0.285 seconds
+
+Nuclear repulsion energy = 109.584730 a.u.
+
+Number of 2E integrals: 813450
+Integral_Pack.cc N=300 L=30
+maxam=2
+F2e(1)=11
+F2e(2)=27
+F2e(3)=42
+F2e(4)=65
+ 0  0     3     0     0     0
+ 1  0     6    11     3     0
+ 1  1     9    49     9    18
+ 2  0     9    49     6     0
+ 2  1    12   129    16    36
+ 2  2    15   274    31   168
+roN=300 roL=30 roNK=300
+found 299
+mu=38 nu=38 | maxmaxl=30
+mu=13 nu=13 | maxmaxl=30
+mu=19 nu=13 | maxmaxl=30
+mu=44 nu=38 | maxmaxl=30
+mu=19 nu=19 | maxmaxl=30
+mu=44 nu=44 | maxmaxl=30
+mu=38 nu=35 | maxmaxl=30
+mu=13 nu=10 | maxmaxl=30
+mu=19 nu=10 | maxmaxl=30
+mu=44 nu=35 | maxmaxl=30
+mu=35 nu=35 | maxmaxl=30
+mu=10 nu=10 | maxmaxl=30
+mu=38 nu=36 | maxmaxl=30
+mu=13 nu=11 | maxmaxl=30
+mu=44 nu=36 | maxmaxl=30
+mu=19 nu=11 | maxmaxl=30
+mu=36 nu=35 | maxmaxl=30
+mu=11 nu=10 | maxmaxl=30
+mu=11 nu=11 | maxmaxl=30
+mu=36 nu=36 | maxmaxl=30
+mu=16 nu=13 | maxmaxl=30
+mu=41 nu=38 | maxmaxl=30
+mu=44 nu=41 | maxmaxl=30
+mu=19 nu=16 | maxmaxl=30
+mu=19 nu=2 | maxmaxl=30
+mu=44 nu=27 | maxmaxl=30
+mu=44 nu=32 | maxmaxl=30
+mu=19 nu=7 | maxmaxl=30
+mu=41 nu=35 | maxmaxl=30
+mu=16 nu=10 | maxmaxl=30
+mu=13 nu=2 | maxmaxl=30
+mu=38 nu=27 | maxmaxl=30
+mu=38 nu=32 | maxmaxl=30
+mu=13 nu=7 | maxmaxl=30
+mu=27 nu=27 | maxmaxl=30
+mu=32 nu=32 | maxmaxl=30
+mu=2 nu=2 | maxmaxl=30
+mu=7 nu=7 | maxmaxl=19
+mu=38 nu=37 | maxmaxl=30
+mu=13 nu=12 | maxmaxl=30
+mu=44 nu=37 | maxmaxl=30
+mu=19 nu=12 | maxmaxl=30
+mu=41 nu=36 | maxmaxl=30
+mu=16 nu=11 | maxmaxl=30
+mu=2 nu=10 | maxmaxl=30
+mu=27 nu=35 | maxmaxl=30
+mu=32 nu=35 | maxmaxl=30
+mu=7 nu=10 | maxmaxl=30
+mu=37 nu=35 | maxmaxl=30
+mu=12 nu=10 | maxmaxl=30
+mu=19 nu=0 | maxmaxl=30
+mu=44 nu=25 | maxmaxl=30
+mu=44 nu=30 | maxmaxl=30
+mu=19 nu=5 | maxmaxl=30
+mu=7 nu=5 | maxmaxl=30
+mu=27 nu=25 | maxmaxl=30
+mu=2 nu=0 | maxmaxl=30
+mu=32 nu=30 | maxmaxl=30
+mu=13 nu=1 | maxmaxl=30
+mu=38 nu=26 | maxmaxl=30
+mu=38 nu=31 | maxmaxl=30
+mu=13 nu=6 | maxmaxl=30
+mu=19 nu=1 | maxmaxl=30
+mu=44 nu=26 | maxmaxl=30
+mu=44 nu=31 | maxmaxl=30
+mu=19 nu=6 | maxmaxl=30
+mu=13 nu=0 | maxmaxl=30
+mu=38 nu=25 | maxmaxl=30
+mu=38 nu=30 | maxmaxl=30
+mu=13 nu=5 | maxmaxl=30
+mu=12 nu=11 | maxmaxl=30
+mu=37 nu=36 | maxmaxl=30
+mu=2 nu=11 | maxmaxl=30
+mu=27 nu=36 | maxmaxl=30
+mu=32 nu=36 | maxmaxl=30
+mu=7 nu=11 | maxmaxl=30
+mu=16 nu=2 | maxmaxl=30
+mu=41 nu=27 | maxmaxl=30
+mu=41 nu=32 | maxmaxl=30
+mu=16 nu=7 | maxmaxl=20
+mu=10 nu=1 | maxmaxl=30
+mu=35 nu=26 | maxmaxl=30
+mu=35 nu=31 | maxmaxl=30
+mu=10 nu=6 | maxmaxl=30
+mu=10 nu=0 | maxmaxl=30
+mu=35 nu=25 | maxmaxl=30
+mu=35 nu=30 | maxmaxl=30
+mu=10 nu=5 | maxmaxl=30
+mu=41 nu=41 | maxmaxl=23
+mu=16 nu=16 | maxmaxl=24
+mu=30 nu=30 | maxmaxl=30
+mu=25 nu=25 | maxmaxl=30
+mu=5 nu=5 | maxmaxl=30
+mu=0 nu=0 | maxmaxl=30
+mu=44 nu=6 | maxmaxl=26
+mu=11 nu=1 | maxmaxl=30
+mu=36 nu=26 | maxmaxl=30
+mu=36 nu=31 | maxmaxl=30
+mu=11 nu=6 | maxmaxl=30
+mu=38 nu=6 | maxmaxl=30
+mu=7 nu=2 | maxmaxl=28
+mu=32 nu=27 | maxmaxl=30
+mu=2 nu=12 | maxmaxl=30
+mu=27 nu=37 | maxmaxl=30
+mu=32 nu=37 | maxmaxl=30
+mu=27 nu=26 | maxmaxl=30
+mu=32 nu=31 | maxmaxl=30
+mu=2 nu=1 | maxmaxl=30
+mu=7 nu=6 | maxmaxl=14
+mu=7 nu=12 | maxmaxl=19
+mu=11 nu=0 | maxmaxl=30
+mu=36 nu=25 | maxmaxl=30
+mu=36 nu=30 | maxmaxl=30
+mu=11 nu=5 | maxmaxl=30
+mu=16 nu=0 | maxmaxl=30
+mu=41 nu=25 | maxmaxl=30
+mu=41 nu=30 | maxmaxl=30
+mu=16 nu=5 | maxmaxl=28
+mu=35 nu=6 | maxmaxl=30
+mu=16 nu=12 | maxmaxl=23
+mu=41 nu=37 | maxmaxl=22
+mu=2 nu=6 | maxmaxl=29
+mu=7 nu=1 | maxmaxl=16
+mu=32 nu=26 | maxmaxl=29
+mu=27 nu=31 | maxmaxl=29
+mu=36 nu=6 | maxmaxl=30
+mu=41 nu=7 | maxmaxl=7
+mu=31 nu=30 | maxmaxl=30
+mu=26 nu=25 | maxmaxl=30
+mu=6 nu=5 | maxmaxl=27
+mu=1 nu=0 | maxmaxl=30
+mu=2 nu=5 | maxmaxl=27
+mu=7 nu=0 | maxmaxl=30
+mu=27 nu=30 | maxmaxl=30
+mu=32 nu=25 | maxmaxl=30
+mu=12 nu=0 | maxmaxl=30
+mu=37 nu=25 | maxmaxl=30
+mu=37 nu=30 | maxmaxl=30
+mu=12 nu=5 | maxmaxl=27
+mu=16 nu=1 | maxmaxl=21
+mu=41 nu=26 | maxmaxl=20
+mu=41 nu=31 | maxmaxl=20
+mu=16 nu=6 | maxmaxl=18
+mu=37 nu=37 | maxmaxl=21
+mu=12 nu=12 | maxmaxl=22
+mu=44 nu=7 | maxmaxl=17
+mu=44 nu=5 | maxmaxl=19
+mu=5 nu=1 | maxmaxl=26
+mu=6 nu=0 | maxmaxl=30
+mu=31 nu=25 | maxmaxl=30
+mu=30 nu=26 | maxmaxl=30
+mu=32 nu=6 | maxmaxl=24
+mu=7 nu=31 | maxmaxl=9
+mu=27 nu=6 | maxmaxl=24
+mu=7 nu=26 | maxmaxl=9
+mu=41 nu=6 | maxmaxl=13
+mu=19 nu=31 | maxmaxl=23
+mu=7 nu=37 | maxmaxl=6
+mu=19 nu=26 | maxmaxl=23
+mu=12 nu=1 | maxmaxl=20
+mu=37 nu=26 | maxmaxl=19
+mu=37 nu=31 | maxmaxl=19
+mu=12 nu=6 | maxmaxl=17
+mu=41 nu=5 | maxmaxl=23
+mu=5 nu=0 | maxmaxl=30
+mu=30 nu=25 | maxmaxl=30
+mu=13 nu=31 | maxmaxl=30
+mu=44 nu=1 | maxmaxl=21
+mu=13 nu=26 | maxmaxl=30
+mu=38 nu=5 | maxmaxl=30
+mu=6 nu=6 | maxmaxl=9
+mu=31 nu=31 | maxmaxl=18
+mu=1 nu=1 | maxmaxl=19
+mu=26 nu=26 | maxmaxl=18
+mu=38 nu=1 | maxmaxl=30
+mu=38 nu=7 | maxmaxl=30
+mu=44 nu=16 | maxmaxl=18
+mu=19 nu=41 | maxmaxl=20
+mu=31 nu=10 | maxmaxl=30
+mu=6 nu=1 | maxmaxl=14
+mu=31 nu=26 | maxmaxl=17
+mu=26 nu=10 | maxmaxl=30
+mu=37 nu=6 | maxmaxl=12
+mu=31 nu=5 | maxmaxl=22
+mu=30 nu=6 | maxmaxl=30
+mu=25 nu=6 | maxmaxl=30
+mu=26 nu=5 | maxmaxl=22
+mu=35 nu=1 | maxmaxl=30
+mu=41 nu=16 | maxmaxl=5
+mu=37 nu=5 | maxmaxl=20
+mu=41 nu=13 | maxmaxl=30
+mu=38 nu=16 | maxmaxl=30
+mu=31 nu=11 | maxmaxl=30
+mu=35 nu=5 | maxmaxl=30
+mu=31 nu=6 | maxmaxl=9
+mu=26 nu=11 | maxmaxl=30
+mu=26 nu=6 | maxmaxl=9
+mu=36 nu=1 | maxmaxl=30
+mu=16 nu=31 | maxmaxl=10
+mu=16 nu=26 | maxmaxl=10
+mu=7 nu=36 | maxmaxl=30
+mu=41 nu=1 | maxmaxl=9
+mu=32 nu=7 | maxmaxl=13
+mu=44 nu=12 | maxmaxl=15
+mu=19 nu=37 | maxmaxl=17
+mu=27 nu=7 | maxmaxl=14
+mu=41 nu=12 | maxmaxl=6
+mu=16 nu=37 | maxmaxl=3
+mu=7 nu=30 | maxmaxl=16
+mu=32 nu=5 | maxmaxl=16
+mu=27 nu=5 | maxmaxl=16
+mu=7 nu=25 | maxmaxl=16
+mu=41 nu=10 | maxmaxl=30
+mu=16 nu=35 | maxmaxl=30
+mu=32 nu=1 | maxmaxl=18
+mu=2 nu=31 | maxmaxl=20
+mu=27 nu=1 | maxmaxl=18
+mu=2 nu=26 | maxmaxl=20
+mu=31 nu=12 | maxmaxl=9
+mu=26 nu=12 | maxmaxl=9
+mu=38 nu=12 | maxmaxl=30
+mu=13 nu=37 | maxmaxl=30
+mu=37 nu=1 | maxmaxl=8
+mu=7 nu=35 | maxmaxl=30
+mu=32 nu=16 | maxmaxl=16
+mu=30 nu=5 | maxmaxl=28
+mu=25 nu=5 | maxmaxl=28
+mu=31 nu=1 | maxmaxl=7
+mu=27 nu=16 | maxmaxl=16
+mu=26 nu=1 | maxmaxl=7
+mu=37 nu=12 | maxmaxl=3
+mu=36 nu=5 | maxmaxl=30
+mu=41 nu=2 | maxmaxl=17
+mu=31 nu=0 | maxmaxl=30
+mu=30 nu=1 | maxmaxl=30
+mu=25 nu=1 | maxmaxl=30
+mu=26 nu=0 | maxmaxl=30
+mu=16 nu=30 | maxmaxl=30
+mu=16 nu=25 | maxmaxl=30
+mu=41 nu=11 | maxmaxl=30
+mu=16 nu=36 | maxmaxl=30
+mu=37 nu=10 | maxmaxl=30
+mu=35 nu=12 | maxmaxl=30
+mu=41 nu=0 | maxmaxl=28
+mu=32 nu=12 | maxmaxl=13
+mu=27 nu=12 | maxmaxl=13
+mu=2 nu=37 | maxmaxl=14
+mu=30 nu=12 | maxmaxl=16
+mu=25 nu=12 | maxmaxl=15
+mu=37 nu=0 | maxmaxl=16
+mu=19 nu=30 | maxmaxl=8
+mu=19 nu=25 | maxmaxl=8
+mu=44 nu=0 | maxmaxl=6
+mu=36 nu=12 | maxmaxl=30
+mu=37 nu=11 | maxmaxl=30
+mu=13 nu=30 | maxmaxl=7
+mu=13 nu=25 | maxmaxl=7
+mu=44 nu=19 | maxmaxl=2
+mu=38 nu=0 | maxmaxl=5
+mu=19 nu=38 | maxmaxl=2
+mu=44 nu=13 | maxmaxl=2
+mu=30 nu=11 | maxmaxl=6
+mu=25 nu=11 | maxmaxl=6
+mu=19 nu=32 | maxmaxl=4
+mu=19 nu=27 | maxmaxl=4
+mu=38 nu=13 | maxmaxl=2
+mu=30 nu=0 | maxmaxl=4
+mu=25 nu=0 | maxmaxl=4
+mu=36 nu=0 | maxmaxl=4
+mu=44 nu=11 | maxmaxl=1
+mu=19 nu=36 | maxmaxl=1
+mu=32 nu=13 | maxmaxl=4
+mu=27 nu=13 | maxmaxl=3
+mu=44 nu=2 | maxmaxl=3
+mu=32 nu=0 | maxmaxl=4
+mu=2 nu=30 | maxmaxl=4
+mu=27 nu=0 | maxmaxl=4
+mu=2 nu=25 | maxmaxl=4
+mu=38 nu=11 | maxmaxl=1
+mu=13 nu=36 | maxmaxl=1
+mu=38 nu=2 | maxmaxl=3
+mu=30 nu=10 | maxmaxl=1
+mu=32 nu=11 | maxmaxl=3
+mu=25 nu=10 | maxmaxl=1
+mu=27 nu=11 | maxmaxl=3
+mu=36 nu=11 | maxmaxl=0
+mu=35 nu=0 | maxmaxl=0
+mu=2 nu=36 | maxmaxl=2
+mu=32 nu=2 | maxmaxl=1
+mu=27 nu=2 | maxmaxl=1
+mu=44 nu=10 | maxmaxl=0
+mu=19 nu=35 | maxmaxl=0
+mu=13 nu=35 | maxmaxl=0
+mu=38 nu=10 | maxmaxl=0
+mu=32 nu=10 | maxmaxl=0
+mu=27 nu=10 | maxmaxl=0
+mu=36 nu=10 | maxmaxl=0
+mu=35 nu=11 | maxmaxl=0
+mu=2 nu=35 | maxmaxl=0
+nShell=24 nShellPairs=299 nSigShellPairs=299 pAuxCount=4.825061e+08 (primitive) AuxCount=5.419724e+07 (contracted)
+mCost=1.414025e+06
+fCost=2.723843e+09
+wCost=1.365609e+09
+Starting SCF procedure...
+GMatrixROmem.x10 compute
+  EJ = 167.994469 a.u.
+    Time to construct JMatrix with RO: 13.5 seconds (9.754 for ints)
+  EK = 0.000000 a.u.
+    Time to construct KMatrix with RO: 7.7e-07 seconds (0 for ints)
+    Time to construct GMatrix with RO: 13.5 seconds
+   Max DIIS error = 8.318e+00 subspaceSize = 0
+Cycle #0 Total energy = -137.547632 a.u. (scale factor = 3.000000)
+----------------------------------------------------------
+GMatrixROmem.x10 compute
+  EJ = 128.632701 a.u.
+    Time to construct JMatrix with RO: 13.5 seconds (9.754 for ints)
+  EK = 43.219627 a.u.
+    Time to construct KMatrix with RO: 179 seconds (48.9 for ints)
+    Time to construct GMatrix with RO: 193 seconds
+   Max DIIS error = 1.908e+00 subspaceSize = 1
+Cycle #1 Total energy = -147.567020 a.u. (scale factor = 3.000000) (-10.019388)
+----------------------------------------------------------
+GMatrixROmem.x10 compute
+  EJ = 192.357496 a.u.
+    Time to construct JMatrix with RO: 13.4 seconds (9.73 for ints)
+  EK = 58.546036 a.u.
+    Time to construct KMatrix with RO: 179 seconds (48.73 for ints)
+    Time to construct GMatrix with RO: 192 seconds
+   Max DIIS error = 1.675e+00 subspaceSize = 2
+Starting DIIS...
+Cycle #2 Total energy = -160.223539 a.u. (scale factor = 3.000000) (-12.656519)
+----------------------------------------------------------
+GMatrixROmem.x10 compute
+  EJ = 170.312642 a.u.
+    Time to construct JMatrix with RO: 13.4 seconds (9.727 for ints)
+  EK = 53.067963 a.u.
+    Time to construct KMatrix with RO: 179 seconds (48.75 for ints)
+    Time to construct GMatrix with RO: 192 seconds
+   Max DIIS error = 3.586e-01 subspaceSize = 3
+Cycle #3 Total energy = -154.128700 a.u. (scale factor = 3.000000) (6.094839)
+----------------------------------------------------------
+GMatrixROmem.x10 compute
+  EJ = 166.899972 a.u.
+    Time to construct JMatrix with RO: 13.4 seconds (9.728 for ints)
+  EK = 52.336676 a.u.
+    Time to construct KMatrix with RO: 179 seconds (48.75 for ints)
+    Time to construct GMatrix with RO: 192 seconds
+   Max DIIS error = 8.258e-02 subspaceSize = 4
+Cycle #4 Total energy = -152.890190 a.u. (scale factor = 3.000000) (1.238510)
+----------------------------------------------------------
+GMatrixROmem.x10 compute
+  EJ = 166.282878 a.u.
+    Time to construct JMatrix with RO: 13.4 seconds (9.73 for ints)
+  EK = 52.206261 a.u.
+    Time to construct KMatrix with RO: 179 seconds (48.74 for ints)
+    Time to construct GMatrix with RO: 192 seconds
+   Max DIIS error = 3.040e-02 subspaceSize = 5
+Cycle #5 Total energy = -152.648841 a.u. (scale factor = 3.000000) (0.241349)
+----------------------------------------------------------
+GMatrixROmem.x10 compute
+  EJ = 166.148624 a.u.
+    Time to construct JMatrix with RO: 13.4 seconds (9.73 for ints)
+  EK = 52.179084 a.u.
+    Time to construct KMatrix with RO: 179 seconds (48.74 for ints)
+    Time to construct GMatrix with RO: 192 seconds
+   Max DIIS error = 6.539e-03 subspaceSize = 6
+Cycle #6 Total energy = -152.605278 a.u. (scale factor = 3.000000) (0.043562)
+----------------------------------------------------------
+GMatrixROmem.x10 compute
+  EJ = 166.135836 a.u.
+    Time to construct JMatrix with RO: 13.4 seconds (9.729 for ints)
+  EK = 52.177627 a.u.
+    Time to construct KMatrix with RO: 179 seconds (48.75 for ints)
+    Time to construct GMatrix with RO: 192 seconds
+   Max DIIS error = 1.673e-03 subspaceSize = 7
+Cycle #7 Total energy = -152.603796 a.u. (scale factor = 3.000000) (0.001483)
+----------------------------------------------------------
+GMatrixROmem.x10 compute
+  EJ = 166.136583 a.u.
+    Time to construct JMatrix with RO: 13.4 seconds (9.733 for ints)
+  EK = 52.178083 a.u.
+    Time to construct KMatrix with RO: 179 seconds (48.75 for ints)
+    Time to construct GMatrix with RO: 192 seconds
+   Max DIIS error = 2.175e-04 subspaceSize = 8
+Cycle #8 Total energy = -152.604089 a.u. (scale factor = 3.000000) (-0.000293)
+----------------------------------------------------------
+GMatrixROmem.x10 compute
+  EJ = 166.137340 a.u.
+    Time to construct JMatrix with RO: 13.4 seconds (9.728 for ints)
+  EK = 52.178249 a.u.
+    Time to construct KMatrix with RO: 179 seconds (48.75 for ints)
+    Time to construct GMatrix with RO: 192 seconds
+   Max DIIS error = 5.688e-05 subspaceSize = 9
+Cycle #9 Total energy = -152.604278 a.u. (scale factor = 3.000000) (-0.000189)
+----------------------------------------------------------
+GMatrixROmem.x10 compute
+  EJ = 166.137509 a.u.
+    Time to construct JMatrix with RO: 13.4 seconds (9.73 for ints)
+  EK = 52.178266 a.u.
+    Time to construct KMatrix with RO: 179 seconds (48.75 for ints)
+    Time to construct GMatrix with RO: 192 seconds
+   Max DIIS error = 9.395e-06 subspaceSize = 10
+Cycle #10 Total energy = -152.604344 a.u. (scale factor = 3.000000) (-0.000066)
+----------------------------------------------------------
+SCF converged. Final SCF energy = -152.604344 a.u.
+==========================================================
+GMatrixROmem construction timings:
+  iters     mean   stddev      min      max
+2840160 0.0002059 0.0003026 8.75e-07 0.003169
+
+
+Total time since start: 1.99e+03 seconds
+
