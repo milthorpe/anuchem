@@ -122,11 +122,9 @@ public class PenningTrap {
             val startPosPrinter = new Printer(new FileWriter(new File("positions_0.dat"), false));
             val leafOctants = fmm.localData().leafOctants;
             for (leafOctant in leafOctants) {
-                val octantAtoms = leafOctant.getAtoms();
-                for (i in 0..(octantAtoms.size-1)) {
-                    if (octantAtoms(i) != null) {
-                        props.accumulate(octantAtoms(i), this);
-                    }
+                val octantAtoms = leafOctant.atoms;
+                for (atoms in octantAtoms) {
+                    props.accumulate(atoms, this);
                 }
                 // print start positions
                 printPositions(0, octantAtoms, startPosPrinter);
@@ -158,7 +156,7 @@ public class PenningTrap {
             val timeInt = (timestep * step) as Int;
             val endPosPrinter = new Printer(new FileWriter(new File("positions_" + timeInt + ".dat"), true));
             for (leafOctant in leafOctants) {
-                printPositions(timestep * step, leafOctant.getAtoms(), endPosPrinter);
+                printPositions(timestep * step, leafOctant.atoms, endPosPrinter);
             }
 
             Team.WORLD.allreduce[Long](here.id, timer.count, 0, timer.count, 0, timer.count.size, Team.ADD);
@@ -193,9 +191,7 @@ public class PenningTrap {
 
         val leafOctants = fmm.localData().leafOctants;
         finish for (leafOctant in leafOctants) async {
-            val boxAtoms = leafOctant.getAtoms();
-            for (i in 0..(boxAtoms.size-1)) {
-                val atom = boxAtoms(i);
+            for (atom in leafOctant.atoms) {
                 // timestep using Boris integrator
                 val chargeMassRatio = atom.charge / atom.mass * CHARGE_MASS_FACTOR;
 
@@ -243,9 +239,9 @@ public class PenningTrap {
         // TODO async
         //var placeAtoms:Int = 0;
         for (leafOctant in leafOctants) {
-            val boxAtoms = leafOctant.getAtoms();
+            val boxAtoms = leafOctant.atoms;
             //placeAtoms += boxAtoms.size;
-            for (i in 0..(boxAtoms.size-1)) {
+            for (i in 0..(boxAtoms.size()-1)) {
                 val atom = boxAtoms(i);
                 atom.centre = atom.centre + atom.velocity * dt;
                 //Console.OUT.print(atom.centre.i + " " + atom.centre.j + " " + atom.centre.k + " ");
@@ -310,9 +306,9 @@ public class PenningTrap {
         return ion.charge * ion.velocity.j * eFieldNorm;
     }
 
-    private def printPositions(time:Double, myAtoms:Rail[MMAtom], printer:Printer) {
+    private def printPositions(time:Double, myAtoms:ArrayList[MMAtom], printer:Printer) {
         val timeInt = time as Int;
-        for ([i] in myAtoms) {
+        for ([i] in 0..(myAtoms.size()-1)) {
             val atom = myAtoms(i);
             if (atom != null) {
                 printer.printf("%i %i %s %12.8f %12.8f %12.8f\n", here.id, i, atom.symbol, atom.centre.i*1.0e3, atom.centre.j*1.0e3, atom.centre.k*1.0e3);
