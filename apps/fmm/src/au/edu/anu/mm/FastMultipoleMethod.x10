@@ -311,7 +311,7 @@ public class FastMultipoleMethod {
             }
             firstLeafOctant(p) = i as UInt;
             if (here == Place.FIRST_PLACE) {
-                Console.OUT.println("place " + (p-1) + " first " + firstLeafOctant(p-1) + " last " + (firstLeafOctant(p)-1) + " load " + load);
+                //Console.OUT.println("place " + (p-1) + " first " + firstLeafOctant(p-1) + " last " + (firstLeafOctant(p)-1) + " load " + load);
             }
         }
 
