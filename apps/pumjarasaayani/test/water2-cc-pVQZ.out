@@ -31,9 +31,9 @@ Number of atoms: 6
 	Reading in basis info. for cc-pVQZ from test/basis
 
 Using 280 basis functions.
-    Time for setting up basis functions: 35.3 milliseconds
+    Time for setting up basis functions: 36.1 milliseconds
 
-    Time for computing 1E integrals: 7.29 seconds
+    Time for computing 1E integrals: 7.26 seconds
 
 Nuclear repulsion energy = 109.584730 a.u.
 
@@ -2273,10 +2273,10 @@ wCost=1.079655e+10
 Starting SCF procedure...
 GMatrixROmem.x10 compute
   EJ = 169.611910 a.u.
-    Time to construct JMatrix with RO: 194 seconds (125.8 for ints)
+    Time to construct JMatrix with RO: 197 seconds (126.8 for ints)
   EK = 0.000000 a.u.
-    Time to construct KMatrix with RO: 8.57e-07 seconds (0 for ints)
-    Time to construct GMatrix with RO: 194 seconds
+    Time to construct KMatrix with RO: 6.14e-07 seconds (0 for ints)
+    Time to construct GMatrix with RO: 197 seconds
    Max DIIS error = 2.629e+00 subspaceSize = 0
 Cycle #0 Total energy = -140.853193 a.u. (scale factor = 3.000000)
 ----------------------------------------------------------

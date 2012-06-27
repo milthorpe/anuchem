@@ -62,19 +62,15 @@ public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
     val kMatrix:DenseMatrix{self.M==self.N,self.N==this.N};
     // used for calculating eJ, eK
     val scratch:DenseMatrix{self.M==self.N,self.N==this.N};
+    val scratchDen:DenseMatrix{self.M==self.N,self.N==this.N};
 
     transient val aux:Integral_Pack;
 
     var counter:Int=0;
 
     public def this(N:Int, bfs:BasisFunctions, molecule:Molecule[QMAtom], nOrbital:Int):GMatrixROmem{self.M==N,self.N==N} {     
-        super(N, N); // DO ***NOT*** PUT ANYTHING BEFORE THIS LINE!!!
-        //val result = Runtime.execForRead("date");
-	//Console.OUT.println("result = " + result);
-	//Console.OUT.println("result.available = " + result.available());
-        //val date = result.readLine();
-	//Console.OUT.println(date);
-        //Console.OUT.printf("GMatrixROmem.x10 initialization - %s\n",result);
+        super(N, N); // DO NOT PUT ANYTHING BEFORE THIS LINE!!!
+        //val result = Runtime.execForRead("date"); Console.OUT.printf("GMatrixROmem.x10 initialization - %s\n",result);
         this.bfs = bfs;
         this.mol = molecule;
         this.nOrbital = nOrbital;
@@ -90,6 +86,7 @@ public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
         jMatrix = new DenseMatrix(N, N);
         kMatrix = new DenseMatrix(N, N);
         scratch = new DenseMatrix(N, N);
+        scratchDen = new DenseMatrix(N, N);
 
         val roLm = (roL+1)*(roL+1);
         val maxam = bfs.getShellList().getMaximumAngularMomentum();
@@ -292,7 +289,15 @@ public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
 
         // Form J matrix
         timer.start(TIMER_JMATRIX); var t:Double=0.;
-        var fac:Double; var ind:Int;
+        var fac:Double; var ind:Int; var jContrib:Double;
+
+        for (spInd in 0..(numSigShellPairs-1)) {
+            val sp=shellPairs(spInd);
+            if (sp.mu!=sp.nu) fac=2.; else fac=1.;
+            for (var tmu:Int=sp.mu; tmu<sp.mu+sp.maxbraa; tmu++) for (var tnu:Int=sp.nu; tnu<sp.nu+sp.maxbrab; tnu++)
+                scratchDen(tmu,tnu)=density(tmu,tnu)*fac*norm(tmu)*norm(tnu);
+        }
+
         for (var ron:Int=0; ron<=roN; ron++) {
             // Form dk vector
             dk.clear();
@@ -302,11 +307,13 @@ public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
                 val maxLron=sp.maxL(ron);                
                 if (maxLron>=0) {
                     val maxLm=(maxLron+1)*(maxLron+1);
-                    ind=0; fac=1.; if (sp.mu!=sp.nu) fac=2.0;  timer.start(TIMER_GENCLASS);
-                    aux.genClass(sp.aang, sp.bang, sp.aPoint, sp.bPoint, sp.zetaA, sp.zetaB, sp.conA, sp.conB, sp.dconA, sp.dconB, temp, ron, maxLron,ylms(spInd).y, ylms(spInd).maxL);    timer.stop(TIMER_GENCLASS); t+= (timer.last(TIMER_GENCLASS) as Double) / 1e9 ;
-                    for (var tmu:Int=sp.mu; tmu<sp.mu+sp.maxbraa; tmu++) for (var tnu:Int=sp.nu; tnu<sp.nu+sp.maxbrab; tnu++)  
-                    for (var rolm:Int=0; rolm<maxLm; rolm++)//for (var rol:Int=0; rol<=maxLron ; rol++) for (var rom:Int=-rol; rom<=rol; rom++)
-                        dk(rolm/*rol*(rol+1)+rom*/) += density(tmu,tnu)*fac*norm(tmu)*norm(tnu)*temp(ind++); // eqn 15b // skip some k's                 
+                    ind=0;  
+                    timer.start(TIMER_GENCLASS);
+                    aux.genClass(sp.aang, sp.bang, sp.aPoint, sp.bPoint, sp.zetaA, sp.zetaB, sp.conA, sp.conB, sp.dconA, sp.dconB, temp, ron, maxLron,ylms(spInd).y, ylms(spInd).maxL);
+                    timer.stop(TIMER_GENCLASS); t+= (timer.last(TIMER_GENCLASS) as Double)/1e9;
+
+                    for (var tmu:Int=sp.mu; tmu<sp.mu+sp.maxbraa; tmu++) for (var tnu:Int=sp.nu; tnu<sp.nu+sp.maxbrab; tnu++) for (var rolm:Int=0; rolm<maxLm; rolm++)
+                        dk(rolm) += scratchDen(tmu,tnu)*temp(ind++); // eqn 15b 
                 }
             }
              
@@ -315,63 +322,76 @@ public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
                 val maxLron=sp.maxL(ron);
                 if (sp.maxL(ron)>=0) { 
                     val maxLm=(maxLron+1)*(maxLron+1);
-                    ind=0;  timer.start(TIMER_GENCLASS);
-                    aux.genClass(sp.aang, sp.bang, sp.aPoint, sp.bPoint, sp.zetaA, sp.zetaB, sp.conA, sp.conB, sp.dconA, sp.dconB, temp, ron, maxLron,ylms(spInd).y, ylms(spInd).maxL);  timer.stop(TIMER_GENCLASS); t+= (timer.last(TIMER_GENCLASS) as Double) / 1e9 ;
+                    ind=0;  
+                    timer.start(TIMER_GENCLASS);
+                    aux.genClass(sp.aang, sp.bang, sp.aPoint, sp.bPoint, sp.zetaA, sp.zetaB, sp.conA, sp.conB, sp.dconA, sp.dconB, temp, ron, maxLron,ylms(spInd).y, ylms(spInd).maxL);  
+                    timer.stop(TIMER_GENCLASS); t+= (timer.last(TIMER_GENCLASS) as Double)/1e9 ;
+
                     for (var tmu:Int=sp.mu; tmu<sp.mu+sp.maxbraa; tmu++) for (var tnu:Int=sp.nu; tnu<sp.nu+sp.maxbrab; tnu++) {
-                        var jContrib:Double = 0.0;  
-                        for (var rolm:Int=0; rolm<maxLm; rolm++)//for (var rol:Int=0; rol<=maxLron ; rol++) for (var rom:Int=-rol; rom<=rol; rom++)
-                            jContrib+=dk(rolm/*rol*(rol+1)+rom*/)*norm(tmu)*norm(tnu)*temp(ind++);
-                        jMatrix(tmu,tnu) += jContrib;   
-                        if (sp.mu!=sp.nu) jMatrix(tnu,tmu) += jContrib;  
+                        val nrm=norm(tmu)*norm(tnu);
+                        jContrib = 0.;
+                        for (var rolm:Int=0; rolm<maxLm; rolm++)
+                            jContrib+=dk(rolm)*nrm*temp(ind++);
+                        jMatrix(tmu,tnu) += jContrib;
+                        //if (sp.mu!=sp.nu) jMatrix(tnu,tmu) += jContrib;
                     } 
+
                 }
             }            
         }     
-
+        for (spInd in 0..(numSigShellPairs-1)) {
+            val sp=shellPairs(spInd);
+            if (sp.mu!=sp.nu) for (var tmu:Int=sp.mu; tmu<sp.mu+sp.maxbraa; tmu++) for (var tnu:Int=sp.nu; tnu<sp.nu+sp.maxbrab; tnu++) 
+                jMatrix(tnu,tmu) = jMatrix(tmu,tnu);
+        }
         timer.stop(TIMER_JMATRIX);
+
 // vvvv For development purpose vvvvvv
         val eJ = scratch.mult(density, jMatrix).trace();
         Console.OUT.printf("  EJ = %.6f a.u.\n", eJ);
 // ^^^^ It is not required for normal calculation ^^^^^
+
         Console.OUT.printf("    Time to construct JMatrix with RO: %.3g seconds (%.4g for ints)\n", (timer.last(TIMER_JMATRIX) as Double) / 1e9, t);
 
         // Form K matrix
         timer.start(TIMER_KMATRIX); t=0.;
 
         if (counter++!=0) // First cycle gives EK=0 
-        for(aorb in 0..(nOrbital-1)) for (var ron:Int=0; ron<=roNK; ron++){ // To save mem
+        for (aorb in 0..(nOrbital-1)) for (var ron:Int=0; ron<=roNK; ron++){ // To save mem
             muk.reset();
             for (spInd in 0..(numSigShellPairs-1)) {
                 val sp=shellPairs(spInd);
                 val maxLron=sp.maxL(ron);
                 if (maxLron>=0) {
-                    val maxLm=(maxLron+1)*(maxLron+1);  timer.start(TIMER_GENCLASS);
-                    aux.genClass(sp.aang, sp.bang, sp.aPoint, sp.bPoint, sp.zetaA, sp.zetaB, sp.conA, sp.conB, sp.dconA, sp.dconB, temp, ron, maxLron,ylms(spInd).y, ylms(spInd).maxL);   timer.stop(TIMER_GENCLASS); t+= (timer.last(TIMER_GENCLASS) as Double) / 1e9 ;
+                    val maxLm=(maxLron+1)*(maxLron+1);  
+                    timer.start(TIMER_GENCLASS);
+                    aux.genClass(sp.aang, sp.bang, sp.aPoint, sp.bPoint, sp.zetaA, sp.zetaB, sp.conA, sp.conB, sp.dconA, sp.dconB, temp, ron, maxLron,ylms(spInd).y, ylms(spInd).maxL);
+                    timer.stop(TIMER_GENCLASS); t+= (timer.last(TIMER_GENCLASS) as Double)/1e9;
                     ind=0;                   
                     for (var tmu:Int=sp.mu; tmu<sp.mu+sp.maxbraa; tmu++) for (var tnu:Int=sp.nu; tnu<sp.nu+sp.maxbrab; tnu++) { 
-                        val normMo = mos(aorb,tnu) * norm(tmu) * norm(tnu);
-                         for (var rolm:Int=0; rolm<maxLm; rolm++) //for (var rol:Int=0; rol<=maxLron; rol++) for (var rom:Int=-rol; rom<=rol; rom++)
-                            muk(tmu,rolm/*rol*(rol+1)+rom*/) += normMo * temp(ind++); // skip some k's    
+                        val normMo = mos(aorb,tnu)*norm(tmu)*norm(tnu);
+                        for (var rolm:Int=0; rolm<maxLm; rolm++) 
+                            muk(tmu,rolm)+= normMo*temp(ind++);     
                     }                                   
                     if (sp.mu!=sp.nu) {
                         ind=0;
                         for (var tmu:Int=sp.mu; tmu<sp.mu+sp.maxbraa; tmu++) for (var tnu:Int=sp.nu; tnu<sp.nu+sp.maxbrab; tnu++) { 
                             val normMo = mos(aorb,tmu)*norm(tmu)*norm(tnu);
-                             for (var rolm:Int=0; rolm<maxLm; rolm++) //for (var rol:Int=0; rol<=maxLron; rol++) for (var rom:Int=-rol; rom<=rol; rom++) 
-                                muk(tnu,rolm/*rol*(rol+1)+rom*/) += normMo * temp(ind++); // skip some k's    
+                             for (var rolm:Int=0; rolm<maxLm; rolm++) 
+                                muk(tnu,rolm)+= normMo*temp(ind++);    
                         }
                     } 
                 }              
             }
-
             kMatrix.multTrans(muk, muk, true);
         }   
-        
         timer.stop(TIMER_KMATRIX);
+
 // vvvv For development purpose vvvvvv
         val eK = scratch.mult(density, kMatrix).trace();
         Console.OUT.printf("  EK = %.6f a.u.\n", eK);
 // ^^^^ It is not required for normal calculation ^^^^^
+
         Console.OUT.printf("    Time to construct KMatrix with RO: %.3g seconds (%.4g for ints)\n", (timer.last(TIMER_KMATRIX) as Double) / 1e9, t);
 
         // Form G matrix

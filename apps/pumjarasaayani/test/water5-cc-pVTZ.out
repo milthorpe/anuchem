@@ -42,7 +42,7 @@ Number of atoms: 15
 Using 325 basis functions.
     Time for setting up basis functions: 14.4 milliseconds
 
-    Time for computing 1E integrals: 19 seconds
+    Time for computing 1E integrals: 19.2 seconds
 
 Nuclear repulsion energy = 595.663658 a.u.
 
@@ -4704,10 +4704,10 @@ wCost=1.017055e+10
 Starting SCF procedure...
 GMatrixROmem.x10 compute
   EJ = 466.437525 a.u.
-    Time to construct JMatrix with RO: 160 seconds (100.3 for ints)
+    Time to construct JMatrix with RO: 162 seconds (102.7 for ints)
   EK = 0.000000 a.u.
-    Time to construct KMatrix with RO: 8.6e-07 seconds (0 for ints)
-    Time to construct GMatrix with RO: 160 seconds
+    Time to construct KMatrix with RO: 8.67e-07 seconds (0 for ints)
+    Time to construct GMatrix with RO: 162 seconds
    Max DIIS error = 9.162e+00 subspaceSize = 0
 Cycle #0 Total energy = -352.421389 a.u. (scale factor = 3.000000)
 ----------------------------------------------------------
@@ -4718,5 +4718,5 @@ GMatrixROmem construction timings:
       0        0        0 9.223e+09 -9.223e+09
 
 
-Total time since start: 1.25e+03 seconds
+Total time since start: 1.26e+03 seconds
 

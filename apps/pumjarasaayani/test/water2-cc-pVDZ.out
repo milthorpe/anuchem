@@ -31,9 +31,9 @@ Number of atoms: 6
 	Reading in basis info. for cc-pVDZ from test/basis
 
 Using 50 basis functions.
-    Time for setting up basis functions: 3.17 milliseconds
+    Time for setting up basis functions: 3.18 milliseconds
 
-    Time for computing 1E integrals: 0.285 seconds
+    Time for computing 1E integrals: 0.286 seconds
 
 Nuclear repulsion energy = 109.584730 a.u.
 
@@ -358,101 +358,101 @@ wCost=1.365609e+09
 Starting SCF procedure...
 GMatrixROmem.x10 compute
   EJ = 167.994469 a.u.
-    Time to construct JMatrix with RO: 13.5 seconds (9.754 for ints)
+    Time to construct JMatrix with RO: 13.6 seconds (9.783 for ints)
   EK = 0.000000 a.u.
-    Time to construct KMatrix with RO: 7.7e-07 seconds (0 for ints)
-    Time to construct GMatrix with RO: 13.5 seconds
+    Time to construct KMatrix with RO: 8.36e-07 seconds (0 for ints)
+    Time to construct GMatrix with RO: 13.6 seconds
    Max DIIS error = 8.318e+00 subspaceSize = 0
 Cycle #0 Total energy = -137.547632 a.u. (scale factor = 3.000000)
 ----------------------------------------------------------
 GMatrixROmem.x10 compute
   EJ = 128.632701 a.u.
-    Time to construct JMatrix with RO: 13.5 seconds (9.754 for ints)
+    Time to construct JMatrix with RO: 13.6 seconds (9.785 for ints)
   EK = 43.219627 a.u.
-    Time to construct KMatrix with RO: 179 seconds (48.9 for ints)
-    Time to construct GMatrix with RO: 193 seconds
+    Time to construct KMatrix with RO: 188 seconds (49.03 for ints)
+    Time to construct GMatrix with RO: 201 seconds
    Max DIIS error = 1.908e+00 subspaceSize = 1
 Cycle #1 Total energy = -147.567020 a.u. (scale factor = 3.000000) (-10.019388)
 ----------------------------------------------------------
 GMatrixROmem.x10 compute
   EJ = 192.357496 a.u.
-    Time to construct JMatrix with RO: 13.4 seconds (9.73 for ints)
+    Time to construct JMatrix with RO: 13.6 seconds (9.801 for ints)
   EK = 58.546036 a.u.
-    Time to construct KMatrix with RO: 179 seconds (48.73 for ints)
-    Time to construct GMatrix with RO: 192 seconds
+    Time to construct KMatrix with RO: 188 seconds (49.18 for ints)
+    Time to construct GMatrix with RO: 202 seconds
    Max DIIS error = 1.675e+00 subspaceSize = 2
 Starting DIIS...
 Cycle #2 Total energy = -160.223539 a.u. (scale factor = 3.000000) (-12.656519)
 ----------------------------------------------------------
 GMatrixROmem.x10 compute
   EJ = 170.312642 a.u.
-    Time to construct JMatrix with RO: 13.4 seconds (9.727 for ints)
+    Time to construct JMatrix with RO: 13.7 seconds (9.852 for ints)
   EK = 53.067963 a.u.
-    Time to construct KMatrix with RO: 179 seconds (48.75 for ints)
-    Time to construct GMatrix with RO: 192 seconds
+    Time to construct KMatrix with RO: 188 seconds (49.07 for ints)
+    Time to construct GMatrix with RO: 202 seconds
    Max DIIS error = 3.586e-01 subspaceSize = 3
 Cycle #3 Total energy = -154.128700 a.u. (scale factor = 3.000000) (6.094839)
 ----------------------------------------------------------
 GMatrixROmem.x10 compute
   EJ = 166.899972 a.u.
-    Time to construct JMatrix with RO: 13.4 seconds (9.728 for ints)
+    Time to construct JMatrix with RO: 13.6 seconds (9.79 for ints)
   EK = 52.336676 a.u.
-    Time to construct KMatrix with RO: 179 seconds (48.75 for ints)
-    Time to construct GMatrix with RO: 192 seconds
+    Time to construct KMatrix with RO: 188 seconds (49.28 for ints)
+    Time to construct GMatrix with RO: 202 seconds
    Max DIIS error = 8.258e-02 subspaceSize = 4
 Cycle #4 Total energy = -152.890190 a.u. (scale factor = 3.000000) (1.238510)
 ----------------------------------------------------------
 GMatrixROmem.x10 compute
   EJ = 166.282878 a.u.
-    Time to construct JMatrix with RO: 13.4 seconds (9.73 for ints)
+    Time to construct JMatrix with RO: 13.7 seconds (9.859 for ints)
   EK = 52.206261 a.u.
-    Time to construct KMatrix with RO: 179 seconds (48.74 for ints)
-    Time to construct GMatrix with RO: 192 seconds
+    Time to construct KMatrix with RO: 188 seconds (49.28 for ints)
+    Time to construct GMatrix with RO: 202 seconds
    Max DIIS error = 3.040e-02 subspaceSize = 5
 Cycle #5 Total energy = -152.648841 a.u. (scale factor = 3.000000) (0.241349)
 ----------------------------------------------------------
 GMatrixROmem.x10 compute
   EJ = 166.148624 a.u.
-    Time to construct JMatrix with RO: 13.4 seconds (9.73 for ints)
+    Time to construct JMatrix with RO: 13.6 seconds (9.789 for ints)
   EK = 52.179084 a.u.
-    Time to construct KMatrix with RO: 179 seconds (48.74 for ints)
-    Time to construct GMatrix with RO: 192 seconds
+    Time to construct KMatrix with RO: 188 seconds (49.16 for ints)
+    Time to construct GMatrix with RO: 202 seconds
    Max DIIS error = 6.539e-03 subspaceSize = 6
 Cycle #6 Total energy = -152.605278 a.u. (scale factor = 3.000000) (0.043562)
 ----------------------------------------------------------
 GMatrixROmem.x10 compute
   EJ = 166.135836 a.u.
-    Time to construct JMatrix with RO: 13.4 seconds (9.729 for ints)
+    Time to construct JMatrix with RO: 13.7 seconds (9.815 for ints)
   EK = 52.177627 a.u.
-    Time to construct KMatrix with RO: 179 seconds (48.75 for ints)
-    Time to construct GMatrix with RO: 192 seconds
+    Time to construct KMatrix with RO: 188 seconds (49.18 for ints)
+    Time to construct GMatrix with RO: 202 seconds
    Max DIIS error = 1.673e-03 subspaceSize = 7
 Cycle #7 Total energy = -152.603796 a.u. (scale factor = 3.000000) (0.001483)
 ----------------------------------------------------------
 GMatrixROmem.x10 compute
   EJ = 166.136583 a.u.
-    Time to construct JMatrix with RO: 13.4 seconds (9.733 for ints)
+    Time to construct JMatrix with RO: 13.6 seconds (9.784 for ints)
   EK = 52.178083 a.u.
-    Time to construct KMatrix with RO: 179 seconds (48.75 for ints)
-    Time to construct GMatrix with RO: 192 seconds
+    Time to construct KMatrix with RO: 188 seconds (49.01 for ints)
+    Time to construct GMatrix with RO: 201 seconds
    Max DIIS error = 2.175e-04 subspaceSize = 8
 Cycle #8 Total energy = -152.604089 a.u. (scale factor = 3.000000) (-0.000293)
 ----------------------------------------------------------
 GMatrixROmem.x10 compute
   EJ = 166.137340 a.u.
-    Time to construct JMatrix with RO: 13.4 seconds (9.728 for ints)
+    Time to construct JMatrix with RO: 13.6 seconds (9.781 for ints)
   EK = 52.178249 a.u.
-    Time to construct KMatrix with RO: 179 seconds (48.75 for ints)
-    Time to construct GMatrix with RO: 192 seconds
+    Time to construct KMatrix with RO: 188 seconds (49 for ints)
+    Time to construct GMatrix with RO: 201 seconds
    Max DIIS error = 5.688e-05 subspaceSize = 9
 Cycle #9 Total energy = -152.604278 a.u. (scale factor = 3.000000) (-0.000189)
 ----------------------------------------------------------
 GMatrixROmem.x10 compute
   EJ = 166.137509 a.u.
-    Time to construct JMatrix with RO: 13.4 seconds (9.73 for ints)
+    Time to construct JMatrix with RO: 13.6 seconds (9.785 for ints)
   EK = 52.178266 a.u.
-    Time to construct KMatrix with RO: 179 seconds (48.75 for ints)
-    Time to construct GMatrix with RO: 192 seconds
+    Time to construct KMatrix with RO: 188 seconds (49.14 for ints)
+    Time to construct GMatrix with RO: 202 seconds
    Max DIIS error = 9.395e-06 subspaceSize = 10
 Cycle #10 Total energy = -152.604344 a.u. (scale factor = 3.000000) (-0.000066)
 ----------------------------------------------------------
@@ -460,8 +460,8 @@ SCF converged. Final SCF energy = -152.604344 a.u.
 ==========================================================
 GMatrixROmem construction timings:
   iters     mean   stddev      min      max
-2840160 0.0002059 0.0003026 8.75e-07 0.003169
+     10    201.6   0.3105    201.2    202.1
 
 
-Total time since start: 1.99e+03 seconds
+Total time since start: 2.09e+03 seconds
 
