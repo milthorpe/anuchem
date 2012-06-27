@@ -32,12 +32,13 @@ import au.edu.anu.qm.ro.Integral_Pack;
  */
 
 public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
-    static TIMER_TOTAL = 1;
-    static TIMER_JMATRIX = 2;
-    static TIMER_KMATRIX = 3;
+    static TIMER_TOTAL = 0;
+    static TIMER_JMATRIX = 1;
+    static TIMER_KMATRIX = 2;
+    static TIMER_GENCLASS = 3;
 
     public val timer = new StatisticalTimer(5);
-    public static TIMER_IDX_TOTAL = 0;
+
 
     private val bfs : BasisFunctions;
     private val mol : Molecule[QMAtom];
@@ -301,8 +302,8 @@ public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
                 val maxLron=sp.maxL(ron);                
                 if (maxLron>=0) {
                     val maxLm=(maxLron+1)*(maxLron+1);
-                    ind=0; fac=1.; if (sp.mu!=sp.nu) fac=2.0;  timer.start(0);
-                    aux.genClass(sp.aang, sp.bang, sp.aPoint, sp.bPoint, sp.zetaA, sp.zetaB, sp.conA, sp.conB, sp.dconA, sp.dconB, temp, ron, maxLron,ylms(spInd).y, ylms(spInd).maxL);    timer.stop(0); t+= (timer.last(0) as Double) / 1e9 ;
+                    ind=0; fac=1.; if (sp.mu!=sp.nu) fac=2.0;  timer.start(TIMER_GENCLASS);
+                    aux.genClass(sp.aang, sp.bang, sp.aPoint, sp.bPoint, sp.zetaA, sp.zetaB, sp.conA, sp.conB, sp.dconA, sp.dconB, temp, ron, maxLron,ylms(spInd).y, ylms(spInd).maxL);    timer.stop(TIMER_GENCLASS); t+= (timer.last(TIMER_GENCLASS) as Double) / 1e9 ;
                     for (var tmu:Int=sp.mu; tmu<sp.mu+sp.maxbraa; tmu++) for (var tnu:Int=sp.nu; tnu<sp.nu+sp.maxbrab; tnu++)  
                     for (var rolm:Int=0; rolm<maxLm; rolm++)//for (var rol:Int=0; rol<=maxLron ; rol++) for (var rom:Int=-rol; rom<=rol; rom++)
                         dk(rolm/*rol*(rol+1)+rom*/) += density(tmu,tnu)*fac*norm(tmu)*norm(tnu)*temp(ind++); // eqn 15b // skip some k's                 
@@ -314,8 +315,8 @@ public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
                 val maxLron=sp.maxL(ron);
                 if (sp.maxL(ron)>=0) { 
                     val maxLm=(maxLron+1)*(maxLron+1);
-                    ind=0;  timer.start(0);
-                    aux.genClass(sp.aang, sp.bang, sp.aPoint, sp.bPoint, sp.zetaA, sp.zetaB, sp.conA, sp.conB, sp.dconA, sp.dconB, temp, ron, maxLron,ylms(spInd).y, ylms(spInd).maxL);  timer.stop(0); t+= (timer.last(0) as Double) / 1e9 ;
+                    ind=0;  timer.start(TIMER_GENCLASS);
+                    aux.genClass(sp.aang, sp.bang, sp.aPoint, sp.bPoint, sp.zetaA, sp.zetaB, sp.conA, sp.conB, sp.dconA, sp.dconB, temp, ron, maxLron,ylms(spInd).y, ylms(spInd).maxL);  timer.stop(TIMER_GENCLASS); t+= (timer.last(TIMER_GENCLASS) as Double) / 1e9 ;
                     for (var tmu:Int=sp.mu; tmu<sp.mu+sp.maxbraa; tmu++) for (var tnu:Int=sp.nu; tnu<sp.nu+sp.maxbrab; tnu++) {
                         var jContrib:Double = 0.0;  
                         for (var rolm:Int=0; rolm<maxLm; rolm++)//for (var rol:Int=0; rol<=maxLron ; rol++) for (var rom:Int=-rol; rom<=rol; rom++)
@@ -344,8 +345,8 @@ public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
                 val sp=shellPairs(spInd);
                 val maxLron=sp.maxL(ron);
                 if (maxLron>=0) {
-                    val maxLm=(maxLron+1)*(maxLron+1);  timer.start(0);
-                    aux.genClass(sp.aang, sp.bang, sp.aPoint, sp.bPoint, sp.zetaA, sp.zetaB, sp.conA, sp.conB, sp.dconA, sp.dconB, temp, ron, maxLron,ylms(spInd).y, ylms(spInd).maxL);   timer.stop(0); t+= (timer.last(0) as Double) / 1e9 ;
+                    val maxLm=(maxLron+1)*(maxLron+1);  timer.start(TIMER_GENCLASS);
+                    aux.genClass(sp.aang, sp.bang, sp.aPoint, sp.bPoint, sp.zetaA, sp.zetaB, sp.conA, sp.conB, sp.dconA, sp.dconB, temp, ron, maxLron,ylms(spInd).y, ylms(spInd).maxL);   timer.stop(TIMER_GENCLASS); t+= (timer.last(TIMER_GENCLASS) as Double) / 1e9 ;
                     ind=0;                   
                     for (var tmu:Int=sp.mu; tmu<sp.mu+sp.maxbraa; tmu++) for (var tnu:Int=sp.nu; tnu<sp.nu+sp.maxbrab; tnu++) { 
                         val normMo = mos(aorb,tnu) * norm(tmu) * norm(tnu);
