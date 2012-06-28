@@ -39,7 +39,6 @@ public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
 
     public val timer = new StatisticalTimer(5);
 
-
     private val bfs : BasisFunctions;
     private val mol : Molecule[QMAtom];
 
@@ -69,8 +68,8 @@ public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
     var counter:Int=0;
 
     public def this(N:Int, bfs:BasisFunctions, molecule:Molecule[QMAtom], nOrbital:Int):GMatrixROmem{self.M==N,self.N==N} {     
-        super(N, N); // DO NOT PUT ANYTHING BEFORE THIS LINE!!!
-        //val result = Runtime.execForRead("date"); Console.OUT.printf("GMatrixROmem.x10 initialization - %s\n",result);
+        super(N, N); 
+        Console.OUT.printf("GMatrixROmem.x10 initialization starts at ..."); //val result = Runtime.execForRead("date"); 
         this.bfs = bfs;
         this.mol = molecule;
         this.nOrbital = nOrbital;
@@ -204,11 +203,8 @@ public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
 
         val compareShellPairContribs = (y:ShellPair,x:ShellPair) => x.contrib.compareTo(y.contrib);
         ArrayUtils.sort[ShellPair](shellPairs, compareShellPairContribs);
-
         // numSigShellPairs = Math.abs(ArrayUtils.binarySearch[ShellPair](rawShellPairs, dummySignificantPair, compareShellPairContribs));
-        Console.OUT.println("found " +/*+ numSigShellPairs + " significant from " + raw*/shellPairs.size /*+ " total"*/);
 
-//      shellPairs = new Array[ShellPair](numSigShellPairs);
         var fCost:Double=0.;
         var wCost:Double=0.;
         var mCost:Double=0.;
@@ -219,7 +215,7 @@ public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
 
         for (i in 0..(numSigShellPairs-1)) {
 
-            val sh = /*raw*/shellPairs(i);
+            val sh = shellPairs(i);
             val a=sh.aang; val b=sh.bang; val ka=sh.dconA; val kb=sh.dconB;
 
             // Find MaxL(n) -- This screening is a gold standard but slow
@@ -263,7 +259,7 @@ public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
             AuxCount+=bracount*K; 
             Console.OUT.printf("mu=%d nu=%d | maxmaxl=%d\n",sh.mu,sh.nu,maxmaxl);
         }
-        Console.OUT.printf("nShell=%d nShellPairs=%d nSigShellPairs=%d pAuxCount=%e (primitive) AuxCount=%e (contracted)\n",nShell,ind,numSigShellPairs,pAuxCount,AuxCount);
+        Console.OUT.printf("nShell=%d numSigShellPairs=%d pAuxCount=%e (primitive) AuxCount=%e (contracted)\n",nShell,numSigShellPairs,pAuxCount,AuxCount);
         Console.OUT.printf("mCost=%e\n", mCost);
         Console.OUT.printf("fCost=%e\n", fCost);
         Console.OUT.printf("wCost=%e\n", wCost);
@@ -281,8 +277,7 @@ public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
     }
 
     public def compute(density:Density{self.N==this.N}, mos:MolecularOrbitals{self.N==this.N}) {
-        //Runtime.getRuntime().exec("date");
-        Console.OUT.printf("GMatrixROmem.x10 compute\n");
+        Console.OUT.printf("GMatrixROmem.x10 compute starts at ...\n"); //Runtime.getRuntime().exec("date");
         timer.start(TIMER_TOTAL);
         jMatrix.reset();
         kMatrix.reset();
@@ -333,7 +328,6 @@ public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
                         for (var rolm:Int=0; rolm<maxLm; rolm++)
                             jContrib+=dk(rolm)*nrm*temp(ind++);
                         jMatrix(tmu,tnu) += jContrib;
-                        //if (sp.mu!=sp.nu) jMatrix(tnu,tmu) += jContrib;
                     } 
 
                 }
