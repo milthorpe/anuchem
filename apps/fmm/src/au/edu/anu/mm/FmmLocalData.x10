@@ -62,7 +62,7 @@ public class FmmLocalData {
     /** @return the ID of the place to which the given leaf octant is assigned */
     public def getPlaceId(leafOctantId:OctantId) {
         var placeId:Int = ArrayUtils.binarySearch[UInt](firstLeafOctant, leafOctantId.getLeafMortonId());
-        if (placeId < 0) placeId = -placeId - 1;
+        if (placeId < 0) placeId = -(placeId+2);
         return placeId;
     }
 
