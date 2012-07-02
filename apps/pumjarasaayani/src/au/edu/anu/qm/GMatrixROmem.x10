@@ -223,7 +223,7 @@ public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
             val wc=(F1(a+b)/3.+nCr(a+b+4,4)+F3(a,b))*ka*kb+F4(a,b)/2.; 
             var K:Double=0;
             for (var ron:Int=0; ron<roN; ron++)
-               K+=Math.pow(sh.maxL(ron)+1,2);
+               if (sh.maxL(ron)>=0) K+=Math.pow(sh.maxL(ron)+1,2);
             fCost+=fc*K;
             wCost+=wc*K;
             val bracount=(a+1)*(a+2)/2*(b+1)*(b+2)/2;
@@ -235,7 +235,6 @@ public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
         Console.OUT.printf("mCost=%e\n", mCost);
         Console.OUT.printf("fCost=%e\n", fCost);
         Console.OUT.printf("wCost=%e\n", wCost);
-        //Runtime.getRuntime().exec("date");
     }
 
     private def nCr(a:Int,b:Int):Int {
@@ -264,7 +263,7 @@ public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
             for (var tmu:Int=sp.mu; tmu<sp.mu+sp.maxbraa; tmu++) for (var tnu:Int=sp.nu; tnu<sp.nu+sp.maxbrab; tnu++)
                 scratch(tmu,tnu)=density(tmu,tnu)*fac*norm(tmu)*norm(tnu);
         }
-        Console.OUT.printf("rawtime\n");
+        if (counter==0)  Console.OUT.printf("rawtime\n");
         for (var ron:Int=0; ron<=roN; ron++) {
             // Form dk vector
             dk.clear();       
@@ -274,13 +273,14 @@ public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
                 if (maxLron>=0) {
                     val maxLm=(maxLron+1)*(maxLron+1);
                     ind=0;  
-                    timer.start(TIMER_GENCLASS);
+                    //timer.start(TIMER_GENCLASS);
                     aux.genClass(sp.aang, sp.bang, sp.aPoint, sp.bPoint, sp.zetaA, sp.zetaB, sp.conA, sp.conB, sp.dconA, sp.dconB, temp, ron, maxLron,ylms(spInd).y, ylms(spInd).maxL);
-                    timer.stop(TIMER_GENCLASS);
-                    Console.OUT.printf("%d\t%d\t%d\t%d\t%d\t%d",sp.aang, sp.bang, sp.dconA, sp.dconB, ron, maxLron); // 6 is the maximum for printf
-                    Console.OUT.printf("\t%20.15e\n",(timer.last(TIMER_GENCLASS) as Double)/1e9);
-                    t+=(timer.last(TIMER_GENCLASS) as Double)/1e9;
-
+                    /*timer.stop(TIMER_GENCLASS);
+                    if (counter==0) {
+                        Console.OUT.printf("%d\t%d\t%d\t%d\t%d\t%d",sp.aang, sp.bang, sp.dconA, sp.dconB, ron, maxLron); // printf can accomodate upto 6 arguments?
+                        Console.OUT.printf("\t%20.15e\n",(timer.last(TIMER_GENCLASS) as Double)/1e9);
+                    }
+                    t+=(timer.last(TIMER_GENCLASS) as Double)/1e9;*/
                     for (var tmu:Int=sp.mu; tmu<sp.mu+sp.maxbraa; tmu++) for (var tnu:Int=sp.nu; tnu<sp.nu+sp.maxbrab; tnu++) {
                         val scdmn=scratch(tmu,tnu);
                         for (var rolm:Int=0; rolm<maxLm; rolm++)
@@ -295,9 +295,9 @@ public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
                 if (sp.maxL(ron)>=0) { 
                     val maxLm=(maxLron+1)*(maxLron+1);
                     ind=0;  
-                    timer.start(TIMER_GENCLASS);
+                    //timer.start(TIMER_GENCLASS);
                     aux.genClass(sp.aang, sp.bang, sp.aPoint, sp.bPoint, sp.zetaA, sp.zetaB, sp.conA, sp.conB, sp.dconA, sp.dconB, temp, ron, maxLron,ylms(spInd).y, ylms(spInd).maxL);  
-                    timer.stop(TIMER_GENCLASS); t+= (timer.last(TIMER_GENCLASS) as Double)/1e9 ;
+                    //timer.stop(TIMER_GENCLASS); t+= (timer.last(TIMER_GENCLASS) as Double)/1e9 ;
 
                     for (var tmu:Int=sp.mu; tmu<sp.mu+sp.maxbraa; tmu++) for (var tnu:Int=sp.nu; tnu<sp.nu+sp.maxbrab; tnu++) {
                         val nrm=norm(tmu)*norm(tnu);
@@ -310,7 +310,7 @@ public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
                 }
             }            
         } 
-        Console.OUT.printf("rawtime\n");    
+        if (counter==0) Console.OUT.printf("rawtime\n");    
         for (spInd in 0..(numSigShellPairs-1)) {
             val sp=shellPairs(spInd);
             if (sp.mu!=sp.nu) for (var tmu:Int=sp.mu; tmu<sp.mu+sp.maxbraa; tmu++) for (var tnu:Int=sp.nu; tnu<sp.nu+sp.maxbrab; tnu++) 

@@ -196,7 +196,7 @@ namespace au {
         double (*V1)[K]=(double (*)[K])malloc(totalBraL[a+b+1]*K*sizeof(double));
         double (*V2)[K]=(double (*)[K])malloc(totalBraL[a+b+1]*K*sizeof(double));
         if (V1==NULL || V2==NULL) {printf("Integral_Pack.cc V1/V2 allocation failed size=%d*sizeof(double)\n",totalBraL[a+b+1]*K); exit(1);}
-        double (*HRR[MAX_BRA_L+1][MAX_BRA_L+1])[K];
+        double (*HRR[a+b+1][b+1])[K];
         for (i=a; i<=a+b; i++) {
             HRR[i][0] = (double (*)[K])(malloc(sizeof(double)*K*noOfBra[i]));
             if (HRR[i][0]==NULL) {printf("Integral_Pack.cc HRR[%d][0] allocation failed sized=%d*sizeof(double)\n",i,K*noOfBra[i]); exit(1);}
@@ -343,7 +343,6 @@ namespace au {
 
         int totalInt = noOfBra[a]*noOfBra[b]*K;
         memcpy(temp, HRR[a][b], totalInt*sizeof(double));
-        //if (HRR[a][b]==NULL) {printf("Integral_Pack.cc ln362\n"); exit(1);}
         free(HRR[a][b]);
     }
 
