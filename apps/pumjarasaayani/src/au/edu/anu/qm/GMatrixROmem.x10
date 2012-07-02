@@ -36,7 +36,6 @@ public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
     static TIMER_JMATRIX = 1;
     static TIMER_KMATRIX = 2;
     static TIMER_GENCLASS = 3;
-
     public val timer = new StatisticalTimer(5);
 
     private val bfs : BasisFunctions;
@@ -61,10 +60,8 @@ public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
     val kMatrix:DenseMatrix{self.M==self.N,self.N==this.N};
     // used for calculating eJ, eK
     val scratch:DenseMatrix{self.M==self.N,self.N==this.N};
-    val scratchDen:DenseMatrix{self.M==self.N,self.N==this.N};
 
     transient val aux:Integral_Pack;
-
     var counter:Int=0;
 
     public def this(N:Int, bfs:BasisFunctions, molecule:Molecule[QMAtom], nOrbital:Int):GMatrixROmem{self.M==N,self.N==N} {     
@@ -73,36 +70,22 @@ public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
         this.bfs = bfs;
         this.mol = molecule;
         this.nOrbital = nOrbital;
-
         val jd = JobDefaults.getInstance();
         this.roN=jd.roN;
-        if (jd.roNK==-1) this.roNK=jd.roN;
-        else this.roNK=jd.roNK;
+        if (jd.roNK==-1) this.roNK=jd.roN; else this.roNK=jd.roNK;
         this.roL=jd.roL;
         this.roZ=jd.roZ;
-  
         this.norm = bfs.getNormalizationFactors();
         jMatrix = new DenseMatrix(N, N);
         kMatrix = new DenseMatrix(N, N);
         scratch = new DenseMatrix(N, N);
-        scratchDen = new DenseMatrix(N, N);
-
         val roLm = (roL+1)*(roL+1);
         val maxam = bfs.getShellList().getMaximumAngularMomentum();
         val maxam1 = (maxam+1)*(maxam+2)/2;
         temp = new Rail[Double](maxam1*maxam1*roLm);
         aux = new Integral_Pack(roN,roL);
         dk = new Rail[Double](roLm); // eqn 15b in RO#7
-
         muk = new DenseMatrix(N,roLm); 
-
-        // Shell/Shellpair counting & allocation 
-        var nShell:Int=0;
-        val noOfAtoms = mol.getNumberOfAtoms();
-        for(var a:Int=0; a<noOfAtoms; a++) {
-            val aFunc = mol.getAtom(a).getBasisFunctions();
-            nShell+=aFunc.size();
-        }
 
         // Reconstruct Table IV in LHG2012 paper
         Console.OUT.printf("maxam=%d\n",maxam);
@@ -138,57 +121,50 @@ public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
             Console.OUT.printf("%2d %2d %5d %5d %5d %5d\n",a,b,F1(a+b)+F2(a+b)+F3(a,b),F4(a,b),W1(a+b)+W2(a+b)+W3(a,b),W4(a,b));          
         }
 
-        // The cost factor here will be used later
-
+        // Shell/Shellpair business 
+        Console.OUT.printf("roN=%d roL=%d roNK=%d\n",roN,roL,roNK); 
         val threshold = 1.0e-8;
+        var nShell:Int=0;
+        val noOfAtoms = mol.getNumberOfAtoms();
+        for(var a:Int=0; a<noOfAtoms; a++) {
+            val aFunc = mol.getAtom(a).getBasisFunctions();
+            nShell+=aFunc.size();
+        }
         val rawShellPairs = new Array[ShellPair](nShell*(nShell+1)/2); 
         val zeroPoint = Point3d(0.0, 0.0, 0.0);
         val emptyRailD = new Rail[Double](0),emptyRailI = new Rail[Int](0); 
         val dummySignificantPair = new ShellPair(0, 0, zeroPoint, zeroPoint, emptyRailD, emptyRailD, emptyRailD, emptyRailD, 0, 0, 0, 0, emptyRailI, threshold);
-
-        Console.OUT.printf("roN=%d roL=%d roNK=%d\n",roN,roL,roNK); 
         var mu:Int=0,nu:Int=0,ind:Int=0; 
-        // centre a       
-        for(var a:Int=0; a<noOfAtoms; a++) {
+        for(var a:Int=0; a<noOfAtoms; a++) { // centre a  
             val aFunc = mol.getAtom(a).getBasisFunctions();
-            val naFunc = aFunc.size();
-            // basis functions on a
-            for(var i:Int=0; i<naFunc; i++) {
-                val iaFunc = aFunc.get(i);
-                // centre b
-                for(var b:Int=0; b<noOfAtoms; b++) {
+            val naFunc = aFunc.size();          
+            for(var i:Int=0; i<naFunc; i++) { // basis functions on a
+                val iaFunc = aFunc.get(i);               
+                for(var b:Int=0; b<noOfAtoms; b++) { // centre b
                     val bFunc = mol.getAtom(b).getBasisFunctions();
-                    val nbFunc = bFunc.size();
-                    // basis functions on b
-                    for(var j:Int=0; j<nbFunc; j++) {
+                    val nbFunc = bFunc.size();                    
+                    for(var j:Int=0; j<nbFunc; j++) { // basis functions on b
                         val jbFunc = bFunc.get(j);
                         //Console.OUT.printf("a=%d i=%d b=%d j=%d [naFunc=%d nbFunc=%d]\n", a,i,b,j,naFunc,nbFunc);
                         var aaFunc:ContractedGaussian=iaFunc,bbFunc:ContractedGaussian=jbFunc;
-                        val aa=iaFunc.getTotalAngularMomentum();
-                        val bb=jbFunc.getTotalAngularMomentum();
-                        val maxbraa = (aa+1)*(aa+2)/2; 
-                        val maxbrab = (bb+1)*(bb+2)/2;                  
-                        if (aa>bb || (aa==bb && mu>=nu)) {                        
-                            // extract info from basisfunctions
-                            // Note that iaFunc and jbFunc are ContractedGaussians
-                            // val may not work?  must specify the same type as in cpp code?
-                            val aang = aaFunc.getTotalAngularMomentum();
-                            val aPoint = aaFunc.origin;
-                            val zetaA = aaFunc.exponents;
-                            val conA = aaFunc.coefficients;
-                            val dConA = conA.size;
-                            val bang = bbFunc.getTotalAngularMomentum();
-                            val bPoint = bbFunc.origin; 
-                            val zetaB = bbFunc.exponents;                        
-                            val conB = bbFunc.coefficients; 
-                            val dConB = conB.size;
-                            var contrib : Double = 0.; // S = conservative estimate
+                        val aa=iaFunc.getTotalAngularMomentum(); val bb=jbFunc.getTotalAngularMomentum();                       
+                        val maxbraa = (aa+1)*(aa+2)/2; val maxbrab = (bb+1)*(bb+2)/2;                                          
+                        if (aa>bb || (aa==bb && mu>=nu)) {
+                            val aang = aaFunc.getTotalAngularMomentum(); val bang = bbFunc.getTotalAngularMomentum();
+                            val aPoint = aaFunc.origin; val bPoint = bbFunc.origin; 
+                            val zetaA = aaFunc.exponents; val zetaB = bbFunc.exponents; 
+                            val conA = aaFunc.coefficients; val conB = bbFunc.coefficients; 
+                            val dConA = conA.size; val dConB = conB.size;
+                            var contrib : Double = 0.; // ss = conservative estimate
                             val R2 = Math.pow(aPoint.i-bPoint.i,2.)+Math.pow(aPoint.j-bPoint.j,2.)+Math.pow(aPoint.k-bPoint.k,2.);
                             for (var ii:Int=0; ii<dConA; ii++) for (var jj:Int=0; jj<dConB; jj++) 
-                                contrib+=conA(ii)*conB(jj)*Math.exp(-zetaA(ii)*zetaB(jj)/(zetaA(ii)+zetaB(jj))*R2); // norm already included in con coef
-                            val maxL = new Rail[Int](roN);
-                            if (Math.abs(contrib)>threshold) 
-                                rawShellPairs(ind++) = new ShellPair(aang, bang, aPoint, bPoint, zetaA, zetaB, conA, conB, dConA, dConB, mu, nu, maxL, Math.abs(contrib));                            
+                                contrib+=conA(ii)*conB(jj)*Math.exp(-zetaA(ii)*zetaB(jj)/(zetaA(ii)+zetaB(jj))*R2); 
+                            contrib=Math.abs(contrib);
+                            if (contrib>=threshold) {
+                                val maxL = new Rail[Int](roN);
+                                rawShellPairs(ind++) = new 
+                                    ShellPair(aang,bang,aPoint,bPoint,zetaA,zetaB,conA,conB,dConA,dConB,mu,nu,maxL,contrib);             
+                            }               
                         }
                         if (b!=noOfAtoms-1 || j!=nbFunc-1) nu+=maxbrab;
                         else {mu+=maxbraa; nu=0;}
@@ -200,31 +176,26 @@ public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
         shellPairs = new Array[ShellPair](numSigShellPairs); 
         ylms = new Array[Ylm](numSigShellPairs);
         for (i in 0..(numSigShellPairs-1))
-            shellPairs(i)=rawShellPairs(i);
-
-        val compareShellPairContribs = (y:ShellPair,x:ShellPair) => x.contrib.compareTo(y.contrib);
-        ArrayUtils.sort[ShellPair](shellPairs, compareShellPairContribs);
+            shellPairs(i)=rawShellPairs(i); // TODO delete rawShellPairs
+        // val compareShellPairContribs = (y:ShellPair,x:ShellPair) => x.contrib.compareTo(y.contrib);
+        // ArrayUtils.sort[ShellPair](shellPairs, compareShellPairContribs);
         // numSigShellPairs = Math.abs(ArrayUtils.binarySearch[ShellPair](rawShellPairs, dummySignificantPair, compareShellPairContribs));
 
+        // Find MaxL(n) -- This screening is a gold standard but slow
+        val THRESH=1.0e-8;                        
         var fCost:Double=0.;
         var wCost:Double=0.;
         var mCost:Double=0.;
         var pAuxCount:Double=0.;
         var AuxCount:Double=0.;
-
         val emptyYlm = new Ylm(emptyRailD,-1);
-
         for (i in 0..(numSigShellPairs-1)) {
-
-            val sh = shellPairs(i);
-            val a=sh.aang; val b=sh.bang; val ka=sh.dconA; val kb=sh.dconB;
-
-            // Find MaxL(n) -- This screening is a gold standard but slow
-            var maxl:Int=0,maxn:Int=0,maxmaxl:Int=0; val THRESH=1.0e-8;                        
-            var count1:Int=0; //sh.maxL = new Rail[Int](roN);
+            val sh = shellPairs(i); val a=sh.aang; val b=sh.bang; val ka=sh.dconA; val kb=sh.dconB;
+            
+            var maxl:Int=0,maxn:Int=0,maxmaxl:Int=0; 
+            var count1:Int=0; 
             for (var ron:Int=0; ron<=roN; ron++) {                           
                 aux.genClass(sh.aang, sh.bang, sh.aPoint, sh.bPoint, sh.zetaA, sh.zetaB, sh.conA, sh.conB, sh.dconA, sh.dconB, temp, ron, roL, emptyYlm.y, emptyYlm.maxL);  
-
                 var auxint:Double=0.,rol:Int=roL;                               
                 for (; rol>=0 && auxint<THRESH; rol--) { 
                     for (var rom:Int=-rol; rom<=rol; rom++)  for (var tmu:Int=0; tmu<sh.maxbraa; tmu++) for (var tnu:Int=0; tnu<sh.maxbrab; tnu++) {
@@ -241,7 +212,7 @@ public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
                     maxn=ron;
                     if (maxl>maxmaxl) maxmaxl=maxl;
                 }
-                sh.maxL(ron)=maxl;
+                sh.maxL(ron)=maxl; //if (ron>0) if (maxl>sh.maxL(ron-1)) Console.OUT.printf("%d %d | %d %d %d\n",sh.mu,sh.nu,ron,maxl,sh.maxL(ron-1));
                 //if (maxl!=-1) Console.OUT.printf("L(n=%d)=%d\n",ron,maxl);
             }
             val y = new Rail[Double](ka*kb*(maxmaxl+1)*(maxmaxl+1)); mCost+=ka*kb*(maxmaxl+1)*(maxmaxl+1);
@@ -291,7 +262,7 @@ public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
             val sp=shellPairs(spInd);
             if (sp.mu!=sp.nu) fac=2.; else fac=1.;
             for (var tmu:Int=sp.mu; tmu<sp.mu+sp.maxbraa; tmu++) for (var tnu:Int=sp.nu; tnu<sp.nu+sp.maxbrab; tnu++)
-                scratchDen(tmu,tnu)=density(tmu,tnu)*fac*norm(tmu)*norm(tnu);
+                scratch(tmu,tnu)=density(tmu,tnu)*fac*norm(tmu)*norm(tnu);
         }
         Console.OUT.printf("rawtime\n");
         for (var ron:Int=0; ron<=roN; ron++) {
@@ -311,7 +282,7 @@ public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
                     t+=(timer.last(TIMER_GENCLASS) as Double)/1e9;
 
                     for (var tmu:Int=sp.mu; tmu<sp.mu+sp.maxbraa; tmu++) for (var tnu:Int=sp.nu; tnu<sp.nu+sp.maxbrab; tnu++) {
-                        val scdmn=scratchDen(tmu,tnu);
+                        val scdmn=scratch(tmu,tnu);
                         for (var rolm:Int=0; rolm<maxLm; rolm++)
                             dk(rolm) += scdmn*temp(ind++); // eqn 15b 
                     }
