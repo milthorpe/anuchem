@@ -296,8 +296,7 @@ public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
         Console.OUT.printf("rawtime\n");
         for (var ron:Int=0; ron<=roN; ron++) {
             // Form dk vector
-            dk.clear();
-       
+            dk.clear();       
             for (spInd in 0..(numSigShellPairs-1)) {
                 val sp=shellPairs(spInd);
                 val maxLron=sp.maxL(ron);                
@@ -311,8 +310,11 @@ public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
                     Console.OUT.printf("\t%20.15e\n",(timer.last(TIMER_GENCLASS) as Double)/1e9);
                     t+=(timer.last(TIMER_GENCLASS) as Double)/1e9;
 
-                    for (var tmu:Int=sp.mu; tmu<sp.mu+sp.maxbraa; tmu++) for (var tnu:Int=sp.nu; tnu<sp.nu+sp.maxbrab; tnu++) for (var rolm:Int=0; rolm<maxLm; rolm++)
-                        dk(rolm) += scratchDen(tmu,tnu)*temp(ind++); // eqn 15b 
+                    for (var tmu:Int=sp.mu; tmu<sp.mu+sp.maxbraa; tmu++) for (var tnu:Int=sp.nu; tnu<sp.nu+sp.maxbrab; tnu++) {
+                        val scdmn=scratchDen(tmu,tnu);
+                        for (var rolm:Int=0; rolm<maxLm; rolm++)
+                            dk(rolm) += scdmn*temp(ind++); // eqn 15b 
+                    }
                 }
             }
              
