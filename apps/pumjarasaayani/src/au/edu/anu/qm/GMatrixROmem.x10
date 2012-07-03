@@ -248,7 +248,8 @@ public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
     }
 
     public def compute(density:Density{self.N==this.N}, mos:MolecularOrbitals{self.N==this.N}) {
-        Console.OUT.printf("GMatrixROmem.x10 compute starts at ...\n"); //Runtime.getRuntime().exec("date");
+        val result = Runtime.execForRead("date"); 
+        Console.OUT.printf("GMatrixROmem.x10 compute starts at %s...\n",result.readLine()); 
         timer.start(TIMER_TOTAL);
         jMatrix.reset();
         kMatrix.reset();

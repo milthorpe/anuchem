@@ -87,4 +87,6 @@ int main(int argc, char *argv[]) {
         tally();
     }
     printstat("Timing statistics per INTPACK CALL");
+
+    printf("Total time = %e\n",S);
 }
