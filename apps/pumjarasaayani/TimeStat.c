@@ -62,14 +62,25 @@ int main(int argc, char *argv[]) {
     }
     fclose(fptr);
 
-    // TALLY TIME PER FETCH & WRITE
+    // TALLY TIME PER FLOP
     init(); //double fc=0.,wc=0.,tt=0.;
     while (!feof(fptr)) {
         read;
-        w=(l+1)*(l+1)*((F123[a][b]+W123[a][b])*cona*conb+F4[a][b]+W4[a][b]);
-        tally();     
+        w=(l+1)*(l+1)*2*((F123[a][b]-a-b-1)*cona*conb+F4[a][b]);
+        if (!n) w=1; 
+        tally();
     }
-    printstat("Timing statistics per FETCH & WRITE");
+    printstat("Timing statistics per MUL & ADD");
+
+    // TALLY TIME PER FETCH
+    init(); //double fc=0.,wc=0.,tt=0.;
+    while (!feof(fptr)) {
+        read;
+        w=(l+1)*(l+1)*(F123[a][b]*cona*conb+F4[a][b]);
+        if (!n) w=1;
+        tally();
+    }
+    printstat("Timing statistics per FETCH");
 
     // TALLY TIME PER CONTRACTED INTEGRAL
     init();
