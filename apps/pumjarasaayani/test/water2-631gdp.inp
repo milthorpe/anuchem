@@ -12,6 +12,6 @@ O 1.430776   -0.003706    0.113495
 end
 guess sad
 use_RO 1
-RO_N 140
-RO_L 150
+RO_N 150
+RO_L 160
 gmat_parallel_scheme 0
