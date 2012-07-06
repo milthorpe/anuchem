@@ -270,40 +270,40 @@ namespace au {
                         int aminusIndex = map3[abs(x-2*delta[0][j])][abs(y-2*delta[1][j])][abs(z-2*delta[2][j])];
                         int aj = delta[0][j]*(x-1) + delta[1][j]*(y-1) + delta[2][j]*(z-1);
                         double paj = P[j]-A[j];
-
-                        cblas_dcopy(K, Va[aIndex], 1, Va[aplusIndex], 1);
-                        cblas_dscal(K, paj, Va[aplusIndex], 1);
-                        cblas_daxpy(K, P[j], Vb[aIndex], 1, Va[aplusIndex], 1);
+                        // Va[aplusIndex][...]=P[j]*Vb[aIndex][...]+paj*Va[aIndex][...]
+                        cblas_dcopy(K, Va[aIndex], 1, Va[aplusIndex], 1); // Va[aplusIndex][...]=Va[aIndex][...]
+                        cblas_dscal(K, paj, Va[aplusIndex], 1); // Va[aplusIndex][...]=paj*Va[aplusIndex][...]
+                        cblas_daxpy(K, P[j], Vb[aIndex], 1, Va[aplusIndex], 1); // Va[aplusIndex][...] = P[j]*Vb[aIndex][...]+Va[aplusIndex][...]
                         if (aj>0) {
                             cblas_daxpy(K, aj*one2zeta, Va[aminusIndex], 1, Va[aplusIndex], 1);
                             cblas_daxpy(K, aj*one2zeta, Vb[aminusIndex], 1, Va[aplusIndex], 1);
                         }
                         switch (j) {
                         case 2: //z
-                            for (l=1; l<=Ln; l++) for (m=-l+1; m<l; m++) {
-                                int k=lm2k(l,m);
-                                Va[aplusIndex][k] += onelambda*cz[k]*Vb[aIndex][lm2k(l-1,m)];
+                            for (l=1; l<=Ln; l++) {
+                                int ll=l*l+l; int ll1=l*l-l;
+                                for (m=-l+1; m<l; m++) Va[aplusIndex][ll+m] += onelambda*cz[ll+m]*Vb[aIndex][ll1+m];
                             }
                         break;
                         case 1: //y
-                            for (l=1; l<=Ln; l++) for (m=-l; m<l-1; m++) {
-                                int k=lm2k(l,m);
-                                Va[aplusIndex][k] += onelambda*cyplus[k]*Vb[aIndex][lm2k(l-1,-(m+1))];
+                            for (l=1; l<=Ln; l++) {
+                                int ll=l*l+l; int ll1=l*l-l;
+                                for (m=-l; m<l-1; m++) Va[aplusIndex][ll+m] += onelambda*cyplus[ll+m]*Vb[aIndex][ll1-(m+1)];
                             }
-                            for (l=1; l<=Ln; l++) for (m=-l+2; m<=l; m++) {
-                                int k=lm2k(l,m);
-                                Va[aplusIndex][k] += onelambda*cyminus[k]*Vb[aIndex][lm2k(l-1,-(m-1))];
+                            for (l=1; l<=Ln; l++) {
+                                int ll=l*l+l; int ll1=l*l-l;
+                                for (m=-l+2; m<=l; m++) Va[aplusIndex][ll+m] += onelambda*cyminus[ll+m]*Vb[aIndex][ll1-(m-1)];
                             }     
                         break;
                         //case 0:
                         default: //x
-                            for (l=1; l<=Ln; l++) for (m=-l; m<l-1; m++) {
-                                int k=lm2k(l,m);
-                                Va[aplusIndex][k] += onelambda*cxplus[k]*Vb[aIndex][lm2k(l-1,m+1)];
+                            for (l=1; l<=Ln; l++) {
+                                int ll=l*l+l; int ll1=l*l-l;
+                                for (m=-l; m<l-1; m++) Va[aplusIndex][ll+m] += onelambda*cxplus[ll+m]*Vb[aIndex][ll1+m+1];
                             }
-                            for (l=1; l<=Ln; l++) for (m=-l+2; m<=l; m++) {
-                                int k=lm2k(l,m);
-                                Va[aplusIndex][k] += onelambda*cxminus[k]*Vb[aIndex][lm2k(l-1,m-1)];
+                            for (l=1; l<=Ln; l++) {
+                                int ll=l*l+l; int ll1=l*l-l;
+                                for (m=-l+2; m<=l; m++) Va[aplusIndex][ll+m] += onelambda*cxminus[ll+m]*Vb[aIndex][ll1+m-1];
                             }
                         }
                     }
@@ -312,7 +312,8 @@ namespace au {
             }
             double (* Va)[K] = swap ? V2 : V1;
             for (i=a; i<=a+b; i++) for (bra=0; bra<noOfBra[i]; bra++) 
-                cblas_daxpy(K, 1.0, Va[bra+totalBraL[i]], 1, HRR[i][0][bra], 1);
+                cblas_daxpy(K, 1.0, Va[bra+totalBraL[i]], 1, HRR[i][0][bra], 1); 
+                // HRR[i][0][bra][...] = Va[bra+totalBraL[i]][...]+HRR[i][0][bra][...] 
         }
 
         free(V1);free(V2);
@@ -327,15 +328,13 @@ namespace au {
             	int lindex = ii*noOfBra[j] + jj;
             	int rindex1=HRRMAP[i][j][lindex].x;
             	int rindex2=HRRMAP[i][j][lindex].y;
-
+            	double factor = dd[HRRMAP[i][j][lindex].z];
                 double* lhs = HRR[i][j][lindex];
                 double* rhs1 = HRR[i+1][j-1][rindex1];
                 double* rhs2 = HRR[i][j-1][rindex2];
-
-            	double factor = dd[HRRMAP[i][j][lindex].z];
-
-                cblas_dcopy(K, rhs1, 1, lhs, 1);
-                cblas_daxpy(K, factor, rhs2, 1, lhs, 1);
+                // lhs[...]=factor*rhs2[...]+rhs1[...]
+                cblas_dcopy(K, rhs1, 1, lhs, 1); // lhs[...] = rhs1[...]
+                cblas_daxpy(K, factor, rhs2, 1, lhs, 1); // lhs[...] = factor*rhs2[...] + lhs[...]
         	}
             free(HRR[i][j-1]);
             if (i==a+b-j) free(HRR[i+1][j-1]);
