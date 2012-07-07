@@ -5,6 +5,8 @@
 #include <papi.h>
 #include "PAPI.h"
 
+static void printerror(const char *file, int line, const char *call, int retval);
+
 namespace edu {
     namespace utk {
         namespace cs {
@@ -14,6 +16,7 @@ namespace edu {
                 }
 
                 PAPI::PAPI() {
+                    EventSet=PAPI_NULL;
                     int num_hwcntrs;
                     if ((num_hwcntrs = PAPI_num_counters()) <= PAPI_OK)  
                         printerror(__FILE__, __LINE__, "PAPI_num_counters", num_hwcntrs);
@@ -35,48 +38,48 @@ namespace edu {
                 }
 
                 void PAPI::shutDown() {
-                    if (EventSet != NULL) destroyEventSet();
+                    if (EventSet != PAPI_NULL) destroyEventSet();
                     PAPI_shutdown();
                 }
 
                 void PAPI::startFlops() {
                     createEventSet();
                     addEvent(PAPI_TOT_INS);
-                    addEvent(PAPI_FP_OPS);
+                    addEvent(PAPI_FP_INS);
                     start();
                 }
 
                 void PAPI::start() {
                     int retval;
                     /* Start counting events in the Event Set */
-                    if (retval=PAPI_start(EventSet) != PAPI_OK)
+                    if ((retval=PAPI_start(EventSet)) != PAPI_OK)
                         printerror(__FILE__, __LINE__, "PAPI_start", retval);
                 }
 
                 void PAPI::stop() {
                     int retval;
                     /* Read the counting events in the Event Set */
-                    if (retval=PAPI_stop(EventSet, values) != PAPI_OK)
+                    if ((retval=PAPI_stop(EventSet, values)) != PAPI_OK)
                         printerror(__FILE__, __LINE__, "PAPI_stop", retval);
                 }
 
                 void PAPI::createEventSet() {
                     int retval;
-                    if (retval=PAPI_create_eventset(&EventSet) != PAPI_OK)
+                    if ((retval=PAPI_create_eventset(&EventSet)) != PAPI_OK)
                         printerror(__FILE__, __LINE__, "PAPI_create_eventset", retval);
                 }
 
                 void PAPI::addEvent(int EventCode) {
                     int retval;
-                    if (retval=PAPI_add_event(EventSet, EventCode) != PAPI_OK)
+                    if ((retval=PAPI_add_event(EventSet, EventCode)) != PAPI_OK)
                         printerror(__FILE__, __LINE__, "PAPI_add_event", retval);
                 }
 
                 void PAPI::destroyEventSet() {
                     int retval;
-                    if (retval=PAPI_cleanup_eventset(EventSet) != PAPI_OK)
+                    if ((retval=PAPI_cleanup_eventset(EventSet)) != PAPI_OK)
                         printerror(__FILE__, __LINE__, "PAPI_cleanup_eventset", retval);
-                    if (retval=PAPI_destroy_eventset(&EventSet) != PAPI_OK)
+                    if ((retval=PAPI_destroy_eventset(&EventSet)) != PAPI_OK)
                         printerror(__FILE__, __LINE__, "PAPI_destroy_eventset", retval);
                 }
 
@@ -88,7 +91,7 @@ namespace edu {
     }
 }
 
-static void printerror(char *file, int line, char *call, int retval) {
+static void printerror(const char *file, int line, const char *call, int retval) {
     printf("%s\tFAILED\nLine # %d\n", file, line);
     if ( retval == PAPI_ESYS ) {
         char buf[128];

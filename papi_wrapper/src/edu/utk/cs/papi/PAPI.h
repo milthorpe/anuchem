@@ -26,5 +26,4 @@ namespace edu {
     }
 }
 
-static void printerror(char *file, int line, char *call, int retval);
 
