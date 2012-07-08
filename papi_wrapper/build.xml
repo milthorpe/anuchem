@@ -48,7 +48,7 @@
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/src">
             <arg value="-c"/>
-            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} -report postcompile=1 -sourcepath . -buildx10lib ../. ${src.list} -d ${include} -post '# -echo &quot;-I${papi.include}&quot; # &quot;-L${papi.lib}&quot; # -lpapi' -o ${x10lib-cpp}"/>
+            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} -report postcompile=1 -sourcepath . -buildx10lib ../. ${src.list} -d ${include} -post '# &quot;-I${papi.include}&quot; # &quot;-L${papi.lib}&quot; # -lpapi' -o ${x10lib-cpp}"/>
         </exec>
 
         <jar jarfile="${x10lib-cpp}.jar">
@@ -76,7 +76,7 @@
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/src">
             <arg value="-c"/>
-            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} ${x10c.debug} -report postcompile=1 -post '# -echo &quot;-I${papi.include}&quot; # &quot;-L${papi.lib}&quot; # -lpapi' -sourcepath . -d '${target-src}' '${basedir}/${testclass}'"/>
+            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} ${x10c.debug} -report postcompile=1 -post '# -Wall &quot;-I${papi.include}&quot; # &quot;-L${papi.lib}&quot; # -lpapi' -sourcepath . -d '${target-src}' '${basedir}/${testclass}'"/>
         </exec>
     </target>
 

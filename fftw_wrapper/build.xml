@@ -43,7 +43,7 @@
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/src">
             <arg value="-c"/>
-            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} -report postcompile=1 -sourcepath . -buildx10lib ../. ${src.list} -d ../include -post '# -echo &quot;-I${fftw3.include}&quot; # &quot;-L${fftw3.lib}&quot; # -lfftw3' -o ${x10lib-cpp}"/>
+            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} -report postcompile=1 -sourcepath . -buildx10lib ../. ${src.list} -d ../include -post '# &quot;-I${fftw3.include}&quot; # &quot;-L${fftw3.lib}&quot; # -lfftw3' -o ${x10lib-cpp}"/>
         </exec>
 
         <jar jarfile="${x10lib-cpp}.jar">

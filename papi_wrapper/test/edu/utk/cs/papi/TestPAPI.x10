@@ -22,8 +22,12 @@ public class TestPAPI {
         val papi = new PAPI();
         papi.initialize();
         papi.startFlops();
+        var x:Double=0.0;
+        for (i in 1..1000000) {
+            x += i;
+        }
         papi.stop();
-        Console.OUT.printf("Total cycles: %d total FP ops: %d", papi.getCounter(0), papi.getCounter(1));
+        Console.OUT.printf("Total cycles: %d total FP ops: %d\n", papi.getCounter(0), papi.getCounter(1));
     }
 }
 
