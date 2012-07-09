@@ -35,8 +35,8 @@ public class PAPI {
     /**
      * Destroy current eventset and shutdown PAPI
      */
-    @Native("c++", "(#this)->shutdown()")
-    public native def shutdown():void;
+    @Native("c++", "(#this)->shutDown()")
+    public native def shutDown():void;
 
     /**
      * Add events for FLOPS counters
