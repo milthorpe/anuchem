@@ -6,19 +6,25 @@ namespace edu {
             namespace papi {
                 class PAPI {
                     public:
-                        PAPI();
                         static PAPI* _make();
+                        PAPI();
+                        ~PAPI();
                         void initialize();
-                        void shutDown();
-                        void startFlops();
+                        void countFlops();
+                        void printFlops();
+                        void countMemoryOps();
+                        void printMemoryOps();
                         void start();
                         void stop();
+                        void reset();
+                        int64_t getCounter(int i);
                         void createEventSet();
                         void addEvent(int EventCode);
                         void destroyEventSet();
-                        int64_t getCounter(int i);
+                        void shutDown();
 				    private:
                         int EventSet;
+                        long long cycles;
 					    long long *values;
                 };
             }

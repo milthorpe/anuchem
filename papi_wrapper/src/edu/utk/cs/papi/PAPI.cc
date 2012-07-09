@@ -21,9 +21,6 @@ namespace edu {
                     if ((num_hwcntrs = PAPI_num_counters()) <= PAPI_OK)  
                         printerror(__FILE__, __LINE__, "PAPI_num_counters", num_hwcntrs);
                     values = new long long[num_hwcntrs];
-                }
-
-                void PAPI::initialize() {
                     int retval = PAPI_library_init(PAPI_VER_CURRENT);
 
                     if (retval != PAPI_VER_CURRENT && retval > 0) {
@@ -37,30 +34,62 @@ namespace edu {
                     }
                 }
 
-                void PAPI::shutDown() {
-                    if (EventSet != PAPI_NULL) destroyEventSet();
-                    PAPI_shutdown();
+                PAPI::~PAPI() {
+                    shutDown();
                 }
 
-                void PAPI::startFlops() {
+                void PAPI::countFlops() {
+                    if (EventSet != PAPI_NULL) destroyEventSet();
                     createEventSet();
                     addEvent(PAPI_TOT_INS);
                     addEvent(PAPI_FP_INS);
-                    start();
+                    addEvent(PAPI_FP_OPS);
+                }
+
+                void PAPI::printFlops() {
+                    printf("total cyc: %16lld total ins: %16lld total FP ins: %16lld total FLOPS: %16lld\n", cycles, values[0], values[1], values[2]);
+                }
+
+                void PAPI::countMemoryOps() {
+                    if (EventSet != PAPI_NULL) destroyEventSet();
+                    createEventSet();
+                    addEvent(PAPI_TOT_INS);
+                    addEvent(PAPI_LD_INS);
+                    addEvent(PAPI_SR_INS);
+                }
+
+                void PAPI::printMemoryOps() {
+                    printf("total cyc: %16lld total ins: %16lld total LD ins: %16lld total SR ins: %16lld\n", cycles, values[0], values[1], values[2]);
                 }
 
                 void PAPI::start() {
+                    cycles = -PAPI_get_real_cyc();
                     int retval;
+                  /* Reset the counting events in the Event Set */
+                    if ((retval=PAPI_reset(EventSet)) != PAPI_OK)
+                        printerror(__FILE__, __LINE__, "PAPI_reset", retval);
                     /* Start counting events in the Event Set */
                     if ((retval=PAPI_start(EventSet)) != PAPI_OK)
                         printerror(__FILE__, __LINE__, "PAPI_start", retval);
                 }
 
                 void PAPI::stop() {
+                    cycles += PAPI_get_real_cyc();
                     int retval;
                     /* Read the counting events in the Event Set */
                     if ((retval=PAPI_stop(EventSet, values)) != PAPI_OK)
                         printerror(__FILE__, __LINE__, "PAPI_stop", retval);
+                }
+
+                void PAPI::reset() {
+                    int retval;
+                    /* Reset the counting events in the Event Set */
+                    if ((retval=PAPI_reset(EventSet)) != PAPI_OK)
+                        printerror(__FILE__, __LINE__, "PAPI_reset", retval);
+                }
+
+                int64_t PAPI::getCounter(int i) {
+                    return values[i];
                 }
 
                 void PAPI::createEventSet() {
@@ -83,8 +112,9 @@ namespace edu {
                         printerror(__FILE__, __LINE__, "PAPI_destroy_eventset", retval);
                 }
 
-                int64_t PAPI::getCounter(int i) {
-                    return values[i];
+                void PAPI::shutDown() {
+                    if (EventSet != PAPI_NULL) destroyEventSet();
+                    PAPI_shutdown();
                 }
             }
         }

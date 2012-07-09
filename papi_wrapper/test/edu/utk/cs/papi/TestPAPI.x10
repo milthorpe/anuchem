@@ -12,22 +12,37 @@ package edu.utk.cs.papi;
 
 /**
  * Tests wrapper for PAPI toolkit
+ * Counts FLOPs and memory ops for a dot product
  * @see http://icl.cs.utk.edu/papi
  * @author milthorpe
  */
 public class TestPAPI {
-    public def sizeOfCentralCluster() : Double = 80.0;
-
     public static def main(args : Array[String](1)) {
+        val N = 1000000;
+        val a = new Array[Double](N, 1.0001);
+
         val papi = new PAPI();
-        papi.initialize();
-        papi.startFlops();
-        var x:Double=0.0;
-        for (i in 1..1000000) {
-            x += i;
+        papi.countFlops();
+        papi.start();
+        var x:Double=1.0;
+        for (i in 0..(N-1)) {
+            x *= a(i);
         }
         papi.stop();
-        Console.OUT.printf("Total cycles: %d total FP ops: %d\n", papi.getCounter(0), papi.getCounter(1));
+        papi.printFlops();
+
+        Console.OUT.println("dot product = " + x);
+
+        papi.countMemoryOps();
+        papi.start();
+        x=1.0;
+        for (i in 0..(N-1)) {
+            x *= a(i);
+        }
+        papi.stop();
+        papi.printMemoryOps();
+
+        Console.OUT.println("dot product = " + x);
     }
 }
 
