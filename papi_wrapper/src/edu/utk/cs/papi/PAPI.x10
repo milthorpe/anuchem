@@ -39,7 +39,7 @@ public class PAPI {
     public native def shutDown():void;
 
     /**
-     * Add events for FLOPS counters
+     * Add events for FLOPS counters and start count
      */
     @Native("c++", "(#this)->countFlops()")
     public native def countFlops():void;
@@ -51,7 +51,7 @@ public class PAPI {
     public native def printFlops():void;
 
     /**
-     * Add events for load/store counters
+     * Add events for load/store counters and start count
      */
     @Native("c++", "(#this)->countMemoryOps()")
     public native def countMemoryOps():void;
@@ -63,16 +63,28 @@ public class PAPI {
     public native def printMemoryOps():void;
 
     /**
-     * Stop currently running counters
+     * Start counters for current event set
      */
-    @Native("c++", "(#this)->stop()")
-    public native def stop():void;
+    @Native("c++", "(#this)->startCount()")
+    public native def startCount():void;
 
     /**
-     * Reset currently running counters
+     * Stop currently running counters
      */
-    @Native("c++", "(#this)->reset()")
-    public native def reset():void;
+    @Native("c++", "(#this)->stopCount()")
+    public native def stopCount():void;
+
+    /**
+     * Resume counters for current event set
+     */
+    @Native("c++", "(#this)->resumeCount()")
+    public native def resumeCount():void;
+
+    /**
+     * Reset currently running counters and leave running
+     */
+    @Native("c++", "(#this)->resetCount()")
+    public native def resetCount():void;
 
     /**
      * Get the value of a given counter
@@ -99,13 +111,6 @@ public class PAPI {
      */
     @Native("c++", "(#this)->destroyEventSet()")
     public native def destroyEventSet():void;
-
-    /**
-     * Start counters for current event set
-     */
-    @Native("c++", "(#this)->start()")
-    public native def start():void;
-
 
 }
 

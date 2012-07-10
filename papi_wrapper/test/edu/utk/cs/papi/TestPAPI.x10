@@ -23,23 +23,21 @@ public class TestPAPI {
 
         val papi = new PAPI();
         papi.countFlops();
-        papi.start();
         var x:Double=1.0;
         for (i in 0..(N-1)) {
             x *= a(i);
         }
-        papi.stop();
+        papi.stopCount();
         papi.printFlops();
 
         Console.OUT.println("dot product = " + x);
 
         papi.countMemoryOps();
-        papi.start();
         x=1.0;
         for (i in 0..(N-1)) {
             x *= a(i);
         }
-        papi.stop();
+        papi.stopCount();
         papi.printMemoryOps();
 
         Console.OUT.println("dot product = " + x);

@@ -14,9 +14,10 @@ namespace edu {
                         void printFlops();
                         void countMemoryOps();
                         void printMemoryOps();
-                        void start();
-                        void stop();
-                        void reset();
+                        void startCount();
+                        void stopCount();
+                        void resumeCount();
+                        void resetCount();
                         int64_t getCounter(int i);
                         void createEventSet();
                         void addEvent(int EventCode);
@@ -24,8 +25,10 @@ namespace edu {
                         void shutDown();
 				    private:
                         int EventSet;
+                        int num_hwcntrs;
                         long long cycles;
 					    long long *values;
+					    long long *total;
                 };
             }
         }
