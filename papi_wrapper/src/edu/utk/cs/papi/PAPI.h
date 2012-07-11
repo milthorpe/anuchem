@@ -16,7 +16,6 @@ namespace edu {
                         void printMemoryOps();
                         void startCount();
                         void stopCount();
-                        void resumeCount();
                         void resetCount();
                         int64_t getCounter(int i);
                         void createEventSet();
@@ -28,7 +27,8 @@ namespace edu {
                         int num_hwcntrs;
                         long long cycles;
 					    long long *values;
-					    long long *total;
+					    long long *totals;
+                        void resetTotals();
                 };
             }
         }

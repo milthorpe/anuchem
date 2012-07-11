@@ -24,6 +24,16 @@ import x10.util.IndexedMemoryChunk;
 @NativeCPPCompilationUnit("PAPI.cc")
 @NativeRep("c++", "::edu::utk::cs::papi::PAPI *", "::edu::utk::cs::papi::PAPI", null)
 public class PAPI {
+    static COUNTER_TOTAL_INS = 0;
+
+    // floating point ops
+    static COUNTER_FP_INS = 1;
+    static COUNTER_FP_OPS = 2;
+
+    // memory ops    
+    static COUNTER_LD_INS = 1;
+    static COUNTER_SR_INS = 2;
+
     // High-level API
 
     /**
@@ -39,49 +49,45 @@ public class PAPI {
     public native def shutDown():void;
 
     /**
-     * Add events for FLOPS counters and start count
+     * Creates eventset for FLOPS counters.
+     * Assumes counters are not currently running.
      */
     @Native("c++", "(#this)->countFlops()")
     public native def countFlops():void;
 
     /**
-     * Print FLOPS counters
+     * Print current values of FLOPS counters
      */
     @Native("c++", "(#this)->printFlops()")
     public native def printFlops():void;
 
     /**
-     * Add events for load/store counters and start count
+     * Creates eventset for load/store counters.
+     * Assumes counters are not currently running.
      */
     @Native("c++", "(#this)->countMemoryOps()")
     public native def countMemoryOps():void;
 
     /**
-     * Print load/store counters
+     * Print current values of load/store counters
      */
     @Native("c++", "(#this)->printMemoryOps()")
     public native def printMemoryOps():void;
 
     /**
-     * Start counters for current event set
+     * Start or resume counters for current event set
      */
     @Native("c++", "(#this)->startCount()")
     public native def startCount():void;
 
     /**
-     * Stop currently running counters
+     * Stop and accumulate currently running counters
      */
     @Native("c++", "(#this)->stopCount()")
     public native def stopCount():void;
 
     /**
-     * Resume counters for current event set
-     */
-    @Native("c++", "(#this)->resumeCount()")
-    public native def resumeCount():void;
-
-    /**
-     * Reset currently running counters and leave running
+     * Reset currently running counters
      */
     @Native("c++", "(#this)->resetCount()")
     public native def resetCount():void;

@@ -20,7 +20,7 @@ namespace edu {
                     if ((num_hwcntrs = PAPI_num_counters()) <= PAPI_OK)  
                         printerror(__FILE__, __LINE__, "PAPI_num_counters", num_hwcntrs);
                     values = new long long[num_hwcntrs];
-                    total = new long long[num_hwcntrs];
+                    totals = new long long[num_hwcntrs];
                     int retval = PAPI_library_init(PAPI_VER_CURRENT);
 
                     if (retval != PAPI_VER_CURRENT && retval > 0) {
@@ -43,12 +43,12 @@ namespace edu {
                     createEventSet();
                     addEvent(PAPI_TOT_INS);
                     addEvent(PAPI_FP_INS);
-                    //addEvent(PAPI_FP_OPS);
-                    startCount();
+                    addEvent(PAPI_FP_OPS);
+                    resetTotals();
                 }
 
                 void PAPI::printFlops() {
-                    printf("total cyc: %16lld total ins: %16lld total FP ins: %16lld total FLOPS: %16lld\n", cycles, values[0], values[1], values[2]);
+                    printf("total cyc: %16lld total ins: %16lld total FP ins: %16lld total FLOPS: %16lld\n", cycles, totals[0], totals[1], totals[2]);
                 }
 
                 void PAPI::countMemoryOps() {
@@ -56,15 +56,16 @@ namespace edu {
                     createEventSet();
                     addEvent(PAPI_TOT_INS);
                     addEvent(PAPI_LD_INS);
-                    //addEvent(PAPI_SR_INS);
-                    startCount();
+                    addEvent(PAPI_SR_INS);
+                    resetTotals();
                 }
 
                 void PAPI::printMemoryOps() {
-                    printf("total cyc: %16lld total ins: %16lld total LD ins: %16lld total SR ins: %16lld\n", cycles, values[0], values[1], values[2]);
+                    printf("total cyc: %16lld total ins: %16lld total LD ins: %16lld total SR ins: %16lld\n", cycles, totals[0], totals[1], totals[2]);
                 }
 
                 void PAPI::startCount() {
+                    cycles -= PAPI_get_real_cyc();
                     int retval;
                     if ((retval=PAPI_start(EventSet)) != PAPI_OK)
                         printerror(__FILE__, __LINE__, "PAPI_start", retval);
@@ -73,21 +74,15 @@ namespace edu {
                 void PAPI::stopCount() {
                     cycles += PAPI_get_real_cyc();
                     int retval;
-                    if ((retval=PAPI_accum(EventSet, values)) != PAPI_OK)
-                        printerror(__FILE__, __LINE__, "PAPI_accum", retval);
-                }
-
-                void PAPI::resumeCount() {
-                    cycles -= PAPI_get_real_cyc();
-                    int retval;
-                    /* Reset the counting events in the Event Set */
-                    if ((retval=PAPI_reset(EventSet)) != PAPI_OK)
-                        printerror(__FILE__, __LINE__, "PAPI_reset", retval);
+                    if ((retval=PAPI_stop(EventSet, values)) != PAPI_OK)
+                        printerror(__FILE__, __LINE__, "PAPI_stop", retval);
+                    for (int i=0; i<num_hwcntrs; i++) {
+                        totals[i] += values[i];
+                    }
                 }
 
                 void PAPI::resetCount() {
-                    cycles = -PAPI_get_real_cyc();
-                    bzero(values, num_hwcntrs*sizeof(double));
+                    resetTotals();
                     int retval;
                     /* Reset the counting events in the Event Set */
                     if ((retval=PAPI_reset(EventSet)) != PAPI_OK)
@@ -96,7 +91,7 @@ namespace edu {
                 }
 
                 int64_t PAPI::getCounter(int i) {
-                    return values[i];
+                    return totals[i];
                 }
 
                 void PAPI::createEventSet() {
@@ -122,6 +117,11 @@ namespace edu {
                 void PAPI::shutDown() {
                     if (EventSet != PAPI_NULL) destroyEventSet();
                     PAPI_shutdown();
+                }
+
+                void PAPI::resetTotals() {
+                    cycles = 0LL;
+                    bzero(totals, num_hwcntrs*sizeof(double));
                 }
             }
         }

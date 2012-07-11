@@ -19,11 +19,18 @@ package edu.utk.cs.papi;
 public class TestPAPI {
     public static def main(args : Array[String](1)) {
         val N = 1000000;
-        val a = new Array[Double](N, 1.0001);
+        val a = new Array[Double](N, 1.00001);
 
         val papi = new PAPI();
         papi.countFlops();
+
+        papi.startCount();
         var x:Double=1.0;
+        for (i in 0..(N-1)) {
+            x *= a(i);
+        }
+        papi.stopCount();
+        papi.startCount();
         for (i in 0..(N-1)) {
             x *= a(i);
         }
@@ -33,6 +40,8 @@ public class TestPAPI {
         Console.OUT.println("dot product = " + x);
 
         papi.countMemoryOps();
+
+        papi.startCount();
         x=1.0;
         for (i in 0..(N-1)) {
             x *= a(i);
