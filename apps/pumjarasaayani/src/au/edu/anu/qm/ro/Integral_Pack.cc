@@ -14,6 +14,8 @@ double JpY00[11]={0.28209479177387814, 0.09403159725795937, 0.018806319451591877
        		0.0026866170645131254, 0.000298513007168125,0.000027137546106193183, 
                 2.087503546630245e-6,1.39166903108683e-7, 8.186288418157823e-9,
                 4.308572851662012e-10, 2.0517013579342914e-11}; 
+double *arr1,*arr2;
+
 // 0-10 accomodate (hh|phi) - need more for higer angular momentum - see RO#7 eqn 6b 
 // double *YCon[MAX_C*MAX_C];
 
@@ -31,12 +33,13 @@ namespace au {
         this->N = N; this->L=L;
         initialize();
         initializeCoulomb(N);
+        arr1=(double *)malloc(totalBraL[MAX_BRA_L*2+1]*(L+1)*(L+1)*sizeof(double));
+        arr2=(double *)malloc(totalBraL[MAX_BRA_L*2+1]*(L+1)*(L+1)*sizeof(double));
         printf("Integral_Pack.cc N=%d L=%d\n",N,L);
     }
 
     Integral_Pack::~Integral_Pack() {
-        free(lambda);
-        free(q);
+        free(lambda); free(q); free(arr1); free(arr2);
         for (int i=1; i<=MAX_BRA_L; i++) for (int j=1; j<=i; j++) {
             free(HRRMAP[i][j]);
         }
@@ -193,9 +196,9 @@ namespace au {
         double ldn=lambda[n],onelambda;
         bool swap,lzero=(ldn==0.); // should be replace by ldn<1e-y 
         if (!lzero) onelambda=-1.0/ldn;
-        double (*V1)[K]=(double (*)[K])malloc(totalBraL[a+b+1]*K*sizeof(double));
-        double (*V2)[K]=(double (*)[K])malloc(totalBraL[a+b+1]*K*sizeof(double));
-        if (V1==NULL || V2==NULL) {printf("Integral_Pack.cc V1/V2 allocation failed size=%d*sizeof(double)\n",totalBraL[a+b+1]*K); exit(1);}
+        double (*V1)[K]=(double (*)[K])arr1;//malloc(totalBraL[a+b+1]*K*sizeof(double));
+        double (*V2)[K]=(double (*)[K])arr2;//malloc(totalBraL[a+b+1]*K*sizeof(double));
+        //if (V1==NULL || V2==NULL) {printf("Integral_Pack.cc V1/V2 allocation failed size=%d*sizeof(double)\n",totalBraL[a+b+1]*K); exit(1);}
         double (*HRR[a+b+1][b+1])[K];
         for (i=a; i<=a+b; i++) {
             HRR[i][0] = (double (*)[K])(malloc(sizeof(double)*K*noOfBra[i]));
@@ -327,7 +330,7 @@ namespace au {
                 // HRR[i][0][bra][...] = Va[bra+totalBraL[i]][...]+HRR[i][0][bra][...] 
         }
 
-        free(V1);free(V2);
+        //free(V1);free(V2);
         if (Ylm==NULL) free(Y);
 
         double dd[3]={A[0]-B[0],A[1]-B[1],A[2]-B[2]};
