@@ -10,7 +10,11 @@
     <property name="anuchem.props" location="${anuchem}/anuchem_${x10rt}.properties"/>
     <property name="gml.lib" location="${user.home}/x10-trunk/x10.gml/lib/native_gml.jar"/>
     <property name="gml.props" location="${user.home}/x10-trunk/x10.gml/native_gml.properties"/>
-    <property name="bash.exe" value="bash"/>    
+    <property name="papi" value="true" />
+    <property name="x10papi" location="../../papi_wrapper"/>
+    <property name="x10papi.props" location="${x10papi}/x10papi_${x10rt}.properties"/>
+    <property name="papiHome" location="${user.home}/papi"/>
+    <property name="bash.exe" value="bash"/>
     <property name="optimize" value="true" />
     <property name="nochecks" value="true" />
     <property name="debug" value="false"/>
@@ -49,6 +53,14 @@
 
     <condition property="post.cpuprofile" value="-L${perftoolsHome}/lib -lprofiler" else="">
         <istrue value="${cpuprofile}"/>
+    </condition>
+
+    <condition property="x10lib.papi" value="-x10lib ${x10papi.props}" else="">
+        <istrue value="${papi}"/>
+    </condition>
+
+    <condition property="post.papi" value="-L${papiHome}/lib -lpapi" else="">
+        <istrue value="${papi}"/>
     </condition>
 
 
@@ -120,11 +132,11 @@
         <pathconvert property="src.list" refid="changed.src.files" dirsep="/" pathsep=" ">
             <map from="${basedir}${file.separator}src${file.separator}" to=""/>
         </pathconvert>
-        <echo message="x10c++ -x10rt ${x10rt} -classpath ${gml.lib} -x10lib ${gml.props} -x10lib ${xla.props} -x10lib ${anuchem.props} -sourcepath . ${basedir}/${testclass}"/>
+        <echo message="x10c++ -x10rt ${x10rt} -classpath ${gml.lib} -x10lib ${gml.props} -x10lib ${xla.props} -x10lib ${anuchem.props} ${x10lib.papi} -sourcepath . ${basedir}/${testclass}"/>
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/src">
             <arg value="-c"/> 
-            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.debug} ${x10c.profile} ${x10c.optimize} ${x10c.nochecks} -report postcompile=1 -post '# ${post.cpuprofile} ${post.heapprofile} # -L/usr/lib # -lblas -L/scratch/lapack -llapack' -classpath ${gml.lib} -x10lib ${gml.props} -x10lib ${xla.props} -x10lib ${anuchem.props} -sourcepath . -d ${target-src} ${basedir}/${testclass}"/>
+            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.debug} ${x10c.profile} ${x10c.optimize} ${x10c.nochecks} -report postcompile=1 -classpath ${gml.lib} -x10lib ${gml.props} -x10lib ${xla.props} -x10lib ${anuchem.props} ${x10lib.papi} -sourcepath . -post '# # ${post.cpuprofile} ${post.heapprofile} ${post.papi} -L/usr/lib # -lblas -L/scratch/lapack -llapack -lpapi' -d ${target-src} ${basedir}/${testclass}"/>
         </exec>
     </target>
 

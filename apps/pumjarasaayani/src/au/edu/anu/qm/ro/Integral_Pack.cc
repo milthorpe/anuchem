@@ -288,22 +288,33 @@ namespace au {
                         case 1: //y
                             for (l=1; l<=Ln; l++) {
                                 int ll=l*l+l; int ll1=l*l-l;
-                                for (m=-l; m<l-1; m++) Va[aplusIndex][ll+m] += onelambda*cyplus[ll+m]*Vb[aIndex][ll1-(m+1)];
+                                if (l>0) { 
+                                    Va[aplusIndex][ll-l] += onelambda*cyplus[ll-l]*Vb[aIndex][ll1+l-1];
+                                    Va[aplusIndex][ll+l] += onelambda*cyminus[ll+l]*Vb[aIndex][ll1-l+1];
+                                    if (l>1) {
+                                        Va[aplusIndex][ll-l+1] += onelambda*cyplus[ll-l+1]*Vb[aIndex][ll1+l-2];
+                                        Va[aplusIndex][ll+l-1] += onelambda*cyminus[ll+l-1]*Vb[aIndex][ll1-l+2];
+                                    }
+                                }
+                                for (m=-l+2; m<l-1; m++) 
+                                    Va[aplusIndex][ll+m] += onelambda*(cyplus[ll+m]*Vb[aIndex][ll1-m-1]+cyminus[ll+m]*Vb[aIndex][ll1-m+1]);
                             }
-                            for (l=1; l<=Ln; l++) {
-                                int ll=l*l+l; int ll1=l*l-l;
-                                for (m=-l+2; m<=l; m++) Va[aplusIndex][ll+m] += onelambda*cyminus[ll+m]*Vb[aIndex][ll1-(m-1)];
-                            }     
                         break;
                         //case 0:
                         default: //x
                             for (l=1; l<=Ln; l++) {
                                 int ll=l*l+l; int ll1=l*l-l;
-                                for (m=-l; m<l-1; m++) Va[aplusIndex][ll+m] += onelambda*cxplus[ll+m]*Vb[aIndex][ll1+m+1];
-                            }
-                            for (l=1; l<=Ln; l++) {
-                                int ll=l*l+l; int ll1=l*l-l;
-                                for (m=-l+2; m<=l; m++) Va[aplusIndex][ll+m] += onelambda*cxminus[ll+m]*Vb[aIndex][ll1+m-1];
+                                if (l>0) {
+                                    Va[aplusIndex][ll-l] += onelambda*cxplus[ll-l]*Vb[aIndex][ll1-l+1];
+                                    Va[aplusIndex][ll+l] += onelambda*cxminus[ll+l]*Vb[aIndex][ll1+l-1];
+                                    if (l>1) {
+                                        Va[aplusIndex][ll-l+1] += onelambda*cxplus[ll-l+1]*Vb[aIndex][ll1-l+2];
+                                        Va[aplusIndex][ll+l-1] += onelambda*cxminus[ll+l-1]*Vb[aIndex][ll1+l-2];
+                                    }
+                                }
+                                for (m=-l+2; m<l-1; m++) 
+                                    Va[aplusIndex][ll+m] += onelambda*(cxplus[ll+m]*Vb[aIndex][ll1+m+1]+cxminus[ll+m]*Vb[aIndex][ll1+m-1]);
+
                             }
                         }
                     }
