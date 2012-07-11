@@ -192,7 +192,7 @@ namespace au {
     } 
 
     int Integral_Pack::Genclass(int a, int b, double *A, double *B, double *zetaA, double *zetaB, double *conA, double *conB, int dconA, int dconB, double* temp, int n, int Ln, double *Ylm, int maxL){
-        int bra,K=(Ln+1)*(Ln+1),p,e,i,ii,j,jj,k,l,m; 
+        int bra,K=(Ln+1)*(Ln+1),p,e,i,ii,j,jj,k,l,m,ll,ll1; 
         double ldn=lambda[n],onelambda;
         bool swap,lzero=(ldn==0.); // should be replace by ldn<1e-y 
         if (!lzero) onelambda=-1.0/ldn;
@@ -257,8 +257,9 @@ namespace au {
                 // Fill e=0
                 if (!rzero && !lzero) {
                     double nfactor=q[n]*gAB*exp(-.25*sqr(ldn)/zeta)*pow(-.5*ldn/zeta/r,p);
-                    for (l=0; l<=Ln; l++) for (m=-l; m<=l; m++) 
-                            Va[0][lm2k(l,m)] = nfactor*J[l+p]*Y[lm2k(l,m)]; // eqn (23) //6a
+                    for (l=0; l<=Ln; l++) {
+                        ll=l*l+l; for (m=-l; m<=l; m++) Va[0][ll+m] = nfactor*J[l+p]*Y[ll+m]; // eqn (23) //6a
+                    }
                 }
                 else if (rzero && !lzero) 
                     Va[0][0] = q[n]*gAB*exp(-.25*sqr(ldn)/zeta)*pow(-.5*sqr(ldn)/zeta,p)*JpY00[p]; // l=m=0 only //6b   
@@ -273,10 +274,11 @@ namespace au {
                         int aminusIndex = map3[abs(x-2*delta[0][j])][abs(y-2*delta[1][j])][abs(z-2*delta[2][j])];
                         int aj = delta[0][j]*(x-1) + delta[1][j]*(y-1) + delta[2][j]*(z-1);
                         double paj = P[j]-A[j];
-                        // Va[aplusIndex][...]=P[j]*Vb[aIndex][...]+paj*Va[aIndex][...]
-                        cblas_dcopy(K, Va[aIndex], 1, Va[aplusIndex], 1); // Va[aplusIndex][...]=Va[aIndex][...]
-                        cblas_dscal(K, paj, Va[aplusIndex], 1); // Va[aplusIndex][...]=paj*Va[aplusIndex][...]
-                        cblas_daxpy(K, P[j], Vb[aIndex], 1, Va[aplusIndex], 1); // Va[aplusIndex][...] = P[j]*Vb[aIndex][...]+Va[aplusIndex][...]
+                        for (k=0; k<(Ln+1)*(Ln+1); k++)
+                            Va[aplusIndex][k]=P[j]*Vb[aIndex][k]+paj*Va[aIndex][k];
+                        //cblas_dcopy(K, Va[aIndex], 1, Va[aplusIndex], 1); // Va[aplusIndex][...]=Va[aIndex][...]
+                        //cblas_dscal(K, paj, Va[aplusIndex], 1); // Va[aplusIndex][...]=paj*Va[aplusIndex][...]
+                        //cblas_daxpy(K, P[j], Vb[aIndex], 1, Va[aplusIndex], 1); // Va[aplusIndex][...] = P[j]*Vb[aIndex][...]+Va[aplusIndex][...]
                         if (aj>0) {
                             cblas_daxpy(K, aj*one2zeta, Va[aminusIndex], 1, Va[aplusIndex], 1);
                             cblas_daxpy(K, aj*one2zeta, Vb[aminusIndex], 1, Va[aplusIndex], 1);
@@ -284,13 +286,13 @@ namespace au {
                         switch (j) {
                         case 2: //z
                             for (l=1; l<=Ln; l++) {
-                                int ll=l*l+l; int ll1=l*l-l;
+                                ll=l*l+l; ll1=l*l-l;
                                 for (m=-l+1; m<l; m++) Va[aplusIndex][ll+m] += onelambda*cz[ll+m]*Vb[aIndex][ll1+m];
                             }
                         break;
                         case 1: //y
                             for (l=1; l<=Ln; l++) {
-                                int ll=l*l+l; int ll1=l*l-l;
+                                ll=l*l+l; ll1=l*l-l;
                                 if (l>0) { 
                                     Va[aplusIndex][ll-l] += onelambda*cyplus[ll-l]*Vb[aIndex][ll1+l-1];
                                     Va[aplusIndex][ll+l] += onelambda*cyminus[ll+l]*Vb[aIndex][ll1-l+1];
@@ -306,7 +308,7 @@ namespace au {
                         //case 0:
                         default: //x
                             for (l=1; l<=Ln; l++) {
-                                int ll=l*l+l; int ll1=l*l-l;
+                                ll=l*l+l; ll1=l*l-l;
                                 if (l>0) {
                                     Va[aplusIndex][ll-l] += onelambda*cxplus[ll-l]*Vb[aIndex][ll1-l+1];
                                     Va[aplusIndex][ll+l] += onelambda*cxminus[ll+l]*Vb[aIndex][ll1+l-1];
