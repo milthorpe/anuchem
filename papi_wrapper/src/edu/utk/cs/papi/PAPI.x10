@@ -33,6 +33,8 @@ public class PAPI {
     // memory ops    
     static COUNTER_LD_INS = 1;
     static COUNTER_SR_INS = 2;
+    static COUNTER_L1_LDM = 3;
+    static COUNTER_L1_STM = 4;
 
     // High-level API
 
