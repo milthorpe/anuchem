@@ -307,9 +307,9 @@ public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
                     val maxLm=(maxLron+1)*(maxLron+1);
                     ind=0;  
                     //timer.start(TIMER_GENCLASS);
-                    papi.startCount();
+                    //papi.startCount();
                     aux.genClass(sp.aang, sp.bang, sp.aPoint, sp.bPoint, sp.zetaA, sp.zetaB, sp.conA, sp.conB, sp.dconA, sp.dconB, temp, ron, maxLron,ylms(spInd).y, ylms(spInd).maxL);  
-                    papi.stopCount();
+                    //papi.stopCount();
                     //timer.stop(TIMER_GENCLASS); t+= (timer.last(TIMER_GENCLASS) as Double)/1e9 ;
 
                     for (var tmu:Int=sp.mu; tmu<sp.mu+sp.maxbraa; tmu++) for (var tnu:Int=sp.nu; tnu<sp.nu+sp.maxbrab; tnu++) {
@@ -343,7 +343,7 @@ public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
         Console.OUT.printf("    Time to construct JMatrix with RO: %.3g seconds (%.4g for ints)\n", (timer.last(TIMER_JMATRIX) as Double) / 1e9, t);
 
         // Form K matrix
-        papi.resetCount();
+        //papi.resetCount();
         timer.start(TIMER_KMATRIX); t=0.;
 
         if (counter++!=0) // First cycle gives EK=0 
@@ -355,9 +355,9 @@ public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
                 if (maxLron>=0) {
                     val maxLm=(maxLron+1)*(maxLron+1);  
                     timer.start(TIMER_GENCLASS);
-                    papi.startCount();
+                    //papi.startCount();
                     aux.genClass(sp.aang, sp.bang, sp.aPoint, sp.bPoint, sp.zetaA, sp.zetaB, sp.conA, sp.conB, sp.dconA, sp.dconB, temp, ron, maxLron,ylms(spInd).y, ylms(spInd).maxL);
-                    papi.stopCount();
+                    //papi.stopCount();
                     timer.stop(TIMER_GENCLASS); t+= (timer.last(TIMER_GENCLASS) as Double)/1e9;
                     ind=0;                   
                     for (var tmu:Int=sp.mu; tmu<sp.mu+sp.maxbraa; tmu++) for (var tnu:Int=sp.nu; tnu<sp.nu+sp.maxbrab; tnu++) { 
@@ -380,7 +380,7 @@ public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
         timer.stop(TIMER_KMATRIX);
         Console.OUT.print("K matrix ");
         //papi.printFlops();
-        papi.printMemoryOps();
+        //papi.printMemoryOps();
 
 // vvvv For development purpose vvvvvv
         val eK = scratch.mult(density, kMatrix).trace();
