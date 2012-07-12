@@ -91,11 +91,11 @@ public class ElectrostaticDirectMethod {
                         for (j in 0..(i-1)) {
 				            val atomJ = myAtoms(j);
                             val rVec = atomJ.centre - atomI.centre;
-                            val r2 = rVec.lengthSquared();
-                            val r = Math.sqrt(r2);
-                            val e = atomI.charge * atomJ.charge / r;
+                            val invR2 = 1.0 / rVec.lengthSquared();
+                            val invR = Math.sqrt(invR2);
+                            val e = atomI.charge * atomJ.charge * invR;
                             energyThisPlace += 2.0 * e;
-                            val pairForce = e / r2 * rVec;
+                            val pairForce = e * invR2 * rVec;
                             atomI.force += pairForce;
 				            atomJ.force -= pairForce;
                         }
@@ -124,11 +124,11 @@ public class ElectrostaticDirectMethod {
                             for (i in 0..(myAtoms.size-1)) {
                                 val atomI = myAtoms(i);
                                 val rVec = atomJ.centre - atomI.centre;
-                                val r2 = rVec.lengthSquared();
-                                val r = Math.sqrt(r2);
-                                val e = atomI.charge * atomJ.charge / r;
+                                val invR2 = 1.0 / rVec.lengthSquared();
+                                val invR = Math.sqrt(invR2);
+                                val e = atomI.charge * atomJ.charge * invR;
                                 energyThisPlace += e;
-                                val pairForce = e / r2 * rVec;
+                                val pairForce = e * invR2 * rVec;
                                 atomI.force += pairForce;
                             }
                         }
@@ -155,11 +155,11 @@ public class ElectrostaticDirectMethod {
                                 for (i in 0..(myAtoms.size-1)) {
                                     val atomI = myAtoms(i);
                                     val rVec = atomJ.centre - atomI.centre;
-                                    val r2 = rVec.lengthSquared();
-                                    val r = Math.sqrt(r2);
-                                    val e = atomI.charge * atomJ.charge / r;
+                                    val invR2 = 1.0 / rVec.lengthSquared();
+                                    val invR = Math.sqrt(invR2);
+                                    val e = atomI.charge * atomJ.charge * invR;
                                     energyWithOther += e;
-                                    val pairForce = e / r2 * rVec;
+                                    val pairForce = e * invR2 * rVec;
                                     atomI.force += pairForce;
                                 }
                             }
@@ -174,11 +174,11 @@ public class ElectrostaticDirectMethod {
                         for (j in 0..(i-1)) {
 						    val atomJ = myAtoms(j);
                             val rVec = atomJ.centre - atomI.centre;
-                            val r2 = rVec.lengthSquared();
-                            val r = Math.sqrt(r2);
-                            val e = atomI.charge * atomJ.charge / r;
+                            val invR2 = 1.0 / rVec.lengthSquared();
+                            val invR = Math.sqrt(invR2);
+                            val e = atomI.charge * atomJ.charge * invR;
                             energyThisPlace += 2.0 * e;
-                            val pairForce = e / r2 * rVec;
+                            val pairForce = e * invR2 * rVec;
                             atomI.force += pairForce;
 				            atomJ.force -= pairForce;
                         }

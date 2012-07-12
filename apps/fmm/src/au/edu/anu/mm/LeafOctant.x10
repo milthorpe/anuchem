@@ -125,11 +125,11 @@ public class LeafOctant extends Octant implements Comparable[LeafOctant] {
             for (sameBoxAtomIndex in 0..(atomIndex1-1)) {
                 val sameBoxAtom = atoms(sameBoxAtomIndex);
                 val rVec = sameBoxAtom.centre - atom1.centre;
-                val r2 = rVec.lengthSquared();
-                val r = Math.sqrt(r2);
-                val e = atom1.charge * sameBoxAtom.charge / r;
+                val invR2 = 1.0 / rVec.lengthSquared();
+                val invR = Math.sqrt(invR2);
+                val e = atom1.charge * sameBoxAtom.charge * invR;
                 directEnergy += 2.0 * e;
-                val pairForce = (e / r2) * rVec;
+                val pairForce = e * invR2 * rVec;
                 atom1.force += pairForce;
                 sameBoxAtom.force -= pairForce;
             }
@@ -151,11 +151,12 @@ public class LeafOctant extends Octant implements Comparable[LeafOctant] {
                             val atom1 = atoms(atomIndex1);
                             val rVec = translatedCentre - atom1.centre;
                             val r2 = rVec.lengthSquared();
-                            val r = Math.sqrt(r2);
-                            if (r != 0.0) { // don't include dipole-balancing charges at same point
-                                val e = atom1.charge * atom2.charge / r;
+                            if (r2 != 0.0) { // don't include dipole-balancing charges at same point
+                                val invR2 = 1.0 / r2;
+                                val invR = Math.sqrt(invR2);
+                                val e = atom1.charge * atom2.charge * invR;
                                 directEnergy += e;
-                                val pairForce = (e / r2) * rVec;
+                                val pairForce = e * invR2 * rVec;
                                 atom1.force += pairForce;
                             }
                         }
@@ -172,11 +173,11 @@ public class LeafOctant extends Octant implements Comparable[LeafOctant] {
                         for (atomIndex1 in 0..(atoms.size()-1)) {
                             val atom1 = atoms(atomIndex1);
                             val rVec = atom2.centre - atom1.centre;
-                            val r2 = rVec.lengthSquared();
-                            val r = Math.sqrt(r2);
-                            val e = atom1.charge * atom2.charge / r;
+                            val invR2 = 1.0 / rVec.lengthSquared();
+                            val invR = Math.sqrt(invR2);
+                            val e = atom1.charge * atom2.charge * invR;
                             directEnergy += e;
-                            val pairForce = (e / r2) * rVec;
+                            val pairForce = e * invR2 * rVec;
                             atom1.force += pairForce;
                         }
                     }
