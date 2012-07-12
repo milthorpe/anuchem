@@ -48,7 +48,7 @@ namespace edu {
                 }
 
                 void PAPI::printFlops() {
-                    printf("total cyc: %16lld total ins: %16lld total FP ins: %16lld total FLOPS: %16lld\n", cycles, totals[0], totals[1], totals[2]);
+                    printf("cycles: %16lld total ins: %16lld FP ins: %16lld FLOPS: %16lld\n", cycles, totals[0], totals[1], totals[2]);
                 }
 
                 void PAPI::countMemoryOps() {
@@ -57,13 +57,14 @@ namespace edu {
                     addEvent(PAPI_TOT_INS);
                     addEvent(PAPI_LD_INS);
                     addEvent(PAPI_SR_INS);
-                    addEvent(PAPI_L1_LDM);
-                    addEvent(PAPI_L1_STM);
+                    //addEvent(PAPI_L1_LDM);
+                    //addEvent(PAPI_L1_STM);
                     resetTotals();
                 }
 
                 void PAPI::printMemoryOps() {
-                    printf("cycles: %16lld total ins: %16lld LD ins: %16lld SR ins: %16lld L1 LD miss: %16lld L1 ST miss: %16lld\n", cycles, totals[0], totals[1], totals[2], totals[3], totals[4]);
+                    printf("cycles: %16lld total ins: %16lld LD ins: %16lld SR ins: %16lld\n", cycles, totals[0], totals[1], totals[2]);
+                    //printf("cycles: %16lld total ins: %16lld LD ins: %16lld SR ins: %16lld L1 LD miss: %16lld L1 ST miss: %16lld\n", cycles, totals[0], totals[1], totals[2], totals[3], totals[4]);
                 }
 
                 void PAPI::startCount() {
