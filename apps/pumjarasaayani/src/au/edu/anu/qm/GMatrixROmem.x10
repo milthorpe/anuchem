@@ -291,7 +291,7 @@ public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
                     if (counter==0) {
                         Console.OUT.printf("%d\t%d\t%d\t%d\t%d\t%d",sp.aang, sp.bang, sp.dconA, sp.dconB, ron, maxLron); // printf can accomodate upto 6 arguments?
                         //Console.OUT.printf("\t%20.15e\n",(timer.last(TIMER_GENCLASS) as Double)/1e9);
-                        Console.OUT.printf("\t%ld\n",papi.getCounter(COUNTER_LD_INS));
+                        Console.OUT.printf("\t%ld\n",papi.getCounter(/*PAPI.COUNTER_LD_INS*/1));
                     }
                     t+=(timer.last(TIMER_GENCLASS) as Double)/1e9;
                     for (var tmu:Int=sp.mu; tmu<sp.mu+sp.maxbraa; tmu++) for (var tnu:Int=sp.nu; tnu<sp.nu+sp.maxbrab; tnu++) {
