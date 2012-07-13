@@ -70,7 +70,8 @@ public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
 
     public def this(N:Int, bfs:BasisFunctions, molecule:Molecule[QMAtom], nOrbital:Int):GMatrixROmem{self.M==N,self.N==N} {     
         super(N, N); 
-        Console.OUT.printf("GMatrixROmem.x10 initialization starts at ..."); //val result = Runtime.execForRead("date"); 
+        val result = Runtime.execForRead("date"); 
+        Console.OUT.printf("GMatrixROmem.x10 initialization starts at %s...\n",result.readLine()); 
         this.bfs = bfs;
         this.mol = molecule;
         this.nOrbital = nOrbital;
@@ -286,12 +287,13 @@ public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
                     papi.startCount();
                     aux.genClass(sp.aang, sp.bang, sp.aPoint, sp.bPoint, sp.zetaA, sp.zetaB, sp.conA, sp.conB, sp.dconA, sp.dconB, temp, ron, maxLron,ylms(spInd).y, ylms(spInd).maxL);
                     papi.stopCount();
-                    /*timer.stop(TIMER_GENCLASS);
+                    //timer.stop(TIMER_GENCLASS);
                     if (counter==0) {
                         Console.OUT.printf("%d\t%d\t%d\t%d\t%d\t%d",sp.aang, sp.bang, sp.dconA, sp.dconB, ron, maxLron); // printf can accomodate upto 6 arguments?
-                        Console.OUT.printf("\t%20.15e\n",(timer.last(TIMER_GENCLASS) as Double)/1e9);
+                        //Console.OUT.printf("\t%20.15e\n",(timer.last(TIMER_GENCLASS) as Double)/1e9);
+                        Console.OUT.printf("\t%ld\n",papi.getCounter(COUNTER_LD_INS));
                     }
-                    t+=(timer.last(TIMER_GENCLASS) as Double)/1e9;*/
+                    t+=(timer.last(TIMER_GENCLASS) as Double)/1e9;
                     for (var tmu:Int=sp.mu; tmu<sp.mu+sp.maxbraa; tmu++) for (var tnu:Int=sp.nu; tnu<sp.nu+sp.maxbrab; tnu++) {
                         val scdmn=scratch(tmu,tnu);
                         for (var rolm:Int=0; rolm<maxLm; rolm++)
