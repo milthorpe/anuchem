@@ -2,7 +2,7 @@
 
 i=20000
 dmax=3
-p=10
+p=12
 while [ $i -le 100000 ]
 do
   echo "X10_NTHREADS=1 bin/fmm $i 150 $dmax $p 2 -verbose -compare -forces"

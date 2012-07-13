@@ -22,6 +22,7 @@ import x10x.vector.Vector3d;
 import au.edu.anu.chem.PointCharge;
 import au.edu.anu.chem.mm.MMAtom;
 import au.edu.anu.util.Timer;
+import edu.utk.cs.papi.PAPI;
 
 /**
  * This class implements the Fast Multipole Method for electrostatic
@@ -134,6 +135,11 @@ public class FastMultipoleMethod {
     public def calculateEnergyLocal():Double {
         val timer = localData().timer;
         timer.start(FmmLocalData.TIMER_INDEX_TOTAL);
+
+        //val papi = new PAPI();
+        //papi.countFlops();
+        //papi.startCount();
+
         finish {
             async {
                 prefetchRemoteAtoms();
@@ -144,6 +150,10 @@ public class FastMultipoleMethod {
         val localEnergy = 0.5 * downwardPass();
         timer.stop(FmmLocalData.TIMER_INDEX_TOTAL);
         Team.WORLD.allreduce[Long](here.id, timer.total, 0, timer.total, 0, timer.total.size, Team.MAX);
+        
+        //papi.stopCount();
+        //papi.printFlops();
+        //papi.shutDown();
 
         return localEnergy;
 
@@ -183,7 +193,7 @@ public class FastMultipoleMethod {
                     //Console.OUT.println(atomI.symbol + " force = " + atomI.force + " magnitude " + atomI.force.length() + " forceError = " + forceError);
                 }
             }
-            Console.OUT.println("max force error = " + maxForceError);
+            Console.OUT.printf("F err: %8.4d", maxForceError);
         }
     }
 

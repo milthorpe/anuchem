@@ -93,7 +93,7 @@ public class TestFastMultipoleMethod extends TestElectrostatic {
                 Console.OUT.println("error bound in potential due to B-shift: " + e_b_shift);
             }
         } else {
-            Console.OUT.print(numAtoms + " atoms: ");
+            Console.OUT.printf("N: %8i ", numAtoms);
         }
 
         val atoms = generateAtoms(numAtoms);
@@ -112,9 +112,10 @@ public class TestFastMultipoleMethod extends TestElectrostatic {
             logTime("Prefetch",   FmmLocalData.TIMER_INDEX_PREFETCH,  fmm.localData().timer);
             logTime("Upward",     FmmLocalData.TIMER_INDEX_UPWARD,    fmm.localData().timer);
             logTime("Downward",   FmmLocalData.TIMER_INDEX_DOWNWARD,  fmm.localData().timer);
+            logTime("Total",      FmmLocalData.TIMER_INDEX_TOTAL,     fmm.localData().timer);
+        } else {
+            Console.OUT.printf("p: %2i D_max: %2i time: %8.4fs tree: %8.4fs", numTerms, dMax, (fmm.localData().timer.mean(FmmLocalData.TIMER_INDEX_TOTAL) as Double) / 1e9, (fmm.localData().timer.mean(FmmLocalData.TIMER_INDEX_TREE) as Double) / 1e9);
         }
-
-        logTime("Total",     FmmLocalData.TIMER_INDEX_TOTAL,     fmm.localData().timer, verbose);
 
         if (compare) {
             if (forces) {
@@ -123,12 +124,16 @@ public class TestFastMultipoleMethod extends TestElectrostatic {
             val direct = new ElectrostaticDirectMethod(atoms);
             val directEnergy = direct.getEnergy();
             logTime(" cf. Direct electrostatic ", ElectrostaticDirectMethod.TIMER_INDEX_TOTAL, direct.timer);
+            val error = Math.abs(directEnergy - energy) / Math.abs(energy);
             if (verbose) {
                 //direct.printForces();
-                val error = directEnergy - energy;
-                Console.OUT.println("direct = " + directEnergy + " error = " + error + " relative error = " + Math.abs(error) / Math.abs(energy));
+
+                Console.OUT.println("direct = " + directEnergy + " error = " + error + " relative error = " + error);
+            } else {
+                Console.OUT.printf("E err: %8.4d", error);
             }
         }
+        Console.OUT.println();
     }
 }
 
