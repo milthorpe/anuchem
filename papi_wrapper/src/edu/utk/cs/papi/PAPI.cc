@@ -67,14 +67,14 @@ namespace edu {
                     //printf("cycles: %16lld total ins: %16lld LD ins: %16lld SR ins: %16lld L1 LD miss: %16lld L1 ST miss: %16lld\n", cycles, totals[0], totals[1], totals[2], totals[3], totals[4]);
                 }
 
-                void PAPI::startCount() {
+                void PAPI::start() {
                     cycles -= PAPI_get_real_cyc();
                     int retval;
                     if ((retval=PAPI_start(EventSet)) != PAPI_OK)
                         printerror(__FILE__, __LINE__, "PAPI_start", retval);
                 }
 
-                void PAPI::stopCount() {
+                void PAPI::stop() {
                     cycles += PAPI_get_real_cyc();
                     int retval;
                     if ((retval=PAPI_stop(EventSet, values)) != PAPI_OK)
@@ -84,7 +84,7 @@ namespace edu {
                     }
                 }
 
-                void PAPI::resetCount() {
+                void PAPI::reset() {
                     resetTotals();
                     int retval;
                     /* Reset the counting events in the Event Set */
@@ -95,6 +95,10 @@ namespace edu {
 
                 int64_t PAPI::getCounter(int i) {
                     return totals[i];
+                }
+
+                void PAPI::resetCounter(int i) {
+                    totals[i] = 0;
                 }
 
                 void PAPI::createEventSet() {

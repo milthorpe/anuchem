@@ -14,10 +14,11 @@ namespace edu {
                         void printFlops();
                         void countMemoryOps();
                         void printMemoryOps();
-                        void startCount();
-                        void stopCount();
-                        void resetCount();
+                        void start();
+                        void stop();
+                        void reset();
                         int64_t getCounter(int i);
+                        void resetCounter(int i);
                         void createEventSet();
                         void addEvent(int EventCode);
                         void destroyEventSet();

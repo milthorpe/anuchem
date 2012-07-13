@@ -263,7 +263,7 @@ public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
         kMatrix.reset();
 
         // Form J matrix
-        papi.resetCount();
+        papi.reset();
         timer.start(TIMER_JMATRIX); var t:Double=0.;
         var fac:Double; var ind:Int; var jContrib:Double;
 
@@ -284,15 +284,16 @@ public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
                     val maxLm=(maxLron+1)*(maxLron+1);
                     ind=0;  
                     //timer.start(TIMER_GENCLASS);
-                    papi.startCount();
+                    papi.start();
                     aux.genClass(sp.aang, sp.bang, sp.aPoint, sp.bPoint, sp.zetaA, sp.zetaB, sp.conA, sp.conB, sp.dconA, sp.dconB, temp, ron, maxLron,ylms(spInd).y, ylms(spInd).maxL);
-                    papi.stopCount();
+                    papi.stop();
                     //timer.stop(TIMER_GENCLASS);
                     if (counter==0) {
                         Console.OUT.printf("%d\t%d\t%d\t%d\t%d\t%d",sp.aang, sp.bang, sp.dconA, sp.dconB, ron, maxLron); // printf can accomodate upto 6 arguments?
                         //Console.OUT.printf("\t%20.15e\n",(timer.last(TIMER_GENCLASS) as Double)/1e9);
-                        Console.OUT.printf("\t%ld\n",papi.getCounter(/*PAPI.COUNTER_LD_INS*/1));
+                        Console.OUT.printf("\t%lld\n",papi.getCounter(/*PAPI.COUNTER_LD_INS*/1));
                     }
+                    papi.resetCounter(/*PAPI.COUNTER_LD_INS*/1);
                     t+=(timer.last(TIMER_GENCLASS) as Double)/1e9;
                     for (var tmu:Int=sp.mu; tmu<sp.mu+sp.maxbraa; tmu++) for (var tnu:Int=sp.nu; tnu<sp.nu+sp.maxbrab; tnu++) {
                         val scdmn=scratch(tmu,tnu);
@@ -309,9 +310,9 @@ public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
                     val maxLm=(maxLron+1)*(maxLron+1);
                     ind=0;  
                     //timer.start(TIMER_GENCLASS);
-                    //papi.startCount();
+                    //papi.start();
                     aux.genClass(sp.aang, sp.bang, sp.aPoint, sp.bPoint, sp.zetaA, sp.zetaB, sp.conA, sp.conB, sp.dconA, sp.dconB, temp, ron, maxLron,ylms(spInd).y, ylms(spInd).maxL);  
-                    //papi.stopCount();
+                    //papi.stop();
                     //timer.stop(TIMER_GENCLASS); t+= (timer.last(TIMER_GENCLASS) as Double)/1e9 ;
 
                     for (var tmu:Int=sp.mu; tmu<sp.mu+sp.maxbraa; tmu++) for (var tnu:Int=sp.nu; tnu<sp.nu+sp.maxbrab; tnu++) {
@@ -357,9 +358,9 @@ public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
                 if (maxLron>=0) {
                     val maxLm=(maxLron+1)*(maxLron+1);  
                     timer.start(TIMER_GENCLASS);
-                    //papi.startCount();
+                    //papi.start();
                     aux.genClass(sp.aang, sp.bang, sp.aPoint, sp.bPoint, sp.zetaA, sp.zetaB, sp.conA, sp.conB, sp.dconA, sp.dconB, temp, ron, maxLron,ylms(spInd).y, ylms(spInd).maxL);
-                    //papi.stopCount();
+                    //papi.stop();
                     timer.stop(TIMER_GENCLASS); t+= (timer.last(TIMER_GENCLASS) as Double)/1e9;
                     ind=0;                   
                     for (var tmu:Int=sp.mu; tmu<sp.mu+sp.maxbraa; tmu++) for (var tnu:Int=sp.nu; tnu<sp.nu+sp.maxbrab; tnu++) { 

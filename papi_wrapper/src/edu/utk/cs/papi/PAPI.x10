@@ -79,26 +79,32 @@ public class PAPI {
     /**
      * Start or resume counters for current event set
      */
-    @Native("c++", "(#this)->startCount()")
-    public native def startCount():void;
+    @Native("c++", "(#this)->start()")
+    public native def start():void;
 
     /**
      * Stop and accumulate currently running counters
      */
-    @Native("c++", "(#this)->stopCount()")
-    public native def stopCount():void;
+    @Native("c++", "(#this)->stop()")
+    public native def stop():void;
 
     /**
      * Reset currently running counters
      */
-    @Native("c++", "(#this)->resetCount()")
-    public native def resetCount():void;
+    @Native("c++", "(#this)->reset()")
+    public native def reset():void;
 
     /**
      * Get the value of a given counter
      */
     @Native("c++", "(#this)->getCounter(#i)")
-    public native def getCounter(i:Int):Long;   
+    public native def getCounter(i:Int):Long;
+
+    /**
+     * Set the value of a given counter to zero
+     */
+    @Native("c++", "(#this)->resetCounter(#i)")
+    public native def resetCounter(i:Int):void;   
 
     // Low-level API
 
