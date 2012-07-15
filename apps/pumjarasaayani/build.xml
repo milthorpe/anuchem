@@ -17,7 +17,7 @@
     <property name="bash.exe" value="bash"/>
     <property name="optimize" value="true" />
     <property name="nochecks" value="true" />
-    <property name="debug" value="false"/>
+    <property name="debug" value="true"/>
     <property name="profile"  value="false" />
     <property name="cpuprofile"  value="false"/>
     <property name="perftoolsHome" location="${user.home}/perftools"/>
@@ -51,7 +51,7 @@
         <istrue value="${profile}" />
     </condition>
 
-    <condition property="post.cpuprofile" value="-L${perftoolsHome}/lib -lprofiler" else="">
+    <condition property="post.cpuprofile" value="-L${perftoolsHome}/lib -Wl,--no-as-needed -lprofiler -Wl,--as-needed" else="">
         <istrue value="${cpuprofile}"/>
     </condition>
 
