@@ -262,6 +262,8 @@ public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
         jMatrix.reset();
         kMatrix.reset();
 
+        var prevLoadCount:Long = 0;
+
         // Form J matrix
         papi.reset();
         timer.start(TIMER_JMATRIX); var t:Double=0.;
@@ -291,9 +293,11 @@ public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
                     if (counter==0) {
                         Console.OUT.printf("%d\t%d\t%d\t%d\t%d\t%d",sp.aang, sp.bang, sp.dconA, sp.dconB, ron, maxLron); // printf can accomodate upto 6 arguments?
                         //Console.OUT.printf("\t%20.15e\n",(timer.last(TIMER_GENCLASS) as Double)/1e9);
-                        Console.OUT.printf("\t%lld\n",papi.getCounter(/*PAPI.COUNTER_LD_INS*/1));
+                        val loadCount = papi.getCounter(/*PAPI.COUNTER_LD_INS*/1);
+                        Console.OUT.printf("\t%lld\n",loadCount-prevLoadCount);
+                        prevLoadCount = loadCount;
                     }
-                    papi.resetCounter(/*PAPI.COUNTER_LD_INS*/1);
+
                     t+=(timer.last(TIMER_GENCLASS) as Double)/1e9;
                     for (var tmu:Int=sp.mu; tmu<sp.mu+sp.maxbraa; tmu++) for (var tnu:Int=sp.nu; tnu<sp.nu+sp.maxbrab; tnu++) {
                         val scdmn=scratch(tmu,tnu);
