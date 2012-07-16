@@ -33,7 +33,8 @@ namespace au {
         this->N = N; this->L=L;
         initialize();
         initializeCoulomb(N);
-        arrV=(double *)malloc(totalBraL[MAX_BRA_L*2+1]*(L+1)*(L+1)*sizeof(double)*2);
+
+        arrV=(double *)malloc(totalBraL[MAX_BRA_L+1]*(L+1)*(L+1)*sizeof(double)*2);
         printf("Integral_Pack.cc N=%d L=%d\n",N,L);
     }
 
@@ -48,10 +49,12 @@ namespace au {
         int x,y,z,l,m=0;
         totalBraL[0]=0;
         totalBraL[1]=1;
+
         for (l=0; l<=MAX_BRA_L; l++) {
             noOfBra[l]=((l+1)*(l+2))/2;
             if (l>0) totalBraL[l+1]=totalBraL[l]+noOfBra[l];
-              for (x=0; x<=l; x++) for (y=0; y<=l-x; y++) { // must be consistent with PowerList.x10
+                
+             for (x=0; x<=l; x++) for (y=0; y<=l-x; y++) { // must be consistent with PowerList.x10
 
                 map3[x][y][z=l-x-y] = m;
                 inverseMap3[m].x = x;
@@ -130,16 +133,15 @@ namespace au {
             YCon[i]=(double *)malloc((L+1)*(L+1)*sizeof(double));
             if (YCon[i]==NULL) {printf("Integral_Pack.cc allocation failed at ln128\n"); exit(1);}
         }*/
-        
     }
 
-    int Integral_Pack::GenJ(double *B, double x, int L) {
+    void Integral_Pack::GenJ(double *B, double x, int L) {
         int l,nb=L+1,ncalc;
 
         if (x<1e-20) { // To guard division by zero later in "fac" - 1e-20 should be justified by checking with Mathematica.
             for (l=0; l<=L; l++) B[l]=0.;
             B[0]=1.;
-            return 0;
+            return;
         }
 
         J_bessel_HalfInt(x, nb, B, &ncalc);
@@ -149,7 +151,7 @@ namespace au {
         for (; l<=L; l++) B[l]=0.;
     }
 
-    int Integral_Pack::GenY(double *Y, double X, double phi, int L) {
+    void Integral_Pack::GenY(double *Y, double X, double phi, int L) {
         // Plm calculation according to (6.7.9)-(6.7.10) NR 3rd ed
         int l,m;
         double Plm[L+1][L+1],sintheta = sqrt(1-X*X);
@@ -178,7 +180,7 @@ namespace au {
         }
     }
 
-    int Integral_Pack::GenclassY(double *A, double *B, double *zetaA, double *zetaB, double *conA, double *conB, int dconA, int dconB, int Ln, double *Ylm){      
+    void Integral_Pack::GenclassY(double *A, double *B, double *zetaA, double *zetaB, double *conA, double *conB, int dconA, int dconB, int Ln, double *Ylm){      
         int ii,jj;
         for (ii=0; ii<dconA; ii++) for (jj=0; jj<dconB; jj++) {
             double zeta=zetaA[ii]+zetaB[jj];
@@ -190,11 +192,11 @@ namespace au {
         }
     } 
 
-    int Integral_Pack::Genclass(int a, int b, double *A, double *B, double *zetaA, double *zetaB, double *conA, double *conB, int dconA, int dconB, double* temp, int n, int Ln, double *Ylm, int maxL){
+    void Integral_Pack::Genclass(int a, int b, double *A, double *B, double *zetaA, double *zetaB, double *conA, double *conB, int dconA, int dconB, double* temp, int n, int Ln, double *Ylm, int maxL){
         int bra,K=(Ln+1)*(Ln+1),p,e,i,ii,j,jj,k,l,m,ll,ll1; 
         double ldn=lambda[n],onelambda;
         bool swap,lzero=(ldn==0.); // should be replace by ldn<1e-y 
-        if (!lzero) onelambda=-1.0/ldn;
+        onelambda = lzero? 0.0 : -1.0/ldn;
         double (*V1)[K]=(double (*)[K])arrV;///malloc(totalBraL[a+b+1]*K*sizeof(double));
         double (*V2)[K]=(double (*)[K])(arrV+totalBraL[a+b+1]*K);//malloc(totalBraL[a+b+1]*K*sizeof(double));
         //if (V1==NULL || V2==NULL) {printf("Integral_Pack.cc V1/V2 allocation failed size=%d*sizeof(double)\n",totalBraL[a+b+1]*K); exit(1);}
@@ -264,7 +266,7 @@ namespace au {
                     Va[0][0] = q[n]*gAB*exp(-.25*sqr(ldn)/zeta)*pow(-.5*sqr(ldn)/zeta,p)*JpY00[p]; // l=m=0 only //6b   
 
                 // Fill higher e
-            	if (!lzero) {
+                if (!lzero) {
                     for (e=1; e<a+b+1-p; e++) for (i=0; i<noOfBra[e]; i++)  {
                         int aplusIndex = totalBraL[e]+i;
                         int j=buildMap[aplusIndex]; // printf("j=%d\n",j);
@@ -366,7 +368,7 @@ namespace au {
         free(HRR[a][b]);
     }
 
-    int Integral_Pack::initializeCoulomb(int N){
+    void Integral_Pack::initializeCoulomb(int N){
         lambda = (double *) malloc(sizeof(double)*(N+1));
         q = (double *) malloc(sizeof(double)*(N+1));
         int i;
@@ -383,4 +385,50 @@ namespace au {
             }
         }
     }
+}
+
+int main() {
+
+    // Test Ylm
+    /*int l,m; double Y[MAX_KET_LM],X=0.5941074799900165,phi=0.8002747424752843;
+    GenY(Y,X,phi,MAX_KET_L);
+    for (l=0; l<=MAX_KET_L; l++) {
+    	for (m=-l; m<=l; m++) printf("%8.5e  ",Y[lm2k(l,m)]);
+    	printf("\n");
+    }*/
+
+    // Test jl
+    /*int l; double x=.567,J[MAX_KET_L+1];
+    GenJ(J,x,MAX_KET_L);
+    for (l=0; l<=MAX_KET_L; l++)
+    	printf("%8.5e  ",J[l]);
+    printf("\n");*/
+
+    // Test Genclass
+    int a=2,b=0,N=10,L=10,dconA=6,dconB=3;
+    double A[3],B[3];
+    double conA[dconA],conB[dconB],zetaA[dconA],zetaB[dconB];
+
+    au::edu::anu::qm::ro::Integral_Pack* ip = new au::edu::anu::qm::ro::Integral_Pack(N,L);
+
+    A[0]=.1; B[0]=.4;
+    A[1]=.2; B[1]=.3;
+    A[2]=.3; B[2]=.2;
+
+    zetaA[0]=1.;  conA[0]=6.;
+    zetaA[1]=2.;  conA[1]=5.;
+    zetaA[2]=3.;  conA[2]=4.;
+    zetaA[3]=4.;  conA[3]=3.;
+    zetaA[4]=5.;  conA[4]=2.;
+    zetaA[5]=6.;  conA[5]=1.;
+
+    zetaB[0]=1.;  conB[0]=1.5;
+    zetaB[1]=2.;  conB[1]=2.5;
+    zetaB[2]=4.5; conB[2]=3.5;
+
+    double temp[(L+1)*(L+1)*(a+1)*(a+2)/2*(b+1)*(b+2)/2],Y[(L+1)*(L+1)*dconA*dconB];
+    ip->GenclassY(A,B,zetaA,zetaB,conA,conB,dconA,dconB,L,Y);
+    for (int i=0; i<100000; i++)
+    ip->Genclass(a,b,A,B,zetaA,zetaB,conA,conB,dconA,dconB,temp,N,L,Y,L);
+
 }

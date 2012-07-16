@@ -21,8 +21,8 @@ namespace au {
                             static Integral_Pack* _make(int N,int L);
                             Integral_Pack(int N, int L);
                             ~Integral_Pack();
-                            int GenclassY(double *A, double *B, double *zetaA, double *zetaB, double *conA, double *conB, int dconA, int dconB, int Ln, double *Ylm);
-                  int Genclass(int a, int b, double *A, double *B, double *zetaA, double *zetaB, double *conA, double *conB, int dconA, int dconB, double* temp, int N, int Ln, double *Ylm, int maxL);
+                            void GenclassY(double *A, double *B, double *zetaA, double *zetaB, double *conA, double *conB, int dconA, int dconB, int Ln, double *Ylm);
+                            void Genclass(int a, int b, double *A, double *B, double *zetaA, double *zetaB, double *conA, double *conB, int dconA, int dconB, double* temp, int N, int Ln, double *Ylm, int maxL);
 
                         private:
                             int N,L;
@@ -45,9 +45,9 @@ namespace au {
                             double *lambda, *q;
 
                             void initialize();
-                            int initializeCoulomb(int N);
-                            int GenJ(double *B, double x, int L);
-                            int GenY(double *Y, double X, double phi, int L);
+                            void initializeCoulomb(int N);
+                            void GenJ(double *B, double x, int L);
+                            void GenY(double *Y, double X, double phi, int L);
 
                     };
                 }
