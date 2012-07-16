@@ -118,12 +118,14 @@ public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
             F2(a+b)=0; W2(a+b)=nCr(a+b+4,4);
             for (var f:Int=1; f<=a+b; f++)
                 F2(a+b)+=(a+b-f+1)*F2e(f);
-            F3(a,b)=nCr(a+b+3,3)-nCr(a+2,3); W3(a,b)=F3(a,b);
+            if (a>0) F3(a,b)=nCr(a+b+3,3)-nCr(a+2,3); else F3(0,0)=1;
+            W3(a,b)=F3(a,b);
             F4(a,b)=0;
             for (var f:Int=1; f<=b; f++) for (var e:Int=a; e<=a+b-f; e++)  
                 F4(a,b)+=nCr(e+2,2)*nCr(f+2,2);
             W4(a,b)=F4(a,b); F4(a,b)*=2;
             Console.OUT.printf("%2d %2d %5d %5d %5d %5d\n",a,b,F1(a+b)+F2(a+b)+F3(a,b),F4(a,b),W1(a+b)+W2(a+b)+W3(a,b),W4(a,b));          
+Console.OUT.printf("%2d %2d %5d %5d %5d %5d\n",a,b,F1(a+b),F2(a+b),F3(a,b),F4(a,b));  
         }
 
         // Shell/Shellpair business 
@@ -246,7 +248,6 @@ public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
     }
 
     private def nCr(a:Int,b:Int):Int {
-        //return 1; 
         var re:Int=1;
         for (var temp:Int=b+1; temp<=a; temp++)
             re*=temp; // this can overflow easily - be careful
