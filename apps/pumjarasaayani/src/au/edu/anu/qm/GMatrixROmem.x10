@@ -87,7 +87,7 @@ public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
         val roLm = (roL+1)*(roL+1);
         val maxam = bfs.getShellList().getMaximumAngularMomentum();
         val maxam1 = (maxam+1)*(maxam+2)/2;
-        temp = new Rail[Double](maxam1*maxam1*roLm);
+        temp = new Rail[Double](maxam1*maxam1*roLm); // will be passed to C++ code
         aux = new Integral_Pack(roN,roL);
         dk = new Rail[Double](roLm); // eqn 15b in RO#7
         muk = new DenseMatrix(N,roLm); 
@@ -249,10 +249,10 @@ Console.OUT.printf("%2d %2d %5d %5d %5d %5d\n",a,b,F1(a+b),F2(a+b),F3(a,b),F4(a,
 
     private def nCr(a:Int,b:Int):Int {
         var re:Int=1;
-        for (var temp:Int=b+1; temp<=a; temp++)
-            re*=temp; // this can overflow easily - be careful
-        for (var temp:Int=2; temp<=a-b; temp++)
-            re/=temp; // this is always an integer - don't worry
+        for (var t:Int=b+1; t<=a; t++)
+            re*=t; // this can overflow easily - be careful
+        for (var t:Int=2; t<=a-b; t++)
+            re/=t; // this is always an integer - don't worry
         return re;
     }
 
@@ -286,11 +286,11 @@ Console.OUT.printf("%2d %2d %5d %5d %5d %5d\n",a,b,F1(a+b),F2(a+b),F3(a,b),F4(a,
                 if (maxLron>=0) {
                     val maxLm=(maxLron+1)*(maxLron+1);
                     ind=0;  
-                    //timer.start(TIMER_GENCLASS);
-                    papi.start();
+                    timer.start(TIMER_GENCLASS);
+                    //papi.start();
                     aux.genClass(sp.aang, sp.bang, sp.aPoint, sp.bPoint, sp.zetaA, sp.zetaB, sp.conA, sp.conB, sp.dconA, sp.dconB, temp, ron, maxLron,ylms(spInd).y, ylms(spInd).maxL);
-                    papi.stop();
-                    //timer.stop(TIMER_GENCLASS);
+                    //papi.stop();
+                    timer.stop(TIMER_GENCLASS);
                     if (counter==0) {
                         Console.OUT.printf("%d\t%d\t%d\t%d\t%d\t%d",sp.aang, sp.bang, sp.dconA, sp.dconB, ron, maxLron); // printf can accomodate upto 6 arguments?
                         //Console.OUT.printf("\t%20.15e\n",(timer.last(TIMER_GENCLASS) as Double)/1e9);

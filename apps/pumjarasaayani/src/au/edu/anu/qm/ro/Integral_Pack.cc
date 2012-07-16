@@ -202,7 +202,8 @@ namespace au {
         //if (V1==NULL || V2==NULL) {printf("Integral_Pack.cc V1/V2 allocation failed size=%d*sizeof(double)\n",totalBraL[a+b+1]*K); exit(1);}
         double (*HRR[a+b+1][b+1])[K];
         for (i=a; i<=a+b; i++) {
-            HRR[i][0] = (double (*)[K])(malloc(sizeof(double)*K*noOfBra[i]));
+            if (i==a && b==0) HRR[a][0]=(double (*)[K])temp; 
+            else HRR[i][0] = (double (*)[K])(malloc(sizeof(double)*K*noOfBra[i]));
             if (HRR[i][0]==NULL) {printf("Integral_Pack.cc HRR[%d][0] allocation failed sized=%d*sizeof(double)\n",i,K*noOfBra[i]); exit(1);}
             memset(HRR[i][0],0,sizeof(double)*K*noOfBra[i]);
         }
@@ -344,7 +345,8 @@ namespace au {
         double dd[3]={A[0]-B[0],A[1]-B[1],A[2]-B[2]};
    
         for (j=1; j<=b; j++) for (i=a; i<=a+b-j; i++)  {
-            HRR[i][j] = (double (*)[K])(malloc(sizeof(double)*K*noOfBra[i]*noOfBra[j]));
+            if (i==a && j==b) HRR[a][b]=(double (*)[K])temp;
+            else HRR[i][j]=(double (*)[K])(malloc(sizeof(double)*K*noOfBra[i]*noOfBra[j]));
             if (HRR[i][j]==NULL) {printf("Integral_Pack.cc HRR[%d][%d] size=%d*sizeof(double)\n",i,j,K*noOfBra[i]*noOfBra[j]); exit(1);}
             for (ii=0; ii<noOfBra[i]; ii++) for (jj=0; jj<noOfBra[j]; jj++) {
             	int lindex = ii*noOfBra[j] + jj;
@@ -358,14 +360,12 @@ namespace au {
                 // lhs[...]=factor*rhs2[...]+rhs1[...]
                 cblas_dcopy(K, rhs1, 1, lhs, 1); // lhs[...] = rhs1[...]
                 cblas_daxpy(K, factor, rhs2, 1, lhs, 1); // lhs[...] = factor*rhs2[...] + lhs[...]*/
-        	}
+            }
             free(HRR[i][j-1]);
             if (i==a+b-j) free(HRR[i+1][j-1]);
         }
-
-        int totalInt = noOfBra[a]*noOfBra[b]*K;
-        memcpy(temp, HRR[a][b], totalInt*sizeof(double));
-        free(HRR[a][b]);
+        //memcpy(temp, HRR[a][b], noOfBra[a]*noOfBra[b]*K*sizeof(double));
+        //free(HRR[a][b]);
     }
 
     void Integral_Pack::initializeCoulomb(int N){
