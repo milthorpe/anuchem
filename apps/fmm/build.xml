@@ -14,6 +14,7 @@
     <property name="papi" value="true" />
     <property name="x10papi" location="../../papi_wrapper"/>
     <property name="x10papi.props" location="${x10papi}/x10papi_${x10rt}.properties"/>
+    <property name="papiHome" location="${user.home}/papi"/>
     <property name="x10.testlib" location="${user.home}/x10-trunk/x10.tests/examples/x10lib"/>
     <property name="bash.exe" value="bash"/>    
     <property name="optimize" value="true"/>
