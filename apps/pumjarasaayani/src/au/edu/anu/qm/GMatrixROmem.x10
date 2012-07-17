@@ -223,7 +223,7 @@ Console.OUT.printf("%2d %2d %5d %5d %5d %5d\n",a,b,F1(a+b),F2(a+b),F3(a,b),F4(a,
                 //if (maxl!=-1) Console.OUT.printf("L(n=%d)=%d\n",ron,maxl);
             }
             val y = new Rail[Double](ka*kb*(maxmaxl+1)*(maxmaxl+1)); mCost+=ka*kb*(maxmaxl+1)*(maxmaxl+1);
-            aux.genClassY(sh.aPoint, sh.bPoint, sh.zetaA, sh.zetaB, sh.conA, sh.conB, sh.dconA, sh.dconB, maxmaxl, y);
+            aux.genClassY(sh.aPoint, sh.bPoint, sh.zetaA, sh.zetaB, sh.dconA, sh.dconB, maxmaxl, y);
             ylms(i) = new Ylm(y,maxmaxl);
 
             val fc=(F1(a+b)+F2(a+b)+F3(a,b))*ka*kb+F4(a,b); 

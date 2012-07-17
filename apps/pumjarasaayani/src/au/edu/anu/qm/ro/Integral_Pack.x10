@@ -34,8 +34,8 @@ public class Integral_Pack {
      * Generate Ylm for a given shell pair
      */
 
-    @Native("c++", "(#this)->GenclassY((double*)&((#1).x10__i), (double*)&((#2).x10__i), (#3)._val->raw().raw(), (#4)._val->raw().raw(), (#5)._val->raw().raw(), (#6)._val->raw().raw(), (#7), (#8), (#9), (#10)._val->raw().raw())")
-    public native def genClassY(A:Point3d, B:Point3d, zetaA:Rail[Double], zetaB:Rail[Double], conA:Rail[Double], conB:Rail[Double], dconA:Int, dconB:Int, Ln:Int, Ylm:Rail[Double]):Int;
+    @Native("c++", "(#this)->GenclassY((double*)&((#1).x10__i), (double*)&((#2).x10__i), (#3)._val->raw().raw(), (#4)._val->raw().raw(), (#5), (#6), (#7), (#8)._val->raw().raw())")
+    public native def genClassY(A:Point3d, B:Point3d, zetaA:Rail[Double], zetaB:Rail[Double], dconA:Int, dconB:Int, Ln:Int, Ylm:Rail[Double]):Int;
 
     /**
      * Generate a class of auxiliary integrals for the given parameters
