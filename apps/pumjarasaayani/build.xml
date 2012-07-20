@@ -34,6 +34,7 @@
     <property name="bin" location="${basedir}/bin" />
     <property name="exe" value="pumjarasaayani"/>
     <property name="jar" value="pumjarasaayani.jar"/>
+    <property name="lib" location="${basedir}/lib" />
 
     <condition property="x10c.optimize" value="-O" else="">
         <istrue value="${optimize}" />
@@ -120,7 +121,7 @@
         </exec>
     </target>
 
-    <target name="build-src-cpp" depends="check-src,build-cpp-wrappers" unless="src.uptodate">
+    <target name="build-src-cpp" depends="check-src,build-integral-pack" unless="src.uptodate">
         <echo message="Building source tree"/>
 
         <fileset id="changed.src.files" dir="${basedir}/src" includes="**/*.x10">
@@ -136,7 +137,7 @@
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/src">
             <arg value="-c"/> 
-            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.debug} ${x10c.profile} ${x10c.optimize} ${x10c.nochecks} -report postcompile=1 -classpath ${gml.lib} -x10lib ${gml.props} -x10lib ${xla.props} -x10lib ${anuchem.props} ${x10lib.papi} -sourcepath . -post '# # ${post.cpuprofile} ${post.heapprofile} ${post.papi} -L/usr/lib # -lblas -L/scratch/lapack -llapack -lpapi' -d ${target-src} ${basedir}/${testclass}"/>
+            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.debug} ${x10c.profile} ${x10c.optimize} ${x10c.nochecks} -report postcompile=1 -classpath ${gml.lib} -x10lib ${gml.props} -x10lib ${xla.props} -x10lib ${anuchem.props} ${x10lib.papi} -sourcepath . -post '# # ${post.cpuprofile} ${post.heapprofile} ${post.papi} -L/usr/lib -L${lib} -lintpack # -lblas -L/scratch/lapack -llapack -lpapi' -d ${target-src} ${basedir}/${testclass}"/>
         </exec>
     </target>
 
@@ -160,11 +161,29 @@
         </uptodate>
     </target>
 
-    <target name="build-cpp-wrappers" depends="check-src-gsl" unless="src.uptodate.gsl">
-        <echo message="Building C++ wrappers"/>
+    <target name="build-integral-pack" depends="check-src-gsl" unless="src.uptodate.gsl">
+        <echo message="Building integral pack"/>
 
-        <copy todir="${target}/classes">
-            <fileset id="cpp.files" dir="${basedir}/src" includes="**/*.h,**/*.cc"/>
+        <mkdir dir="${lib}"/>
+
+        <copy todir="${lib}">
+            <fileset id="cpp.files" dir="ro" includes="**/*.h,**/*.cc"/>
+        </copy>
+
+        <exec executable="${bash.exe}" failonerror="true" dir="${lib}">
+            <arg value="-c"/> 
+            <arg value="g++ -Wall -c -g -O2 -funroll-loops Integral_Pack.cc bessel4.cc"/>
+        </exec>
+
+        <exec executable="${bash.exe}" failonerror="true" dir="${lib}">
+            <arg value="-c"/> 
+            <arg value="ar crf libintpack.a Integral_Pack.o bessel4.o"/>
+        </exec>
+
+        <mkdir dir="${target-src}/au/edu/anu/qm/ro"/>
+
+        <copy todir="${target-src}/au/edu/anu/qm/ro">
+            <fileset id="header.file" dir="ro" includes="Integral_Pack.h"/>
         </copy>
     </target>
     
@@ -228,6 +247,7 @@
 	<target name="clean">
 		<delete dir="target" />
 		<delete dir="bin" />
+		<delete dir="lib" />
 	</target>
 
 </project>

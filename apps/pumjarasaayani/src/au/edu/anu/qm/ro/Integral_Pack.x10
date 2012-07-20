@@ -23,8 +23,6 @@ import x10x.vector.Point3d;
  *
  * @author milthorpe
  */
-@NativeCPPCompilationUnit("bessel4.cc")
-@NativeCPPCompilationUnit("Integral_Pack.cc")
 @NativeRep("c++", "::au::edu::anu::qm::ro::Integral_Pack *", "::au::edu::anu::qm::ro::Integral_Pack", null)
 public class Integral_Pack {
 
