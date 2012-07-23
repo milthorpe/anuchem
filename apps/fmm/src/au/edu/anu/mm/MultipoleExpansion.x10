@@ -155,8 +155,7 @@ public class MultipoleExpansion extends Expansion {
 		    }
 	    }
 
-	    scratch.backRotate(temp, complexK(1), wigner(1) ); 
-    	unsafeAdd(scratch);
+	    scratch.backRotateAndAdd(complexK(1), wigner(1), this); 
     }
 
     /**

@@ -147,4 +147,31 @@ public class Expansion {
         }
     }
 
+    /** 
+     * Rotates this expansion (local and multipole are differentiated by different precalculated wigner matrices) in three dimensions and adds to the given target expansion
+     * Performs rotation around x-axis first, THEN rotation around z-axis (for "backwards" rotation)
+     * @param wigner, precalculated wigner matrices, an array of WignerMatrices, indexed first by p from 0 to max terms in expansion
+     * @param complexK, values of exp(i*k*phi)
+     * @see Dachsel 2006 eqn 4 & 5
+     */
+    public def backRotateAndAdd(complexK:Rail[Complex], wigner:Rail[Array[Double](2){rect}], target:Expansion) {
+        val targetTerms = target.terms;
+        targetTerms(0,0) += terms(0,0);
+        for (l in 1..p) {
+            val Dl = wigner(l);
+
+            for (m in 0..l) {
+	            var O_lm:Complex = terms(l,0) * Dl(m, 0);
+                var m_sign:Int = -1;
+                for (k in 1..l) {
+                    val t_lk = terms(l, k);
+                    O_lm += t_lk * Dl(m, k) + m_sign * t_lk.conjugate() * Dl(m, -k); // Eq. 5, for k and -k
+                    m_sign = -m_sign;
+                }
+                O_lm = O_lm * complexK(m);
+                targetTerms(l,m) += O_lm;
+            }
+        }
+    }
+
 }
