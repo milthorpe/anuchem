@@ -2,7 +2,7 @@
 <!DOCTYPE project [<!ENTITY buildfile SYSTEM "file:./build-user.xml">]>
 <project name="Fast Multipole Method" default="build" basedir=".">
     &buildfile;
-    <property name="x10rt" value="mpi" />
+    <property name="x10rt" value="sockets" />
     <property name="x10x.xla" location="../../xla"/>
 	<property name="xla.props" location="${x10x.xla}/xla_${x10rt}.properties"/>
 	<property name="xla.src" location="${x10x.xla}/src"/>
@@ -11,7 +11,7 @@
     <property name="anuchem.props" location="${anuchem}/anuchem_${x10rt}.properties"/>
 	<property name="anuchem.src" location="${anuchem}/src"/>
 	<property name="anuchem.lib" location="${anuchem}/lib/anu-chem.jar"/>
-    <property name="papi" value="true" />
+    <property name="papi" value="false" />
     <property name="x10papi" location="../../papi_wrapper"/>
     <property name="x10papi.props" location="${x10papi}/x10papi_${x10rt}.properties"/>
     <property name="papiHome" location="${user.home}/papi"/>
