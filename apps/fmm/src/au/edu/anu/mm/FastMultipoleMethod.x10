@@ -193,7 +193,7 @@ public class FastMultipoleMethod {
                     //Console.OUT.println(atomI.symbol + " force = " + atomI.force + " magnitude " + atomI.force.length() + " forceError = " + forceError);
                 }
             }
-            Console.OUT.printf("F err: %8.4d", maxForceError);
+            Console.OUT.printf("F err: %8.4g", maxForceError);
         }
     }
 
