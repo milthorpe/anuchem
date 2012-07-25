@@ -1,5 +1,5 @@
 CPP := mpicxx
-CFLAGS := -O
+CFLAGS := -O2 -funroll-loops
 
 run:	directcpp
 	./directcpp
