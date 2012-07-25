@@ -288,17 +288,17 @@ public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
                 if (maxLron>=0) {
                     val maxLm=(maxLron+1)*(maxLron+1);
                     ind=0;  
-                    //timer.start(TIMER_GENCLASS);
-                    papi.start();
+                    timer.start(TIMER_GENCLASS);
+                    //papi.start();
                     aux.genClass(sp.aang, sp.bang, sp.aPoint, sp.bPoint, sp.zetaA, sp.zetaB, sp.conA, sp.conB, sp.dconA, sp.dconB, temp, ron, maxLron,ylms(spInd).y, ylms(spInd).maxL);
-                    papi.stop();
-                    //timer.stop(TIMER_GENCLASS);
+                    //papi.stop();
+                    timer.stop(TIMER_GENCLASS);
                     if (counter==0) {
-                        Console.OUT.printf("%d\t%d\t%d\t%d\t%d\t%d",sp.aang, sp.bang, sp.dconA, sp.dconB, ron, maxLron); // printf can accomodate upto 6 arguments?
+                        //Console.OUT.printf("%d\t%d\t%d\t%d\t%d\t%d",sp.aang, sp.bang, sp.dconA, sp.dconB, ron, maxLron); // printf can accomodate upto 6 arguments?
                         //Console.OUT.printf("\t%20.15e\n",(timer.last(TIMER_GENCLASS) as Double)/1e9);
-                        val loadCount = papi.getCounter(/*PAPI.COUNTER_LD_INS*/1);
+                        /*val loadCount = papi.getCounter(1);
                         Console.OUT.printf("\t%lld\n",loadCount-prevLoadCount);
-                        prevLoadCount = loadCount;
+                        prevLoadCount = loadCount;*/
                     }
 
                     t+=(timer.last(TIMER_GENCLASS) as Double)/1e9;
@@ -364,11 +364,11 @@ public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
                 val maxLron=sp.maxL(ron);
                 if (maxLron>=0) {
                     val maxLm=(maxLron+1)*(maxLron+1);  
-                    timer.start(TIMER_GENCLASS);
+                    //timer.start(TIMER_GENCLASS);
                     //papi.start();
                     aux.genClass(sp.aang, sp.bang, sp.aPoint, sp.bPoint, sp.zetaA, sp.zetaB, sp.conA, sp.conB, sp.dconA, sp.dconB, temp, ron, maxLron,ylms(spInd).y, ylms(spInd).maxL);
                     //papi.stop();
-                    timer.stop(TIMER_GENCLASS); t+= (timer.last(TIMER_GENCLASS) as Double)/1e9;
+                    //timer.stop(TIMER_GENCLASS); t+= (timer.last(TIMER_GENCLASS) as Double)/1e9;
                     ind=0;                   
                     for (var tmu:Int=sp.mu; tmu<sp.mu+sp.maxbraa; tmu++) for (var tnu:Int=sp.nu; tnu<sp.nu+sp.maxbrab; tnu++) { 
                         val normMo = mos(aorb,tnu)*norm(tmu)*norm(tnu);
