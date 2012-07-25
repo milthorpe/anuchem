@@ -15,6 +15,7 @@ import au.edu.anu.chem.mm.MMAtom;
 import au.edu.anu.chem.mm.ElectrostaticDirectMethod;
 import au.edu.anu.chem.mm.TestElectrostatic;
 import au.edu.anu.util.Timer;
+//import edu.utk.cs.papi.PAPI;
 
 /**
  * Tests the new distributed FMM implementation.
@@ -99,10 +100,17 @@ public class TestFastMultipoleMethod extends TestElectrostatic {
         val atoms = generateAtoms(numAtoms);
         val fmm = new FastMultipoleMethod(density, dMax, numTerms, wellSpaced, SIZE, numAtoms);
         fmm.initialAssignment(atoms);
+
+        //val papi = new PAPI();
+        //papi.countFlops();
+        //papi.start();
         val energy = fmm.calculateEnergy();
         for (i in 1..10) {
            //fmm.calculateEnergy();
         }
+        //papi.stop();
+        //papi.printFlops();
+        //papi.shutDown();
         
         if (verbose) {
             Console.OUT.println("energy = " + energy);
@@ -114,7 +122,7 @@ public class TestFastMultipoleMethod extends TestElectrostatic {
             logTime("Downward",   FmmLocalData.TIMER_INDEX_DOWNWARD,  fmm.localData().timer);
             logTime("Total",      FmmLocalData.TIMER_INDEX_TOTAL,     fmm.localData().timer);
         } else {
-            Console.OUT.printf("p: %2i D_max: %2i time: %8.4fs tree: %8.4fs", numTerms, dMax, (fmm.localData().timer.mean(FmmLocalData.TIMER_INDEX_TOTAL) as Double) / 1e9, (fmm.localData().timer.mean(FmmLocalData.TIMER_INDEX_TREE) as Double) / 1e9);
+            Console.OUT.printf("p: %2i D_max: %2i time (s): %9.5f tree (s): %9.5f", numTerms, dMax, (fmm.localData().timer.mean(FmmLocalData.TIMER_INDEX_TOTAL) as Double) / 1e9, (fmm.localData().timer.mean(FmmLocalData.TIMER_INDEX_TREE) as Double) / 1e9);
         }
 
         if (compare) {
@@ -130,7 +138,7 @@ public class TestFastMultipoleMethod extends TestElectrostatic {
 
                 Console.OUT.println("direct = " + directEnergy + " error = " + error + " relative error = " + error);
             } else {
-                Console.OUT.printf("E err: %8.4g", error);
+                Console.OUT.printf("E err: %.2G", error);
             }
         }
         Console.OUT.println();
