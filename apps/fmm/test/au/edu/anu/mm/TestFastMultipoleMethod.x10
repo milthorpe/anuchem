@@ -130,7 +130,7 @@ public class TestFastMultipoleMethod extends TestElectrostatic {
 
                 Console.OUT.println("direct = " + directEnergy + " error = " + error + " relative error = " + error);
             } else {
-                Console.OUT.printf("E err: %8.4d", error);
+                Console.OUT.printf("E err: %8.4g", error);
             }
         }
         Console.OUT.println();

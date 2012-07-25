@@ -5,7 +5,7 @@
 
     <target name="test" depends="test-fmm,test-pme,test-pumjarasaayani" />
 
-    <target name="build" depends="xla,anu-chem,anum,fmm,pme,pumjarasaayani" />
+    <target name="build" depends="xla,anu-chem,papi,anum,fmm,pme,pumjarasaayani" />
 
     <target name="anu-chem" description="Build the ANUChem shared library" depends="xla">
         <ant dir="anu-chem" antfile="build.xml" />
@@ -13,6 +13,10 @@
 
     <target name="xla" description="Build the X10 Linear Algebra (XLA) shared library">
         <ant dir="xla" antfile="build.xml" />
+    </target>
+
+    <target name="papi" description="Build the PAPI wrapper shared library">
+        <ant dir="papi_wrapper" antfile="build.xml" />
     </target>
 
     <target name="fftw_wrapper" description="Build the FFTW wrapper shared library">
@@ -51,7 +55,7 @@
         </exec>
     </target>
 
-    <target name="pumjarasaayani" description="Build the Pumja Rasaayani (Quantum Chemistry) app code" depends="anu-chem,xla">
+    <target name="pumjarasaayani" description="Build the Pumja Rasaayani (Quantum Chemistry) app code" depends="anu-chem,xla,papi">
         <ant antfile="build.xml" dir="apps/pumjarasaayani" target="build"/>
     </target>
 

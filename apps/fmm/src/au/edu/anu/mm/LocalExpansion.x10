@@ -97,8 +97,7 @@ public class LocalExpansion extends Expansion {
     		}
 	   	}
 
-	    scratch.backRotate(temp, complexK(0), wigner(1) );
-    	unsafeAdd(scratch);
+	    scratch.backRotateAndAdd(complexK(0), wigner(1), this);
     }
 
     /**
@@ -153,8 +152,7 @@ public class LocalExpansion extends Expansion {
             b_m_pow = b_m_pow * inv_b;
 	    }
 
-	    scratch.backRotate(temp, complexK(0), wigner(1) );
-	    unsafeAdd(scratch);
+	    scratch.backRotateAndAdd(complexK(0), wigner(1), this);
     }
 
     /**

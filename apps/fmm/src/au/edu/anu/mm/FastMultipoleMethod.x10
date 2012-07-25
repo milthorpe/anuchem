@@ -22,7 +22,7 @@ import x10x.vector.Vector3d;
 import au.edu.anu.chem.PointCharge;
 import au.edu.anu.chem.mm.MMAtom;
 import au.edu.anu.util.Timer;
-import edu.utk.cs.papi.PAPI;
+//import edu.utk.cs.papi.PAPI;
 
 /**
  * This class implements the Fast Multipole Method for electrostatic
@@ -193,7 +193,7 @@ public class FastMultipoleMethod {
                     //Console.OUT.println(atomI.symbol + " force = " + atomI.force + " magnitude " + atomI.force.length() + " forceError = " + forceError);
                 }
             }
-            Console.OUT.printf("F err: %8.4d", maxForceError);
+            Console.OUT.printf("F err: %8.4g", maxForceError);
         }
     }
 

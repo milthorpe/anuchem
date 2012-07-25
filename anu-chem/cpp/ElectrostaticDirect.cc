@@ -65,16 +65,17 @@ static double getEnergy() {
             double zDist = atoms[i].centre.k -atoms[j].centre.k;
 
             double r2 = xDist * xDist + yDist * yDist + zDist * zDist;
-            double r = sqrt(r2);
+            double invR2 = 1.0 / r2;
+            double invR = sqrt(invR2);
 
-            double e = (atoms[i].charge * atoms[j].charge) / r;
+            double e = (atoms[i].charge * atoms[j].charge) * invR;
             energy += 2.0 * e;
-            atoms[i].force.i += e / r2 * xDist;
-            atoms[j].force.i -= e / r2 * xDist;
-            atoms[i].force.j += e / r2 * yDist;
-            atoms[j].force.j -= e / r2 * yDist;
-            atoms[i].force.k += e / r2 * zDist;
-            atoms[j].force.k -= e / r2 * zDist;
+            atoms[i].force.i += e * invR2 * xDist;
+            atoms[j].force.i -= e * invR2 * xDist;
+            atoms[i].force.j += e * invR2 * yDist;
+            atoms[j].force.j -= e * invR2 * yDist;
+            atoms[i].force.k += e * invR2 * zDist;
+            atoms[j].force.k -= e * invR2 * zDist;
         }
     }
 
@@ -103,13 +104,14 @@ static double getEnergy() {
                 double zDist = otherAtoms[i].centre.k - atoms[j].centre.k;
 
                 double r2 = xDist * xDist + yDist * yDist + zDist * zDist;
-                double r = sqrt(r2);
+                double invR2 = 1.0 / r2;
+                double invR = sqrt(invR2);
 
-                double e = (otherAtoms[i].charge * atoms[j].charge) / r;
+                double e = (otherAtoms[i].charge * atoms[j].charge) * invR;
                 energy += e;
-                atoms[i].force.i += e / r2 * xDist;
-                atoms[i].force.j += e / r2 * yDist;
-                atoms[i].force.k += e / r2 * zDist;
+                atoms[i].force.i += e * invR2 * xDist;
+                atoms[i].force.j += e * invR2 * yDist;
+                atoms[i].force.k += e * invR2 * zDist;
             }
         }
 
