@@ -23,10 +23,10 @@
     <property name="debug" value="false"/>
     <property name="profile"  value="false"/>
     <property name="cpuprofile"  value="true"/>
-    <property name="perftoolsHome" location="/scratch/perftools"/>
+    <property name="perftoolsHome" location="${user.home}/perftools"/>
     <property name="mpiPprofile"  value="false"/>
-    <property name="mpiPHome" location="/scratch/mpiP"/>
-    <property name="binutilsHome" location="/scratch/binutils"/>
+    <property name="mpiPHome" location="${user.home}/mpiP"/>
+    <property name="binutilsHome" location="${user.home}/binutils"/>
     <property name="x10rt" value="mpi"/>
 	<property name="target" location="${basedir}/target"/>
 	<property name="target-src" location="${target}/classes"/>
