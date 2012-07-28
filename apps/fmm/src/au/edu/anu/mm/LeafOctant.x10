@@ -47,6 +47,10 @@ public class LeafOctant extends Octant implements Comparable[LeafOctant] {
 
     public def compareTo(b:LeafOctant):Int = id.compareTo(b.id);
 
+    public def countOctants():Int = 1;
+
+    public def ghostOctants():Int = 0;
+
     /**
      * Get the multipole representation of this octant, which is
      * simply the sum of the contributions of the particles in the octant.

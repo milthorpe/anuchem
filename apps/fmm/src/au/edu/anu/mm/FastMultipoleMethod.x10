@@ -213,11 +213,6 @@ public class FastMultipoleMethod {
         return farField;
     }
 
-    static struct SumReducer implements Reducible[Double] {
-        public def zero() = 0.0;
-        public operator this(a:Double, b:Double) = (a + b);
-    }
-
     public def initialAssignment(atoms:DistArray[Rail[MMAtom]](1)) {
         finish ateach(p1 in atoms) {
             localData().timer.start(FmmLocalData.TIMER_INDEX_TREE);
@@ -225,6 +220,28 @@ public class FastMultipoleMethod {
             assignAtomsToOctantsLocal(localAtoms);
             localData().timer.stop(FmmLocalData.TIMER_INDEX_TREE);
         }
+    }
+
+    public def countOctants() {
+        val totalOctants = finish (IntSumReducer()) {
+            ateach(p1 in Dist.makeUnique()) {
+                var octants:Int = 0;
+                for (topLevelOctant in localData().topLevelOctants) {
+                    octants += topLevelOctant.countOctants();
+                }
+                offer octants;
+            }
+        };
+        val totalGhostOctants = finish (IntSumReducer()) {
+            ateach(p1 in Dist.makeUnique()) {
+                var ghostOctants:Int = 0;
+                for (topLevelOctant in localData().topLevelOctants) {
+                    ghostOctants += topLevelOctant.ghostOctants();
+                }
+                offer ghostOctants;
+            }
+        };
+        Console.OUT.println("total: " + totalOctants + " ghost: " + totalGhostOctants);
     }
 
     /** 
@@ -576,5 +593,17 @@ public class FastMultipoleMethod {
     public def getLeafOctantId(atomCentre:Point3d):OctantId {
         return new OctantId((atomCentre.i / size * lowestLevelDim + lowestLevelDim / 2) as UByte, (atomCentre.j / size * lowestLevelDim + lowestLevelDim / 2) as UByte, (atomCentre.k / size * lowestLevelDim + lowestLevelDim / 2) as UByte, dMax as UByte);
     }
+
+    static struct SumReducer implements Reducible[Double] {
+        public def zero() = 0.0;
+        public operator this(a:Double, b:Double) = (a + b);
+    }
+
+    static struct IntSumReducer implements Reducible[Int] {
+        public def zero() = 0;
+        public operator this(a:Int, b:Int) = (a + b);
+    }
+
+
 }
 

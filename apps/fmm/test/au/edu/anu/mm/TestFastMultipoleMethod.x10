@@ -100,6 +100,7 @@ public class TestFastMultipoleMethod extends TestElectrostatic {
         val atoms = generateAtoms(numAtoms);
         val fmm = new FastMultipoleMethod(density, dMax, numTerms, wellSpaced, SIZE, numAtoms);
         fmm.initialAssignment(atoms);
+        fmm.countOctants();
 
         //val papi = new PAPI();
         //papi.countFlops();

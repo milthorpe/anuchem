@@ -53,6 +53,28 @@ public class ParentOctant extends Octant implements Comparable[ParentOctant] {
         }
     }
 
+    public def countOctants():Int {
+        var octants:Int = 0;
+        for (i in children) {
+            val child = children(i);
+            if (child != null) {
+                octants += child.countOctants();
+            }
+        }
+        return octants;
+    }
+
+    public def ghostOctants():Int {
+        var ghostOctants:Int = 0;
+        for (i in children) {
+            val child = children(i);
+            if (child != null) {
+                ghostOctants += child.ghostOctants();
+            }
+        }
+        return ghostOctants;
+    }
+
     public def compareTo(b:ParentOctant):Int = id.compareTo(b.id);
 
     public def numAtoms() = numAtoms;

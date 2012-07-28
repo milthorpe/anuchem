@@ -69,6 +69,9 @@ public abstract class Octant implements Comparable[Octant] {
                         (id.z + 0.5) * sideLength - offset);
     }
 
+    abstract public def countOctants():Int;
+    abstract public def ghostOctants():Int;
+
     abstract protected def downward(localData:PlaceLocalHandle[FmmLocalData], size:Double, parentLocalExpansion:LocalExpansion, dMax:UByte):Double;
 
     /** 
