@@ -19,6 +19,7 @@
     <property name="bash.exe" value="bash"/>    
     <property name="optimize" value="true"/>
     <property name="nochecks" value="true"/>
+    <property name="unroll" value="false"/>
     <property name="debug" value="true"/>
     <property name="profile"  value="false"/>
     <property name="cpuprofile"  value="false"/>
@@ -65,6 +66,10 @@
 
     <condition property="post.papi" value="-L${papiHome}/lib -lpapi" else="">
         <istrue value="${papi}"/>
+    </condition>
+
+    <condition property="post.unroll" value="-funroll-loops" else="">
+        <istrue value="${unroll}"/>
     </condition>
 
     <condition property="link.mpiPprofile" value="-L${binutilsHome}/lib -L${mpiPHome}/lib -lmpiP -lbfd -liberty -lm" else="">
@@ -134,7 +139,7 @@
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/src">
             <arg value="-c"/>
-            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} ${x10c.debug} ${x10c.cpuprofile} ${x10c.profile} -report postcompile=1 -post '# -funroll-loops # ${link.mpiPprofile} ${post.cpuprofile} ${post.papi}' -x10lib ${xla.props} -x10lib ${anuchem.props} ${x10lib.papi} -sourcepath . -d '${target-src}' '${basedir}/${testclass}'"/>
+            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} ${x10c.debug} ${x10c.cpuprofile} ${x10c.profile} -report postcompile=1 -post '# ${post.unroll} # ${link.mpiPprofile} ${post.cpuprofile} ${post.papi}' -x10lib ${xla.props} -x10lib ${anuchem.props} ${x10lib.papi} -sourcepath . -d '${target-src}' '${basedir}/${testclass}'"/>
         </exec>
     </target>
 

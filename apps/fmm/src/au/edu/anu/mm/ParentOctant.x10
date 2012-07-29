@@ -35,22 +35,6 @@ public class ParentOctant extends Octant implements Comparable[ParentOctant] {
      */
     public def this(id:OctantId, numTerms:Int, localData:FmmLocalData, dMax:UByte) {
         super(id, numTerms);
-        val levelDim = (Math.pow2(dMax) / Math.pow2(id.level));
-        var i:Int = 0;
-        for (x2 in (2*id.x)..(2*id.x+1)) {
-            for (y2 in (2*id.y)..(2*id.y+1)) {
-                for (z2 in (2*id.z)..(2*id.z+1)) {
-                    val childOctantId = OctantId(x2 as UByte, y2 as UByte, z2 as UByte, id.level+1UY);
-                    val placeId = localData.getPlaceId(childOctantId.getAnchor(dMax));
-                    if (placeId != here.id && placeId >= 0 && placeId < Place.MAX_PLACES) {
-                        // the child octant is not held at this place
-                        //Console.OUT.println("at " + here + " octant " + id + " creating ghost for octant " + childOctantId + " held at " + placeId);
-                        children(i) = new GhostOctant(childOctantId, placeId);
-                    }
-                    i++;
-                 }
-            }
-        }
     }
 
     public def countOctants():Int {

@@ -431,6 +431,7 @@ public class FastMultipoleMethod {
                     var parentOctant:ParentOctant = parentOctants.getOrElse(parentId, null) as ParentOctant;
                     if (parentOctant == null) {
                         parentOctant = new ParentOctant(parentId, numTerms, local, dMax);
+                        createGhostChildren(parentOctant, octantLoads, firstLeafOctant);
                         parentOctants.put(parentId, parentOctant);
                         octants.put(parentId.getMortonId(), parentOctant);
                     }
@@ -480,6 +481,39 @@ public class FastMultipoleMethod {
         }
 
         createLET();
+    }
+
+    private def createGhostChildren(parentOctant:ParentOctant, octantLoads:Rail[Int], firstLeafOctant:Rail[UInt]) {
+        val id = parentOctant.id;
+        val levelDim = (Math.pow2(dMax) / Math.pow2(id.level));
+        var i:Int = 0;
+        for (x2 in (2*id.x)..(2*id.x+1)) {
+            for (y2 in (2*id.y)..(2*id.y+1)) {
+                for (z2 in (2*id.z)..(2*id.z+1)) {
+                    val childOctantId = OctantId(x2 as UByte, y2 as UByte, z2 as UByte, id.level+1U);
+                    val anchor = childOctantId.getAnchor(dMax);
+                    var nonEmpty:Boolean = false;
+                    val size = Math.pow(8.0, (dMax / childOctantId.level - 1)) as Int;
+                    val startDescendant = anchor.getLeafMortonId() as Int;
+                    val endDescendant = startDescendant + size - 1;
+                    for (j in Math.max(firstLeafOctant(here.id+1) as Int,startDescendant)..endDescendant) {
+                        if (octantLoads(j) > 0) {
+                            nonEmpty = true;
+                            break;
+                        }
+                    }
+                    if (nonEmpty) {
+                        // non-empty child octant is not held at this place
+                        val placeId = localData().getPlaceId(anchor);
+                        if (placeId != here.id) {
+                            //Console.OUT.println("at " + here + " octant " + id + " creating ghost " + childOctantId + " held at " + placeId);
+                            parentOctant.children(i) = new GhostOctant(childOctantId, placeId);
+                       }
+                    }
+                    i++;
+                }
+            }
+        }
     }
 
     /**
