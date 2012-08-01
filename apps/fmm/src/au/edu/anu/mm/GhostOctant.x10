@@ -84,9 +84,7 @@ public class GhostOctant extends Octant implements Comparable[Octant] {
     }
      
 
-    public def addToCombinedVSet(combinedVSet:HashSet[UInt], ws:Int) {
-        super.addToCombinedVSet(combinedVSet, ws);
-    }
+    public def addToCombinedVSet(combinedVSet:HashSet[UInt], ws:Int) { }
 
     public def toString(): String {
         return "GhostOctant " + id;

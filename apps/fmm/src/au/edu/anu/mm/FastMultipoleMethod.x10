@@ -118,7 +118,7 @@ public class FastMultipoleMethod {
 
         this.size = size;
 
-        this.localData = PlaceLocalHandle.make[FmmLocalData](Dist.makeUnique(), () => new FmmLocalData(numTerms, ws));
+        this.localData = PlaceLocalHandle.make[FmmLocalData](Dist.makeUnique(), () => new FmmLocalData(numTerms, dMax, ws));
     }
     
     public def calculateEnergy():Double {
@@ -291,8 +291,10 @@ public class FastMultipoleMethod {
             leafOctantList.add(octant as LeafOctant);
         }
         leafOctantList.sort();
-        val maxLeafOctants = Math.pow(8.0, dMax) as Int;
-        val octantLoads = new Array[Int](maxLeafOctants);
+
+        val local = localData();
+        val octantLoads = local.octantLoads;
+        octantLoads.clear();
         if (leafOctantList.size() > 0) {
             for(octant in leafOctantList) {
                 val mortonId = octant.id.getLeafMortonId() as Int;
@@ -301,12 +303,12 @@ public class FastMultipoleMethod {
             }
         }
 
-        val local = localData();
+
         local.octants = octants;
         local.leafOctants = leafOctantList;
 
         // sort and redistribute octants
-        Team.WORLD.allreduce[Int](here.id, octantLoads, 0, octantLoads, 0, maxLeafOctants, Team.ADD);
+        allReduceOctantLoads(octantLoads);
         val total = octantLoads.reduce[Int]((a:Int,b:Int)=>a+b, 0);
         val placeShare = total / Place.MAX_PLACES;
         val leftOver = total % Place.MAX_PLACES;
@@ -321,7 +323,7 @@ public class FastMultipoleMethod {
         for (p in 1..Place.MAX_PLACES) {
             val share = p <= leftOver ? placeShare+1 : placeShare;
             var load:Int = 0;
-            while(load < share && i < maxLeafOctants) {
+            while(load < share && i < octantLoads.size) {
                 load += octantLoads(i++);
                 if (load >= share) {
                     break;
@@ -481,6 +483,23 @@ public class FastMultipoleMethod {
         }
 
         createLET();
+    }
+
+    private def allReduceOctantLoads(myOctantLoads:Array[Int]) {
+        //Team.WORLD.allreduce[Int](here.id, octantLoads, 0, octantLoads, 0, maxLeafOctants, Team.ADD);
+        Team.WORLD.barrier(here.id);
+
+        if (here == Place.FIRST_PLACE) {
+            for (p in 1..(Place.MAX_PLACES-1)) {
+                val pLoads = at(Place(p)) localData().octantLoads;
+                myOctantLoads.map(myOctantLoads, pLoads, (x:Int,y:Int)=>x+y);
+            }
+            finish ateach(place in Dist.makeUnique()) {
+                Array.copy[Int](myOctantLoads, localData().octantLoads);
+            }
+        }
+
+        Team.WORLD.barrier(here.id);
     }
 
     private def createGhostChildren(parentOctant:ParentOctant, octantLoads:Rail[Int], firstLeafOctant:Rail[UInt]) {

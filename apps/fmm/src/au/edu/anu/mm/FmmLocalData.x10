@@ -29,6 +29,9 @@ public class FmmLocalData {
     /** All octants held at this place. */
     var octants:HashMap[UInt,Octant];
 
+    /** The load on each leaf octant across all places. */
+    val octantLoads:Array[Int];
+
     /** All leaf octants held at this place. */
     var leafOctants:ArrayList[LeafOctant];
 
@@ -53,9 +56,11 @@ public class FmmLocalData {
     /** A multi-timer for the several segments of a single getEnergy invocation, indexed by the constants above. */
     public val timer:Timer;
 
-    public def this(numTerms:Int, ws:Int) {
+    public def this(numTerms:Int, dMax:Int, ws:Int) {
         fmmOperators = new FmmOperators(numTerms, ws);
         timer = new Timer(6);
+        val maxLeafOctants = Math.pow(8.0, dMax) as Int;
+        octantLoads = new Array[Int](maxLeafOctants);
         // TODO construct LET
     }
 
