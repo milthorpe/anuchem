@@ -29,9 +29,11 @@ import au.edu.anu.qm.ro.Integral_Pack;
  */
 
 public class GMatrixRO extends DenseMatrix{self.M==self.N} {
-
-    public val timer = new StatisticalTimer(1);
-    public static TIMER_IDX_TOTAL = 0;
+    static TIMER_TOTAL = 0;
+    static TIMER_JMATRIX = 1;
+    static TIMER_KMATRIX = 2;
+    static TIMER_GENCLASS = 3;
+    public val timer = new StatisticalTimer(5);
 
     private val bfs : BasisFunctions;
     private val mol : Molecule[QMAtom];

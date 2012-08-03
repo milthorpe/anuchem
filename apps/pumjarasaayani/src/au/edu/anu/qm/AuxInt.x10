@@ -1,0 +1,35 @@
+/*
+ * This file is part of ANUChem.
+ *
+ *  This file is licensed to You under the Eclipse Public License (EPL);
+ *  You may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *      http://www.opensource.org/licenses/eclipse-1.0.php
+ *
+ * (C) Copyright Australian National University 2010-2012.
+ */
+package au.edu.anu.qm;
+
+import x10.compiler.NonEscaping;
+import x10.util.ArrayList;
+import x10x.vector.Point3d;
+import au.edu.anu.qm.IntLm; 
+
+/**
+ * Represents a list of ShellPair
+ *
+ * @author: T. Limpanuparb, J. Milthorpe
+ */
+
+
+public struct AuxInt {
+    public val intLms : Rail[IntLm];
+    public val maxN : Int;
+
+    public def this(intLms:Rail[IntLm], maxN:Int) {
+        this.intLms=intLms;
+        this.maxN=maxN;
+    }
+
+}
+
