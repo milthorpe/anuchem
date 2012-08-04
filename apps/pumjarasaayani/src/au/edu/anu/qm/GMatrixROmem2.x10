@@ -378,9 +378,11 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
         if (counter++!=0) // First cycle gives EK=0 
         for (aorb in 0..(nOrbital-1)) for (var ron:Int=0; ron<=roNK; ron++){ // To save mem
             muk.reset();
+            var maxmaxl:Int=-1;
             for (spInd in 0..(numSigShellPairs-1)) {
                 val sp=shellPairs(spInd);
                 val maxLron=sp.maxL(ron);
+                if (maxLron>maxmaxl) maxmaxl=maxLron;
                 if (maxLron>=0) {
                     val maxLm=(maxLron+1)*(maxLron+1);  
                     //timer.start(TIMER_GENCLASS);
@@ -405,7 +407,8 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
                     } 
                 }              
             }
-            kMatrix.multTrans(muk, muk, true); // most expensive
+            if (aorb==0)  Console.OUT.printf("ron=%d maxmaxl=%d\n",ron,maxmaxl);
+            kMatrix.multTrans(muk, muk, true); // most expensive -- can be reduced by using maxmaxl
         }   
         timer.stop(TIMER_KMATRIX);
         Console.OUT.print("K matrix ");
