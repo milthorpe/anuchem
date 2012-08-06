@@ -59,6 +59,7 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
     val shellPairs:Rail[ShellPair]; 
     val auxInts:Rail[AuxInt]; 
     val muk:DenseMatrix{self.M==this.N}; 
+    val maxmaxl:Rail[Int];
     val jMatrix:DenseMatrix{self.M==self.N,self.N==this.N};
     val kMatrix:DenseMatrix{self.M==self.N,self.N==this.N};
     // used for calculating eJ, eK
@@ -203,13 +204,11 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
 
         auxInts = new Rail[AuxInt](numSigShellPairs);
         for (i in 0..(numSigShellPairs-1)) {
-            val sh = shellPairs(i); val a=sh.aang; val b=sh.bang; val ka=sh.dconA; val kb=sh.dconB;
-            
-            var maxl:Int=0,maxn:Int=0,maxmaxl:Int=0; 
+            val sh = shellPairs(i); val a=sh.aang; val b=sh.bang; val ka=sh.dconA; val kb=sh.dconB;            
+            var maxl:Int=0,maxn:Int=0; 
             var count1:Int=0; 
             val intLms = new Rail[IntLm](roN); 
-            for (var ron:Int=0; ron<=roN; ron++) {     
-                      
+            for (var ron:Int=0; ron<=roN; ron++) {                           
                 aux.genClass(sh.aang, sh.bang, sh.aPoint, sh.bPoint, sh.zetaA, sh.zetaB, sh.conA, sh.conB, sh.dconA, sh.dconB, temp, ron, roL, emptyYlm.y, emptyYlm.maxL);  
                 var auxint:Double=0.,rol:Int=roL;                               
                 for (; rol>=0 && auxint<THRESH; rol--) { 
@@ -224,8 +223,7 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
                 else {
                     maxl=rol+1;
                     count1+=Math.pow(maxl+1,2);
-                    maxn=ron;
-                    if (maxl>maxmaxl) maxmaxl=maxl;
+                    maxn=ron;                   
                 }
                 sh.maxL(ron)=maxl; 
                 if (maxl>=0) {
@@ -239,12 +237,11 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
                             val mmu=tmu*(roL+1)*(roL+1)*sh.maxbrab+mnu;
                             arr(ind++)=temp(mmu);
                         }
-                    intLms(ron) = new IntLm(arr,maxl); // if use temp instead of arr, there result will be corrupted...
+                    intLms(ron) = new IntLm(arr,maxl); 
                 }
                 else intLms(ron) = new IntLm(emptyRailD,-1);
             }
             auxInts(i) = new AuxInt(intLms,maxn);
-
             val fc=(F1(a+b)+F2(a+b)+F3(a,b))*ka*kb+F4(a,b); 
             val wc=(F1(a+b)/3.+nCr(a+b+4,4)+F3(a,b))*ka*kb+F4(a,b)/2.; 
             var K:Double=0;
@@ -255,8 +252,15 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
             val bracount=(a+1)*(a+2)/2*(b+1)*(b+2)/2;
             pAuxCount+=ka*kb*bracount*K;
             AuxCount+=bracount*K; 
-            Console.OUT.printf("mu=%d nu=%d | maxmaxl=%d\n",sh.mu,sh.nu,maxmaxl);
         }
+        maxmaxl = new Rail[Int](roN);
+        for (var ron:Int=0; ron<=roN; ron++) {
+            maxmaxl(ron)=-1;
+            for (i in 0..(numSigShellPairs-1))
+                if (shellPairs(i).maxL(ron)>maxmaxl(ron)) maxmaxl(ron)=shellPairs(i).maxL(ron);
+            Console.OUT.printf("maxmaxl(%d)=%d\n", ron, maxmaxl(ron));
+        }
+
         Console.OUT.printf("nShell=%d numSigShellPairs=%d pAuxCount=%e (primitive) AuxCount=%e (contracted)\n",nShell,numSigShellPairs,pAuxCount,AuxCount);
         Console.OUT.printf("mCost=%e\n", mCost);
         Console.OUT.printf("fCost=%e\n", fCost);
@@ -378,11 +382,9 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
         if (counter++!=0) // First cycle gives EK=0 
         for (aorb in 0..(nOrbital-1)) for (var ron:Int=0; ron<=roNK; ron++){ // To save mem
             muk.reset();
-            var maxmaxl:Int=-1;
             for (spInd in 0..(numSigShellPairs-1)) {
                 val sp=shellPairs(spInd);
                 val maxLron=sp.maxL(ron);
-                if (maxLron>maxmaxl) maxmaxl=maxLron;
                 if (maxLron>=0) {
                     val maxLm=(maxLron+1)*(maxLron+1);  
                     //timer.start(TIMER_GENCLASS);
@@ -406,8 +408,7 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
                         }
                     } 
                 }              
-            }
-            if (aorb==0)  Console.OUT.printf("ron=%d maxmaxl=%d\n",ron,maxmaxl);
+            }        
             kMatrix.multTrans(muk, muk, true); // most expensive -- can be reduced by using maxmaxl
         }   
         timer.stop(TIMER_KMATRIX);
