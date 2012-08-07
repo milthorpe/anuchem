@@ -73,8 +73,7 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
 
     public def this(N:Int, bfs:BasisFunctions, molecule:Molecule[QMAtom], nOrbital:Int):GMatrixROmem2{self.M==N,self.N==N} {     
         super(N, N); 
-        val result = Runtime.execForRead("date"); 
-        Console.OUT.printf("GMatrixROmem.x10 initialization starts at %s...\n",result.readLine()); 
+        val result = Runtime.execForRead("date"); Console.OUT.printf("GMatrixROmem.x10 initialization starts at %s...\n",result.readLine()); 
         this.bfs = bfs;
         this.mol = molecule;
         this.nOrbital = nOrbital;
@@ -91,7 +90,7 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
         val maxam = bfs.getShellList().getMaximumAngularMomentum();
         val maxam1 = (maxam+1)*(maxam+2)/2;
         temp = new Rail[Double](maxam1*maxam1*roLm); // will be passed to C++ code
-        aux = new Integral_Pack(roN,roL,0);
+        aux = new Integral_Pack(roN,roL,0.);
         dk = new Rail[Double](roLm); // eqn 15b in RO#7
         muk = new DenseMatrix(N,roLm); 
 
@@ -200,7 +199,7 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
         var mCost:Double=0.;
         var pAuxCount:Double=0.;
         var AuxCount:Double=0.;
-        val emptyYlm = new Ylm(emptyRailD,-1);
+   
 
         auxInts = new Rail[AuxInt](numSigShellPairs);
         for (i in 0..(numSigShellPairs-1)) {
@@ -208,8 +207,11 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
             var maxl:Int=0,maxn:Int=0; 
             var count1:Int=0; 
             val intLms = new Rail[IntLm](roN); 
+            val tempY = new Rail[Double](sh.dconA*sh.dconB*(roL+1)*(roL+1));
+            aux.genClassY(sh.aPoint, sh.bPoint, sh.zetaA, sh.zetaB, sh.dconA, sh.dconB,  roL, tempY);
+
             for (var ron:Int=0; ron<=roN; ron++) {                           
-                aux.genClass(sh.aang, sh.bang, sh.aPoint, sh.bPoint, sh.zetaA, sh.zetaB, sh.conA, sh.conB, sh.dconA, sh.dconB, temp, ron, roL, emptyYlm.y, emptyYlm.maxL);  
+                aux.genClass(sh.aang, sh.bang, sh.aPoint, sh.bPoint, sh.zetaA, sh.zetaB, sh.conA, sh.conB, sh.dconA, sh.dconB, temp, ron, roL, tempY, roL);  
                 var auxint:Double=0.,rol:Int=roL;                               
                 for (; rol>=0 && auxint<THRESH; rol--) { 
                     for (var rom:Int=-rol; rom<=rol; rom++)  for (var tmu:Int=0; tmu<sh.maxbraa; tmu++) for (var tnu:Int=0; tnu<sh.maxbrab; tnu++) {

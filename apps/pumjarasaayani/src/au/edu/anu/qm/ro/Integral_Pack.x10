@@ -26,7 +26,7 @@ import x10x.vector.Point3d;
 @NativeRep("c++", "::au::edu::anu::qm::ro::Integral_Pack *", "::au::edu::anu::qm::ro::Integral_Pack", null)
 public class Integral_Pack {
 
-    public native def this(N:Int,L:Int,Type:Int);
+    public native def this(N:Int,L:Int,Type:Double);
 
     /**
      * Generate Ylm for a given shell pair
