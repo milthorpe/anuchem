@@ -54,7 +54,7 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
     val norm:Rail[Double];
     val temp:Rail[Double];
     val dk:Rail[Double];
-
+    val emptyRailD = new Rail[Double](0),emptyRailI = new Rail[Int](0); 
     // Big arrays stored in Memory
     val shellPairs:Rail[ShellPair]; 
     val auxInts:Rail[AuxInt]; 
@@ -143,7 +143,7 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
         }
         val rawShellPairs = new Array[ShellPair](nShell*(nShell+1)/2); 
         val zeroPoint = Point3d(0.0, 0.0, 0.0);
-        val emptyRailD = new Rail[Double](0),emptyRailI = new Rail[Int](0); 
+       
         val dummySignificantPair = new ShellPair(0, 0, zeroPoint, zeroPoint, emptyRailD, emptyRailD, emptyRailD, emptyRailD, 0, 0, 0, 0, emptyRailI, threshold);
         var mu:Int=0,nu:Int=0,ind:Int=0; 
         for(var a:Int=0; a<noOfAtoms; a++) { // centre a  
@@ -200,7 +200,6 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
         var pAuxCount:Double=0.;
         var AuxCount:Double=0.;
    
-
         auxInts = new Rail[AuxInt](numSigShellPairs);
         for (i in 0..(numSigShellPairs-1)) {
             val sh = shellPairs(i); val a=sh.aang; val b=sh.bang; val ka=sh.dconA; val kb=sh.dconB;            
@@ -431,6 +430,159 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
         Console.OUT.printf("    Time to construct GMatrix with RO: %.3g seconds\n", (timer.last(TIMER_TOTAL) as Double) / 1e9);
 
     }
+
+    public def computeLong(density:Density{self.N==this.N}, mos:MolecularOrbitals{self.N==this.N}) {
+        val result = Runtime.execForRead("date"); 
+        Console.OUT.printf("GMatrixROmem.x10 compute starts at %s...\n",result.readLine()); 
+        val auxl = new Integral_Pack(roN,roL,1.0);
+        timer.start(TIMER_TOTAL);
+        jMatrix.reset();
+        kMatrix.reset();
+
+        var prevLoadCount:Long = 0;
+
+        // Form J matrix
+        papi.reset();
+        timer.start(TIMER_JMATRIX); var t:Double=0.;
+        var fac:Double; var ind:Int; var jContrib:Double;
+
+        for (spInd in 0..(numSigShellPairs-1)) {
+            val sp=shellPairs(spInd);
+            if (sp.mu!=sp.nu) fac=2.; else fac=1.;
+            for (var tmu:Int=sp.mu; tmu<sp.mu+sp.maxbraa; tmu++) for (var tnu:Int=sp.nu; tnu<sp.nu+sp.maxbrab; tnu++)
+                scratch(tmu,tnu)=density(tmu,tnu)*fac*norm(tmu)*norm(tnu);
+        }
+        if (counter==0)  Console.OUT.printf("rawtime\n");
+        for (var ron:Int=0; ron<=roN; ron++) {
+            // Form dk vector
+            dk.clear();       
+            for (spInd in 0..(numSigShellPairs-1)) {
+                val sp=shellPairs(spInd);
+                val maxLron=sp.maxL(ron);                
+                if (maxLron>=0) {
+                    val maxLm=(maxLron+1)*(maxLron+1);
+                    ind=0;  
+                    timer.start(TIMER_GENCLASS);
+                    //val temp1=auxInts(spInd).intLms(ron).IntLm;
+                    //papi.start();
+                    auxl.genClass(sp.aang, sp.bang, sp.aPoint, sp.bPoint, sp.zetaA, sp.zetaB, sp.conA, sp.conB, sp.dconA, sp.dconB, temp, ron, maxLron,emptyRailD, -1);
+                    //papi.stop();
+                    timer.stop(TIMER_GENCLASS);
+                    if (counter==0) {
+                        //Console.OUT.printf("%d\t%d\t%d\t%d\t%d\t%d",sp.aang, sp.bang, sp.dconA, sp.dconB, ron, maxLron); // printf can accomodate upto 6 arguments?
+                        //Console.OUT.printf("\t%20.15e\n",(timer.last(TIMER_GENCLASS) as Double)/1e9);
+                        /*val loadCount = papi.getCounter(1);
+                        Console.OUT.printf("\t%lld\n",loadCount-prevLoadCount);
+                        prevLoadCount = loadCount;*/
+                    }
+
+                    t+=(timer.last(TIMER_GENCLASS) as Double)/1e9;
+                    for (var tmu:Int=sp.mu; tmu<sp.mu+sp.maxbraa; tmu++) for (var tnu:Int=sp.nu; tnu<sp.nu+sp.maxbrab; tnu++) {
+                        val scdmn=scratch(tmu,tnu);
+                        for (var rolm:Int=0; rolm<maxLm; rolm++)
+                            dk(rolm) += scdmn*temp(ind++); // eqn 15b 
+                    }
+                }
+            }
+             
+            for (spInd in 0..(numSigShellPairs-1)) {
+                val sp=shellPairs(spInd);
+                val maxLron=sp.maxL(ron);
+                if (sp.maxL(ron)>=0) { 
+                    val maxLm=(maxLron+1)*(maxLron+1);
+                    ind=0;  
+                    //timer.start(TIMER_GENCLASS);
+                    //papi.start();
+                    //val temp1=auxInts(spInd).intLms(ron).IntLm;
+                    auxl.genClass(sp.aang, sp.bang, sp.aPoint, sp.bPoint, sp.zetaA, sp.zetaB, sp.conA, sp.conB, sp.dconA, sp.dconB, temp, ron, maxLron,emptyRailD, -1);  
+                    //papi.stop();
+                    //timer.stop(TIMER_GENCLASS); t+= (timer.last(TIMER_GENCLASS) as Double)/1e9 ;
+
+                    for (var tmu:Int=sp.mu; tmu<sp.mu+sp.maxbraa; tmu++) for (var tnu:Int=sp.nu; tnu<sp.nu+sp.maxbrab; tnu++) {
+                        val nrm=norm(tmu)*norm(tnu);
+                        jContrib = 0.;
+                        for (var rolm:Int=0; rolm<maxLm; rolm++)
+                            jContrib+=dk(rolm)*nrm*temp(ind++);
+                        jMatrix(tmu,tnu) += jContrib;
+                    } 
+
+                }
+            }            
+        } 
+        if (counter==0) Console.OUT.printf("rawtime\n");    
+        for (spInd in 0..(numSigShellPairs-1)) {
+            val sp=shellPairs(spInd);
+            if (sp.mu!=sp.nu) for (var tmu:Int=sp.mu; tmu<sp.mu+sp.maxbraa; tmu++) for (var tnu:Int=sp.nu; tnu<sp.nu+sp.maxbrab; tnu++) 
+                jMatrix(tnu,tmu) = jMatrix(tmu,tnu);
+        }
+        timer.stop(TIMER_JMATRIX);
+        Console.OUT.print("J matrix ");
+        //papi.printFlops();
+        papi.printMemoryOps();
+
+
+// vvvv For development purpose vvvvvv
+        val eJ = scratch.mult(density, jMatrix).trace();
+        Console.OUT.printf("  EJ = %.6f a.u.\n", eJ);
+// ^^^^ It is not required for normal calculation ^^^^^
+
+        Console.OUT.printf("    Time to construct JMatrix with RO: %.3g seconds (%.4g for ints)\n", (timer.last(TIMER_JMATRIX) as Double) / 1e9, t);
+
+        // Form K matrix
+        //papi.resetCount();
+        timer.start(TIMER_KMATRIX); t=0.;
+
+        if (counter++!=0) // First cycle gives EK=0 
+        for (aorb in 0..(nOrbital-1)) for (var ron:Int=0; ron<=roNK; ron++){ // To save mem
+            muk.reset();
+            for (spInd in 0..(numSigShellPairs-1)) {
+                val sp=shellPairs(spInd);
+                val maxLron=sp.maxL(ron);
+                if (maxLron>=0) {
+                    val maxLm=(maxLron+1)*(maxLron+1);  
+                    //timer.start(TIMER_GENCLASS);
+                    //papi.start();
+                    auxl.genClass(sp.aang, sp.bang, sp.aPoint, sp.bPoint, sp.zetaA, sp.zetaB, sp.conA, sp.conB, sp.dconA, sp.dconB, temp, ron, maxLron,emptyRailD, -1);
+                    //val temp1=auxInts(spInd).intLms(ron).IntLm;
+                    //papi.stop();
+                    //timer.stop(TIMER_GENCLASS); t+= (timer.last(TIMER_GENCLASS) as Double)/1e9;
+                    ind=0;                   
+                    for (var tmu:Int=sp.mu; tmu<sp.mu+sp.maxbraa; tmu++) for (var tnu:Int=sp.nu; tnu<sp.nu+sp.maxbrab; tnu++) { 
+                        val normMo = mos(aorb,tnu)*norm(tmu)*norm(tnu);
+                        for (var rolm:Int=0; rolm<maxLm; rolm++) 
+                            muk(tmu,rolm)+= normMo*temp(ind++);     
+                    }                                   
+                    if (sp.mu!=sp.nu) {
+                        ind=0;
+                        for (var tmu:Int=sp.mu; tmu<sp.mu+sp.maxbraa; tmu++) for (var tnu:Int=sp.nu; tnu<sp.nu+sp.maxbrab; tnu++) { 
+                            val normMo = mos(aorb,tmu)*norm(tmu)*norm(tnu);
+                             for (var rolm:Int=0; rolm<maxLm; rolm++) 
+                                muk(tnu,rolm)+= normMo*temp(ind++);    
+                        }
+                    } 
+                }              
+            }        
+            kMatrix.multTrans(muk, muk, true); // most expensive -- can be reduced by using maxmaxl
+        }   
+        timer.stop(TIMER_KMATRIX);
+        Console.OUT.print("K matrix ");
+        //papi.printFlops();
+        //papi.printMemoryOps();
+
+// vvvv For development purpose vvvvvv
+        val eK = scratch.mult(density, kMatrix).trace();
+        Console.OUT.printf("  EK = %.6f a.u.\n", eK);
+// ^^^^ It is not required for normal calculation ^^^^^
+
+        Console.OUT.printf("    Time to construct KMatrix with RO: %.3g seconds (%.4g for ints)\n", (timer.last(TIMER_KMATRIX) as Double) / 1e9, t);
+
+        // Form G matrix
+        jMatrix.d.map(this.d, kMatrix.d, (j:Double,k:Double)=>(2.0*j-k)); // eqn 14
+        timer.stop(TIMER_TOTAL);
+        Console.OUT.printf("    Time to construct GMatrix with RO: %.3g seconds\n", (timer.last(TIMER_TOTAL) as Double) / 1e9);
+
+    }
+
  
 }
 

@@ -174,6 +174,13 @@ public class HartreeFockSCFMethod extends SCFMethod {
             Console.OUT.println("GMatrixROmem construction timings:");
             gMatrixRo.timer.printSeconds();
         }
+    
+        // long range energy
+        if (jd.roOn >0) {
+            Console.OUT.println("Long-range");
+            gMatrixRo.computeLong(density, mos);   
+        }
     }
+
 }
 
