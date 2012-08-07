@@ -91,7 +91,7 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
         val maxam = bfs.getShellList().getMaximumAngularMomentum();
         val maxam1 = (maxam+1)*(maxam+2)/2;
         temp = new Rail[Double](maxam1*maxam1*roLm); // will be passed to C++ code
-        aux = new Integral_Pack(roN,roL);
+        aux = new Integral_Pack(roN,roL,0);
         dk = new Rail[Double](roLm); // eqn 15b in RO#7
         muk = new DenseMatrix(N,roLm); 
 
