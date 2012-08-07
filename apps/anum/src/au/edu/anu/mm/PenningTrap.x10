@@ -104,7 +104,7 @@ public class PenningTrap {
      */
     public def mdRun(timestep:Double, numSteps:Int, logSteps:Int) {
         Console.OUT.println("# Timestep = " + timestep + "ns, number of steps = " + numSteps);
-        val timer = new StatisticalTimer(2);
+        val timer = new StatisticalTimer(3);
  
         SystemProperties.printHeader();
 
@@ -166,8 +166,10 @@ public class PenningTrap {
             Team.WORLD.allreduce[Double](here.id, timer.sumOfSquares, 0, timer.sumOfSquares, 0, timer.sumOfSquares.size, Team.ADD);
             if (here == Place.FIRST_PLACE) {
                 timer.printSeconds();
-                Console.OUT.println("reassign:");
+                Console.OUT.println("fmm:");
                 timer.printSeconds(1);
+                Console.OUT.println("reassign:");
+                timer.printSeconds(2);
             }
         }
 
@@ -183,11 +185,14 @@ public class PenningTrap {
      * @param props the system properties to evaluate
      */
     public def mdStepLocal(step:Int, dt:Double, current:Array[Double], accumProps:Boolean, props:SystemProperties, timer:StatisticalTimer) {
-        timer.start(1);
+        timer.start(2);
         fmm.reassignAtoms(step);
-        timer.stop(1);
+        timer.stop(2);
+
         timer.start(0);
+        timer.start(1);
         fmm.calculateEnergyLocal();
+        timer.stop(1);
 
         val leafOctants = fmm.localData().leafOctants;
         finish for (leafOctant in leafOctants) async {
