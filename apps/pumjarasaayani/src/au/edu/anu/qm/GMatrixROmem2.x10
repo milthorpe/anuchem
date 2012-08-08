@@ -380,24 +380,60 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
         // Form K matrix
         //papi.resetCount();
         timer.start(TIMER_KMATRIX); t=0.;
+        val giant3DMat = new DenseMatrix(N,(roL+1)*(roL+1)*nOrbital);
+        val veck = new Rail[Double](0..((roL+1)*(roL+1)-1));
+        //val t2DMat = new Array[Double](0..(nOrbital-1)*0..((roL+1)*(roL+1)-1));
 
         if (counter++!=0) // First cycle gives EK=0 
-        for (aorb in 0..(nOrbital-1)) for (var ron:Int=0; ron<=roNK; ron++){ // To save mem
+        // prepare vector of MOs if LAPACK is to be used.
+        for (var ron:Int=0; ron<=roNK; ron++){
+            timer.start(TIMER_GENCLASS);
+            giant3DMat.reset();
+            for (spInd in 0..(numSigShellPairs-1)) {
+                val sp=shellPairs(spInd);
+                val maxLron=sp.maxL(ron);
+                if (maxLron>=0) {
+                    val maxLm=(maxLron+1)*(maxLron+1); 
+                    val temp1=auxInts(spInd).intLms(ron).IntLm; 
+                    ind=0; var ind2:Int=0;
+                    for (var tmu:Int=sp.mu; tmu<sp.mu+sp.maxbraa; tmu++) for (var tnu:Int=sp.nu; tnu<sp.nu+sp.maxbrab; tnu++) { 
+                        val normMo = norm(tmu)*norm(tnu); 
+                        for (var rolm:Int=0; rolm<maxLm; rolm++) 
+                            veck(rolm) = normMo*temp1(ind++);                        
+                        // Vector Vector multiplication
+                        ind2=0;
+                        for (var rolm:Int=0; rolm<maxLm; rolm++) for (var aorb:Int=0;  aorb<nOrbital; aorb++)
+                            //t2DMat(aorb,rolm)=veck(rolm)*mos(aorb,tmu);
+                            giant3DMat(tmu,ind2++)+=veck(rolm)*mos(aorb,tnu);  // Vector Vector multiplication
+                                          
+                        if (sp.mu!=sp.nu) {
+                            ind2=0;
+                            for (var rolm:Int=0; rolm<maxLm; rolm++) for (var aorb:Int=0;  aorb<nOrbital; aorb++)
+                                //t2DMat(aorb,rolm)=veck(rolm)*mos(aorb,tmu);
+                                giant3DMat(tnu,ind2++)+=veck(rolm)*mos(aorb,tmu);  // Vector Vector multiplication                       
+                        }
+                    }
+                }
+            }
+            timer.stop(TIMER_GENCLASS); t+= (timer.last(TIMER_GENCLASS) as Double)/1e9;
+            kMatrix.multTrans(giant3DMat, giant3DMat, true);
+        }
+ /*       for (aorb in 0..(nOrbital-1)) for (var ron:Int=0; ron<=roNK; ron++){ // To save mem
             muk.reset();
             for (spInd in 0..(numSigShellPairs-1)) {
                 val sp=shellPairs(spInd);
                 val maxLron=sp.maxL(ron);
                 if (maxLron>=0) {
                     val maxLm=(maxLron+1)*(maxLron+1);  
-                    //timer.start(TIMER_GENCLASS);
+                    timer.start(TIMER_GENCLASS);
                     //papi.start();
                     // aux.genClass(sp.aang, sp.bang, sp.aPoint, sp.bPoint, sp.zetaA, sp.zetaB, sp.conA, sp.conB, sp.dconA, sp.dconB, temp, ron, maxLron,ylms(spInd).y, ylms(spInd).maxL);
                     val temp1=auxInts(spInd).intLms(ron).IntLm;
                     //papi.stop();
-                    //timer.stop(TIMER_GENCLASS); t+= (timer.last(TIMER_GENCLASS) as Double)/1e9;
+                    
                     ind=0;                   
                     for (var tmu:Int=sp.mu; tmu<sp.mu+sp.maxbraa; tmu++) for (var tnu:Int=sp.nu; tnu<sp.nu+sp.maxbrab; tnu++) { 
-                        val normMo = mos(aorb,tnu)*norm(tmu)*norm(tnu);
+                        val normMo = mos(aorb,tnu)*norm(tmu)*norm(tnu); 
                         for (var rolm:Int=0; rolm<maxLm; rolm++) 
                             muk(tmu,rolm)+= normMo*temp1(ind++);     
                     }                                   
@@ -409,6 +445,8 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
                                 muk(tnu,rolm)+= normMo*temp1(ind++);    
                         }
                     } 
+                    timer.stop(TIMER_GENCLASS); t+= (timer.last(TIMER_GENCLASS) as Double)/1e9;
+
                 }              
             }        
             // kMatrix.multTrans(muk, muk, true); // most expensive -- can be reduced by using maxmaxl
@@ -417,7 +455,7 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
             val dim = [N, N, m];
             DenseMatrixBLAS.compMultTrans(muk, muk, kMatrix, dim, true);
 
-        }   
+        }   */
         timer.stop(TIMER_KMATRIX);
         Console.OUT.print("K matrix ");
         //papi.printFlops();
