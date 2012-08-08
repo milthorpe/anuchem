@@ -16,6 +16,7 @@ import x10.util.Team;
 import x10.util.concurrent.AtomicInteger;
 
 import x10.matrix.DenseMatrix;
+import x10.matrix.blas.DenseMatrixBLAS;
 
 import x10x.vector.Vector;
 import x10x.vector.Point3d;
@@ -410,7 +411,12 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
                     } 
                 }              
             }        
-            kMatrix.multTrans(muk, muk, true); // most expensive -- can be reduced by using maxmaxl
+            // kMatrix.multTrans(muk, muk, true); // most expensive -- can be reduced by using maxmaxl
+            val m=(maxmaxl(roN)+1)*(maxmaxl(roN)+1);
+            // val m = (roL+1)*(roL+1);
+            val dim = [N, N, m];
+            DenseMatrixBLAS.compMultTrans(muk, muk, kMatrix, dim, true);
+
         }   
         timer.stop(TIMER_KMATRIX);
         Console.OUT.print("K matrix ");
