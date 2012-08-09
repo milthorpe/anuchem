@@ -36,6 +36,7 @@ public class AtomInfo {
     private def this() {
         atomicNumbers.put("H",  1);
         atomicNumbers.put("He", 2);
+
         atomicNumbers.put("Li", 3);
         atomicNumbers.put("Be", 4);
         atomicNumbers.put("B",  5);
@@ -44,6 +45,15 @@ public class AtomInfo {
         atomicNumbers.put("O",  8);
         atomicNumbers.put("F",  9);
         atomicNumbers.put("Ne", 10);
+
+        atomicNumbers.put("Na", 10);
+        atomicNumbers.put("Mg", 12);
+        atomicNumbers.put("Al", 13);
+        atomicNumbers.put("Si", 14);
+        atomicNumbers.put("P", 15);
+        atomicNumbers.put("S", 16);
+        atomicNumbers.put("Cl", 17);
+        atomicNumbers.put("Ar", 18);
 
         covalentRadii.put("H",  0.4346);
         covalentRadii.put("He", 0.6047);

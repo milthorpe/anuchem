@@ -179,6 +179,11 @@ public class HartreeFockSCFMethod extends SCFMethod {
         if (jd.roOn >0) {
             Console.OUT.println("Long-range");
             gMatrixRo.computeLong(density, mos);   
+            fock.compute(hCore, gMatrixRo);
+            val eOne = density.clone().mult(density, hCore).trace();
+            val eTwo = density.clone().mult(density, fock).trace();
+            energy = eOne + eTwo + nuclearEnergy;
+            Console.OUT.printf("Cycle ** Total energy = %.6f a.u. (scale factor = %.6f)",  energy/roZ,roZ);
         }
     }
 
