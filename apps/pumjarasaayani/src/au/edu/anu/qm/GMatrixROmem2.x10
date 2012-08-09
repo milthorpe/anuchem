@@ -381,7 +381,6 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
         //papi.resetCount();
         timer.start(TIMER_KMATRIX); t=0.;
         val giant3DMat = new DenseMatrix(N,(roL+1)*(roL+1)*nOrbital);
-        val veck = new Rail[Double](0..((roL+1)*(roL+1)-1));
         //val t2DMat = new Array[Double](0..(nOrbital-1)*0..((roL+1)*(roL+1)-1));
 
         if (counter++!=0) // First cycle gives EK=0 
@@ -397,20 +396,18 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
                     val temp1=auxInts(spInd).intLms(ron).IntLm; 
                     ind=0; var ind2:Int=0;
                     for (var tmu:Int=sp.mu; tmu<sp.mu+sp.maxbraa; tmu++) for (var tnu:Int=sp.nu; tnu<sp.nu+sp.maxbrab; tnu++) { 
-                        val normMo = norm(tmu)*norm(tnu); 
-                        for (var rolm:Int=0; rolm<maxLm; rolm++) 
-                            veck(rolm) = normMo*temp1(ind++);                        
+                        val normMo = norm(tmu)*norm(tnu);                        
                         // Vector Vector multiplication
                         ind2=0;
-                        for (var rolm:Int=0; rolm<maxLm; rolm++) for (var aorb:Int=0;  aorb<nOrbital; aorb++)
-                            //t2DMat(aorb,rolm)=veck(rolm)*mos(aorb,tmu);
-                            giant3DMat(tmu,ind2++)+=veck(rolm)*mos(aorb,tnu);  // Vector Vector multiplication
-                                          
-                        if (sp.mu!=sp.nu) {
-                            ind2=0;
-                            for (var rolm:Int=0; rolm<maxLm; rolm++) for (var aorb:Int=0;  aorb<nOrbital; aorb++)
-                                //t2DMat(aorb,rolm)=veck(rolm)*mos(aorb,tmu);
-                                giant3DMat(tnu,ind2++)+=veck(rolm)*mos(aorb,tmu);  // Vector Vector multiplication                       
+                        for (var rolm:Int=0; rolm<maxLm; rolm++) {
+                            val normInt = normMo*temp1(ind++);
+                            for (var aorb:Int=0;  aorb<nOrbital; aorb++) {
+                                //t2DMat(aorb,rolm)=normInt*mos(aorb,tmu);
+                                if (sp.mu!=sp.nu) {
+                                    giant3DMat(tnu,ind2)+=normInt*mos(aorb,tmu);  // DAXPY incY = mos.N
+                                }
+                                giant3DMat(tmu,ind2++)+=normInt*mos(aorb,tnu);  // DAXPY incY = mos.N
+                            }
                         }
                     }
                 }
