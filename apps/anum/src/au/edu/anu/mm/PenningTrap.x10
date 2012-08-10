@@ -185,11 +185,11 @@ public class PenningTrap {
      * @param props the system properties to evaluate
      */
     public def mdStepLocal(step:Int, dt:Double, current:Array[Double], accumProps:Boolean, props:SystemProperties, timer:StatisticalTimer) {
+        timer.start(0);
         timer.start(2);
         fmm.reassignAtoms(step);
         timer.stop(2);
 
-        timer.start(0);
         timer.start(1);
         fmm.calculateEnergyLocal();
         timer.stop(1);
