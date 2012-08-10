@@ -1,15 +1,15 @@
 S2O
 basis 6311g
 units 0.5291772109217
-RO_Z 2.0
+RO_Z 1.95
 molecule
 S       0.509453        0.444369        0.000000
 S       -1.297003       -0.164876       0.000000
 O       1.575099        -0.558987       0.000000
 end
-scf_max 15
+scf_max 35
 guess core
-use_RO 0
-RO_N 90
-RO_L 13
+use_RO 1
+RO_N 100
+RO_L 30
 gmat_parallel_scheme 0

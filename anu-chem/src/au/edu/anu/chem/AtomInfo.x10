@@ -68,15 +68,25 @@ public class AtomInfo {
 
         vdWRadii.put("H",  2.2677);
         vdWRadii.put("He", 2.6456);
-        vdWRadii.put("Li", 2.6456);
-        vdWRadii.put("Be", 2.5936);
-        vdWRadii.put("B",  1.5023);
+
+        vdWRadii.put("Li", 3.4393);
+        vdWRadii.put("Be", 2.8913);
+        vdWRadii.put("B",  3.6283);
         vdWRadii.put("C",  3.2125);
         vdWRadii.put("N",  2.9291);
         vdWRadii.put("O",  2.8724);
         vdWRadii.put("F",  2.7779);
-        vdWRadii.put("Ne", 2.7779);
-// see test/basis/atomrad.txt
+        vdWRadii.put("Ne", 2.9102);
+
+        vdWRadii.put("Na", 4.2897);
+        vdWRadii.put("Mg", 3.2692);
+        vdWRadii.put("Al", 3.4771);
+        vdWRadii.put("Si", 3.9684);
+        vdWRadii.put("P", 3.4015);
+        vdWRadii.put("S", 3.4015);
+        vdWRadii.put("Cl", 3.3070);
+        vdWRadii.put("Ar", 3.5527);
+// see test/basis/atomrad.txt /5.2917721092/10
 
         atomicMass.put("H",  1.0079);
         atomicMass.put("He", 4.0026);
