@@ -49,12 +49,15 @@ public class TwoElectronIntegrals {
     private val THRESH:Double;
     private val TCrit:Double;
 
+    private val omega:Double;
+
     /**
      * @param maxam maximum angular momentum (determines total number of integrals)
      * @param normFactors normalization factors for integrals of different angular momenta
      */
-    public def this(maxam : Int, normFactors:Rail[Double], Th:Double) {
+    public def this(maxam : Int, normFactors:Rail[Double], Th:Double, omega:Double) {
         // allocate scratch memory
+        this.omega=omega;
         this.maxam = maxam;
         maxam2 = 2*maxam;
         val maxam4 = 4*maxam;
@@ -439,7 +442,16 @@ public class TwoElectronIntegrals {
      * "Two-electron repulsion Integrals Over Gaussian s Functions"
      * International Journal of Quantum Chemistry, vol 40, 745-752 (1991)
     */    
-    def computeZeroM(angMomABCD:Int, T:Double, Upq:Double, eta:Double) {
+    def computeZeroM(angMomABCD:Int, Ti:Double, Upq:Double, etai:Double) {
+        // ADG1999
+        var eta:Double=etai,T:Double=Ti;
+        if (omega>0.0) {
+            val om2=omega*omega;
+            val r2=Ti/etai; // eqn 6
+            eta = etai * om2 / (om2+etai); // eqn 13
+            T = eta* r2; // eqn 12
+        }
+
         // GJP1991 eqn 20-21
         if (T > TCrit) { 
             val invR2 = eta/T;

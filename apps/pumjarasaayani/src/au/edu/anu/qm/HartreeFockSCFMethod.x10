@@ -61,16 +61,16 @@ public class HartreeFockSCFMethod extends SCFMethod {
 
         val gMatrix:GMatrix{self.N==N};
         val gMatrixRo:GMatrixROmem2{self.N==N};
-        if (jd.roOn>0) {
+        //if (jd.roOn>0) {
             gMatrixRo = new GMatrixROmem2(N, bfs, molecule, noOfOccupancies);
-        } else {
-            gMatrixRo = null;
-        }
-        if (jd.roOn==0 || jd.compareRo==true) {
-            gMatrix = new GMatrix(N, bfs, molecule);
-        } else {
-            gMatrix = null;
-        }
+        //} else {
+        //    gMatrixRo = null;
+        //}
+        // if (jd.roOn==0 || jd.compareRo==true) {
+            gMatrix = new GMatrix(N, bfs, molecule,0.0);
+        // } else {
+        //    gMatrix = null;
+        //}
 
         val mos = new MolecularOrbitals(N);
         val density = new Density(N, noOfOccupancies); // density.make();
@@ -176,15 +176,20 @@ public class HartreeFockSCFMethod extends SCFMethod {
         }
     
         // long range energy
-        if (jd.roOn >0) {
+        // if (jd.roOn >0) {
             Console.OUT.println("Long-range");
+            density.compute(mos);
             gMatrixRo.computeLong(density, mos);   
-            fock.compute(hCore, gMatrixRo);
-            val eOne = density.clone().mult(density, hCore).trace();
-            val eTwo = density.clone().mult(density, fock).trace();
-            energy = eOne + eTwo + nuclearEnergy;
-            Console.OUT.printf("Cycle ** Total energy = %.6f a.u. (scale factor = %.6f)",  energy/roZ,roZ);
-        }
+            //fock.compute(hCore, gMatrixRo);
+            //val eOne = density.clone().mult(density, hCore).trace();
+            //val eTwo = density.clone().mult(density, fock).trace();
+            //energy = eOne + eTwo + nuclearEnergy;
+            //Console.OUT.printf("Cycle ** Total energy = %.6f a.u. (scale factor = %.6f)",  energy/roZ,roZ);
+        //}
+            Console.OUT.println("Long-range");
+            val gMatrixW = new GMatrix(N, bfs, molecule,0.1);
+            gMatrixW.computeLong(density);   
+
     }
 
 }

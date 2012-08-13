@@ -49,6 +49,7 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
     val roNK:Int;
     val roL:Int;
     val roZ:Double;
+    val omega:Double;
     val nOrbital:Int;
     val numSigShellPairs:Int;
     
@@ -83,6 +84,7 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
         if (jd.roNK==-1) this.roNK=jd.roN; else this.roNK=jd.roNK;
         this.roL=jd.roL;
         this.roZ=jd.roZ;
+        this.omega = jd.omega;
         this.norm = bfs.getNormalizationFactors();
         jMatrix = new DenseMatrix(N, N);
         kMatrix = new DenseMatrix(N, N);
@@ -475,7 +477,7 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
     public def computeLong(density:Density{self.N==this.N}, mos:MolecularOrbitals{self.N==this.N}) {
         val result = Runtime.execForRead("date"); 
         Console.OUT.printf("GMatrixROmem.x10 compute starts at %s...\n",result.readLine()); 
-        val auxl = new Integral_Pack(roN,roL,1.0);
+        val auxl = new Integral_Pack(roN,roL,omega);
         timer.start(TIMER_TOTAL);
         jMatrix.reset();
         kMatrix.reset();
@@ -493,7 +495,7 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
             for (var tmu:Int=sp.mu; tmu<sp.mu+sp.maxbraa; tmu++) for (var tnu:Int=sp.nu; tnu<sp.nu+sp.maxbrab; tnu++)
                 scratch(tmu,tnu)=density(tmu,tnu)*fac*norm(tmu)*norm(tnu);
         }
-        if (counter==0)  Console.OUT.printf("rawtime\n");
+        
         for (var ron:Int=0; ron<=roN; ron++) {
             // Form dk vector
             dk.clear();       
@@ -509,13 +511,13 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
                     auxl.genClass(sp.aang, sp.bang, sp.aPoint, sp.bPoint, sp.zetaA, sp.zetaB, sp.conA, sp.conB, sp.dconA, sp.dconB, temp, ron, maxLron,emptyRailD, -1);
                     //papi.stop();
                     timer.stop(TIMER_GENCLASS);
-                    if (counter==0) {
+                    //if (counter==0) {
                         //Console.OUT.printf("%d\t%d\t%d\t%d\t%d\t%d",sp.aang, sp.bang, sp.dconA, sp.dconB, ron, maxLron); // printf can accomodate upto 6 arguments?
                         //Console.OUT.printf("\t%20.15e\n",(timer.last(TIMER_GENCLASS) as Double)/1e9);
                         /*val loadCount = papi.getCounter(1);
                         Console.OUT.printf("\t%lld\n",loadCount-prevLoadCount);
                         prevLoadCount = loadCount;*/
-                    }
+                   // }
 
                     t+=(timer.last(TIMER_GENCLASS) as Double)/1e9;
                     for (var tmu:Int=sp.mu; tmu<sp.mu+sp.maxbraa; tmu++) for (var tnu:Int=sp.nu; tnu<sp.nu+sp.maxbrab; tnu++) {
@@ -550,7 +552,7 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
                 }
             }            
         } 
-        if (counter==0) Console.OUT.printf("rawtime\n");    
+        
         for (spInd in 0..(numSigShellPairs-1)) {
             val sp=shellPairs(spInd);
             if (sp.mu!=sp.nu) for (var tmu:Int=sp.mu; tmu<sp.mu+sp.maxbraa; tmu++) for (var tnu:Int=sp.nu; tnu<sp.nu+sp.maxbrab; tnu++) 
@@ -573,7 +575,7 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
         //papi.resetCount();
         timer.start(TIMER_KMATRIX); t=0.;
 
-        if (counter++!=0) // First cycle gives EK=0 
+
         for (aorb in 0..(nOrbital-1)) for (var ron:Int=0; ron<=roNK; ron++){ // To save mem
             muk.reset();
             for (spInd in 0..(numSigShellPairs-1)) {

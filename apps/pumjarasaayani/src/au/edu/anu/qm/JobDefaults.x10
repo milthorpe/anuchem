@@ -13,7 +13,7 @@ package au.edu.anu.qm;
 /**
  * SCF Job defaults
  *
- * @author V. Ganesh, milthorpe
+ * @author V. Ganesh, milthorpe, T. Limpanuparb
  */
 public class JobDefaults {
     public static SCF_METHOD_DIIS = "diis";
@@ -40,6 +40,7 @@ public class JobDefaults {
     public var roNK:Int;
     public var roL:Int;
     public var roZ:Double;
+    public var omega:Double;
     public var centering:Int; // See Q-CHEM Job description
 
     private def this() { 
@@ -51,6 +52,7 @@ public class JobDefaults {
         gMatrixParallelScheme = GMatrix.DEFAULT_GMATTYPE;
         useMta = false;
         compareRo = false;
+        omega = 0.1;
     }
 
     private static _theInstance = new JobDefaults();

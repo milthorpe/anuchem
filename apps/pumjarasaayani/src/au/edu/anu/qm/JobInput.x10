@@ -141,6 +141,8 @@ public class JobInput {
                     jd.roNK = getIntParam(line);
                 } else if (line.startsWith("RO_L")) {
                     jd.roL = getIntParam(line);
+                } else if (line.startsWith("omega")) {
+                    jd.omega = getDoubleParam(line);
                 } else if (line.startsWith("center")) {
                     jd.centering = getIntParam(line);
                 } else if (line.startsWith("use_RO")) {
