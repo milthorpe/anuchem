@@ -501,7 +501,7 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
             dk.clear();       
             for (spInd in 0..(numSigShellPairs-1)) {
                 val sp=shellPairs(spInd);
-                val maxLron=sp.maxL(ron);                
+                val maxLron=roL;//sp.maxL(ron);                
                 if (maxLron>=0) {
                     val maxLm=(maxLron+1)*(maxLron+1);
                     ind=0;  
@@ -530,7 +530,7 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
              
             for (spInd in 0..(numSigShellPairs-1)) {
                 val sp=shellPairs(spInd);
-                val maxLron=sp.maxL(ron);
+                val maxLron=roL;//sp.maxL(ron);
                 if (sp.maxL(ron)>=0) { 
                     val maxLm=(maxLron+1)*(maxLron+1);
                     ind=0;  
@@ -580,7 +580,7 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
             muk.reset();
             for (spInd in 0..(numSigShellPairs-1)) {
                 val sp=shellPairs(spInd);
-                val maxLron=sp.maxL(ron);
+                val maxLron=roL;//sp.maxL(ron);
                 if (maxLron>=0) {
                     val maxLm=(maxLron+1)*(maxLron+1);  
                     //timer.start(TIMER_GENCLASS);
