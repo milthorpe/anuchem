@@ -41,7 +41,7 @@ public class GMatrix extends DenseMatrix{self.M==self.N} {
     private val mol : Molecule[QMAtom];
     private var omega : Double;
 
-    static THRESH:Double = 1.0e-8;
+    static THRESH:Double = 0;//1.0e-8;
     private var thresh2:Double = 0.0;
 
     public def this(N:Int, bfs:BasisFunctions, molecule:Molecule[QMAtom],omega:Double):GMatrix{self.M==N,self.N==N} {
