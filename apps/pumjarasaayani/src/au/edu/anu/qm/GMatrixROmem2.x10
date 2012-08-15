@@ -137,7 +137,7 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
 
         // Shell/Shellpair business 
         Console.OUT.printf("roN=%d roL=%d roNK=%d\n",roN,roL,roNK); 
-        val threshold = 1.0e-8;
+        val threshold = 1.0e-8; // ******************
         var nShell:Int=0;
         val noOfAtoms = mol.getNumberOfAtoms();
         for(var a:Int=0; a<noOfAtoms; a++) {
@@ -214,7 +214,7 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
 
             for (var ron:Int=0; ron<=roN; ron++) {                           
                 aux.genClass(sh.aang, sh.bang, sh.aPoint, sh.bPoint, sh.zetaA, sh.zetaB, sh.conA, sh.conB, sh.dconA, sh.dconB, temp, ron, roL, tempY, roL);  
-                var auxint:Double=0.,rol:Int=roL;                               
+                var auxint:Double=-1/*can't set to 0 as roThresh can be 0*/,rol:Int=roL;                               
                 for (; rol>=0 && auxint<roThresh; rol--) { 
                     for (var rom:Int=-rol; rom<=rol; rom++)  for (var tmu:Int=0; tmu<sh.maxbraa; tmu++) for (var tnu:Int=0; tnu<sh.maxbrab; tnu++) {
                         val ml=rol*(rol+1)+rom;

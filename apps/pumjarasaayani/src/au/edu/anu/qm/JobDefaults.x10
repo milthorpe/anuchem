@@ -66,8 +66,8 @@ public class JobDefaults {
         roZ=1.0;
 
         omega = .1;
-        thresh = 0.;
-        roThresh =0.;
+        thresh = 1e-8;
+        roThresh = 1e-8;
 
     }
 
