@@ -61,13 +61,15 @@ public class HartreeFockSCFMethod extends SCFMethod {
 
         val gMatrix:GMatrix{self.N==N};
         val gMatrixRo:GMatrixROmem2{self.N==N};
+        val roThresh=jd.roThresh;
+        val thresh=jd.thresh;
         if (jd.roOn>0) {
-            gMatrixRo = new GMatrixROmem2(N, bfs, molecule, noOfOccupancies,0.);
+            gMatrixRo = new GMatrixROmem2(N, bfs, molecule, noOfOccupancies,0.,roThresh);
         } else {
             gMatrixRo = null;
         }
         if (jd.roOn==0 || jd.compareRo==true) {
-            gMatrix = new GMatrix(N, bfs, molecule,0.);
+            gMatrix = new GMatrix(N, bfs, molecule,0.,thresh);
         } else {
             gMatrix = null;
         }
@@ -184,11 +186,11 @@ public class HartreeFockSCFMethod extends SCFMethod {
         Console.OUT.println("Long-range - RO");
         density.compute(mos);
         val omega=jd.omega;
-        val gMatrixRoL = new GMatrixROmem2(N, bfs, molecule, noOfOccupancies,omega);
+        val gMatrixRoL = new GMatrixROmem2(N, bfs, molecule, noOfOccupancies,omega,0.);
         gMatrixRoL.compute(density, mos);   
         
         Console.OUT.println("Long-range - Conventional");
-        val gMatrixL = new GMatrix(N, bfs, molecule,omega);
+        val gMatrixL = new GMatrix(N, bfs, molecule,omega,0.);
         gMatrixL.compute(density);   
 
             //fock.compute(hCore, gMatrixRo);

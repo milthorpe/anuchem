@@ -55,7 +55,7 @@ public class TwoElectronIntegrals {
      * @param maxam maximum angular momentum (determines total number of integrals)
      * @param normFactors normalization factors for integrals of different angular momenta
      */
-    public def this(maxam : Int, normFactors:Rail[Double], Th:Double, omega:Double) {
+    public def this(maxam : Int, normFactors:Rail[Double], omega:Double, Th:Double) {
         // allocate scratch memory
         this.omega=omega;
         this.maxam = maxam;

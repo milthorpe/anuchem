@@ -41,14 +41,15 @@ public class GMatrix extends DenseMatrix{self.M==self.N} {
     private val mol : Molecule[QMAtom];
     private var omega : Double;
 
-    static THRESH:Double = 0;//1.0e-8;
+    private val thresh:Double; //1.0e-8;
     private var thresh2:Double = 0.0;
 
-    public def this(N:Int, bfs:BasisFunctions, molecule:Molecule[QMAtom],omega:Double):GMatrix{self.M==N,self.N==N} {
+    public def this(N:Int, bfs:BasisFunctions, molecule:Molecule[QMAtom], omega:Double, thresh:Double):GMatrix{self.M==N,self.N==N} {
         super(N, N);
         this.bfs = bfs;
         this.mol = molecule;
         this.omega=omega;
+        this.thresh=thresh;
         val jd = JobDefaults.getInstance();
         this.gMatType = jd.gMatrixParallelScheme;
 
@@ -90,7 +91,7 @@ public class GMatrix extends DenseMatrix{self.M==self.N} {
         // Schwarz cut-off: Häser & Ahlrichs eqn 12
         val shellList = bfs.getShellList();
         val maxam = shellList.getMaximumAngularMomentum();
-        val twoE = new TwoElectronIntegrals(maxam, bfs.getNormalizationFactors(), THRESH, omega);
+        val twoE = new TwoElectronIntegrals(maxam, bfs.getNormalizationFactors(), omega, thresh);
 
 
         val fakeDensity = new Density(N, 2, 1.0);
@@ -128,7 +129,7 @@ public class GMatrix extends DenseMatrix{self.M==self.N} {
         Console.OUT.printf("\tmaxEst %.4g\n", maxEst);
         val maxEstVal = maxEst;
 
-        computeInst = DistArray.make[ComputePlace](Dist.makeUnique(), (Point) => new ComputePlace(N, molecule, bfs, qCut, dCut, maxEstVal,omega));
+        computeInst = DistArray.make[ComputePlace](Dist.makeUnique(), (Point) => new ComputePlace(N, molecule, bfs, qCut, dCut, maxEstVal,omega,thresh));
     }
 
     /** top level method to form the G Matrix, depending on gMatType appropriate functions are called */
@@ -558,14 +559,16 @@ public class GMatrix extends DenseMatrix{self.M==self.N} {
         private val dCut:DenseMatrix;
         private val maxEst:Double;
         private var thresh2:Double;
+        private val thresh:Double;
 
         public val computeThreads = new Array[ComputeThread](Runtime.NTHREADS);
 
-        public def this(N : Int, mol:Molecule[QMAtom], bfs:BasisFunctions, qCut:DenseMatrix, dCut:DenseMatrix, maxEst:Double, omega:Double) {
+        public def this(N : Int, mol:Molecule[QMAtom], bfs:BasisFunctions, qCut:DenseMatrix, dCut:DenseMatrix, maxEst:Double, omega:Double, thresh:Double) {
             this.mol = mol;
             this.qCut = qCut;
             this.dCut = dCut;
             this.maxEst = maxEst;
+            this.thresh = thresh;
 
             gMatrixContribution = new DenseMatrix(N, N);
             jMatrixContribution = new DenseMatrix(N, N);
@@ -577,7 +580,7 @@ public class GMatrix extends DenseMatrix{self.M==self.N} {
             density = new Density(N, noOfOccupancies);
 
             for(var i:Int=0; i<Runtime.NTHREADS; i++) {
-                computeThreads(i) = new ComputeThread(N, bfs, qCut, dCut, omega);
+                computeThreads(i) = new ComputeThread(N, bfs, qCut, dCut, omega, thresh);
             }
         }
 
@@ -661,7 +664,7 @@ public class GMatrix extends DenseMatrix{self.M==self.N} {
             if (Place.FIRST_PLACE == here) {
                 Console.OUT.printf("\tmaxDen %.4g\n", maxDen);
             }
-            thresh2 = THRESH/maxEst/maxDen;
+            thresh2 = thresh/maxEst/maxDen;
         }
 
         /**
@@ -845,10 +848,12 @@ public class GMatrix extends DenseMatrix{self.M==self.N} {
         private val qCut:DenseMatrix;
         private val dCut:DenseMatrix;
         private var thresh2:Double;
+        private var thresh:Double;
 
-        def this(N: Int, bfs:BasisFunctions, qCut:DenseMatrix, dCut:DenseMatrix, omega:Double) {
+        def this(N: Int, bfs:BasisFunctions, qCut:DenseMatrix, dCut:DenseMatrix, omega:Double, thresh:Double) {
             val shellList = bfs.getShellList();
-            this.twoEI = new TwoElectronIntegrals(shellList.getMaximumAngularMomentum(), bfs.getNormalizationFactors(), THRESH, omega);
+            this.thresh=thresh;
+            this.twoEI = new TwoElectronIntegrals(shellList.getMaximumAngularMomentum(), bfs.getNormalizationFactors(),  omega, thresh);
             this.shellList = shellList;
             this.qCut = qCut;
             this.dCut = dCut;
@@ -960,7 +965,7 @@ public class GMatrix extends DenseMatrix{self.M==self.N} {
                             val maxDCut4 = Math.max(maxDCut2,maxDCut3);
                             val maxDCut = Math.max(maxDCut4,maxDCut1);
 
-                            if (qCut(aFunc.intIndex,bFunc.intIndex)*qCut(cFunc.intIndex,dFunc.intIndex)*maxDCut<THRESH)
+                            if (qCut(aFunc.intIndex,bFunc.intIndex)*qCut(cFunc.intIndex,dFunc.intIndex)*maxDCut<thresh)
                                 continue;
 
                             totInt += computeSingle2(aFunc, bFunc, cFunc, dFunc,
@@ -1007,7 +1012,7 @@ public class GMatrix extends DenseMatrix{self.M==self.N} {
                     val maxDCut4 = Math.max(maxDCut2,maxDCut3);
                     val maxDCut = Math.max(maxDCut4,maxDCut1);
 
-                    if (qCut(aFunc.intIndex,bFunc.intIndex)*qCut(cStrt,dStrt)*maxDCut<THRESH)
+                    if (qCut(aFunc.intIndex,bFunc.intIndex)*qCut(cStrt,dStrt)*maxDCut<thresh)
                         continue;
 
                     totInt += computeSingle2(aFunc, bFunc, cFunc, dFunc,

@@ -73,7 +73,7 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
     transient val aux:Integral_Pack;
     var counter:Int=0;
 
-    public def this(N:Int, bfs:BasisFunctions, molecule:Molecule[QMAtom], nOrbital:Int, omega:Double):GMatrixROmem2{self.M==N,self.N==N} {     
+    public def this(N:Int, bfs:BasisFunctions, molecule:Molecule[QMAtom], nOrbital:Int, omega:Double, roThresh:Double):GMatrixROmem2{self.M==N,self.N==N} {     
         super(N, N); 
         val result = Runtime.execForRead("date"); Console.OUT.printf("GMatrixROmem.x10 initialization starts at %s...\n",result.readLine()); 
         this.bfs = bfs;
@@ -196,7 +196,7 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
         // numSigShellPairs = Math.abs(ArrayUtils.binarySearch[ShellPair](rawShellPairs, dummySignificantPair, compareShellPairContribs));
 
         // Find MaxL(n) -- This screening is a gold standard but slow
-        val THRESH=1.0e-8;                        
+                               
         var fCost:Double=0.;
         var wCost:Double=0.;
         var mCost:Double=0.;
@@ -215,7 +215,7 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
             for (var ron:Int=0; ron<=roN; ron++) {                           
                 aux.genClass(sh.aang, sh.bang, sh.aPoint, sh.bPoint, sh.zetaA, sh.zetaB, sh.conA, sh.conB, sh.dconA, sh.dconB, temp, ron, roL, tempY, roL);  
                 var auxint:Double=0.,rol:Int=roL;                               
-                for (; rol>=0 && auxint<THRESH; rol--) { 
+                for (; rol>=0 && auxint<roThresh; rol--) { 
                     for (var rom:Int=-rol; rom<=rol; rom++)  for (var tmu:Int=0; tmu<sh.maxbraa; tmu++) for (var tnu:Int=0; tnu<sh.maxbrab; tnu++) {
                         val ml=rol*(rol+1)+rom;
                         val mnu=tnu*(roL+1)*(roL+1)+ml;
@@ -223,7 +223,7 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
                         auxint = Math.max(Math.abs(temp(mmu)), auxint);
                     }
                 }
-                if (auxint<THRESH) maxl=-1; 
+                if (auxint<roThresh) maxl=-1; 
                 else {
                     maxl=rol+1;
                     count1+=Math.pow(maxl+1,2);
