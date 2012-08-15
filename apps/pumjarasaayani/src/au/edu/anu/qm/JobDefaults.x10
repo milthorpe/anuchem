@@ -40,7 +40,10 @@ public class JobDefaults {
     public var roNK:Int;
     public var roL:Int;
     public var roZ:Double;
+
     public var omega:Double;
+    public var thresh:Double;
+    public var roThresh:Double;
     public var centering:Int; // See Q-CHEM Job description
 
     private def this() { 
@@ -51,8 +54,21 @@ public class JobDefaults {
         diisSubspaceSize = 15; // Q-CHEM default
         gMatrixParallelScheme = GMatrix.DEFAULT_GMATTYPE;
         useMta = false;
+
+        guess=JobDefaults.GUESS_SAD;
+        
+        roOn=0;
         compareRo = false;
-        omega = 0.1;
+
+        roN=10;
+        roNK=-1; // see GmatrixRoMem.x10
+        roL=10;
+        roZ=1.0;
+
+        omega = .1;
+        thresh = 0.;
+        roThresh =0.;
+
     }
 
     private static _theInstance = new JobDefaults();

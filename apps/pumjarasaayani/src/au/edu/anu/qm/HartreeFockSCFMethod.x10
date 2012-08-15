@@ -61,16 +61,16 @@ public class HartreeFockSCFMethod extends SCFMethod {
 
         val gMatrix:GMatrix{self.N==N};
         val gMatrixRo:GMatrixROmem2{self.N==N};
-        //if (jd.roOn>0) {
-            gMatrixRo = new GMatrixROmem2(N, bfs, molecule, noOfOccupancies);
-        //} else {
-        //    gMatrixRo = null;
-        //}
-        // if (jd.roOn==0 || jd.compareRo==true) {
-            gMatrix = new GMatrix(N, bfs, molecule,0.0);
-        // } else {
-        //    gMatrix = null;
-        //}
+        if (jd.roOn>0) {
+            gMatrixRo = new GMatrixROmem2(N, bfs, molecule, noOfOccupancies,0.);
+        } else {
+            gMatrixRo = null;
+        }
+        if (jd.roOn==0 || jd.compareRo==true) {
+            gMatrix = new GMatrix(N, bfs, molecule,0.);
+        } else {
+            gMatrix = null;
+        }
 
         val mos = new MolecularOrbitals(N);
         val density = new Density(N, noOfOccupancies); // density.make();
@@ -78,10 +78,15 @@ public class HartreeFockSCFMethod extends SCFMethod {
         var fock:Fock{self.M==N,self.N==N} = new Fock(N);
 
         if (jd.guess.equals(JobDefaults.GUESS_SAD)) {
+            Console.OUT.printf("guess = SAD... (core for MOs)\n");
             density.applyGuess(bfs.getSAD());
-        } else { // if (jd.guess.equals(JobDefaults.GUESS_CORE)) {
+            mos.compute(hCore, overlap); // Cheat
+        } else if (jd.guess.equals(JobDefaults.GUESS_CORE)) {
+            Console.OUT.printf("guess = core...\n");
             mos.compute(hCore, overlap);
             density.compute(mos);
+        } else {
+            Console.OUT.printf("guess = ???...\n");
         }
         Console.OUT.printf("Starting SCF procedure...\n");      
 
@@ -176,19 +181,22 @@ public class HartreeFockSCFMethod extends SCFMethod {
         }
     
         // long range energy
-        // if (jd.roOn >0) {
-            Console.OUT.println("Long-range");
-            density.compute(mos);
-            gMatrixRo.computeLong(density, mos);   
+        Console.OUT.println("Long-range - RO");
+        density.compute(mos);
+        val omega=jd.omega;
+        val gMatrixRoL = new GMatrixROmem2(N, bfs, molecule, noOfOccupancies,omega);
+        gMatrixRoL.compute(density, mos);   
+        
+        Console.OUT.println("Long-range - Conventional");
+        val gMatrixL = new GMatrix(N, bfs, molecule,omega);
+        gMatrixL.compute(density);   
+
             //fock.compute(hCore, gMatrixRo);
             //val eOne = density.clone().mult(density, hCore).trace();
             //val eTwo = density.clone().mult(density, fock).trace();
             //energy = eOne + eTwo + nuclearEnergy;
             //Console.OUT.printf("Cycle ** Total energy = %.6f a.u. (scale factor = %.6f)",  energy/roZ,roZ);
-        //}
-            Console.OUT.println("Long-range");
-            val gMatrixW = new GMatrix(N, bfs, molecule,0.1);
-            gMatrixW.computeLong(density);   
+
 
     }
 

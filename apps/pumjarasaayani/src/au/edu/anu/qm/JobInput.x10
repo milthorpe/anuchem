@@ -69,13 +69,7 @@ public class JobInput {
         val jd = JobDefaults.getInstance();
         var conversion:Double = 1.0;
         var charge:Int = 0;
-        var multiplicity:Int = 1;
-        jd.roOn=0;
-        jd.roN=10;
-        jd.roNK=-1; // see GmatrixRoMem.x10
-        jd.roL=10;
-        jd.roZ=1.0;
-        jd.guess=JobDefaults.GUESS_SAD;
+        var multiplicity:Int = 1;       
 
         if (line.startsWith("charge")) {
             charge = getIntParam(line);
@@ -147,6 +141,10 @@ public class JobInput {
                     jd.centering = getIntParam(line);
                 } else if (line.startsWith("use_RO")) {
                     jd.roOn = getIntParam(line);
+                } else if (line.startsWith("RO_thresh")) {
+                    jd.roThresh = getDoubleParam(line);
+                } else if (line.startsWith("thresh")) {
+                    jd.thresh = getDoubleParam(line);
                 } else if (line.startsWith("compare_RO")) {
                     jd.compareRo = true;
                 } else if (line.startsWith("guess")) {

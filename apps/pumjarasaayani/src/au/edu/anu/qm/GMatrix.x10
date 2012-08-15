@@ -165,13 +165,6 @@ public class GMatrix extends DenseMatrix{self.M==self.N} {
        Console.OUT.printf("    Time to construct GMatrix: %.3g seconds\n", (timer.last(0) as Double) / 1e9);
     }
 
-    public def computeLong(density:Density) {
-        val jd = JobDefaults.getInstance();
-        omega=jd.omega;
-        compute(density);
-        omega=0;
-    }
-
     private def computeSerial(density:Density) {
         val computePlace = computeInst(here.id);
         computePlace.reset(density);
