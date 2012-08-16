@@ -377,15 +377,20 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
         // Form K matrix
         // if (counter++!=0) // if guess MOs is not available - i.e. SAD, first cycle gives EK=0 // This is partly fixed by using 'core' guess for MOs
         //papi.resetCount();
+        Console.OUT.print("K matrix ");
         timer.start(TIMER_KMATRIX); t=0.;
-
+        var t1:Double=0.;  var t2:Double=0.; var t3:Double=0.;
         // Version 3 - Unlimited memory - try to see what performance we can get
+        val roK = (roL+1)*(roL+1);
+        val auxIntMat = new DenseMatrix(N,N*roK);
+        val halfAuxMat = new DenseMatrix(nOrbital,N*roK);
 
 for (var ron:Int=0; ron<=roNK; ron++){
 
-        // step 1
-        val roK = (maxmaxl(roN)+1)*(maxmaxl(roN)+1);
-        val auxIntMat = new DenseMatrix(N,N*roK);
+        // step 1 - could be moved to initialization // need more mem
+        timer.start(TIMER_GENCLASS);
+        
+       
         for (spInd in 0..(numSigShellPairs-1)) {
             val sp=shellPairs(spInd);
             val maxLron=sp.maxL(ron);
@@ -403,27 +408,33 @@ for (var ron:Int=0; ron<=roNK; ron++){
                     }
             }
         }
- 
+        timer.stop(TIMER_GENCLASS); t1+= (timer.last(TIMER_GENCLASS) as Double)/1e9 ;
+       
         // step 2
-        val halfAuxMat = new DenseMatrix(nOrbital,N*roK);
+        timer.start(TIMER_GENCLASS);
+        
         // Matrix Matrix multiplication
         for (var aorb:Int=0;  aorb<nOrbital; aorb++) for (var muk:Int=0;  muk<N*roK; muk++) {
             halfAuxMat(aorb,muk)=0.;
             for (var lambda:Int=0;  lambda<N; lambda++)
                 halfAuxMat(aorb,muk)+=mos(aorb,lambda)*auxIntMat(lambda,muk);
         }
+        timer.stop(TIMER_GENCLASS); t2+= (timer.last(TIMER_GENCLASS) as Double)/1e9 ;
 
         // step 3
+        timer.start(TIMER_GENCLASS);
         val halfAuxMat2 = new DenseMatrix(N,nOrbital*roK);
         for (var mu:Int=0;  mu<N; mu++)  for (var aorb:Int=0;  aorb<nOrbital; aorb++) for (var k:Int=0;  k<roK; k++) 
             halfAuxMat2(mu,aorb*roK+k)=halfAuxMat(aorb,mu*roK+k);
             
         // Matrix Matrix multiplication
         kMatrix.multTrans(halfAuxMat2, halfAuxMat2, true);
+        timer.stop(TIMER_GENCLASS); t3+= (timer.last(TIMER_GENCLASS) as Double)/1e9 ;
         //for (var mu:Int=0;  mu<N; mu++) for (var nu:Int=0; nu<N; nu++) {
         //}
         
 }
+        Console.OUT.printf("version 3: time %lf %lf %lf \n",t1,t2,t3);
         // Version 2 - save memory and try to be smart by reducing numbers of loads
         /* 
         val giant3DMat = new DenseMatrix(N,(roL+1)*(roL+1)*nOrbital);
@@ -499,7 +510,7 @@ for (var ron:Int=0; ron<=roNK; ron++){
 
         }   */
         timer.stop(TIMER_KMATRIX);
-        Console.OUT.print("K matrix ");
+        
         //papi.printFlops();
         //papi.printMemoryOps();
 

@@ -14,7 +14,7 @@ F       1.220554        -0.625297       -1.084041
 end
 scf_max 15
 guess core
-use_RO 0
+use_RO 1
 RO_N 16
 RO_L 17
 omega 0.1
