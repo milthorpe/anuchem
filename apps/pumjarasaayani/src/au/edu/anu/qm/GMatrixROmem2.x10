@@ -266,7 +266,7 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
         Console.OUT.printf("wCost=%e\n", wCost);
         papi = new PAPI();
         //papi.countFlops();
-        papi.countMemoryOps();
+        //papi.countMemoryOps();
     }
 
     private def nCr(a:Int,b:Int):Int {
@@ -288,7 +288,7 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
         var prevLoadCount:Long = 0;
 
         // Form J matrix
-        papi.reset();
+        //papi.reset();
         timer.start(TIMER_JMATRIX); var t:Double=0.;
         var fac:Double; var ind:Int; var jContrib:Double;
 
@@ -364,7 +364,7 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
         timer.stop(TIMER_JMATRIX);
         Console.OUT.print("J matrix ");
         //papi.printFlops();
-        papi.printMemoryOps();
+        //papi.printMemoryOps();
 
 
 // vvvv For development purpose vvvvvv
@@ -412,13 +412,9 @@ for (var ron:Int=0; ron<=roNK; ron++){
        
         // step 2
         timer.start(TIMER_GENCLASS);
+
+        DenseMatrixBLAS.comp(mos, auxIntMat, halfAuxMat, [nOrbital, N*roK, N], false);
         
-        // Matrix Matrix multiplication
-        for (var aorb:Int=0;  aorb<nOrbital; aorb++) for (var muk:Int=0;  muk<N*roK; muk++) {
-            halfAuxMat(aorb,muk)=0.;
-            for (var lambda:Int=0;  lambda<N; lambda++)
-                halfAuxMat(aorb,muk)+=mos(aorb,lambda)*auxIntMat(lambda,muk);
-        }
         timer.stop(TIMER_GENCLASS); t2+= (timer.last(TIMER_GENCLASS) as Double)/1e9 ;
 
         // step 3
