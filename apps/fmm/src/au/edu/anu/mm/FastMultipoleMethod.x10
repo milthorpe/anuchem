@@ -400,13 +400,6 @@ public class FastMultipoleMethod {
 
         // TODO coarsening and balancing
 
-        leafOctantList.sort();
-        if (leafOctantList.size() > 0) {
-            val firstId = leafOctantList.getFirst().id;
-            val lastId = leafOctantList.getLast().id;
-            //Console.OUT.println("at " + here + " first leaf = " + firstId + " " + firstId.getLeafMortonId() + " last = " + lastId + " " + lastId.getLeafMortonId());
-        }
-
         val octantList = new ArrayList[Octant](leafOctantList.size());
         var prevOctantId:OctantId = OctantId(0UY,0UY,0UY,dMax);
         for(octant in leafOctantList) {
@@ -453,7 +446,6 @@ public class FastMultipoleMethod {
             for (parentOctantEntry in parentOctantEntries) {
                 octantList.add(parentOctantEntry.getValue());
             }
-            octantList.sort(); // TODO remove - only useful for logging
 
             if (octantList.size() > 0) {
                 //Console.OUT.println("at " + here + " level " + level + " first " + octantList.getFirst().id + " last " + octantList.getLast().id);
