@@ -366,7 +366,6 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
         //papi.printFlops();
         //papi.printMemoryOps();
 
-
 // vvvv For development purpose vvvvvv
         val eJ = scratch.mult(density, jMatrix).trace();
         Console.OUT.printf("  EJ = %.6f a.u.\n", eJ);
@@ -379,11 +378,13 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
         //papi.resetCount();
         Console.OUT.print("K matrix ");
         timer.start(TIMER_KMATRIX); t=0.;
-        var t1:Double=0.;  var t2:Double=0.; var t3:Double=0.;
+        var t1:Double=0.;  var t2:Double=0.; var t31:Double=0.; var t32:Double=0.;
         // Version 3 - Unlimited memory - try to see what performance we can get
         val roK = (roL+1)*(roL+1);
         val auxIntMat = new DenseMatrix(N,N*roK);
         val halfAuxMat = new DenseMatrix(nOrbital,N*roK);
+        val halfAuxMat2 = new DenseMatrix(N,nOrbital*roK);
+        // these three Mats should be allocated once at initialization step
 
 for (var ron:Int=0; ron<=roNK; ron++){
 
@@ -412,25 +413,23 @@ for (var ron:Int=0; ron<=roNK; ron++){
        
         // step 2
         timer.start(TIMER_GENCLASS);
-
-        DenseMatrixBLAS.comp(mos, auxIntMat, halfAuxMat, [nOrbital, N*roK, N], false);
-        
+        DenseMatrixBLAS.comp(mos, auxIntMat, halfAuxMat, [nOrbital, N*roK, N], false);     
         timer.stop(TIMER_GENCLASS); t2+= (timer.last(TIMER_GENCLASS) as Double)/1e9 ;
 
         // step 3
         timer.start(TIMER_GENCLASS);
-        val halfAuxMat2 = new DenseMatrix(N,nOrbital*roK);
         for (var mu:Int=0;  mu<N; mu++)  for (var aorb:Int=0;  aorb<nOrbital; aorb++) for (var k:Int=0;  k<roK; k++) 
             halfAuxMat2(mu,aorb*roK+k)=halfAuxMat(aorb,mu*roK+k);
-            
+        timer.stop(TIMER_GENCLASS); t31+= (timer.last(TIMER_GENCLASS) as Double)/1e9 ;
+
+        timer.start(TIMER_GENCLASS);    
         // Matrix Matrix multiplication
         kMatrix.multTrans(halfAuxMat2, halfAuxMat2, true);
-        timer.stop(TIMER_GENCLASS); t3+= (timer.last(TIMER_GENCLASS) as Double)/1e9 ;
-        //for (var mu:Int=0;  mu<N; mu++) for (var nu:Int=0; nu<N; nu++) {
-        //}
+        timer.stop(TIMER_GENCLASS); t32+= (timer.last(TIMER_GENCLASS) as Double)/1e9 ;
+
         
 }
-        Console.OUT.printf("version 3: time %lf %lf %lf \n",t1,t2,t3);
+        Console.OUT.printf("version 3: time 1=%lf 2=%lf 3.1=%lf 3.2=%lf\n",t1,t2,t31,t32);
         // Version 2 - save memory and try to be smart by reducing numbers of loads
         /* 
         val giant3DMat = new DenseMatrix(N,(roL+1)*(roL+1)*nOrbital);
