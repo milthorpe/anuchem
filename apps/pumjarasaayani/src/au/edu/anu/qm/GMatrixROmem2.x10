@@ -59,6 +59,11 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
     val jMatrix:DenseMatrix{self.M==self.N,self.N==this.N};
     val kMatrix:DenseMatrix{self.M==self.N,self.N==this.N};
 
+    val roK:Int;
+    val auxIntMat:DenseMatrix;//(N,N*roK);
+    val halfAuxMat:DenseMatrix;//(nOrbital,N*roK);
+    val halfAuxMat2:DenseMatrix;//(N,nOrbital*roK);
+
     // used for calculating eJ, eK
     val scratch:DenseMatrix{self.M==self.N,self.N==this.N};
 
@@ -267,6 +272,11 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
         papi = new PAPI();
         //papi.countFlops();
         //papi.countMemoryOps();
+
+        roK = (roL+1)*(roL+1);
+        auxIntMat = new DenseMatrix(N,N*roK);
+        halfAuxMat = new DenseMatrix(nOrbital,N*roK);
+        halfAuxMat2 = new DenseMatrix(N,nOrbital*roK);
     }
 
     private def nCr(a:Int,b:Int):Int {
@@ -380,10 +390,10 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
         timer.start(TIMER_KMATRIX); t=0.;
         var t1:Double=0.;  var t2:Double=0.; var t31:Double=0.; var t32:Double=0.;
         // Version 3 - Unlimited memory - try to see what performance we can get
-        val roK = (roL+1)*(roL+1);
-        val auxIntMat = new DenseMatrix(N,N*roK);
-        val halfAuxMat = new DenseMatrix(nOrbital,N*roK);
-        val halfAuxMat2 = new DenseMatrix(N,nOrbital*roK);
+        //val roK = (roL+1)*(roL+1);
+        //val auxIntMat = new DenseMatrix(N,N*roK);
+        //val halfAuxMat = new DenseMatrix(nOrbital,N*roK);
+        //val halfAuxMat2 = new DenseMatrix(N,nOrbital*roK);
         // these three Mats should be allocated once at initialization step
 
 for (var ron:Int=0; ron<=roNK; ron++){
