@@ -41,6 +41,8 @@ public class JobDefaults {
     public var roL:Int;
     public var roZ:Double;
 
+    public var rad:Double;
+
     public var omega:Double;
     public var thresh:Double;
     public var roThresh:Double;

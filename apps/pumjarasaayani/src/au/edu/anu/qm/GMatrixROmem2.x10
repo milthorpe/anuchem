@@ -80,11 +80,31 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
         this.mol = molecule;
         this.nOrbital = nOrbital;
         val jd = JobDefaults.getInstance();
-        this.roN=jd.roN;
-        if (jd.roNK==-1) this.roNK=jd.roN; else this.roNK=jd.roNK;
-        this.roL=jd.roL;
-        this.roZ=jd.roZ;
+
         this.omega = jd.omega;
+        if (omega==0.) { // TODO: replace 0. by 1e-x 
+            this.roN=jd.roN;
+            if (jd.roNK==-1) this.roNK=jd.roN; else this.roNK=jd.roNK;
+            this.roL=jd.roL;
+            this.roZ=jd.roZ;
+        }
+        else {
+            this.roL=jd.roL;
+            this.roZ=jd.roZ;
+            val rad=jd.rad;
+            val napprox=Math.ceil(rad*rad*.25+(Math.sqrt(-Math.log(jd.roThresh))-1.)*rad+3.) as Int; // eqn 11 RO #5 
+            Console.OUT.printf("rad=%g,roThresh=%g,napprox=%d\n",rad,jd.roThresh,napprox);
+            if (napprox<jd.roN) {
+                this.roN = napprox;
+                this.roNK = napprox;
+            
+            }
+            else {
+                this.roN = jd.roN;
+                this.roNK = jd.roN;
+            }
+        }
+
         this.norm = bfs.getNormalizationFactors();
         jMatrix = new DenseMatrix(N, N);
         kMatrix = new DenseMatrix(N, N);

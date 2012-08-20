@@ -48,16 +48,16 @@ public class PumjaRasaayani {
         Console.OUT.println("PumjaRasaayani shunya.tri, Quantum Chemistry program in x10, v0.4");
         Console.OUT.println("" + Place.MAX_PLACES + " places, " + Runtime.NTHREADS + " threads per place");
 
-        mol.transformToSNO();
+        mol.transformToSNO(); // Other transformations exist 
 
-        val rad=mol.getRadius(jd.roZ);
+        jd.rad=mol.getRadius(jd.roZ);
+        val rad=jd.rad;
         val PI=3.1415926535;
         Console.OUT.printf("rad/PI=%f\n",rad/PI);
-        if (rad>PI) Console.OUT.printf("WARNING: RO is not valid for rad>PI\n");
+        if (jd.roOn!=0 && rad>PI) Console.OUT.printf("WARNING: Coulomb RO is not valid for rad>PI\n");
+        if (jd.roOn==0 && jd.roZ!=1.0) Console.OUT.printf("WARNING: Coulomb RO is off: roZ=%f is not necessary.\n",jd.roZ);
 
         printInput();
-
-
 
         if (jd.useMta) { runMTA(); return; }
 

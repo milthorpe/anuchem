@@ -103,7 +103,6 @@ public class JobInput {
         try {
             while (line != null && !line.startsWith("end")) {
                 val wrd = StringSplitter.splitOnWhitespace(line);
-
                 molecule.addAtom(new QMAtom(wrd(0), 
                                    Point3d(Double.parseDouble(wrd(1))/conversion/jd.roZ,
                                             Double.parseDouble(wrd(2))/conversion/jd.roZ,
@@ -159,8 +158,7 @@ public class JobInput {
         } catch (e:EOFException) {
             // no more atoms / job directives
         }
-
-        fil.close();
+        fil.close();        
     }
 
     private static def getIntParam(line:String) = Int.parseInt(StringSplitter.splitOnWhitespace(line)(1));
