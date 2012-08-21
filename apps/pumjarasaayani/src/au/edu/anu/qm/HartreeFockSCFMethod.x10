@@ -190,7 +190,7 @@ public class HartreeFockSCFMethod extends SCFMethod {
         gMatrixRoL.compute(density, mos);   
         
         Console.OUT.println("Long-range - Conventional");
-        val gMatrixL = new GMatrix(N, bfs, molecule,jd.roZ*omega,jd.Thresh); // RO Thesis 2.22
+        val gMatrixL = new GMatrix(N, bfs, molecule,jd.roZ*omega,jd.thresh); // RO Thesis 2.22
         gMatrixL.compute(density);   
 
             //fock.compute(hCore, gMatrixRo);
