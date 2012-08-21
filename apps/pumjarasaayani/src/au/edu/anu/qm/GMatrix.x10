@@ -170,7 +170,7 @@ public class GMatrix extends DenseMatrix{self.M==self.N} {
         val computePlace = computeInst(here.id);
         computePlace.reset(density);
         val computeThread = computePlace.computeThreads(0);
-
+        val jd = JobDefaults.getInstance();
         val shellList = bfs.getShellList();
         val shellPrimitives = shellList.getShellPrimitives();
         val numPrimitives = shellList.getNumberOfShellPrimitives();
@@ -203,10 +203,10 @@ public class GMatrix extends DenseMatrix{self.M==self.N} {
         val kMatrix=computeThread.getKMat();
 
         val eJ = density.clone().mult(density, jMatrix).trace();
-        Console.OUT.printf("  EJ = %.6f a.u.\n", eJ);
+        Console.OUT.printf("  EJ = %.6f a.u.\n", eJ/jd.roZ);
 
         val eK = density.clone().mult(density, kMatrix).trace();
-        Console.OUT.printf("  EK = %.6f a.u.\n", eK);
+        Console.OUT.printf("  EK = %.6f a.u.\n", eK/jd.roZ);
 // ^^^^ It is not required for normal calculation ^^^^^
     }
 

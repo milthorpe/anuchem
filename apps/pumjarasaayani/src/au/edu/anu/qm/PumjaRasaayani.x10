@@ -50,7 +50,7 @@ public class PumjaRasaayani {
 
         mol.transformToSNO(); // Other transformations exist 
 
-        jd.rad=mol.getRadius(jd.roZ);
+        jd.rad=mol.getRadius(jd.roZ)*jd.roZ;
         val rad=jd.rad;
         val PI=3.1415926535;
         Console.OUT.printf("rad/PI=%f\n",rad/PI);

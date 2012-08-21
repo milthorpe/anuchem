@@ -10,9 +10,9 @@ H 1.727607    0.762122   -0.351887
 H 1.704312   -0.747744   -0.399151
 O 1.430776   -0.003706    0.113495
 end
-scf_max 20
-guess sad
-use_RO 1
+scf_max 0
+guess core
+use_RO 0
 RO_N 150
-RO_L 160
+RO_L 2
 gmat_parallel_scheme 0

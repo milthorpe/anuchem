@@ -72,15 +72,16 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
 
     transient val aux:Integral_Pack;
     var counter:Int=0;
+    var roThresh:Double=0.;
 
-    public def this(N:Int, bfs:BasisFunctions, molecule:Molecule[QMAtom], nOrbital:Int, omega:Double, roThresh:Double):GMatrixROmem2{self.M==N,self.N==N} {     
+    public def this(N:Int, bfs:BasisFunctions, molecule:Molecule[QMAtom], nOrbital:Int, omega:Double,roThresh:Double):GMatrixROmem2{self.M==N,self.N==N} {     
         super(N, N); 
         val result = Runtime.execForRead("date"); Console.OUT.printf("GMatrixROmem.x10 initialization starts at %s...\n",result.readLine()); 
         this.bfs = bfs;
         this.mol = molecule;
         this.nOrbital = nOrbital;
         val jd = JobDefaults.getInstance();
-
+        this.roThresh=roThresh;
         this.omega = jd.omega;
         if (omega==0.) { // TODO: replace 0. by 1e-x 
             this.roN=jd.roN;
@@ -92,8 +93,8 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
             this.roL=jd.roL;
             this.roZ=jd.roZ;
             val rad=jd.rad;
-            val napprox=Math.ceil(rad*rad*.25+(Math.sqrt(-Math.log(jd.roThresh))-1.)*rad+3.) as Int; // eqn 11 RO #5 
-            Console.OUT.printf("rad=%g,roThresh=%g,napprox=%d\n",rad,jd.roThresh,napprox);
+            val napprox=Math.ceil(rad*rad*.25+(Math.sqrt(-Math.log(this.roThresh))-1.)*rad+3.) as Int; // eqn 11 RO #5 
+            Console.OUT.printf("rad=%g,roThresh=%g,napprox=%d\n",rad,this.roThresh,napprox);
             if (napprox<jd.roN) {
                 this.roN = napprox;
                 this.roNK = napprox;
@@ -314,7 +315,7 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
         timer.start(TIMER_TOTAL);
         jMatrix.reset();
         kMatrix.reset();
-
+        val jd = JobDefaults.getInstance();
         var prevLoadCount:Long = 0;
 
         // Form J matrix
@@ -398,7 +399,7 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
 
 // vvvv For development purpose vvvvvv
         val eJ = scratch.mult(density, jMatrix).trace();
-        Console.OUT.printf("  EJ = %.6f a.u.\n", eJ);
+        Console.OUT.printf("  EJ = %.6f a.u.\n", eJ/jd.roZ);
 // ^^^^ It is not required for normal calculation ^^^^^
 
         Console.OUT.printf("    Time to construct JMatrix with RO: %.3g seconds (%.4g for ints)\n", (timer.last(TIMER_JMATRIX) as Double) / 1e9, t);
@@ -541,7 +542,7 @@ for (var ron:Int=0; ron<=roNK; ron++){
 
 // vvvv For development purpose vvvvvv
         val eK = scratch.mult(density, kMatrix).trace();
-        Console.OUT.printf("  EK = %.6f a.u.\n", eK);
+        Console.OUT.printf("  EK = %.6f a.u.\n", eK/jd.roZ);
 // ^^^^ It is not required for normal calculation ^^^^^
 
         Console.OUT.printf("    Time to construct KMatrix with RO: %.3g seconds (%.4g for ints)\n", (timer.last(TIMER_KMATRIX) as Double) / 1e9, t);
