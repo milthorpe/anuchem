@@ -63,12 +63,12 @@ public class HartreeFockSCFMethod extends SCFMethod {
         val gMatrixRo:GMatrixROmem2{self.N==N};
         val roThresh=jd.roThresh;
         val thresh=jd.thresh;
-        if (jd.roOn>0) {
+        if (jd.roOn>0 && maxIteration>0) {
             gMatrixRo = new GMatrixROmem2(N, bfs, molecule, noOfOccupancies,0.,roThresh);
         } else {
             gMatrixRo = null;
         }
-        if (jd.roOn==0 || jd.compareRo==true) {
+        if ((jd.roOn==0 || jd.compareRo==true) && maxIteration>0) {
             gMatrix = new GMatrix(N, bfs, molecule,0.,thresh);
         } else {
             gMatrix = null;
@@ -172,12 +172,12 @@ public class HartreeFockSCFMethod extends SCFMethod {
 
         Console.OUT.printf("==========================================================\n");
 
-        if (jd.roOn == 0 || jd.compareRo) {
+        if ((jd.roOn == 0 || jd.compareRo) && maxIteration>0) {
             Console.OUT.println("GMatrix construction timings:");
             gMatrix.timer.printSeconds();
         }
 
-        if (jd.roOn>0) {
+        if (jd.roOn>0 && maxIteration>0) {
             Console.OUT.println("GMatrixROmem construction timings:");
             gMatrixRo.timer.printSeconds();
         }
