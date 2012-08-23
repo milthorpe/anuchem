@@ -18,7 +18,7 @@ public struct OctantId(x:UByte, y:UByte, z:UByte, level:UByte) implements Compar
     }
 
     public def compareTo(b:OctantId):Int {
-        val comp = this.getMortonId().compareTo(b.getMortonId());
+        val comp = this.getLeafMortonId().compareTo(b.getLeafMortonId());
         if (comp == 0) {
             return this.level.compareTo(b.level);
         } else {
@@ -32,14 +32,14 @@ public struct OctantId(x:UByte, y:UByte, z:UByte, level:UByte) implements Compar
     public operator this >= (x:OctantId) = (this.compareTo(x) >= 0);
 
     public def next():OctantId {
-        return OctantId.getFromMortonId(this.getMortonId()+(1U << 8));
+        return OctantId.getFromMortonId(this.getMortonId()+1U);
     }
 
     public def getMortonId():UInt {
         val x = this.x as UInt;
         val y = this.y as UInt;
         val z = this.z as UInt;
-        Console.OUT.printf("x %8s y %8s z %8s level %8s\n", x.toBinaryString(), y.toBinaryString(), z.toBinaryString(), level.toBinaryString());
+        //Console.OUT.printf("x %8s y %8s z %8s level %8s\n", x.toBinaryString(), y.toBinaryString(), z.toBinaryString(), level.toBinaryString());
         var id:UInt = 0U;
         var bitmask:UInt = 1U;
         var shift:Int = 0;
@@ -51,7 +51,7 @@ public struct OctantId(x:UByte, y:UByte, z:UByte, level:UByte) implements Compar
         }
         shift = 24;
         id |= (level as UInt) << shift;
-        Console.OUT.printf("Morton id = %32s\n", id.toBinaryString());
+        //Console.OUT.printf("Morton id = %32s\n", id.toBinaryString());
         return id;
     }
 
@@ -61,8 +61,8 @@ public struct OctantId(x:UByte, y:UByte, z:UByte, level:UByte) implements Compar
         var x:UInt = 0U;
         var y:UInt = 0U;
         var z:UInt = 0U;
-        var shift:Int = 24;
-        var bitmask:UInt = 1U << 31;
+        var shift:Int = 16;
+        var bitmask:UInt = 1U << 23;
         for (i in 0..7) {
             x |= (mortonId & bitmask) >> shift--; bitmask = bitmask >> 1;
             y |= (mortonId & bitmask) >> shift--; bitmask = bitmask >> 1;
@@ -93,7 +93,7 @@ public struct OctantId(x:UByte, y:UByte, z:UByte, level:UByte) implements Compar
 
     /** @return the octant ID of the parent of this octant */
     public def getParentId():OctantId {
-        return new OctantId(x/2, y/2, z/2, level-1);
+        return new OctantId(x/2UY, y/2UY, z/2UY, level-1UY);
     }
 
     /** @return the anchor of this octant */
@@ -105,7 +105,7 @@ public struct OctantId(x:UByte, y:UByte, z:UByte, level:UByte) implements Compar
 
     /** @return the index of the given child octant in this (shared) octant's child array */
     public def getChildIndex(dMax:UByte, childId:OctantId):Int {
-        return (childId.x%2 << 2) | (childId.y%2 << 1) | (childId.z%2);
+        return (childId.x%2UY << 2) | (childId.y%2UY << 1) | (childId.z%2);
     }
 
     public def toString(): String {
