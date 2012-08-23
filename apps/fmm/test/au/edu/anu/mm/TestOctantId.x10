@@ -14,18 +14,18 @@ package au.edu.anu.mm;
  * Test OctantId class
  * @author milthorpe
  */
-class TestOctantId {
-    public static def main(Rail[String]) {
-        val dMax = 5US;
-        val a = new OctantId(12,  2, 60, dMax-1);
-        val b = new OctantId(11, 47, 21, dMax);
-        val c = new OctantId(21, 30,  2, dMax);
+public class TestOctantId {
+    public static def main(args:Rail[String]) {
+        val dMax = 5UY;
+        val a = new OctantId(12UY,  2UY, 60UY, dMax-1);
+        val b = new OctantId(11UY, 47UY, 21UY, dMax);
+        val c = new OctantId(21UY, 30UY,  2UY, dMax);
         Console.OUT.println(a.compareTo(b));
         Console.OUT.println(b.compareTo(c));
         Console.OUT.println(a.compareTo(c));
 
-        Console.OUT.println("a = " + a + " parent = " + a.getParentId(dMax) + " offset = " + a.getParentId(dMax).getChildIndex(dMax, a));
-        Console.OUT.println("b = " + b + " parent = " + b.getParentId(dMax) + " offset = " + b.getParentId(dMax).getChildIndex(dMax, b));
-        Console.OUT.println("c = " + c + " parent = " + c.getParentId(dMax) + " offset = " + c.getParentId(dMax).getChildIndex(dMax, c));
+        Console.OUT.println("a = " + a + " parent = " + a.getParentId() + " offset = " + a.getParentId().getChildIndex(dMax, a));
+        Console.OUT.println("b = " + b + " parent = " + b.getParentId() + " offset = " + b.getParentId().getChildIndex(dMax, b));
+        Console.OUT.println("c = " + c + " parent = " + c.getParentId() + " offset = " + c.getParentId().getChildIndex(dMax, c));
     }
 }

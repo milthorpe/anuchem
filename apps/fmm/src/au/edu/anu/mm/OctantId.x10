@@ -18,7 +18,12 @@ public struct OctantId(x:UByte, y:UByte, z:UByte, level:UByte) implements Compar
     }
 
     public def compareTo(b:OctantId):Int {
-        return this.getMortonId().compareTo(b.getMortonId());
+        val comp = this.getMortonId().compareTo(b.getMortonId());
+        if (comp == 0) {
+            return this.level.compareTo(b.level);
+        } else {
+            return comp;
+        }
     }
 
     public operator this < (x:OctantId) = (this.compareTo(x) < 0);
@@ -34,24 +39,25 @@ public struct OctantId(x:UByte, y:UByte, z:UByte, level:UByte) implements Compar
         val x = this.x as UInt;
         val y = this.y as UInt;
         val z = this.z as UInt;
-        //Console.OUT.printf("x %8s y %8s z %8s level %8s\n", x.toBinaryString(), y.toBinaryString(), z.toBinaryString(), level.toBinaryString());
+        Console.OUT.printf("x %8s y %8s z %8s level %8s\n", x.toBinaryString(), y.toBinaryString(), z.toBinaryString(), level.toBinaryString());
         var id:UInt = 0U;
         var bitmask:UInt = 1U;
-        var shift:Int = 8;
+        var shift:Int = 0;
         for (i in 0..7) {
             id |= (bitmask & z) << shift++;
             id |= (bitmask & y) << shift++;
             id |= (bitmask & x) << shift;
             bitmask = bitmask << 1;
         }
-        id |= (level as UInt);
-        //Console.OUT.printf("Morton id = %32s\n", id.toBinaryString());
+        shift = 24;
+        id |= (level as UInt) << shift;
+        Console.OUT.printf("Morton id = %32s\n", id.toBinaryString());
         return id;
     }
 
     public static def getFromMortonId(mortonId:UInt):OctantId {
         //Console.OUT.printf("get from Morton id = %32s\n", mortonId.toBinaryString());
-        val level = mortonId & UByte.MAX_VALUE as UInt;
+        val level = (mortonId >> 24) as UInt;
         var x:UInt = 0U;
         var y:UInt = 0U;
         var z:UInt = 0U;
