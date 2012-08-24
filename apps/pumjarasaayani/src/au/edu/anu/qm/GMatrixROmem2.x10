@@ -223,7 +223,8 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
         var mCost:Double=0.;
         var pAuxCount:Double=0.;
         var AuxCount:Double=0.;
-   
+        
+        val intThresh=roThresh*1e-3;
         auxInts = new Rail[AuxInt](numSigShellPairs);
         for (i in 0..(numSigShellPairs-1)) {
             val sh = shellPairs(i); val a=sh.aang; val b=sh.bang; val ka=sh.dconA; val kb=sh.dconB;            
@@ -236,7 +237,7 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
             for (var ron:Int=0; ron<=roN; ron++) {                           
                 aux.genClass(sh.aang, sh.bang, sh.aPoint, sh.bPoint, sh.zetaA, sh.zetaB, sh.conA, sh.conB, sh.dconA, sh.dconB, temp, ron, roL, tempY, roL);  
                 var auxint:Double=-1/*can't set to 0 as roThresh can be 0*/,rol:Int=roL;                               
-                for (; rol>=0 && auxint<roThresh; rol--) { 
+                for (; rol>=0 && auxint<intThresh; rol--) { 
                     for (var rom:Int=-rol; rom<=rol; rom++)  for (var tmu:Int=0; tmu<sh.maxbraa; tmu++) for (var tnu:Int=0; tnu<sh.maxbrab; tnu++) {
                         val ml=rol*(rol+1)+rom;
                         val mnu=tnu*(roL+1)*(roL+1)+ml;
@@ -244,7 +245,7 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
                         auxint = Math.max(Math.abs(temp(mmu)), auxint);
                     }
                 }
-                if (auxint<roThresh) maxl=-1; 
+                if (auxint<intThresh) maxl=-1; 
                 else {
                     maxl=rol+1;
                     count1+=Math.pow(maxl+1,2);
