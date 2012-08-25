@@ -448,6 +448,7 @@ public class FastMultipoleMethod {
             }
 
             if (octantList.size() > 0) {
+                octantList.sort();
                 //Console.OUT.println("at " + here + " level " + level + " first " + octantList.getFirst().id + " last " + octantList.getLast().id);
                 var lastOctantId:OctantId = octantList.getLast().id.next();
                 //Console.OUT.println("at " + here + " lastOctantId " + lastOctantId);
