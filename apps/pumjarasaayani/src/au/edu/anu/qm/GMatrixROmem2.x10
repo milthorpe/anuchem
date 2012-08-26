@@ -117,7 +117,6 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
         val l_n = new Rail[Int](roN+3);
         aux = new Integral_Pack(roN,roL,omega,roThresh,jd.rad);
         aux.getNL(l_n);
-
         roN=roNK=l_n(0);
         roL=l_n(roN+2);  
         Console.OUT.printf("roN=%d roL=%d roNK=%d\n",roN,roL,roNK); 
@@ -164,7 +163,6 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
         }
 
         // Shell/Shellpair business 
-        Console.OUT.printf("roN=%d roL=%d roNK=%d\n",roN,roL,roNK); 
         val threshold = 1.0e-8; // ******************
         var nShell:Int=0;
         val noOfAtoms = mol.getNumberOfAtoms();
@@ -230,8 +228,6 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
         var mCost:Double=0.;
         var pAuxCount:Double=0.;
         var AuxCount:Double=0.;
-
-
 
         val intThresh=roThresh/*1e-3*/;
         auxInts = new Rail[AuxInt](numSigShellPairs);

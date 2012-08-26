@@ -24,7 +24,7 @@ guess core
 use_RO 0
 RO_N 300
 RO_L 10
-RO_thresh 1e-5
+RO_thresh 1e-6
 thresh 1e-14
 omega 0.1
 gmat_parallel_scheme 0
