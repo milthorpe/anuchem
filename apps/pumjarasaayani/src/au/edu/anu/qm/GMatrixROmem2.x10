@@ -49,7 +49,7 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
     val dk:Rail[Double];
     val emptyRailD = new Rail[Double](0),emptyRailI = new Rail[Int](0); 
 
-    val roN:Int; val roNK:Int;  val roL:Int; val roZ:Double;
+    var roN:Int; var roNK:Int;  var roL:Int; val roZ:Double;
 
     // Big arrays stored in Memory
     val shellPairs:Rail[ShellPair]; 
@@ -93,7 +93,7 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
             this.roL=jd.roL;
             this.roZ=jd.roZ;
             val rad=jd.rad;
-            val napprox=Math.ceil(rad*rad*.25+(Math.sqrt(-Math.log(this.roThresh))-1.)*rad+3.) as Int; // eqn 11 RO #5 
+            val napprox=Math.ceil(rad*rad*.25+(Math.sqrt(-Math.log10(this.roThresh))-1.)*rad+2.) as Int; // RO Thesis Eq (5.11) RO #5 Eq (11)
             Console.OUT.printf("rad=%g,roThresh=%g,napprox=%d\n",rad,this.roThresh,napprox);
             if (napprox<jd.roN) {
                 this.roN = napprox;
@@ -114,7 +114,14 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
         val maxam = bfs.getShellList().getMaximumAngularMomentum();
         val maxam1 = (maxam+1)*(maxam+2)/2;
         temp = new Rail[Double](maxam1*maxam1*roLm); // will be passed to C++ code
-        aux = new Integral_Pack(roN,roL,omega);
+        val l_n = new Rail[Int](roN+3);
+        aux = new Integral_Pack(roN,roL,omega,roThresh,jd.rad);
+        aux.getNL(l_n);
+
+        roN=roNK=l_n(0);
+        roL=l_n(roN+2);  
+        Console.OUT.printf("roN=%d roL=%d roNK=%d\n",roN,roL,roNK); 
+
         dk = new Rail[Double](roLm); // eqn 15b in RO#7
         muk = new DenseMatrix(N,roLm); 
 
@@ -223,8 +230,10 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
         var mCost:Double=0.;
         var pAuxCount:Double=0.;
         var AuxCount:Double=0.;
-        
-        val intThresh=roThresh*1e-3;
+
+
+
+        val intThresh=roThresh/*1e-3*/;
         auxInts = new Rail[AuxInt](numSigShellPairs);
         for (i in 0..(numSigShellPairs-1)) {
             val sh = shellPairs(i); val a=sh.aang; val b=sh.bang; val ka=sh.dconA; val kb=sh.dconB;            
@@ -251,7 +260,10 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
                     count1+=Math.pow(maxl+1,2);
                     maxn=ron;                   
                 }
-                sh.maxL(ron)=maxl; 
+                sh.maxL(ron)=maxl=roL;//;maxl; 
+                // overide
+                //if (maxl>l_n(ron+1)) sh.maxL(ron)=maxl=l_n(ron+1);
+
                 if (maxl>=0) {
                     // copy temp to arr
                     val arr = new Rail[Double]((maxl+1)*(maxl+1)*sh.maxbraa*sh.maxbrab); mCost+=(maxl+1)*(maxl+1)*sh.maxbraa*sh.maxbrab;
@@ -279,12 +291,15 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
             pAuxCount+=ka*kb*bracount*K;
             AuxCount+=bracount*K; 
         }
-        maxmaxl = new Rail[Int](roN);
+        maxmaxl = new Rail[Int](roN); //roL=0; //override
         for (var ron:Int=0; ron<=roN; ron++) {
             maxmaxl(ron)=-1;
             for (i in 0..(numSigShellPairs-1))
                 if (shellPairs(i).maxL(ron)>maxmaxl(ron)) maxmaxl(ron)=shellPairs(i).maxL(ron);
             Console.OUT.printf("maxmaxl(%d)=%d\n", ron, maxmaxl(ron));
+            // overide
+            //maxmaxl(ron)=l_n(ron+1); 
+            //if (maxmaxl(ron)>roL) roL=maxmaxl(ron);
         }
 
         Console.OUT.printf("nShell=%d numSigShellPairs=%d pAuxCount=%e (primitive) AuxCount=%e (contracted)\n",nShell,numSigShellPairs,pAuxCount,AuxCount);

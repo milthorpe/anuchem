@@ -26,7 +26,9 @@ import x10x.vector.Point3d;
 @NativeRep("c++", "::au::edu::anu::qm::ro::Integral_Pack *", "::au::edu::anu::qm::ro::Integral_Pack", null)
 public class Integral_Pack {
 
-    public native def this(N:Int,L:Int,Type:Double);
+    //@Native("c++","(#this)->Integral_Pack->_make((#1),(#2),(#3),(#4),(#5),(#6)._val->raw().raw())") // doesn't work
+    public native def this(N:Int,L:Int,Type:Double,roThresh:Double,rad:Double);
+
 
     /**
      * Generate Ylm for a given shell pair
@@ -40,6 +42,9 @@ public class Integral_Pack {
      */
     @Native("c++", "(#this)->Genclass((#1), (#2), (double*)&((#3).x10__i), (double*)&((#4).x10__i), (#5)._val->raw().raw(), (#6)._val->raw().raw(), (#7)._val->raw().raw(), (#8)._val->raw().raw(), (#9), (#10), (#11)._val->raw().raw(), (#12), (#13), (#14)._val->raw().raw(), (#15))")
     public native def genClass(a:Int, b:Int, A:Point3d, B:Point3d, zetaA:Rail[Double], zetaB:Rail[Double], conA:Rail[Double], conB:Rail[Double], dconA:Int, dconB:Int, temp:Rail[Double], N:Int, Ln:Int, Ylm:Rail[Double],maxL:Int):Int;
+
+    @Native("c++","(#this)->getNL((#1)._val->raw().raw())")
+    public native def getNL(n_l:Rail[Int]):Int;
 
 }
 
