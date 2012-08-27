@@ -99,9 +99,11 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
         temp = new Rail[Double](maxam1*maxam1*roLm); // will be passed to C++ code
         val l_n = new Rail[Int](roN+3);
         aux = new Integral_Pack(roN,roL,omega,roThresh,jd.rad);
-        aux.getNL(l_n);
-        roN=roNK=l_n(0);
-        roL=l_n(roN+2);  
+        if (omega>0.) {
+            aux.getNL(l_n);
+            roN=roNK=l_n(0);
+            roL=l_n(roN+2);  
+        }
         Console.OUT.printf("roN=%d roL=%d roNK=%d\n",roN,roL,roNK); 
 
         dk = new Rail[Double](roLm); // eqn 15b in RO#7
@@ -248,16 +250,15 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
                 // overide
                 // if (maxl>l_n(ron+1)) sh.maxL(ron)=maxl=l_n(ron+1); 
                 
-                if (maxl>=0) {
-                    aux.genClass(sh.aang, sh.bang, sh.aPoint, sh.bPoint, sh.zetaA, sh.zetaB, sh.conA, sh.conB, sh.dconA, sh.dconB, temp, ron, maxl, tempY, roL);  
+                if (maxl>=0) {                     
                     // copy temp to arr
                     val arr = new Rail[Double]((maxl+1)*(maxl+1)*sh.maxbraa*sh.maxbrab); mCost+=(maxl+1)*(maxl+1)*sh.maxbraa*sh.maxbrab;
                     ind=0;
                     for (var tmu:Int=0; tmu<sh.maxbraa; tmu++) for (var tnu:Int=0; tnu<sh.maxbrab; tnu++) 
                         for (rol=0; rol<=maxl ; rol++) for (var rom:Int=-rol; rom<=rol; rom++) {
                             val ml=rol*(rol+1)+rom;
-                            val mnu=tnu*(maxl+1)*(maxl+1)+ml;
-                            val mmu=tmu*(maxl+1)*(maxl+1)*sh.maxbrab+mnu;
+                            val mnu=tnu*(roL+1)*(roL+1)+ml;
+                            val mmu=tmu*(roL+1)*(roL+1)*sh.maxbrab+mnu;
                             arr(ind++)=temp(mmu);
                         }
                     intLms(ron) = new IntLm(arr,maxl); 
