@@ -150,7 +150,7 @@ public class Molecule[T]{T <: Atom} {
             val distance=atmvec.magnitude()+ai.getVdwRadius(atm)/roZ;
             if (rad<distance) rad=distance;
         }
-        Console.OUT.printf("Radius = %f\n",rad);
+        Console.OUT.printf("radius = %f  scaled radius = %f\n",rad*roZ,rad);
         return rad; 
     }
 

@@ -83,29 +83,12 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
         val jd = JobDefaults.getInstance();
         this.roThresh=roThresh;
         this.omega = jd.omega;
-        if (omega==0.) { // TODO: replace 0. by 1e-x 
+        
             this.roN=jd.roN;
             if (jd.roNK==-1) this.roNK=jd.roN; else this.roNK=jd.roNK;
             this.roL=jd.roL;
             this.roZ=jd.roZ;
-        }
-        else {
-            this.roL=jd.roL;
-            this.roZ=jd.roZ;
-            val rad=jd.rad;
-            val napprox=Math.ceil(rad*rad*.25+(Math.sqrt(-Math.log10(this.roThresh))-1.)*rad+2.) as Int; // RO Thesis Eq (5.11) RO #5 Eq (11)
-            Console.OUT.printf("rad=%g,roThresh=%g,napprox=%d\n",rad,this.roThresh,napprox);
-            if (napprox<jd.roN) {
-                this.roN = napprox;
-                this.roNK = napprox;
-            
-            }
-            else {
-                this.roN = jd.roN;
-                this.roNK = jd.roN;
-            }
-        }
-
+       
         this.norm = bfs.getNormalizationFactors();
         jMatrix = new DenseMatrix(N, N);
         kMatrix = new DenseMatrix(N, N);
@@ -163,7 +146,8 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
         }
 
         // Shell/Shellpair business 
-        val threshold = 1.0e-8; // ******************
+        val threshold = roThresh*jd.roZ*jd.roZ*1e-2; // ** must be relative to roThresh *** otherwise Z scaling will cause problem
+        // This is effectively a density threshold RO Thesis (2.26)
         var nShell:Int=0;
         val noOfAtoms = mol.getNumberOfAtoms();
         for(var a:Int=0; a<noOfAtoms; a++) {
@@ -198,7 +182,8 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
                             var contrib : Double = 0.; // ss = conservative estimate
                             val R2 = Math.pow(aPoint.i-bPoint.i,2.)+Math.pow(aPoint.j-bPoint.j,2.)+Math.pow(aPoint.k-bPoint.k,2.);
                             for (var ii:Int=0; ii<dConA; ii++) for (var jj:Int=0; jj<dConB; jj++) 
-                                contrib+=conA(ii)*conB(jj)*Math.exp(-zetaA(ii)*zetaB(jj)/(zetaA(ii)+zetaB(jj))*R2); 
+                                contrib+=conA(ii)*conB(jj)*Math.exp(-zetaA(ii)*zetaB(jj)/(zetaA(ii)+zetaB(jj))*R2)
+                                        /Math.pow(jd.roZ,aang+bang);  // See Szabo Ostlund 3.284-3.286 
                             contrib=Math.abs(contrib);
                             if (contrib>=threshold) {
                                 val maxL = new Rail[Int](roN);

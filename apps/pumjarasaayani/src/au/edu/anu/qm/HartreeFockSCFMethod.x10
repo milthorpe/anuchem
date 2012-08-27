@@ -64,12 +64,12 @@ public class HartreeFockSCFMethod extends SCFMethod {
         val roThresh=jd.roThresh;
         val thresh=jd.thresh;
         if (jd.roOn>0 && maxIteration>0) {
-            gMatrixRo = new GMatrixROmem2(N, bfs, molecule, noOfOccupancies,0.,roThresh);
+            gMatrixRo = new GMatrixROmem2(N, bfs, molecule, noOfOccupancies,0.,roZ*roThresh);
         } else {
             gMatrixRo = null;
         }
         if ((jd.roOn==0 || jd.compareRo==true) && maxIteration>0) {
-            gMatrix = new GMatrix(N, bfs, molecule,0.,thresh);
+            gMatrix = new GMatrix(N, bfs, molecule,0.,roZ*thresh);
         } else {
             gMatrix = null;
         }
@@ -186,11 +186,11 @@ public class HartreeFockSCFMethod extends SCFMethod {
         Console.OUT.println("Long-range - RO");
         density.compute(mos);
         val omega=jd.omega;
-        val gMatrixRoL = new GMatrixROmem2(N, bfs, molecule, noOfOccupancies,jd.roZ*omega,jd.roThresh); // RO Thesis Eq (2.22)
+        val gMatrixRoL = new GMatrixROmem2(N, bfs, molecule, noOfOccupancies,jd.roZ*omega,roZ*jd.roThresh); // RO Thesis Eq (2.22)
         gMatrixRoL.compute(density, mos);   
         
         Console.OUT.println("Long-range - Conventional");
-        val gMatrixL = new GMatrix(N, bfs, molecule,jd.roZ*omega,jd.thresh); // RO Thesis Eq (2.22)
+        val gMatrixL = new GMatrix(N, bfs, molecule,jd.roZ*omega,roZ*jd.thresh); // RO Thesis Eq (2.22)
         gMatrixL.compute(density);   
 
             //fock.compute(hCore, gMatrixRo);

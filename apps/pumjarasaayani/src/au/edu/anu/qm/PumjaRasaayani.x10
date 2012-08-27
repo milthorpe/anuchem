@@ -50,11 +50,9 @@ public class PumjaRasaayani {
 
         mol.transformToSNO(); // Other transformations exist 
 
-        jd.rad=mol.getRadius(jd.roZ)*jd.roZ;
-        val rad=jd.rad;
-        val PI=3.1415926535;
-        Console.OUT.printf("rad/PI=%f\n",rad/PI);
-        if (jd.roOn!=0 && rad>PI) Console.OUT.printf("WARNING: Coulomb RO is not valid for rad>PI\n");
+        jd.rad=mol.getRadius(jd.roZ);
+        Console.OUT.printf("rad/PI=%f\n",jd.rad/3.1415926535);
+        if (jd.roOn!=0 && jd.rad>3.1415926535) Console.OUT.printf("WARNING: Coulomb RO is not valid for rad>PI\n");
         if (jd.roOn==0 && jd.roZ!=1.0) Console.OUT.printf("WARNING: Coulomb RO is off: roZ=%f is not necessary.\n",jd.roZ);
 
         printInput();
