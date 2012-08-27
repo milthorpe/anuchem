@@ -29,7 +29,7 @@ import au.edu.anu.util.SharedCounter;
 import au.edu.anu.util.Timer;
 import au.edu.anu.util.StatisticalTimer;
 import au.edu.anu.qm.ro.Integral_Pack;
-import edu.utk.cs.papi.PAPI;
+//import edu.utk.cs.papi.PAPI;
 
 public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
     public val timer = new StatisticalTimer(5);
@@ -68,7 +68,7 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
     val scratch:DenseMatrix{self.M==self.N,self.N==this.N};
 
     // PAPI performance counters
-    transient val papi:PAPI;
+    //transient val papi:PAPI;
 
     transient val aux:Integral_Pack;
     var counter:Int=0;
@@ -289,7 +289,7 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
         Console.OUT.printf("mCost=%e\n", mCost);
         Console.OUT.printf("fCost=%e\n", fCost);
         Console.OUT.printf("wCost=%e\n", wCost);
-        papi = new PAPI();
+        //papi = new PAPI();
         //papi.countFlops();
         //papi.countMemoryOps();
 

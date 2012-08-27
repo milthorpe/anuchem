@@ -26,7 +26,7 @@ import au.edu.anu.util.SharedCounter;
 import au.edu.anu.util.Timer;
 import au.edu.anu.util.StatisticalTimer;
 import au.edu.anu.qm.ro.Integral_Pack;
-import edu.utk.cs.papi.PAPI;
+//import edu.utk.cs.papi.PAPI;
 
 /**
  * G matrix in HF calculation -- RO 
@@ -63,7 +63,7 @@ public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
     val scratch:DenseMatrix{self.M==self.N,self.N==this.N};
 
     // PAPI performance counters
-    transient val papi:PAPI;
+    //transient val papi:PAPI;
 
     transient val aux:Integral_Pack;
     var counter:Int=0;
@@ -244,9 +244,9 @@ public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
         Console.OUT.printf("mCost=%e\n", mCost);
         Console.OUT.printf("fCost=%e\n", fCost);
         Console.OUT.printf("wCost=%e\n", wCost);
-        papi = new PAPI();
+        //papi = new PAPI();
         //papi.countFlops();
-        papi.countMemoryOps();
+        //papi.countMemoryOps();
     }
 
     private def nCr(a:Int,b:Int):Int {
@@ -268,7 +268,7 @@ public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
         var prevLoadCount:Long = 0;
 
         // Form J matrix
-        papi.reset();
+        //papi.reset();
         timer.start(TIMER_JMATRIX); var t:Double=0.;
         var fac:Double; var ind:Int; var jContrib:Double;
 
@@ -288,17 +288,31 @@ public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
                 if (maxLron>=0) {
                     val maxLm=(maxLron+1)*(maxLron+1);
                     ind=0;  
+<<<<<<< local
+                    //timer.start(TIMER_GENCLASS);
+=======
                     timer.start(TIMER_GENCLASS);
+>>>>>>> other
                     //papi.start();
                     aux.genClass(sp.aang, sp.bang, sp.aPoint, sp.bPoint, sp.zetaA, sp.zetaB, sp.conA, sp.conB, sp.dconA, sp.dconB, temp, ron, maxLron,ylms(spInd).y, ylms(spInd).maxL);
                     //papi.stop();
+<<<<<<< local
+                    //timer.stop(TIMER_GENCLASS);
+=======
                     timer.stop(TIMER_GENCLASS);
+>>>>>>> other
                     if (counter==0) {
                         //Console.OUT.printf("%d\t%d\t%d\t%d\t%d\t%d",sp.aang, sp.bang, sp.dconA, sp.dconB, ron, maxLron); // printf can accomodate upto 6 arguments?
                         //Console.OUT.printf("\t%20.15e\n",(timer.last(TIMER_GENCLASS) as Double)/1e9);
+<<<<<<< local
+                        //val loadCount = papi.getCounter(/*PAPI.COUNTER_LD_INS*/1);
+                        //Console.OUT.printf("\t%lld\n",loadCount-prevLoadCount);
+                       // prevLoadCount = loadCount;
+=======
                         /*val loadCount = papi.getCounter(1);
                         Console.OUT.printf("\t%lld\n",loadCount-prevLoadCount);
                         prevLoadCount = loadCount;*/
+>>>>>>> other
                     }
 
                     t+=(timer.last(TIMER_GENCLASS) as Double)/1e9;
@@ -342,7 +356,7 @@ public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
         timer.stop(TIMER_JMATRIX);
         Console.OUT.print("J matrix ");
         //papi.printFlops();
-        papi.printMemoryOps();
+        //papi.printMemoryOps();
 
 
 // vvvv For development purpose vvvvvv

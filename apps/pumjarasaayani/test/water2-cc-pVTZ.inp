@@ -10,11 +10,12 @@ H 1.727607    0.762122   -0.351887
 H 1.704312   -0.747744   -0.399151
 O 1.430776   -0.003706    0.113495
 end
+compare_RO
 scf_max 0
 guess core
-use_RO 0
+use_RO 1
 RO_N 150
-RO_L 5
+RO_L 50
 RO_thresh 1e-6
 thresh 1e-14
 omega 0.1
