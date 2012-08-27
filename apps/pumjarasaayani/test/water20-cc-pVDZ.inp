@@ -65,8 +65,8 @@ molecule
  H     6.467756    -0.377707     2.704835
 end
 scf_max 0
-guess sad
-use_RO 0
+guess core
+use_RO 1
 RO_N 300
 RO_L 30
 RO_thresh 1e-6

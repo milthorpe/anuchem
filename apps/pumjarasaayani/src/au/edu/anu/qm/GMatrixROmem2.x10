@@ -214,19 +214,22 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
         var pAuxCount:Double=0.;
         var AuxCount:Double=0.;
 
-        val intThresh=roThresh/*1e-3*/;
+        val intThresh=roThresh/Math.sqrt(jd.roZ); // must be relative to given thresh so that roZ works
         auxInts = new Rail[AuxInt](numSigShellPairs);
         for (i in 0..(numSigShellPairs-1)) {
             val sh = shellPairs(i); val a=sh.aang; val b=sh.bang; val ka=sh.dconA; val kb=sh.dconB;            
             var maxl:Int=0,maxn:Int=0; 
             var count1:Int=0; 
+            var rol:Int=0; 
             val intLms = new Rail[IntLm](roN); 
             val tempY = new Rail[Double](sh.dconA*sh.dconB*(roL+1)*(roL+1));
             aux.genClassY(sh.aPoint, sh.bPoint, sh.zetaA, sh.zetaB, sh.dconA, sh.dconB,  roL, tempY);
 
-            for (var ron:Int=0; ron<=roN; ron++) {                           
+            for (var ron:Int=0; ron<=roN; ron++) {                                           
                 aux.genClass(sh.aang, sh.bang, sh.aPoint, sh.bPoint, sh.zetaA, sh.zetaB, sh.conA, sh.conB, sh.dconA, sh.dconB, temp, ron, roL, tempY, roL);  
-                var auxint:Double=-1/*can't set to 0 as roThresh can be 0*/,rol:Int=roL;                               
+               
+                var auxint:Double=-1; //can't set to 0 as roThresh can be 0
+                rol=roL;                               
                 for (; rol>=0 && auxint<intThresh; rol--) { 
                     for (var rom:Int=-rol; rom<=rol; rom++)  for (var tmu:Int=0; tmu<sh.maxbraa; tmu++) for (var tnu:Int=0; tnu<sh.maxbrab; tnu++) {
                         val ml=rol*(rol+1)+rom;
@@ -241,19 +244,20 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
                     count1+=Math.pow(maxl+1,2);
                     maxn=ron;                   
                 }
-                sh.maxL(ron)=maxl=roL;//;maxl; 
+                sh.maxL(ron)=maxl; 
                 // overide
-                //if (maxl>l_n(ron+1)) sh.maxL(ron)=maxl=l_n(ron+1);
-
+                // if (maxl>l_n(ron+1)) sh.maxL(ron)=maxl=l_n(ron+1); 
+                
                 if (maxl>=0) {
+                    aux.genClass(sh.aang, sh.bang, sh.aPoint, sh.bPoint, sh.zetaA, sh.zetaB, sh.conA, sh.conB, sh.dconA, sh.dconB, temp, ron, maxl, tempY, roL);  
                     // copy temp to arr
                     val arr = new Rail[Double]((maxl+1)*(maxl+1)*sh.maxbraa*sh.maxbrab); mCost+=(maxl+1)*(maxl+1)*sh.maxbraa*sh.maxbrab;
                     ind=0;
                     for (var tmu:Int=0; tmu<sh.maxbraa; tmu++) for (var tnu:Int=0; tnu<sh.maxbrab; tnu++) 
                         for (rol=0; rol<=maxl ; rol++) for (var rom:Int=-rol; rom<=rol; rom++) {
                             val ml=rol*(rol+1)+rom;
-                            val mnu=tnu*(roL+1)*(roL+1)+ml;
-                            val mmu=tmu*(roL+1)*(roL+1)*sh.maxbrab+mnu;
+                            val mnu=tnu*(maxl+1)*(maxl+1)+ml;
+                            val mmu=tmu*(maxl+1)*(maxl+1)*sh.maxbrab+mnu;
                             arr(ind++)=temp(mmu);
                         }
                     intLms(ron) = new IntLm(arr,maxl); 
@@ -272,15 +276,12 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
             pAuxCount+=ka*kb*bracount*K;
             AuxCount+=bracount*K; 
         }
-        maxmaxl = new Rail[Int](roN); //roL=0; //override
+        maxmaxl = new Rail[Int](roN);
         for (var ron:Int=0; ron<=roN; ron++) {
             maxmaxl(ron)=-1;
             for (i in 0..(numSigShellPairs-1))
                 if (shellPairs(i).maxL(ron)>maxmaxl(ron)) maxmaxl(ron)=shellPairs(i).maxL(ron);
             Console.OUT.printf("maxmaxl(%d)=%d\n", ron, maxmaxl(ron));
-            // overide
-            //maxmaxl(ron)=l_n(ron+1); 
-            //if (maxmaxl(ron)>roL) roL=maxmaxl(ron);
         }
 
         Console.OUT.printf("nShell=%d numSigShellPairs=%d pAuxCount=%e (primitive) AuxCount=%e (contracted)\n",nShell,numSigShellPairs,pAuxCount,AuxCount);

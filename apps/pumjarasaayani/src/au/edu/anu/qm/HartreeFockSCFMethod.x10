@@ -183,16 +183,18 @@ public class HartreeFockSCFMethod extends SCFMethod {
         }
     
         // long range energy
+        if (jd.roOn>0) {
         Console.OUT.println("Long-range - RO");
         density.compute(mos);
-        val omega=jd.omega;
-        val gMatrixRoL = new GMatrixROmem2(N, bfs, molecule, noOfOccupancies,jd.roZ*omega,roZ*jd.roThresh); // RO Thesis Eq (2.22)
+        val gMatrixRoL = new GMatrixROmem2(N, bfs, molecule, noOfOccupancies,jd.roZ*jd.omega,roZ*jd.roThresh); // RO Thesis Eq (2.22)
         gMatrixRoL.compute(density, mos);   
-        
-        Console.OUT.println("Long-range - Conventional");
-        val gMatrixL = new GMatrix(N, bfs, molecule,jd.roZ*omega,roZ*jd.thresh); // RO Thesis Eq (2.22)
-        gMatrixL.compute(density);   
+        }
 
+        if (jd.compareRo) {
+        Console.OUT.println("Long-range - Conventional");
+        val gMatrixL = new GMatrix(N, bfs, molecule,jd.roZ*jd.omega,roZ*jd.thresh); // RO Thesis Eq (2.22)
+        gMatrixL.compute(density);   
+        }
             //fock.compute(hCore, gMatrixRo);
             //val eOne = density.clone().mult(density, hCore).trace();
             //val eTwo = density.clone().mult(density, fock).trace();

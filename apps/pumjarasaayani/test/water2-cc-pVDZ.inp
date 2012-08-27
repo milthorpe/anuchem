@@ -1,7 +1,7 @@
 2water
 basis cc-pVDZ
 units 0.5291772109217
-RO_Z 1000000005
+RO_Z 1000000.5
 molecule
 H -1.958940   -0.032063    0.725554
 H -0.607485    0.010955    0.056172
@@ -12,7 +12,7 @@ O 1.430776   -0.003706    0.113495
 end
 scf_max 0
 guess core
-use_RO 0
+use_RO 1
 RO_N 100
 RO_L 50
 RO_thresh 1e-6
