@@ -1,7 +1,7 @@
 2water
 basis cc-pVDZ
 units 0.5291772109217
-RO_Z 1000000.5
+RO_Z 1.0
 molecule
 H -1.958940   -0.032063    0.725554
 H -0.607485    0.010955    0.056172
@@ -17,5 +17,5 @@ RO_N 100
 RO_L 50
 RO_thresh 1e-6
 thresh 1e-14
-omega .1
+omega 1.
 gmat_parallel_scheme 0

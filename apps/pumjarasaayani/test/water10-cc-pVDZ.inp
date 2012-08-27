@@ -35,12 +35,13 @@ molecule
  H     2.980307     1.433102    -1.934626
 end
 scf_max 0
-guess sad
+guess core
 use_RO 1
+compare_RO 
 RO_N 300
-RO_L 10
+RO_L 90
 RO_thresh 1e-6
 thresh 1e-14
-omega 0.1
+omega .5
 gmat_parallel_scheme 0
 
