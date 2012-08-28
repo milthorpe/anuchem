@@ -62,14 +62,14 @@ public class JobDefaults {
         roOn=0;
         compareRo = false;
 
-        roN=10;
+        roN=100;
         roNK=-1; // see GmatrixRoMem.x10
-        roL=10;
+        roL=100;
         roZ=1.0;
 
         omega = .1;
-        thresh = 1e-8;
-        roThresh = 1e-8;
+        thresh = 1e-14;
+        roThresh = 1e-6;
 
     }
 
