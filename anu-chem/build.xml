@@ -2,7 +2,7 @@
 <!DOCTYPE project [<!ENTITY buildfile SYSTEM "file:./build-user.xml">]>
 <project name="X10 Chemistry project" default="build" basedir=".">
     <property environment="env"/>
-    <property name="x10rt" value="sockets"/>
+    <property name="x10rt" value="mpi"/>
     <property name="x10x.xla" location="../xla"/>
 	<property name="xla.props" location="${x10x.xla}/xla_${x10rt}.properties"/>
     <property name="x10home" location="${env.X10HOME}" />
@@ -10,6 +10,7 @@
     <property name="bash.exe" value="bash"/>
     <property name="optimize" value="true" />
     <property name="nochecks" value="true" />
+    <property name="workstealing" value="false" />
     <property name="debug" value="false"/>
     <property name="profile"  value="false"/>
     <property name="cpuprofile"  value="false"/>
@@ -26,6 +27,10 @@
 
     <condition property="x10c.optimize" value="-O" else="">
         <istrue value="${optimize}" />
+    </condition>
+
+    <condition property="x10c.workstealing" value="-WORK_STEALING" else="">
+        <istrue value="${workstealing}" />
     </condition>
 
     <condition property="x10c.nochecks" value="-NO_CHECKS" else="">
@@ -89,7 +94,7 @@
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/src">
             <arg value="-c"/>
-	    <arg value="'x10c' ${x10c.optimize} -sourcepath '.${path.separator}${xla.src}' -classpath '${xla.lib}' -commandlineonly -d '${target-src}' ${src.list}"/>
+	    <arg value="'x10c' ${x10c.optimize} ${x10c.workstealing} -x10lib ${xla.props}  -commandlineonly -d '${target-src}' ${src.list}"/>
         </exec>
     </target>
 
@@ -117,7 +122,7 @@
         <pathconvert property="src.list" refid="changed.src.files" dirsep="/" pathsep=" ">
             <map from="${basedir}${file.separator}src${file.separator}" to=""/>
         </pathconvert>
-        <echo message="x10c++ -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} ${x10c.debug} ${x10c.profile} -x10lib ${xla.props} -sourcepath . '${basedir}/${testclass}'"/>
+        <echo message="x10c++ -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} ${x10c.workstealing} ${x10c.debug} ${x10c.profile} -x10lib ${xla.props} -sourcepath . '${basedir}/${testclass}'"/>
 
         <copy todir="${target}/classes">
             <fileset id="cpp.files" dir="${basedir}/src" includes="**/*.h,**/*.struct_h,**/*.cc"/>
@@ -125,7 +130,7 @@
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/src">
             <arg value="-c"/>
-            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} ${x10c.debug} ${x10c.profile} -report postcompile=1 -post '# -g ${x10c.optimize} -funroll-loops # ${post.cpuprofile} #' -x10lib ${xla.props} -sourcepath . -d '${target-src}' '${basedir}/${testclass}'"/>
+            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} ${x10c.workstealing} ${x10c.debug} ${x10c.profile} -report postcompile=1 -post '# -g ${x10c.optimize} -funroll-loops # ${post.cpuprofile} #' -x10lib ${xla.props} -sourcepath . -d '${target-src}' '${basedir}/${testclass}'"/>
         </exec>
     </target>
 
