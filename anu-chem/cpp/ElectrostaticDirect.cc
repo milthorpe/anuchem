@@ -3,8 +3,11 @@
 #include <math.h>
 #include <stdio.h>
 #include <mpi.h>
+#include <papi.h>
 #include "ElectrostaticDirect.h"
 #include "Atom.h"
+
+//#define USEPAPI 1
 
 using namespace std;
 
@@ -14,6 +17,7 @@ static long microTime() {
     return (long)(tv.tv_sec * 1000000LL + tv.tv_usec);
 }
 
+static void printerror(const char *file, int line, const char *call, int retval);
 
 static Atom* setup() {
 	atoms = new Atom[atomsPerPlace+1];
@@ -40,6 +44,30 @@ static double randomNoise() {
 }
 
 static double getEnergy() {
+#ifdef USEPAPI
+    int EventSet=PAPI_NULL;
+    int retval = PAPI_library_init(PAPI_VER_CURRENT);
+
+    if (retval != PAPI_VER_CURRENT && retval > 0) {
+        fprintf(stderr,"PAPI library version mismatch!\n");
+        exit(1);
+    }
+
+    if (retval < 0) {
+        fprintf(stderr, "Initialization error!\n");
+        exit(1);
+    }
+    PAPI_create_eventset(&EventSet);
+    PAPI_add_event(EventSet, PAPI_TOT_INS);
+    PAPI_add_event(EventSet, PAPI_FP_INS);
+    PAPI_add_event(EventSet, PAPI_FP_OPS);
+    long long *totals = new long long[3];
+    bzero(totals, 3*sizeof(long long));
+    long long cycles = -PAPI_get_real_cyc();
+    if ((retval=PAPI_start(EventSet)) != PAPI_OK)
+        printerror(__FILE__, __LINE__, "PAPI_start", retval);
+#endif
+
     double energy = 0.0;
 
     Atom* otherAtoms = new Atom[atomsPerPlace+1];
@@ -135,7 +163,7 @@ static double getEnergy() {
 
         if (p != myRank) {
             // energy for all interactions with other atoms at other place
-            int otherNumAtoms = p < leftOver ? atomsPerPlace+1 : atomsPerPlace;
+            int otherNumAtoms = p < leftOver ? astatic void printerror(const char *file, int line, const char *call, int retval);tomsPerPlace+1 : atomsPerPlace;
             for (int i = 0; i < otherNumAtoms; i++) {
                 for (int j = 0; j < myNumAtoms; j++) {
                     double xDist = otherAtoms[i].centre.i - atoms[j].centre.i;
@@ -168,6 +196,13 @@ static double getEnergy() {
 
     double totalEnergy;
     MPI_Reduce(&energy, &totalEnergy, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+
+#ifdef USEPAPI
+    cycles += PAPI_get_real_cyc();
+    PAPI_stop(EventSet, totals);
+    printf("cycles: %16lld total ins: %16lld FP ins: %16lld FLOPS: %16lld\n", cycles, totals[0], totals[1], totals[2]);
+    printf("FLOPS/cycle %f\n", (double)totals[1] / cycles);
+#endif
     
     if (myRank == 0) {
         printf("energy = %.5f\n", totalEnergy);
@@ -175,6 +210,27 @@ static double getEnergy() {
 
     return energy;
 }
+
+static void printerror(const char *file, int line, const char *call, int retval) {
+    printf("%s\tFAILED\nLine # %d\n", file, line);
+    if ( retval == PAPI_ESYS ) {
+        char buf[128];
+        memset( buf, '\0', sizeof(buf) );
+        sprintf(buf, "System error in %s:", call );
+        perror(buf);
+    }
+    else if ( retval > 0 ) {
+        printf("Error calculating: %s retval %d\n", call, retval );
+    }
+    else {
+        char errstring[PAPI_MAX_STR_LEN];
+        PAPI_perror(retval, errstring, PAPI_MAX_STR_LEN );
+        printf("Error in %s: %s\n", call, errstring );
+    }
+    printf("\n");
+    exit(1);
+}
+
 
 int main(int argc, char* argv[]) {
     MPI_Init(&argc, &argv);
