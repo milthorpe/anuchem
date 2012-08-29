@@ -1,11 +1,12 @@
 CPP := mpicxx
-CFLAGS := -O2 -funroll-loops
+CFLAGS := -O3 -funroll-loops -g
+#LDFLAGS := -lpapi
 
 run:	directcpp
 	./directcpp
 
 directcpp:	ElectrostaticDirect.cc
-	$(CPP) $(CFLAGS) ElectrostaticDirect.cc -o directcpp
+	$(CPP) $(CFLAGS) ElectrostaticDirect.cc $(LDFLAGS) -o directcpp
 
 clean:
 	rm -f directcpp
