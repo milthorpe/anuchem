@@ -297,7 +297,7 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
             
         }
 
-        maxmaxl = new Rail[Int](roN);
+        maxmaxl = new Rail[Int](roN+1);
         for (var ron:Int=0; ron<=roN; ron++) {
             maxmaxl(ron)=-1;
             for (i in 0..(numSigShellPairs-1))
