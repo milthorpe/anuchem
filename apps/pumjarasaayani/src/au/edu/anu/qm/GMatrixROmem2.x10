@@ -246,7 +246,7 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
                         val mnu=tnu*(roL+1)*(roL+1)+ml;
                         val mmu=tmu*(roL+1)*(roL+1)*sh.maxbrab+mnu;
                         auxint = Math.max(Math.abs(temp(mmu)), auxint);
-                        //if (Math.abs(temp(mmu))>maxint(roK*ron+ml)) maxint(roK*ron+ml)=Math.abs(temp(mmu));
+                        if (Math.abs(temp(mmu))>maxint(roK*ron+ml)) maxint(roK*ron+ml)=Math.abs(temp(mmu));
                     }
                 }
                 if (auxint<intThresh && rol==-1) maxl=-1; 
@@ -256,7 +256,7 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
                     maxn=ron;                   
                 }
                 sh.maxL(ron)=maxl; 
-                Console.OUT.printf("shellpair id=%d ron=%d maxl=%d [%d,%e]\n",i,ron,maxl,roL,auxint);
+                //Console.OUT.printf("shellpair id=%d ron=%d maxl=%d [%d,%e]\n",i,ron,maxl,roL,auxint);
                 // overide
                 /* if (maxl>l_n(ron+1))*/// sh.maxL(ron)=maxl=l_n(ron+1); 
                 
