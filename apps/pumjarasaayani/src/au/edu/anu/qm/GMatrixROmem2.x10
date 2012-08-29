@@ -86,7 +86,7 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
         this.omega = jd.omega;
         this.roZ=jd.roZ;
 
-        val l_n = new Rail[Int](roN+3);
+        val l_n = new Rail[Int](jd.roN+3);
         aux = new Integral_Pack(jd.roN,jd.roL,omega,roThresh,jd.rad);
         if (omega>0.) {
             aux.getNL(l_n);
@@ -97,22 +97,22 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
             this.roN=jd.roN;
             this.roL=jd.roL;
         }
-
+        roK = (roL+1)*(roL+1);
         //TODO: Come up with an NK scheme
-        if (jd.roNK==-1) this.roNK=roN; else this.roNK=jd.roNK; 
+        this.roNK=roN;//if (jd.roNK==-1) this.roNK=roN; else this.roNK=jd.roNK; 
      
         this.norm = bfs.getNormalizationFactors();
         jMatrix = new DenseMatrix(N, N);
         kMatrix = new DenseMatrix(N, N);
         scratch = new DenseMatrix(N, N);
-        val roLm = (roL+1)*(roL+1);
+       
         val maxam = bfs.getShellList().getMaximumAngularMomentum();
         val maxam1 = (maxam+1)*(maxam+2)/2;
-        temp = new Rail[Double](maxam1*maxam1*roLm); // will be passed to C++ code   
+        temp = new Rail[Double](maxam1*maxam1*roK); // will be passed to C++ code   
 
-        dk = new Rail[Double](roLm); // eqn 15b in RO#7
-        var maxint:Rail[Double] = new Rail[Double](roLm*(roN+1)); 
-        muk = new DenseMatrix(N,roLm); 
+        dk = new Rail[Double](roK); // eqn 15b in RO#7
+        var maxint:Rail[Double] = new Rail[Double](roK*(roN+1)); 
+        muk = new DenseMatrix(N,roK); 
 
         // Reconstruct Table IV in LHG2012 paper
         Console.OUT.printf("maxam=%d\n",maxam);
@@ -151,7 +151,7 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
             Console.OUT.printf("%2d %2d %5d %5d %5d %5d\n",a,b,F1(a+b)+F2(a+b)+F3(a,b),F4(a,b),W1(a+b)+W2(a+b)+W3(a,b),W4(a,b));          
             //Console.OUT.printf("%2d %2d %5d %5d %5d %5d\n",a,b,F1(a+b),F2(a+b),F3(a,b),F4(a,b));  
         }
-
+        Console.OUT.printf("Screening shellpairs...\n");
         // Shell/Shellpair business 
         val threshold = roThresh*jd.roZ*jd.roZ*1e-2; // ** must be relative to roThresh *** otherwise Z scaling will cause problem
         // This is effectively a density threshold RO Thesis (2.26)
@@ -193,7 +193,7 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
                                         /Math.pow(jd.roZ,aang+bang);  // See Szabo Ostlund 3.284-3.286 
                             contrib=Math.abs(contrib);
                             if (contrib>=threshold) {
-                                val maxL = new Rail[Int](roN);
+                                val maxL = new Rail[Int](roN+1);
                                 rawShellPairs(ind++) = new 
                                     ShellPair(aang,bang,aPoint,bPoint,zetaA,zetaB,conA,conB,dConA,dConB,mu,nu,maxL,contrib);             
                             }               
@@ -205,10 +205,12 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
             }   
         }   
         numSigShellPairs = ind;
-        shellPairs = new Array[ShellPair](numSigShellPairs); 
-
+        shellPairs = new Array[ShellPair](numSigShellPairs);         
         for (i in 0..(numSigShellPairs-1))
-            shellPairs(i)=rawShellPairs(i); // TODO delete rawShellPairs
+            shellPairs(i)=rawShellPairs(i); 
+        Console.OUT.printf("found %d significant shellpairs.\n",numSigShellPairs);
+        // TODO delete rawShellPairs
+
         // val compareShellPairContribs = (y:ShellPair,x:ShellPair) => x.contrib.compareTo(y.contrib);
         // ArrayUtils.sort[ShellPair](shellPairs, compareShellPairContribs);
         // numSigShellPairs = Math.abs(ArrayUtils.binarySearch[ShellPair](rawShellPairs, dummySignificantPair, compareShellPairContribs));
@@ -223,19 +225,20 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
 
         val intThresh=roThresh/Math.sqrt(jd.roZ); // must be relative to given thresh so that roZ works
         auxInts = new Rail[AuxInt](numSigShellPairs);
+
+        // TODO: Replace 10 by maxDcon
+        val tempY = new Rail[Double](10*10*(roL+1)*(roL+1));
         for (i in 0..(numSigShellPairs-1)) {
-            val sh = shellPairs(i); val a=sh.aang; val b=sh.bang; val ka=sh.dconA; val kb=sh.dconB;            
-            var maxl:Int=0,maxn:Int=0; 
-            var count1:Int=0; 
-            var rol:Int=0; 
-            val intLms = new Rail[IntLm](roN); 
-            val tempY = new Rail[Double](sh.dconA*sh.dconB*(roL+1)*(roL+1));
+            val sh = shellPairs(i); val a=sh.aang; val b=sh.bang; val ka=sh.dconA; val kb=sh.dconB;   
             aux.genClassY(sh.aPoint, sh.bPoint, sh.zetaA, sh.zetaB, sh.dconA, sh.dconB,  roL, tempY);
+         
+            var maxl:Int=0,maxn:Int=0; 
+            var count1:Int=0; var rol:Int=0; 
+            val intLms = new Rail[IntLm](roN+1);            
 
             for (var ron:Int=0; ron<=roN; ron++) {                                           
-                aux.genClass(sh.aang, sh.bang, sh.aPoint, sh.bPoint, sh.zetaA, sh.zetaB, sh.conA, sh.conB, sh.dconA, sh.dconB, temp, ron, roL, tempY, roL);  
-               
-                var auxint:Double=-1; //can't set to 0 as roThresh can be 0
+                aux.genClass(sh.aang, sh.bang, sh.aPoint, sh.bPoint, sh.zetaA, sh.zetaB, sh.conA, sh.conB, sh.dconA, sh.dconB, temp, ron, roL, tempY, roL);                 
+                var auxint:Double=-1.; //can't set to 0 as roThresh can be 0
                 rol=roL;                               
                 for (; rol>=0 && auxint<intThresh; rol--) { 
                     for (var rom:Int=-rol; rom<=rol; rom++)  for (var tmu:Int=0; tmu<sh.maxbraa; tmu++) for (var tnu:Int=0; tnu<sh.maxbrab; tnu++) {
@@ -243,18 +246,19 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
                         val mnu=tnu*(roL+1)*(roL+1)+ml;
                         val mmu=tmu*(roL+1)*(roL+1)*sh.maxbrab+mnu;
                         auxint = Math.max(Math.abs(temp(mmu)), auxint);
-                        if (Math.abs(temp(mmu))>maxint(roLm*ron+ml)) maxint(roLm*ron+ml)=Math.abs(temp(mmu));
+                        //if (Math.abs(temp(mmu))>maxint(roK*ron+ml)) maxint(roK*ron+ml)=Math.abs(temp(mmu));
                     }
                 }
-                if (auxint<intThresh) maxl=-1; 
+                if (auxint<intThresh && rol==-1) maxl=-1; 
                 else {
                     maxl=rol+1;
-                    count1+=Math.pow(maxl+1,2);
+                    count1+=(maxl+1)*(maxl+1);
                     maxn=ron;                   
                 }
                 sh.maxL(ron)=maxl; 
+                Console.OUT.printf("shellpair id=%d ron=%d maxl=%d [%d,%e]\n",i,ron,maxl,roL,auxint);
                 // overide
-                // if (maxl>l_n(ron+1)) sh.maxL(ron)=maxl=l_n(ron+1); 
+                /* if (maxl>l_n(ron+1))*/// sh.maxL(ron)=maxl=l_n(ron+1); 
                 
                 if (maxl>=0) {                     
                     // copy temp to arr
@@ -275,7 +279,7 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
             val fc=(F1(a+b)+F2(a+b)+F3(a,b))*ka*kb+F4(a,b); 
             val wc=(F1(a+b)/3.+nCr(a+b+4,4)+F3(a,b))*ka*kb+F4(a,b)/2.; 
             var K:Double=0;
-            for (var ron:Int=0; ron<roN; ron++)
+            for (var ron:Int=0; ron<=roN; ron++)
                if (sh.maxL(ron)>=0) K+=Math.pow(sh.maxL(ron)+1,2);
             fCost+=fc*K;
             wCost+=wc*K;
@@ -285,7 +289,7 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
         }
 
         for (var ron:Int=0; ron<=roN; ron++) {
-            val offset=roLm*ron;
+            val offset=roK*ron;
             for (var rol:Int=0; rol<=roL; rol++) {
                 var mint:Double=0.;
                 for (var rom:Int=-rol; rom<=rol; rom++) {
@@ -312,8 +316,7 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
         //papi = new PAPI();
         //papi.countFlops();
         //papi.countMemoryOps();
-
-        roK = (roL+1)*(roL+1);
+        
         auxIntMat = new DenseMatrix(N,N*roK);
         halfAuxMat = new DenseMatrix(nOrbital,N*roK);
         halfAuxMat2 = new DenseMatrix(N,nOrbital*roK);
