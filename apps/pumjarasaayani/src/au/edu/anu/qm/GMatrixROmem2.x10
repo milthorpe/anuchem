@@ -80,15 +80,27 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
         this.bfs = bfs;
         this.mol = molecule;
         this.nOrbital = nOrbital;
+
         val jd = JobDefaults.getInstance();
         this.roThresh=roThresh;
         this.omega = jd.omega;
-        
+        this.roZ=jd.roZ;
+
+        val l_n = new Rail[Int](roN+3);
+        aux = new Integral_Pack(jd.roN,jd.roL,omega,roThresh,jd.rad);
+        if (omega>0.) {
+            aux.getNL(l_n);
+            roN=roNK=l_n(0);
+            roL=l_n(roN+2);  
+        }
+        else {
             this.roN=jd.roN;
-            if (jd.roNK==-1) this.roNK=jd.roN; else this.roNK=jd.roNK;
             this.roL=jd.roL;
-            this.roZ=jd.roZ;
-       
+        }
+
+        //TODO: Come up with an NK scheme
+        if (jd.roNK==-1) this.roNK=roN; else this.roNK=jd.roNK; 
+     
         this.norm = bfs.getNormalizationFactors();
         jMatrix = new DenseMatrix(N, N);
         kMatrix = new DenseMatrix(N, N);
@@ -96,17 +108,10 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
         val roLm = (roL+1)*(roL+1);
         val maxam = bfs.getShellList().getMaximumAngularMomentum();
         val maxam1 = (maxam+1)*(maxam+2)/2;
-        temp = new Rail[Double](maxam1*maxam1*roLm); // will be passed to C++ code
-        val l_n = new Rail[Int](roN+3);
-        aux = new Integral_Pack(roN,roL,omega,roThresh,jd.rad);
-        if (omega>0.) {
-            aux.getNL(l_n);
-            roN=roNK=l_n(0);
-            roL=l_n(roN+2);  
-        }
-        Console.OUT.printf("roN=%d roL=%d roNK=%d\n",roN,roL,roNK); 
+        temp = new Rail[Double](maxam1*maxam1*roLm); // will be passed to C++ code   
 
         dk = new Rail[Double](roLm); // eqn 15b in RO#7
+        var maxint:Rail[Double] = new Rail[Double](roLm*(roN+1)); 
         muk = new DenseMatrix(N,roLm); 
 
         // Reconstruct Table IV in LHG2012 paper
@@ -238,6 +243,7 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
                         val mnu=tnu*(roL+1)*(roL+1)+ml;
                         val mmu=tmu*(roL+1)*(roL+1)*sh.maxbrab+mnu;
                         auxint = Math.max(Math.abs(temp(mmu)), auxint);
+                        if (Math.abs(temp(mmu))>maxint(roLm*ron+ml)) maxint(roLm*ron+ml)=Math.abs(temp(mmu));
                     }
                 }
                 if (auxint<intThresh) maxl=-1; 
@@ -277,6 +283,20 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
             pAuxCount+=ka*kb*bracount*K;
             AuxCount+=bracount*K; 
         }
+
+        for (var ron:Int=0; ron<=roN; ron++) {
+            val offset=roLm*ron;
+            for (var rol:Int=0; rol<=roL; rol++) {
+                var mint:Double=0.;
+                for (var rom:Int=-rol; rom<=rol; rom++) {
+                    val ml=rol*(rol+1)+rom;
+                    mint = Math.max(maxint(offset+ml),mint);
+                }
+                Console.OUT.printf("maxint(%d,%d)=%e\n", ron, rol, mint);   
+            }
+            
+        }
+
         maxmaxl = new Rail[Int](roN);
         for (var ron:Int=0; ron<=roN; ron++) {
             maxmaxl(ron)=-1;
