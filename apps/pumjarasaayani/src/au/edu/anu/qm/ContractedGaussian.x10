@@ -47,6 +47,7 @@ public struct ContractedGaussian {
 
     public def getTotalAngularMomentum() = power.getTotalAngularMomentum();
     public def getMaximumAngularMomentum() = power.getMaximumAngularMomentum();
+    public def getMaximumDegreeOfContraction() = coefficients.size ;
 
     public def distanceFrom(cg:ContractedGaussian) : Double = origin.distance(cg.origin);
     public def distanceSquaredFrom(cg:ContractedGaussian) : Double = origin.distanceSquared(cg.origin);

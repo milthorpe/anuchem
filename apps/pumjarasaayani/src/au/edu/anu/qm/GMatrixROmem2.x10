@@ -107,15 +107,15 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
         scratch = new DenseMatrix(N, N);
        
         val maxam = bfs.getShellList().getMaximumAngularMomentum();
+        val mdc=bfs.getShellList().getMaximumDegreeOfContraction();
         val maxam1 = (maxam+1)*(maxam+2)/2;
-        temp = new Rail[Double](maxam1*maxam1*roK); // will be passed to C++ code   
-
+        temp = new Rail[Double](maxam1*maxam1*roK); // will be passed to C++ code           
         dk = new Rail[Double](roK); // eqn 15b in RO#7
         var maxint:Rail[Double] = new Rail[Double](roK*(roN+1)); 
         muk = new DenseMatrix(N,roK); 
 
         // Reconstruct Table IV in LHG2012 paper
-        Console.OUT.printf("maxam=%d\n",maxam);
+        Console.OUT.printf("bfs.getShellList().getMaximumAngularMomentum()= %d\nbfs.getShellList().getMaximumDegreeOfContraction() = %d\n",maxam,mdc);
         val F1 = new Array[Int](0..(2*maxam)); val W1 = new Array[Int](0..(2*maxam));
         val F2 = new Array[Int](0..(2*maxam)); val W2 = new Array[Int](0..(2*maxam));
         val F3 = new Array[Int](0..maxam*0..maxam); val W3 = new Array[Int](0..maxam*0..maxam);
@@ -225,9 +225,8 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
 
         val intThresh=roThresh/Math.sqrt(jd.roZ); // must be relative to given thresh so that roZ works
         auxInts = new Rail[AuxInt](numSigShellPairs);
-
-        // TODO: Replace 10 by maxDcon
-        val tempY = new Rail[Double](10*10*(roL+1)*(roL+1));
+        
+        val tempY = new Rail[Double](mdc*mdc*(roL+1)*(roL+1));
         for (i in 0..(numSigShellPairs-1)) {
             val sh = shellPairs(i); val a=sh.aang; val b=sh.bang; val ka=sh.dconA; val kb=sh.dconB;   
             aux.genClassY(sh.aPoint, sh.bPoint, sh.zetaA, sh.zetaB, sh.dconA, sh.dconB,  roL, tempY);
@@ -296,7 +295,7 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
                     val ml=rol*(rol+1)+rom;
                     mint = Math.max(maxint(offset+ml),mint);
                 }
-                Console.OUT.printf("maxint(%d,%d)=%e\n", ron, rol, mint);   
+                //Console.OUT.printf("maxint(%d,%d)=%e\n", ron, rol, mint);   
             }
             
         }
@@ -340,6 +339,8 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
         val jd = JobDefaults.getInstance();
         var prevLoadCount:Long = 0;
 
+
+        Console.OUT.print("J matrix\n");
         // Form J matrix
         //papi.reset();
         timer.start(TIMER_JMATRIX); var t:Double=0.;
@@ -351,7 +352,7 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
             for (var tmu:Int=sp.mu; tmu<sp.mu+sp.maxbraa; tmu++) for (var tnu:Int=sp.nu; tnu<sp.nu+sp.maxbrab; tnu++)
                 scratch(tmu,tnu)=density(tmu,tnu)*fac*norm(tmu)*norm(tnu);
         }
-        if (counter==0)  Console.OUT.printf("rawtime\n");
+        //if (counter==0)  Console.OUT.printf("rawtime\n");
         for (var ron:Int=0; ron<=roN; ron++) {
             // Form dk vector
             dk.clear();       
@@ -408,14 +409,14 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
                 }
             }            
         } 
-        if (counter==0) Console.OUT.printf("rawtime\n");    
+        //if (counter==0) Console.OUT.printf("rawtime\n");    
         for (spInd in 0..(numSigShellPairs-1)) {
             val sp=shellPairs(spInd);
             if (sp.mu!=sp.nu) for (var tmu:Int=sp.mu; tmu<sp.mu+sp.maxbraa; tmu++) for (var tnu:Int=sp.nu; tnu<sp.nu+sp.maxbrab; tnu++) 
                 jMatrix(tnu,tmu) = jMatrix(tmu,tnu);
         }
         timer.stop(TIMER_JMATRIX);
-        Console.OUT.print("J matrix ");
+        
         //papi.printFlops();
         //papi.printMemoryOps();
 
@@ -429,7 +430,7 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
         // Form K matrix
         // if (counter++!=0) // if guess MOs is not available - i.e. SAD, first cycle gives EK=0 // This is partly fixed by using 'core' guess for MOs
         //papi.resetCount();
-        Console.OUT.print("K matrix ");
+        Console.OUT.print("K matrix\n");
         timer.start(TIMER_KMATRIX); t=0.;
         var t1:Double=0.;  var t2:Double=0.; var t31:Double=0.; var t32:Double=0.;
         // Version 3 - Unlimited memory - try to see what performance we can get
@@ -480,7 +481,8 @@ for (var ron:Int=0; ron<=roNK; ron++){
         kMatrix.multTrans(halfAuxMat2, halfAuxMat2, true);
         timer.stop(TIMER_GENCLASS); t32+= (timer.last(TIMER_GENCLASS) as Double)/1e9 ;
 
-        
+        val eKron = scratch.mult(density, kMatrix).trace();
+        Console.OUT.printf("  EK(%d) = %.6f a.u.\n",ron, eKron/jd.roZ);
 }
         Console.OUT.printf("version 3: time 1=%lf 2=%lf 3.1=%lf 3.2=%lf\n",t1,t2,t31,t32);
         // Version 2 - save memory and try to be smart by reducing numbers of loads

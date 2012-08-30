@@ -24,11 +24,12 @@ public struct ShellList {
     private val shellList:HashMap[Int, Shell];
     private val powerList:Rail[Rail[Power]];
     private val maxam:Int;
+    private val maxDcon:Int; // Max degree of contraction
 
     public def this(molecule:Molecule[QMAtom]) {
         // init shell list
         val shellList = new HashMap[Int, Shell]();
-        var maxam : Int = 0;
+        var maxam : Int = 0; var maxDcon:Int =0;
         for(var atmno:Int=0; atmno<molecule.getNumberOfAtoms(); atmno++) {
             val atom = molecule.getAtom(atmno);
             val bfs  = atom.getBasisFunctions();
@@ -37,7 +38,9 @@ public struct ShellList {
             for(var i:Int=0; i<nbf; i++) {
                 val cg = bfs.get(i);
                 val am = cg.getMaximumAngularMomentum();
+                val dcon = cg.getMaximumDegreeOfContraction();
                 maxam  = Math.max(am, maxam);
+                maxDcon = Math.max(dcon, maxDcon);
 
                 var shell:Shell = shellList.getOrElse(am, null);
                 if (shell == null) {
@@ -55,6 +58,7 @@ public struct ShellList {
         for(i in 0..maxam4) powerList(i) = pList.generatePowerList(i); 
 
         this.maxam = maxam;
+        this.maxDcon = maxDcon;
         this.shellList = shellList;
         this.powerList = powerList;
     }
@@ -83,6 +87,7 @@ public struct ShellList {
     }
 
     public @Inline def getMaximumAngularMomentum() = maxam;
+    public @Inline def getMaximumDegreeOfContraction() = maxDcon;
     public @Inline def getShell(am:Int) = shellList.getOrElse(am, null);
     public @Inline def getPowers(am:Int) = powerList(am);
 }
