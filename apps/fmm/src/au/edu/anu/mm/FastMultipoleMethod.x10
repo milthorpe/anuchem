@@ -201,7 +201,7 @@ public class FastMultipoleMethod {
     protected def downwardPass():Double {
         localData().timer.start(FmmLocalData.TIMER_INDEX_DOWNWARD);
 
-        val topLevelExp = null; // TODO periodic ? (at (boxes(0).dist(0,0,0)) {boxes(0)(0,0,0).localExp}) : null;
+        val topLevelExp:LocalExpansion = null; // TODO periodic ? (at (boxes(0).dist(0,0,0)) {boxes(0)(0,0,0).localExp}) : null;
         val farField = finish(SumReducer()) {
             for (topLevelOctant in localData().topLevelOctants) {
                 if (topLevelOctant != null && topLevelOctant.id.level == OctantId.TOP_LEVEL) async {
