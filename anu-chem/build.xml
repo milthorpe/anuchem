@@ -2,7 +2,7 @@
 <!DOCTYPE project [<!ENTITY buildfile SYSTEM "file:./build-user.xml">]>
 <project name="X10 Chemistry project" default="build" basedir=".">
     <property environment="env"/>
-    <property name="x10rt" value="mpi"/>
+    <property name="x10rt" value="sockets"/>
     <property name="x10x.xla" location="../xla"/>
 	<property name="xla.props" location="${x10x.xla}/xla_${x10rt}.properties"/>
     <property name="x10home" location="${env.X10HOME}" />
