@@ -183,18 +183,20 @@ public class HartreeFockSCFMethod extends SCFMethod {
         }
     
         // long range energy
+        //Console.OUT.println("before RO heapSize = " + System.heapSize());
         if (jd.roOn>0) {
-        Console.OUT.println("Long-range - RO");
-        density.compute(mos);
-        val gMatrixRoL = new GMatrixROmem2(N, bfs, molecule, noOfOccupancies,jd.roZ*jd.omega,roZ*jd.roThresh); // RO Thesis Eq (2.22)
-        gMatrixRoL.compute(density, mos);   
+            computeLongRangeRO(N, mos, noOfOccupancies, density, jd, bfs);
+            System.gc();
+            //Console.OUT.println("after GC heapSize = " + System.heapSize());
         }
 
+
         if (jd.compareRo) {
-        Console.OUT.println("Long-range - Conventional");
-        val gMatrixL = new GMatrix(N, bfs, molecule,jd.roZ*jd.omega,roZ*jd.thresh); // RO Thesis Eq (2.22)
-        gMatrixL.compute(density);   
+            Console.OUT.println("Long-range - Conventional");
+            val gMatrixL = new GMatrix(N, bfs, molecule,jd.roZ*jd.omega,roZ*jd.thresh); // RO Thesis Eq (2.22)
+            gMatrixL.compute(density);   
         }
+        Console.OUT.println("after conventional = " + System.heapSize());
             //fock.compute(hCore, gMatrixRo);
             //val eOne = density.clone().mult(density, hCore).trace();
             //val eTwo = density.clone().mult(density, fock).trace();
@@ -202,6 +204,18 @@ public class HartreeFockSCFMethod extends SCFMethod {
             //Console.OUT.printf("Cycle ** Total energy = %.6f a.u. (scale factor = %.6f)",  energy/roZ,roZ);
 
 
+    }
+
+    private def computeLongRangeRO(N:Int, mos:MolecularOrbitals{self.N==N}, noOfOccupancies:Int, density:Density{self.M==N,self.N==N}, jd:JobDefaults, bfs:BasisFunctions) {
+         Console.OUT.println("Long-range - RO");
+            density.compute(mos);
+            val gMatrixRoL = new GMatrixROmem2(N, bfs, molecule, noOfOccupancies,jd.roZ*jd.omega,roZ*jd.roThresh); // RO Thesis Eq (2.22)
+            gMatrixRoL.compute(density, mos);
+/* 
+            Console.OUT.println("after RO heapSize = " + System.heapSize() + " size of gMatrixRoL.muk = " + gMatrixRoL.muk.d.size
+                 + " size of gMatrixRoL.auxIntMat = " + gMatrixRoL.auxIntMat.d.size
+                 + " size of gMatrixRoL.jMatrix = " + gMatrixRoL.jMatrix.d.size);
+*/
     }
 
 }
