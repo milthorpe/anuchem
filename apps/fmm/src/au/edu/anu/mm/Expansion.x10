@@ -42,9 +42,9 @@ public class Expansion {
         this.p = e.p;
     }
 
-    public @Inline operator this(l:Int, m:Int) = terms(l*(l+1)+m);
+    public @Inline final operator this(l:Int, m:Int) = terms(l*(l+1)+m);
 
-    public @Inline operator this(l:Int, m:Int)=(v:Complex):Complex {
+    public @Inline final operator this(l:Int, m:Int)=(v:Complex):Complex {
         terms(l*(l+1)+m) = v;
         return v;
     }
