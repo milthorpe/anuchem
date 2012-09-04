@@ -13,7 +13,7 @@ end
 scf_max 0
 compare_RO
 guess core
-use_RO 1
+use_RO 0
 RO_N 1
 RO_L 3
 RO_thresh 1e-6
