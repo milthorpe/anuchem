@@ -79,8 +79,8 @@ public class ParentOctant extends Octant implements Comparable[ParentOctant] {
                     childExpansions(i) = child.upward(localData, size, dMax);
                 }
             }
-            multipoleExp.terms.clear();
-            localExp.terms.clear();
+            multipoleExp.clear();
+            localExp.clear();
         }
 
         val fmmOperators = localData().fmmOperators;

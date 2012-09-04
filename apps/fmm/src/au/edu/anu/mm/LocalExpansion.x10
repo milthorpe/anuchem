@@ -39,12 +39,11 @@ public class LocalExpansion extends Expansion {
      */
     public static def getMlm(v:Tuple3d, p:Int) : LocalExpansion {
         val exp = new LocalExpansion(p);
-        val terms = exp.terms;
         val v_pole = Polar3d.getPolar3d(v);
         val pplm = AssociatedLegendrePolynomial.getPlk(v_pole.theta, p);
         val rfac0 : Double = 1.0 / v_pole.r;
 
-        terms(0,0) = Complex(rfac0 * pplm(0,0), 0.0);
+        exp(0,0) = Complex(rfac0 * pplm(0,0), 0.0);
 
         val phifac0 = Complex(Math.cos(v_pole.phi), Math.sin(v_pole.phi));
         var rfac : Double = rfac0 * rfac0;
@@ -53,12 +52,12 @@ public class LocalExpansion extends Expansion {
             il = il * l;
             var ilm : Double = il;
             var phifac : Complex = Complex.ONE;
-            terms(l,0) = phifac * (rfac * pplm(l,0) * ilm);
+            exp(l,0) = phifac * (rfac * pplm(l,0) * ilm);
             for (m in 1..l) {
                 ilm = ilm / (l+1-m);
                 phifac = phifac * phifac0;
         		val M_lm = phifac * (rfac * pplm(l,m) * ilm);
-                terms(l,m) = M_lm;
+                exp(l,m) = M_lm;
             }
             rfac = rfac * rfac0;
         }
@@ -82,9 +81,8 @@ public class LocalExpansion extends Expansion {
         Array.copy(source.terms, scratch.terms);
         scratch.rotate(temp, complexK(1), wigner(0) );
 
-    	val targetTerms = scratch.terms;
     	for (m in 0..p) {
-    		for (l in m..p) temp(l) = targetTerms(l, m);
+    		for (l in m..p) temp(l) = scratch(l, m);
 
     		for (l in m..p) {
     			var M_lm : Complex = Complex.ZERO;
@@ -93,7 +91,7 @@ public class LocalExpansion extends Expansion {
     				M_lm = M_lm + temp(j) * F_lm;
     				F_lm = F_lm * b / (j - l + 1);
     			}
-    			targetTerms(l, m) = M_lm;
+    			scratch(l, m) = M_lm;
     		}
 	   	}
 
@@ -128,12 +126,11 @@ public class LocalExpansion extends Expansion {
         Array.copy(source.terms, scratch.terms);
     	scratch.rotate(temp, complexK(0), wigner(0) );
 
-	    val targetTerms = scratch.terms;
         var m_sign:Int = 1;
         var b_m_pow:Double = 1.0;
 	    for (m in 0..p) {
             for (l in m..p) {
-                temp(l) = m_sign * targetTerms(l, m).conjugate();
+                temp(l) = m_sign * scratch(l, m).conjugate();
             }
 
             var F_lm:Double = Factorial.getFactorial(m+m) * inv_b * b_m_pow * b_m_pow;
@@ -145,7 +142,7 @@ public class LocalExpansion extends Expansion {
 				    M_lm = M_lm + temp(j) * F_jl;
 				    F_jl = (j+l+1) * inv_b * F_jl;
 			    }
-			    targetTerms(l, m) = M_lm;
+			    scratch(l, m) = M_lm;
                 F_lm = (m+l+1) * inv_b * F_lm;
 		    }
             m_sign = -m_sign;
@@ -182,14 +179,14 @@ public class LocalExpansion extends Expansion {
         for (j in 0..p) {
             var k_sign:Int=1-(2*j%2);
             for (k in -j..j) {
-                val O_jk = k < 0 ? (k_sign * source.terms(j,-k).conjugate()) : source.terms(j,k);
+                val O_jk = k < 0 ? (k_sign * source(j,-k).conjugate()) : source(j,k);
                 for (l in 0..(p-j)) {
                     for (m in 0..l) {
                         val km = k+m;
                         if (Math.abs(km) <= (j+l)) {
-                            val B_lmjk = km < 0 ? ((1-(2*km%2)) * transform.terms(j+l, -km).conjugate()) : transform.terms(j+l, km);
+                            val B_lmjk = km < 0 ? ((1-(2*km%2)) * transform(j+l, -km).conjugate()) : transform(j+l, km);
                             //Console.OUT.println("source.terms.dist(" + j + "," + k + ") = " + source.terms.dist(j,k));
-                            this.terms(l,m) = this.terms(l,m) + B_lmjk * O_jk;
+                            this(l,m) = this(l,m) + B_lmjk * O_jk;
                         }
                     }
                 }
@@ -215,14 +212,14 @@ public class LocalExpansion extends Expansion {
         var dt:Double = 0.0;
         var dp:Double = 0.0;
 
-        var potential:Double = q * pplm(0,0) * terms(0,0).re;
+        var potential:Double = q * pplm(0,0) * this(0,0).re;
 
         val phifac0 = Complex(Math.cos(-v_pole.phi), Math.sin(-v_pole.phi));
         var rfac : Double = v_pole.r;
         var rfacPrev : Double = 1.0;
         var il : Double = 1.0;
         for (l in 1..p) {
-            val Ml0 = terms(l,0);
+            val Ml0 = this(l,0);
             il = il * l;
             var F_lm:Complex = Complex(1.0/il, 0.0); // e^{-i m phi} / (l+|m|)!
             potential += (Ml0 * F_lm * (q * rfac * pplm(l,0))).re;
@@ -232,7 +229,7 @@ public class LocalExpansion extends Expansion {
             for (m in 1..l) {
                 F_lm = F_lm * phifac0 / (l+m);
                 val Olm = F_lm * (q * rfac * pplm(l,m));
-                val Mlm = terms(l,m);
+                val Mlm = this(l,m);
 
                 potential += 2.0*(Mlm.re * Olm.re) - 2.0*(Mlm.im * Olm.im);
 
@@ -276,7 +273,7 @@ public class LocalExpansion extends Expansion {
         val parentExpansion = new LocalExpansion(p);
         for (l in 0..p) {
             for (m in 0..l) {
-                parentExpansion.terms(l,m) = terms(l,m) / Math.pow(3.0, l+1);
+                parentExpansion(l,m) = this(l,m) / Math.pow(3.0, l+1);
             }
         }
         return parentExpansion;

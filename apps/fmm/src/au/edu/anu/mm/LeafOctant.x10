@@ -59,8 +59,8 @@ public class LeafOctant extends Octant implements Comparable[LeafOctant] {
     protected def upward(localData:PlaceLocalHandle[FmmLocalData], size:Double, dMax:UByte):Pair[Int,MultipoleExpansion] {
         //Console.OUT.println("at " + here + " LeafOctant.upward for " + id + " numAtoms = " + numAtoms);
         if (atoms.size() > 0) {
-            multipoleExp.terms.clear();
-            localExp.terms.clear();
+            multipoleExp.clear();
+            localExp.clear();
 
             val p = multipoleExp.p;
             val centre = getCentre(size);
