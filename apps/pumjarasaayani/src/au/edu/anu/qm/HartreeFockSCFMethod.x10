@@ -9,9 +9,11 @@
  * (C) Copyright Australian National University 2010-2012.
  */
 package au.edu.anu.qm;
-
 import au.edu.anu.chem.Molecule;
 import au.edu.anu.util.Timer;
+
+import x10.matrix.DenseMatrix;
+import x10.matrix.blas.DenseMatrixBLAS;
 
 /**
  * Implementation of Hartree-Fock SCF method
@@ -52,8 +54,8 @@ public class HartreeFockSCFMethod extends SCFMethod {
         var converged:Boolean = false;
         var oldEnergy:Double = 0.0;
 
-        val hCore   = oneE.getHCore();
-        val overlap = oneE.getOverlap();
+        Console.OUT.printf("\nGetting HCore...\n"); val hCore   = oneE.getHCore();
+        Console.OUT.printf("Getting Overlap...\n"); val overlap = oneE.getOverlap();
 
         // init memory for the matrices
         val N = hCore.N;
@@ -171,6 +173,13 @@ public class HartreeFockSCFMethod extends SCFMethod {
            Console.OUT.printf("SCF converged. Final SCF energy = %.6f a.u.\n", energy/roZ,roZ);
 
         Console.OUT.printf("==========================================================\n");
+
+        val pdmat = new DenseMatrix(N, N);
+        pdmat.multTrans(density, overlap, true);
+        var ecount:Double=0.;
+        for (var i:Int=0; i<N; i++)
+             ecount+=pdmat(i,i);
+        Console.OUT.printf("ecount=%e\n",ecount);
 
         if ((jd.roOn == 0 || jd.compareRo) && maxIteration>0) {
             Console.OUT.println("GMatrix construction timings:");
