@@ -57,6 +57,11 @@ public class HartreeFockSCFMethod extends SCFMethod {
         Console.OUT.printf("\nGetting HCore...\n"); val hCore   = oneE.getHCore();
         Console.OUT.printf("Getting Overlap...\n"); val overlap = oneE.getOverlap();
 
+        val diag = new GMLDiagonalizer();
+        diag.diagonalize(overlap);
+        val eigval =  diag.getEigenValues().d;;
+        Console.OUT.printf("Eigen values %e %e %e\n",eigval(0),eigval(1),eigval(2));        
+
         // init memory for the matrices
         val N = hCore.N;
         val jd = JobDefaults.getInstance();
