@@ -179,11 +179,15 @@ public class HartreeFockSCFMethod extends SCFMethod {
 
         Console.OUT.printf("==========================================================\n");
 
-        val pdmat = new DenseMatrix(N, N);
-        pdmat.multTrans(density, overlap, true);
+        //val pdmat = new DenseMatrix(N, N);
+        //pdmat.multTrans(density, overlap, true);
         var ecount:Double=0.;
-        for (var i:Int=0; i<N; i++)
-             ecount+=pdmat(i,i);
+        for (var i:Int=0; i<N; i++) for (var j:Int=i; j<N; j++) {
+             val contrib=density(i,j)*overlap(i,j);
+             ecount+=contrib;
+             if (i!=j) ecount+=contrib;
+             if (density(i,j)>10.) Console.OUT.printf("density(%d,%d)=%e, s=%e\n",i,j,density(i,j),overlap(i,j));
+        }
         Console.OUT.printf("ecount=%e\n",ecount);
 
         if ((jd.roOn == 0 || jd.compareRo) && maxIteration>0) {
