@@ -13,10 +13,10 @@ end
 scf_max 0
 compare_RO
 guess core
-use_RO 0
+use_RO 1
 RO_N 1
 RO_L 3
 RO_thresh 1e-6
 thresh 1e-14
-omega .1
+omega 1.
 gmat_parallel_scheme 0

@@ -202,9 +202,15 @@ public class HartreeFockSCFMethod extends SCFMethod {
     
         // long range energy
         //Console.OUT.println("before RO heapSize = " + System.heapSize());
-        if (jd.roOn>0) {
+        while (jd.roOn>0 && jd.roN>0) {
             computeLongRangeRO(N, mos, noOfOccupancies, density, jd, bfs);
             System.gc();
+            Console.OUT.print("Input new roN (xxx) or 000 to exit:");
+            val rbuf = new Rail[Byte](10);
+            Console.IN.read(rbuf,0,4);
+            jd.roN = (rbuf(0)-48)*100+(rbuf(1)-48)*10+(rbuf(2)-48)*1;            
+            Console.OUT.println(rbuf + "new roN = "+jd.roN);
+            
             //Console.OUT.println("after GC heapSize = " + System.heapSize());
         }
 
