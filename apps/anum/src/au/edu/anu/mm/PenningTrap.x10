@@ -119,17 +119,7 @@ public class PenningTrap {
         finish ateach(place in Dist.makeUnique()) {
             var step:Int = 0;
             val props = new SystemProperties();
-            val startPosPrinter = new Printer(new FileWriter(new File("positions_0.dat"), false));
-            val leafOctants = fmm.localData().leafOctants;
-            for (leafOctant in leafOctants) {
-                val octantAtoms = leafOctant.atoms;
-                for (atoms in octantAtoms) {
-                    props.accumulate(atoms, this);
-                }
-                // print start positions
-                printPositions(0, octantAtoms, startPosPrinter);
-            }
-            reduceAndPrintProperties(0, props);
+            printStartPositions(props);
 
             val current = new Array[Double](numSteps);
 
@@ -152,12 +142,7 @@ public class PenningTrap {
                 printMassSpectrum(timestep, current);
             }
 
-            // print end positions
-            val timeInt = (timestep * step) as Int;
-            val endPosPrinter = new Printer(new FileWriter(new File("positions_" + timeInt + ".dat"), true));
-            for (leafOctant in leafOctants) {
-                printPositions(timestep * step, leafOctant.atoms, endPosPrinter);
-            }
+            printEndPositions(timestep * step);
 
             Team.WORLD.allreduce[Long](here.id, timer.count, 0, timer.count, 0, timer.count.size, Team.ADD);
             Team.WORLD.allreduce[Long](here.id, timer.total, 0, timer.total, 0, timer.total.size, Team.ADD);
@@ -173,6 +158,30 @@ public class PenningTrap {
             }
         }
 
+    }
+
+    private def printStartPositions(props:SystemProperties) {
+        val startPosPrinter = new Printer(new FileWriter(new File("positions_0.dat"), false));
+        val leafOctants = fmm.localData().leafOctants;
+        for (leafOctant in leafOctants) {
+            val octantAtoms = leafOctant.atoms;
+            for (atoms in octantAtoms) {
+                props.accumulate(atoms, this);
+            }
+            // print start positions
+            printPositions(0, octantAtoms, startPosPrinter);
+        }
+        reduceAndPrintProperties(0, props);
+    }
+
+    private def printEndPositions(time:Double) {
+        // print end positions
+        val timeInt = (time) as Int;
+        val endPosPrinter = new Printer(new FileWriter(new File("positions_" + timeInt + ".dat"), true));
+        val leafOctants = fmm.localData().leafOctants;
+        for (leafOctant in leafOctants) {
+            printPositions(time, leafOctant.atoms, endPosPrinter);
+        }
     }
 
     /**
@@ -191,7 +200,7 @@ public class PenningTrap {
         timer.stop(2);
 
         timer.start(1);
-        fmm.calculateEnergyLocal();
+        val pairwiseEnergy = fmm.calculateEnergyLocal();
         timer.stop(1);
 
         val leafOctants = fmm.localData().leafOctants;
