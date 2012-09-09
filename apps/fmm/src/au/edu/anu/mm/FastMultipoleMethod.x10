@@ -590,7 +590,6 @@ public class FastMultipoleMethod {
         // separate the uList into partial lists stored at each nearby place
         for ([p] in myCombinedUList) {
             val octantId = OctantId.getFromMortonId(myCombinedUList(p));
-            if (octantId.level > 0UY) { // TODO why is octant 0:(0,0,0) in the list?
             val placeId = local.getPlaceId(octantId.getAnchor(dMax));
             if (placeId >= 0 && placeId < Place.MAX_PLACES) {
                 // leaf octant exists at Place(placeId)
@@ -600,7 +599,6 @@ public class FastMultipoleMethod {
                     uListPlaces.put(placeId, uListForPlace);
                 }
                 uListForPlace.add(myCombinedUList(p));
-            }
             }
         }
 

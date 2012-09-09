@@ -225,6 +225,7 @@ public class LeafOctant extends Octant implements Comparable[LeafOctant] {
      * The U-list consists of all leaf octants not well-separated from this octant.
      */
     public def createUList(ws:Int) {
+        val tempUList = new ArrayList[OctantId]();
         val levelDim = Math.pow2(id.level);
         val w = 2*ws+1;
         uList = new Array[OctantId](w*w*w-1);
@@ -236,11 +237,12 @@ public class LeafOctant extends Octant implements Comparable[LeafOctant] {
                 for (z in Math.max(0,id.z-ws)..Math.min(levelDim-1,id.z+ws)) {
                     val z2 = z as UByte;
                     if (!(x2==id.x && y2==id.y && z2==id.z)) {
-                        uList(i++) = OctantId(x2,y2,z2,id.level);
+                        tempUList.add(OctantId(x2,y2,z2,id.level));
                     }
                 }
             }
         }
+        this.uList = tempUList.toArray();
     }
 
     public def getUList() = this.uList;
