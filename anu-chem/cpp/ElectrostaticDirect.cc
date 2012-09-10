@@ -87,24 +87,36 @@ static double getEnergy() {
 
     // energy for all interactions within this place
     for (int i = 0; i < myNumAtoms; i++) {
+        double fi = 0.0;
+        double fj = 0.0;
+        double fk = 0.0;
+        double ii = atoms[i].centre.i;
+        double ij = atoms[i].centre.j;
+        double ik = atoms[i].centre.k;
+        double qi = atoms[i].charge;
         for (int j = 0; j < i; j++) {
-            double xDist = atoms[i].centre.i -atoms[j].centre.i;
-            double yDist = atoms[i].centre.j -atoms[j].centre.j;
-            double zDist = atoms[i].centre.k -atoms[j].centre.k;
+            double xDist = ii - atoms[j].centre.i;
+            double yDist = ij - atoms[j].centre.j;
+            double zDist = ik - atoms[j].centre.k;
 
             double r2 = xDist * xDist + yDist * yDist + zDist * zDist;
             double invR2 = 1.0 / r2;
             double invR = sqrt(invR2);
 
-            double e = (atoms[i].charge * atoms[j].charge) * invR;
+            double e = (qi * atoms[j].charge) * invR;
             energy += 2.0 * e;
-            atoms[i].force.i += e * invR2 * xDist;
+
             atoms[j].force.i -= e * invR2 * xDist;
-            atoms[i].force.j += e * invR2 * yDist;
             atoms[j].force.j -= e * invR2 * yDist;
-            atoms[i].force.k += e * invR2 * zDist;
             atoms[j].force.k -= e * invR2 * zDist;
+
+            fi += e * invR2 * xDist;
+            fj += e * invR2 * yDist;
+            fk += e * invR2 * zDist;
         }
+        atoms[i].force.i = fi;
+        atoms[i].force.j = fj;
+        atoms[i].force.k = fk;
     }
 
     MPI_Status ignore;
