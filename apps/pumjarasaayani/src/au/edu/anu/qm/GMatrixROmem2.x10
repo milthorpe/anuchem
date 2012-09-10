@@ -32,7 +32,6 @@ import au.edu.anu.qm.ro.Integral_Pack;
 //import edu.utk.cs.papi.PAPI;
 
 public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
-
     // Timer
     public val timer = new StatisticalTimer(5);
     static TIMER_TOTAL = 0; static TIMER_JMATRIX = 1;

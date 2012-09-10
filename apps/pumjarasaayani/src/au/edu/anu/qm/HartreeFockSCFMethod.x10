@@ -60,8 +60,8 @@ public class HartreeFockSCFMethod extends SCFMethod {
         val diag = new GMLDiagonalizer();
         diag.diagonalize(overlap);
         val eigval =  diag.getEigenValues().d;;
-        Console.OUT.printf("Eigen values %e %e %e\n",eigval(0),eigval(1),eigval(2));        
-
+        Console.OUT.printf("Three smallest eigen values %e %e %e\n",eigval(0),eigval(1),eigval(2));        
+        if (eigval(0)<1e-6) Console.OUT.printf("Linear dependence detected!!!\n");
         // init memory for the matrices
         val N = hCore.N;
         val jd = JobDefaults.getInstance();
@@ -179,16 +179,18 @@ public class HartreeFockSCFMethod extends SCFMethod {
 
         Console.OUT.printf("==========================================================\n");
 
-        //val pdmat = new DenseMatrix(N, N);
-        //pdmat.multTrans(density, overlap, true);
-        var ecount:Double=0.;
+        // val pdmat = new DenseMatrix(N, N);
+        // pdmat.multTrans(density, overlap, true);
+        // Trace of PS = # electrons
+        var ecount:Double=0.; var maxDen:Double=0.;
         for (var i:Int=0; i<N; i++) for (var j:Int=i; j<N; j++) {
              val contrib=density(i,j)*overlap(i,j);
              ecount+=contrib;
              if (i!=j) ecount+=contrib;
              if (density(i,j)>10.) Console.OUT.printf("density(%d,%d)=%e, s=%e\n",i,j,density(i,j),overlap(i,j));
+             if (density(i,j)>maxDen) maxDen=density(i,j);
         }
-        Console.OUT.printf("ecount=%e\n",ecount);
+        Console.OUT.printf("ecount=%e maxDen=%e\n",ecount,maxDen);
 
         if ((jd.roOn == 0 || jd.compareRo) && maxIteration>0) {
             Console.OUT.println("GMatrix construction timings:");
@@ -205,11 +207,13 @@ public class HartreeFockSCFMethod extends SCFMethod {
         while (jd.roOn>0 && jd.roN>0) {
             computeLongRangeRO(N, mos, noOfOccupancies, density, jd, bfs);
             System.gc();
-            Console.OUT.print("Input new roN (xxx) or 000 to exit:");
-            val rbuf = new Rail[Byte](10);
-            Console.IN.read(rbuf,0,4);
+            Console.OUT.print("Input new roN Omega roThresh (nnn ooo t) or 000 000 0 to exit:");
+            val rbuf = new Rail[Byte](20);
+            Console.IN.read(rbuf,0,10);
             jd.roN = (rbuf(0)-48)*100+(rbuf(1)-48)*10+(rbuf(2)-48)*1;            
-            Console.OUT.println(rbuf + "new roN = "+jd.roN);
+            jd.omega = (rbuf(4)-48)*1.0+(rbuf(5)-48)*0.1+(rbuf(6)-48)*0.01;
+            jd.roThresh = Math.pow(10,-(rbuf(8)-48));
+            Console.OUT.println("new roN = "+jd.roN +" new omega ="+jd.omega+" new roThresh ="+jd.roThresh);
             
             //Console.OUT.println("after GC heapSize = " + System.heapSize());
         }
