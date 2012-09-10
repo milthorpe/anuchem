@@ -1,7 +1,7 @@
 10water
 basis cc-pVQZ
 units 0.5291772109217
-RO_Z 3.0
+RO_Z 1.0
 molecule
  O    -0.970508     2.454333     1.174186
  O    -2.589474     0.126309     1.242786
@@ -34,9 +34,12 @@ molecule
  H     2.205641     0.241922    -1.365884
  H     2.980307     1.433102    -1.934626
 end
-scf_max 1
-guess sad
+scf_max 0
+guess core
 use_RO 1
 RO_N 300
-RO_L 30
+RO_L 100
+RO_thresh 1e-6
+thresh 1e-14
+omega 0.1
 gmat_parallel_scheme 0
