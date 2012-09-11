@@ -440,22 +440,26 @@ for (var ron:Int=0; ron<=roNK; ron++){
             }
         }
         timer.stop(TIMER_GENCLASS); t1+= (timer.last(TIMER_GENCLASS) as Double)/1e9 ;
-       
+        Console.OUT.printf("step1 %.6f\n",t1);
+
         // step 2
         timer.start(TIMER_GENCLASS);
         DenseMatrixBLAS.comp(mos, auxIntMat, halfAuxMat, [nOrbital, N*roK, N], false);     
         timer.stop(TIMER_GENCLASS); t2+= (timer.last(TIMER_GENCLASS) as Double)/1e9 ;
+        Console.OUT.printf("step2 %.6f\n",t2);
 
         // step 3
         timer.start(TIMER_GENCLASS);
         for (var mu:Int=0;  mu<N; mu++)  for (var aorb:Int=0;  aorb<nOrbital; aorb++) for (var k:Int=0;  k<roK; k++) 
             halfAuxMat2(mu,aorb*roK+k)=halfAuxMat(aorb,mu*roK+k);
         timer.stop(TIMER_GENCLASS); t31+= (timer.last(TIMER_GENCLASS) as Double)/1e9 ;
+        Console.OUT.printf("step3.1 %.6f\n",t31);
 
         timer.start(TIMER_GENCLASS);    
         // Matrix Matrix multiplication
         kMatrix.multTrans(halfAuxMat2, halfAuxMat2, true);
         timer.stop(TIMER_GENCLASS); t32+= (timer.last(TIMER_GENCLASS) as Double)/1e9 ;
+        Console.OUT.printf("step3.2 %.6f\n",t32);
 
         val eKron = scratch.mult(density, kMatrix).trace();
         Console.OUT.printf("  EK(%d) = %.6f a.u.\n",ron, eKron/jd.roZ);
