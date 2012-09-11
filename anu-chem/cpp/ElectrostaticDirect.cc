@@ -33,6 +33,9 @@ static Atom* setup() {
         atoms[i].centre.i = x;
 		atoms[i].centre.j = y;
 		atoms[i].centre.k = z;
+        atoms[i].force.i = 0.0;
+        atoms[i].force.j = 0.0;
+        atoms[i].force.k = 0.0;
 		atoms[i].charge = gridPoint%2==0?1.0:-1.0;
         gridPoint++;
 	}
