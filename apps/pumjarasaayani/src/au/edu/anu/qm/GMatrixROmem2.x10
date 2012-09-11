@@ -104,11 +104,11 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
         var maxint:Rail[Double] = new Rail[Double](roK*(roN+1)); 
         val tempY = new Rail[Double](mdc*mdc*roK);
         Console.OUT.printf("GMatrixROmem.x10 Memory (2) allocated sucessfully...\n"); 
-
+        val NroK= N*roK;
         auxIntMat = new DenseMatrix(N,N*roK);
         halfAuxMat = new DenseMatrix(nOrbital,N*roK);
         halfAuxMat2 = new DenseMatrix(N,nOrbital*roK);
-        Console.OUT.printf("GMatrixROmem.x10 Memory (3) allocated sucessfully...\n"); 
+        Console.OUT.printf("GMatrixROmem.x10 Memory (3) %d allocated sucessfully...\n",NroK); 
 
         // Reconstruct Table IV in LHG2012 paper
         Console.OUT.printf("bfs.getShellList().getMaximumAngularMomentum()= %d\nbfs.getShellList().getMaximumDegreeOfContraction() = %d\n",maxam,mdc);
