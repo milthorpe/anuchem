@@ -179,18 +179,25 @@ public class HartreeFockSCFMethod extends SCFMethod {
 
         Console.OUT.printf("==========================================================\n");
 
-        // val pdmat = new DenseMatrix(N, N);
-        // pdmat.multTrans(density, overlap, true);
+        var ecount:Double=0.; var maxDen:Double=0.; var minDen:Double=1e100;
+
+        /* val pdmat = new DenseMatrix(N, N);
+        pdmat.multTrans(density, overlap, true);
+        for (var i:Int=0; i<N; i++) {
+            ecount+=pdmat(i);
+            if (pdmat(i)<0.) Console.OUT.printf("padmat(%d)=%e\n",i,pdmat(i));
+        }      
         // Trace of PS = # electrons
-        var ecount:Double=0.; var maxDen:Double=0.;
+        ecount=0.;*/
         for (var i:Int=0; i<N; i++) for (var j:Int=i; j<N; j++) {
              val contrib=density(i,j)*overlap(i,j);
              ecount+=contrib;
              if (i!=j) ecount+=contrib;
-             if (density(i,j)>10.) Console.OUT.printf("density(%d,%d)=%e, s=%e\n",i,j,density(i,j),overlap(i,j));
+             if (density(i,j)>100.) Console.OUT.printf("density(%d,%d)=%e, s=%e\n",i,j,density(i,j),overlap(i,j));
              if (density(i,j)>maxDen) maxDen=density(i,j);
+             else if (density(i,j)<minDen) minDen=density(i,j);
         }
-        Console.OUT.printf("ecount=%e maxDen=%e\n",ecount,maxDen);
+        Console.OUT.printf("ecount=%e maxDen=%e minDen=%e\n",ecount,maxDen,minDen);
 
         if ((jd.roOn == 0 || jd.compareRo) && maxIteration>0) {
             Console.OUT.println("GMatrix construction timings:");
