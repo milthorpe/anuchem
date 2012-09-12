@@ -217,7 +217,7 @@ public class HartreeFockSCFMethod extends SCFMethod {
             Console.OUT.print("Input new roN Omega roThresh (nnn ooo t) or 000 000 0 to exit:");
             val rbuf = new Rail[Byte](20);
             Console.IN.read(rbuf,0,10);
-            jd.roN = (rbuf(0)-48)*100+(rbuf(1)-48)*10+(rbuf(2)-48)*1;            
+            jd.roN = ((rbuf(0)-48) as Int)*100+(rbuf(1)-48)*10+(rbuf(2)-48)*1;            
             jd.omega = (rbuf(4)-48)*1.0+(rbuf(5)-48)*0.1+(rbuf(6)-48)*0.01;
             jd.roThresh = Math.pow(10,-(rbuf(8)-48));
             Console.OUT.println("rbuf = "+rbuf);
