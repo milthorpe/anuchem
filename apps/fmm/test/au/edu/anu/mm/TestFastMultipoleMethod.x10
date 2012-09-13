@@ -103,14 +103,14 @@ public class TestFastMultipoleMethod extends TestElectrostatic {
         //fmm.countOctants();
 
         //val papi = new PAPI();
-        //papi.countFlops();
+        //papi.countMemoryOps();
         //papi.start();
         val energy = fmm.calculateEnergy();
         for (i in 1..10) {
            //fmm.calculateEnergy();
         }
         //papi.stop();
-        //papi.printFlops();
+        //papi.printMemoryOps();
         //papi.shutDown();
         
         if (verbose) {

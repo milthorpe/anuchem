@@ -129,7 +129,6 @@ public class ParentOctant extends Octant implements Comparable[ParentOctant] {
             constructLocalExpansion(localData, size, parentLocalExpansion);
 
             val parentExp = localExp;
-
             val farField = finish (SumReducer()) {
                 for (i in 0..(children.size-1)) {
                     val childOctant = children(i);
@@ -144,9 +143,7 @@ public class ParentOctant extends Octant implements Comparable[ParentOctant] {
                     }
                 }
             };
-
             return farField;
-
         } else {
             return 0.0;
         }

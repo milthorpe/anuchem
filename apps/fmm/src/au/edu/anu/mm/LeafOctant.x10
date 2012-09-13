@@ -88,19 +88,23 @@ public class LeafOctant extends Octant implements Comparable[LeafOctant] {
         if (atoms.size() > 0) {
             constructLocalExpansion(localData, size, parentLocalExpansion);
 
-            return getPotential(size, localData().locallyEssentialTree, dMax);
+            var potential: Double = farField(size);
+            potential += nearField(size, localData().locallyEssentialTree, dMax);
+
+            return potential;
         } else {
             return 0.0;
-        }        
+        }  
     }
 
     /**
-     * Returns the far-field potential of all charges within this octant due to
-     * all charges in well-separated octant.
-     * Updates forces on each particle due to long-range interactions.
+     * Calculates the potential and forces on atoms in this octant, due to 
+     * all charges in well-separated octants, using the previously calculated
+     * local expansion for this octant.
      * @param size the side length of the full simulation box
+     * @return the potential due to far-field interactions
      */
-    private def getPotential(size:Double, myLET:LET, dMax:UByte):Double {
+    public def farField(size:Double):Double {
         val boxCentre = getCentre(size);
 
         var potential:Double = 0.0;
@@ -111,17 +115,18 @@ public class LeafOctant extends Octant implements Comparable[LeafOctant] {
             potential += localExp.calculatePotentialAndForces(atom, locationWithinBox);
         }
 
-        potential += calculateDirectPotentialAndForces(size, myLET, dMax);
-
         return potential;
     }
 
     /** 
-     * Calculates the potential and forces due to atoms in this octant and in
-     * all non-well-separated octants.
-     * @return the potential due to direct interactions
+     * Calculates the potential and forces on atoms in this octant, due to 
+     * all other atoms in this octant and in non-well-separated octants.
+     * @param size the side length of the full simulation box
+     * @param myLET the locally essential tree at this place
+     * @param dMax the maximum number of levels in the tree
+     * @return the potential due to near-field interactions
      */
-    private def calculateDirectPotentialAndForces(size:Double, myLET:LET, dMax:UByte):Double {
+    public def nearField(size:Double, myLET:LET, dMax:UByte):Double {
         var directEnergy:Double = 0.0;
         for (atomIndex1 in 0..(atoms.size()-1)) {
             // direct calculation between all atoms in this octant

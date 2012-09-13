@@ -141,12 +141,13 @@ public class FastMultipoleMethod {
             }
             upwardPass();
             Team.WORLD.barrier(here.id);
+
         }
-        val localEnergy = 0.5 * downwardPass();
+        val potential = downwardPass();
         timer.stop(FmmLocalData.TIMER_INDEX_TOTAL);
         Team.WORLD.allreduce[Long](here.id, timer.total, 0, timer.total, 0, timer.total.size, Team.MAX);
 
-        return localEnergy;
+        return 0.5 * potential;
 
     }
 
@@ -190,15 +191,13 @@ public class FastMultipoleMethod {
 
     protected def upwardPass() {
         localData().timer.start(FmmLocalData.TIMER_INDEX_UPWARD);
-        finish {
-            for (topLevelOctant in localData().topLevelOctants) async {
-                topLevelOctant.upward(localData, size, dMax);
-            }
+        finish for (topLevelOctant in localData().topLevelOctants) async {
+            topLevelOctant.upward(localData, size, dMax);
         }
         localData().timer.stop(FmmLocalData.TIMER_INDEX_UPWARD);
     }
 
-    protected def downwardPass():Double {
+    protected def downwardPass() {
         localData().timer.start(FmmLocalData.TIMER_INDEX_DOWNWARD);
 
         val topLevelExp:LocalExpansion = null; // TODO periodic ? (at (boxes(0).dist(0,0,0)) {boxes(0)(0,0,0).localExp}) : null;
@@ -603,7 +602,7 @@ public class FastMultipoleMethod {
         }
 
         // retrieve the partial list for each place and store into my LET
-        for (placeEntry in uListPlaces.entries()) {
+        finish for (placeEntry in uListPlaces.entries()) async {
             val placeId = placeEntry.getKey();
             val uListForPlace = placeEntry.getValue();
             val uListArray = uListForPlace.toArray();
