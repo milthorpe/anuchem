@@ -10,6 +10,8 @@
  */
 package au.edu.anu.qm;
 
+import x10.compiler.Ifdef;
+
 import x10.util.ArrayList;
 import x10.util.ArrayUtils;
 import x10.util.Team;
@@ -29,7 +31,8 @@ import au.edu.anu.util.SharedCounter;
 import au.edu.anu.util.Timer;
 import au.edu.anu.util.StatisticalTimer;
 import au.edu.anu.qm.ro.Integral_Pack;
-//import edu.utk.cs.papi.PAPI;
+//@Ifdef("__PAPI__")  
+import edu.utk.cs.papi.PAPI; 
 
 public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
     // Timer
@@ -38,7 +41,8 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
     static TIMER_KMATRIX = 2; static TIMER_GENCLASS = 3;
 
     // PAPI performance counters
-    // transient val papi:PAPI;
+    @Ifdef("__PAPI__") 
+    transient val papi:PAPI; 
 
     // Integral_Pack 
     transient val aux:Integral_Pack;
@@ -68,9 +72,11 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
         val result = Runtime.execForRead("date"); Console.OUT.printf("GMatrixROmem.x10 initialization starts at %s...\n",result.readLine()); 
         this.bfs = bfs; this.mol = molecule; this.nOrbital = nOrbital;     
 
-        //papi = new PAPI();
-        //papi.countFlops();
-        //papi.countMemoryOps();     
+        @Ifdef("__PAPI__") { 
+            papi = new PAPI(); 
+            papi.countFlops();
+            papi.countMemoryOps(); 
+        }     
 
         val jd = JobDefaults.getInstance();
         val l_n = new Rail[Int](jd.roN+3);
@@ -324,7 +330,8 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
 
         // Form J matrix
         Console.OUT.print("J matrix\n");
-        //papi.reset();
+        @Ifdef("__PAPI__") 
+        { papi.reset(); }
         timer.start(TIMER_JMATRIX); var t:Double=0.;
         var fac:Double; var ind:Int; var jContrib:Double;
 
@@ -346,9 +353,11 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
                     ind=0;  
                     timer.start(TIMER_GENCLASS);
                     val temp1=auxInts(spInd).intLms(ron).IntLm;
-                    //papi.start();
+                    @Ifdef("__PAPI__") 
+                    { papi.start(); }
                     //aux.genClass(sp.aang, sp.bang, sp.aPoint, sp.bPoint, sp.zetaA, sp.zetaB, sp.conA, sp.conB, sp.dconA, sp.dconB, temp, ron, maxLron,ylms(spInd).y, ylms(spInd).maxL);
-                    //papi.stop();
+                    @Ifdef("__PAPI__") 
+                    { papi.stop(); }
                     timer.stop(TIMER_GENCLASS);
                     if (false) {
                         //Console.OUT.printf("%d\t%d\t%d\t%d\t%d\t%d",sp.aang, sp.bang, sp.dconA, sp.dconB, ron, maxLron); // printf can accomodate upto 6 arguments?
@@ -374,10 +383,12 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
                     val maxLm=(maxLron+1)*(maxLron+1);
                     ind=0;  
                     //timer.start(TIMER_GENCLASS);
-                    //papi.start();
+                    @Ifdef("__PAPI__") 
+                    { papi.start(); }
                     val temp1=auxInts(spInd).intLms(ron).IntLm;
                     //aux.genClass(sp.aang, sp.bang, sp.aPoint, sp.bPoint, sp.zetaA, sp.zetaB, sp.conA, sp.conB, sp.dconA, sp.dconB, temp, ron, maxLron,ylms(spInd).y, ylms(spInd).maxL);  
-                    //papi.stop();
+                    @Ifdef("__PAPI__") 
+                    { papi.stop(); }
                     //timer.stop(TIMER_GENCLASS); t+= (timer.last(TIMER_GENCLASS) as Double)/1e9 ;
 
                     for (var tmu:Int=sp.mu; tmu<sp.mu+sp.maxbraa; tmu++) for (var tnu:Int=sp.nu; tnu<sp.nu+sp.maxbrab; tnu++) {
@@ -399,8 +410,11 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
         }
         timer.stop(TIMER_JMATRIX);
         
-        //papi.printFlops();
-        //papi.printMemoryOps();
+        @Ifdef("__PAPI__") 
+        {
+            papi.printFlops();
+            papi.printMemoryOps();
+        }
 
 // vvvv For development purpose vvvvvv
         val eJ = scratch.mult(density, jMatrix).trace();
@@ -411,7 +425,9 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
 
         // Form K matrix
         // if guess MOs is not available - i.e. SAD, first cycle gives EK=0 // This is partly fixed by using 'core' guess for MOs
-        // papi.resetCount();
+        @Ifdef("__PAPI__") 
+        { papi.reset(); }
+
         Console.OUT.print("K matrix\n");
         timer.start(TIMER_KMATRIX); t=0.;
         var t1:Double=0.;  var t2:Double=0.; var t31:Double=0.; var t32:Double=0.;
@@ -509,10 +525,12 @@ for (var ron:Int=0; ron<=roNK; ron++){
                 if (maxLron>=0) {
                     val maxLm=(maxLron+1)*(maxLron+1);  
                     timer.start(TIMER_GENCLASS);
-                    //papi.start();
+                    @Ifdef("__PAPI__") 
+                    { papi.start(); }
                     // aux.genClass(sp.aang, sp.bang, sp.aPoint, sp.bPoint, sp.zetaA, sp.zetaB, sp.conA, sp.conB, sp.dconA, sp.dconB, temp, ron, maxLron,ylms(spInd).y, ylms(spInd).maxL);
                     val temp1=auxInts(spInd).intLms(ron).IntLm;
-                    //papi.stop();
+                    @Ifdef("__PAPI__") 
+                    { papi.stop(); }
                     
                     ind=0;                   
                     for (var tmu:Int=sp.mu; tmu<sp.mu+sp.maxbraa; tmu++) for (var tnu:Int=sp.nu; tnu<sp.nu+sp.maxbrab; tnu++) { 
@@ -541,8 +559,11 @@ for (var ron:Int=0; ron<=roNK; ron++){
         }   */
         timer.stop(TIMER_KMATRIX);
         
-        //papi.printFlops();
-        //papi.printMemoryOps();
+        @Ifdef("__PAPI__") 
+        {
+            papi.printFlops();
+            papi.printMemoryOps();
+        }
 
 // vvvv For development purpose vvvvvv
         val eK = scratch.mult(density, kMatrix).trace();
