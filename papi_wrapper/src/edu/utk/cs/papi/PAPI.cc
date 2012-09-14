@@ -15,7 +15,7 @@ namespace edu {
                     return new PAPI();
                 }
 
-                PAPI::PAPI() {
+                void PAPI::initialize() {
                     EventSet=PAPI_NULL;
                     if ((num_hwcntrs = PAPI_num_counters()) <= PAPI_OK)  
                         printerror(__FILE__, __LINE__, "PAPI_num_counters", num_hwcntrs);
@@ -32,10 +32,6 @@ namespace edu {
                         fprintf(stderr, "Initialization error!\n");
                         exit(1);
                     }
-                }
-
-                PAPI::~PAPI() {
-                    shutDown();
                 }
 
                 void PAPI::countFlops() {

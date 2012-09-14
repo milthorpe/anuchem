@@ -42,7 +42,7 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
 
     // PAPI performance counters
     //@Ifdef("__PAPI__") // XTENLANG-3132
-    transient val papi:PAPI; 
+    transient var papi:PAPI = new PAPI(); 
 
     // Integral_Pack 
     transient val aux:Integral_Pack;
@@ -73,13 +73,9 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
         this.bfs = bfs; this.mol = molecule; this.nOrbital = nOrbital;     
 
         @Ifdef("__PAPI__") { 
-            papi = new PAPI(); 
+            papi.initialize();
             papi.countFlops();
             papi.countMemoryOps(); 
-        }
-        // TODO remove - workaround for XTENLANG-3132
-        @Ifndef("__PAPI__") { 
-            papi = null;
         }
 
         val jd = JobDefaults.getInstance();
