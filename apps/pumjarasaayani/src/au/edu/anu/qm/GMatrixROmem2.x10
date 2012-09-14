@@ -11,6 +11,7 @@
 package au.edu.anu.qm;
 
 import x10.compiler.Ifdef;
+import x10.compiler.Ifndef;
 
 import x10.util.ArrayList;
 import x10.util.ArrayUtils;
@@ -31,8 +32,7 @@ import au.edu.anu.util.SharedCounter;
 import au.edu.anu.util.Timer;
 import au.edu.anu.util.StatisticalTimer;
 import au.edu.anu.qm.ro.Integral_Pack;
-//@Ifdef("__PAPI__")  
-import edu.utk.cs.papi.PAPI; 
+import edu.utk.cs.papi.PAPI;
 
 public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
     // Timer
@@ -41,7 +41,7 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
     static TIMER_KMATRIX = 2; static TIMER_GENCLASS = 3;
 
     // PAPI performance counters
-    @Ifdef("__PAPI__") 
+    //@Ifdef("__PAPI__") // XTENLANG-3132
     transient val papi:PAPI; 
 
     // Integral_Pack 
@@ -76,7 +76,11 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
             papi = new PAPI(); 
             papi.countFlops();
             papi.countMemoryOps(); 
-        }     
+        }
+        // TODO remove - workaround for XTENLANG-3132
+        @Ifndef("__PAPI__") { 
+            papi = null;
+        }
 
         val jd = JobDefaults.getInstance();
         val l_n = new Rail[Int](jd.roN+3);
