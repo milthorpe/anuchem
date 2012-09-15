@@ -164,9 +164,10 @@ public class Expansion {
         target(0,0) += this(0,0);
         for (l in 1..p) {
             val Dl = wigner(l);
+            val t_l0 = this(l,0);
 
             for (m in 0..l) {
-	            var O_lm:Complex = this(l,0) * Dl(m, 0);
+	            var O_lm:Complex = t_l0 * Dl(m, 0);
                 var m_sign:Double = -1.0;
                 for (k in 1..l) {
                     val t_lk = this(l, k);
