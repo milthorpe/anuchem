@@ -121,35 +121,39 @@ public class LocalExpansion extends Expansion {
      * @see Dachsel 2006, eqn 10
      */
     public def transformAndAddToLocal(scratch:MultipoleExpansion, temp:Rail[Complex], v:Vector3d, complexK:Rail[Rail[Complex]], source:MultipoleExpansion, wigner:Rail[Rail[Array[Double](2){rect}]]) { 
-    	val inv_b = 1 / v.length();
+        val inv_b = 1 / v.length();
 
         Array.copy(source.terms, scratch.terms);
-    	scratch.rotate(temp, complexK(0), wigner(0) );
+        scratch.rotate(temp, complexK(0), wigner(0) );
 
         var m_sign:Double = 1.0;
         var b_m_pow:Double = 1.0;
-	    for (m in 0..p) {
+        for (m in 0..p) {
             for (l in m..p) {
                 temp(l) = m_sign * scratch(l, m).conjugate();
             }
 
             var F_lm:Double = Factorial.getFactorial(m+m) * inv_b * b_m_pow * b_m_pow;
-		    for (l in m..p) {
-			    var M_lm : Complex = Complex.ZERO;
-			    var F_jl : Double = F_lm;
+            var ml:Double = m+m+1;
+            for (l in m..p) {
+                var M_lm : Complex = Complex.ZERO;
+                var F_jl : Double = F_lm;
+                var jl:Double = ml;
 
-			    for (j in m..p) {
-				    M_lm = M_lm + temp(j) * F_jl;
-				    F_jl = (j+l+1) * inv_b * F_jl;
-			    }
-			    scratch(l, m) = M_lm;
-                F_lm = (m+l+1) * inv_b * F_lm;
-		    }
+                for (j in m..p) {
+                    M_lm = M_lm + temp(j) * F_jl;
+                    F_jl = jl * inv_b * F_jl;
+                    jl += 1.0;
+                }
+                scratch(l, m) = M_lm;
+                F_lm = ml * inv_b * F_lm;
+                ml += 1;
+            }
             m_sign = -m_sign;
             b_m_pow = b_m_pow * inv_b;
-	    }
+        }
 
-	    scratch.backRotateAndAdd(complexK(0), wigner(1), this);
+        scratch.backRotateAndAdd(complexK(0), wigner(1), this);
     }
 
     /**
