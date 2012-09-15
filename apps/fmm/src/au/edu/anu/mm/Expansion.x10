@@ -114,7 +114,7 @@ public class Expansion {
            
             for (m in 0..l) {
 	            var O_lm:Complex = temp(0) * Dl(m, 0);
-                var m_sign:Int = -1;
+                var m_sign:Double = -1.0;
                 for (k in 1..l) {
                     val temp_k = temp(k);
                     O_lm += temp_k * Dl(m, k) + m_sign * temp_k.conjugate() * Dl(m, -k); // Eq. 5, for k and -k
@@ -141,7 +141,7 @@ public class Expansion {
            
             for (m in 0..l) {
 	            var O_lm:Complex = temp(0) * Dl(m, 0);
-                var m_sign:Int = -1;
+                var m_sign:Double = -1.0;
                 for (k in 1..l) {
                     val temp_k = temp(k);
                     O_lm += temp_k * Dl(m, k) + m_sign * temp_k.conjugate() * Dl(m, -k); // Eq. 5, for k and -k
@@ -167,7 +167,7 @@ public class Expansion {
 
             for (m in 0..l) {
 	            var O_lm:Complex = this(l,0) * Dl(m, 0);
-                var m_sign:Int = -1;
+                var m_sign:Double = -1.0;
                 for (k in 1..l) {
                     val t_lk = this(l, k);
                     O_lm += t_lk * Dl(m, k) + m_sign * t_lk.conjugate() * Dl(m, -k); // Eq. 5, for k and -k

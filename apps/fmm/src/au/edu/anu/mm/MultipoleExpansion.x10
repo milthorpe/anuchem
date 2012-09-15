@@ -186,7 +186,7 @@ public class MultipoleExpansion extends Expansion {
         atomic {
             // TODO should be just:  for ([j,k] in region) {
             for (j in 0..p) {
-                var k_sign:Int=1-(2*j%2);
+                var k_sign:Double=1-(2*j%2);
                 for (k in -j..j) {
                     val O_jk = k < 0 ? (k_sign * source(j,-k).conjugate()) : source(j,k);
                     for (l in j..p) {

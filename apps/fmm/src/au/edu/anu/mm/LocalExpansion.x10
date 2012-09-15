@@ -126,7 +126,7 @@ public class LocalExpansion extends Expansion {
         Array.copy(source.terms, scratch.terms);
     	scratch.rotate(temp, complexK(0), wigner(0) );
 
-        var m_sign:Int = 1;
+        var m_sign:Double = 1.0;
         var b_m_pow:Double = 1.0;
 	    for (m in 0..p) {
             for (l in m..p) {
@@ -177,7 +177,7 @@ public class LocalExpansion extends Expansion {
                                          source : MultipoleExpansion) {
         // TODO should be just:  for ([j,k] in terms.region) {
         for (j in 0..p) {
-            var k_sign:Int=1-(2*j%2);
+            var k_sign:Double=1-(2*j%2);
             for (k in -j..j) {
                 val O_jk = k < 0 ? (k_sign * source(j,-k).conjugate()) : source(j,k);
                 for (l in 0..(p-j)) {
