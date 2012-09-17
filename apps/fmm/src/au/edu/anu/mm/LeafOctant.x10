@@ -36,13 +36,17 @@ public class LeafOctant extends Octant implements Comparable[LeafOctant] {
 
     public def numAtoms() = atoms.size();
 
-    public def getAtomCharges():Rail[PointCharge] {
-        val charges = new Array[PointCharge](atoms.size());
+    public def getAtomData():Rail[Double] {
+        val flat = new Array[Double](atoms.size()*4);
         for (i in 0..(atoms.size()-1)) {
             val atom = atoms(i);
-            charges(i) = PointCharge(atom.centre, atom.charge);
+            val idx = i*4;
+            flat(idx)   = atom.centre.i;
+            flat(idx+1) = atom.centre.j;
+            flat(idx+2) = atom.centre.k;
+            flat(idx+3) = atom.charge;
         }
-        return charges;
+        return flat;
     }
 
     public def compareTo(b:LeafOctant):Int = id.compareTo(b.id);
@@ -147,10 +151,11 @@ public class LeafOctant extends Octant implements Comparable[LeafOctant] {
         val periodic = false; // TODO
         // direct calculation with all atoms in non-well-separated octants
         if (periodic) {
+/*
             val lowestLevelDim = Math.pow2(dMax);
             for (p in 0..(uList.size-1)) {
                 val octantIndex2 = uList(p);
-                val octant2Atoms = myLET.getAtomsForOctant(uList(p).getMortonId());
+                val octant2Atoms = myLET.getAtomDataForOctant(uList(p).getMortonId());
                 if (octant2Atoms != null) {
                     val translation = getTranslation(lowestLevelDim, size, octantIndex2.x, octantIndex2.y, octantIndex2.z);
                     for (octant2AtomsIndex in 0..(octant2Atoms.size-1)) {
@@ -172,23 +177,45 @@ public class LeafOctant extends Octant implements Comparable[LeafOctant] {
                     }
                 }
             }
+*/
         } else {
             for (p in 0..(uList.size-1)) {
-                val octant2Atoms = myLET.getAtomsForOctant(uList(p).getMortonId());
-                if (octant2Atoms != null) {
-                    //Console.OUT.println("at " + here + " calculating direct for " + id + " against " + uList(p));
-                    for (octant2AtomsIndex in 0..(octant2Atoms.size-1)) {
-                        val atom2 = octant2Atoms(octant2AtomsIndex);
-                        for (atomIndex1 in 0..(atoms.size()-1)) {
-                            val atom1 = atoms(atomIndex1);
-                            val rVec = atom2.centre - atom1.centre;
-                            val invR2 = 1.0 / rVec.lengthSquared();
+                val oct2Data = myLET.getAtomDataForOctant(uList(p).getMortonId());
+                if (oct2Data != null) {
+                    for (i in 0..(atoms.size()-1)) {
+                        val atomI = atoms(i);
+                        val ci = atomI.centre;
+                        val xi = ci.i;
+                        val yi = ci.j;
+                        val zi = ci.k;
+                        val qi = atomI.charge;
+                        var fix:Double = atomI.force.i;
+                        var fiy:Double = atomI.force.j;
+                        var fiz:Double = atomI.force.k;
+
+                        //Console.OUT.println("at " + here + " calculating direct for " + id + " against " + uList(p));
+                        for (var j:Int=0; j<oct2Data.size; j+=4) {
+                            val xj = oct2Data(j);
+                            val yj = oct2Data(j+1);
+                            val zj = oct2Data(j+2);
+                            val qj = oct2Data(j+3);
+
+                            val dx = xj-xi;
+                            val dy = yj-yi;
+                            val dz = zj-zi;
+                            val r2 = (dx*dx + dy*dy + dz*dz);
+                            val invR2 = 1.0 / r2;
                             val invR = Math.sqrt(invR2);
-                            val e = atom1.charge * atom2.charge * invR;
+                            val qq = qi * qj;
+                            val e = invR * qq;
                             directEnergy += e;
-                            val pairForce = e * invR2 * rVec;
-                            atom1.force += pairForce;
+
+                            val forceScaling = e * invR2;
+                            fix += forceScaling * dx;
+                            fiy += forceScaling * dy;
+                            fiz += forceScaling * dz;
                         }
+                        atomI.force = Vector3d(fix, fiy, fiz);
                     }
                 }
             }
