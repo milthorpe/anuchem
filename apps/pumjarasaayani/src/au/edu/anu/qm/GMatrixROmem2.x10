@@ -23,6 +23,7 @@ import x10.matrix.blas.DenseMatrixBLAS;
 
 import x10x.vector.Vector;
 import x10x.vector.Point3d;
+
 import au.edu.anu.chem.Molecule;
 import au.edu.anu.qm.ShellPair; 
 import au.edu.anu.qm.Ylm; 
@@ -32,6 +33,7 @@ import au.edu.anu.util.SharedCounter;
 import au.edu.anu.util.Timer;
 import au.edu.anu.util.StatisticalTimer;
 import au.edu.anu.qm.ro.Integral_Pack;
+
 import edu.utk.cs.papi.PAPI;
 
 public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
@@ -41,7 +43,7 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
     static TIMER_KMATRIX = 2; static TIMER_GENCLASS = 3;
 
     // PAPI performance counters
-    //@Ifdef("__PAPI__") // XTENLANG-3132
+    // @Ifdef("__PAPI__") // XTENLANG-3132
     transient var papi:PAPI = new PAPI(); 
 
     // Integral_Pack 
@@ -57,19 +59,20 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
     val shellPairs:Rail[ShellPair]; 
     val auxInts:Rail[AuxInt]; 
     val muk:DenseMatrix{self.M==this.N}; 
-    val maxmaxl:Rail[Int];
+    // @Ifdef("__DEBUG__") // XTENLANG-3132
+    var maxmaxl:Rail[Int] = new Rail[Int](0);
     val jMatrix:DenseMatrix{self.M==self.N,self.N==this.N};
     val kMatrix:DenseMatrix{self.M==self.N,self.N==this.N};
-    // scratch is used for calculating eJ, eK
     val scratch:DenseMatrix{self.M==self.N,self.N==this.N};
+
     // Big arrays stored in Memory     
     val auxIntMat:DenseMatrix;//(N,N*roK);
     val halfAuxMat:DenseMatrix;//(nOrbital,N*roK);
-    val halfAuxMat2:DenseMatrix;//(N,nOrbital*roK);   
+    val halfAuxMat2:DenseMatrix;//(N,nOrbital*roK);
 
     public def this(N:Int, bfs:BasisFunctions, molecule:Molecule[QMAtom], nOrbital:Int, omega:Double,roThresh:Double):GMatrixROmem2{self.M==N,self.N==N} {     
         super(N, N); 
-        val result = Runtime.execForRead("date"); Console.OUT.printf("GMatrixROmem.x10 initialization starts at %s...\n",result.readLine()); 
+        val result = Runtime.execForRead("date"); Console.OUT.printf("GMatrixROmem.x10 init %s...\n",result.readLine()); 
         this.bfs = bfs; this.mol = molecule; this.nOrbital = nOrbital;     
 
         @Ifdef("__PAPI__") { 
@@ -110,6 +113,7 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
         var maxint:Rail[Double] = new Rail[Double](roK*(roN+1)); 
         val tempY = new Rail[Double](mdc*mdc*roK);
         Console.OUT.printf("GMatrixROmem.x10 Memory (2) allocated sucessfully...\n"); 
+
         val NroK= N*roK;
         auxIntMat = new DenseMatrix(N,N*roK);
         halfAuxMat = new DenseMatrix(nOrbital,N*roK);
@@ -117,12 +121,13 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
         Console.OUT.printf("GMatrixROmem.x10 Memory (3) %d allocated sucessfully...\n",NroK); 
 
         // Reconstruct Table IV in LHG2012 paper
+        @Ifdef("__DEBUG__") val F1 = new Array[Int](0..(2*maxam)); val W1 = new Array[Int](0..(2*maxam));
+        @Ifdef("__DEBUG__") val F2 = new Array[Int](0..(2*maxam)); val W2 = new Array[Int](0..(2*maxam));
+        @Ifdef("__DEBUG__") val F3 = new Array[Int](0..maxam*0..maxam); val W3 = new Array[Int](0..maxam*0..maxam);
+        @Ifdef("__DEBUG__") val F4 = new Array[Int](0..maxam*0..maxam); val W4 = new Array[Int](0..maxam*0..maxam);
+        @Ifdef("__DEBUG__") val F2e = new Array[Int](0..(2*maxam));
+        @Ifdef("__DEBUG__") {        
         Console.OUT.printf("bfs.getShellList().getMaximumAngularMomentum()= %d\nbfs.getShellList().getMaximumDegreeOfContraction() = %d\n",maxam,mdc);
-        val F1 = new Array[Int](0..(2*maxam)); val W1 = new Array[Int](0..(2*maxam));
-        val F2 = new Array[Int](0..(2*maxam)); val W2 = new Array[Int](0..(2*maxam));
-        val F3 = new Array[Int](0..maxam*0..maxam); val W3 = new Array[Int](0..maxam*0..maxam);
-        val F4 = new Array[Int](0..maxam*0..maxam); val W4 = new Array[Int](0..maxam*0..maxam);
-        val F2e = new Array[Int](0..(2*maxam));
         for (var a:Int=1; a<=2*maxam; a++) {
             F2e(a)=0;
             for (var i:Int=0; i<=a; i++) 
@@ -151,7 +156,7 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
                 F4(a,b)+=nCr(e+2,2)*nCr(f+2,2);
             W4(a,b)=F4(a,b); F4(a,b)*=2;
             Console.OUT.printf("%2d %2d %5d %5d %5d %5d\n",a,b,F1(a+b)+F2(a+b)+F3(a,b),F4(a,b),W1(a+b)+W2(a+b)+W3(a,b),W4(a,b));          
-        }
+        } }
 
         // Shell/Shellpair business 
         Console.OUT.printf("GMatrixROmem.x10 Screening shellpairs...\n");        
@@ -272,6 +277,7 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
                 else intLms(ron) = new IntLm(emptyRailD,-1);
             }
             auxInts(i) = new AuxInt(intLms,maxn);
+            @Ifdef("__DEBUG__") {
             val fc=(F1(a+b)+F2(a+b)+F3(a,b))*ka*kb+F4(a,b); 
             val wc=(F1(a+b)/3.+nCr(a+b+4,4)+F3(a,b))*ka*kb+F4(a,b)/2.; 
             var K:Double=0;
@@ -282,8 +288,9 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
             val bracount=(a+1)*(a+2)/2*(b+1)*(b+2)/2;
             pAuxCount+=ka*kb*bracount*K;
             AuxCount+=bracount*K; 
+            }
         }
-
+        @Ifdef("__DEBUG__") {
         for (var ron:Int=0; ron<=roN; ron++) {
             val offset=roK*ron;
             for (var rol:Int=0; rol<=roL; rol++) {
@@ -308,6 +315,7 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
         Console.OUT.printf("mCost=%e\n", mCost);
         Console.OUT.printf("fCost=%e\n", fCost);
         Console.OUT.printf("wCost=%e\n", wCost);   
+        }
     }
 
     private def nCr(a:Int,b:Int):Int {
@@ -330,8 +338,7 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
 
         // Form J matrix
         Console.OUT.print("J matrix\n");
-        @Ifdef("__PAPI__") 
-        { papi.reset(); }
+        @Ifdef("__PAPI__") { papi.reset(); }
         timer.start(TIMER_JMATRIX); var t:Double=0.;
         var fac:Double; var ind:Int; var jContrib:Double;
 
@@ -341,7 +348,7 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
             for (var tmu:Int=sp.mu; tmu<sp.mu+sp.maxbraa; tmu++) for (var tnu:Int=sp.nu; tnu<sp.nu+sp.maxbrab; tnu++)
                 scratch(tmu,tnu)=density(tmu,tnu)*fac*norm(tmu)*norm(tnu);
         }
-        //if (false) Console.OUT.printf("rawtime\n");
+        
         for (var ron:Int=0; ron<=roN; ron++) {
             // Form dk vector
             dk.clear();       
@@ -402,7 +409,7 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
                 }
             }            
         } 
-        //if (false) Console.OUT.printf("rawtime\n");    
+            
         for (spInd in 0..(numSigShellPairs-1)) {
             val sp=shellPairs(spInd);
             if (sp.mu!=sp.nu) for (var tmu:Int=sp.mu; tmu<sp.mu+sp.maxbraa; tmu++) for (var tnu:Int=sp.nu; tnu<sp.nu+sp.maxbrab; tnu++) 
@@ -410,23 +417,21 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
         }
         timer.stop(TIMER_JMATRIX);
         
-        @Ifdef("__PAPI__") 
-        {
+        @Ifdef("__PAPI__") {
             papi.printFlops();
             papi.printMemoryOps();
         }
 
-// vvvv For development purpose vvvvvv
-        val eJ = scratch.mult(density, jMatrix).trace();
-        Console.OUT.printf("  EJ = %.6f a.u.\n", eJ/jd.roZ);
-// ^^^^ It is not required for normal calculation ^^^^^
+        @Ifdef("__DEBUG__") {
+            val eJ = scratch.mult(density, jMatrix).trace();
+            Console.OUT.printf("  EJ = %.6f a.u.\n", eJ/jd.roZ);
+        }
 
         Console.OUT.printf("    Time to construct JMatrix with RO: %.3g seconds (%.4g for ints)\n", (timer.last(TIMER_JMATRIX) as Double) / 1e9, t);
 
         // Form K matrix
         // if guess MOs is not available - i.e. SAD, first cycle gives EK=0 // This is partly fixed by using 'core' guess for MOs
-        @Ifdef("__PAPI__") 
-        { papi.reset(); }
+        @Ifdef("__PAPI__") { papi.reset(); }
 
         Console.OUT.print("K matrix\n");
         timer.start(TIMER_KMATRIX); t=0.;
@@ -476,9 +481,10 @@ for (var ron:Int=0; ron<=roNK; ron++){
         kMatrix.multTrans(halfAuxMat2, halfAuxMat2, true);
         timer.stop(TIMER_GENCLASS); t32+= (timer.last(TIMER_GENCLASS) as Double)/1e9 ;
         Console.OUT.printf("step3.2 %.6f\n",t32);
-
-        val eKron = scratch.mult(density, kMatrix).trace();
-        Console.OUT.printf("  EK(%d) = %.6f a.u.\n",ron, eKron/jd.roZ);
+        @Ifdef("__DEBUG__") {
+            val eKron = scratch.mult(density, kMatrix).trace();
+            Console.OUT.printf("  EK(%d) = %.6f a.u.\n",ron, eKron/jd.roZ);
+        }
 }
         Console.OUT.printf("version 3: time 1=%lf 2=%lf 3.1=%lf 3.2=%lf\n",t1,t2,t31,t32);
         // Version 2 - save memory and try to be smart by reducing numbers of loads
@@ -576,9 +582,7 @@ for (var ron:Int=0; ron<=roNK; ron++){
         jMatrix.d.map(this.d, kMatrix.d, (j:Double,k:Double)=>(2.0*j-k)); // eqn 14
         timer.stop(TIMER_TOTAL);
         Console.OUT.printf("    Time to construct GMatrix with RO: %.3g seconds\n", (timer.last(TIMER_TOTAL) as Double) / 1e9);
-
     }
-
 }
 
 
