@@ -10,12 +10,14 @@
  */
 package au.edu.anu.mm;
 
+import x10.compiler.Ifdef;
+
 import x10x.vector.Point3d;
 import au.edu.anu.chem.mm.MMAtom;
 import au.edu.anu.chem.mm.ElectrostaticDirectMethod;
 import au.edu.anu.chem.mm.TestElectrostatic;
 import au.edu.anu.util.Timer;
-//import edu.utk.cs.papi.PAPI;
+import edu.utk.cs.papi.PAPI;
 
 /**
  * Tests the new distributed FMM implementation.
@@ -102,16 +104,23 @@ public class TestFastMultipoleMethod extends TestElectrostatic {
         fmm.initialAssignment(atoms);
         //fmm.countOctants();
 
-        //val papi = new PAPI();
-        //papi.countMemoryOps();
-        //papi.start();
+        val papi = new PAPI();
+@Ifdef("__PAPI__")
+{
+        papi.initialize();
+        papi.countMemoryOps();
+        papi.start();
+}
         val energy = fmm.calculateEnergy();
         for (i in 1..10) {
            //fmm.calculateEnergy();
         }
-        //papi.stop();
-        //papi.printMemoryOps();
-        //papi.shutDown();
+@Ifdef("__PAPI__")
+{
+        papi.stop();
+        papi.printMemoryOps();
+        papi.shutDown();
+}
         
         if (verbose) {
             Console.OUT.println("energy = " + energy);
