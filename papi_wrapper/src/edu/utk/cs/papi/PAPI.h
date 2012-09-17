@@ -7,8 +7,6 @@ namespace edu {
                 class PAPI {
                     public:
                         static PAPI* _make();
-                        PAPI();
-                        ~PAPI();
                         void initialize();
                         void countFlops();
                         void printFlops();

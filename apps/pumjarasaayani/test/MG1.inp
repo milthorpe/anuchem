@@ -23,7 +23,6 @@ molecule
  H                 -3.66442300   -0.50005600   -0.05018500
  H                 -2.25560600    1.79093000    0.58211000
 end
-compare_RO
 scf_max 0
 guess core
 use_RO 1

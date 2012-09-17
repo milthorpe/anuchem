@@ -18,13 +18,12 @@ molecule
  O                 -2.13847100   -0.63104500   -0.18915600
  H                 -2.71847500   -1.27241500    0.23814300
 end
-compare_RO
 scf_max 0
 guess core
 use_RO 1
-RO_N 1
+RO_N 100
 RO_L 50
 RO_thresh 1e-6
-thresh 2e-14
-omega 0.1
+thresh 1e-14
+omega 0.2
 gmat_parallel_scheme 0
