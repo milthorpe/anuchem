@@ -610,7 +610,7 @@ public class FastMultipoleMethod {
                 FastMultipoleMethod.getAtomsForOctantList(local, uListArray) :
                 at(Place.place(placeId)) { FastMultipoleMethod.getAtomsForOctantList(localData(), uListArray)};
             for (i in 0..(uListArray.size-1)) {
-                myLET.setAtomsForOctant(uListArray(i), atomsForPlace(i));
+                myLET.setAtomDataForOctant(uListArray(i), atomsForPlace(i));
             }
         }
         local.timer.stop(FmmLocalData.TIMER_INDEX_PREFETCH);
@@ -622,11 +622,11 @@ public class FastMultipoleMethod {
      * a Rail[PointCharge] containing the atoms for each octant.
      */
     private static def getAtomsForOctantList(localData:FmmLocalData, octantList:Rail[UInt]) {
-        val atomList = new Rail[Rail[PointCharge]](octantList.size);
+        val atomList = new Rail[Rail[Double]](octantList.size);
         for (i in 0..(octantList.size-1)) {
             val octant = localData.getOctant(octantList(i)) as LeafOctant;
             if (octant != null) {
-                atomList(i) = octant.getAtomCharges();
+                atomList(i) = octant.getAtomData();
             }
         }
         return atomList;
