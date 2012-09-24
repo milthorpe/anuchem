@@ -118,7 +118,7 @@ public class FastMultipoleMethod {
 
         this.size = size;
 
-        this.localData = PlaceLocalHandle.make[FmmLocalData](Dist.makeUnique(), () => new FmmLocalData(numTerms, dMax, ws));
+        this.localData = PlaceLocalHandle.make[FmmLocalData](Dist.makeUnique(), () => new FmmLocalData(numTerms, dMax as UByte, ws, size));
     }
     
     public def calculateEnergy():Double {
@@ -192,7 +192,7 @@ public class FastMultipoleMethod {
     protected def upwardPass() {
         localData().timer.start(FmmLocalData.TIMER_INDEX_UPWARD);
         finish for (topLevelOctant in localData().topLevelOctants) async {
-            topLevelOctant.upward(localData, size, dMax);
+            topLevelOctant.upward(localData);
         }
         localData().timer.stop(FmmLocalData.TIMER_INDEX_UPWARD);
     }
@@ -204,7 +204,7 @@ public class FastMultipoleMethod {
         val farField = finish(SumReducer()) {
             for (topLevelOctant in localData().topLevelOctants) {
                 if (topLevelOctant != null && topLevelOctant.id.level == OctantId.TOP_LEVEL) async {
-                    offer topLevelOctant.downward(localData, size, topLevelExp, dMax);
+                    offer topLevelOctant.downward(localData, topLevelExp);
                 }
             }
         };
