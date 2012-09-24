@@ -24,7 +24,11 @@ public class FmmLocalData {
     public static val TIMER_INDEX_UPWARD:Int = 2;
     public static val TIMER_INDEX_DOWNWARD:Int = 3;
     public static val TIMER_INDEX_TREE:Int = 4;
-    public static val TIMER_INDEX_PLACEHOLDER:Int = 5;
+    public static val TIMER_INDEX_ASSIGN:Int = 5;
+    public static val TIMER_INDEX_REDUCE:Int = 6;
+    public static val TIMER_INDEX_REDIST:Int = 7;
+    public static val TIMER_INDEX_PARENTS:Int = 8;
+    public static val TIMER_INDEX_LET:Int = 9;
 
     /** All octants held at this place. */
     var octants:HashMap[UInt,Octant];
@@ -58,7 +62,7 @@ public class FmmLocalData {
 
     public def this(numTerms:Int, dMax:Int, ws:Int) {
         fmmOperators = new FmmOperators(numTerms, ws);
-        timer = new Timer(6);
+        timer = new Timer(10);
         val maxLeafOctants = Math.pow(8.0, dMax) as Int;
         octantLoads = new Array[Int](maxLeafOctants);
         // TODO construct LET
