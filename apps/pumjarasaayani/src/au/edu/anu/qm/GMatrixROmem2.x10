@@ -102,7 +102,7 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
         jMatrix = new DenseMatrix(N, N);
         kMatrix = new DenseMatrix(N, N);
         scratch = new DenseMatrix(N, N);
-        Console.OUT.printf("GMatrixROmem.x10 Memory (1) allocated sucessfully...\n");        
+        @Ifdef("__DEBUG__") { Console.OUT.printf("GMatrixROmem.x10 Memory (N^2) allocated sucessfully...\n"); }
 
         val maxam = bfs.getShellList().getMaximumAngularMomentum();
         val mdc=bfs.getShellList().getMaximumDegreeOfContraction();
@@ -112,13 +112,12 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
         muk = new DenseMatrix(N,roK); 
         var maxint:Rail[Double] = new Rail[Double](roK*(roN+1)); 
         val tempY = new Rail[Double](mdc*mdc*roK);
-        Console.OUT.printf("GMatrixROmem.x10 Memory (2) allocated sucessfully...\n"); 
+        @Ifdef("__DEBUG__") { Console.OUT.printf("GMatrixROmem.x10 Memory (K) allocated sucessfully...\n"); }
 
-        val NroK= N*roK;
         auxIntMat = new DenseMatrix(N,N*roK);
         halfAuxMat = new DenseMatrix(nOrbital,N*roK);
         halfAuxMat2 = new DenseMatrix(N,nOrbital*roK);
-        Console.OUT.printf("GMatrixROmem.x10 Memory (3) %d allocated sucessfully...\n",NroK); 
+        @Ifdef("__DEBUG__") { Console.OUT.printf("GMatrixROmem.x10 Memory (N^2 K) allocated sucessfully...\n"); }
 
         // Reconstruct Table IV in LHG2012 paper
         @Ifdef("__DEBUG__") val F1 = new Array[Int](0..(2*maxam)); val W1 = new Array[Int](0..(2*maxam));
@@ -424,7 +423,7 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
 
         @Ifdef("__DEBUG__") {
             val eJ = scratch.mult(density, jMatrix).trace();
-            Console.OUT.printf("  EJ = %.6f a.u.\n", eJ/jd.roZ);
+            Console.OUT.printf("  EJ = %.10f a.u.\n", eJ/jd.roZ);
         }
 
         Console.OUT.printf("    Time to construct JMatrix with RO: %.3g seconds (%.4g for ints)\n", (timer.last(TIMER_JMATRIX) as Double) / 1e9, t);
@@ -483,7 +482,7 @@ for (var ron:Int=0; ron<=roNK; ron++){
         Console.OUT.printf("step3.2 %.6f\n",t32);
         @Ifdef("__DEBUG__") {
             val eKron = scratch.mult(density, kMatrix).trace();
-            Console.OUT.printf("  EK(%d) = %.6f a.u.\n",ron, eKron/jd.roZ);
+            Console.OUT.printf("  EK(%d) = %.10f a.u.\n",ron, eKron/jd.roZ);
         }
 }
         Console.OUT.printf("version 3: time 1=%lf 2=%lf 3.1=%lf 3.2=%lf\n",t1,t2,t31,t32);
@@ -571,13 +570,11 @@ for (var ron:Int=0; ron<=roNK; ron++){
             papi.printMemoryOps();
         }
 
-// vvvv For development purpose vvvvvv
-        val eK = scratch.mult(density, kMatrix).trace();
-        Console.OUT.printf("  EK = %.6f a.u.\n", eK/jd.roZ);
-// ^^^^ It is not required for a normal calculation ^^^^^
-
-        Console.OUT.printf("    Time to construct KMatrix with RO: %.3g seconds (%.4g for ints)\n", (timer.last(TIMER_KMATRIX) as Double) / 1e9, t);
-
+        @Ifdef("__DEBUG__") {
+            val eK = scratch.mult(density, kMatrix).trace();
+            Console.OUT.printf("  EK = %.10f a.u.\n", eK/jd.roZ);
+            Console.OUT.printf("    Time to construct KMatrix with RO: %.3g seconds (%.4g for ints)\n", (timer.last(TIMER_KMATRIX) as Double) / 1e9, t);
+        }
         // Form G matrix
         jMatrix.d.map(this.d, kMatrix.d, (j:Double,k:Double)=>(2.0*j-k)); // eqn 14
         timer.stop(TIMER_TOTAL);

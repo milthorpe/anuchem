@@ -9,16 +9,20 @@
  * (C) Copyright Australian National University 2010-2012.
  */
 package au.edu.anu.qm;
+
+import x10.compiler.Ifdef;
+import x10.compiler.Ifndef;
+
 import au.edu.anu.chem.Molecule;
 import au.edu.anu.util.Timer;
+import au.edu.anu.util.StatisticalTimer;
 
 import x10.matrix.DenseMatrix;
 import x10.matrix.blas.DenseMatrixBLAS;
 
 /**
  * Implementation of Hartree-Fock SCF method
- *
- * @author: V.Ganesh
+ * @author: V. Ganesh, J. Milthorpe, T. Limpanuparb 
  */
 public class HartreeFockSCFMethod extends SCFMethod { 
 
@@ -33,6 +37,9 @@ public class HartreeFockSCFMethod extends SCFMethod {
     }
 
     public def scf() : void {
+        val timer = new StatisticalTimer(5);
+        val TIMER_TOTAL:Int = 0; val TIMER_H:Int = 1; val TIMER_S:Int = 2; val TIMER_F:Int = 3; val TIMER_M:Int = 4; //Can't use static
+
         val noOfElectrons = molecule.getNumberOfElectrons();        
         if (noOfElectrons%2 != 0 || molecule.getMultiplicity()!=1) {
            Console.OUT.println("Currently supports only closed shell calculations!");
@@ -53,15 +60,15 @@ public class HartreeFockSCFMethod extends SCFMethod {
 
         var converged:Boolean = false;
         var oldEnergy:Double = 0.0;
-
-        Console.OUT.printf("\nGetting HCore...\n"); val hCore   = oneE.getHCore();
-        Console.OUT.printf("Getting Overlap...\n"); val overlap = oneE.getOverlap();
-
-        val diag = new GMLDiagonalizer();
-        diag.diagonalize(overlap);
-        val eigval =  diag.getEigenValues().d;;
-        Console.OUT.printf("Three smallest eigen values %e %e %e\n",eigval(0),eigval(1),eigval(2));        
-        if (eigval(0)<1e-6) Console.OUT.printf("Linear dependence detected!!!\n");
+        val hCore   = oneE.getHCore();
+        val overlap = oneE.getOverlap();
+        @Ifdef("__DEBUG__") {
+            val diag = new GMLDiagonalizer();
+            diag.diagonalize(overlap);
+            val eigval =  diag.getEigenValues().d;;
+            Console.OUT.printf("Three smallest eigen values %e %e %e\n",eigval(0),eigval(1),eigval(2));        
+            if (eigval(0)<1e-6) Console.OUT.printf("Linear dependence detected!!!\n");
+        }
         // init memory for the matrices
         val N = hCore.N;
         val jd = JobDefaults.getInstance();
@@ -121,35 +128,29 @@ public class HartreeFockSCFMethod extends SCFMethod {
                 }
             } else {
                 gMatrix.compute(density);
-            }
+            }            
 
-            //val timer = new Timer(2);
-
-            //timer.start(0);
+            timer.start(TIMER_F);
             // make fock matrix
             if (jd.roOn>0) fock.compute(hCore, gMatrixRo);
             else fock.compute(hCore, gMatrix);
             // SCF_ALGORITHM = DIIS  
             fock = diis.next(fock, overlap, density);
-            //timer.stop(0);
-            //Console.OUT.println ("    Time to construct Fock: " + (timer.total(0) as Double) / 1e9 + " seconds");
+            timer.stop(TIMER_F);
+            Console.OUT.println ("    Time to construct Fock: " + (timer.total(TIMER_F) as Double) / 1e9 + " seconds");
 
-            //timer.start(1);
+            timer.start(TIMER_M);
             // compute the new MOs
             mos.compute(fock, overlap);
-            //timer.stop(1);
-            //Console.OUT.println ("    Time to form MOS: " + (timer.total(1) as Double) / 1e9 + " seconds");
+            timer.stop(TIMER_F);
+            Console.OUT.println ("    Time to form MOS: " + (timer.total(TIMER_M) as Double) / 1e9 + " seconds");
          
-            // compute the total energy at this point
+            // compute the total energy 
             val eOne = density.clone().mult(density, hCore).trace();
-            // Console.OUT.printf("  Nuclear electron attraction energy = %.6f a.u.\n", eOne);
-
-            val eTwo = density.clone().mult(density, fock).trace();
-            // Console.OUT.printf("  Electron repulsion energy = %.6f a.u.\n", eTwo);
-            
+            val eTwo = density.clone().mult(density, fock).trace();           
             energy = eOne + eTwo + nuclearEnergy;
 
-            Console.OUT.printf("Cycle #%i Total energy = %.6f a.u. (scale factor = %.6f)", scfIteration, energy/roZ,roZ);
+            Console.OUT.printf("Cycle #%i Total energy = %.6f a.u. (scale factor = %.10f)", scfIteration, energy/roZ,roZ);
             if (scfIteration>0) {
                 Console.OUT.printf(" (%.6f)", (energy-oldEnergy)/roZ);
             } else {
@@ -226,7 +227,6 @@ public class HartreeFockSCFMethod extends SCFMethod {
             //Console.OUT.println("after GC heapSize = " + System.heapSize());
         }
 
-
         if (jd.compareRo) {
             Console.OUT.println("Long-range - Conventional");
             val gMatrixL = new GMatrix(N, bfs, molecule,jd.roZ*jd.omega,roZ*jd.thresh); // RO Thesis Eq (2.22)
@@ -238,8 +238,6 @@ public class HartreeFockSCFMethod extends SCFMethod {
             //val eTwo = density.clone().mult(density, fock).trace();
             //energy = eOne + eTwo + nuclearEnergy;
             //Console.OUT.printf("Cycle ** Total energy = %.6f a.u. (scale factor = %.6f)",  energy/roZ,roZ);
-
-
     }
 
     private def computeLongRangeRO(N:Int, mos:MolecularOrbitals{self.N==N}, noOfOccupancies:Int, density:Density{self.M==N,self.N==N}, jd:JobDefaults, bfs:BasisFunctions) {

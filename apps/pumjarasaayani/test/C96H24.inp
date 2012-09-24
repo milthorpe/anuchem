@@ -1,5 +1,5 @@
 H2O
-basis 6311g
+basis 631gdp
 units 0.5291772108
 RO_Z 1.0
 molecule
@@ -125,9 +125,10 @@ H 1.212436 -14.390000 0.
 H 8.487049 3.190000 0.
 end
 guess core
-use_RO 0
+use_RO 1
 scf_max 0
-RO_N 90
-RO_L 13
+RO_N 100
+RO_L 100
 omega 0.1
+RO_thresh 1e-6
 gmat_parallel_scheme 0
