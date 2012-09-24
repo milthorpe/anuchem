@@ -72,18 +72,18 @@ public abstract class Octant implements Comparable[Octant] {
     abstract public def countOctants():Int;
     abstract public def ghostOctants():Int;
 
-    abstract protected def downward(localData:PlaceLocalHandle[FmmLocalData], size:Double, parentLocalExpansion:LocalExpansion, dMax:UByte):Double;
+    abstract protected def downward(localData:PlaceLocalHandle[FmmLocalData], parentLocalExpansion:LocalExpansion):Double;
 
     /** 
      * Generates and combines multipole expansions for all descendants into an
      * expansion for this box. Note: non-blocking - the top-level call to this 
      * method must be enclosed in a finish statement.
      */
-    abstract protected def upward(localData:PlaceLocalHandle[FmmLocalData], size:Double, dMax:UByte):Pair[Int,MultipoleExpansion];
+    abstract protected def upward(localData:PlaceLocalHandle[FmmLocalData]):Pair[Int,MultipoleExpansion];
 
-    protected def constructLocalExpansion(localData:PlaceLocalHandle[FmmLocalData], size:Double, parentLocalExpansion:LocalExpansion) {
+    protected def constructLocalExpansion(localData:PlaceLocalHandle[FmmLocalData], parentLocalExpansion:LocalExpansion) {
         val local = localData();
-        val sideLength = size / Math.pow2(id.level);
+        val sideLength = local.size / Math.pow2(id.level);
         val myComplexK = local.fmmOperators.complexK;
         val myWignerB = local.fmmOperators.wignerB;
         val myWignerC = local.fmmOperators.wignerC;
@@ -122,7 +122,7 @@ public abstract class Octant implements Comparable[Octant] {
         }
     }
 
-    protected def sendMultipole(localData:PlaceLocalHandle[FmmLocalData], dMax:UByte) {
+    protected def sendMultipole(localData:PlaceLocalHandle[FmmLocalData]) {
         // async send this box's multipole expansion to V-list
         //Console.OUT.println("at " + here + " sending multipole for " + id);
         if (vList != null) {
@@ -131,7 +131,7 @@ public abstract class Octant implements Comparable[Octant] {
             val multipoleExp = this.multipoleExp;
             val vListPlaces = new HashSet[Int]();
             for ([p] in vList) {
-                val placeId = local.getPlaceId(vList(p).getAnchor(dMax));
+                val placeId = local.getPlaceId(vList(p).getAnchor(local.dMax));
                 if (placeId >= 0 && placeId < Place.MAX_PLACES) {
                     //Console.OUT.println("at " + here + " sending multipole for " + id + " " + vList(p) + " held at " + placeId);
                     vListPlaces.add(placeId);

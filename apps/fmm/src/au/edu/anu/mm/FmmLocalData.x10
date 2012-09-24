@@ -30,6 +30,17 @@ public class FmmLocalData {
     public static val TIMER_INDEX_PARENTS:Int = 8;
     public static val TIMER_INDEX_LET:Int = 9;
 
+    /** The maximum number of levels in the octree. */
+    public val dMax:UByte;
+
+    /**
+     * The side length of the cube. 
+     * To ensure balanced rounding errors within the multipole and local 
+     * calculations, all force/energy calculations are performed within 
+     * an origin-centred cube.
+     */
+    public val size:Double; 
+
     /** All octants held at this place. */
     var octants:HashMap[UInt,Octant];
 
@@ -60,8 +71,10 @@ public class FmmLocalData {
     /** A multi-timer for the several segments of a single getEnergy invocation, indexed by the constants above. */
     public val timer:Timer;
 
-    public def this(numTerms:Int, dMax:Int, ws:Int) {
+    public def this(numTerms:Int, dMax:UByte, ws:Int, size:Double) {
         fmmOperators = new FmmOperators(numTerms, ws);
+        this.dMax = dMax;
+        this.size = size;
         timer = new Timer(10);
         val maxLeafOctants = Math.pow(8.0, dMax) as Int;
         octantLoads = new Array[Int](maxLeafOctants);

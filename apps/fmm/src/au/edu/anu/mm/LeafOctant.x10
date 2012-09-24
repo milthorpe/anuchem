@@ -60,12 +60,13 @@ public class LeafOctant extends Octant implements Comparable[LeafOctant] {
      * simply the sum of the contributions of the particles in the octant.
      * N.B. must only be called once per pass
      */
-    protected def upward(localData:PlaceLocalHandle[FmmLocalData], size:Double, dMax:UByte):Pair[Int,MultipoleExpansion] {
+    protected def upward(localData:PlaceLocalHandle[FmmLocalData]):Pair[Int,MultipoleExpansion] {
         //Console.OUT.println("at " + here + " LeafOctant.upward for " + id + " numAtoms = " + numAtoms);
         if (atoms.size() > 0) {
             multipoleExp.clear();
             localExp.clear();
 
+            val size = localData().size;
             val p = multipoleExp.p;
             val centre = getCentre(size);
             for (i in 0..(atoms.size()-1)) {
@@ -77,7 +78,7 @@ public class LeafOctant extends Octant implements Comparable[LeafOctant] {
 
             atomic this.multipoleReady = true;
 
-            sendMultipole(localData, dMax);
+            sendMultipole(localData);
 
             return Pair[Int,MultipoleExpansion](atoms.size(), this.multipoleExp);
         } else {
@@ -85,15 +86,16 @@ public class LeafOctant extends Octant implements Comparable[LeafOctant] {
         }
     }
 
-    protected def downward(localData:PlaceLocalHandle[FmmLocalData], size:Double, parentLocalExpansion:LocalExpansion, dMax:UByte):Double {
+    protected def downward(localData:PlaceLocalHandle[FmmLocalData], parentLocalExpansion:LocalExpansion):Double {
         //Console.OUT.println("at " + here + " LeafOctant.downward for " + id + " numAtoms = " + numAtoms);
         this.multipoleReady = false; // reset
 
         if (atoms.size() > 0) {
-            constructLocalExpansion(localData, size, parentLocalExpansion);
+            constructLocalExpansion(localData, parentLocalExpansion);
 
-            var potential: Double = farField(size);
-            potential += nearField(size, localData().locallyEssentialTree, dMax);
+            val local = localData();
+            var potential: Double = farField(local.size);
+            potential += nearField(local.size, local.locallyEssentialTree, local.dMax);
 
             return potential;
         } else {
