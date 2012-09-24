@@ -108,7 +108,7 @@ public class TestFastMultipoleMethod extends TestElectrostatic {
 @Ifdef("__PAPI__")
 {
         papi.initialize();
-        papi.countMemoryOps();
+        papi.countFlops();
         papi.start();
 }
         val energy = fmm.calculateEnergy();
@@ -118,7 +118,7 @@ public class TestFastMultipoleMethod extends TestElectrostatic {
 @Ifdef("__PAPI__")
 {
         papi.stop();
-        papi.printMemoryOps();
+        papi.printFlops();
         papi.shutDown();
 }
         
@@ -126,6 +126,11 @@ public class TestFastMultipoleMethod extends TestElectrostatic {
             Console.OUT.println("energy = " + energy);
 
             logTime("(Tree construction)", FmmLocalData.TIMER_INDEX_TREE, fmm.localData().timer);
+            logTime("(assign)",   FmmLocalData.TIMER_INDEX_ASSIGN,    fmm.localData().timer);
+            logTime("(reduce)",   FmmLocalData.TIMER_INDEX_REDUCE,    fmm.localData().timer);
+            logTime("(redist)",   FmmLocalData.TIMER_INDEX_REDIST,    fmm.localData().timer);
+            logTime("(parents)",  FmmLocalData.TIMER_INDEX_PARENTS,   fmm.localData().timer);
+            logTime("(LET)",      FmmLocalData.TIMER_INDEX_LET,       fmm.localData().timer);
 
             logTime("Prefetch",   FmmLocalData.TIMER_INDEX_PREFETCH,  fmm.localData().timer);
             logTime("Upward",     FmmLocalData.TIMER_INDEX_UPWARD,    fmm.localData().timer);
