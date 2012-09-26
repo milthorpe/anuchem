@@ -38,10 +38,13 @@ import edu.utk.cs.papi.PAPI;
 
 public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
     // Timer
-    public val timer = new StatisticalTimer(5);
+    public val timer = new StatisticalTimer(7);
     static TIMER_TOTAL = 0; static TIMER_JMATRIX = 1;
     static TIMER_KMATRIX = 2; static TIMER_GENCLASS = 3;
 
+    static TIMER_INTGEN = 4;
+    static TIMER_INTSCREEN = 5;
+    static TIMER_INTCOPY = 6;
     // PAPI performance counters
     // @Ifdef("__PAPI__") // XTENLANG-3132
     transient var papi:PAPI = new PAPI(); 
@@ -227,17 +230,25 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
 
         val intThresh=roThresh/Math.sqrt(jd.roZ); // aux ints scale as if it is a sqrt of energy
         auxInts = new Rail[AuxInt](numSigShellPairs);
-        
+        var t11:Double=0.,t12:Double=0.,t2:Double=0.,t3:Double=0.;  
+
         for (i in 0..(numSigShellPairs-1)) {
-            val sh = shellPairs(i); val a=sh.aang; val b=sh.bang; val ka=sh.dconA; val kb=sh.dconB;   
+            val sh = shellPairs(i); val a=sh.aang; val b=sh.bang; val ka=sh.dconA; val kb=sh.dconB; 
+
+            timer.start(TIMER_INTGEN); 
             aux.genClassY(sh.aPoint, sh.bPoint, sh.zetaA, sh.zetaB, sh.dconA, sh.dconB,  roL, tempY);
-         
+            timer.stop(TIMER_INTGEN);  t11+= (timer.last(TIMER_INTGEN) as Double)/1e9;       
+
             var maxl:Int=0,maxn:Int=0; 
             var count1:Int=0; var rol:Int=0; 
             val intLms = new Rail[IntLm](roN+1);            
 
-            for (var ron:Int=0; ron<=roN; ron++) {                                           
-                aux.genClass(sh.aang, sh.bang, sh.aPoint, sh.bPoint, sh.zetaA, sh.zetaB, sh.conA, sh.conB, sh.dconA, sh.dconB, temp, ron, roL, tempY, roL);                 
+            for (var ron:Int=0; ron<=roN; ron++) {       
+                timer.start(TIMER_INTGEN);                                     
+                aux.genClass(sh.aang, sh.bang, sh.aPoint, sh.bPoint, sh.zetaA, sh.zetaB, sh.conA, sh.conB, sh.dconA, sh.dconB, temp, ron, roL, tempY, roL);
+                timer.stop(TIMER_INTGEN);  t12+= (timer.last(TIMER_INTGEN) as Double)/1e9;   
+
+                timer.start(TIMER_INTSCREEN);   
                 var auxint:Double=-1.; //can't set to 0 as roThresh can be 0.
                 rol=roL;                               
                 for (; rol>=0 && auxint<intThresh; rol--) { 
@@ -259,7 +270,8 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
                 //Console.OUT.printf("shellpair id=%d ron=%d maxl=%d [%d,%e]\n",i,ron,maxl,roL,auxint);
                 // override
                 /* if (maxl>l_n(ron+1))*/// sh.maxL(ron)=maxl=l_n(ron+1); 
-                
+                timer.stop(TIMER_INTSCREEN);  t2+= (timer.last(TIMER_INTSCREEN) as Double)/1e9;
+                timer.start(TIMER_INTCOPY); 
                 if (maxl>=0) {                     
                     // copy temp to arr
                     val arr = new Rail[Double]((maxl+1)*(maxl+1)*sh.maxbraa*sh.maxbrab); mCost+=(maxl+1)*(maxl+1)*sh.maxbraa*sh.maxbrab;
@@ -274,6 +286,7 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
                     intLms(ron) = new IntLm(arr,maxl); 
                 }
                 else intLms(ron) = new IntLm(emptyRailD,-1);
+                timer.stop(TIMER_INTCOPY);  t3+= (timer.last(TIMER_INTCOPY) as Double)/1e9;
             }
             auxInts(i) = new AuxInt(intLms,maxn);
             @Ifdef("__DEBUG__") {
@@ -309,6 +322,7 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
                 if (shellPairs(i).maxL(ron)>maxmaxl(ron)) maxmaxl(ron)=shellPairs(i).maxL(ron);
             Console.OUT.printf("maxmaxl(%d)=%d\n", ron, maxmaxl(ron));
         }
+        Console.OUT.printf("t11=%e\nt12=%e\nt2=%e\nt3=%e\n", t11,t12,t2,t3);
 
         Console.OUT.printf("nShell=%d numSigShellPairs=%d pAuxCount=%e (primitive) AuxCount=%e (contracted)\n",nShell,numSigShellPairs,pAuxCount,AuxCount);
         Console.OUT.printf("mCost=%e\n", mCost);
