@@ -134,21 +134,6 @@ public class LeafOctant extends Octant implements Comparable[LeafOctant] {
      */
     public def nearField(size:Double, myLET:LET, dMax:UByte):Double {
         var directEnergy:Double = 0.0;
-        for (atomIndex1 in 0..(atoms.size()-1)) {
-            // direct calculation between all atoms in this octant
-            val atom1 = atoms(atomIndex1);
-            for (sameBoxAtomIndex in 0..(atomIndex1-1)) {
-                val sameBoxAtom = atoms(sameBoxAtomIndex);
-                val rVec = sameBoxAtom.centre - atom1.centre;
-                val invR2 = 1.0 / rVec.lengthSquared();
-                val invR = Math.sqrt(invR2);
-                val e = atom1.charge * sameBoxAtom.charge * invR;
-                directEnergy += 2.0 * e;
-                val pairForce = e * invR2 * rVec;
-                atom1.force += pairForce;
-                sameBoxAtom.force -= pairForce;
-            }
-        }
 
         val periodic = false; // TODO
         // direct calculation with all atoms in non-well-separated octants
@@ -220,6 +205,22 @@ public class LeafOctant extends Octant implements Comparable[LeafOctant] {
                         atomI.force = Vector3d(fix, fiy, fiz);
                     }
                 }
+            }
+        }
+
+        for (atomIndex1 in 0..(atoms.size()-1)) {
+            // direct calculation between all atoms in this octant
+            val atom1 = atoms(atomIndex1);
+            for (sameBoxAtomIndex in 0..(atomIndex1-1)) {
+                val sameBoxAtom = atoms(sameBoxAtomIndex);
+                val rVec = sameBoxAtom.centre - atom1.centre;
+                val invR2 = 1.0 / rVec.lengthSquared();
+                val invR = Math.sqrt(invR2);
+                val e = atom1.charge * sameBoxAtom.charge * invR;
+                directEnergy += 2.0 * e;
+                val pairForce = e * invR2 * rVec;
+                atom1.force += pairForce;
+                sameBoxAtom.force -= pairForce;
             }
         }
 
