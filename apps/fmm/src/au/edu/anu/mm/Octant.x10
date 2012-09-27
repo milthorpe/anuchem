@@ -139,7 +139,7 @@ public abstract class Octant implements Comparable[Octant] {
             }
             for(placeId in vListPlaces) {
                 if (placeId == here.id) {
-                    localData().locallyEssentialTree.setMultipoleForOctant(mortonId, multipoleExp);
+                    local.locallyEssentialTree.setMultipoleForOctant(mortonId, multipoleExp);
                 } else {
                     at(Place(placeId)) async {
                         //Console.OUT.println("at " + here + " sending multipole for " + id + " to place " + placeId);

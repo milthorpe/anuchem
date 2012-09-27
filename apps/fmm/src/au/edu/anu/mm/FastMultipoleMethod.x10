@@ -293,6 +293,8 @@ public class FastMultipoleMethod {
         }
         leafOctantList.sort();
 
+        val localData = this.localData; // TODO shouldn't be necessary XTENLANG-1913
+        val numTerms = this.numTerms; // TODO shouldn't be necessary XTENLANG-1913
         val local = localData();
         val octantLoads = local.octantLoads;
         octantLoads.clear();
@@ -486,6 +488,8 @@ public class FastMultipoleMethod {
         //Team.WORLD.allreduce[Int](here.id, octantLoads, 0, octantLoads, 0, maxLeafOctants, Team.ADD);
         Team.WORLD.barrier(here.id);
 
+        val localData = this.localData; // TODO shouldn't be necessary XTENLANG-1913
+
         if (here == Place.FIRST_PLACE) {
             for (p in 1..(Place.MAX_PLACES-1)) {
                 val pLoads = at(Place(p)) localData().octantLoads;
@@ -609,6 +613,7 @@ public class FastMultipoleMethod {
             }
         }
 
+        val localData = this.localData;
         // retrieve the partial list for each place and store into my LET
         finish for (placeEntry in uListPlaces.entries()) async {
             val placeId = placeEntry.getKey();

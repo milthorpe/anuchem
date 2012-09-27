@@ -25,6 +25,8 @@ public class GhostOctant extends Octant implements Comparable[Octant] {
     /** The number of atoms in all boxes below this box. */
     private var numAtoms:Int;
 
+    private var target:GlobalRef[Octant];
+
     /**
      * Creates a new GhostOctant for an octant at the given place.
      */
@@ -41,48 +43,53 @@ public class GhostOctant extends Octant implements Comparable[Octant] {
 
     public def numAtoms() = numAtoms;
 
+    static class GhostUpward(
+        numAtoms:Int,
+        multipoleExp:MultipoleExpansion,
+        target:GlobalRef[Octant]
+    ) {
+
+        public def this(numAtoms:Int, multipoleExp:MultipoleExpansion, target:GlobalRef[Octant]) {
+            property(numAtoms, multipoleExp, target);
+        }
+    }
+
     /** 
      * Go to home place of this octant and return multipole expansion (once computed).
      */
     protected def upward(localData:PlaceLocalHandle[FmmLocalData]):Pair[Int,MultipoleExpansion] {
         val mortonId = id.getMortonId();
-        val result = at(Place(placeId)) getRemoteMultipole(localData, mortonId);
-        numAtoms = result.first;
-        //Console.OUT.println("at " + here + " GhostOctant.upward for " + id + " held at " + placeId + " numAtoms = " + numAtoms);
-        return result;
+        val result = at(Place(placeId)) GhostOctant.upwardRemote(localData, mortonId);
+        if (result != null) {
+            numAtoms = result.numAtoms;
+            target = result.target;
+            //Console.OUT.println("at " + here + " GhostOctant.upward for " + id + " held at " + placeId + " numAtoms = " + numAtoms);
+            return Pair[Int,MultipoleExpansion](result.numAtoms, result.multipoleExp);
+        } else {
+            return Pair[Int,MultipoleExpansion](0, null);
+        }
     }
 
-    private def getRemoteMultipole(localData:PlaceLocalHandle[FmmLocalData], mortonId:UInt):Pair[Int,MultipoleExpansion] {
+    private static def upwardRemote(localData:PlaceLocalHandle[FmmLocalData], mortonId:UInt):GhostUpward {
         val octant = localData().getOctant(mortonId);
         if (octant != null) {
             //Console.OUT.println("at " + here + " waiting on multipole " + mortonId);
-            when(octant.multipoleReady) {
-                //Console.OUT.println("at " + here + " progressed on multipole " + mortonId + " numAtoms = " + octant.numAtoms);
-                return Pair[Int,MultipoleExpansion](octant.numAtoms(), octant.multipoleExp);
-            }
+            when(octant.multipoleReady);
+            //Console.OUT.println("at " + here + " progressed on multipole " + mortonId + " numAtoms = " + octant.numAtoms);
+            return new GhostUpward(octant.numAtoms(), octant.multipoleExp, new GlobalRef[Octant](octant));
         } else {
-            return Pair[Int,MultipoleExpansion](0, null);
+            return null;
         }
     }
 
     protected def downward(localData:PlaceLocalHandle[FmmLocalData], parentLocalExpansion:LocalExpansion):Double {
         //Console.OUT.println("at " + here + " GhostOctant.downward for " + id + " held at " + placeId); 
         if (numAtoms > 0) {
-            return at(Place(placeId)) downwardRemote(localData, parentLocalExpansion);
+            val target = this.target;
+            return at (target.home) target().downward(localData, parentLocalExpansion);
         }
         return 0.0;
     }
-
-
-    private def downwardRemote(localData:PlaceLocalHandle[FmmLocalData], parentLocalExpansion:LocalExpansion):Double {
-        val octant = localData().getOctant(id);
-        if (octant != null) {
-            return octant.downward(localData, parentLocalExpansion);
-        } else {
-            return 0.0;
-        }
-    }
-     
 
     public def addToCombinedVSet(combinedVSet:HashSet[UInt], ws:Int) { }
 
