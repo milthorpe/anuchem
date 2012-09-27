@@ -38,7 +38,7 @@ public class HartreeFockSCFMethod extends SCFMethod {
 
     public def scf() : void {
         val timer = new StatisticalTimer(5);
-        val TIMER_TOTAL:Int = 0; val TIMER_H:Int = 1; val TIMER_S:Int = 2; val TIMER_F:Int = 3; val TIMER_M:Int = 4; //Can't use static
+        val TIMER_TOTAL:Int = 0; val TIMER_2:Int = 1; val TIMER_S:Int = 2; val TIMER_F:Int = 3; val TIMER_M:Int = 4; //Can't use static
 
         val noOfElectrons = molecule.getNumberOfElectrons();        
         if (noOfElectrons%2 != 0 || molecule.getMultiplicity()!=1) {
@@ -63,11 +63,13 @@ public class HartreeFockSCFMethod extends SCFMethod {
         val hCore   = oneE.getHCore();
         val overlap = oneE.getOverlap();
         @Ifdef("__DEBUG__") {
+            Console.OUT.printf("Checking the ovelap matrix...\n");
             val diag = new GMLDiagonalizer();
             diag.diagonalize(overlap);
             val eigval =  diag.getEigenValues().d;;
-            Console.OUT.printf("Three smallest eigen values %e %e %e\n",eigval(0),eigval(1),eigval(2));        
+            Console.OUT.printf("Three smallest eigenvalues %e %e %e\n",eigval(0),eigval(1),eigval(2));        
             if (eigval(0)<1e-6) Console.OUT.printf("Linear dependence detected!!!\n");
+            Console.OUT.printf("Allocating various 2D matrices...\n");
         }
         // init memory for the matrices
         val N = hCore.N;
@@ -93,6 +95,7 @@ public class HartreeFockSCFMethod extends SCFMethod {
 
         var fock:Fock{self.M==N,self.N==N} = new Fock(N);
 
+        Console.OUT.printf("Making guess orbitals...\n");
         if (jd.guess.equals(JobDefaults.GUESS_SAD)) {
             Console.OUT.printf("guess = SAD... (core for MOs)\n");
             density.applyGuess(bfs.getSAD());
@@ -104,6 +107,7 @@ public class HartreeFockSCFMethod extends SCFMethod {
         } else {
             Console.OUT.printf("guess = ???...\n");
         }
+
         Console.OUT.printf("Starting SCF procedure...\n");      
 
         val diis = new DIISFockExtrapolator(N);
