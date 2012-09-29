@@ -339,7 +339,6 @@ public class FastMultipoleMethod {
             */
         }
 
-
         finish for (var destPlace:Place=here.next(); destPlace!=here && leafOctantList.size() > 0; destPlace=destPlace.next()) {
             val p = destPlace.id;
             val placeStart = firstLeafOctant(p);
@@ -491,9 +490,10 @@ public class FastMultipoleMethod {
                 val pLoads = at(Place(p)) localData().octantLoads;
                 myOctantLoads.map(myOctantLoads, pLoads, (x:Int,y:Int)=>x+y);
             }
-            finish for(place in Place.places()) at(place) async {
+            finish for(p in 1..(Place.MAX_PLACES-1)) at(Place(p)) async {
                 Array.copy[Int](myOctantLoads, localData().octantLoads);
             }
+
         }
 
         Team.WORLD.barrier(here.id);
