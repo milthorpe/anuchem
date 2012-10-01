@@ -15,6 +15,8 @@
     <property name="x10papi" location="../../papi_wrapper"/>
     <property name="x10papi.props" location="${x10papi}/x10papi_${x10rt}.properties"/>
     <property name="papiHome" location="${user.home}/papi"/>
+    <property name="usemkl" value="false"/>
+    <property name="lapackHome" value="/scratch/lapack"/>
     <property name="bash.exe" value="bash"/>
     <property name="optimize" value="true" />
     <property name="nochecks" value="true" />
@@ -72,6 +74,10 @@
 
     <condition property="post.heapprofile" value="-ltcmalloc" else="">
         <istrue value="${heapprofile}" />
+    </condition>
+
+    <condition property="post.lapack" value="-L$(MKL)/lib/em64t -lmkl_intel_lp64 -lmkl_sequential -lmkl_core -lmkl_lapack -lpthread -lm" else="-L${lapackHome} -L/usr/lib -llapack -lblas">
+        <istrue value="${usemkl}"/>
     </condition>
     
     <target name="init">
@@ -142,7 +148,7 @@
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/src">
             <arg value="-c"/> 
-            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.debug} ${x10c.profile} ${x10c.optimize} ${x10c.nochecks} ${define.papi} ${define.verbose} -report postcompile=1 -classpath ${gml.lib} -x10lib ${gml.props} -x10lib ${xla.props} -x10lib ${anuchem.props} -x10lib ${x10papi.props} -sourcepath . -post '# # ${post.cpuprofile} ${post.heapprofile} ${post.papi} -L/usr/lib -L${lib} -lintpack # -lblas -L/scratch/lapack -llapack -lpapi' -d ${target-src} ${basedir}/${testclass}"/>
+            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.debug} ${x10c.profile} ${x10c.optimize} ${x10c.nochecks} ${define.papi} ${define.verbose} -report postcompile=1 -classpath ${gml.lib} -x10lib ${gml.props} -x10lib ${xla.props} -x10lib ${anuchem.props} -x10lib ${x10papi.props} -sourcepath . -post '# ${post.cpuprofile} ${post.heapprofile} ${post.papi} # -L${lib} -lintpack ${post.papi} ${post.lapack} ' -d ${target-src} ${basedir}/${testclass}"/>
         </exec>
     </target>
 
