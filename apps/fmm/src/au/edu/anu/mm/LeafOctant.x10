@@ -95,7 +95,7 @@ public class LeafOctant extends Octant implements Comparable[LeafOctant] {
 
             val local = localData();
             var potential: Double = farField(local.size);
-            potential += nearField(local.size, local.locallyEssentialTree, local.dMax);
+            //potential += nearField(local.size, local.locallyEssentialTree, local.dMax);
 
             return potential;
         } else {
@@ -166,6 +166,7 @@ public class LeafOctant extends Octant implements Comparable[LeafOctant] {
             }
 */
         } else {
+            //Console.OUT.println(id + " uList " + uList.size);
             for (p in 0..(uList.size-1)) {
                 val oct2Data = myLET.getAtomDataForOctant(uList(p).getMortonId());
                 if (oct2Data != null) {

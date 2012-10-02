@@ -94,6 +94,7 @@ public abstract class Octant implements Comparable[Octant] {
         val scratch = new MultipoleExpansion(numTerms);    
         val scratch_array = new Array[Complex](numTerms+1);
         val vList = getVList();
+        //Console.OUT.println(id + " vList " + vList.size);
         for ([p] in vList) {
             val octantIndex2 = vList(p);
             val box2MultipoleExp = locallyEssentialTree.getMultipoleForOctant(octantIndex2.getMortonId());
