@@ -1,15 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE project [<!ENTITY buildfile SYSTEM "file:./build-user.xml">]>
 <project name="Pumja Rasaayani" default="build" basedir=".">
+    <property environment="env"/>
     <property name="x10rt" value="sockets" />
     <property name="xla" location="../../xla"/>
     <property name="xla.props" location="${xla}/xla_${x10rt}.properties"/>
-    <property name="x10.testlib" location="${user.home}/x10-trunk/x10.tests/examples/x10lib"/>
+    <property name="x10.testlib" location="${env.X10HOME}/x10.tests/examples/x10lib"/>
     <property name="anuchem" location="../../anu-chem"/>
     <property name="anuchem.src" location="${anuchem}/src"/>
     <property name="anuchem.props" location="${anuchem}/anuchem_${x10rt}.properties"/>
-    <property name="gml.lib" location="${user.home}/x10-trunk/x10.gml/lib/native_gml.jar"/>
-    <property name="gml.props" location="${user.home}/x10-trunk/x10.gml/native_gml.properties"/>
+    <property name="gml.lib" location="${env.X10HOME}/../x10.gml/lib/native_gml.jar"/>
+    <property name="gml.props" location="${env.X10HOME}/../x10.gml/native_gml.properties"/>
     <property name="papi" value="false" />
     <property name="verbose" value="false" />
     <property name="x10papi" location="../../papi_wrapper"/>
@@ -148,7 +149,7 @@
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/src">
             <arg value="-c"/> 
-            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.debug} ${x10c.profile} ${x10c.optimize} ${x10c.nochecks} ${define.papi} ${define.verbose} -report postcompile=1 -classpath ${gml.lib} -x10lib ${gml.props} -x10lib ${xla.props} -x10lib ${anuchem.props} -x10lib ${x10papi.props} -sourcepath . -post '# # ${post.cpuprofile} ${post.heapprofile} ${post.papi} -L/usr/lib -L${lib} -lintpack # -lblas -L${lapackHome} ${post.lapack} -lpapi' -d ${target-src} ${basedir}/${testclass}"/>
+            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.debug} ${x10c.profile} ${x10c.optimize} ${x10c.nochecks} ${define.papi} ${define.verbose} -report postcompile=1 -classpath ${gml.lib} -x10lib ${gml.props} -x10lib ${xla.props} -x10lib ${anuchem.props} -x10lib ${x10papi.props} -sourcepath . -post '# # ${post.cpuprofile} ${post.heapprofile} ${post.papi} -L/usr/lib -L${lib} -lintpack # -L${lapackHome} ${post.lapack} -lpapi' -d ${target-src} ${basedir}/${testclass}"/>
         </exec>
     </target>
 
