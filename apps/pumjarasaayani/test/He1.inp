@@ -1,0 +1,17 @@
+He1
+basis cc-pVDZ
+units 0.5291772109217
+RO_Z 1.0
+molecule
+He	     0.000	     0.000	     0.000
+end
+scf_max 0
+guess core
+use_RO 1
+compare_RO 
+RO_N 27
+RO_L 39
+RO_thresh 1e-6
+thresh 1e-14
+omega 1.
+gmat_parallel_scheme 0
