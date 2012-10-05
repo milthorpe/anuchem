@@ -55,6 +55,8 @@ public class AtomInfo {
         atomicNumbers.put("Cl", 17);
         atomicNumbers.put("Ar", 18);
 
+        atomicNumbers.put("Br", 35);
+
         covalentRadii.put("H",  0.4346);
         covalentRadii.put("He", 0.6047);
         covalentRadii.put("Li", 0.6047);
