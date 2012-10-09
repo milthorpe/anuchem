@@ -145,6 +145,7 @@ public class FastMultipoleMethod {
         }
         val potential = downwardPass();
         timer.stop(FmmLocalData.TIMER_INDEX_TOTAL);
+        //Console.OUT.printf("at %d: prefetch %.3G upward %.3G downward %.3G\n", here.id, timer.mean(FmmLocalData.TIMER_INDEX_PREFETCH) / 1e9, timer.mean(FmmLocalData.TIMER_INDEX_UPWARD) / 1e9, timer.mean(FmmLocalData.TIMER_INDEX_DOWNWARD) / 1e9);
         Team.WORLD.allreduce[Long](here.id, timer.total, 0, timer.total, 0, timer.total.size, Team.MAX);
 
         return 0.5 * potential;
@@ -218,6 +219,44 @@ public class FastMultipoleMethod {
             val localAtoms = atoms(p1);
             assignAtomsToOctantsLocal(localAtoms);
             localData().timer.stop(FmmLocalData.TIMER_INDEX_TREE);
+        }
+    }
+
+    /** 
+     * Estimate cost of uList and vList interactions at each place, and then
+     * combine with estimates at other places to get the average cost.
+     */
+    private def estimateCostLocal() {
+        val estimate = new Array[Long](2);
+        val leafOctants = localData().leafOctants;
+        val numEstimates = Math.min(leafOctants.size(), 8);
+        var uListEstimate:Long = 0L;
+        var vListEstimate:Long = 0L;
+        if (numEstimates > 0) {
+            for (i in 0..(numEstimates-1)) {
+                if (leafOctants(i) != null) {
+                    uListEstimate += leafOctants(i).estimateUListCost();
+                }
+            }
+            uListEstimate /= numEstimates;
+            vListEstimate = leafOctants(0).estimateVListCost(localData);
+
+        }
+
+        //Console.OUT.println("u-List estimate at " + here + " = " + uListEstimate);
+        estimate(FmmLocalData.ESTIMATE_P2P) = uListEstimate;
+        //Console.OUT.println("v-List estimate at " + here + " = " + vListEstimate);
+        estimate(FmmLocalData.ESTIMATE_M2L) = vListEstimate;
+
+        Team.WORLD.allreduce[Long](here.id, estimate, 0, estimate, 0, estimate.size, Team.ADD);
+
+        val cost = localData().cost;
+        for (i in 0..(estimate.size-1)) {
+            cost(i) = estimate(i) / Place.numPlaces();
+        }
+        if (here == Place.FIRST_PLACE) {
+            Console.OUT.println("u-List cost " + cost(FmmLocalData.ESTIMATE_P2P));
+            Console.OUT.println("v-List cost " + cost(FmmLocalData.ESTIMATE_M2L));
         }
     }
 
@@ -306,18 +345,33 @@ public class FastMultipoleMethod {
             }
         }
 
-
         local.octants = octants;
         local.leafOctants = leafOctantList;
 
         timer.stop(FmmLocalData.TIMER_INDEX_ASSIGN);
 
+        estimateCostLocal(); // TODO shouldn't include in tree construction time
+
         // sort and redistribute octants
         timer.start(FmmLocalData.TIMER_INDEX_REDUCE);
         allReduceOctantLoads(octantLoads);
+        val numAtoms = octantLoads.reduce[Int]((a:Int,b:Int)=>a+b, 0);
+        val uListCost = local.cost(FmmLocalData.ESTIMATE_P2P);
+        val q = numAtoms / octantLoads.size; // average particles per lowest-level octant
+        val vListCost = local.cost(FmmLocalData.ESTIMATE_M2L);
+
+        val costs = new Array[Long](octantLoads.size);
+        for(i in 0..(octantLoads.size-1)) {
+            val mortonId = i as UInt;
+            //Console.OUT.println(OctantId.getFromMortonId(mortonId) + " uList " + (octantLoads(i) * LeafOctant.estimateUListSize(mortonId, dMax) * q * uListCost) + " vList " + Octant.estimateVListSize(mortonId, dMax) * vListCost);
+            // octantLoad = uListInteractions * costP2P + vListInteractions * costM2L 
+            costs(i) = 
+                    octantLoads(i) * LeafOctant.estimateUListSize(mortonId, dMax) * q * uListCost 
+                  + Octant.estimateVListSize(mortonId, dMax) * vListCost;
+        }
         timer.stop(FmmLocalData.TIMER_INDEX_REDUCE);
         timer.start(FmmLocalData.TIMER_INDEX_REDIST);
-        val total = octantLoads.reduce[Int]((a:Int,b:Int)=>a+b, 0);
+        val total = costs.reduce[Long]((a:Long,b:Long)=>a+b, 0L);
         val placeShare = total / Place.MAX_PLACES;
         val leftOver = total % Place.MAX_PLACES;
 
@@ -326,19 +380,19 @@ public class FastMultipoleMethod {
         var i:Int=0;
         for (p in 1..Place.MAX_PLACES) {
             val share = p <= leftOver ? placeShare+1 : placeShare;
-            var load:Int = 0;
-            while(load < share && i < octantLoads.size) {
-                load += octantLoads(i++);
+            var load:Long = 0;
+            while(load < share && i < costs.size) {
+                load += costs(i++);
                 if (load >= share) {
                     break;
                 }
             }
             firstLeafOctant(p) = i as UInt;
-            /*
+/*
             if (here == Place.FIRST_PLACE) {
                 Console.OUT.println("place " + (p-1) + " first " + firstLeafOctant(p-1) + " last " + (firstLeafOctant(p)-1) + " load " + load);
             }
-            */
+*/
         }
 
         finish for (var destPlace:Place=here.next(); destPlace!=here && leafOctantList.size() > 0; destPlace=destPlace.next()) {

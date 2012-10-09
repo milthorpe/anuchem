@@ -68,6 +68,11 @@ public class FmmLocalData {
     /** The operator arrays for transformations and translations. */
     val fmmOperators:FmmOperators;
 
+    /** cost estimates (in ns) per interaction = [P2P, M2L] */
+    val cost:Rail[Long] = new Array[Long](2);
+    public static val ESTIMATE_P2P=0;
+    public static val ESTIMATE_M2L=1;
+
     /** A multi-timer for the several segments of a single getEnergy invocation, indexed by the constants above. */
     public val timer:Timer;
 

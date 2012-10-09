@@ -10,8 +10,10 @@
  */
 package au.edu.anu.mm;
 
+import x10.compiler.Inline;
 import x10.util.ArrayList;
 import x10.util.Pair;
+import x10.util.Random;
 
 import x10x.vector.Point3d;
 import x10x.vector.Vector3d;
@@ -95,7 +97,7 @@ public class LeafOctant extends Octant implements Comparable[LeafOctant] {
 
             val local = localData();
             var potential: Double = farField(local.size);
-            //potential += nearField(local.size, local.locallyEssentialTree, local.dMax);
+            potential += nearField(local.size, local.locallyEssentialTree, local.dMax);
 
             return potential;
         } else {
@@ -170,41 +172,7 @@ public class LeafOctant extends Octant implements Comparable[LeafOctant] {
             for (p in 0..(uList.size-1)) {
                 val oct2Data = myLET.getAtomDataForOctant(uList(p).getMortonId());
                 if (oct2Data != null) {
-                    for (i in 0..(atoms.size()-1)) {
-                        val atomI = atoms(i);
-                        val ci = atomI.centre;
-                        val xi = ci.i;
-                        val yi = ci.j;
-                        val zi = ci.k;
-                        val qi = atomI.charge;
-                        var fix:Double = atomI.force.i;
-                        var fiy:Double = atomI.force.j;
-                        var fiz:Double = atomI.force.k;
-
-                        //Console.OUT.println("at " + here + " calculating direct for " + id + " against " + uList(p));
-                        for (var j:Int=0; j<oct2Data.size; j+=4) {
-                            val xj = oct2Data(j);
-                            val yj = oct2Data(j+1);
-                            val zj = oct2Data(j+2);
-                            val qj = oct2Data(j+3);
-
-                            val dx = xj-xi;
-                            val dy = yj-yi;
-                            val dz = zj-zi;
-                            val r2 = (dx*dx + dy*dy + dz*dz);
-                            val invR2 = 1.0 / r2;
-                            val invR = Math.sqrt(invR2);
-                            val qq = qi * qj;
-                            val e = invR * qq;
-                            directEnergy += e;
-
-                            val forceScaling = e * invR2;
-                            fix += forceScaling * dx;
-                            fiy += forceScaling * dy;
-                            fiz += forceScaling * dz;
-                        }
-                        atomI.force = Vector3d(fix, fiy, fiz);
-                    }
+                    directEnergy += p2pKernel(oct2Data);
                 }
             }
         }
@@ -225,6 +193,55 @@ public class LeafOctant extends Octant implements Comparable[LeafOctant] {
             }
         }
 
+        return directEnergy;
+    }
+
+    /**
+     * Calculates forces and potential on atoms in this box due to atoms
+     * in a neighbouring octant, where <code>oct2Data</code> is laid out 
+     * sequentially in memory as a Rail[Double](N*4) repeating:
+     * - atom x coord
+     * - atom y coord
+     * - atom z coord
+     * - atom charge
+     */
+    private @Inline def p2pKernel(oct2Data:Rail[Double]) {
+        var directEnergy:Double=0.0;
+        for (i in 0..(atoms.size()-1)) {
+            val atomI = atoms(i);
+            val ci = atomI.centre;
+            val xi = ci.i;
+            val yi = ci.j;
+            val zi = ci.k;
+            val qi = atomI.charge;
+            var fix:Double = atomI.force.i;
+            var fiy:Double = atomI.force.j;
+            var fiz:Double = atomI.force.k;
+
+            //Console.OUT.println("at " + here + " calculating direct for " + id + " against " + uList(p));
+            for (var j:Int=0; j<oct2Data.size; j+=4) {
+                val xj = oct2Data(j);
+                val yj = oct2Data(j+1);
+                val zj = oct2Data(j+2);
+                val qj = oct2Data(j+3);
+
+                val dx = xj-xi;
+                val dy = yj-yi;
+                val dz = zj-zi;
+                val r2 = (dx*dx + dy*dy + dz*dz);
+                val invR2 = 1.0 / r2;
+                val invR = Math.sqrt(invR2);
+                val qq = qi * qj;
+                val e = invR * qq;
+                directEnergy += e;
+
+                val forceScaling = e * invR2;
+                fix += forceScaling * dx;
+                fiy += forceScaling * dy;
+                fiz += forceScaling * dz;
+            }
+            atomI.force = Vector3d(fix, fiy, fiz);
+        }
         return directEnergy;
     }
 
@@ -254,6 +271,40 @@ public class LeafOctant extends Octant implements Comparable[LeafOctant] {
             translationZ = -size;
         }
         return Vector3d(translationX, translationY, translationZ);
+    }
+
+    /** 
+     * Estimates the number of octants in a leaf octant's U-list,
+     * given the octant id. 
+     */
+    public static def estimateUListSize(mortonId:UInt, dMax:UByte):Int {
+        val maxExtent = (1U << dMax) - 1U;
+        val id = OctantId.getFromMortonId(mortonId);
+        val xExtent = (id.x > 0U && id.x < maxExtent) ? 3 : 2;
+        val yExtent = (id.y > 0U && id.y < maxExtent) ? 3 : 2;
+        val zExtent = (id.z > 0U && id.z < maxExtent) ? 3 : 2;
+        //Console.OUT.println("uList for " + id + " size = " + xExtent * yExtent * zExtent);
+        return xExtent * yExtent * zExtent;
+    }
+
+    /**
+     * Returns a cost estimate per interaction (in ns) of U-list calculation.
+     */
+    public def estimateUListCost():Long {
+        // use number of particles in this box as an estimate for others
+        val rand = new Random();
+        // create dummy singly-charged ions in random positions offset by [40,40,40]
+        val dummyData = new Rail[Double](atoms.size()*4, 
+                (i:Int) => (i%4==3)? 1.0 : rand.nextDouble()+40.0);
+        val start = System.nanoTime();
+        for (i in 0..26) {
+            p2pKernel(dummyData);
+        }
+        val stop = System.nanoTime();
+        val interactions = 27 * atoms.size() * atoms.size();
+        val perInt = (stop-start) / interactions;
+        //Console.OUT.println("for " + id + " q = " + atoms.size() + " interactions = " + interactions + " perInt = " + perInt);
+        return perInt;
     }
 
     /**

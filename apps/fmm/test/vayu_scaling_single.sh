@@ -6,7 +6,7 @@
 #PBS -wd
 #module load ipm
 module load hpctoolkit
-i=1
+i=32
 while [ $i -le 32 ]
 do
   export X10_NPLACES=$i

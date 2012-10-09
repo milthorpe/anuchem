@@ -151,6 +151,47 @@ public abstract class Octant implements Comparable[Octant] {
         }
     }
 
+    /** Estimates the number of octants in an octant's V-list, given the octant id. */
+    public static def estimateVListSize(mortonId:UInt, dMax:UByte):Int {
+        val maxExtent = (1U << dMax) - 1U;
+        val id = OctantId.getFromMortonId(mortonId);
+        val nearX = (id.x > 0U && id.x < maxExtent) ? 3 : 2;
+        val nearY = (id.y > 0U && id.y < maxExtent) ? 3 : 2;
+        val nearZ = (id.z > 0U && id.z < maxExtent) ? 3 : 2;
+        val neighbours = nearX * nearY * nearX;
+
+        val leagueX = (id.x > 1U && id.x < (maxExtent-1U)) ? 6 : 4;
+        val leagueY = (id.y > 1U && id.y < (maxExtent-1U)) ? 6 : 4;
+        val leagueZ = (id.z > 1U && id.z < (maxExtent-1U)) ? 6 : 4;
+        val colleagues = leagueX * leagueY * leagueZ;
+
+        //Console.OUT.println("vList for " + id + " size = " + (colleagues - neighbours));
+        return colleagues - neighbours;
+    }
+
+    /**
+     * Returns a cost estimate per interaction (in ns) of V-list calculation.
+     */
+    public def estimateVListCost(localData:PlaceLocalHandle[FmmLocalData]):Long {
+        val local = localData();
+        val myComplexK = local.fmmOperators.complexK;
+        val myWignerB = local.fmmOperators.wignerB;
+
+        val numTerms = localExp.p;
+        val scratch = new MultipoleExpansion(numTerms);    
+        val scratch_array = new Array[Complex](numTerms+1);
+        val randomExp = new MultipoleExpansion(numTerms);
+        val start = System.nanoTime();
+        for (i in 1..10) {
+            localExp.transformAndAddToLocal(scratch, scratch_array,
+		        Vector3d(1.0, 1.0, 1.0), 
+				myComplexK(1,1,1), randomExp, myWignerB(1,1,1) );
+        }
+        val stop = System.nanoTime();
+        localExp.clear();
+        return (stop-start)/10L;
+    }
+
     /**
      * Creates the V-list for this box.
      * The V-list consists of the children of those boxes not 

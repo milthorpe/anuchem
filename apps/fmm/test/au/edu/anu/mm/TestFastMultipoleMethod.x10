@@ -30,8 +30,8 @@ public class TestFastMultipoleMethod extends TestElectrostatic {
         var numAtoms:Int;
         var density:Double = 60.0;
         var dMax:Int = 3;
-        var numTerms:Int = 10;
-        var wellSpaced:Int = 2;
+        var numTerms:Int = 12;
+        var wellSpaced:Int = 1;
         var verbose:Boolean = false;
         var compare:Boolean = false;
         var forces:Boolean = false;
