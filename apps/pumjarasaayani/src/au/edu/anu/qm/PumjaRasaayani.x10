@@ -48,7 +48,7 @@ public class PumjaRasaayani {
         Console.OUT.println("PumjaRasaayani shunya.tri, Quantum Chemistry program in x10, v0.4");
         Console.OUT.println("" + Place.MAX_PLACES + " places, " + Runtime.NTHREADS + " threads per place");
 
-        mol.transformToSNO(); // Other transformations exist 
+        mol.transformToSNO(jd.roZ); // Other transformations exist 
 
         jd.rad=mol.getRadius(jd.roZ);
         Console.OUT.printf("rad/PI=%f\n",jd.rad/3.1415926535);

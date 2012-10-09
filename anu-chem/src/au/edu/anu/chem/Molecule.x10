@@ -124,16 +124,49 @@ public class Molecule[T]{T <: Atom} {
         return Point3d(x/chargeSum,y/chargeSum,z/chargeSum);
     }
 
+    public def getCentreOfVDW(roZ:Double):Point3d {
+        var step:Double = 0.1; // Atomic Unit
+        val initialguess =  centreOfMass();
+        val ai = AtomInfo.getInstance();
+        var x:Double = -initialguess.i, y:Double = -initialguess.j, z:Double = -initialguess.k;
+        var isConverged:Boolean=false;
+
+        while (isConverged==false || step>.0001) {
+            var rad1:Double=0.,rad2:Double=0.,dx:Double=0.,dy:Double=0.,dz:Double=0.;
+            
+            for(atm:T in atomList) {
+                val atmvec= Vector3d(atm.centre.i+x,atm.centre.j+y,atm.centre.k+z);
+                val distance=atmvec.magnitude()+ai.getVdwRadius(atm)/roZ;
+                if (rad1<distance) { 
+                    rad1=distance;
+                    dx= -atm.centre.i/atmvec.magnitude()*step;
+                    dy= -atm.centre.j/atmvec.magnitude()*step;
+                    dz= -atm.centre.k/atmvec.magnitude()*step;
+                }
+            }
+            for(atm:T in atomList) {
+                val atmvec= Vector3d(atm.centre.i+x+dx,atm.centre.j+y+dy,atm.centre.k+z+dz);
+                val distance=atmvec.magnitude()+ai.getVdwRadius(atm)/roZ;
+                if (rad2<distance) rad2=distance;                    
+            }
+            @Ifdef("__DEBUG__") {Console.OUT.printf("rad1=%e, rad2=%e, step=%e\n",rad1,rad2,step);}
+            if (rad2<rad1) {x+=dx; y+=dy;z+=dz; isConverged=false;}
+            else {isConverged=true; step*=.1;}
+        }
+        return Point3d(-x,-y,-z);
+    }
+
     /**
      * Translates and rotates this molecule to standard nuclear orientation.
      * @see Gill, P.M.W., Johnson, B.G. and Pople, J.A. (1993).
      *   "A standard grid for density functional calculations".
      *    Chem. Phys. Lett. 209 (5-6) pp.506-512  (Appendix A)
      */
-    public def transformToSNO() {
-        val zeroMoment = getCentreOfNuclearCharge();
-        val translation = Vector3d(-zeroMoment.i, -zeroMoment.j, -zeroMoment.k);
-        if (translation.magnitude() > 1.0e-12) {
+    public def transformToSNO(roZ:Double) {
+        // TODO use different method for molCentre according to input file specification.
+        val molCentre = getCentreOfVDW(roZ); //getCentreOfNuclearCharge();
+        val translation = Vector3d(-molCentre.i, -molCentre.j, -molCentre.k);
+        if (translation.magnitude() > 1.0e-5) { // generally geometry files contain 3 decimal places
             Console.OUT.printf("\ntranslated molecule by [%.4g, %.4g, %.4g]\n\n", translation.i, translation.j, translation.k);
         }
         for(atm:T in atomList) {
