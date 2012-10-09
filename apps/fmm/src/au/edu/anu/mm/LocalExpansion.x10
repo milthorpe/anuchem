@@ -78,8 +78,7 @@ public class LocalExpansion extends Expansion {
     public def translateAndAddLocal(scratch:MultipoleExpansion, temp:Rail[Complex], v:Vector3d, complexK:Rail[Rail[Complex]], source:LocalExpansion, wigner:Rail[Rail[Array[Double](2){rect}]]) { 
 	    val b = v.length();
 
-        Array.copy(source.terms, scratch.terms);
-        scratch.rotate(temp, complexK(1), wigner(0) );
+        source.rotate(complexK(1), wigner(0), scratch);
 
     	for (m in 0..p) {
     		for (l in m..p) temp(l) = scratch(l, m);
@@ -123,8 +122,7 @@ public class LocalExpansion extends Expansion {
     public def transformAndAddToLocal(scratch:MultipoleExpansion, temp:Rail[Complex], v:Vector3d, complexK:Rail[Rail[Complex]], source:MultipoleExpansion, wigner:Rail[Rail[Array[Double](2){rect}]]) { 
         val inv_b = 1 / v.length();
 
-        Array.copy(source.terms, scratch.terms);
-        scratch.rotate(temp, complexK(0), wigner(0) );
+        source.rotate(complexK(0), wigner(0), scratch);
 
         var m_sign:Double = 1.0;
         var b_m_pow:Double = 1.0;
@@ -259,9 +257,8 @@ public class LocalExpansion extends Expansion {
      * @return a new expansion, which is the current expansion after it is rotated
      */
     public def rotate(theta : Double, phi : Double) {
-        val target = new LocalExpansion(this);
-        val temp = new Array[Complex](p+1);
-    	target.rotate(temp, genComplexK(phi, p)(0), WignerRotationMatrix.getCCollection(theta, p)(0) );
+        val target = new LocalExpansion(p);
+    	this.rotate(genComplexK(phi, p)(0), WignerRotationMatrix.getCCollection(theta, p)(0), target);
     	return target;
     }
 

@@ -135,8 +135,7 @@ public class MultipoleExpansion extends Expansion {
 	    val b = v.length();
 	    val invB = 1 / b;
 
-        Array.copy(source.terms, scratch.terms);
-	    scratch.rotate(temp, complexK(0), wigner(0) );
+	    source.rotate(complexK(0), wigner(0), scratch);
 
 	    for (m in 0..p) {
 		    for (l in m..p) temp(l) = scratch(l, m);
@@ -212,9 +211,8 @@ public class MultipoleExpansion extends Expansion {
      * @return a new expansion which has been rotated
      */
     public def rotate(theta : Double, phi : Double) {
-    	val target = new MultipoleExpansion(this);
-        val temp = new Array[Complex](p+1);
-    	target.rotate(temp, genComplexK(phi, p)(1) , WignerRotationMatrix.getACollection(theta, p)(0) );
+    	val target = new MultipoleExpansion(p);
+    	this.rotate(genComplexK(phi, p)(1) , WignerRotationMatrix.getACollection(theta, p)(0), target);
     	return target;
     }
 

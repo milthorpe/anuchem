@@ -106,21 +106,20 @@ public class Expansion {
      * @param complexK, values of exp(i*k*phi)
      * @see Dachsel 2006 eqn 4 & 5
      */
-    public def rotate(temp:Rail[Complex], complexK:Rail[Complex], wigner:Rail[Array[Double](2){rect}]) {
+    public def rotate(complexK:Rail[Complex], wigner:Rail[Array[Double](2){rect}], target:Expansion) {
+        target(0,0) = this(0,0);
         for (l in 1..p) {
             val Dl = wigner(l);
 
-	        for (k in 0..l) temp(k) = this(l, k) * complexK(k);
-           
             for (m in 0..l) {
-	            var O_lm:Complex = temp(0) * Dl(m, 0);
+	            var O_lm:Complex = this(l, 0) * Dl(m, 0);
                 var m_sign:Double = -1.0;
                 for (k in 1..l) {
-                    val temp_k = temp(k);
+                    val temp_k = this(l, k) * complexK(k);
                     O_lm += temp_k * Dl(m, k) + m_sign * temp_k.conjugate() * Dl(m, -k); // Eq. 5, for k and -k
                     m_sign = -m_sign;
                 }
-                this(l,m) = O_lm;
+                target(l,m) = O_lm;
             }
         }
     }
