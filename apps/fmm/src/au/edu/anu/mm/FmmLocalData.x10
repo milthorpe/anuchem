@@ -29,6 +29,7 @@ public class FmmLocalData {
     public static val TIMER_INDEX_REDIST:Int = 7;
     public static val TIMER_INDEX_PARENTS:Int = 8;
     public static val TIMER_INDEX_LET:Int = 9;
+    public static val TIMER_INDEX_P2P:Int = 10;
 
     /** The maximum number of levels in the octree. */
     public val dMax:UByte;
@@ -80,7 +81,7 @@ public class FmmLocalData {
         fmmOperators = new FmmOperators(numTerms, ws);
         this.dMax = dMax;
         this.size = size;
-        timer = new Timer(10);
+        timer = new Timer(11);
         val maxLeafOctants = Math.pow(8.0, dMax) as Int;
         octantLoads = new Array[Int](maxLeafOctants);
         // TODO construct LET

@@ -97,7 +97,9 @@ public class LeafOctant extends Octant implements Comparable[LeafOctant] {
 
             val local = localData();
             var potential: Double = farField(local.size);
+            local.timer.start(FmmLocalData.TIMER_INDEX_P2P);
             potential += nearField(local.size, local.locallyEssentialTree, local.dMax);
+            local.timer.stop(FmmLocalData.TIMER_INDEX_P2P);
 
             return potential;
         } else {
@@ -314,9 +316,6 @@ public class LeafOctant extends Octant implements Comparable[LeafOctant] {
     public def createUList(ws:Int) {
         val tempUList = new ArrayList[OctantId]();
         val levelDim = Math.pow2(id.level);
-        val w = 2*ws+1;
-        uList = new Array[OctantId](w*w*w-1);
-        var i:Int = 0;
         for (x in Math.max(0,id.x-ws)..Math.min(levelDim-1,id.x+ws)) {
             val x2 = x as UByte;
             for (y in Math.max(0,id.y-ws)..Math.min(levelDim-1,id.y+ws)) {
