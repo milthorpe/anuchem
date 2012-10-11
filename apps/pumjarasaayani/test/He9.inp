@@ -1,0 +1,25 @@
+He9
+basis aug-cc-pVQZ
+units 0.5291772109217
+RO_Z 1.0
+molecule
+He	     0.000	     0.000	     0.000
+He	     4.200	     0.000	     0.000
+He	     8.400	     0.000	     0.000
+He	     2.100	     3.637	     0.000
+He	     6.300	     3.637	     0.000
+He	     4.200	     7.275	     0.000
+He	     2.100	     1.819	     3.637
+He	     6.300	     1.819	     3.637
+He	     4.200	     5.456	     3.637
+end
+scf_max 0
+guess core
+use_RO 1
+compare_RO 
+RO_N 300
+RO_L 100
+RO_thresh 1e-8
+thresh 1e-14
+omega .5
+gmat_parallel_scheme 0
