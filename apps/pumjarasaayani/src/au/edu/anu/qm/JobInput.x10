@@ -159,6 +159,13 @@ public class JobInput {
             // no more atoms / job directives
         }
         fil.close();        
+        // Flexible THRESH input
+        val conCrit = 0.39901297826025206; // Mathematica: Solve[10^-x == x, x] // N
+        if (jd.roThresh>conCrit) jd.roThresh=Math.pow(10.,-jd.roThresh);
+        if (jd.thresh>conCrit) jd.thresh=Math.pow(10.,-jd.thresh);
+        if (jd.energyTolerance>conCrit) jd.energyTolerance=Math.pow(10.,-jd.energyTolerance);
+        if (jd.diisStartThreshold>conCrit) jd.diisStartThreshold=Math.pow(10.,-jd.diisStartThreshold);
+        if (jd.diisConvergenceThreshold>conCrit) jd.diisConvergenceThreshold=Math.pow(10.,-jd.diisConvergenceThreshold);
     }
 
     private static def getIntParam(line:String) = Int.parseInt(StringSplitter.splitOnWhitespace(line)(1));
