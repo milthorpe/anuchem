@@ -15,6 +15,8 @@ import x10.util.ArrayList;
 
 import x10x.vector.Point3d;
 import x10x.vector.Vector3d;
+import x10.compiler.Ifdef;
+import x10.compiler.Ifndef;
 
 /**
  * This class represents a Molecule
