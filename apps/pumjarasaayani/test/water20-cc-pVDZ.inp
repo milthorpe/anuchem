@@ -67,8 +67,8 @@ end
 scf_max 0
 guess core
 use_RO 1
-RO_N 1
-RO_L 6
+RO_N 100
+RO_L 60
 RO_thresh 1e-6
 thresh 1e-14
 omega 0.1	
