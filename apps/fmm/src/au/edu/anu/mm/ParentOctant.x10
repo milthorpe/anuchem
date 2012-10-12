@@ -89,8 +89,7 @@ public class ParentOctant extends Octant implements Comparable[ParentOctant] {
         val myWignerA = fmmOperators.wignerA;
         val halfSideLength = local.size / Math.pow2(id.level+2);
         val numTerms = multipoleExp.p;
-        val scratch = new MultipoleExpansion(numTerms);    
-        val scratch_array = new Array[Complex](numTerms+1);
+        val scratch = FmmScratch.getWorkerLocal();
         var i:Int=0;
         var nonNullChildren:Boolean = false;
         for (x2 in (2*id.x)..(2*id.x+1)) {
@@ -103,7 +102,7 @@ public class ParentOctant extends Octant implements Comparable[ParentOctant] {
                         val dx = ((x2+1)%2)*2-1;
                         val dy = ((y2+1)%2)*2-1;
                         val dz = ((z2+1)%2)*2-1;
-                        this.multipoleExp.translateAndAddMultipole(scratch, scratch_array,
+                        this.multipoleExp.translateAndAddMultipole(scratch.exp, scratch.array,
                           Vector3d(dx*halfSideLength, dy*halfSideLength, dz*halfSideLength),
                           myComplexK(dx,dy,dz), childExp.second, myWignerA((dx+1)/2, (dy+1)/2, (dz+1)/2));
                     }

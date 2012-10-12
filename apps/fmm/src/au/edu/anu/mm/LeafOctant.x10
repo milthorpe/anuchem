@@ -27,6 +27,7 @@ import au.edu.anu.chem.mm.MMAtom;
  */
 public class LeafOctant extends Octant implements Comparable[LeafOctant] {
     public var atoms:ArrayList[MMAtom];
+    private var sources:Rail[Double];
 
     /** The U-list consists of all leaf octants not well-separated from this octant. */
     private var uList:Rail[OctantId];
@@ -36,19 +37,22 @@ public class LeafOctant extends Octant implements Comparable[LeafOctant] {
         atoms = new ArrayList[MMAtom]();
     }
 
-    public def numAtoms() = atoms.size();
-
-    public def getAtomData():Rail[Double] {
-        val flat = new Array[Double](atoms.size()*4);
+    public def makeSources() {
+        this.sources = new Array[Double](atoms.size()*4);
         for (i in 0..(atoms.size()-1)) {
             val atom = atoms(i);
             val idx = i*4;
-            flat(idx)   = atom.centre.i;
-            flat(idx+1) = atom.centre.j;
-            flat(idx+2) = atom.centre.k;
-            flat(idx+3) = atom.charge;
+            sources(idx)   = atom.centre.i;
+            sources(idx+1) = atom.centre.j;
+            sources(idx+2) = atom.centre.k;
+            sources(idx+3) = atom.charge;
         }
-        return flat;
+    }
+
+    public def numAtoms() = atoms.size();
+
+    public def getSources():Rail[Double] {
+        return sources;
     }
 
     public def compareTo(b:LeafOctant):Int = id.compareTo(b.id);

@@ -46,7 +46,7 @@ public class FmmLocalData {
     var octants:HashMap[UInt,Octant];
 
     /** The load on each leaf octant across all places. */
-    var octantLoads:Array[Int];
+    var octantLoads:Rail[Int];
 
     /** All leaf octants held at this place. */
     var leafOctants:ArrayList[LeafOctant];

@@ -91,8 +91,7 @@ public abstract class Octant implements Comparable[Octant] {
 
         // transform and add multipole expansions from same level
         val numTerms = localExp.p;
-        val scratch = new MultipoleExpansion(numTerms);    
-        val scratch_array = new Array[Complex](numTerms+1);
+        val scratch = FmmScratch.getWorkerLocal();
         val vList = getVList();
         //Console.OUT.println(id + " vList " + vList.size);
         for ([p] in vList) {
@@ -104,7 +103,7 @@ public abstract class Octant implements Comparable[Octant] {
                 val dx2 = (octantIndex2.x as Int)-id.x;
                 val dy2 = (octantIndex2.y as Int)-id.y;
                 val dz2 = (octantIndex2.z as Int)-id.z;
-                localExp.transformAndAddToLocal(scratch, scratch_array,
+                localExp.transformAndAddToLocal(scratch.exp, scratch.array,
 			        Vector3d(dx2*sideLength, dy2*sideLength, dz2*sideLength), 
 					myComplexK(dx2,dy2,dz2), box2MultipoleExp, myWignerB(dx2,dy2,dz2) );
                 //Console.OUT.println("at " + here + " added multipole for " + octantIndex2 + " to " + id);
@@ -117,7 +116,7 @@ public abstract class Octant implements Comparable[Octant] {
             val dy = 2*(id.y%2)-1;
             val dz = 2*(id.z%2)-1;
 
-            localExp.translateAndAddLocal(scratch, scratch_array,
+            localExp.translateAndAddLocal(scratch.exp, scratch.array,
                 Vector3d(dx*0.5*sideLength, dy*0.5*sideLength, dz*0.5*sideLength),
                 myComplexK(dx,dy,dz), parentLocalExpansion, myWignerC((dx+1)/2, (dy+1)/2, (dz+1)/2));
         }
@@ -178,12 +177,11 @@ public abstract class Octant implements Comparable[Octant] {
         val myWignerB = local.fmmOperators.wignerB;
 
         val numTerms = localExp.p;
-        val scratch = new MultipoleExpansion(numTerms);    
-        val scratch_array = new Array[Complex](numTerms+1);
+        val scratch = FmmScratch.getWorkerLocal();
         val randomExp = new MultipoleExpansion(numTerms);
         val start = System.nanoTime();
         for (i in 1..10) {
-            localExp.transformAndAddToLocal(scratch, scratch_array,
+            localExp.transformAndAddToLocal(scratch.exp, scratch.array,
 		        Vector3d(1.0, 1.0, 1.0), 
 				myComplexK(1,1,1), randomExp, myWignerB(1,1,1) );
         }

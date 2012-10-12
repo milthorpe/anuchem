@@ -217,6 +217,7 @@ public class FastMultipoleMethod {
         finish ateach(p1 in atoms) {
             FastMultipoleMethod.localData.timer.start(FmmLocalData.TIMER_INDEX_TREE);
             this.localData.init(numTerms, dMax as UByte, ws, size);
+            FmmScratch.init( ()=>new FmmScratch(numTerms) );
             val localAtoms = atoms(p1);
             assignAtomsToOctantsLocal(localAtoms);
             FastMultipoleMethod.localData.timer.stop(FmmLocalData.TIMER_INDEX_TREE);
@@ -340,7 +341,7 @@ public class FastMultipoleMethod {
         if (leafOctantList.size() > 0) {
             for(octant in leafOctantList) {
                 val mortonId = octant.id.getLeafMortonId() as Int;
-                octantLoads(mortonId) = octant.atoms.size();
+                octantLoads(mortonId) = octant.numAtoms();
                 //Console.OUT.println("at " + here + " octant " + mortonId + "(" + octant.id + ") has " + octantLoads(mortonId));
             }
         }
@@ -446,8 +447,9 @@ public class FastMultipoleMethod {
                                 leafOctantsHere.addBefore(k, targetOctant);
                                 localDest.octants.put(octantId.getMortonId(), targetOctant);
                             }
+                            val targetAtoms = targetOctant.atoms;
                             for (atom in atoms) {
-                                targetOctant.atoms.add(atom);
+                                targetAtoms.add(atom);
                             }
                         }
                     }
@@ -463,11 +465,12 @@ public class FastMultipoleMethod {
         var prevOctantId:OctantId = OctantId(0UY,0UY,0UY,dMax);
         for(octant in leafOctantList) {
              //Console.OUT.println("at " + here + ": " + octant.id);
-             octantList.add(octant);
-             if (octant.id > prevOctantId.next()) {
-                 //Console.OUT.println("at " + here + " skipped octants from " + prevOctantId + " " + prevOctantId.getLeafMortonId() + " to " + octant.id + " " + octant.id.getLeafMortonId());
-             }
-             prevOctantId = octant.id;
+            octant.makeSources();
+            octantList.add(octant);
+            if (octant.id > prevOctantId.next()) {
+                //Console.OUT.println("at " + here + " skipped octants from " + prevOctantId + " " + prevOctantId.getLeafMortonId() + " to " + octant.id + " " + octant.id.getLeafMortonId());
+            }
+            prevOctantId = octant.id;
         }
 
         local.topLevelOctants = new ArrayList[Octant](octantList.size());
@@ -538,7 +541,7 @@ public class FastMultipoleMethod {
         createLET();
     }
 
-    private def allReduceOctantLoads(myOctantLoads:Array[Int]) {
+    private def allReduceOctantLoads(myOctantLoads:Rail[Int]) {
         //Team.WORLD.allreduce[Int](here.id, octantLoads, 0, octantLoads, 0, maxLeafOctants, Team.ADD);
         Team.WORLD.barrier(here.id);
 
@@ -693,7 +696,7 @@ public class FastMultipoleMethod {
         for (i in 0..(octantList.size-1)) {
             val octant = local.getOctant(octantList(i)) as LeafOctant;
             if (octant != null) {
-                atomList(i) = octant.getAtomData();
+                atomList(i) = octant.getSources();
             }
         }
         return atomList;
