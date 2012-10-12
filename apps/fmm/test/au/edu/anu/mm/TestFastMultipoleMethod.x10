@@ -125,19 +125,19 @@ public class TestFastMultipoleMethod extends TestElectrostatic {
         if (verbose) {
             Console.OUT.println("energy = " + energy);
 
-            logTime("(Tree construction)", FmmLocalData.TIMER_INDEX_TREE, fmm.localData().timer);
-            logTime("(assign)",   FmmLocalData.TIMER_INDEX_ASSIGN,    fmm.localData().timer);
-            logTime("(reduce)",   FmmLocalData.TIMER_INDEX_REDUCE,    fmm.localData().timer);
-            logTime("(redist)",   FmmLocalData.TIMER_INDEX_REDIST,    fmm.localData().timer);
-            logTime("(parents)",  FmmLocalData.TIMER_INDEX_PARENTS,   fmm.localData().timer);
-            logTime("(LET)",      FmmLocalData.TIMER_INDEX_LET,       fmm.localData().timer);
+            logTime("(Tree construction)", FmmLocalData.TIMER_INDEX_TREE, FastMultipoleMethod.localData.timer);
+            logTime("(assign)",   FmmLocalData.TIMER_INDEX_ASSIGN,    FastMultipoleMethod.localData.timer);
+            logTime("(reduce)",   FmmLocalData.TIMER_INDEX_REDUCE,    FastMultipoleMethod.localData.timer);
+            logTime("(redist)",   FmmLocalData.TIMER_INDEX_REDIST,    FastMultipoleMethod.localData.timer);
+            logTime("(parents)",  FmmLocalData.TIMER_INDEX_PARENTS,   FastMultipoleMethod.localData.timer);
+            logTime("(LET)",      FmmLocalData.TIMER_INDEX_LET,       FastMultipoleMethod.localData.timer);
 
-            logTime("Prefetch",   FmmLocalData.TIMER_INDEX_PREFETCH,  fmm.localData().timer);
-            logTime("Upward",     FmmLocalData.TIMER_INDEX_UPWARD,    fmm.localData().timer);
-            logTime("Downward",   FmmLocalData.TIMER_INDEX_DOWNWARD,  fmm.localData().timer);
-            logTime("Total",      FmmLocalData.TIMER_INDEX_TOTAL,     fmm.localData().timer);
+            logTime("Prefetch",   FmmLocalData.TIMER_INDEX_PREFETCH,  FastMultipoleMethod.localData.timer);
+            logTime("Upward",     FmmLocalData.TIMER_INDEX_UPWARD,    FastMultipoleMethod.localData.timer);
+            logTime("Downward",   FmmLocalData.TIMER_INDEX_DOWNWARD,  FastMultipoleMethod.localData.timer);
+            logTime("Total",      FmmLocalData.TIMER_INDEX_TOTAL,     FastMultipoleMethod.localData.timer);
         } else {
-            Console.OUT.printf("p: %2i D_max: %2i time (s): %9.5f tree (s): %9.5f", numTerms, dMax, (fmm.localData().timer.mean(FmmLocalData.TIMER_INDEX_TOTAL) as Double) / 1e9, (fmm.localData().timer.mean(FmmLocalData.TIMER_INDEX_TREE) as Double) / 1e9);
+            Console.OUT.printf("p: %2i D_max: %2i time (s): %9.5f tree (s): %9.5f", numTerms, dMax, (FastMultipoleMethod.localData.timer.mean(FmmLocalData.TIMER_INDEX_TOTAL) as Double) / 1e9, (FastMultipoleMethod.localData.timer.mean(FmmLocalData.TIMER_INDEX_TREE) as Double) / 1e9);
         }
 
         if (compare) {

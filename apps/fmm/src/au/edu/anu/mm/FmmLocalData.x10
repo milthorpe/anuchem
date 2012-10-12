@@ -32,7 +32,7 @@ public class FmmLocalData {
     public static val TIMER_INDEX_P2P:Int = 10;
 
     /** The maximum number of levels in the octree. */
-    public val dMax:UByte;
+    public var dMax:UByte;
 
     /**
      * The side length of the cube. 
@@ -40,13 +40,13 @@ public class FmmLocalData {
      * calculations, all force/energy calculations are performed within 
      * an origin-centred cube.
      */
-    public val size:Double; 
+    public var size:Double; 
 
     /** All octants held at this place. */
     var octants:HashMap[UInt,Octant];
 
     /** The load on each leaf octant across all places. */
-    val octantLoads:Array[Int];
+    var octantLoads:Array[Int];
 
     /** All leaf octants held at this place. */
     var leafOctants:ArrayList[LeafOctant];
@@ -67,7 +67,7 @@ public class FmmLocalData {
     var locallyEssentialTree:LET;
 
     /** The operator arrays for transformations and translations. */
-    val fmmOperators:FmmOperators;
+    var fmmOperators:FmmOperators;
 
     /** cost estimates (in ns) per interaction = [P2P, M2L] */
     val cost:Rail[Long] = new Array[Long](2);
@@ -75,13 +75,12 @@ public class FmmLocalData {
     public static val ESTIMATE_M2L=1;
 
     /** A multi-timer for the several segments of a single getEnergy invocation, indexed by the constants above. */
-    public val timer:Timer;
+    public val timer = new Timer(11);
 
-    public def this(numTerms:Int, dMax:UByte, ws:Int, size:Double) {
-        fmmOperators = new FmmOperators(numTerms, ws);
+    public def init(numTerms:Int, dMax:UByte, ws:Int, size:Double) {
         this.dMax = dMax;
         this.size = size;
-        timer = new Timer(11);
+        fmmOperators = new FmmOperators(numTerms, ws);
         val maxLeafOctants = Math.pow(8.0, dMax) as Int;
         octantLoads = new Array[Int](maxLeafOctants);
         // TODO construct LET

@@ -57,9 +57,9 @@ public class GhostOctant extends Octant implements Comparable[Octant] {
     /** 
      * Go to home place of this octant and return multipole expansion (once computed).
      */
-    protected def upward(localData:PlaceLocalHandle[FmmLocalData]):Pair[Int,MultipoleExpansion] {
+    protected def upward():Pair[Int,MultipoleExpansion] {
         val mortonId = id.getMortonId();
-        val result = at(Place(placeId)) GhostOctant.upwardRemote(localData, mortonId);
+        val result = at(Place(placeId)) GhostOctant.upwardRemote(mortonId);
         if (result != null) {
             numAtoms = result.numAtoms;
             target = result.target;
@@ -70,8 +70,8 @@ public class GhostOctant extends Octant implements Comparable[Octant] {
         }
     }
 
-    private static def upwardRemote(localData:PlaceLocalHandle[FmmLocalData], mortonId:UInt):GhostUpward {
-        val octant = localData().getOctant(mortonId);
+    private static def upwardRemote(mortonId:UInt):GhostUpward {
+        val octant = FastMultipoleMethod.localData.getOctant(mortonId);
         if (octant != null) {
             //Console.OUT.println("at " + here + " waiting on multipole " + mortonId);
             when(octant.multipoleReady);
@@ -82,11 +82,11 @@ public class GhostOctant extends Octant implements Comparable[Octant] {
         }
     }
 
-    protected def downward(localData:PlaceLocalHandle[FmmLocalData], parentLocalExpansion:LocalExpansion):Double {
+    protected def downward(parentLocalExpansion:LocalExpansion):Double {
         //Console.OUT.println("at " + here + " GhostOctant.downward for " + id + " held at " + placeId); 
         if (numAtoms > 0) {
             val target = this.target;
-            return at (target.home) target().downward(localData, parentLocalExpansion);
+            return at (target.home) target().downward(parentLocalExpansion);
         }
         return 0.0;
     }
