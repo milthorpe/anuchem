@@ -322,7 +322,9 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
                 if (shellPairs(i).maxL(ron)>maxmaxl(ron)) maxmaxl(ron)=shellPairs(i).maxL(ron);
             Console.OUT.printf("maxmaxl(%d)=%d\n", ron, maxmaxl(ron));
         }
-        Console.OUT.printf("t11=%e\nt12=%e\nt2=%e\nt3=%e\n", t11,t12,t2,t3);
+        Console.OUT.printf("Ylm construction %e seconds\nGenClass %e seconds\n", t11,t12);
+        Console.OUT.printf("Time to construct integrals %e seconds\nTime to screen integrals  %e seconds\nTime to store integrals %e seconds\n", t11+t12,t2,t3);
+        Console.OUT.printf("Total integral time %e seconds\n", t11+t12+t2+t3);
 
         Console.OUT.printf("nShell=%d numSigShellPairs=%d pAuxCount=%e (primitive) AuxCount=%e (contracted)\n",nShell,numSigShellPairs,pAuxCount,AuxCount);
         Console.OUT.printf("mCost=%e\n", mCost);
