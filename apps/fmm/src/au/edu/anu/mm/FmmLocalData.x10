@@ -29,7 +29,6 @@ public class FmmLocalData {
     public static val TIMER_INDEX_REDIST:Int = 7;
     public static val TIMER_INDEX_PARENTS:Int = 8;
     public static val TIMER_INDEX_LET:Int = 9;
-    public static val TIMER_INDEX_P2P:Int = 10;
 
     /** The maximum number of levels in the octree. */
     public var dMax:UByte;
@@ -75,7 +74,7 @@ public class FmmLocalData {
     public static val ESTIMATE_M2L=1;
 
     /** A multi-timer for the several segments of a single getEnergy invocation, indexed by the constants above. */
-    public val timer = new Timer(11);
+    public val timer = new Timer(10);
 
     public def init(numTerms:Int, dMax:UByte, ws:Int, size:Double) {
         this.dMax = dMax;

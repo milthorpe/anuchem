@@ -101,9 +101,7 @@ public class LeafOctant extends Octant implements Comparable[LeafOctant] {
 
             val local = FastMultipoleMethod.localData;
             var potential: Double = farField(local.size);
-            local.timer.start(FmmLocalData.TIMER_INDEX_P2P);
             potential += nearField(local.size, local.locallyEssentialTree, local.dMax);
-            local.timer.stop(FmmLocalData.TIMER_INDEX_P2P);
 
             return potential;
         } else {
