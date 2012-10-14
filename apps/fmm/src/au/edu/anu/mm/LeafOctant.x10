@@ -73,13 +73,13 @@ public class LeafOctant extends Octant implements Comparable[LeafOctant] {
             localExp.clear();
 
             val size = FastMultipoleMethod.localData.size;
-            val p = multipoleExp.p;
             val centre = getCentre(size);
+            val plm = FmmScratch.getWorkerLocal().plm;
             for (i in 0..(atoms.size()-1)) {
                 val atom = atoms(i);
                 val atomLocation = centre.vector(atom.centre);
                 // only one thread per octant, so unsafe addOlm is OK
-                multipoleExp.addOlm(atom.charge, atomLocation, p);
+                multipoleExp.addOlm(atom.charge, atomLocation, plm);
             }
 
             atomic this.multipoleReady = true;
@@ -119,12 +119,13 @@ public class LeafOctant extends Octant implements Comparable[LeafOctant] {
     public def farField(size:Double):Double {
         val boxCentre = getCentre(size);
 
+        val plm = FmmScratch.getWorkerLocal().plm;
         var potential:Double = 0.0;
         for (atomIndex in 0..(atoms.size()-1)) {
             val atom = atoms(atomIndex);
             atom.force = Vector3d.NULL; // reset
             val locationWithinBox = atom.centre.vector(boxCentre);
-            potential += localExp.calculatePotentialAndForces(atom, locationWithinBox);
+            potential += localExp.calculatePotentialAndForces(atom, locationWithinBox, plm);
         }
 
         return potential;

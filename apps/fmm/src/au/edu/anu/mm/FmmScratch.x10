@@ -17,10 +17,12 @@ package au.edu.anu.mm;
 public class FmmScratch {
     var exp:MultipoleExpansion;
     var array:Rail[Complex];
+    var plm:AssociatedLegendrePolynomial;
 
     public def this(numTerms:Int) {
         exp = new MultipoleExpansion(numTerms);
         array = new Array[Complex](numTerms+1);
+        plm = new AssociatedLegendrePolynomial(numTerms);
     }
 
     private static val store:Rail[FmmScratch] = new Rail[FmmScratch](Runtime.MAX_THREADS);

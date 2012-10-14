@@ -59,10 +59,10 @@ public struct Polar3d {
                       );
     }
 
-    /** Returns a polar representation of the given cartesian tuple. */
-    public static def getPolar3d(point : Tuple3d) {
-        val rxy2 : Double = (point.i() * point.i()) + (point.j() * point.j());
-        val r2 : Double = rxy2 + (point.k() * point.k());
+    /** Returns a polar representation of the given cartesian vector. */
+    public static def getPolar3d(point:Vector3d) {
+        val rxy2 : Double = (point.i * point.i) + (point.j * point.j);
+        val r2 : Double = rxy2 + (point.k * point.k);
         val r : Double = Math.sqrt(r2);
         var phi : Double;
         var theta : Double;
@@ -76,8 +76,8 @@ public struct Polar3d {
             }
         } else {
             val rxy : Double = Math.sqrt(rxy2);
-            theta = Math.acos(point.k() / r);
-            phi = Math.acos(point.i() / rxy);
+            theta = Math.acos(point.k / r);
+            phi = Math.acos(point.i / rxy);
             if (point.j() < 0.0) {
                 phi = 2.0*Math.PI - phi;
             }

@@ -6,11 +6,10 @@
  *  You may obtain a copy of the License at
  *      http://www.opensource.org/licenses/eclipse-1.0.php
  *
- * (C) Copyright Josh Milthorpe 2011.
+ * (C) Copyright Josh Milthorpe 2011-2012.
  */
 package au.edu.anu.mm;
 
-import x10x.vector.Point3d;
 import x10x.polar.Polar3d;
 import x10x.vector.Vector3d;
 
@@ -69,7 +68,7 @@ class FmmOperators {
     private def precomputeWignerA(numTerms : Int) {
         val wignerA = new Array[Rail[Rail[Array[Double](2){rect}]]]((0..1)*(0..1)*(0..1));
         for ([i,j,k] in wignerA) {
-    		val theta = Polar3d.getPolar3d( Point3d(i*2-1,j*2-1,k*2-1) ).theta;
+    		val theta = Polar3d.getPolar3d( Vector3d(i*2-1,j*2-1,k*2-1) ).theta;
 	        wignerA(i, j, k) = WignerRotationMatrix.getACollection(theta, numTerms);
         }
         return wignerA;
@@ -78,7 +77,7 @@ class FmmOperators {
     private def precomputeWignerC(numTerms : Int) {
         val wignerB = new Array[Rail[Rail[Array[Double](2){rect}]]]((0..1)*(0..1)*(0..1));
         for ([i,j,k] in wignerB) {
-		    val theta = Polar3d.getPolar3d( Point3d(i*2-1,j*2-1,k*2-1) ).theta;
+		    val theta = Polar3d.getPolar3d( Vector3d(i*2-1,j*2-1,k*2-1) ).theta;
 	        wignerB(i, j, k) = WignerRotationMatrix.getCCollection(theta, numTerms);
         }
         return wignerB;
@@ -87,7 +86,7 @@ class FmmOperators {
     private def precomputeWignerB(numTerms : Int, ws : Int) {
         val wignerC = new Array[Rail[Rail[Array[Double](2){rect}]]]((-(2*ws+1))..(2*ws+1) * (-(2*ws+1))..(2*ws+1) * (-(2*ws+1))..(2*ws+1));
         for ([i,j,k] in wignerC) {
-            val theta = Polar3d.getPolar3d ( Point3d(i, j, k) ).theta;
+            val theta = Polar3d.getPolar3d ( Vector3d(i, j, k) ).theta;
 	        wignerC(i, j, k) = WignerRotationMatrix.getBCollection(theta, numTerms);
         }
         return wignerC;
@@ -100,7 +99,7 @@ class FmmOperators {
     private def precomputeComplex(numTerms : Int, ws : Int) {
         val complexK = new Array[Rail[Rail[Complex]]]((-(2*ws+1))..(2*ws+1) * (-(2*ws+1))..(2*ws+1) * (-(2*ws+1))..(2*ws+1));
         for ([i,j,k] in complexK) {
-            val phi = Polar3d.getPolar3d ( Point3d(i, j, k) ).phi;
+            val phi = Polar3d.getPolar3d ( Vector3d(i, j, k) ).phi;
             complexK(i, j, k) = Expansion.genComplexK(phi, numTerms);
         }
         return complexK;

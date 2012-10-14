@@ -37,13 +37,13 @@ public class LocalExpansion extends Expansion {
     /**
      * Calculate the local Taylor-type expansion M_{lm} (with m >= 0) for a single point v.
      */
-    public static def getMlm(v:Tuple3d, p:Int) : LocalExpansion {
+    public static def getMlm(v:Vector3d, p:Int) : LocalExpansion {
         val exp = new LocalExpansion(p);
         val v_pole = Polar3d.getPolar3d(v);
         val pplm = AssociatedLegendrePolynomial.getPlk(v_pole.theta, p);
         val rfac0 : Double = 1.0 / v_pole.r;
 
-        exp(0,0) = Complex(rfac0 * pplm(0,0), 0.0);
+        exp(0,0) = Complex(rfac0, 0.0);
 
         val phifac0 = Complex(Math.cos(v_pole.phi), Math.sin(v_pole.phi));
         var rfac : Double = rfac0 * rfac0;
@@ -202,19 +202,19 @@ public class LocalExpansion extends Expansion {
      * and add the forces to the atom.
      * @param atom the atom for which to calculate the potential
      * @param v the vector from the box centre to the atom centre
-     * @param localExp local expansion of potential due to distant particles
+     * @param plm a scratch space in which to store the assoc. Legendre polynomial for the atom centre
      * @return the potential due to distant particles
      */
-    public def calculatePotentialAndForces(atom:MMAtom, v:Tuple3d):Double {
+    public def calculatePotentialAndForces(atom:MMAtom, v:Vector3d, pplm:AssociatedLegendrePolynomial):Double {
         val v_pole = Polar3d.getPolar3d(v);
         val q = atom.charge;
-        val pplm = AssociatedLegendrePolynomial.getPlk(v_pole.theta, p+1);
+        pplm.getPlk(v_pole.theta);
 
         var dr:Double = 0.0;
         var dt:Double = 0.0;
         var dp:Double = 0.0;
 
-        var potential:Double = q * pplm(0,0) * this(0,0).re;
+        var potential:Double = q * this(0,0).re;
 
         val phifac0 = Complex(Math.cos(-v_pole.phi), Math.sin(-v_pole.phi));
         var rfac : Double = v_pole.r;

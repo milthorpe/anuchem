@@ -36,12 +36,12 @@ public class MultipoleExpansion extends Expansion {
     /**
      * Calculate the multipole-like term O_{lm} (with m >= 0) for a point v.
      */
-    public static def getOlm(q : Double, v : Tuple3d, p : Int) : MultipoleExpansion {
+    public static def getOlm(q:Double, v:Vector3d, p:Int) : MultipoleExpansion {
         val exp = new MultipoleExpansion(p);
         val v_pole = Polar3d.getPolar3d(v);
         val pplm = AssociatedLegendrePolynomial.getPlk(v_pole.theta, p); 
 
-        exp(0,0) = Complex(q * pplm(0,0), 0.0);
+        exp(0,0) = Complex(q, 0.0);
 
         val phifac0 = Complex(Math.cos(-v_pole.phi), Math.sin(-v_pole.phi));
         var rfac : Double = v_pole.r;
@@ -66,12 +66,15 @@ public class MultipoleExpansion extends Expansion {
     /**
      * Calculate the multipole-like term O_{lm} (with m >= 0) for a point v
      * and add to this expansion.
+     * @param q the charge
+     * @param v the location of the charge relative to the expansion centre
+     * @param plm a scratch space in which to store the assoc. Legendre polynomial for the centre
      */
-    public def addOlm(q : Double, v : Tuple3d, p : Int) {
+    public def addOlm(q:Double, v:Vector3d, pplm:AssociatedLegendrePolynomial) {
         val v_pole = Polar3d.getPolar3d(v);
-        val pplm = AssociatedLegendrePolynomial.getPlk(v_pole.theta, p); 
+        pplm.getPlk(v_pole.theta); 
 
-        this(0,0) += Complex(q * pplm(0,0), 0.0);
+        this(0,0) += Complex(q, 0.0);
 
         val phifac0 = Complex(Math.cos(-v_pole.phi), Math.sin(-v_pole.phi));
         var rfac : Double = v_pole.r;
@@ -94,12 +97,12 @@ public class MultipoleExpansion extends Expansion {
     /**
      * Calculate the chargeless multipole-like term O_{lm} (with m >= 0) for a point v.
      */
-    public static def getOlm(v : Tuple3d, p : Int) : MultipoleExpansion {
+    public static def getOlm(v:Vector3d, p:Int) : MultipoleExpansion {
         val exp = new MultipoleExpansion(p);
         val v_pole = Polar3d.getPolar3d(v);
         val pplm = AssociatedLegendrePolynomial.getPlk(v_pole.theta, p); 
 
-        exp(0,0) = Complex(pplm(0,0), 0.0);
+        exp(0,0) = Complex(1.0, 0.0);
 
         val phifac0 = Complex(Math.cos(-v_pole.phi), Math.sin(-v_pole.phi));
         var rfac : Double = v_pole.r;
