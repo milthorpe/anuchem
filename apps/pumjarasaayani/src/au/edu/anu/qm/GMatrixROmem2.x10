@@ -476,7 +476,7 @@ for (var ron:Int=0; ron<=roNK; ron++){
             }
         }
         timer.stop(TIMER_GENCLASS); t1+= (timer.last(TIMER_GENCLASS) as Double)/1e9 ;
-        Console.OUT.printf("step1 %.6f\n",t1);
+        
 
         // step 2
         timer.start(TIMER_GENCLASS);

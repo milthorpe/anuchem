@@ -219,7 +219,8 @@ public class HartreeFockSCFMethod extends SCFMethod {
         do {
             computeLongRangeRO(N, mos, noOfOccupancies, density, jd, bfs);
             System.gc();
-            Console.OUT.print("Input new roN Omega roThresh (nnn ooo t) or 000 000 0 to exit:");
+            if (jd.compareRo) {
+            Console.OUT.print("Input new roN Omega roThresh (nnn ooo t) or 000 000 0 to exit:");            
             val rbuf = new Rail[Byte](20);
             Console.IN.read(rbuf,0,10);
             jd.roN = ((rbuf(0)-48) as Int)*100+(rbuf(1)-48)*10+(rbuf(2)-48)*1;            
@@ -227,7 +228,7 @@ public class HartreeFockSCFMethod extends SCFMethod {
             jd.roThresh = Math.pow(10,-(rbuf(8)-48));
             Console.OUT.println("rbuf = "+rbuf);
             Console.OUT.println("new roN = "+jd.roN +" new omega ="+jd.omega+" new roThresh ="+jd.roThresh);
-            
+            } 
             //Console.OUT.println("after GC heapSize = " + System.heapSize());
         } while (jd.roOn>0 && jd.roN>0 && jd.compareRo);
 
