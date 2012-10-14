@@ -34,7 +34,7 @@ public class TestFastMultipoleMethod extends TestElectrostatic {
         var wellSpaced:Int = 1;
         var verbose:Boolean = false;
         var compare:Boolean = false;
-        var forces:Boolean = false;
+        var rms:Boolean = false;
         if (args.size > 0) {
             numAtoms = Int.parseInt(args(0));
             if (args.size > 1) {
@@ -53,8 +53,8 @@ public class TestFastMultipoleMethod extends TestElectrostatic {
                                     if (args(6).equals("-compare")) {
                                         compare = true;
                                         if (args.size > 7) {
-                                            if (args(7).equals("-forces")) {
-                                                forces = true;
+                                            if (args(7).equals("-rms")) {
+                                                rms = true;
                                             }
                                         }
                                     }
@@ -65,14 +65,14 @@ public class TestFastMultipoleMethod extends TestElectrostatic {
                 }
             }
         } else {
-            Console.ERR.println("usage: fmm numAtoms [density] [numTerms] [wellSpaced] [-verbose] [-compare] [-forces]");
+            Console.ERR.println("usage: fmm numAtoms [density] [numTerms] [wellSpaced] [-verbose] [-compare] [-rms]");
             return;
         }
 
-        new TestFastMultipoleMethod().test(numAtoms, density, dMax, numTerms, wellSpaced, verbose, compare, forces);
+        new TestFastMultipoleMethod().test(numAtoms, density, dMax, numTerms, wellSpaced, verbose, compare, rms);
     }
 
-    public def test(numAtoms:Int, density:Double, dMax:Int, numTerms:Int, wellSpaced:Int, verbose:Boolean, compare:Boolean, forces:Boolean) {
+    public def test(numAtoms:Int, density:Double, dMax:Int, numTerms:Int, wellSpaced:Int, verbose:Boolean, compare:Boolean, rms:Boolean) {
         if (verbose) {
             Console.OUT.println("Testing FMM for " + numAtoms 
                       + " atoms, target density = " + density
@@ -99,7 +99,7 @@ public class TestFastMultipoleMethod extends TestElectrostatic {
             Console.OUT.printf("N: %8i ", numAtoms);
         }
 
-        val atoms = generateAtoms(numAtoms);
+        val atoms = generateAtoms(numAtoms, false);
         val fmm = new FastMultipoleMethod(density, dMax, numTerms, wellSpaced, SIZE, numAtoms);
         fmm.initialAssignment(atoms);
         //fmm.countOctants();
@@ -141,8 +141,8 @@ public class TestFastMultipoleMethod extends TestElectrostatic {
         }
 
         if (compare) {
-            if (forces) {
-                fmm.printForces();
+            if (rms) {
+                fmm.printRMSErrors();
             }
             val direct = new ElectrostaticDirectMethod(atoms);
             val directEnergy = direct.getEnergy();
