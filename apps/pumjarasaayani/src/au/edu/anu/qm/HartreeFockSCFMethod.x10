@@ -216,7 +216,7 @@ public class HartreeFockSCFMethod extends SCFMethod {
     
         // long range energy
         //Console.OUT.println("before RO heapSize = " + System.heapSize());
-        while (jd.roOn>0 && jd.roN>0) {
+        while (jd.roOn>0 && jd.roN>0 && jd.compareRo) {
             computeLongRangeRO(N, mos, noOfOccupancies, density, jd, bfs);
             System.gc();
             Console.OUT.print("Input new roN Omega roThresh (nnn ooo t) or 000 000 0 to exit:");
