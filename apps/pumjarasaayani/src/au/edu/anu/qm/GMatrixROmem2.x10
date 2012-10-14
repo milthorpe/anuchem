@@ -482,24 +482,23 @@ for (var ron:Int=0; ron<=roNK; ron++){
         timer.start(TIMER_GENCLASS);
         DenseMatrixBLAS.comp(mos, auxIntMat, halfAuxMat, [nOrbital, N*roK, N], false);     
         timer.stop(TIMER_GENCLASS); t2+= (timer.last(TIMER_GENCLASS) as Double)/1e9 ;
-        Console.OUT.printf("step2 %.6f\n",t2);
+       
 
         // step 3
         timer.start(TIMER_GENCLASS);
         for (var mu:Int=0;  mu<N; mu++)  for (var aorb:Int=0;  aorb<nOrbital; aorb++) for (var k:Int=0;  k<roK; k++) 
             halfAuxMat2(mu,aorb*roK+k)=halfAuxMat(aorb,mu*roK+k);
         timer.stop(TIMER_GENCLASS); t31+= (timer.last(TIMER_GENCLASS) as Double)/1e9 ;
-        Console.OUT.printf("step3.1 %.6f\n",t31);
+        
 
         timer.start(TIMER_GENCLASS);    
         // Matrix Matrix multiplication
         kMatrix.multTrans(halfAuxMat2, halfAuxMat2, true);
         timer.stop(TIMER_GENCLASS); t32+= (timer.last(TIMER_GENCLASS) as Double)/1e9 ;
-        Console.OUT.printf("step3.2 %.6f\n",t32);
-        @Ifdef("__DEBUG__") {
+        /*@Ifdef("__DEBUG__") {
             val eKron = scratch.mult(density, kMatrix).trace();
             Console.OUT.printf("  EK(%d) = %.10f a.u.\n",ron, eKron/jd.roZ);
-        }
+        }*/
 }
         Console.OUT.printf("version 3: time 1=%lf 2=%lf 3.1=%lf 3.2=%lf\n",t1,t2,t31,t32);
         // Version 2 - save memory and try to be smart by reducing numbers of loads
@@ -589,7 +588,7 @@ for (var ron:Int=0; ron<=roNK; ron++){
         @Ifdef("__DEBUG__") {
             val eK = scratch.mult(density, kMatrix).trace();
             Console.OUT.printf("  EK = %.10f a.u.\n", eK/jd.roZ);
-            Console.OUT.printf("    Time to construct KMatrix with RO: %.3g seconds (%.4g for ints)\n", (timer.last(TIMER_KMATRIX) as Double) / 1e9, t);
+            Console.OUT.printf("    Time to construct KMatrix with RO: %.3g seconds (%e)\n", (timer.last(TIMER_KMATRIX) as Double) / 1e9, t1+t2+t31+t32);
         }
         // Form G matrix
         jMatrix.d.map(this.d, kMatrix.d, (j:Double,k:Double)=>(2.0*j-k)); // eqn 14
