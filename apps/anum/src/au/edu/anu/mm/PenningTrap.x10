@@ -85,8 +85,8 @@ public class PenningTrap {
                     fmmNumTerms:Int) {
         this.numAtoms = numAtoms;
         val wellSeparatedParam = 2;
-        this.fmm = new FastMultipoleMethod(fmmDensity, fmmDMax, fmmNumTerms, wellSeparatedParam, edgeLength, numAtoms);
-        fmm.initialAssignment(atoms);
+        this.fmm = new FastMultipoleMethod(fmmDensity, fmmDMax, fmmNumTerms, wellSeparatedParam, edgeLength);
+        fmm.initialAssignment(numAtoms, atoms);
         this.V_T = trappingPotential;
         this.B = magneticField;
         this.edgeLength = edgeLength;
@@ -162,7 +162,7 @@ public class PenningTrap {
 
     private def printStartPositions(props:SystemProperties) {
         val startPosPrinter = new Printer(new FileWriter(new File("positions_0.dat"), false));
-        val leafOctants = fmm.localData().leafOctants;
+        val leafOctants = FastMultipoleMethod.localData.leafOctants;
         for (leafOctant in leafOctants) {
             val octantAtoms = leafOctant.atoms;
             for (atoms in octantAtoms) {
@@ -178,7 +178,7 @@ public class PenningTrap {
         // print end positions
         val timeInt = (time) as Int;
         val endPosPrinter = new Printer(new FileWriter(new File("positions_" + timeInt + ".dat"), true));
-        val leafOctants = fmm.localData().leafOctants;
+        val leafOctants = FastMultipoleMethod.localData.leafOctants;
         for (leafOctant in leafOctants) {
             printPositions(time, leafOctant.atoms, endPosPrinter);
         }
@@ -203,7 +203,7 @@ public class PenningTrap {
         val pairwiseEnergy = fmm.calculateEnergyLocal();
         timer.stop(1);
 
-        val leafOctants = fmm.localData().leafOctants;
+        val leafOctants = FastMultipoleMethod.localData.leafOctants;
         finish for (leafOctant in leafOctants) async {
             for (atom in leafOctant.atoms) {
                 // timestep using Boris integrator
