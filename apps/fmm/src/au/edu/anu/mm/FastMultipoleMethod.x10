@@ -142,10 +142,16 @@ public class FastMultipoleMethod {
         val potential = downwardPass();
         timer.stop(FmmLocalData.TIMER_INDEX_TOTAL);
         Console.OUT.printf("at %d: prefetch %.3G upward %.3G downward %.3G\n", here.id, timer.mean(FmmLocalData.TIMER_INDEX_PREFETCH) / 1e9, timer.mean(FmmLocalData.TIMER_INDEX_UPWARD) / 1e9, timer.mean(FmmLocalData.TIMER_INDEX_DOWNWARD) / 1e9);
-        Team.WORLD.allreduce[Long](here.id, timer.total, 0, timer.total, 0, timer.total.size, Team.MAX);
 
         return 0.5 * potential;
 
+    }
+
+    public def reduceMaxTimes() {
+        finish ateach(p1 in Dist.makeUnique()) {
+            val timer = FastMultipoleMethod.localData.timer;
+            Team.WORLD.allreduce[Long](here.id, timer.total, 0, timer.total, 0, timer.total.size, Team.MAX);
+        }
     }
 
     public def printRMSErrors() {

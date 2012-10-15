@@ -132,6 +132,8 @@ public class TestFastMultipoleMethod extends TestElectrostatic {
         papi.printFlops();
         papi.shutDown();
 }
+
+        fmm.reduceMaxTimes();
         
         if (verbose) {
             Console.OUT.println("energy = " + energy);
