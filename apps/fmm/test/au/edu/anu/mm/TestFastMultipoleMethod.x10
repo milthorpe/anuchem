@@ -100,8 +100,14 @@ public class TestFastMultipoleMethod extends TestElectrostatic {
         }
 
         val atoms = generateAtoms(numAtoms, false);
-        val fmm = new FastMultipoleMethod(density, dMax, numTerms, wellSpaced, SIZE, numAtoms);
-        fmm.initialAssignment(atoms);
+        val fmm = new FastMultipoleMethod(density, dMax, numTerms, wellSpaced, SIZE);
+        fmm.initialAssignment(numAtoms, atoms);
+        for (timerId in 4..9) {
+            FastMultipoleMethod.localData.timer.clear(timerId);
+        }
+        finish ateach(place in Dist.makeUnique()) {
+          fmm.reassignAtoms(0);
+        }
         //fmm.countOctants();
 
         val papi = new PAPI();
@@ -112,9 +118,14 @@ public class TestFastMultipoleMethod extends TestElectrostatic {
         papi.start();
 }
         val energy = fmm.calculateEnergy();
-        for (i in 1..15) {
-        //   fmm.calculateEnergy();
+/*
+        finish ateach(place in Dist.makeUnique()) {
+            for (i in 1..15) {
+                fmm.reassignAtoms(i);
+                fmm.calculateEnergyLocal();
+            }
         }
+*/
 @Ifdef("__PAPI__")
 {
         papi.stop();

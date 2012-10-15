@@ -171,13 +171,13 @@ public abstract class Octant implements Comparable[Octant] {
     /**
      * Returns a cost estimate per interaction (in ns) of V-list calculation.
      */
-    public def estimateVListCost():Long {
+    public static def estimateVListCost(numTerms:Int):Long {
         val local = FastMultipoleMethod.localData;
         val myComplexK = local.fmmOperators.complexK;
         val myWignerB = local.fmmOperators.wignerB;
 
-        val numTerms = localExp.p;
         val scratch = FmmScratch.getWorkerLocal();
+        val localExp = new LocalExpansion(numTerms);
         val randomExp = new MultipoleExpansion(numTerms);
         val start = System.nanoTime();
         for (i in 1..10) {

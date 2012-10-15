@@ -294,19 +294,28 @@ public class LeafOctant extends Octant implements Comparable[LeafOctant] {
 
     /**
      * Returns a cost estimate per interaction (in ns) of U-list calculation.
+     * @param q the average density per lowest level box
      */
-    public def estimateUListCost():Long {
-        // use number of particles in this box as an estimate for others
+    public static def estimateUListCost(q:Int):Long {
+        val dummyOctant = new LeafOctant(new OctantId(0UY, 0UY, 0UY, 0UY), 1);
         val rand = new Random();
-        // create dummy singly-charged ions in random positions offset by [40,40,40]
-        val dummyData = new Rail[Double](atoms.size()*4, 
-                (i:Int) => (i%4==3)? 1.0 : rand.nextDouble()+40.0);
+        for (i in 1..q) {
+            // create dummy singly-charged ions in random positions offset by [40,40,40]
+            val atom = new MMAtom(new Point3d(rand.nextDouble()+40.0, rand.nextDouble()+40.0, rand.nextDouble()+40.0), 1.0, 1.0);
+            dummyOctant.atoms.add(atom);
+        }
+
+        // interact with dummy singly-charged ions in random positions offset by [39,39,39]
+        val dummyData = new Rail[Double](q*4, 
+                (i:Int) => (i%4==3)? 1.0 : rand.nextDouble()+39.0);
+
         val start = System.nanoTime();
-        for (i in 0..26) {
-            p2pKernel(dummyData);
+        for (i in 0..1000) {
+            dummyOctant.p2pKernel(dummyData);
         }
         val stop = System.nanoTime();
-        val interactions = 27 * atoms.size() * atoms.size();
+
+        val interactions = 1000 * q * q;
         val perInt = (stop-start) / interactions;
         //Console.OUT.println("for " + id + " q = " + atoms.size() + " interactions = " + interactions + " perInt = " + perInt);
         return perInt;

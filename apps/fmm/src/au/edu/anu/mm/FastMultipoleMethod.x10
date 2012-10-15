@@ -82,10 +82,9 @@ public class FastMultipoleMethod {
                     dMax:Int,
                     numTerms:Int,
                     ws:Int,
-                    size:Double,  
-                    numAtoms:Int) {
+                    size:Double) {
         // topLevel in regular FMM is 2 (octants higher than this cannot be well-spaced)
-        this(density, dMax, numTerms, ws, size, numAtoms, 2, false);
+        this(density, dMax, numTerms, ws, size, 2, false);
     }
 
     /**
@@ -102,8 +101,7 @@ public class FastMultipoleMethod {
                     dMax:Int,
                     numTerms:Int,
                     ws:Int,
-                    size:Double,  
-                    numAtoms:Int,
+                    size:Double,
                     topLevel:Int,
                     periodic:boolean) {
         this.topLevel = topLevel as UByte;
@@ -229,11 +227,12 @@ public class FastMultipoleMethod {
         return farField;
     }
 
-    public def initialAssignment(atoms:DistArray[Rail[MMAtom]](1)) {
+    public def initialAssignment(numAtoms:Int, atoms:DistArray[Rail[MMAtom]](1)) {
         finish ateach(p1 in atoms) {
             FastMultipoleMethod.localData.timer.start(FmmLocalData.TIMER_INDEX_TREE);
             this.localData.init(numTerms, dMax as UByte, ws, size);
             FmmScratch.init( ()=>new FmmScratch(numTerms) );
+            estimateCostLocal(numAtoms); // TODO shouldn't include in tree construction time
             val localAtoms = atoms(p1);
             assignAtomsToOctantsLocal(localAtoms);
             FastMultipoleMethod.localData.timer.stop(FmmLocalData.TIMER_INDEX_TREE);
@@ -244,22 +243,12 @@ public class FastMultipoleMethod {
      * Estimate cost of uList and vList interactions at each place, and then
      * combine with estimates at other places to get the average cost.
      */
-    private def estimateCostLocal() {
+    private def estimateCostLocal(numAtoms:Int) {
         val estimate = new Array[Long](2);
-        val leafOctants = FastMultipoleMethod.localData.leafOctants;
-        val numEstimates = Math.min(leafOctants.size(), 8);
-        var uListEstimate:Long = 0L;
-        var vListEstimate:Long = 0L;
-        if (numEstimates > 0) {
-            for (i in 0..(numEstimates-1)) {
-                if (leafOctants(i) != null) {
-                    uListEstimate += leafOctants(i).estimateUListCost();
-                }
-            }
-            uListEstimate /= numEstimates;
-            vListEstimate = leafOctants(0).estimateVListCost();
-
-        }
+        val numBoxes = Math.pow(8.0, dMax) as Int;
+        val q = numAtoms / numBoxes;
+        val uListEstimate = LeafOctant.estimateUListCost(q);
+        val vListEstimate = Octant.estimateVListCost(numTerms);
 
         //Console.OUT.println("u-List estimate at " + here + " = " + uListEstimate);
         estimate(FmmLocalData.ESTIMATE_P2P) = uListEstimate;
@@ -367,8 +356,6 @@ public class FastMultipoleMethod {
 
         timer.stop(FmmLocalData.TIMER_INDEX_ASSIGN);
 
-        estimateCostLocal(); // TODO shouldn't include in tree construction time
-
         // sort and redistribute octants
         timer.start(FmmLocalData.TIMER_INDEX_REDUCE);
         allReduceOctantLoads(octantLoads);
@@ -387,6 +374,7 @@ public class FastMultipoleMethod {
                   + Octant.estimateVListSize(mortonId, dMax) * vListCost;
         }
         timer.stop(FmmLocalData.TIMER_INDEX_REDUCE);
+
         timer.start(FmmLocalData.TIMER_INDEX_REDIST);
         val total = costs.reduce[Long]((a:Long,b:Long)=>a+b, 0L);
         val placeShare = total / Place.MAX_PLACES;
