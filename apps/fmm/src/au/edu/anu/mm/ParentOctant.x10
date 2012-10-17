@@ -33,7 +33,7 @@ public class ParentOctant extends Octant implements Comparable[ParentOctant] {
      * Creates a new FmmBox with multipole and local expansions
      * of the given number of terms.
      */
-    public def this(id:OctantId, numTerms:Int, localData:FmmLocalData, dMax:UByte) {
+    public def this(id:OctantId, numTerms:Int, dMax:UByte) {
         super(id, numTerms);
     }
 
@@ -67,7 +67,7 @@ public class ParentOctant extends Octant implements Comparable[ParentOctant] {
      * For each shared octant, combines multipole expansions for <= 8 child
      * octants into a single multipole expansion for the parent octant.
      */
-    protected def upward(localData:PlaceLocalHandle[FmmLocalData], size:Double, dMax:UByte):Pair[Int,MultipoleExpansion] {
+    protected def upward():Pair[Int,MultipoleExpansion] {
         //Console.OUT.println("at " + here + " ParentOctant.upward for " + id + " children.size = " + children.size);
         numAtoms = 0; // reset
 
@@ -76,20 +76,20 @@ public class ParentOctant extends Octant implements Comparable[ParentOctant] {
             for (i in children) {
                 val child = children(i);
                 if (child != null) async {
-                    childExpansions(i) = child.upward(localData, size, dMax);
+                    childExpansions(i) = child.upward();
                 }
             }
-            multipoleExp.terms.clear();
-            localExp.terms.clear();
+            multipoleExp.clear();
+            localExp.clear();
         }
 
-        val fmmOperators = localData().fmmOperators;
+        val local = FastMultipoleMethod.localData;
+        val fmmOperators = local.fmmOperators;
         val myComplexK = fmmOperators.complexK;
         val myWignerA = fmmOperators.wignerA;
-        val halfSideLength = size / Math.pow2(id.level+2);
+        val halfSideLength = local.size / Math.pow2(id.level+2);
         val numTerms = multipoleExp.p;
-        val scratch = new MultipoleExpansion(numTerms);    
-        val scratch_array = new Array[Complex](numTerms+1);
+        val scratch = FmmScratch.getWorkerLocal();
         var i:Int=0;
         var nonNullChildren:Boolean = false;
         for (x2 in (2*id.x)..(2*id.x+1)) {
@@ -102,7 +102,7 @@ public class ParentOctant extends Octant implements Comparable[ParentOctant] {
                         val dx = ((x2+1)%2)*2-1;
                         val dy = ((y2+1)%2)*2-1;
                         val dz = ((z2+1)%2)*2-1;
-                        this.multipoleExp.translateAndAddMultipole(scratch, scratch_array,
+                        this.multipoleExp.translateAndAddMultipole(scratch.exp, scratch.array,
                           Vector3d(dx*halfSideLength, dy*halfSideLength, dz*halfSideLength),
                           myComplexK(dx,dy,dz), childExp.second, myWignerA((dx+1)/2, (dy+1)/2, (dz+1)/2));
                     }
@@ -113,23 +113,22 @@ public class ParentOctant extends Octant implements Comparable[ParentOctant] {
         atomic this.multipoleReady = true;
 
         if (nonNullChildren) {
-            sendMultipole(localData, dMax);
+            sendMultipole();
         } else {
             return Pair[Int,MultipoleExpansion](0, null);
         }
         return Pair[Int,MultipoleExpansion](numAtoms, this.multipoleExp);
     }
 
-    protected def downward(localData:PlaceLocalHandle[FmmLocalData], size:Double, parentLocalExpansion:LocalExpansion, dMax:UByte):Double {
+    protected def downward(parentLocalExpansion:LocalExpansion):Double {
         //Console.OUT.println("at " + here + " ParentOctant.downward for " + id + " numAtoms = " + numAtoms);
 
         this.multipoleReady = false; // reset
 
         if (numAtoms > 0) {
-            constructLocalExpansion(localData, size, parentLocalExpansion);
+            constructLocalExpansion(parentLocalExpansion);
 
             val parentExp = localExp;
-
             val farField = finish (SumReducer()) {
                 for (i in 0..(children.size-1)) {
                     val childOctant = children(i);
@@ -140,13 +139,11 @@ public class ParentOctant extends Octant implements Comparable[ParentOctant] {
                         val childX = 2*id.x + dx;
                         val childY = 2*id.y + dy;
                         val childZ = 2*id.z + dz;
-                        offer childOctant.downward(localData, size, parentExp, dMax);
+                        offer childOctant.downward(parentExp);
                     }
                 }
             };
-
             return farField;
-
         } else {
             return 0.0;
         }

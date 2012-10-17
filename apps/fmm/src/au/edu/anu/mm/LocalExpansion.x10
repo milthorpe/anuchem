@@ -37,14 +37,13 @@ public class LocalExpansion extends Expansion {
     /**
      * Calculate the local Taylor-type expansion M_{lm} (with m >= 0) for a single point v.
      */
-    public static def getMlm(v:Tuple3d, p:Int) : LocalExpansion {
+    public static def getMlm(v:Vector3d, p:Int) : LocalExpansion {
         val exp = new LocalExpansion(p);
-        val terms = exp.terms;
         val v_pole = Polar3d.getPolar3d(v);
         val pplm = AssociatedLegendrePolynomial.getPlk(v_pole.theta, p);
         val rfac0 : Double = 1.0 / v_pole.r;
 
-        terms(0,0) = Complex(rfac0 * pplm(0,0), 0.0);
+        exp(0,0) = Complex(rfac0, 0.0);
 
         val phifac0 = Complex(Math.cos(v_pole.phi), Math.sin(v_pole.phi));
         var rfac : Double = rfac0 * rfac0;
@@ -53,12 +52,12 @@ public class LocalExpansion extends Expansion {
             il = il * l;
             var ilm : Double = il;
             var phifac : Complex = Complex.ONE;
-            terms(l,0) = phifac * (rfac * pplm(l,0) * ilm);
+            exp(l,0) = phifac * (rfac * pplm(l,0) * ilm);
             for (m in 1..l) {
                 ilm = ilm / (l+1-m);
                 phifac = phifac * phifac0;
         		val M_lm = phifac * (rfac * pplm(l,m) * ilm);
-                terms(l,m) = M_lm;
+                exp(l,m) = M_lm;
             }
             rfac = rfac * rfac0;
         }
@@ -79,12 +78,10 @@ public class LocalExpansion extends Expansion {
     public def translateAndAddLocal(scratch:MultipoleExpansion, temp:Rail[Complex], v:Vector3d, complexK:Rail[Rail[Complex]], source:LocalExpansion, wigner:Rail[Rail[Array[Double](2){rect}]]) { 
 	    val b = v.length();
 
-        Array.copy(source.terms, scratch.terms);
-        scratch.rotate(temp, complexK(1), wigner(0) );
+        source.rotate(complexK(1), wigner(0), scratch);
 
-    	val targetTerms = scratch.terms;
     	for (m in 0..p) {
-    		for (l in m..p) temp(l) = targetTerms(l, m);
+    		for (l in m..p) temp(l) = scratch(l, m);
 
     		for (l in m..p) {
     			var M_lm : Complex = Complex.ZERO;
@@ -93,7 +90,7 @@ public class LocalExpansion extends Expansion {
     				M_lm = M_lm + temp(j) * F_lm;
     				F_lm = F_lm * b / (j - l + 1);
     			}
-    			targetTerms(l, m) = M_lm;
+    			scratch(l, m) = M_lm;
     		}
 	   	}
 
@@ -123,36 +120,38 @@ public class LocalExpansion extends Expansion {
      * @see Dachsel 2006, eqn 10
      */
     public def transformAndAddToLocal(scratch:MultipoleExpansion, temp:Rail[Complex], v:Vector3d, complexK:Rail[Rail[Complex]], source:MultipoleExpansion, wigner:Rail[Rail[Array[Double](2){rect}]]) { 
-    	val inv_b = 1 / v.length();
+        val inv_b = 1 / v.length();
 
-        Array.copy(source.terms, scratch.terms);
-    	scratch.rotate(temp, complexK(0), wigner(0) );
+        source.rotate(complexK(0), wigner(0), scratch);
 
-	    val targetTerms = scratch.terms;
-        var m_sign:Int = 1;
+        var m_sign:Double = 1.0;
         var b_m_pow:Double = 1.0;
-	    for (m in 0..p) {
+        for (m in 0..p) {
             for (l in m..p) {
-                temp(l) = m_sign * targetTerms(l, m).conjugate();
+                temp(l) = m_sign * scratch(l, m).conjugate();
             }
 
             var F_lm:Double = Factorial.getFactorial(m+m) * inv_b * b_m_pow * b_m_pow;
-		    for (l in m..p) {
-			    var M_lm : Complex = Complex.ZERO;
-			    var F_jl : Double = F_lm;
+            var ml:Double = m+m+1;
+            for (l in m..p) {
+                var M_lm : Complex = Complex.ZERO;
+                var F_jl : Double = F_lm;
+                var jl:Double = ml;
 
-			    for (j in m..p) {
-				    M_lm = M_lm + temp(j) * F_jl;
-				    F_jl = (j+l+1) * inv_b * F_jl;
-			    }
-			    targetTerms(l, m) = M_lm;
-                F_lm = (m+l+1) * inv_b * F_lm;
-		    }
+                for (j in m..p) {
+                    M_lm = M_lm + temp(j) * F_jl;
+                    F_jl = jl * inv_b * F_jl;
+                    jl += 1.0;
+                }
+                scratch(l, m) = M_lm;
+                F_lm = ml * inv_b * F_lm;
+                ml += 1;
+            }
             m_sign = -m_sign;
             b_m_pow = b_m_pow * inv_b;
-	    }
+        }
 
-	    scratch.backRotateAndAdd(complexK(0), wigner(1), this);
+        scratch.backRotateAndAdd(complexK(0), wigner(1), this);
     }
 
     /**
@@ -180,16 +179,16 @@ public class LocalExpansion extends Expansion {
                                          source : MultipoleExpansion) {
         // TODO should be just:  for ([j,k] in terms.region) {
         for (j in 0..p) {
-            var k_sign:Int=1-(2*j%2);
+            var k_sign:Double=1-(2*j%2);
             for (k in -j..j) {
-                val O_jk = k < 0 ? (k_sign * source.terms(j,-k).conjugate()) : source.terms(j,k);
+                val O_jk = k < 0 ? (k_sign * source(j,-k).conjugate()) : source(j,k);
                 for (l in 0..(p-j)) {
                     for (m in 0..l) {
                         val km = k+m;
                         if (Math.abs(km) <= (j+l)) {
-                            val B_lmjk = km < 0 ? ((1-(2*km%2)) * transform.terms(j+l, -km).conjugate()) : transform.terms(j+l, km);
+                            val B_lmjk = km < 0 ? ((1-(2*km%2)) * transform(j+l, -km).conjugate()) : transform(j+l, km);
                             //Console.OUT.println("source.terms.dist(" + j + "," + k + ") = " + source.terms.dist(j,k));
-                            this.terms(l,m) = this.terms(l,m) + B_lmjk * O_jk;
+                            this(l,m) = this(l,m) + B_lmjk * O_jk;
                         }
                     }
                 }
@@ -203,26 +202,26 @@ public class LocalExpansion extends Expansion {
      * and add the forces to the atom.
      * @param atom the atom for which to calculate the potential
      * @param v the vector from the box centre to the atom centre
-     * @param localExp local expansion of potential due to distant particles
+     * @param plm a scratch space in which to store the assoc. Legendre polynomial for the atom centre
      * @return the potential due to distant particles
      */
-    public def calculatePotentialAndForces(atom:MMAtom, v:Tuple3d):Double {
+    public def calculatePotentialAndForces(atom:MMAtom, v:Vector3d, pplm:AssociatedLegendrePolynomial):Double {
         val v_pole = Polar3d.getPolar3d(v);
         val q = atom.charge;
-        val pplm = AssociatedLegendrePolynomial.getPlk(v_pole.theta, p+1);
+        pplm.getPlk(v_pole.theta);
 
         var dr:Double = 0.0;
         var dt:Double = 0.0;
         var dp:Double = 0.0;
 
-        var potential:Double = q * pplm(0,0) * terms(0,0).re;
+        var potential:Double = q * this(0,0).re;
 
         val phifac0 = Complex(Math.cos(-v_pole.phi), Math.sin(-v_pole.phi));
         var rfac : Double = v_pole.r;
         var rfacPrev : Double = 1.0;
         var il : Double = 1.0;
         for (l in 1..p) {
-            val Ml0 = terms(l,0);
+            val Ml0 = this(l,0);
             il = il * l;
             var F_lm:Complex = Complex(1.0/il, 0.0); // e^{-i m phi} / (l+|m|)!
             potential += (Ml0 * F_lm * (q * rfac * pplm(l,0))).re;
@@ -232,7 +231,7 @@ public class LocalExpansion extends Expansion {
             for (m in 1..l) {
                 F_lm = F_lm * phifac0 / (l+m);
                 val Olm = F_lm * (q * rfac * pplm(l,m));
-                val Mlm = terms(l,m);
+                val Mlm = this(l,m);
 
                 potential += 2.0*(Mlm.re * Olm.re) - 2.0*(Mlm.im * Olm.im);
 
@@ -258,9 +257,8 @@ public class LocalExpansion extends Expansion {
      * @return a new expansion, which is the current expansion after it is rotated
      */
     public def rotate(theta : Double, phi : Double) {
-        val target = new LocalExpansion(this);
-        val temp = new Array[Complex](p+1);
-    	target.rotate(temp, genComplexK(phi, p)(0), WignerRotationMatrix.getCCollection(theta, p)(0) );
+        val target = new LocalExpansion(p);
+    	this.rotate(genComplexK(phi, p)(0), WignerRotationMatrix.getCCollection(theta, p)(0), target);
     	return target;
     }
 
@@ -276,7 +274,7 @@ public class LocalExpansion extends Expansion {
         val parentExpansion = new LocalExpansion(p);
         for (l in 0..p) {
             for (m in 0..l) {
-                parentExpansion.terms(l,m) = terms(l,m) / Math.pow(3.0, l+1);
+                parentExpansion(l,m) = this(l,m) / Math.pow(3.0, l+1);
             }
         }
         return parentExpansion;

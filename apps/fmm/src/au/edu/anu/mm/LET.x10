@@ -37,7 +37,7 @@ public class LET {
      * non-well-separated boxes for use in direct evaluations 
      * with all atoms at a given place.
      */
-    public val cachedAtoms : Rail[Rail[PointCharge]];
+    public val cachedAtoms : Rail[Rail[Double]];
     
     public def this(combinedUList:Rail[UInt],
                 combinedVList:Rail[UInt]) {
@@ -45,7 +45,7 @@ public class LET {
         this.combinedVList = combinedVList;
         this.multipoleCopies = new Array[MultipoleExpansion](combinedVList.size);
 
-        this.cachedAtoms = new Array[Rail[PointCharge]](combinedUList.size);
+        this.cachedAtoms = new Array[Rail[Double]](combinedUList.size);
     }
 
     public def getMultipoleForOctant(mortonId:UInt) {
@@ -64,7 +64,7 @@ public class LET {
         }
     }
 
-    public def getAtomsForOctant(mortonId:UInt) {
+    public def getAtomDataForOctant(mortonId:UInt) {
         val cacheIndex = ArrayUtils.binarySearch(combinedUList, mortonId);
         if (cacheIndex >= 0) {
             return cachedAtoms(cacheIndex);
@@ -73,7 +73,7 @@ public class LET {
         }
     }
 
-    public def setAtomsForOctant(mortonId:UInt, atoms:Rail[PointCharge]) {
+    public def setAtomDataForOctant(mortonId:UInt, atoms:Rail[Double]) {
         val cacheIndex = ArrayUtils.binarySearch(combinedUList, mortonId);
         if (cacheIndex >= 0) {
             cachedAtoms(cacheIndex) = atoms;

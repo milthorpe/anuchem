@@ -72,18 +72,18 @@ public abstract class Octant implements Comparable[Octant] {
     abstract public def countOctants():Int;
     abstract public def ghostOctants():Int;
 
-    abstract protected def downward(localData:PlaceLocalHandle[FmmLocalData], size:Double, parentLocalExpansion:LocalExpansion, dMax:UByte):Double;
+    abstract protected def downward(parentLocalExpansion:LocalExpansion):Double;
 
     /** 
      * Generates and combines multipole expansions for all descendants into an
      * expansion for this box. Note: non-blocking - the top-level call to this 
      * method must be enclosed in a finish statement.
      */
-    abstract protected def upward(localData:PlaceLocalHandle[FmmLocalData], size:Double, dMax:UByte):Pair[Int,MultipoleExpansion];
+    abstract protected def upward():Pair[Int,MultipoleExpansion];
 
-    protected def constructLocalExpansion(localData:PlaceLocalHandle[FmmLocalData], size:Double, parentLocalExpansion:LocalExpansion) {
-        val local = localData();
-        val sideLength = size / Math.pow2(id.level);
+    protected def constructLocalExpansion(parentLocalExpansion:LocalExpansion) {
+        val local = FastMultipoleMethod.localData;
+        val sideLength = local.size / Math.pow2(id.level);
         val myComplexK = local.fmmOperators.complexK;
         val myWignerB = local.fmmOperators.wignerB;
         val myWignerC = local.fmmOperators.wignerC;
@@ -91,9 +91,9 @@ public abstract class Octant implements Comparable[Octant] {
 
         // transform and add multipole expansions from same level
         val numTerms = localExp.p;
-        val scratch = new MultipoleExpansion(numTerms);    
-        val scratch_array = new Array[Complex](numTerms+1);
+        val scratch = FmmScratch.getWorkerLocal();
         val vList = getVList();
+        //Console.OUT.println(id + " vList " + vList.size);
         for ([p] in vList) {
             val octantIndex2 = vList(p);
             val box2MultipoleExp = locallyEssentialTree.getMultipoleForOctant(octantIndex2.getMortonId());
@@ -103,7 +103,7 @@ public abstract class Octant implements Comparable[Octant] {
                 val dx2 = (octantIndex2.x as Int)-id.x;
                 val dy2 = (octantIndex2.y as Int)-id.y;
                 val dz2 = (octantIndex2.z as Int)-id.z;
-                localExp.transformAndAddToLocal(scratch, scratch_array,
+                localExp.transformAndAddToLocal(scratch.exp, scratch.array,
 			        Vector3d(dx2*sideLength, dy2*sideLength, dz2*sideLength), 
 					myComplexK(dx2,dy2,dz2), box2MultipoleExp, myWignerB(dx2,dy2,dz2) );
                 //Console.OUT.println("at " + here + " added multipole for " + octantIndex2 + " to " + id);
@@ -116,22 +116,22 @@ public abstract class Octant implements Comparable[Octant] {
             val dy = 2*(id.y%2)-1;
             val dz = 2*(id.z%2)-1;
 
-            localExp.translateAndAddLocal(scratch, scratch_array,
+            localExp.translateAndAddLocal(scratch.exp, scratch.array,
                 Vector3d(dx*0.5*sideLength, dy*0.5*sideLength, dz*0.5*sideLength),
                 myComplexK(dx,dy,dz), parentLocalExpansion, myWignerC((dx+1)/2, (dy+1)/2, (dz+1)/2));
         }
     }
 
-    protected def sendMultipole(localData:PlaceLocalHandle[FmmLocalData], dMax:UByte) {
+    protected def sendMultipole() {
         // async send this box's multipole expansion to V-list
         //Console.OUT.println("at " + here + " sending multipole for " + id);
         if (vList != null) {
-            val local = localData();
+            val local = FastMultipoleMethod.localData;
             val mortonId = id.getMortonId();
             val multipoleExp = this.multipoleExp;
             val vListPlaces = new HashSet[Int]();
             for ([p] in vList) {
-                val placeId = local.getPlaceId(vList(p).getAnchor(dMax));
+                val placeId = local.getPlaceId(vList(p).getAnchor(local.dMax));
                 if (placeId >= 0 && placeId < Place.MAX_PLACES) {
                     //Console.OUT.println("at " + here + " sending multipole for " + id + " " + vList(p) + " held at " + placeId);
                     vListPlaces.add(placeId);
@@ -139,15 +139,55 @@ public abstract class Octant implements Comparable[Octant] {
             }
             for(placeId in vListPlaces) {
                 if (placeId == here.id) {
-                    localData().locallyEssentialTree.setMultipoleForOctant(mortonId, multipoleExp);
+                    local.locallyEssentialTree.setMultipoleForOctant(mortonId, multipoleExp);
                 } else {
                     at(Place(placeId)) async {
                         //Console.OUT.println("at " + here + " sending multipole for " + id + " to place " + placeId);
-                        localData().locallyEssentialTree.setMultipoleForOctant(mortonId, multipoleExp);
+                        FastMultipoleMethod.localData.locallyEssentialTree.setMultipoleForOctant(mortonId, multipoleExp);
                     }
                 }
             }
         }
+    }
+
+    /** Estimates the number of octants in an octant's V-list, given the octant id. */
+    public static def estimateVListSize(mortonId:UInt, dMax:UByte):Int {
+        val maxExtent = (1U << dMax) - 1U;
+        val id = OctantId.getFromMortonId(mortonId);
+        val nearX = (id.x > 0U && id.x < maxExtent) ? 3 : 2;
+        val nearY = (id.y > 0U && id.y < maxExtent) ? 3 : 2;
+        val nearZ = (id.z > 0U && id.z < maxExtent) ? 3 : 2;
+        val neighbours = nearX * nearY * nearX;
+
+        val leagueX = (id.x > 1U && id.x < (maxExtent-1U)) ? 6 : 4;
+        val leagueY = (id.y > 1U && id.y < (maxExtent-1U)) ? 6 : 4;
+        val leagueZ = (id.z > 1U && id.z < (maxExtent-1U)) ? 6 : 4;
+        val colleagues = leagueX * leagueY * leagueZ;
+
+        //Console.OUT.println("vList for " + id + " size = " + (colleagues - neighbours));
+        return colleagues - neighbours;
+    }
+
+    /**
+     * Returns a cost estimate per interaction (in ns) of V-list calculation.
+     */
+    public static def estimateVListCost(numTerms:Int):Long {
+        val local = FastMultipoleMethod.localData;
+        val myComplexK = local.fmmOperators.complexK;
+        val myWignerB = local.fmmOperators.wignerB;
+
+        val scratch = FmmScratch.getWorkerLocal();
+        val localExp = new LocalExpansion(numTerms);
+        val randomExp = new MultipoleExpansion(numTerms);
+        val start = System.nanoTime();
+        for (i in 1..10) {
+            localExp.transformAndAddToLocal(scratch.exp, scratch.array,
+		        Vector3d(1.0, 1.0, 1.0), 
+				myComplexK(1,1,1), randomExp, myWignerB(1,1,1) );
+        }
+        val stop = System.nanoTime();
+        localExp.clear();
+        return (stop-start)/10L;
     }
 
     /**

@@ -47,13 +47,19 @@ public class TestElectrostatic {
         logTime(desc, timerIndex, timer, true);
     }
 
+
+    public def generateAtoms(numAtoms:Int) : DistArray[Rail[MMAtom]](1) {
+        return generateAtoms(numAtoms, true);
+    }
+
     /**
      * Generate an array of local Arrays of MMAtoms, one Array for each
      * place.  FMM assumes that the atoms have already been distributed.
      * Locate all particles within a small displacement from points on 
      * a cbrt(N) grid of size SIZE, centered at the origin.
      */
-    public def generateAtoms(numAtoms : Int) : DistArray[Rail[MMAtom]](1) {
+    public def generateAtoms(numAtoms:Int, perturb:Boolean) : DistArray[Rail[MMAtom]](1) {
+        val charge = 1.0 / numAtoms; // keep charge density constant
         //Console.OUT.println("size of cluster =  " + sizeOfCentralCluster());
         val tempAtoms = DistArray.make[ArrayList[MMAtom]](Dist.makeUnique(), (Point) => new ArrayList[MMAtom]());
         val gridSize = (Math.ceil(Math.cbrt(numAtoms)) as Int);
@@ -64,14 +70,13 @@ public class TestElectrostatic {
             val gridX = gridPoint / (gridSize * gridSize);
             val gridY = (gridPoint - (gridX * gridSize * gridSize)) / gridSize;
             val gridZ = gridPoint - (gridX * gridSize * gridSize) - (gridY * gridSize);
-            val x = clusterStart + (gridX + 0.5 + randomNoise()) * (sizeOfCentralCluster() / gridSize);
-            val y = clusterStart + (gridY + 0.5 + randomNoise()) * (sizeOfCentralCluster() / gridSize);
-            val z = clusterStart + (gridZ + 0.5 + randomNoise()) * (sizeOfCentralCluster() / gridSize);
-            val charge = i%2==0?1:-1;
+            val x = clusterStart + (gridX + 0.5) * (sizeOfCentralCluster() / gridSize) + (perturb ? randomNoise(): 0.0);
+            val y = clusterStart + (gridY + 0.5) * (sizeOfCentralCluster() / gridSize) + (perturb ? randomNoise(): 0.0);
+            val z = clusterStart + (gridZ + 0.5) * (sizeOfCentralCluster() / gridSize) + (perturb ? randomNoise(): 0.0);
+            //Console.OUT.println(x + " " + y + " " + z);
             val p = getPlaceId(x, y, z);
             at(Place.place(p)) async {
                 val atom = new MMAtom(Point3d(x, y, z), 1.0, charge);
-                //Console.OUT.println(atom);
                 atomic { tempAtoms(p).add(atom); }
             }
             gridPoint++;

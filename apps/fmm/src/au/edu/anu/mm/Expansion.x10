@@ -27,13 +27,13 @@ import x10.util.StringBuilder;
  */
 public class Expansion {
     /** The terms X_{lm} (with m >= 0) in this expansion */
-    public val terms : Array[Complex](2){rect}; // TODO it's not really rect, it's dense XTENLANG-3000
+    protected val terms : Rail[Complex];
 
     /** The number of terms in the expansion. */
     public val p : Int;
 
     public def this(p : Int) {
-        this.terms = new Array[Complex](new TriangularRegion(0,0,p+1,true));
+        this.terms = new Array[Complex]((p+1)*(p+1));
         this.p = p;
     }
 
@@ -41,6 +41,15 @@ public class Expansion {
 	    this.terms = new Array[Complex](e.terms);
         this.p = e.p;
     }
+
+    public @Inline final operator this(l:Int, m:Int) = terms(l*(l+1)+m);
+
+    public @Inline final operator this(l:Int, m:Int)=(v:Complex):Complex {
+        terms(l*(l+1)+m) = v;
+        return v;
+    }
+
+    public def clear() { terms.clear(); }
 
     /**
      * Add each term of e to this expansion. 
@@ -55,11 +64,8 @@ public class Expansion {
      * This operation is not atomic, therefore not thread-safe.
      */
     @Inline def unsafeAdd(e : Expansion) {
-        //this.terms.map(this.terms, e.terms, (a:Complex, b:Complex)=>a+b);
-        for (l in 0..p) {
-            for (m in 0..l) {
-                this.terms(l,m) += e.terms(l,m);
-            }
+        for (i in terms) {
+            terms(i) += e.terms(i);
         }
     }
 
@@ -70,7 +76,7 @@ public class Expansion {
         val s = new StringBuilder();
         for (i in 0..p) {
             for (j in 0..i) {
-		        s.add("" + terms(i,j) + " ");
+		        s.add("" + this(i,j) + " ");
             }
             s.add("\n");
 	    }
@@ -100,21 +106,21 @@ public class Expansion {
      * @param complexK, values of exp(i*k*phi)
      * @see Dachsel 2006 eqn 4 & 5
      */
-    public def rotate(temp:Rail[Complex], complexK:Rail[Complex], wigner:Rail[Array[Double](2){rect}]) {
+    public def rotate(complexK:Rail[Complex], wigner:Rail[Array[Double](2){rect}], target:Expansion) {
+        target(0,0) = this(0,0);
         for (l in 1..p) {
             val Dl = wigner(l);
+            val t_l0 = this(l,0);
 
-	        for (k in 0..l) temp(k) = terms(l, k) * complexK(k);
-           
             for (m in 0..l) {
-	            var O_lm:Complex = temp(0) * Dl(m, 0);
-                var m_sign:Int = -1;
+	            var O_lm:Complex = t_l0 * Dl(m, 0);
+                var m_sign:Double = -1.0;
                 for (k in 1..l) {
-                    val temp_k = temp(k);
+                    val temp_k = this(l, k) * complexK(k);
                     O_lm += temp_k * Dl(m, k) + m_sign * temp_k.conjugate() * Dl(m, -k); // Eq. 5, for k and -k
                     m_sign = -m_sign;
                 }
-                terms(l,m) = O_lm;
+                target(l,m) = O_lm;
             }
         }
     }
@@ -131,18 +137,18 @@ public class Expansion {
         for (l in 1..p) {
             val Dl = wigner(l);
 
-	        for (k in 0..l) temp(k) = terms(l, k);
+	        for (k in 0..l) temp(k) = this(l, k);
            
             for (m in 0..l) {
 	            var O_lm:Complex = temp(0) * Dl(m, 0);
-                var m_sign:Int = -1;
+                var m_sign:Double = -1.0;
                 for (k in 1..l) {
                     val temp_k = temp(k);
                     O_lm += temp_k * Dl(m, k) + m_sign * temp_k.conjugate() * Dl(m, -k); // Eq. 5, for k and -k
                     m_sign = -m_sign;
                 }
                 O_lm = O_lm * complexK(m);
-                terms(l,m) = O_lm;
+                this(l,m) = O_lm;
             }
         }
     }
@@ -155,21 +161,21 @@ public class Expansion {
      * @see Dachsel 2006 eqn 4 & 5
      */
     public def backRotateAndAdd(complexK:Rail[Complex], wigner:Rail[Array[Double](2){rect}], target:Expansion) {
-        val targetTerms = target.terms;
-        targetTerms(0,0) += terms(0,0);
+        target(0,0) += this(0,0);
         for (l in 1..p) {
             val Dl = wigner(l);
+            val t_l0 = this(l,0);
 
             for (m in 0..l) {
-	            var O_lm:Complex = terms(l,0) * Dl(m, 0);
-                var m_sign:Int = -1;
+	            var O_lm:Complex = t_l0 * Dl(m, 0);
+                var m_sign:Double = -1.0;
                 for (k in 1..l) {
-                    val t_lk = terms(l, k);
+                    val t_lk = this(l, k);
                     O_lm += t_lk * Dl(m, k) + m_sign * t_lk.conjugate() * Dl(m, -k); // Eq. 5, for k and -k
                     m_sign = -m_sign;
                 }
                 O_lm = O_lm * complexK(m);
-                targetTerms(l,m) += O_lm;
+                target(l,m) += O_lm;
             }
         }
     }

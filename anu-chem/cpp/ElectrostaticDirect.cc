@@ -33,6 +33,9 @@ static Atom* setup() {
         atoms[i].centre.i = x;
 		atoms[i].centre.j = y;
 		atoms[i].centre.k = z;
+        atoms[i].force.i = 0.0;
+        atoms[i].force.j = 0.0;
+        atoms[i].force.k = 0.0;
 		atoms[i].charge = gridPoint%2==0?1.0:-1.0;
         gridPoint++;
 	}
@@ -87,24 +90,45 @@ static double getEnergy() {
 
     // energy for all interactions within this place
     for (int i = 0; i < myNumAtoms; i++) {
-        for (int j = 0; j < i; j++) {
-            double xDist = atoms[i].centre.i -atoms[j].centre.i;
-            double yDist = atoms[i].centre.j -atoms[j].centre.j;
-            double zDist = atoms[i].centre.k -atoms[j].centre.k;
+        Atom atomI = atoms[i];
+        double ix = atomI.centre.i;
+        double iy = atomI.centre.j;
+        double iz = atomI.centre.k;
+        double qi = atomI.charge;
 
-            double r2 = xDist * xDist + yDist * yDist + zDist * zDist;
+        double fi = 0.0;
+        double fj = 0.0;
+        double fk = 0.0;
+        for (int j = 0; j < i; j++) {
+            Atom atomJ = atoms[j];
+            double dx = ix - atomJ.centre.i;
+            double dy = iy - atomJ.centre.j;
+            double dz = iz - atomJ.centre.k;
+
+            double r2 = dx * dx + dy * dy + dz * dz;
             double invR2 = 1.0 / r2;
+            double chargeInt = (qi * atomJ.charge);
             double invR = sqrt(invR2);
 
-            double e = (atoms[i].charge * atoms[j].charge) * invR;
+            double e = chargeInt * invR;
+            double forceScale =  e * invR2;
             energy += 2.0 * e;
-            atoms[i].force.i += e * invR2 * xDist;
-            atoms[j].force.i -= e * invR2 * xDist;
-            atoms[i].force.j += e * invR2 * yDist;
-            atoms[j].force.j -= e * invR2 * yDist;
-            atoms[i].force.k += e * invR2 * zDist;
-            atoms[j].force.k -= e * invR2 * zDist;
+
+            double fx = forceScale * dx;
+            double fy = forceScale * dy;
+            double fz = forceScale * dz;
+
+            fi += fx;
+            fj += fy;
+            fk += fz;
+
+            atomJ.force.i -= fx;
+            atomJ.force.j -= fy;
+            atomJ.force.k -= fz;
         }
+        atomI.force.i = fi;
+        atomI.force.j = fj;
+        atomI.force.k = fk;
     }
 
     MPI_Status ignore;

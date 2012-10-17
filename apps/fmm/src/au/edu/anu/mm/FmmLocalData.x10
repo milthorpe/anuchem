@@ -24,13 +24,28 @@ public class FmmLocalData {
     public static val TIMER_INDEX_UPWARD:Int = 2;
     public static val TIMER_INDEX_DOWNWARD:Int = 3;
     public static val TIMER_INDEX_TREE:Int = 4;
-    public static val TIMER_INDEX_PLACEHOLDER:Int = 5;
+    public static val TIMER_INDEX_ASSIGN:Int = 5;
+    public static val TIMER_INDEX_REDUCE:Int = 6;
+    public static val TIMER_INDEX_REDIST:Int = 7;
+    public static val TIMER_INDEX_PARENTS:Int = 8;
+    public static val TIMER_INDEX_LET:Int = 9;
+
+    /** The maximum number of levels in the octree. */
+    public var dMax:UByte;
+
+    /**
+     * The side length of the cube. 
+     * To ensure balanced rounding errors within the multipole and local 
+     * calculations, all force/energy calculations are performed within 
+     * an origin-centred cube.
+     */
+    public var size:Double; 
 
     /** All octants held at this place. */
     var octants:HashMap[UInt,Octant];
 
     /** The load on each leaf octant across all places. */
-    val octantLoads:Array[Int];
+    var octantLoads:Rail[Int];
 
     /** All leaf octants held at this place. */
     var leafOctants:ArrayList[LeafOctant];
@@ -51,14 +66,20 @@ public class FmmLocalData {
     var locallyEssentialTree:LET;
 
     /** The operator arrays for transformations and translations. */
-    val fmmOperators:FmmOperators;
+    var fmmOperators:FmmOperators;
+
+    /** cost estimates (in ns) per interaction = [P2P, M2L] */
+    val cost:Rail[Long] = new Array[Long](2);
+    public static val ESTIMATE_P2P=0;
+    public static val ESTIMATE_M2L=1;
 
     /** A multi-timer for the several segments of a single getEnergy invocation, indexed by the constants above. */
-    public val timer:Timer;
+    public val timer = new Timer(10);
 
-    public def this(numTerms:Int, dMax:Int, ws:Int) {
+    public def init(numTerms:Int, dMax:UByte, ws:Int, size:Double) {
+        this.dMax = dMax;
+        this.size = size;
         fmmOperators = new FmmOperators(numTerms, ws);
-        timer = new Timer(6);
         val maxLeafOctants = Math.pow(8.0, dMax) as Int;
         octantLoads = new Array[Int](maxLeafOctants);
         // TODO construct LET

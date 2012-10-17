@@ -36,12 +36,12 @@ public class MultipoleExpansion extends Expansion {
     /**
      * Calculate the multipole-like term O_{lm} (with m >= 0) for a point v.
      */
-    public static def getOlm(q : Double, v : Tuple3d, p : Int) : MultipoleExpansion {
+    public static def getOlm(q:Double, v:Vector3d, p:Int) : MultipoleExpansion {
         val exp = new MultipoleExpansion(p);
         val v_pole = Polar3d.getPolar3d(v);
         val pplm = AssociatedLegendrePolynomial.getPlk(v_pole.theta, p); 
 
-        exp.terms(0,0) = Complex(q * pplm(0,0), 0.0);
+        exp(0,0) = Complex(q, 0.0);
 
         val phifac0 = Complex(Math.cos(-v_pole.phi), Math.sin(-v_pole.phi));
         var rfac : Double = v_pole.r;
@@ -50,12 +50,12 @@ public class MultipoleExpansion extends Expansion {
             il = il * l;
             var ilm : Double = il;
             var phifac : Complex = Complex.ONE;
-            exp.terms(l,0) = phifac / ilm * (q * rfac * pplm(l,0)); 
+            exp(l,0) = phifac / ilm * (q * rfac * pplm(l,0)); 
             for (m in 1..l) {
                 ilm = ilm*(l+m);
                 phifac = phifac * phifac0;
 		        val O_lm = phifac / ilm * (q * rfac * pplm(l,m));
-                exp.terms(l,m) = O_lm;
+                exp(l,m) = O_lm;
     	    }
             rfac = rfac * v_pole.r;
         }
@@ -66,12 +66,15 @@ public class MultipoleExpansion extends Expansion {
     /**
      * Calculate the multipole-like term O_{lm} (with m >= 0) for a point v
      * and add to this expansion.
+     * @param q the charge
+     * @param v the location of the charge relative to the expansion centre
+     * @param plm a scratch space in which to store the assoc. Legendre polynomial for the centre
      */
-    public def addOlm(q : Double, v : Tuple3d, p : Int) {
+    public def addOlm(q:Double, v:Vector3d, pplm:AssociatedLegendrePolynomial) {
         val v_pole = Polar3d.getPolar3d(v);
-        val pplm = AssociatedLegendrePolynomial.getPlk(v_pole.theta, p); 
+        pplm.getPlk(v_pole.theta); 
 
-        terms(0,0) += Complex(q * pplm(0,0), 0.0);
+        this(0,0) += Complex(q, 0.0);
 
         val phifac0 = Complex(Math.cos(-v_pole.phi), Math.sin(-v_pole.phi));
         var rfac : Double = v_pole.r;
@@ -80,12 +83,12 @@ public class MultipoleExpansion extends Expansion {
             il = il * l;
             var ilm : Double = il;
             var phifac : Complex = Complex.ONE;
-            terms(l,0) += phifac / ilm * (q * rfac * pplm(l,0)); 
+            this(l,0) += phifac / ilm * (q * rfac * pplm(l,0)); 
             for (m in 1..l) {
                 ilm = ilm*(l+m);
                 phifac = phifac * phifac0;
 		        val O_lm = phifac / ilm * (q * rfac * pplm(l,m));
-                terms(l,m) += O_lm;
+                this(l,m) += O_lm;
     	    }
             rfac = rfac * v_pole.r;
         }
@@ -94,12 +97,12 @@ public class MultipoleExpansion extends Expansion {
     /**
      * Calculate the chargeless multipole-like term O_{lm} (with m >= 0) for a point v.
      */
-    public static def getOlm(v : Tuple3d, p : Int) : MultipoleExpansion {
+    public static def getOlm(v:Vector3d, p:Int) : MultipoleExpansion {
         val exp = new MultipoleExpansion(p);
         val v_pole = Polar3d.getPolar3d(v);
         val pplm = AssociatedLegendrePolynomial.getPlk(v_pole.theta, p); 
 
-        exp.terms(0,0) = Complex(pplm(0,0), 0.0);
+        exp(0,0) = Complex(1.0, 0.0);
 
         val phifac0 = Complex(Math.cos(-v_pole.phi), Math.sin(-v_pole.phi));
         var rfac : Double = v_pole.r;
@@ -108,12 +111,12 @@ public class MultipoleExpansion extends Expansion {
             il = il * l;
             var ilm : Double = il;
             var phifac : Complex = Complex.ONE;
-            exp.terms(l,0) = phifac / ilm * (rfac * pplm(l,0)); 
+            exp(l,0) = phifac / ilm * (rfac * pplm(l,0)); 
             for (m in 1..l) {
                 ilm = ilm*(l+m);
                 phifac = phifac * phifac0;
         		val O_lm = phifac / ilm * (rfac * pplm(l,m));
-                exp.terms(l,m) = O_lm;
+                exp(l,m) = O_lm;
             }
             rfac = rfac * v_pole.r;
         }
@@ -135,12 +138,10 @@ public class MultipoleExpansion extends Expansion {
 	    val b = v.length();
 	    val invB = 1 / b;
 
-        Array.copy(source.terms, scratch.terms);
-	    scratch.rotate(temp, complexK(0), wigner(0) );
+	    source.rotate(complexK(0), wigner(0), scratch);
 
-	    val targetTerms = scratch.terms;
 	    for (m in 0..p) {
-		    for (l in m..p) temp(l) = targetTerms(l, m);
+		    for (l in m..p) temp(l) = scratch(l, m);
 
             var b_lm_pow:Double = 1.0;
 		    for (l in m..p) {
@@ -150,7 +151,7 @@ public class MultipoleExpansion extends Expansion {
 				    O_lm = O_lm + temp(j) * F_lm; // explicitly this would be * Math.pow(translationPolar.r, l - j) / fact(l - j);
 				    F_lm = F_lm * (l - j) * invB;
 			    }
-			    targetTerms(l, m) = O_lm;
+			    scratch(l, m) = O_lm;
                 b_lm_pow = b_lm_pow * b;
 		    }
 	    }
@@ -185,17 +186,17 @@ public class MultipoleExpansion extends Expansion {
         // TODO this atomic should be around inner loop update.
         // however as it's "stop the world" it's more efficient to do it out here
         atomic {
-            // TODO should be just:  for ([j,k] in terms.region) {
+            // TODO should be just:  for ([j,k] in region) {
             for (j in 0..p) {
-                var k_sign:Int=1-(2*j%2);
+                var k_sign:Double=1-(2*j%2);
                 for (k in -j..j) {
-                    val O_jk = k < 0 ? (k_sign * source.terms(j,-k).conjugate()) : source.terms(j,k);
+                    val O_jk = k < 0 ? (k_sign * source(j,-k).conjugate()) : source(j,k);
                     for (l in j..p) {
                         for (m in 0..l) {
                             val mk = (m-k);
                             if (Math.abs(mk) <= (l-j)) {
-                                val A_lmjk = mk < 0 ? ((1-(2*mk%2)) * shift.terms(l-j, -mk).conjugate()) : shift.terms(l-j, mk);
-                                this.terms(l,m) = this.terms(l,m) + A_lmjk * O_jk;
+                                val A_lmjk = mk < 0 ? ((1-(2*mk%2)) * shift(l-j, -mk).conjugate()) : shift(l-j, mk);
+                                this(l,m) = this(l,m) + A_lmjk * O_jk;
                             }
                         }
                     }
@@ -213,9 +214,8 @@ public class MultipoleExpansion extends Expansion {
      * @return a new expansion which has been rotated
      */
     public def rotate(theta : Double, phi : Double) {
-    	val target = new MultipoleExpansion(this);
-        val temp = new Array[Complex](p+1);
-    	target.rotate(temp, genComplexK(phi, p)(1) , WignerRotationMatrix.getACollection(theta, p)(0) );
+    	val target = new MultipoleExpansion(p);
+    	this.rotate(genComplexK(phi, p)(1) , WignerRotationMatrix.getACollection(theta, p)(0), target);
     	return target;
     }
 
@@ -231,7 +231,7 @@ public class MultipoleExpansion extends Expansion {
         val parentExpansion = new MultipoleExpansion(p);
         for (l in 0..p) {
             for (m in 0..l) {
-                parentExpansion.terms(l,m) = terms(l,m) * Math.pow(3.0, l);
+                parentExpansion(l,m) = this(l,m) * Math.pow(3.0, l);
             }
         }
         return parentExpansion;

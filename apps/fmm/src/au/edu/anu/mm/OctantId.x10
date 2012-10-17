@@ -49,8 +49,7 @@ public struct OctantId(x:UByte, y:UByte, z:UByte, level:UByte) implements Compar
             id |= (bitmask & x) << shift;
             bitmask = bitmask << 1;
         }
-        shift = 24;
-        id |= (level as UInt) << shift;
+        id |= (level as UInt) << 24;
         //Console.OUT.printf("Morton id = %32s\n", id.toBinaryString());
         return id;
     }
@@ -99,8 +98,8 @@ public struct OctantId(x:UByte, y:UByte, z:UByte, level:UByte) implements Compar
     /** @return the anchor of this octant */
     public def getAnchor(dMax:UByte):OctantId {
         if (level == dMax) return this;
-        val d = (Math.pow2(dMax) as UByte) / (Math.pow2(level) as UByte); 
-        return new OctantId(x*d, y*d, z*d, dMax);
+        val shift = (dMax - level);
+        return new OctantId(x<<shift, y<<shift, z<<shift, dMax);
     }
 
     /** @return the index of the given child octant in this (shared) octant's child array */
