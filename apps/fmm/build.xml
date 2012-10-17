@@ -22,7 +22,7 @@
     <property name="unroll" value="false"/>
     <property name="debug" value="true"/>
     <property name="profile"  value="false"/>
-    <property name="cpuprofile"  value="true"/>
+    <property name="cpuprofile"  value="false"/>
     <property name="perftoolsHome" location="${user.home}/perftools"/>
     <property name="mpiPprofile"  value="false"/>
     <property name="mpiPHome" location="${user.home}/mpiP"/>
