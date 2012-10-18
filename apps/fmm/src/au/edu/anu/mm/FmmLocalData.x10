@@ -43,16 +43,16 @@ public class FmmLocalData {
     public var size:Double; 
 
     /** All octants held at this place. */
-    var octants:HashMap[UInt,Octant];
+    val octants = new HashMap[UInt,Octant]();
 
     /** The load on each leaf octant across all places. */
     var octantLoads:Rail[Int];
 
     /** All leaf octants held at this place. */
-    var leafOctants:ArrayList[LeafOctant];
+    val leafOctants = new ArrayList[LeafOctant]();
 
     /** The top-level octants at this place. */
-    var topLevelOctants:ArrayList[Octant];
+    val topLevelOctants = new ArrayList[Octant]();
 
     /** 
      * An array holding the Octant ID of the first leaf octant at each place.

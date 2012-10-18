@@ -323,7 +323,8 @@ public class FastMultipoleMethod {
         val local = FastMultipoleMethod.localData;
         val timer = local.timer;
         timer.start(FmmLocalData.TIMER_INDEX_ASSIGN);
-        val octants = new HashMap[UInt,Octant]();
+        local.octants.clear();
+        val octants = local.octants;
         for (i in localAtoms) {
             val atom = localAtoms(i);
             val octantId = getLeafOctantId(atom.centre);
@@ -338,7 +339,8 @@ public class FastMultipoleMethod {
         }
 
         val octantEntries = octants.entries();
-        val leafOctantList = new ArrayList[LeafOctant]();
+        local.leafOctants.clear();
+        val leafOctantList = local.leafOctants;
         for (octantEntry in octantEntries) {
             val octant = octantEntry.getValue();
             leafOctantList.add(octant as LeafOctant);
@@ -355,9 +357,6 @@ public class FastMultipoleMethod {
                 //Console.OUT.println("at " + here + " octant " + mortonId + "(" + octant.id + ") has " + octantLoads(mortonId));
             }
         }
-
-        local.octants = octants;
-        local.leafOctants = leafOctantList;
 
         timer.stop(FmmLocalData.TIMER_INDEX_ASSIGN);
 
@@ -482,7 +481,7 @@ public class FastMultipoleMethod {
             prevOctantId = octant.id;
         }
 
-        local.topLevelOctants = new ArrayList[Octant](octantList.size());
+        local.topLevelOctants.clear();
 
         // create parent octants in higher levels
         var level:UByte=dMax;
