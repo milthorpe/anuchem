@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE project [<!ENTITY buildfile SYSTEM "file:./build-user.xml">]>
 <project name="X10 application project" default="build" basedir=".">
+    <property environment="env"/>
     <property name="x10rt" value="sockets" />
     <property name="x10x.xla" location="../../xla"/>
 	<property name="xla.props" location="${x10x.xla}/xla_${x10rt}.properties"/>
@@ -15,7 +16,7 @@
     <property name="fftw" location="../../fftw_wrapper"/>
     <property name="fftw.props" location="${fftw}/fftw_${x10rt}.properties" />
     <property name="fftw3.include" location="${user.home}/fftw/include" />
-    <property name="x10.testlib" location="${user.home}/x10-trunk/x10.tests/examples/x10lib"/>
+    <property name="x10.testlib" location="${env.X10_HOME}/../x10.tests/examples/x10lib"/>
     <property environment="env"/>
     <property name="bash.exe" value="bash"/>    
     <property name="optimize" value="true"/>

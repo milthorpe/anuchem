@@ -5,8 +5,8 @@
     <property name="x10rt" value="sockets"/>
     <property name="x10x.xla" location="../xla"/>
 	<property name="xla.props" location="${x10x.xla}/xla_${x10rt}.properties"/>
-    <property name="x10home" location="${env.X10HOME}" />
-    <property name="x10.testlib" location="${user.home}/x10-trunk/x10.tests/examples/x10lib"/>
+    <property name="x10home" location="${env.X10_HOME}" />
+    <property name="x10.testlib" location="${env.X10_HOME}/../x10.tests/examples/x10lib"/>
     <property name="bash.exe" value="bash"/>
     <property name="optimize" value="true" />
     <property name="nochecks" value="true" />

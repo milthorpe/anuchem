@@ -2,6 +2,7 @@
 <!DOCTYPE project [<!ENTITY buildfile SYSTEM "file:./build-user.xml">]>
 <project name="Fast Multipole Method" default="build" basedir=".">
     &buildfile;
+    <property environment="env"/>
     <property name="x10rt" value="sockets" />
     <property name="x10x.xla" location="../../xla"/>
 	<property name="xla.props" location="${x10x.xla}/xla_${x10rt}.properties"/>
@@ -15,7 +16,7 @@
     <property name="x10papi" location="../../papi_wrapper"/>
     <property name="x10papi.props" location="${x10papi}/x10papi_${x10rt}.properties"/>
     <property name="papiHome" location="${user.home}/papi"/>
-    <property name="x10.testlib" location="${user.home}/x10-trunk/x10.tests/examples/x10lib"/>
+    <property name="x10.testlib" location="${env.X10_HOME}/../x10.tests/examples/x10lib"/>
     <property name="bash.exe" value="bash"/>    
     <property name="optimize" value="true"/>
     <property name="nochecks" value="true"/>

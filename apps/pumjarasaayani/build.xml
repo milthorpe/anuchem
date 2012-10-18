@@ -5,12 +5,12 @@
     <property name="x10rt" value="sockets" />
     <property name="xla" location="../../xla"/>
     <property name="xla.props" location="${xla}/xla_${x10rt}.properties"/>
-    <property name="x10.testlib" location="${env.X10HOME}/x10.tests/examples/x10lib"/>
+    <property name="x10.testlib" location="${env.X10_HOME}/../x10.tests/examples/x10lib"/>
     <property name="anuchem" location="../../anu-chem"/>
     <property name="anuchem.src" location="${anuchem}/src"/>
     <property name="anuchem.props" location="${anuchem}/anuchem_${x10rt}.properties"/>
-    <property name="gml.lib" location="${env.X10HOME}/../x10.gml/lib/native_gml.jar"/>
-    <property name="gml.props" location="${env.X10HOME}/../x10.gml/native_gml.properties"/>
+    <property name="gml.lib" location="${env.X10_HOME}/../x10.gml/lib/native_gml.jar"/>
+    <property name="gml.props" location="${env.X10_HOME}/../x10.gml/native_gml.properties"/>
     <property name="papi" value="false" />
     <property name="verbose" value="false" />
     <property name="x10papi" location="../../papi_wrapper"/>
