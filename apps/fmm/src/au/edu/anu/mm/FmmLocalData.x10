@@ -14,6 +14,7 @@ package au.edu.anu.mm;
 import x10.util.ArrayList;
 import x10.util.ArrayUtils;
 import x10.util.HashMap;
+import x10.util.HashSet;
 
 import au.edu.anu.util.Timer;
 
@@ -98,6 +99,47 @@ public class FmmLocalData {
 
     public def getOctant(octantId:OctantId) {
         return octants.getOrElse(octantId.getMortonId(), null);
+    }
+
+    public def getCombinedUList(ws:Int) {
+        val uMin = new Array[Int](3, Int.MAX_VALUE);
+        val uMax = new Array[Int](3, Int.MIN_VALUE);
+        val combinedUSet = new HashSet[UInt]();
+        for(octant in leafOctants) {
+            val uList = octant.getUList();
+            for ([p] in uList) {
+                val adjacentOctantMortonId = uList(p).getMortonId();
+                combinedUSet.add(adjacentOctantMortonId);
+            }
+        }
+
+        //Console.OUT.println("at " + here + " combined U-list:");
+        val combinedUList = new Array[UInt](combinedUSet.size());
+        var j : Int = 0;
+        for (mortonId in combinedUSet) {
+            combinedUList(j++) = mortonId;
+            //Console.OUT.println(mortonId);
+        }
+        ArrayUtils.sort(combinedUList);
+        return combinedUList;
+    }
+
+    public def getCombinedVList(ws:Int) {
+        val combinedVSet = new HashSet[UInt]();
+        for (topLevelOctant in topLevelOctants) {
+            topLevelOctant.addToCombinedVSet(combinedVSet, ws);
+        }
+        //Console.OUT.println("done " + combinedVSet.size());
+
+        //Console.OUT.println("at " + here + " combined V-list:");
+        val combinedVList = new Rail[UInt](combinedVSet.size());
+        var i:Int = 0;
+        for (mortonId in combinedVSet) {
+            combinedVList(i++) = mortonId;
+            //Console.OUT.println(mortonId);
+        }
+        ArrayUtils.sort(combinedVList);
+        return combinedVList;
     }
 
 }

@@ -14,7 +14,6 @@ import x10.compiler.Inline;
 import x10.util.ArrayList;
 import x10.util.ArrayUtils;
 import x10.util.HashMap;
-import x10.util.HashSet;
 import x10.util.Pair;
 import x10.util.Team;
 import x10x.vector.Point3d;
@@ -331,7 +330,7 @@ public class FastMultipoleMethod {
             val mortonId = octantId.getMortonId();
             var octant:LeafOctant = octants.getOrElse(mortonId, null) as LeafOctant;
             if (octant == null) {
-                octant = new LeafOctant(octantId, numTerms);
+                octant = new LeafOctant(octantId, numTerms, ws);
                 octants.put(mortonId, octant);
 
             }
@@ -453,7 +452,7 @@ public class FastMultipoleMethod {
                             if (targetOctant == null) {
                                 // target octant has not yet been created at this place
                                 //Console.OUT.println("at " + here + " creating octant " + octantId.getLeafMortonId());
-                                targetOctant = new LeafOctant(octantId, numTerms);
+                                targetOctant = new LeafOctant(octantId, numTerms, ws);
                                 leafOctantsHere.addBefore(k, targetOctant);
                                 localDest.octants.put(octantId.getMortonId(), targetOctant);
                             }
@@ -611,41 +610,12 @@ public class FastMultipoleMethod {
         val local = FastMultipoleMethod.localData;
         val timer = local.timer;
         timer.start(FmmLocalData.TIMER_INDEX_LET);
-        val uMin = new Array[Int](3, Int.MAX_VALUE);
-        val uMax = new Array[Int](3, Int.MIN_VALUE);
-        val combinedUSet = new HashSet[UInt]();
-        for(octant in local.leafOctants) {
-            octant.createUList(ws);
-            val uList = octant.getUList();
-            for ([p] in uList) {
-                val adjacentOctantMortonId = uList(p).getMortonId();
-                combinedUSet.add(adjacentOctantMortonId);
-            }
+        val combinedUList:Rail[UInt];
+        val combinedVList:Rail[UInt];
+        finish {
+            async combinedUList = local.getCombinedUList(ws);
+            combinedVList = local.getCombinedVList(ws);
         }
-
-        //Console.OUT.println("at " + here + " combined U-list:");
-        val combinedUList = new Array[UInt](combinedUSet.size());
-        var j : Int = 0;
-        for (mortonId in combinedUSet) {
-            combinedUList(j++) = mortonId;
-            //Console.OUT.println(mortonId);
-        }
-        ArrayUtils.sort(combinedUList);
-
-        val combinedVSet = new HashSet[UInt]();
-        for (topLevelOctant in local.topLevelOctants) {
-            topLevelOctant.addToCombinedVSet(combinedVSet, ws);
-        }
-        //Console.OUT.println("done " + combinedVSet.size());
-
-        //Console.OUT.println("at " + here + " combined V-list:");
-        val combinedVList = new Rail[UInt](combinedVSet.size());
-        var i:Int = 0;
-        for (mortonId in combinedVSet) {
-            combinedVList(i++) = mortonId;
-            //Console.OUT.println(mortonId);
-        }
-        ArrayUtils.sort(combinedVList);
         local.locallyEssentialTree = new LET(combinedUList, combinedVList);
         timer.stop(FmmLocalData.TIMER_INDEX_LET);
     }
