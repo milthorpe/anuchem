@@ -248,7 +248,7 @@ public class GMatrixROmem3 extends DenseMatrix{self.M==self.N} {
                     kMatrix(tmu,tnu) += kContrib;           
                 }
                 // Cast halfAuxMat(N*roK,nOrbital) into halfAuxMat(N, roK*Orbital) then use BLAS
-                // 1DenseMatrixBLAS.compMultTrans(halfAuxMat, halfAuxMat, kMatrix, [N, roK*nOrbital, roK*nOrbital], true);
+                // DenseMatrixBLAS.compMultTrans(halfAuxMat, halfAuxMat, kMatrix, [N, roK*nOrbital, roK*nOrbital], true);
             }
         }
 
