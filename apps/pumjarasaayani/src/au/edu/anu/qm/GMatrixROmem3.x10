@@ -81,8 +81,7 @@ public class GMatrixROmem3 extends DenseMatrix{self.M==self.N} {
 
         val jd = JobDefaults.getInstance();
         val l_n = new Rail[Int](jd.roN+3);
-        aux = new Integral_Pack(jd.roN,jd.roL,omega,roThresh,jd.rad);
-        //TODO: Come up with an NK scheme
+        aux = new Integral_Pack(jd.roN,jd.roL,omega,roThresh,jd.rad*jd.roZ);        
         if (omega>0.) { // long-range Ewald operator
             aux.getNL(l_n);
             roN=roNK=l_n(0);
@@ -192,8 +191,9 @@ public class GMatrixROmem3 extends DenseMatrix{self.M==self.N} {
             for (var tmu:Int=sp.mu; tmu<sp.mu+sp.maxbraa; tmu++) for (var tnu:Int=sp.nu; tnu<sp.nu+sp.maxbrab; tnu++)
                 scratch(tmu,tnu)=density(tmu,tnu)*fac*norm(tmu)*norm(tnu);            
         }
-        val offset=(roL+1)*(roL+1);
+
         for (var ron:Int=0; ron<=roN; ron++) {
+            @Ifdef("__DEBUG__") {Console.OUT.printf("ron=%d...\n",ron); }
             dk.clear();       
             for (spInd in 0..(numSigShellPairs-1)) {
                 val sp=shellPairs(spInd);
@@ -203,14 +203,15 @@ public class GMatrixROmem3 extends DenseMatrix{self.M==self.N} {
                     aux.genClass(sp.aang, sp.bang, sp.aPoint, sp.bPoint, sp.zetaA, sp.zetaB, sp.conA, sp.conB, sp.dconA, sp.dconB, temp, ron, maxLron,ylms(spInd).y, ylms(spInd).maxL);
                     for (var tmu:Int=sp.mu; tmu<sp.mu+sp.maxbraa; tmu++) for (var tnu:Int=sp.nu; tnu<sp.nu+sp.maxbrab; tnu++) {
                         val scdmn=scratch(tmu,tnu);
-                        val muOffset=tmu*offset;
+                        val muOffset=tmu*roK;
+                        val nrm=norm(tmu)*norm(tnu);
                         for (var rolm:Int=0; rolm<maxLm; rolm++) {
                             dk(rolm) += scdmn*temp(ind); 
-                            auxIntMat(muOffset+rolm,tnu) = temp(ind);
+                            auxIntMat(muOffset+rolm,tnu) = nrm*temp(ind);
                             ind++;  
                         } 
                         if (sp.mu!=sp.nu) {
-                            val nuOffset=tnu*offset;
+                            val nuOffset=tnu*roK;
                             for (var rolm:Int=0; rolm<maxLm; rolm++) auxIntMat(nuOffset+rolm,tmu)=auxIntMat(muOffset+rolm,tnu);
                         }
                     }
@@ -225,7 +226,7 @@ public class GMatrixROmem3 extends DenseMatrix{self.M==self.N} {
                     for (var tmu:Int=sp.mu; tmu<sp.mu+sp.maxbraa; tmu++) for (var tnu:Int=sp.nu; tnu<sp.nu+sp.maxbrab; tnu++) {
                         val nrm=norm(tmu)*norm(tnu);
                         jContrib = 0.;
-                        val muOffset=tmu*offset;
+                        val muOffset=tmu*roK;
                         for (var rolm:Int=0; rolm<maxLm; rolm++)
                             jContrib+=dk(rolm)*nrm*auxIntMat(muOffset+rolm,tnu);
                         jMatrix(tmu,tnu) += jContrib;
@@ -233,12 +234,21 @@ public class GMatrixROmem3 extends DenseMatrix{self.M==self.N} {
                 }
             }            
                     
-            if (ron<=roNK && false){        
-                DenseMatrixBLAS.comp(auxIntMat, mos ,halfAuxMat, [N*roK, nOrbital, N], false);    
-                // DenseMatrixBLAS.comp(halfAuxMat, halfAuxMat, kMatrix, [N, roKN*nOrbital, N], true);
-                kMatrix.multTrans(halfAuxMat, halfAuxMat, true);                                         
+            if (ron<=roNK) {        
+                for (var i:Int=0; i<N*roK; i++) for (var j:Int=0; j<nOrbital; j++) {
+                    var contrib:Double=0.;
+                    for (var k:Int=0; k<N; k++) contrib+= mos(j,k)*auxIntMat(i,k);
+                    halfAuxMat(i,j)=contrib;
+                }
+                                                
+                for (var tmu:Int=0; tmu<N; tmu++) for (var tnu:Int=0; tnu<N; tnu++) {
+                    var kContrib:Double=0.;
+                    val muOffset=tmu*roK; val nuOffset=tnu*roK;
+                    for (var orb:Int=0; orb<nOrbital; orb++) for (var rolm:Int=0; rolm<roK; rolm++)
+                        kContrib+=halfAuxMat(muOffset+rolm,orb)*halfAuxMat(nuOffset+rolm,orb);
+                    kMatrix(tmu,tnu) += kContrib;           
+                }
             }
-
         }
 
         for (spInd in 0..(numSigShellPairs-1)) {
