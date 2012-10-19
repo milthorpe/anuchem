@@ -68,13 +68,13 @@ public class PumjaRasaayani {
         val bsf = new BasisFunctions(mol, basisName, getBasisDirName(inputFileName));
         timer.stop(1);
         Console.OUT.println("Number of basis functions: " + bsf.getBasisFunctions().size());
-
-        Console.OUT.printf("    Time for setting up basis functions: %.3g milliseconds\nCalculating 1e ints...\n", (timer.total(1) as Double) / 1e6);
+        //Console.OUT.printf("    Time for setting up basis functions: %.3g milliseconds\nCalculating 1e ints...\n", (timer.total(1) as Double) / 1e6);
         
         timer.start(2);
+        Console.OUT.printf("Computing 1e integrals...\n");
         val oneE = new OneElectronIntegrals(bsf, mol);
         timer.stop(2);
-        Console.OUT.printf("    Time for computing 1E integrals: %.3g seconds\n\n", (timer.total(2) as Double) / 1e9);
+        Console.OUT.printf("\tTime for computing 1E integrals: %.3g seconds\n", (timer.total(2) as Double) / 1e9);
         val hfscf = new HartreeFockSCFMethod(mol, oneE, bsf);
         hfscf.scf();
         timer.stop(0);

@@ -33,7 +33,7 @@ public class BasisSet {
     val roZ:Double;
 
     public def this(name:String, basisDir:String) {
-        Console.OUT.println("\tReading in basis info. for " + name + " from " + basisDir);
+        //Console.OUT.println("\tReading in basis info. for " + name + " from " + basisDir);
 
         basisInfo = new HashMap[String, AtomicBasis]();
 	    basisAtomicDensity = new HashMap[String, DenseMatrix]();

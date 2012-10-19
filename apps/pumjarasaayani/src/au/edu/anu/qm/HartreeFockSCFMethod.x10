@@ -48,13 +48,13 @@ public class HartreeFockSCFMethod extends SCFMethod {
         val noOfOccupancies = noOfElectrons / 2;
 
         val nuclearEnergy = getNuclearEnergy();
-        Console.OUT.printf("Nuclear repulsion energy = %.6f a.u.\n", nuclearEnergy);
+        Console.OUT.printf("Nuclear repulsion energy = %.10g a.u.\n", nuclearEnergy);
 
-        val noOfBasisFunctions:Long = bfs.getBasisFunctions().size();
+        /*val noOfBasisFunctions:Long = bfs.getBasisFunctions().size();
         val noOfIntegrals:Long = noOfBasisFunctions * (noOfBasisFunctions + 1)
                           * (noOfBasisFunctions * noOfBasisFunctions
                              + noOfBasisFunctions + 2) / 8;
-        Console.OUT.println("\nNumber of 2E integrals: " + noOfIntegrals);
+        Console.OUT.println("\nNumber of 2E integrals: " + noOfIntegrals);*/
 
         energy = 0.0;
 
@@ -67,20 +67,19 @@ public class HartreeFockSCFMethod extends SCFMethod {
             val diag = new GMLDiagonalizer();
             diag.diagonalize(overlap);
             val eigval =  diag.getEigenValues().d;;
-            Console.OUT.printf("Three smallest eigenvalues %e %e %e\n",eigval(0),eigval(1),eigval(2));        
-            if (eigval(0)<1e-6) Console.OUT.printf("Linear dependence detected!!!\n");
-            Console.OUT.printf("Allocating various 2D matrices...\n");
+            Console.OUT.printf("Three smallest eigenvalues %.3e %.3e %.3e\n",eigval(0),eigval(1),eigval(2));        
+            if (eigval(0)<1e-6) Console.OUT.printf("Linear dependence detected!!!\n");            
         }
         // init memory for the matrices
         val N = hCore.N;
         val jd = JobDefaults.getInstance();
 
         val gMatrix:GMatrix{self.N==N};
-        val gMatrixRo:GMatrixROmem2{self.N==N};
+        val gMatrixRo:GMatrixROmem3{self.N==N};
         val roThresh=jd.roThresh;
         val thresh=jd.thresh;
         if (jd.roOn>0 && maxIteration>0) {
-            gMatrixRo = new GMatrixROmem2(N, bfs, molecule, noOfOccupancies,0.,roZ*roThresh);
+            gMatrixRo = new GMatrixROmem3(N, bfs, molecule, noOfOccupancies,0.,roZ*roThresh);
         } else {
             gMatrixRo = null;
         }
@@ -95,17 +94,17 @@ public class HartreeFockSCFMethod extends SCFMethod {
 
         var fock:Fock{self.M==N,self.N==N} = new Fock(N);
 
-        Console.OUT.printf("Making guess orbitals...\n");
+        Console.OUT.printf("Making guess orbitals ");
         if (jd.guess.equals(JobDefaults.GUESS_SAD)) {
-            Console.OUT.printf("guess = SAD... (core for MOs)\n");
+            Console.OUT.printf(" (density = SAD, MOs = core)...\n");
             density.applyGuess(bfs.getSAD());
             mos.compute(hCore, overlap); // Cheat
         } else if (jd.guess.equals(JobDefaults.GUESS_CORE)) {
-            Console.OUT.printf("guess = core...\n");
+            Console.OUT.printf(" (MOs & density = core)...\n");
             mos.compute(hCore, overlap);
             density.compute(mos);
         } else {
-            Console.OUT.printf("guess = ???...\n");
+            Console.OUT.printf("(no guess)...\n");
         }
 
         Console.OUT.printf("Starting SCF procedure...\n");      
@@ -233,7 +232,7 @@ public class HartreeFockSCFMethod extends SCFMethod {
         } while (jd.roOn>0 && jd.roN>0 && jd.compareRo);
 
         if (jd.compareRo) {
-            Console.OUT.println("Long-range - Conventional");
+            Console.OUT.printf("Long-range - Conventional\n");
             val gMatrixL = new GMatrix(N, bfs, molecule,jd.roZ*jd.omega,roZ*jd.thresh); // RO Thesis Eq (2.22)
             gMatrixL.compute(density);   
         }
@@ -246,9 +245,9 @@ public class HartreeFockSCFMethod extends SCFMethod {
     }
 
     private def computeLongRangeRO(N:Int, mos:MolecularOrbitals{self.N==N}, noOfOccupancies:Int, density:Density{self.M==N,self.N==N}, jd:JobDefaults, bfs:BasisFunctions) {
-         Console.OUT.println("Long-range - RO");
+         Console.OUT.printf("Long-range - RO\n");
             density.compute(mos);
-            val gMatrixRoL = new GMatrixROmem2(N, bfs, molecule, noOfOccupancies,jd.roZ*jd.omega,roZ*jd.roThresh); // RO Thesis Eq (2.22)
+            val gMatrixRoL = new GMatrixROmem3(N, bfs, molecule, noOfOccupancies,jd.roZ*jd.omega,roZ*jd.roThresh); // RO Thesis Eq (2.22)
             gMatrixRoL.compute(density, mos);
 /* 
             Console.OUT.println("after RO heapSize = " + System.heapSize() + " size of gMatrixRoL.muk = " + gMatrixRoL.muk.d.size
