@@ -234,19 +234,21 @@ public class GMatrixROmem3 extends DenseMatrix{self.M==self.N} {
             }            
                     
             if (ron<=roNK) {        
-                for (var i:Int=0; i<N*roK; i++) for (var j:Int=0; j<nOrbital; j++) {
+                /*for (var i:Int=0; i<N*roK; i++) for (var j:Int=0; j<nOrbital; j++) {
                     var contrib:Double=0.;
-                    for (var k:Int=0; k<N; k++) contrib+= mos(j,k)*auxIntMat(i,k);
+                    for (var k:Int=0; k<N; k++) contrib+= auxIntMat(i,k)*mos(j,k);
                     halfAuxMat(i,j)=contrib;
-                }
+                }*/
+                DenseMatrixBLAS.compMultTrans(auxIntMat, mos, halfAuxMat, [N*roK, nOrbital, N], false);
                                                 
                 for (var tmu:Int=0; tmu<N; tmu++) for (var tnu:Int=0; tnu<N; tnu++) {
-                    var kContrib:Double=0.;
-                    val muOffset=tmu*roK; val nuOffset=tnu*roK;
+                    var kContrib:Double=0.; val muOffset=tmu*roK; val nuOffset=tnu*roK;
                     for (var orb:Int=0; orb<nOrbital; orb++) for (var rolm:Int=0; rolm<roK; rolm++)
                         kContrib+=halfAuxMat(muOffset+rolm,orb)*halfAuxMat(nuOffset+rolm,orb);
                     kMatrix(tmu,tnu) += kContrib;           
                 }
+                // Cast halfAuxMat(N*roK,nOrbital) into halfAuxMat(N, roK*Orbital) then use BLAS
+                // 1DenseMatrixBLAS.compMultTrans(halfAuxMat, halfAuxMat, kMatrix, [N, roK*nOrbital, roK*nOrbital], true);
             }
         }
 
