@@ -81,7 +81,7 @@ public class GMatrixROmem3 extends DenseMatrix{self.M==self.N} {
 
         val jd = JobDefaults.getInstance();
         val l_n = new Rail[Int](jd.roN+3);
-        aux = new Integral_Pack(jd.roN,jd.roL,omega,roThresh,jd.rad*jd.roZ);        
+        aux = new Integral_Pack(jd.roN,jd.roL,omega,roThresh,jd.rad);        
         if (omega>0.) { // long-range Ewald operator
             aux.getNL(l_n);
             roN=roNK=l_n(0);
@@ -224,11 +224,10 @@ public class GMatrixROmem3 extends DenseMatrix{self.M==self.N} {
                 if (sp.maxL(ron)>=0) { 
                     val maxLm=(maxLron+1)*(maxLron+1); ind=0;
                     for (var tmu:Int=sp.mu; tmu<sp.mu+sp.maxbraa; tmu++) for (var tnu:Int=sp.nu; tnu<sp.nu+sp.maxbrab; tnu++) {
-                        val nrm=norm(tmu)*norm(tnu);
                         jContrib = 0.;
                         val muOffset=tmu*roK;
                         for (var rolm:Int=0; rolm<maxLm; rolm++)
-                            jContrib+=dk(rolm)*nrm*auxIntMat(muOffset+rolm,tnu);
+                            jContrib+=dk(rolm)*auxIntMat(muOffset+rolm,tnu);
                         jMatrix(tmu,tnu) += jContrib;
                     } 
                 }
