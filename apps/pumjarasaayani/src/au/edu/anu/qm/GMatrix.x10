@@ -210,10 +210,10 @@ jMatrix = new DenseMatrix(N, N);
         //val kMatrix=computeThread.getKMat();
 
         val eJ = density.clone().mult(density, jMatrix).trace();
-        Console.OUT.printf("  EJ = %.6f a.u.\n", eJ/jd.roZ);
+        Console.OUT.printf("  EJ = %.10f a.u.\n", eJ/jd.roZ);
 
         val eK = density.clone().mult(density, kMatrix).trace();
-        Console.OUT.printf("  EK = %.6f a.u.\n", eK/jd.roZ);
+        Console.OUT.printf("  EK = %.10f a.u.\n", eK/jd.roZ);
 // ^^^^ It is not required for normal calculation ^^^^^
     }
 
