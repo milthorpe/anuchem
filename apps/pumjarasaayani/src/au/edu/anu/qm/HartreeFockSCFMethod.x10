@@ -185,14 +185,6 @@ public class HartreeFockSCFMethod extends SCFMethod {
 
         var ecount:Double=0.; var maxDen:Double=0.; var minDen:Double=1e100;
 
-        /* val pdmat = new DenseMatrix(N, N);
-        pdmat.multTrans(density, overlap, true);
-        for (var i:Int=0; i<N; i++) {
-            ecount+=pdmat(i);
-            if (pdmat(i)<0.) Console.OUT.printf("padmat(%d)=%e\n",i,pdmat(i));
-        }      
-        // Trace of PS = # electrons
-        ecount=0.;*/
         for (var i:Int=0; i<N; i++) for (var j:Int=i; j<N; j++) {
              val contrib=density(i,j)*overlap(i,j);
              ecount+=contrib;
@@ -215,46 +207,37 @@ public class HartreeFockSCFMethod extends SCFMethod {
     
         // long range energy
         //Console.OUT.println("before RO heapSize = " + System.heapSize());
-        do {
-            computeLongRangeRO(N, mos, noOfOccupancies, density, jd, bfs);
-            System.gc();
-            if (false) {
-            Console.OUT.print("Input new roN Omega roThresh (nnn ooo t) or 000 000 0 to exit:");            
-            val rbuf = new Rail[Byte](20);
-            Console.IN.read(rbuf,0,10);
-            jd.roN = ((rbuf(0)-48) as Int)*100+(rbuf(1)-48)*10+(rbuf(2)-48)*1;            
-            jd.omega = (rbuf(4)-48)*1.0+(rbuf(5)-48)*0.1+(rbuf(6)-48)*0.01;
-            jd.roThresh = Math.pow(10,-(rbuf(8)-48));
-            Console.OUT.println("rbuf = "+rbuf);
-            Console.OUT.println("new roN = "+jd.roN +" new omega ="+jd.omega+" new roThresh ="+jd.roThresh);
-            } 
-            //Console.OUT.println("after GC heapSize = " + System.heapSize());
-        } while (jd.roOn>0 && jd.roN>0 && false);
+        val gMatrixRoL = new GMatrixROmem3(N, bfs, molecule, noOfOccupancies,jd.roZ*jd.omega,roZ*jd.roThresh); // RO Thesis Eq (2.22)
+        gMatrixRoL.compute(density, mos);
 
         if (jd.compareRo) {
             Console.OUT.printf("Long-range - Conventional\n");
             val gMatrixL = new GMatrix(N, bfs, molecule,jd.roZ*jd.omega,roZ*jd.thresh); // RO Thesis Eq (2.22)
             gMatrixL.compute(density);   
+            Console.OUT.printf("j=%.5e %.5e k=%.5e %.5e\n",gMatrixL.jMatrix(0,0),gMatrixRoL.jMatrix(0,0),gMatrixL.kMatrix(0,0),gMatrixRoL.kMatrix(0,0));
+            var jrms:Double=0.,krms:Double=0.,jmax:Double=0.,kmax:Double=0.;
+            for ([x,y] in 0..(N-1)*0..(N-1)) {
+                val dj=Math.abs(.5*gMatrixL.jMatrix(x,y)-gMatrixRoL.jMatrix(x,y));
+                val dk=Math.abs(.25*gMatrixL.kMatrix(x,y)-gMatrixRoL.kMatrix(x,y));
+                jrms=dj*dj;
+                krms=dk*dk;
+                if (dj>jmax) jmax=dj;
+                if (dk>kmax) kmax=dk;
+            }
+            val NN=N*N;
+            jrms=Math.pow(jrms/NN,.5);
+            krms=Math.pow(krms/NN,.5);
+            Console.OUT.printf("j=%.5e (%.5e) k=%.5e (%.5e)\n",jrms,jmax,krms,kmax);    
         }
-        Console.OUT.println("after conventional = " + System.heapSize());
-            //fock.compute(hCore, gMatrixRo);
-            //val eOne = density.clone().mult(density, hCore).trace();
-            //val eTwo = density.clone().mult(density, fock).trace();
-            //energy = eOne + eTwo + nuclearEnergy;
-            //Console.OUT.printf("Cycle ** Total energy = %.6f a.u. (scale factor = %.6f)",  energy/roZ,roZ);
+        //Console.OUT.println("after conventional = " + System.heapSize());
+        //fock.compute(hCore, gMatrixRo);
+        //val eOne = density.clone().mult(density, hCore).trace();
+        //val eTwo = density.clone().mult(density, fock).trace();
+        //energy = eOne + eTwo + nuclearEnergy;
+        //Console.OUT.printf("Cycle ** Total energy = %.6f a.u. (scale factor = %.6f)",  energy/roZ,roZ);
     }
 
-    private def computeLongRangeRO(N:Int, mos:MolecularOrbitals{self.N==N}, noOfOccupancies:Int, density:Density{self.M==N,self.N==N}, jd:JobDefaults, bfs:BasisFunctions) {
-         Console.OUT.printf("Long-range - RO\n");
-            density.compute(mos);
-            val gMatrixRoL = new GMatrixROmem3(N, bfs, molecule, noOfOccupancies,jd.roZ*jd.omega,roZ*jd.roThresh); // RO Thesis Eq (2.22)
-            gMatrixRoL.compute(density, mos);
-/* 
-            Console.OUT.println("after RO heapSize = " + System.heapSize() + " size of gMatrixRoL.muk = " + gMatrixRoL.muk.d.size
-                 + " size of gMatrixRoL.auxIntMat = " + gMatrixRoL.auxIntMat.d.size
-                 + " size of gMatrixRoL.jMatrix = " + gMatrixRoL.jMatrix.d.size);
-*/
-    }
+
 
 }
 

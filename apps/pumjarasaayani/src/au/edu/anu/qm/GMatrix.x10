@@ -44,6 +44,9 @@ public class GMatrix extends DenseMatrix{self.M==self.N} {
     private val thresh:Double; //1.0e-8;
     private var thresh2:Double = 0.0;
 
+    val jMatrix:DenseMatrix{self.M==self.N,self.N==this.N};
+    val kMatrix:DenseMatrix{self.M==self.N,self.N==this.N};
+
     public def this(N:Int, bfs:BasisFunctions, molecule:Molecule[QMAtom], omega:Double, thresh:Double):GMatrix{self.M==N,self.N==N} {
         super(N, N);
         this.bfs = bfs;
@@ -52,7 +55,8 @@ public class GMatrix extends DenseMatrix{self.M==self.N} {
         this.thresh=thresh;
         val jd = JobDefaults.getInstance();
         this.gMatType = jd.gMatrixParallelScheme;
-
+kMatrix = new DenseMatrix(N, N);
+jMatrix = new DenseMatrix(N, N);
         val nPlaces = Place.MAX_PLACES;
         switch(gMatType) {
         case 0:
@@ -186,11 +190,14 @@ public class GMatrix extends DenseMatrix{self.M==self.N} {
         }
         Console.OUT.println("    totInt = "+totInt);
         // form the G matrix
-        val jMat = computeThread.getJMat();
-        val kMat = computeThread.getKMat();
-
+        val jt= computeThread.getJMat();
+        val kt= computeThread.getKMat();
+        for([x,y] in 0..(N-1)*0..(N-1)) {
+            jMatrix(x,y)=jt(x,y);
+            kMatrix(x,y)=kt(x,y);
+        }
         for([x,y] in 0..(M-1)*0..(N-1)) {
-           this(x,y) = jMat(x,y) - (0.25*kMat(x,y));
+           this(x,y) = jMatrix(x,y) - (0.25*kMatrix(x,y));
         }
 
         //Console.OUT.println("J Mat");
@@ -199,8 +206,8 @@ public class GMatrix extends DenseMatrix{self.M==self.N} {
         //Console.OUT.println("K Mat");
         //Console.OUT.println(computeThread.getKMat());
 // vvvv For development purpose vvvvvv
-        val jMatrix=computeThread.getJMat();
-        val kMatrix=computeThread.getKMat();
+        //val jMatrix=computeThread.getJMat();
+        //val kMatrix=computeThread.getKMat();
 
         val eJ = density.clone().mult(density, jMatrix).trace();
         Console.OUT.printf("  EJ = %.6f a.u.\n", eJ/jd.roZ);
