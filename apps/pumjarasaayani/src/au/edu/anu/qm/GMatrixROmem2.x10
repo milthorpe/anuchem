@@ -591,7 +591,7 @@ for (var ron:Int=0; ron<=roNK; ron++){
             Console.OUT.printf("    Time to construct KMatrix with RO: %.3g seconds (%e)\n", (timer.last(TIMER_KMATRIX) as Double) / 1e9, t1+t2+t31+t32);
         }
         // Form G matrix
-        jMatrix.d.map(this.d, kMatrix.d, (j:Double,k:Double)=>(2.0*j-k)); // eqn 14
+        jMatrix.d.map(this.d, kMatrix.d, (j:Double,k:Double)=>(j-.5*k)); // eqn 14
         timer.stop(TIMER_TOTAL);
         Console.OUT.printf("    Time to construct GMatrix with RO: %.3g seconds\n", (timer.last(TIMER_TOTAL) as Double) / 1e9);
     }

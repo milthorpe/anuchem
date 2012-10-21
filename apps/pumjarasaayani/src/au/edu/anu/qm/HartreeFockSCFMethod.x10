@@ -149,8 +149,8 @@ public class HartreeFockSCFMethod extends SCFMethod {
             Console.OUT.println ("    Time to form MOS: " + (timer.total(TIMER_M) as Double) / 1e9 + " seconds");
          
             // compute the total energy 
-            val eOne = density.clone().mult(density, hCore).trace();
-            val eTwo = density.clone().mult(density, fock).trace();           
+            val eOne = .5*density.clone().mult(density, hCore).trace();
+            val eTwo = .5*density.clone().mult(density, fock).trace();           
             energy = eOne + eTwo + nuclearEnergy;
 
             Console.OUT.printf("Cycle #%i Total energy = %.6f a.u. (scale factor = %.10f)", scfIteration, energy/roZ,roZ);
@@ -218,7 +218,7 @@ public class HartreeFockSCFMethod extends SCFMethod {
             var jrms:Double=0.,krms:Double=0.,jmax:Double=0.,kmax:Double=0.;
             for ([x,y] in 0..(N-1)*0..(N-1)) {
                 val dj=Math.abs(.5*gMatrixL.jMatrix(x,y)-gMatrixRoL.jMatrix(x,y));
-                val dk=Math.abs(.25*gMatrixL.kMatrix(x,y)-gMatrixRoL.kMatrix(x,y));
+                val dk=Math.abs(.25*gMatrixL.kMatrix(x,y)-2.*gMatrixRoL.kMatrix(x,y));
                 jrms=dj*dj;
                 krms=dk*dk;
                 if (dj>jmax) jmax=dj;

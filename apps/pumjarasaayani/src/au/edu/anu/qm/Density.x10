@@ -44,10 +44,9 @@ public class Density extends DenseMatrix{self.M==self.N} {
     public def compute(mos:MolecularOrbitals{self.N==this.N}) : void {
         // construct it from the MOs .. C*C'
         val dVector = new DenseMatrix(noOfOccupancies, this.N);
-
         DenseMatrix.copyRows(mos, 0, dVector, 0, noOfOccupancies);
-
         super.transMult(dVector, dVector, false);
+        for([x,y] in 0..(N-1)*0..(N-1)) this(x,y)=2.*this(x,y); // Closed-shell
     }
 
     public def applyGuess(SAD:DenseMatrix)  {

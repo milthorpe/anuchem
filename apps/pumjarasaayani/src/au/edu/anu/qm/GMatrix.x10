@@ -197,24 +197,14 @@ jMatrix = new DenseMatrix(N, N);
             kMatrix(x,y)=kt(x,y);
         }
         for([x,y] in 0..(M-1)*0..(N-1)) {
-           this(x,y) = jMatrix(x,y) - (0.25*kMatrix(x,y));
+           this(x,y) = (0.5*jMatrix(x,y)) - (0.125*kMatrix(x,y));
         }
 
-        //Console.OUT.println("J Mat");
-        //Console.OUT.println(computeThread.getJMat());
-
-        //Console.OUT.println("K Mat");
-        //Console.OUT.println(computeThread.getKMat());
-// vvvv For development purpose vvvvvv
-        //val jMatrix=computeThread.getJMat();
-        //val kMatrix=computeThread.getKMat();
-
         val eJ = density.clone().mult(density, jMatrix).trace();
-        Console.OUT.printf("  EJ = %.10f a.u.\n", eJ/jd.roZ);
+        Console.OUT.printf("  EJ = %.10f a.u.\n", .25*eJ/jd.roZ);
 
         val eK = density.clone().mult(density, kMatrix).trace();
-        Console.OUT.printf("  EK = %.10f a.u.\n", eK/jd.roZ);
-// ^^^^ It is not required for normal calculation ^^^^^
+        Console.OUT.printf("  EK = %.10f a.u.\n", -1./32.*eK/jd.roZ);
     }
 
     private def computeThreadedLowMemNoAtomicByBF(density:Density) : void {
@@ -287,7 +277,7 @@ jMatrix = new DenseMatrix(N, N);
             val kMat = computeThreads(idx).getKMat();
              
             for([x,y] in 0..(M-1)*0..(N-1)) {
-               this(x,y) = jMat(x,y) - (0.25*kMat(x,y));
+               this(x,y) = (0.5*jMatrix(x,y)) - (0.125*kMatrix(x,y));
             }
         } // end for
     }

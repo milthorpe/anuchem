@@ -265,12 +265,12 @@ public class GMatrixROmem3 extends DenseMatrix{self.M==self.N} {
 
         @Ifdef("__DEBUG__") {
             val eJ = scratch.mult(density, jMatrix).trace();
-            Console.OUT.printf("  EJ = %.10f a.u.\n", eJ/jd.roZ);
+            Console.OUT.printf("  EJ = %.10f a.u.\n", 0.5*eJ/jd.roZ);
             val eK = scratch.mult(density, kMatrix).trace();
-            Console.OUT.printf("  EK = %.10f a.u.\n", eK/jd.roZ);
+            Console.OUT.printf("  EK = %.10f a.u.\n", -0.25*eK/jd.roZ);
         }
         // Form G matrix
-        jMatrix.d.map(this.d, kMatrix.d, (j:Double,k:Double)=>(2.0*j-k)); // eqn 14
+        jMatrix.d.map(this.d, kMatrix.d, (j:Double,k:Double)=>(j-k)); // eqn 14
         timer.stop(TIMER_TOTAL);
         Console.OUT.printf("    Time to construct GMatrix with RO: %.3g seconds\n", (timer.last(TIMER_TOTAL) as Double) / 1e9);
     }
