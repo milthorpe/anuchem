@@ -227,7 +227,8 @@ public class HartreeFockSCFMethod extends SCFMethod {
             val NN=N*N;
             jrms=Math.pow(jrms/NN,.5);
             krms=Math.pow(krms/NN,.5);
-            Console.OUT.printf("j=%.5e (%.5e) k=%.5e (%.5e)\n",jrms,jmax,krms,kmax);    
+            Console.OUT.printf("j=%.5e (%.5e) k=%.5e (%.5e)\n",jrms,jmax,krms,kmax);
+            Console.OUT.printf("log: j=%.5e (%.5e) k=%.5e (%.5e)\n",-Math.log10(jrms),-Math.log10(jmax),-Math.log10(krms),-Math.log10(kmax));       
         }
         //Console.OUT.println("after conventional = " + System.heapSize());
         //fock.compute(hCore, gMatrixRo);
