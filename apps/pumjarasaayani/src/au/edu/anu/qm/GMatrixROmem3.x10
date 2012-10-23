@@ -189,7 +189,7 @@ public class GMatrixROmem3 extends DenseMatrix{self.M==self.N} {
             val sp=shellPairs(spInd);
             if (sp.mu!=sp.nu) fac=2.; else fac=1.;
             for (var tmu:Int=sp.mu; tmu<sp.mu+sp.maxbraa; tmu++) for (var tnu:Int=sp.nu; tnu<sp.nu+sp.maxbrab; tnu++)
-                scratch(tmu,tnu)=density(tmu,tnu)*fac*norm(tmu)*norm(tnu);            
+                scratch(tmu,tnu)=density(tmu,tnu)*fac;            
         }
 
         for (var ron:Int=0; ron<=roN; ron++) {
@@ -205,11 +205,11 @@ public class GMatrixROmem3 extends DenseMatrix{self.M==self.N} {
                         val scdmn=scratch(tmu,tnu);
                         val nrm=norm(tmu)*norm(tnu);
                         for (var rolm:Int=0; rolm<maxLm; rolm++) {
-                            dk(rolm) += scdmn*temp(ind); 
                             val normAux = nrm*temp(ind);
+                            dk(rolm) += scdmn*normAux; 
                             auxIntMat(tmu+rolm*N,tnu) = normAux;
                             if (sp.mu != sp.nu) {
-                                auxIntMat(tnu+rolm*N,tnu) = normAux;
+                                auxIntMat(tnu+rolm*N,tmu) = normAux;
                             }
                             ind++;  
                         } 
@@ -233,7 +233,6 @@ public class GMatrixROmem3 extends DenseMatrix{self.M==self.N} {
                     
             if (ron<=roNK) {
                 DenseMatrixBLAS.compMultTrans(auxIntMat, mos, halfAuxMat, [N*roK, nOrbital, N], false);
-
                 val halfAuxMat2 = new DenseMatrix(N, roK*nOrbital, halfAuxMat.d);
                 DenseMatrixBLAS.compMultTrans(halfAuxMat2, halfAuxMat2, kMatrix, [N, N, roK*nOrbital], true);
             }
@@ -257,7 +256,7 @@ public class GMatrixROmem3 extends DenseMatrix{self.M==self.N} {
             Console.OUT.printf("  EK = %.10f a.u.\n", -0.25*eK/jd.roZ);
         }
         // Form G matrix
-        jMatrix.d.map(this.d, kMatrix.d, (j:Double,k:Double)=>(j-k)); // eqn 14
+        jMatrix.d.map(this.d, kMatrix.d, (j:Double,k:Double)=>(j-k)); 
         timer.stop(TIMER_TOTAL);
         Console.OUT.printf("    Time to construct GMatrix with RO: %.3g seconds\n", (timer.last(TIMER_TOTAL) as Double) / 1e9);
     }

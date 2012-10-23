@@ -23,10 +23,10 @@ compare_RO
 scf_max 0
 guess core
 use_RO 1
-RO_N 24
-RO_L 28
+RO_N 300
+RO_L 200
 compare_RO
-RO_thresh 1e-6
-thresh 1e-14
+RO_thresh 6
+thresh 14
 omega 1.
 gmat_parallel_scheme 0
