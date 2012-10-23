@@ -28,7 +28,6 @@ public class TestFastMultipoleMethod extends TestElectrostatic {
 
     public static def main(args : Array[String](1)) {
         var numAtoms:Int;
-        var density:Double = 60.0;
         var dMax:Int = 3;
         var numTerms:Int = 12;
         var wellSpaced:Int = 1;
@@ -38,24 +37,21 @@ public class TestFastMultipoleMethod extends TestElectrostatic {
         if (args.size > 0) {
             numAtoms = Int.parseInt(args(0));
             if (args.size > 1) {
-                density = Double.parseDouble(args(1));
+                dMax = Int.parseInt(args(1));
                 if (args.size > 2) {
-                    dMax = Int.parseInt(args(2));
+                    numTerms = Int.parseInt(args(2));
                     if (args.size > 3) {
-                        numTerms = Int.parseInt(args(3));
+                        wellSpaced = Int.parseInt(args(3));
                         if (args.size > 4) {
-                            wellSpaced = Int.parseInt(args(4));
+                            if (args(4).equals("-verbose")) {
+                                verbose = true;
+                            }
                             if (args.size > 5) {
-                                if (args(5).equals("-verbose")) {
-                                    verbose = true;
-                                }
-                                if (args.size > 6) {
-                                    if (args(6).equals("-compare")) {
-                                        compare = true;
-                                        if (args.size > 7) {
-                                            if (args(7).equals("-rms")) {
-                                                rms = true;
-                                            }
+                                if (args(5).equals("-compare")) {
+                                    compare = true;
+                                    if (args.size > 6) {
+                                        if (args(6).equals("-rms")) {
+                                            rms = true;
                                         }
                                     }
                                 }
@@ -65,20 +61,22 @@ public class TestFastMultipoleMethod extends TestElectrostatic {
                 }
             }
         } else {
-            Console.ERR.println("usage: fmm numAtoms [density] [numTerms] [wellSpaced] [-verbose] [-compare] [-rms]");
+            Console.ERR.println("usage: fmm numAtoms [dMax] [numTerms] [wellSpaced] [-verbose] [-compare] [-rms]");
             return;
         }
 
-        new TestFastMultipoleMethod().test(numAtoms, density, dMax, numTerms, wellSpaced, verbose, compare, rms);
+        new TestFastMultipoleMethod().test(numAtoms, dMax, numTerms, wellSpaced, verbose, compare, rms);
     }
 
-    public def test(numAtoms:Int, density:Double, dMax:Int, numTerms:Int, wellSpaced:Int, verbose:Boolean, compare:Boolean, rms:Boolean) {
+    public def test(numAtoms:Int, dMax:Int, numTerms:Int, wellSpaced:Int, verbose:Boolean, compare:Boolean, rms:Boolean) {
+        val numBoxes = Math.pow(8.0, dMax);
+        val density = Math.ceil(numAtoms / numBoxes);
         if (verbose) {
             Console.OUT.println("Testing FMM for " + numAtoms 
                       + " atoms, target density = " + density
+                      + " dMax = " + dMax
                       + " numTerms = " + numTerms
-                      + " wellSpaced = " + wellSpaced
-                      + " dMax = " + dMax);
+                      + " wellSpaced = " + wellSpaced);
 
             val q = 1.0; // absolute value of charges
             val d = SIZE / Math.pow(2.0, dMax) / 2.0;
@@ -118,14 +116,14 @@ public class TestFastMultipoleMethod extends TestElectrostatic {
         papi.start();
 }
         val energy = fmm.calculateEnergy();
-/*
+
         finish ateach(place in Dist.makeUnique()) {
-            for (i in 1..15) {
+            for (i in 1..9) {
                 fmm.reassignAtoms(i);
                 fmm.calculateEnergyLocal();
             }
-        }
-*/
+      }
+
 @Ifdef("__PAPI__")
 {
         papi.stop();

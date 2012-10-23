@@ -11,6 +11,7 @@
 package au.edu.anu.mm;
 
 public struct OctantId(x:UByte, y:UByte, z:UByte, level:UByte) implements Comparable[OctantId] {
+    static LEAF_MASK = 16777215U; // octant ID without level
     static TOP_LEVEL = 2UY;
 
     public def this(x:UByte, y:UByte, z:UByte, level:UByte) {

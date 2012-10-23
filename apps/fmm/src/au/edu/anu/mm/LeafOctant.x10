@@ -34,7 +34,6 @@ public class LeafOctant extends Octant implements Comparable[LeafOctant] {
 
     public def this(id:OctantId, numTerms:Int, ws:Int) {
         super(id, numTerms);
-        atoms = new ArrayList[MMAtom]();
         this.uList = createUList(ws);
     }
 
@@ -299,11 +298,12 @@ public class LeafOctant extends Octant implements Comparable[LeafOctant] {
      */
     public static def estimateUListCost(q:Int):Long {
         val dummyOctant = new LeafOctant(new OctantId(0UY, 0UY, 0UY, 0UY), 1, 1);
+        dummyOctant.atoms = new ArrayList[MMAtom](q);
         val rand = new Random();
-        for (i in 1..q) {
+        for (i in 0..(q-1)) {
             // create dummy singly-charged ions in random positions offset by [40,40,40]
             val atom = new MMAtom(new Point3d(rand.nextDouble()+40.0, rand.nextDouble()+40.0, rand.nextDouble()+40.0), 1.0, 1.0);
-            dummyOctant.atoms.add(atom);
+            dummyOctant.atoms(i) = atom;
         }
 
         // interact with dummy singly-charged ions in random positions offset by [39,39,39]
