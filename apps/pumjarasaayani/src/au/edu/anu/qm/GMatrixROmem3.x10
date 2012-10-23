@@ -122,7 +122,7 @@ public class GMatrixROmem3 extends DenseMatrix{self.M==self.N} {
             val aFunc = mol.getAtom(a).getBasisFunctions();
             nShell+=aFunc.size();
         }
-        var rawShellPairs:Array[ShellPair] = new Array[ShellPair](nShell*(nShell+1)/2); 
+        var rawShellPairs:Rail[ShellPair] = new Array[ShellPair](nShell*(nShell+1)/2); 
         val zeroPoint = Point3d(0.0, 0.0, 0.0);
        
         val dummySignificantPair = new ShellPair(0, 0, zeroPoint, zeroPoint, emptyRailD, emptyRailD, emptyRailD, emptyRailD, 0, 0, 0, 0, emptyRailI, threshold);
@@ -206,13 +206,13 @@ public class GMatrixROmem3 extends DenseMatrix{self.M==self.N} {
                         val nrm=norm(tmu)*norm(tnu);
                         for (var rolm:Int=0; rolm<maxLm; rolm++) {
                             dk(rolm) += scdmn*temp(ind); 
-                            auxIntMat(tmu+rolm*N,tnu) = nrm*temp(ind);
+                            val normAux = nrm*temp(ind);
+                            auxIntMat(tmu+rolm*N,tnu) = normAux;
+                            if (sp.mu != sp.nu) {
+                                auxIntMat(tnu+rolm*N,tnu) = normAux;
+                            }
                             ind++;  
                         } 
-                        if (sp.mu!=sp.nu) {
-                            val nuOffset=tnu*roK;
-                            for (var rolm:Int=0; rolm<maxLm; rolm++) auxIntMat(tnu+rolm*N,tmu)=auxIntMat(tmu+rolm*N,tnu);
-                        }
                     }
                 }
             }
@@ -231,12 +231,7 @@ public class GMatrixROmem3 extends DenseMatrix{self.M==self.N} {
                 }
             }            
                     
-            if (ron<=roNK) {        
-                /*for (var i:Int=0; i<N*roK; i++) for (var j:Int=0; j<nOrbital; j++) {
-                    var contrib:Double=0.;
-                    for (var k:Int=0; k<N; k++) contrib+= auxIntMat(i,k)*mos(j,k);
-                    halfAuxMat(i,j)=contrib;
-                }*/
+            if (ron<=roNK) {
                 DenseMatrixBLAS.compMultTrans(auxIntMat, mos, halfAuxMat, [N*roK, nOrbital, N], false);
 
                 val halfAuxMat2 = new DenseMatrix(N, roK*nOrbital, halfAuxMat.d);
