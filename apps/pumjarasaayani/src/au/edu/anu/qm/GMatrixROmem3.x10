@@ -203,16 +203,15 @@ public class GMatrixROmem3 extends DenseMatrix{self.M==self.N} {
                     aux.genClass(sp.aang, sp.bang, sp.aPoint, sp.bPoint, sp.zetaA, sp.zetaB, sp.conA, sp.conB, sp.dconA, sp.dconB, temp, ron, maxLron,ylms(spInd).y, ylms(spInd).maxL);
                     for (var tmu:Int=sp.mu; tmu<sp.mu+sp.maxbraa; tmu++) for (var tnu:Int=sp.nu; tnu<sp.nu+sp.maxbrab; tnu++) {
                         val scdmn=scratch(tmu,tnu);
-                        val muOffset=tmu*roK;
                         val nrm=norm(tmu)*norm(tnu);
                         for (var rolm:Int=0; rolm<maxLm; rolm++) {
                             dk(rolm) += scdmn*temp(ind); 
-                            auxIntMat(muOffset+rolm,tnu) = nrm*temp(ind);
+                            auxIntMat(tmu+rolm*N,tnu) = nrm*temp(ind);
                             ind++;  
                         } 
                         if (sp.mu!=sp.nu) {
                             val nuOffset=tnu*roK;
-                            for (var rolm:Int=0; rolm<maxLm; rolm++) auxIntMat(nuOffset+rolm,tmu)=auxIntMat(muOffset+rolm,tnu);
+                            for (var rolm:Int=0; rolm<maxLm; rolm++) auxIntMat(tnu+rolm*N,tmu)=auxIntMat(tmu+rolm*N,tnu);
                         }
                     }
                 }
@@ -225,9 +224,8 @@ public class GMatrixROmem3 extends DenseMatrix{self.M==self.N} {
                     val maxLm=(maxLron+1)*(maxLron+1); ind=0;
                     for (var tmu:Int=sp.mu; tmu<sp.mu+sp.maxbraa; tmu++) for (var tnu:Int=sp.nu; tnu<sp.nu+sp.maxbrab; tnu++) {
                         jContrib = 0.;
-                        val muOffset=tmu*roK;
                         for (var rolm:Int=0; rolm<maxLm; rolm++)
-                            jContrib+=dk(rolm)*auxIntMat(muOffset+rolm,tnu);
+                            jContrib+=dk(rolm)*auxIntMat(tmu+rolm*N,tnu);
                         jMatrix(tmu,tnu) += jContrib;
                     } 
                 }
@@ -240,15 +238,9 @@ public class GMatrixROmem3 extends DenseMatrix{self.M==self.N} {
                     halfAuxMat(i,j)=contrib;
                 }*/
                 DenseMatrixBLAS.compMultTrans(auxIntMat, mos, halfAuxMat, [N*roK, nOrbital, N], false);
-                                                
-                for (var tmu:Int=0; tmu<N; tmu++) for (var tnu:Int=0; tnu<N; tnu++) {
-                    var kContrib:Double=0.; val muOffset=tmu*roK; val nuOffset=tnu*roK;
-                    for (var orb:Int=0; orb<nOrbital; orb++) for (var rolm:Int=0; rolm<roK; rolm++)
-                        kContrib+=halfAuxMat(muOffset+rolm,orb)*halfAuxMat(nuOffset+rolm,orb);
-                    kMatrix(tmu,tnu) += kContrib;           
-                }
-                // Cast halfAuxMat(N*roK,nOrbital) into halfAuxMat(N, roK*Orbital) then use BLAS
-                // DenseMatrixBLAS.compMultTrans(halfAuxMat, halfAuxMat, kMatrix, [N, roK*nOrbital, roK*nOrbital], true);
+
+                val halfAuxMat2 = new DenseMatrix(N, roK*nOrbital, halfAuxMat.d);
+                DenseMatrixBLAS.compMultTrans(halfAuxMat2, halfAuxMat2, kMatrix, [N, N, roK*nOrbital], true);
             }
         }
 
