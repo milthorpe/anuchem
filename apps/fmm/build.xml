@@ -20,6 +20,7 @@
     <property name="x10.testlib" location="${env.X10_HOME}/../x10.tests/examples/x10lib"/>
     <property name="bash.exe" value="bash"/>    
     <property name="optimize" value="true"/>
+    <property name="workstealing" value="false" />
     <property name="nochecks" value="true"/>
     <property name="unroll" value="false"/>
     <property name="debug" value="true"/>
@@ -43,6 +44,10 @@
 
     <condition property="x10c.nochecks" value="-NO_CHECKS -VERBOSE_CHECKS=true"  else="-VERBOSE_CHECKS=true">
         <istrue value="${nochecks}"/>
+    </condition>
+
+    <condition property="x10c.workstealing" value="-WORK_STEALING=true"  else="">
+        <istrue value="${workstealing}"/>
     </condition>
 
     <condition property="x10c.bgp" value="-define __BGP__" else="">
@@ -149,11 +154,11 @@
     <target name="build-src-cpp" depends="check-src-cpp" unless="src.uptodate.cpp">
         <echo message="Building source tree"/>
 
-        <echo message="x10c++ -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} ${x10c.bgp} ${x10c.debug} ${x10c.cpuprofile} ${x10c.profile} ${define.papi} -x10lib ${xla.props} -x10lib ${anuchem.props} -x10lib ${x10papi.props} -sourcepath . '${basedir}/${testclass}'"/>
+        <echo message="x10c++ -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} ${x10c.workstealing} ${x10c.bgp} ${x10c.debug} ${x10c.cpuprofile} ${x10c.profile} ${define.papi} -x10lib ${xla.props} -x10lib ${anuchem.props} -x10lib ${x10papi.props} -sourcepath . '${basedir}/${testclass}'"/>
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/src">
             <arg value="-c"/>
-            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} ${x10c.bgp} ${x10c.debug} ${x10c.cpuprofile} ${x10c.profile} ${define.papi} -report postcompile=1 -post '# ${post.unroll} ${cxx.bgp} # ${ld.bgp} ${link.mpiPprofile} ${post.cpuprofile}' -x10lib ${xla.props} -x10lib ${anuchem.props} -x10lib ${x10papi.props} -sourcepath . -d '${target-src}' '${basedir}/${testclass}'"/>
+            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} ${x10c.workstealing} ${x10c.bgp} ${x10c.debug} ${x10c.cpuprofile} ${x10c.profile} ${define.papi} -report postcompile=1 -post '# ${post.unroll} ${cxx.bgp} # ${ld.bgp} ${link.mpiPprofile} ${post.cpuprofile}' -x10lib ${xla.props} -x10lib ${anuchem.props} -x10lib ${x10papi.props} -sourcepath . -d '${target-src}' '${basedir}/${testclass}'"/>
         </exec>
     </target>
 
