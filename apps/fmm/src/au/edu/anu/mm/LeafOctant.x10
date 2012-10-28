@@ -10,7 +10,11 @@
  */
 package au.edu.anu.mm;
 
+import x10.compiler.Ifdef;
+import x10.compiler.Ifndef;
 import x10.compiler.Inline;
+import x10.compiler.Native;
+import x10.compiler.NativeCPPInclude;
 import x10.util.ArrayList;
 import x10.util.Pair;
 import x10.util.Random;
@@ -25,6 +29,7 @@ import au.edu.anu.chem.mm.MMAtom;
  * in the 3D division of space for the fast multipole method.
  * @author milthorpe
  */
+@NativeCPPInclude("bgp_math.h")
 public class LeafOctant extends Octant implements Comparable[LeafOctant] {
     public var atoms:ArrayList[MMAtom];
     private var sources:Rail[Double];
@@ -131,6 +136,9 @@ public class LeafOctant extends Octant implements Comparable[LeafOctant] {
         return potential;
     }
 
+    @Native("c++", "rsqrt(#a)")
+    private @Inline native static def rsqrt(a:Double):Double;
+
     /** 
      * Calculates the potential and forces on atoms in this octant, due to 
      * all other atoms in this octant and in non-well-separated octants.
@@ -160,8 +168,14 @@ public class LeafOctant extends Octant implements Comparable[LeafOctant] {
                             val rVec = translatedCentre - atom1.centre;
                             val r2 = rVec.lengthSquared();
                             if (r2 != 0.0) { // don't include dipole-balancing charges at same point
+@Ifdef("__BGP__") {
+                                val invR = rsqrt(r2);
+                                val invR2 = invR * invR;
+}
+@Ifndef("__BGP__") {
                                 val invR2 = 1.0 / r2;
                                 val invR = Math.sqrt(invR2);
+}
                                 val e = atom1.charge * atom2.charge * invR;
                                 directEnergy += e;
                                 val pairForce = e * invR2 * rVec;
@@ -188,8 +202,16 @@ public class LeafOctant extends Octant implements Comparable[LeafOctant] {
             for (sameBoxAtomIndex in 0..(atomIndex1-1)) {
                 val sameBoxAtom = atoms(sameBoxAtomIndex);
                 val rVec = sameBoxAtom.centre - atom1.centre;
-                val invR2 = 1.0 / rVec.lengthSquared();
-                val invR = Math.sqrt(invR2);
+                val invR:Double;
+                val invR2:Double;
+@Ifdef("__BGP__") {
+                                invR = rsqrt(rVec.lengthSquared());
+                                invR2 = invR * invR;
+}
+@Ifndef("__BGP__") {
+                                invR2 = 1.0 / rVec.lengthSquared();
+                                invR = Math.sqrt(invR2);
+}
                 val e = atom1.charge * sameBoxAtom.charge * invR;
                 directEnergy += 2.0 * e;
                 val pairForce = e * invR2 * rVec;
@@ -200,6 +222,7 @@ public class LeafOctant extends Octant implements Comparable[LeafOctant] {
 
         return directEnergy;
     }
+
 
     /**
      * Calculates forces and potential on atoms in this box due to atoms
@@ -234,8 +257,16 @@ public class LeafOctant extends Octant implements Comparable[LeafOctant] {
                 val dy = yj-yi;
                 val dz = zj-zi;
                 val r2 = (dx*dx + dy*dy + dz*dz);
-                val invR2 = 1.0 / r2;
-                val invR = Math.sqrt(invR2);
+                val invR:Double;
+                val invR2:Double;
+@Ifdef("__BGP__") {
+                                invR = rsqrt(r2);
+                                invR2 = invR * invR;
+}
+@Ifndef("__BGP__") {
+                                invR2 = 1.0 / r2;
+                                invR = Math.sqrt(invR2);
+}
                 val qq = qi * qj;
                 val e = invR * qq;
                 directEnergy += e;
