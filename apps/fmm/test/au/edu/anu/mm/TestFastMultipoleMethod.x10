@@ -100,10 +100,11 @@ public class TestFastMultipoleMethod extends TestElectrostatic {
         val atoms = generateAtoms(numAtoms, false);
         val fmm = new FastMultipoleMethod(density, dMax, numTerms, wellSpaced, SIZE);
         fmm.initialAssignment(numAtoms, atoms);
-        for (timerId in 4..9) {
-            FastMultipoleMethod.localData.timer.clear(timerId);
-        }
+
         finish ateach(place in Dist.makeUnique()) {
+            for (timerId in 4..9) {
+                FastMultipoleMethod.localData.timer.clear(timerId);
+            }
           fmm.reassignAtoms(0);
         }
         //fmm.countOctants();

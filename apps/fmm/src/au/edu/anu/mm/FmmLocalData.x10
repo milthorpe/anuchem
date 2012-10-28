@@ -46,7 +46,7 @@ public class FmmLocalData {
     val octants = new HashMap[UInt,Octant]();
 
     /** The load on each leaf octant across all places. */
-    var octantLoads:Rail[Int];
+    var octantLoads:Rail[Long];
 
     /** All leaf octants held at this place. */
     val leafOctants = new ArrayList[LeafOctant]();
@@ -82,7 +82,7 @@ public class FmmLocalData {
         this.size = size;
         fmmOperators = new FmmOperators(numTerms, ws);
         val maxLeafOctants = Math.pow(8.0, dMax) as Int;
-        octantLoads = new Array[Int](maxLeafOctants);
+        octantLoads = new Array[Long](maxLeafOctants);
         // TODO construct LET
     }
 

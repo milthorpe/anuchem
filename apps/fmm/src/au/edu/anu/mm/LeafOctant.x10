@@ -72,7 +72,7 @@ public class LeafOctant extends Octant implements Comparable[LeafOctant] {
      * N.B. must only be called once per pass
      */
     protected def upward():Pair[Int,MultipoleExpansion] {
-        //Console.OUT.println("at " + here + " LeafOctant.upward for " + id + " numAtoms = " + numAtoms);
+        //Console.OUT.println("at " + here + " LeafOctant.upward for " + id + " numAtoms = " + numAtoms());
         if (atoms.size() > 0) {
             multipoleExp.clear();
             localExp.clear();
@@ -98,7 +98,7 @@ public class LeafOctant extends Octant implements Comparable[LeafOctant] {
     }
 
     protected def downward(parentLocalExpansion:LocalExpansion):Double {
-        //Console.OUT.println("at " + here + " LeafOctant.downward for " + id + " numAtoms = " + numAtoms);
+        //Console.OUT.println("at " + here + " LeafOctant.downward for " + id + " numAtoms = " + numAtoms());
         this.multipoleReady = false; // reset
 
         if (atoms.size() > 0) {

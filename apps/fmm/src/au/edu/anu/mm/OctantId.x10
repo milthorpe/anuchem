@@ -10,6 +10,8 @@
  */
 package au.edu.anu.mm;
 
+import x10x.vector.Point3d;
+
 public struct OctantId(x:UByte, y:UByte, z:UByte, level:UByte) implements Comparable[OctantId] {
     static LEAF_MASK = 16777215U; // octant ID without level
     static TOP_LEVEL = 2UY;
@@ -56,7 +58,7 @@ public struct OctantId(x:UByte, y:UByte, z:UByte, level:UByte) implements Compar
     }
 
     public static def getFromMortonId(mortonId:UInt):OctantId {
-        //Console.OUT.printf("get from Morton id = %32s\n", mortonId.toBinaryString());
+        //Console.OUT.printf("getFromMortonId = %32s\n", mortonId.toBinaryString());
         val level = (mortonId >> 24) as UInt;
         var x:UInt = 0U;
         var y:UInt = 0U;
@@ -72,11 +74,28 @@ public struct OctantId(x:UByte, y:UByte, z:UByte, level:UByte) implements Compar
         return OctantId(x as UByte, y as UByte, z as UByte, level as UByte);
     }
         
-
     public def getLeafMortonId():UInt {
         val x = this.x as UInt;
         val y = this.y as UInt;
         val z = this.z as UInt;
+        //Console.OUT.printf("x %8s y %8s z %8s\n", x.toBinaryString(), y.toBinaryString(), z.toBinaryString());
+        var id:UInt = 0U;
+        var bitmask:UInt = 1U;
+        var shift:Int = 0;
+        for (i in 0..7) {
+            id |= (bitmask & z) << shift++;
+            id |= (bitmask & y) << shift++;
+            id |= (bitmask & x) << shift;
+            bitmask = bitmask << 1;
+        }
+        //Console.OUT.printf("leaf Morton id = %32s\n", id.toBinaryString());
+        return id;
+    }
+
+    public static def getLeafMortonId(atomCentre:Point3d, invSideLength:Double, offset:Double):UInt {
+        val x = (atomCentre.i * invSideLength + offset) as UInt;
+        val y = (atomCentre.j * invSideLength + offset) as UInt;
+        val z = (atomCentre.k * invSideLength + offset) as UInt;
         //Console.OUT.printf("x %8s y %8s z %8s\n", x.toBinaryString(), y.toBinaryString(), z.toBinaryString());
         var id:UInt = 0U;
         var bitmask:UInt = 1U;
