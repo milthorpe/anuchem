@@ -38,7 +38,7 @@ public class LeafOctant extends Octant implements Comparable[LeafOctant] {
     private var uList:Rail[OctantId];
 
     public def this(id:OctantId, numTerms:Int, ws:Int) {
-        super(id, numTerms);
+        super(id, numTerms, ws);
         this.uList = createUList(ws);
     }
 

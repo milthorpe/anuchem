@@ -11,6 +11,7 @@
 package au.edu.anu.mm;
 
 import x10.util.ArrayUtils;
+import x10.util.HashMap;
 
 import au.edu.anu.chem.PointCharge;
 
@@ -22,14 +23,13 @@ import au.edu.anu.chem.PointCharge;
  */
 public class LET {
     public val combinedUList:Rail[UInt];
-    public val combinedVList:Rail[UInt];
 
     /**
      * A cache of multipole copies for the combined V-list of all
      * boxes at this place.  Used to overlap fetching of the multipole
      * expansions with other computation.
      */
-    public val multipoleCopies:Rail[MultipoleExpansion];
+    public val multipoleCopies:HashMap[UInt,MultipoleExpansion];
 
     /**
      * A cache of PointCharge for the combined U-list of all
@@ -39,29 +39,19 @@ public class LET {
      */
     public val cachedAtoms : Rail[Rail[Double]];
     
-    public def this(combinedUList:Rail[UInt],
-                combinedVList:Rail[UInt]) {
+    public def this(combinedUList:Rail[UInt]) {
         this.combinedUList = combinedUList;
-        this.combinedVList = combinedVList;
-        this.multipoleCopies = new Array[MultipoleExpansion](combinedVList.size);
+        this.multipoleCopies = new HashMap[UInt,MultipoleExpansion](combinedUList.size); // guess that V-List is at least as big as U-List
 
         this.cachedAtoms = new Array[Rail[Double]](combinedUList.size);
     }
 
     public def getMultipoleForOctant(mortonId:UInt) {
-        val cacheIndex = ArrayUtils.binarySearch(combinedVList, mortonId);
-        if (cacheIndex >= 0) {
-            return multipoleCopies(cacheIndex);
-        } else {
-            return null;
-        }
+        return multipoleCopies.getOrElse(mortonId, null);
     }
 
     public def setMultipoleForOctant(mortonId:UInt, multipoleExp:MultipoleExpansion) {
-        val cacheIndex = ArrayUtils.binarySearch(combinedVList, mortonId);
-        if (cacheIndex >= 0) {
-            multipoleCopies(cacheIndex) = multipoleExp;
-        }
+        multipoleCopies.put(mortonId, multipoleExp);
     }
 
     public def getAtomDataForOctant(mortonId:UInt) {

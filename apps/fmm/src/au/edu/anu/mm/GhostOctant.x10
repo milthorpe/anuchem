@@ -31,7 +31,7 @@ public class GhostOctant extends Octant implements Comparable[Octant] {
      * Creates a new GhostOctant for an octant at the given place.
      */
     public def this(id:OctantId, placeId:Int) {
-        super(id, 0);
+        super(id);
         this.placeId = placeId;
     }
 
@@ -90,8 +90,6 @@ public class GhostOctant extends Octant implements Comparable[Octant] {
         }
         return 0.0;
     }
-
-    public def addToCombinedVSet(combinedVSet:HashSet[UInt], ws:Int) { }
 
     public def toString(): String {
         return "GhostOctant " + id;

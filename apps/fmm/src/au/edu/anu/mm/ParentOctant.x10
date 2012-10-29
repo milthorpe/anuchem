@@ -33,8 +33,8 @@ public class ParentOctant extends Octant implements Comparable[ParentOctant] {
      * Creates a new FmmBox with multipole and local expansions
      * of the given number of terms.
      */
-    public def this(id:OctantId, numTerms:Int, dMax:UByte) {
-        super(id, numTerms);
+    public def this(id:OctantId, numTerms:Int, ws:Int, dMax:UByte) {
+        super(id, numTerms, ws);
     }
 
     public def countOctants():Int {
@@ -146,16 +146,6 @@ public class ParentOctant extends Octant implements Comparable[ParentOctant] {
             return farField;
         } else {
             return 0.0;
-        }
-    }
-
-    public def addToCombinedVSet(combinedVSet:HashSet[UInt], ws:Int) {
-        super.addToCombinedVSet(combinedVSet, ws);
-        for (i in 0..(children.size-1)) {
-            val childOctant = children(i);
-            if (children(i) != null) {
-                childOctant.addToCombinedVSet(combinedVSet, ws);
-            }
         }
     }
 

@@ -32,7 +32,7 @@ public abstract class Octant implements Comparable[Octant] {
      * The V-list consists of the children of those boxes 
      * not well-separated from this box's parent.
      */
-    private var vList:Rail[OctantId];
+    private val vList:Rail[OctantId];
 
     /** The multipole expansion of the charges within this box. */
     public val multipoleExp:MultipoleExpansion;
@@ -47,13 +47,24 @@ public abstract class Octant implements Comparable[Octant] {
     public var multipoleReady:Boolean = false;
 
     /**
-     * Creates a new FmmBox with multipole and local expansions
+     * Creates a new Octant with multipole and local expansions
      * of the given number of terms.
      */
-    public def this(id:OctantId, numTerms:Int) {
+    public def this(id:OctantId, numTerms:Int, ws:Int) {
         this.id = id;
         this.multipoleExp = new MultipoleExpansion(numTerms);
         this.localExp = new LocalExpansion(numTerms);
+        this.vList = createVList(ws);
+    }
+
+    /**
+     * Creates a new Octant with no expansions (used by GhostOctant).
+     */
+    protected def this(id:OctantId) {
+        this.id = id;
+        this.multipoleExp = null;
+        this.localExp = null;
+        this.vList = null;
     }
 
     public def compareTo(b:Octant):Int = id.compareTo(b.id);
@@ -195,7 +206,7 @@ public abstract class Octant implements Comparable[Octant] {
      * The V-list consists of the children of those boxes not 
      * well-separated from the parent.
      */
-    public def createVList(ws:Int) {
+    private def createVList(ws:Int) {
         val levelDim = Math.pow2(id.level);
         val xOffset = id.x%2 == 1UY ? -1 : 0;
         val yOffset = id.y%2 == 1UY ? -1 : 0;
@@ -213,24 +224,17 @@ public abstract class Octant implements Comparable[Octant] {
                 }
             }
         }
-        this.vList = vList.toArray();
+        return vList.toArray();
     }
 
     public def getVList() = this.vList;
-
-    public def addToCombinedVSet(combinedVSet:HashSet[UInt], ws:Int) {
-        createVList(ws);
-        for ([p] in vList) {
-            combinedVSet.add(vList(p).getMortonId());
-        }
-    }
 
     /**
      * Returns true if this box is well-separated from <code>x,y,z</code>
      * on the same level, i.e. if there are at least <code>ws</code>
      * boxes separating them.
      */
-    public def wellSeparated(ws:Int, x2:Int, y2:Int, z2:Int) : Boolean {
+    private def wellSeparated(ws:Int, x2:Int, y2:Int, z2:Int) : Boolean {
         return Math.abs(id.x - x2) > ws 
             || Math.abs(id.y - y2) > ws 
             || Math.abs(id.z - z2) > ws;

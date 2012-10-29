@@ -123,23 +123,4 @@ public class FmmLocalData {
         ArrayUtils.sort(combinedUList);
         return combinedUList;
     }
-
-    public def getCombinedVList(ws:Int) {
-        val combinedVSet = new HashSet[UInt]();
-        for (topLevelOctant in topLevelOctants) {
-            topLevelOctant.addToCombinedVSet(combinedVSet, ws);
-        }
-        //Console.OUT.println("done " + combinedVSet.size());
-
-        //Console.OUT.println("at " + here + " combined V-list:");
-        val combinedVList = new Rail[UInt](combinedVSet.size());
-        var i:Int = 0;
-        for (mortonId in combinedVSet) {
-            combinedVList(i++) = mortonId;
-            //Console.OUT.println(mortonId);
-        }
-        ArrayUtils.sort(combinedVList);
-        return combinedVList;
-    }
-
 }

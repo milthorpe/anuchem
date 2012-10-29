@@ -540,7 +540,7 @@ public class FastMultipoleMethod {
                     //Console.OUT.println("at " + here + " parent for " + octant.id + " = " + parentId);
                     var parentOctant:ParentOctant = parentOctants.getOrElse(parentId, null) as ParentOctant;
                     if (parentOctant == null) {
-                        parentOctant = new ParentOctant(parentId, numTerms, dMax);
+                        parentOctant = new ParentOctant(parentId, numTerms, ws, dMax);
                         createGhostChildren(parentOctant, octantLoads, firstLeafOctant);
                         parentOctants.put(parentId, parentOctant);
                         octants.put(parentId.getMortonId(), parentOctant);
@@ -568,7 +568,7 @@ public class FastMultipoleMethod {
                 //Console.OUT.println("at " + here + " lastOctantId " + lastOctantId);
                 while (local.getPlaceId(lastOctantId.getAnchor(dMax)) == here.id) {
                     Console.OUT.println("at " + here + " filling in octant " + lastOctantId);
-                    val fillerOctant = new ParentOctant(lastOctantId, numTerms, dMax);
+                    val fillerOctant = new ParentOctant(lastOctantId, numTerms, ws, dMax);
                     octantList.add(fillerOctant);
                     octants.put(lastOctantId.getMortonId(), fillerOctant);
                     lastOctantId = lastOctantId.next();
@@ -644,21 +644,15 @@ public class FastMultipoleMethod {
     }
 
     /**
-     * Creates the locally essential tree at the current place.  This is
-     * later used to overlap remote retrieval of multipole expansion and
-     * particle data with other computation.
+     * Creates the locally essential tree at the current place.  This is later
+     * used to overlap remote retrieval of particle data with other computation.
      */
     private def createLET() {
         val local = FastMultipoleMethod.localData;
         val timer = local.timer;
         timer.start(FmmLocalData.TIMER_INDEX_LET);
-        val combinedUList:Rail[UInt];
-        val combinedVList:Rail[UInt];
-        finish {
-            async combinedUList = local.getCombinedUList(ws);
-            combinedVList = local.getCombinedVList(ws);
-        }
-        local.locallyEssentialTree = new LET(combinedUList, combinedVList);
+        val combinedUList = local.getCombinedUList(ws);
+        local.locallyEssentialTree = new LET(combinedUList);
         timer.stop(FmmLocalData.TIMER_INDEX_LET);
     }
 
