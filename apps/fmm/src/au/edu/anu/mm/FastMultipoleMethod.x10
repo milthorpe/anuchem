@@ -471,7 +471,7 @@ public class FastMultipoleMethod {
                                 val octantId = OctantId.getFromMortonId(mortonId);
                                 // target octant has not yet been created at this place
                                 //Console.OUT.println("at " + here + " creating octant " + octantId.getLeafMortonId());
-                                targetOctant = new LeafOctant(octantId, numTerms, ws);
+                                targetOctant = new LeafOctant(octantId, numTerms, ws, dMax);
                                 targetOctant.atoms = atoms;
                                 localOctants.put(mortonId, targetOctant);
                             } else {
@@ -497,7 +497,7 @@ public class FastMultipoleMethod {
             var leafOctant:LeafOctant = octants.getOrElse(mortonId, null) as LeafOctant;
             if (leafOctant == null) {
                 //Console.OUT.println("octant " + OctantId.getFromMortonId(mortonId) + " stays at " + here + " adding " + atoms.size() + " atoms");
-                leafOctant = new LeafOctant(OctantId.getFromMortonId(mortonId), numTerms, ws);
+                leafOctant = new LeafOctant(OctantId.getFromMortonId(mortonId), numTerms, ws, dMax);
                 leafOctant.atoms = atoms;
                 octants.put(mortonId, leafOctant);
             } else {

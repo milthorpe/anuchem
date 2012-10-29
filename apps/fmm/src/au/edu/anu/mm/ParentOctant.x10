@@ -34,7 +34,7 @@ public class ParentOctant extends Octant implements Comparable[ParentOctant] {
      * of the given number of terms.
      */
     public def this(id:OctantId, numTerms:Int, ws:Int, dMax:UByte) {
-        super(id, numTerms, ws);
+        super(id, numTerms, ws, dMax);
     }
 
     public def countOctants():Int {

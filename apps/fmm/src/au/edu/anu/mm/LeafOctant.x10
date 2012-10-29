@@ -37,9 +37,9 @@ public class LeafOctant extends Octant implements Comparable[LeafOctant] {
     /** The U-list consists of all leaf octants not well-separated from this octant. */
     private var uList:Rail[OctantId];
 
-    public def this(id:OctantId, numTerms:Int, ws:Int) {
-        super(id, numTerms, ws);
-        this.uList = createUList(ws);
+    public def this(id:OctantId, numTerms:Int, ws:Int, dMax:UByte) {
+        super(id, numTerms, ws, dMax);
+        this.uList = createUList(ws, dMax);
     }
 
     public def makeSources() {
@@ -314,8 +314,12 @@ public class LeafOctant extends Octant implements Comparable[LeafOctant] {
      * given the octant id. 
      */
     public static def estimateUListSize(mortonId:UInt, dMax:UByte):Int {
-        val maxExtent = (1U << dMax) - 1U;
         val id = OctantId.getFromMortonId(mortonId);
+        return estimateUListSize(id, dMax);
+    }
+
+    private static def estimateUListSize(id:OctantId, dMax:UByte):Int {
+        val maxExtent = (1U << dMax) - 1U;
         val xExtent = (id.x > 0U && id.x < maxExtent) ? 3 : 2;
         val yExtent = (id.y > 0U && id.y < maxExtent) ? 3 : 2;
         val zExtent = (id.z > 0U && id.z < maxExtent) ? 3 : 2;
@@ -328,7 +332,7 @@ public class LeafOctant extends Octant implements Comparable[LeafOctant] {
      * @param q the average density per lowest level box
      */
     public static def estimateUListCost(q:Int):Long {
-        val dummyOctant = new LeafOctant(new OctantId(0UY, 0UY, 0UY, 0UY), 1, 1);
+        val dummyOctant = new LeafOctant(new OctantId(0UY, 0UY, 0UY, 0UY), 1, 1, 0UY);
         dummyOctant.atoms = new ArrayList[MMAtom](q);
         val rand = new Random();
         for (i in 0..(q-1)) {
@@ -357,8 +361,8 @@ public class LeafOctant extends Octant implements Comparable[LeafOctant] {
      * Creates the U-list for this octant.
      * The U-list consists of all leaf octants not well-separated from this octant.
      */
-    private def createUList(ws:Int) {
-        val tempUList = new ArrayList[OctantId]();
+    private def createUList(ws:Int, dMax:UByte) {
+        val tempUList = new ArrayList[OctantId](estimateUListSize(id, dMax));
         val levelDim = Math.pow2(id.level);
         for (x in Math.max(0,id.x-ws)..Math.min(levelDim-1,id.x+ws)) {
             val x2 = x as UByte;

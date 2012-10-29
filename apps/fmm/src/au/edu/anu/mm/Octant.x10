@@ -50,11 +50,11 @@ public abstract class Octant implements Comparable[Octant] {
      * Creates a new Octant with multipole and local expansions
      * of the given number of terms.
      */
-    public def this(id:OctantId, numTerms:Int, ws:Int) {
+    public def this(id:OctantId, numTerms:Int, ws:Int, dMax:UByte) {
         this.id = id;
         this.multipoleExp = new MultipoleExpansion(numTerms);
         this.localExp = new LocalExpansion(numTerms);
-        this.vList = createVList(ws);
+        this.vList = createVList(ws, dMax);
     }
 
     /**
@@ -163,8 +163,13 @@ public abstract class Octant implements Comparable[Octant] {
 
     /** Estimates the number of octants in an octant's V-list, given the octant id. */
     public static def estimateVListSize(mortonId:UInt, dMax:UByte):Int {
-        val maxExtent = (1U << dMax) - 1U;
         val id = OctantId.getFromMortonId(mortonId);
+        return estimateVListSize(id, dMax);
+    }
+
+    /** Estimates the number of octants in an octant's V-list, given the octant id. */
+    private static def estimateVListSize(id:OctantId, dMax:UByte):Int {
+        val maxExtent = (1U << dMax) - 1U;
         val nearX = (id.x > 0U && id.x < maxExtent) ? 3 : 2;
         val nearY = (id.y > 0U && id.y < maxExtent) ? 3 : 2;
         val nearZ = (id.z > 0U && id.z < maxExtent) ? 3 : 2;
@@ -206,12 +211,12 @@ public abstract class Octant implements Comparable[Octant] {
      * The V-list consists of the children of those boxes not 
      * well-separated from the parent.
      */
-    private def createVList(ws:Int) {
+    private def createVList(ws:Int, dMax:UByte) {
         val levelDim = Math.pow2(id.level);
         val xOffset = id.x%2 == 1UY ? -1 : 0;
         val yOffset = id.y%2 == 1UY ? -1 : 0;
         val zOffset = id.z%2 == 1UY ? -1 : 0;
-        val vList = new ArrayList[OctantId]();
+        val vList = new ArrayList[OctantId](estimateVListSize(id, dMax));
         for (x in Math.max(0,id.x-2*ws+xOffset)..Math.min(levelDim-1,id.x+2*ws+1+xOffset)) {
             val x2 = x as UByte;
             for (y in Math.max(0,id.y-2*ws+yOffset)..Math.min(levelDim-1,id.y+2*ws+1+yOffset)) {
