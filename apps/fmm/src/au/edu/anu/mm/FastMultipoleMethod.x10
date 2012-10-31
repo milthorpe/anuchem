@@ -391,6 +391,7 @@ public class FastMultipoleMethod {
         timer.stop(FmmLocalData.TIMER_INDEX_ASSIGN);
 
         timer.start(FmmLocalData.TIMER_INDEX_REDUCE);
+        octantLoads.clear();
         for(octant in octantAtoms) {
             val mortonId = octant.first as Int;
             octantLoads(mortonId) = octant.second.size();
@@ -404,7 +405,7 @@ public class FastMultipoleMethod {
         for(i in 0..(octantLoads.size-1)) {
             if (octantLoads(i) > 0) {
                 val mortonId = i as UInt;
-                //Console.OUT.println(OctantId.getFromMortonId(mortonId) + " uList " + (octantLoads(i) * LeafOctant.estimateUListSize(mortonId, dMax) * q * uListCost) + " vList " + Octant.estimateVListSize(mortonId, dMax) * vListCost);
+                //Console.OUT.println(OctantId.getFromMortonId(mortonId) + " particles " + octantLoads(i) + " uList " + (octantLoads(i) * LeafOctant.estimateUListSize(mortonId, dMax) * q * uListCost) + " vList " + Octant.estimateVListSize(mortonId, dMax) * vListCost);
                 // octantLoad = uListInteractions * costP2P + vListInteractions * costM2L 
                 octantLoads(i) = 
                         octantLoads(i) * LeafOctant.estimateUListSize(mortonId, dMax) * q * uListCost 
