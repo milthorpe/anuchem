@@ -119,9 +119,9 @@ public class TestFastMultipoleMethod extends TestElectrostatic {
         val energy = fmm.calculateEnergy();
 
         finish ateach(place in Dist.makeUnique()) {
-            for (i in 1..9) {
+            for (i in 1..69) {
                 fmm.reassignAtoms(i);
-                fmm.calculateEnergyLocal();
+                //fmm.calculateEnergyLocal();
             }
       }
 
@@ -138,8 +138,8 @@ public class TestFastMultipoleMethod extends TestElectrostatic {
             Console.OUT.println("energy = " + energy);
 
             logTime("(Tree construction)", FmmLocalData.TIMER_INDEX_TREE, FastMultipoleMethod.localData.timer);
-            logTime("(assign)",   FmmLocalData.TIMER_INDEX_ASSIGN,    FastMultipoleMethod.localData.timer);
-            logTime("(reduce)",   FmmLocalData.TIMER_INDEX_REDUCE,    FastMultipoleMethod.localData.timer);
+            logTime("(sort)",     FmmLocalData.TIMER_INDEX_SORT,      FastMultipoleMethod.localData.timer);
+            logTime("(balance)",  FmmLocalData.TIMER_INDEX_BALANCE,   FastMultipoleMethod.localData.timer);
             logTime("(redist)",   FmmLocalData.TIMER_INDEX_REDIST,    FastMultipoleMethod.localData.timer);
             logTime("(parents)",  FmmLocalData.TIMER_INDEX_PARENTS,   FastMultipoleMethod.localData.timer);
             logTime("(LET)",      FmmLocalData.TIMER_INDEX_LET,       FastMultipoleMethod.localData.timer);

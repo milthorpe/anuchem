@@ -25,8 +25,8 @@ public class FmmLocalData {
     public static val TIMER_INDEX_UPWARD:Int = 2;
     public static val TIMER_INDEX_DOWNWARD:Int = 3;
     public static val TIMER_INDEX_TREE:Int = 4;
-    public static val TIMER_INDEX_ASSIGN:Int = 5;
-    public static val TIMER_INDEX_REDUCE:Int = 6;
+    public static val TIMER_INDEX_SORT:Int = 5;
+    public static val TIMER_INDEX_BALANCE:Int = 6;
     public static val TIMER_INDEX_REDIST:Int = 7;
     public static val TIMER_INDEX_PARENTS:Int = 8;
     public static val TIMER_INDEX_LET:Int = 9;

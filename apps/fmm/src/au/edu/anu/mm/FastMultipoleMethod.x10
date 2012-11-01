@@ -196,8 +196,8 @@ public class FastMultipoleMethod {
                 mseForce += (atomI.force - directForce).magnitude();
                 normForce += directForce.magnitude();
                 
-                val boxCentre = leafOctant.getCentre(size);
-                val locationWithinBox = atomI.centre.vector(boxCentre);
+                //val boxCentre = leafOctant.getCentre(size);
+                //val locationWithinBox = atomI.centre.vector(boxCentre);
                 //val potential = leafOctant.localExp.calculatePotentialAndForces(atomI, locationWithinBox, plm); // TODO fix
 
                 //val direct = directPotential / atomI.charge;
@@ -208,6 +208,7 @@ public class FastMultipoleMethod {
             }
         }
         //Console.OUT.printf("RMS relative potential err: %.2G\n", Math.sqrt(msePot/normPot));
+        Console.OUT.println("mseForce = " +mseForce + " normForce = " + normForce);
         Console.OUT.printf("RMS relative force err: %.2G\n", Math.sqrt(mseForce/normForce));
     }
 
@@ -266,9 +267,7 @@ public class FastMultipoleMethod {
         val uListEstimate = LeafOctant.estimateUListCost(density);
         val vListEstimate = Octant.estimateVListCost(numTerms);
 
-        //Console.OUT.println("u-List estimate at " + here + " = " + uListEstimate);
         estimate(FmmLocalData.ESTIMATE_P2P) = uListEstimate;
-        //Console.OUT.println("v-List estimate at " + here + " = " + vListEstimate);
         estimate(FmmLocalData.ESTIMATE_M2L) = vListEstimate;
 
         Team.WORLD.allreduce[Long](here.id, estimate, 0, estimate, 0, estimate.size, Team.ADD);
@@ -339,9 +338,24 @@ public class FastMultipoleMethod {
      * @param localAtoms an unsorted array of atoms with leaf octant Morton IDs
      */
     private def assignAtomsToOctantsLocal(localAtoms:Rail[Pair[UInt,MMAtom]]) {
+
+        val octantAtoms = sortAtoms(localAtoms);
+
+        determineLoadBalanceLocal(octantAtoms);
+
+        redistributeOctantsLocal(octantAtoms);
+
+        // TODO coarsening and balancing
+
+        createParentOctantsLocal();
+
+        createLET();
+    }
+
+    private def sortAtoms(localAtoms:Rail[Pair[UInt,MMAtom]]) {
         val local = FastMultipoleMethod.localData;
         val timer = local.timer;
-        timer.start(FmmLocalData.TIMER_INDEX_ASSIGN);
+        timer.start(FmmLocalData.TIMER_INDEX_SORT);
         local.octants.clear();
 
         val numBoxes = Math.pow(8.0, dMax) as Int;
@@ -388,9 +402,33 @@ public class FastMultipoleMethod {
             }
         }
 
-        timer.stop(FmmLocalData.TIMER_INDEX_ASSIGN);
+        timer.stop(FmmLocalData.TIMER_INDEX_SORT);
 
-        timer.start(FmmLocalData.TIMER_INDEX_REDUCE);
+        return octantAtoms;
+    }
+
+    private def allReduceOctantLoads(myOctantLoads:Rail[Long]) {
+        //Team.WORLD.allreduce[Int](here.id, octantLoads, 0, octantLoads, 0, maxLeafOctants, Team.ADD);
+        Team.WORLD.barrier(here.id);
+
+        if (here == Place.FIRST_PLACE) {
+            for (p in 1..(Place.MAX_PLACES-1)) {
+                val pLoads = at(Place(p)) FastMultipoleMethod.localData.octantLoads;
+                myOctantLoads.map(myOctantLoads, pLoads, (x:Long,y:Long)=>x+y);
+            }
+            finish for(p in 1..(Place.MAX_PLACES-1)) at(Place(p)) async {
+                Array.copy[Long](myOctantLoads, FastMultipoleMethod.localData.octantLoads);
+            }
+
+        }
+
+        Team.WORLD.barrier(here.id);
+    }
+
+    private def determineLoadBalanceLocal(octantAtoms:ArrayList[Pair[UInt,ArrayList[MMAtom]]]) {
+        val local = FastMultipoleMethod.localData;
+        local.timer.start(FmmLocalData.TIMER_INDEX_BALANCE);
+        val octantLoads = local.octantLoads;
         octantLoads.clear();
         for(octant in octantAtoms) {
             val mortonId = octant.first as Int;
@@ -412,10 +450,7 @@ public class FastMultipoleMethod {
                       + Octant.estimateVListSize(mortonId, dMax) * vListCost;
             }
         }
-        timer.stop(FmmLocalData.TIMER_INDEX_REDUCE);
 
-        // redistribute octants
-        timer.start(FmmLocalData.TIMER_INDEX_REDIST);
         val total = octantLoads.reduce[Long]((a:Long,b:Long)=>a+b, 0L);
         val placeShare = total / Place.MAX_PLACES;
         val leftOver = total % Place.MAX_PLACES;
@@ -440,6 +475,13 @@ public class FastMultipoleMethod {
 */
         }
 
+        local.timer.stop(FmmLocalData.TIMER_INDEX_BALANCE);
+    }
+
+    private def redistributeOctantsLocal(octantAtoms:ArrayList[Pair[UInt,ArrayList[MMAtom]]]) {
+        val local = FastMultipoleMethod.localData;
+        local.timer.start(FmmLocalData.TIMER_INDEX_REDIST);
+        val firstLeafOctant = local.firstLeafOctant;
         val levelBytes = (dMax as UInt << 24);
         finish for (var destPlace:Place=here.next(); destPlace!=here && octantAtoms.size() > 0; destPlace=destPlace.next()) {
             val p = destPlace.id;
@@ -460,30 +502,7 @@ public class FastMultipoleMethod {
             if (atomsToSend.size > 0) {
                //Console.OUT.println("at " + here + " sending " + atomsToSend(0).first+" ... "+atomsToSend(atomsToSend.size-1).first+" to " + destPlace);
                at(destPlace) async {
-                    val localOctants = FastMultipoleMethod.localData.octants;
-                    atomic {
-                        for(j in 0..(atomsToSend.size-1)) {
-                            val octantPair = atomsToSend(j);
-                            val leafMortonId = octantPair.first;
-                            val mortonId = leafMortonId | (dMax as UInt << 24);
-                            val atoms = octantPair.second;
-                            var targetOctant:LeafOctant = localOctants.getOrElse(mortonId, null) as LeafOctant;
-                            if (targetOctant == null) {
-                                val octantId = OctantId.getFromMortonId(mortonId);
-                                // target octant has not yet been created at this place
-                                //Console.OUT.println("at " + here + " creating octant " + octantId.getLeafMortonId());
-                                targetOctant = new LeafOctant(octantId, numTerms, ws, dMax);
-                                targetOctant.atoms = atoms;
-                                localOctants.put(mortonId, targetOctant);
-                            } else {
-                                //Console.OUT.println("octant " + OctantId.getFromMortonId(mortonId) + " found at " + here);
-                                val targetAtoms = targetOctant.atoms;
-                                for (atom in atoms) {
-                                    targetAtoms.add(atom);
-                                }
-                            }
-                        }
-                    }
+                    addAtomsToLocalOctants(atomsToSend);
                 }
             }
         }
@@ -509,12 +528,83 @@ public class FastMultipoleMethod {
             }
             //Console.OUT.println("now at " + here + " octant " + mortonId);
         }
-        timer.stop(FmmLocalData.TIMER_INDEX_REDIST);
+        local.timer.stop(FmmLocalData.TIMER_INDEX_REDIST);
+    }
 
-        // TODO coarsening and balancing
+    /**
+     * Add atoms received from another place to the octants at this place. If
+     * any target octant does not currently exist at this place, create it.
+     */
+    private def addAtomsToLocalOctants(receivedAtoms:Rail[Pair[UInt,ArrayList[MMAtom]]]) {
+        val localOctants = FastMultipoleMethod.localData.octants;
+        atomic {
+            for(j in 0..(receivedAtoms.size-1)) {
+                val octantPair = receivedAtoms(j);
+                val leafMortonId = octantPair.first;
+                val mortonId = leafMortonId | (dMax as UInt << 24);
+                val atoms = octantPair.second;
+                var targetOctant:LeafOctant = localOctants.getOrElse(mortonId, null) as LeafOctant;
+                if (targetOctant == null) {
+                    val octantId = OctantId.getFromMortonId(mortonId);
+                    // target octant has not yet been created at this place
+                    //Console.OUT.println("at " + here + " creating octant " + octantId.getLeafMortonId());
+                    targetOctant = new LeafOctant(octantId, numTerms, ws, dMax);
+                    targetOctant.atoms = atoms;
+                    localOctants.put(mortonId, targetOctant);
+                } else {
+                    //Console.OUT.println("octant " + OctantId.getFromMortonId(mortonId) + " found at " + here);
+                    val targetAtoms = targetOctant.atoms;
+                    for (atom in atoms) {
+                        targetAtoms.add(atom);
+                    }
+                }
+            }
+        }
+    }
+
+    private def createGhostChildren(parentOctant:ParentOctant) {
+        val local = FastMultipoleMethod.localData;
+        val octantLoads = local.octantLoads;
+        val firstLeafOctant = local.firstLeafOctant;
+        val id = parentOctant.id;
+        val levelDim = (Math.pow2(dMax) / Math.pow2(id.level));
+        var i:Int = 0;
+        for (x2 in (2*id.x)..(2*id.x+1)) {
+            for (y2 in (2*id.y)..(2*id.y+1)) {
+                for (z2 in (2*id.z)..(2*id.z+1)) {
+                    val childOctantId = OctantId(x2 as UByte, y2 as UByte, z2 as UByte, id.level+1U);
+                    val anchor = childOctantId.getAnchor(dMax);
+                    var nonEmpty:Boolean = false;
+                    val size = Math.pow(8.0, (dMax / childOctantId.level - 1)) as Int;
+                    val startDescendant = anchor.getLeafMortonId() as Int;
+                    val endDescendant = startDescendant + size - 1;
+                    for (j in Math.max(firstLeafOctant(here.id+1) as Int,startDescendant)..endDescendant) {
+                        if (octantLoads(j) > 0L) {
+                            nonEmpty = true;
+                            break;
+                        }
+                    }
+                    if (nonEmpty) {
+                        // non-empty child octant is not held at this place
+                        val placeId = FastMultipoleMethod.localData.getPlaceId(anchor);
+                        if (placeId != here.id) {
+                            //Console.OUT.println("at " + here + " octant " + id + " creating ghost " + childOctantId + " held at " + placeId);
+                            parentOctant.children(i) = new GhostOctant(childOctantId, placeId);
+                       }
+                    }
+                    i++;
+                }
+            }
+        }
+    }
+
+    private def createParentOctantsLocal() {
+        val local = FastMultipoleMethod.localData;
+        val timer = local.timer;
         timer.start(FmmLocalData.TIMER_INDEX_PARENTS);
 
         // create leaf octant list
+        val octants = local.octants;
         val leafOctants = local.leafOctants;
         val octantList = new ArrayList[Octant](octants.size());
         leafOctants.clear();
@@ -542,7 +632,7 @@ public class FastMultipoleMethod {
                     var parentOctant:ParentOctant = parentOctants.getOrElse(parentId, null) as ParentOctant;
                     if (parentOctant == null) {
                         parentOctant = new ParentOctant(parentId, numTerms, ws, dMax);
-                        createGhostChildren(parentOctant, octantLoads, firstLeafOctant);
+                        createGhostChildren(parentOctant);
                         parentOctants.put(parentId, parentOctant);
                         octants.put(parentId.getMortonId(), parentOctant);
                     }
@@ -589,59 +679,6 @@ public class FastMultipoleMethod {
             //Console.OUT.println("at " + here + " top level " + octant.id + " " + octant.id.getMortonId());
         }
         timer.stop(FmmLocalData.TIMER_INDEX_PARENTS);
-
-        createLET();
-    }
-
-    private def allReduceOctantLoads(myOctantLoads:Rail[Long]) {
-        //Team.WORLD.allreduce[Int](here.id, octantLoads, 0, octantLoads, 0, maxLeafOctants, Team.ADD);
-        Team.WORLD.barrier(here.id);
-
-        if (here == Place.FIRST_PLACE) {
-            for (p in 1..(Place.MAX_PLACES-1)) {
-                val pLoads = at(Place(p)) FastMultipoleMethod.localData.octantLoads;
-                myOctantLoads.map(myOctantLoads, pLoads, (x:Long,y:Long)=>x+y);
-            }
-            finish for(p in 1..(Place.MAX_PLACES-1)) at(Place(p)) async {
-                Array.copy[Long](myOctantLoads, FastMultipoleMethod.localData.octantLoads);
-            }
-
-        }
-
-        Team.WORLD.barrier(here.id);
-    }
-
-    private def createGhostChildren(parentOctant:ParentOctant, octantLoads:Rail[Long], firstLeafOctant:Rail[UInt]) {
-        val id = parentOctant.id;
-        val levelDim = (Math.pow2(dMax) / Math.pow2(id.level));
-        var i:Int = 0;
-        for (x2 in (2*id.x)..(2*id.x+1)) {
-            for (y2 in (2*id.y)..(2*id.y+1)) {
-                for (z2 in (2*id.z)..(2*id.z+1)) {
-                    val childOctantId = OctantId(x2 as UByte, y2 as UByte, z2 as UByte, id.level+1U);
-                    val anchor = childOctantId.getAnchor(dMax);
-                    var nonEmpty:Boolean = false;
-                    val size = Math.pow(8.0, (dMax / childOctantId.level - 1)) as Int;
-                    val startDescendant = anchor.getLeafMortonId() as Int;
-                    val endDescendant = startDescendant + size - 1;
-                    for (j in Math.max(firstLeafOctant(here.id+1) as Int,startDescendant)..endDescendant) {
-                        if (octantLoads(j) > 0L) {
-                            nonEmpty = true;
-                            break;
-                        }
-                    }
-                    if (nonEmpty) {
-                        // non-empty child octant is not held at this place
-                        val placeId = FastMultipoleMethod.localData.getPlaceId(anchor);
-                        if (placeId != here.id) {
-                            //Console.OUT.println("at " + here + " octant " + id + " creating ghost " + childOctantId + " held at " + placeId);
-                            parentOctant.children(i) = new GhostOctant(childOctantId, placeId);
-                       }
-                    }
-                    i++;
-                }
-            }
-        }
     }
 
     /**
