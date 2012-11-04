@@ -61,9 +61,9 @@
 
 	<target name="test-pumjarasaayani" depends="pumjarasaayani"
     description="Test the Pumja Rasaayani app code">
-        <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/apps/pumjarasaayani/bin">
+        <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/apps/pumjarasaayani">
             <arg value="-c"/>
-            <arg value="./pumjarasaayani ../test/H2O-321g.inp"/>
+            <arg value="bin/pumjarasaayani test/H2O-321g.inp"/>
         </exec>
     </target>
 
