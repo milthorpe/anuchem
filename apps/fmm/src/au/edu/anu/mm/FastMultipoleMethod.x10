@@ -164,51 +164,82 @@ public class FastMultipoleMethod {
         var normForce:Double = 0.0;
         var msePot:Double = 0.0;
         var normPot:Double = 0.0;
+        var minForce:Double = Double.MAX_VALUE;
+        var maxForce:Double = 0.0;
+        var minPot:Double = Double.MAX_VALUE;
+        var maxPot:Double = 0.0;
+
         for (leafOctant in leafOctants) {
             val atoms = leafOctant.atoms;
             for (atomI in atoms) {
+                val force = atomI.force; // because force is overwritten by calculatePotentialAndForces
                 var directForce:Vector3d=Vector3d.NULL;
-                //var directPotential:Double = 0.0;
+                var directPotential:Double = 0.0;
+
+                val boxCentre = leafOctant.getCentre(size);
+                val locationWithinBox = atomI.centre.vector(boxCentre);
+                var potential:Double = leafOctant.localExp.calculatePotentialAndForces(atomI, locationWithinBox, plm);
+
+                var nonWsPotential:Double = 0.0;
                 for (atomJ in atoms) {
                     if (atomI != atomJ) {
                         val rVec = atomJ.centre - atomI.centre;
                         val invR2 = 1.0 / rVec.lengthSquared();
                         val invR = Math.sqrt(invR2);
-                        val e = atomI.charge * atomJ.charge * invR2;
-                        //directPotential += e;
-                        val pairForce = e * invR * rVec;
+                        val e = atomI.charge * atomJ.charge * invR;
+                        directPotential += e;
+                        potential += e;
+                        nonWsPotential += e;
+                        val pairForce = e * invR2 * rVec;
                         directForce += pairForce; 
                     }
                 }
+
                 for (leafOctant2 in leafOctants) {
                     if (leafOctant2 != leafOctant) {
                         for (atomJ in leafOctant2.atoms) {
                             val rVec = atomJ.centre - atomI.centre;
                             val invR2 = 1.0 / rVec.lengthSquared();
                             val invR = Math.sqrt(invR2);
-                            val e = atomI.charge * atomJ.charge * invR2;
-                            //directPotential += e;
-                            val pairForce = e * invR * rVec;
+                            val e = atomI.charge * atomJ.charge * invR;
+                            directPotential += e;
+                            val pairForce = e * invR2 * rVec;
                             directForce += pairForce;
+                            if (Math.abs(leafOctant2.id.x - leafOctant.id.x as Int) <= 1
+                             && Math.abs(leafOctant2.id.y - leafOctant.id.y as Int) <= 1
+                             && Math.abs(leafOctant2.id.z - leafOctant.id.z as Int) <= 1) {
+                                potential += e;
+                                nonWsPotential += e;
+                            }
                         }
                     }
                 }
-                mseForce += (atomI.force - directForce).magnitude();
-                normForce += directForce.magnitude();
-                
-                //val boxCentre = leafOctant.getCentre(size);
-                //val locationWithinBox = atomI.centre.vector(boxCentre);
-                //val potential = leafOctant.localExp.calculatePotentialAndForces(atomI, locationWithinBox, plm); // TODO fix
+                //Console.OUT.println("force = " + force + " directForce = "  + directForce);
 
-                //val direct = directPotential / atomI.charge;
-                //val fmm = potential / atomI.charge;
-                //msePot += (fmm - direct) / (fmm - direct);
-                //normPot += direct * direct;
-                //Console.OUT.println(atomI.symbol + " force = " + atomI.force + " magnitude " + atomI.force.length() + " forceError = " + forceError);
+                val forceMag = directForce.magnitude();
+                minForce = Math.min(forceMag, minForce);
+                maxForce = Math.max(forceMag, maxForce); 
+                mseForce += (force - directForce).magnitude();
+                normForce += forceMag;
+
+                //Console.OUT.println("potential = " + potential + " directPotential = "  + directPotential);
+
+                val direct = directPotential / atomI.charge;
+                val fmm = potential / atomI.charge;
+
+                minPot = Math.min(direct, minPot);
+                maxPot = Math.max(direct, maxPot); 
+                msePot += (fmm - direct) * (fmm - direct);
+                normPot += direct * direct;
             }
         }
-        //Console.OUT.printf("RMS relative potential err: %.2G\n", Math.sqrt(msePot/normPot));
-        Console.OUT.println("mseForce = " +mseForce + " normForce = " + normForce);
+
+        Console.OUT.println("minPot = " + minPot + " maxPot = " + maxPot);
+        Console.OUT.println("msePot = " + msePot + " normPot = " + normPot);
+        Console.OUT.printf("RMS relative potential err: %.2G\n", Math.sqrt(msePot/normPot));
+
+        Console.OUT.println("minForce = " + minForce + " maxForce = " + maxForce);
+        Console.OUT.println("mseForce = " + mseForce + " normForce = " + normForce);
         Console.OUT.printf("RMS relative force err: %.2G\n", Math.sqrt(mseForce/normForce));
     }
 
