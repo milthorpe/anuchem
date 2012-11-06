@@ -53,8 +53,8 @@ public struct Polar3d {
         val cosPhi = Math.cos(phi);
         val sinPhi = Math.sin(phi);
 
-        return Vector3d(dr * sinTheta * cosPhi + dt * cosTheta * cosPhi + dp * sinPhi, 
-                        dr * sinTheta * sinPhi + dt * cosTheta * sinPhi - dp * cosPhi,
+        return Vector3d(dr * sinTheta * cosPhi + dt * cosTheta * cosPhi - dp * sinPhi, 
+                        dr * sinTheta * sinPhi + dt * cosTheta * sinPhi + dp * cosPhi,
                         dr * cosTheta          - dt * sinTheta
                       );
     }

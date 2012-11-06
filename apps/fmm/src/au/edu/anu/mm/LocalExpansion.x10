@@ -240,7 +240,7 @@ public class LocalExpansion extends Expansion {
                 val Plm1 = (m<l) ? pplm(l,m+1) : 0.0;
                 val theta_lm = F_lm * 0.5 * q * rfacPrev * ((l-m+1)*(l+m) * pplm(l,m-1) - Plm1);
                 dt += 2.0*(Mlm.re * theta_lm.re) - 2.0*(Mlm.im * theta_lm.im); // avoids conjugate for mirror terms m < 0
-                val phi_lm = Complex.I * F_lm * 0.5 * q * rfacPrev * ((l-m+1)*(l-m+2) * pplm(l+1,m-1) + pplm(l+1,m+1));
+                val phi_lm = Complex.I * F_lm * -0.5 * q * rfacPrev * ((l-m+1)*(l-m+2) * pplm(l+1,m-1) + pplm(l+1,m+1));
                 dp += 2.0*(Mlm.re * phi_lm.re) - 2.0*(Mlm.im * phi_lm.im); // avoids conjugate for mirror terms m < 0
     	    }
             rfacPrev = rfac;
