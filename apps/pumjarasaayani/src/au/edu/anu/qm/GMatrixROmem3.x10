@@ -141,7 +141,7 @@ public class GMatrixROmem3 extends DenseMatrix{self.M==self.N} {
                         var aaFunc:ContractedGaussian=iaFunc,bbFunc:ContractedGaussian=jbFunc;
                         val aa=iaFunc.getTotalAngularMomentum(); val bb=jbFunc.getTotalAngularMomentum();                       
                         val maxbraa = (aa+1)*(aa+2)/2; val maxbrab = (bb+1)*(bb+2)/2;                                          
-                        if (aa>bb || (aa==bb && mu>=nu)) {
+                        if (aa>bb || (aa==bb && mu>=nu)) { // Careful this is a tricky condition                            
                             val aang = aaFunc.getTotalAngularMomentum(); val bang = bbFunc.getTotalAngularMomentum();
                             val aPoint = aaFunc.origin; val bPoint = bbFunc.origin; 
                             val zetaA = aaFunc.exponents; val zetaB = bbFunc.exponents; 
@@ -159,6 +159,7 @@ public class GMatrixROmem3 extends DenseMatrix{self.M==self.N} {
                                 ind++;
                             }               
                         }
+ 
                         if (b!=noOfAtoms-1 || j!=nbFunc-1) nu+=maxbrab;
                         else {mu+=maxbraa; nu=0;}
                     }    
@@ -247,12 +248,6 @@ public class GMatrixROmem3 extends DenseMatrix{self.M==self.N} {
             }
         }
 
-        for (spInd in 0..(numSigShellPairs-1)) {
-            val sp=shellPairs(spInd);
-            if (sp.mu!=sp.nu) for (var tmu:Int=sp.mu; tmu<sp.mu+sp.maxbraa; tmu++) for (var tnu:Int=sp.nu; tnu<sp.nu+sp.maxbrab; tnu++) 
-                jMatrix(tnu,tmu) = jMatrix(tmu,tnu);
-        }      
-        
         @Ifdef("__PAPI__"){
             papi.printFlops();
             papi.printMemoryOps();
@@ -265,8 +260,17 @@ public class GMatrixROmem3 extends DenseMatrix{self.M==self.N} {
             Console.OUT.printf("  EK = %.10f a.u.\n", -0.25*eK/jd.roZ);
             Console.OUT.printf("  Time INT = %.2f s J = %.2f s K = %.2f s\n", tINT, tJ, tK);
         }
-        // Form G matrix
-        jMatrix.d.map(this.d, kMatrix.d, (j:Double,k:Double)=>(j-k)); 
+
+        // Fix lower half of J (see the definition of shellPairs)
+        for (spInd in 0..(numSigShellPairs-1)) {
+            val sp=shellPairs(spInd);
+            if (sp.mu>sp.nu) for (var tmu:Int=sp.mu; tmu<sp.mu+sp.maxbraa; tmu++) for (var tnu:Int=sp.nu; tnu<sp.nu+sp.maxbrab; tnu++) 
+                jMatrix(tnu,tmu) = jMatrix(tmu,tnu);
+        }
+        // Use the lower-half of J and K to form G
+        for (var tmu:Int=0; tmu<N; tmu++) for (var tnu:Int=tmu; tnu<N; tnu++) 
+            this(tnu,tmu)=this(tmu,tnu)=jMatrix(tmu,tnu)-kMatrix(tmu,tnu);
+
         timer.stop(TIMER_TOTAL);
         Console.OUT.printf("    Time to construct GMatrix with RO: %.3g seconds\n", (timer.last(TIMER_TOTAL) as Double) / 1e9);
     }
