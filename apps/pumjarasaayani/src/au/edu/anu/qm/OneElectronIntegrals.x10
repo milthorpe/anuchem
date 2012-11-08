@@ -47,7 +47,7 @@ public class OneElectronIntegrals(numBasisFunctions:Int) {
                 overlap(i,j)=r.readDouble();
                 hCore(i,j)=r.readDouble();
             }
-            Console.OUT.printf("1e Ints read from a file.\n");
+            Console.OUT.println("1e Ints read from "+inpFile+".1int (Abort the calculation and delete the file if geometry/basis set has changed!)");
         } /*catch (eof:x10.io.EOFException) {           
         }*/ catch (ioe:x10.io.IOException) {
             Console.ERR.println(ioe);
@@ -59,6 +59,7 @@ public class OneElectronIntegrals(numBasisFunctions:Int) {
                 w.writeDouble(hCore(i,j));
             }
             w.close();
+            Console.OUT.println("1e Ints saved to "+inpFile+".1int (Delete the file if geometry/basis set has changed!)");
         } finally {
             if (r!=null) r.close();
         }
