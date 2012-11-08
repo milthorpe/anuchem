@@ -72,7 +72,7 @@ public class PumjaRasaayani {
         
         timer.start(2);
         Console.OUT.printf("Computing 1e integrals...\n");
-        val oneE = new OneElectronIntegrals(bsf, mol);
+        val oneE = new OneElectronIntegrals(bsf, mol, inputFileName);
         timer.stop(2);
         Console.OUT.printf("\tTime for computing 1E integrals: %.3g seconds\n", (timer.total(2) as Double) / 1e9);
         val hfscf = new HartreeFockSCFMethod(mol, oneE, bsf);
@@ -96,7 +96,7 @@ public class PumjaRasaayani {
         Console.OUT.printf("\tTime for setting up basis functions: %.3g milliseconds\n\n", (timer.total(1) as Double) / 1e9);
 
         timer.start(2);
-        val oneE = new OneElectronIntegrals(bsf, fragment);
+        val oneE = new OneElectronIntegrals(bsf, fragment, inputFileName);
         Console.OUT.println("\nComputed one-electron integrals.");
         timer.stop(2);
         Console.OUT.printf("\tTime for computing 1E integrals: %.3g seconds\n\n", (timer.total(2) as Double) / 1e9);

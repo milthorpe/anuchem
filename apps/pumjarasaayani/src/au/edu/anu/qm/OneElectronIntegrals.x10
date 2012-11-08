@@ -12,6 +12,12 @@ package au.edu.anu.qm;
 import au.edu.anu.chem.AtomInfo;
 import au.edu.anu.chem.Molecule;
 
+import x10.io.File;
+import x10.io.FileWriter;
+import x10.io.FileReader;
+import x10.io.OutputStreamWriter;
+
+
 /**
  * Evaluate 1E integrals
  *
@@ -23,7 +29,7 @@ public class OneElectronIntegrals(numBasisFunctions:Int) {
     val overlap:Overlap{self.N==numBasisFunctions,self.M==numBasisFunctions};
     val roZ:Double;
   
-    public def this(bfs:BasisFunctions, mol:Molecule[QMAtom]) {
+    public def this(bfs:BasisFunctions, mol:Molecule[QMAtom], inpFile:String) {
         property(bfs.getBasisFunctions().size());
         this.basisFunctions = bfs;
 
@@ -32,8 +38,31 @@ public class OneElectronIntegrals(numBasisFunctions:Int) {
 
         val jd = JobDefaults.getInstance();
         this.roZ=jd.roZ;
+        
+        val file = new File(inpFile+".1int");
+        var r:FileReader=null;
+        try {
+            r=new FileReader(file);
+            for([i, j] in 0..(hCore.M-1)*0..(hCore.N-1)) {
+                overlap(i,j)=r.readDouble();
+                hCore(i,j)=r.readDouble();
+            }
+            Console.OUT.printf("1e Ints read from a file.\n");
+        } /*catch (eof:x10.io.EOFException) {           
+        }*/ catch (ioe:x10.io.IOException) {
+            Console.ERR.println(ioe);
+            Console.OUT.printf("Calculating 1e Ints.\n");
+            compute1E(mol); 
+            val w = new x10.io.FileWriter(file);
+            for([i, j] in 0..(hCore.M-1)*0..(hCore.N-1)) {
+                w.writeDouble(overlap(i,j));
+                w.writeDouble(hCore(i,j));
+            }
+            w.close();
+        } finally {
+            if (r!=null) r.close();
+        }
 
-        compute1E(mol);
     } 
 
     public def getHCore() = hCore;
