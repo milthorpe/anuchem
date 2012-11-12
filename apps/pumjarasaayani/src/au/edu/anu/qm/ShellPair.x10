@@ -33,6 +33,8 @@ public struct ShellPair {
     public val dconB : Int; // Degree of contraction on b
     public val mu : Int;
     public val nu : Int;
+    public val mu2 : Int;
+    public val nu2 : Int;
     public val maxbraa : Int;
     public val maxbrab : Int;
     public val maxL : Rail[Int];
@@ -55,6 +57,8 @@ public struct ShellPair {
         this.nu=nu;
         this.maxbraa=(a+1)*(a+2)/2;
         this.maxbrab=(b+1)*(b+2)/2;
+        this.mu2=mu+maxbraa-1;
+        this.nu2=nu+maxbrab-1;
         this.maxL=maxL;
         this.contrib = contrib;
     }
