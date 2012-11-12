@@ -48,7 +48,7 @@ public class HartreeFockSCFMethod extends SCFMethod {
         val noOfOccupancies = noOfElectrons / 2;
 
         val nuclearEnergy = getNuclearEnergy();
-        Console.OUT.printf("Nuclear repulsion energy = %.10g a.u.\n", nuclearEnergy);
+        Console.OUT.printf("Nuclear repulsion energy = %.10f a.u.\n", nuclearEnergy/roZ);
 
         /*val noOfBasisFunctions:Long = bfs.getBasisFunctions().size();
         val noOfIntegrals:Long = noOfBasisFunctions * (noOfBasisFunctions + 1)
