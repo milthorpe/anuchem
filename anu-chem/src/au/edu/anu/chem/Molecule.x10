@@ -137,13 +137,13 @@ public class Molecule[T]{T <: Atom} {
             var rad1:Double=0.,rad2:Double=0.,dx:Double=0.,dy:Double=0.,dz:Double=0.;
             
             for(atm:T in atomList) {
-                val atmvec= Vector3d(atm.centre.i+x,atm.centre.j+y,atm.centre.k+z);
+                val atmvec=Vector3d(atm.centre.i+x,atm.centre.j+y,atm.centre.k+z);
                 val distance=atmvec.magnitude()+ai.getVdwRadius(atm)/roZ;
                 if (rad1<distance) { 
                     rad1=distance;
-                    dx= -atm.centre.i/atmvec.magnitude()*step;
-                    dy= -atm.centre.j/atmvec.magnitude()*step;
-                    dz= -atm.centre.k/atmvec.magnitude()*step;
+                    dx=-atm.centre.i/atmvec.magnitude()*step;
+                    dy=-atm.centre.j/atmvec.magnitude()*step;
+                    dz=-atm.centre.k/atmvec.magnitude()*step;
                 }
             }
             for(atm:T in atomList) {

@@ -45,7 +45,7 @@ public class OneElectronIntegrals(numBasisFunctions:Int) {
             r=new FileReader(file);
             for([i, j] in 0..(hCore.M-1)*0..(hCore.N-1)) {
                 overlap(i,j)=r.readDouble();
-                hCore(i,j)=r.readDouble();
+                hCore(i,j)=r.readDouble()*roZ;
             }
             Console.OUT.println("1e Ints read from "+inpFile+".1int (Abort the calculation and delete the file if geometry/basis set has changed!)");
         }   catch (ioe:x10.io.IOException) { // include catch (eof:x10.io.EOFException)
@@ -55,7 +55,7 @@ public class OneElectronIntegrals(numBasisFunctions:Int) {
             val w = new x10.io.FileWriter(file);
             for([i, j] in 0..(hCore.M-1)*0..(hCore.N-1)) {
                 w.writeDouble(overlap(i,j));
-                w.writeDouble(hCore(i,j));
+                w.writeDouble(hCore(i,j)/roZ);
             }
             w.close();
             Console.OUT.println("1e Ints saved to "+inpFile+".1int (Delete the file if geometry/basis set has changed!)");
