@@ -1,7 +1,7 @@
 5water
 basis cc-pVQZ
 units 0.5291772109217
-RO_Z 3.0
+RO_Z 2.
 molecule
           O       -0.571270    2.322980   -0.003174
           O        2.038411    1.261129   -0.102281
@@ -23,7 +23,7 @@ scf_max 0
 guess core
 use_RO 1
 RO_N 300
-RO_L 50
+RO_L 15
 RO_thresh 1e-6
 thresh 1e-14
 omega 0.3

@@ -100,10 +100,6 @@ public class PumjaRasaayani {
         Console.OUT.println("\nComputed one-electron integrals.");
         timer.stop(2);
         Console.OUT.printf("\tTime for computing 1E integrals: %.3g seconds\n\n", (timer.total(2) as Double) / 1e9);
-        // Console.OUT.println("HCore");
-        // Console.OUT.println(oneE.getHCore());
-        // Console.OUT.println("Overlap");
-        // Console.OUT.println(oneE.getOverlap());
 
         val hfscf = new HartreeFockSCFMethod(fragment, oneE, bsf);
         hfscf.scf();

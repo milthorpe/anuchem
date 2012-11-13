@@ -48,8 +48,7 @@ public class OneElectronIntegrals(numBasisFunctions:Int) {
                 hCore(i,j)=r.readDouble();
             }
             Console.OUT.println("1e Ints read from "+inpFile+".1int (Abort the calculation and delete the file if geometry/basis set has changed!)");
-        } /*catch (eof:x10.io.EOFException) {           
-        }*/ catch (ioe:x10.io.IOException) {
+        }   catch (ioe:x10.io.IOException) { // include catch (eof:x10.io.EOFException)
             Console.ERR.println(ioe);
             Console.OUT.printf("Calculating 1e Ints.\n");
             compute1E(mol); 

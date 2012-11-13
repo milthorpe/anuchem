@@ -152,8 +152,8 @@ public class HartreeFockSCFMethod extends SCFMethod {
             val eOne = .5*density.clone().mult(density, hCore).trace();
             val eTwo = .5*density.clone().mult(density, fock).trace();           
             energy = eOne + eTwo + nuclearEnergy;
-
-            Console.OUT.printf("Cycle #%i Total energy = %.6f a.u. (scale factor = %.10f)", scfIteration, energy/roZ,roZ);
+            @Ifdef("__DEBUG__") { Console.OUT.printf("eOne = %.10f eTwo= %.10f\n",eOne/roZ,eTwo/roZ);}
+            Console.OUT.printf("Cycle #%i Total energy = %.10f\n", scfIteration, energy/roZ);
             if (scfIteration>0) {
                 Console.OUT.printf(" (%.6f)", (energy-oldEnergy)/roZ);
             } else {

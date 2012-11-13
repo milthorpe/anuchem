@@ -70,10 +70,10 @@ public class GMatrixROmem3 extends DenseMatrix{self.M==self.N} {
             papi.countFlops();
             papi.countMemoryOps(); 
         }
-
+        @Ifdef("__DEBUG__") { Console.OUT.printf("roThresh=%e\n",roThresh); } 
         val jd = JobDefaults.getInstance();
         val l_n = new Rail[Int](jd.roN+3);
-        aux = new Integral_Pack(jd.roN,jd.roL,omega,roThresh,jd.rad);          
+        aux = new Integral_Pack(jd.roN,jd.roL,omega,roThresh,jd.rad,jd.roZ);                 
         if (omega>0.) { // long-range Ewald operator
             aux.getNL(l_n);
             roN=roNK=l_n(0);

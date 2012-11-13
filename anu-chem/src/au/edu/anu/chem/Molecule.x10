@@ -127,13 +127,13 @@ public class Molecule[T]{T <: Atom} {
     }
 
     public def getCentreOfVDW(roZ:Double):Point3d {
-        var step:Double = 0.1; // Atomic Unit
+        var step:Double = 0.1/roZ; // Atomic Unit
         val initialguess =  centreOfMass();
         val ai = AtomInfo.getInstance();
         var x:Double = -initialguess.i, y:Double = -initialguess.j, z:Double = -initialguess.k;
         var isConverged:Boolean=false;
 
-        while (isConverged==false || step>.0001) {
+        while (isConverged==false || step>.0001/roZ) {
             var rad1:Double=0.,rad2:Double=0.,dx:Double=0.,dy:Double=0.,dz:Double=0.;
             
             for(atm:T in atomList) {
@@ -168,7 +168,7 @@ public class Molecule[T]{T <: Atom} {
         // TODO use different method for molCentre according to input file specification.
         val molCentre = getCentreOfVDW(roZ); //getCentreOfNuclearCharge();
         val translation = Vector3d(-molCentre.i, -molCentre.j, -molCentre.k);
-        if (translation.magnitude() > 1.0e-5) { // generally geometry files contain 3 decimal places
+        if (translation.magnitude() > 1.0e-5/roZ) { // generally geometry files contain 3 decimal places
             Console.OUT.printf("\ntranslated molecule by [%.4g, %.4g, %.4g]\n\n", translation.i, translation.j, translation.k);
         }
         for(atm:T in atomList) {

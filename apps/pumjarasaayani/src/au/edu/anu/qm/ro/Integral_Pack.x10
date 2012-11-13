@@ -27,7 +27,7 @@ import x10x.vector.Point3d;
 public class Integral_Pack {
 
     //@Native("c++","(#this)->Integral_Pack->_make((#1),(#2),(#3),(#4),(#5),(#6)->raw().raw())") // doesn't work
-    public native def this(N:Int,L:Int,Type:Double,roThresh:Double,rad:Double);
+    public native def this(N:Int,L:Int,Type:Double,roThresh:Double,rad:Double,roZ:Double);
 
 
     /**
