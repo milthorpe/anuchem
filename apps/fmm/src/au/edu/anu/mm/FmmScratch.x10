@@ -17,12 +17,17 @@ package au.edu.anu.mm;
 public class FmmScratch {
     var exp:MultipoleExpansion;
     var array:Rail[Complex];
+
+    /** 
+     * Associated Legendre polynomial scratch for use in L2P calculations.
+     * Must have p+1 terms for gradient calculation.
+     */
     var plm:AssociatedLegendrePolynomial;
 
     public def this(numTerms:Int) {
         exp = new MultipoleExpansion(numTerms);
         array = new Array[Complex](numTerms+1);
-        plm = new AssociatedLegendrePolynomial(numTerms);
+        plm = new AssociatedLegendrePolynomial(numTerms+1); // p+1 for gradient calculation
     }
 
     private static val store:Rail[FmmScratch] = new Rail[FmmScratch](Runtime.MAX_THREADS);

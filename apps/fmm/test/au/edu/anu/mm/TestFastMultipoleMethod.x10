@@ -117,14 +117,14 @@ public class TestFastMultipoleMethod extends TestElectrostatic {
         papi.start();
 }
         val energy = fmm.calculateEnergy();
-
+/*
         finish ateach(place in Dist.makeUnique()) {
-            for (i in 1..69) {
+            for (i in 1..9) {
                 fmm.reassignAtoms(i);
-                //fmm.calculateEnergyLocal();
+                fmm.calculateEnergyLocal();
             }
       }
-
+*/
 @Ifdef("__PAPI__")
 {
         papi.stop();

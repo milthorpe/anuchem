@@ -44,7 +44,7 @@ public struct Polar3d {
      * @param dr (d/d r)
      * @param dt (1/r * d/d theta)
      * @param dp (1/r sin theta * d / d phi)
-     * @see Kabadshow (2006). "The Fast Multipole Method - Alternative Gradient Algorithm and Parallelization". PhD thesis, Forschungszentrum Juelich
+     * @see Kabadshow (2006). "The Fast Multipole Method - Alternative Gradient Algorithm and Parallelization". PhD thesis, Forschungszentrum Juelich. Section 3.2.
      * @eturns the gradient vector in polar coordinates
      */
     public def getGradientVector(dr:Double, dt:Double, dp:Double) {
