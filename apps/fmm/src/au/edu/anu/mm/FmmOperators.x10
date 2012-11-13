@@ -74,20 +74,20 @@ class FmmOperators {
         return wignerA;
     }
 
-    private def precomputeWignerC(numTerms : Int) {
-        val wignerB = new Array[Rail[Rail[Array[Double](2){rect}]]]((0..1)*(0..1)*(0..1));
+    private def precomputeWignerB(numTerms : Int, ws : Int) {
+        val wignerB = new Array[Rail[Rail[Array[Double](2){rect}]]]((-(2*ws+1))..(2*ws+1) * (-(2*ws+1))..(2*ws+1) * (-(2*ws+1))..(2*ws+1));
         for ([i,j,k] in wignerB) {
-		    val theta = Polar3d.getPolar3d( Vector3d(i*2-1,j*2-1,k*2-1) ).theta;
-	        wignerB(i, j, k) = WignerRotationMatrix.getCCollection(theta, numTerms);
+            val theta = Polar3d.getPolar3d ( Vector3d(i, j, k) ).theta;
+	        wignerB(i, j, k) = WignerRotationMatrix.getBCollection(theta, numTerms);
         }
         return wignerB;
     }
 
-    private def precomputeWignerB(numTerms : Int, ws : Int) {
-        val wignerC = new Array[Rail[Rail[Array[Double](2){rect}]]]((-(2*ws+1))..(2*ws+1) * (-(2*ws+1))..(2*ws+1) * (-(2*ws+1))..(2*ws+1));
+    private def precomputeWignerC(numTerms : Int) {
+        val wignerC = new Array[Rail[Rail[Array[Double](2){rect}]]]((0..1)*(0..1)*(0..1));
         for ([i,j,k] in wignerC) {
-            val theta = Polar3d.getPolar3d ( Vector3d(i, j, k) ).theta;
-	        wignerC(i, j, k) = WignerRotationMatrix.getBCollection(theta, numTerms);
+		    val theta = Polar3d.getPolar3d( Vector3d(i*2-1,j*2-1,k*2-1) ).theta;
+	        wignerC(i, j, k) = WignerRotationMatrix.getCCollection(theta, numTerms);
         }
         return wignerC;
     }

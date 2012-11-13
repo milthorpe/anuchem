@@ -10,8 +10,6 @@
  */
 package au.edu.anu.mm;
 
-import x10.array.TriangularRegion;
-
 import x10.compiler.Inline;
 import x10.util.StringBuilder;
 

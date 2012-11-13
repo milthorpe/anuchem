@@ -204,6 +204,7 @@ public class LocalExpansion extends Expansion {
      * @param v the vector from the box centre to the atom centre
      * @param plm a scratch space in which to store the assoc. Legendre polynomial for the atom centre
      * @return the potential due to distant particles
+     * @see Kabadshow (2006). "The Fast Multipole Method - Alternative Gradient Algorithm and Parallelization". PhD thesis, Forschungszentrum Juelich.  Section 3.2.1
      */
     public def calculatePotentialAndForces(atom:MMAtom, v:Vector3d, pplm:AssociatedLegendrePolynomial):Double {
         val v_pole = Polar3d.getPolar3d(v);

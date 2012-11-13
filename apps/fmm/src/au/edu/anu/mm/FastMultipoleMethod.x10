@@ -216,10 +216,10 @@ public class FastMultipoleMethod {
                 }
                 //Console.OUT.println("force = " + force + " directForce = "  + directForce);
 
-                val forceMag = directForce.magnitude();
+                val forceMag = directForce.lengthSquared();
                 minForce = Math.min(forceMag, minForce);
                 maxForce = Math.max(forceMag, maxForce); 
-                mseForce += (force - directForce).magnitude();
+                mseForce += (force - directForce).lengthSquared();
                 normForce += forceMag;
 
                 //Console.OUT.println("potential = " + potential + " directPotential = "  + directPotential);
@@ -234,13 +234,13 @@ public class FastMultipoleMethod {
             }
         }
 
-        Console.OUT.println("minPot = " + minPot + " maxPot = " + maxPot);
-        Console.OUT.println("msePot = " + msePot + " normPot = " + normPot);
-        Console.OUT.printf("RMS relative potential err: %.2G\n", Math.sqrt(msePot/normPot));
+        //Console.OUT.println("minPot = " + minPot + " maxPot = " + maxPot);
+        //Console.OUT.println("msePot = " + msePot + " normPot = " + normPot);
+        Console.OUT.printf("RMS relative potential err: %.1E\n", Math.sqrt(msePot/normPot));
 
-        Console.OUT.println("minForce = " + minForce + " maxForce = " + maxForce);
-        Console.OUT.println("mseForce = " + mseForce + " normForce = " + normForce);
-        Console.OUT.printf("RMS relative force err: %.2G\n", Math.sqrt(mseForce/normForce));
+        //Console.OUT.println("minForce = " + minForce + " maxForce = " + maxForce);
+        //Console.OUT.println("mseForce = " + mseForce + " normForce = " + normForce);
+        Console.OUT.printf("RMS relative force err: %.1E\n", Math.sqrt(mseForce/normForce));
     }
 
     protected def upwardPass() {

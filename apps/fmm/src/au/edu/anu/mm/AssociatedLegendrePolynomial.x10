@@ -11,6 +11,7 @@
 package au.edu.anu.mm;
 
 import x10.compiler.Inline;
+import x10.util.StringBuilder;
 
 /**
  * This class calculates associated Legendre polynomials.
@@ -117,4 +118,18 @@ public class AssociatedLegendrePolynomial {
 		}
 		return Plm;
 	}
+
+    /**
+     * @return a string representation of this polynomial.  does not include terms for m<0
+     */
+    public def toString() : String {
+        val s = new StringBuilder();
+        for (i in 0..p) {
+            for (j in 0..i) {
+		        s.add("" + this(i,j) + " ");
+            }
+            s.add("\n");
+	    }
+        return s.toString();
+    }
 }
