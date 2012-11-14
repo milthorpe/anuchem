@@ -100,7 +100,7 @@ public class GMatrixROmem3 extends DenseMatrix{self.M==self.N} {
         @Ifdef("__DEBUG__") { Console.OUT.printf("GMatrixROmem3.x10 Memory O(N^2) allocated sucessfully...\n"); }
 
         auxIntMat = new DenseMatrix(N*roK,N);
-        halfAuxMat = new DenseMatrix(N*roK,nOrbital);
+        halfAuxMat = new DenseMatrix(nOrbital,N*roK);
         @Ifdef("__DEBUG__") { Console.OUT.printf("GMatrixROmem3.x10 Memory O(N^2 K) allocated sucessfully...\n"); }        
 
         // Shell/Shellpair business 
@@ -191,7 +191,7 @@ public class GMatrixROmem3 extends DenseMatrix{self.M==self.N} {
                         for (var rolm:Int=0; rolm<maxLm; rolm++) {
                             val normAux = nrm*temp(ind++); 
                             /*atomic*/ dk(rolm) += scdmn*normAux; 
-                            auxIntMat(tmu+rolm*N,tnu) = auxIntMat(tnu+rolm*N,tmu) = normAux;                            
+                            auxIntMat(tmu*roK+rolm,tnu) = auxIntMat(tnu*roK+rolm,tmu) = normAux;                            
                         } 
                     }
                     else for (var tmu:Int=sp.mu; tmu<=sp.mu2; tmu++) for (var tnu:Int=sp.nu; tnu<=sp.nu2; tnu++) /*for ([tmu,tnu] in (sp.mu..sp.mu2)*(sp.nu..sp.nu2))*/ {
@@ -200,7 +200,7 @@ public class GMatrixROmem3 extends DenseMatrix{self.M==self.N} {
                         for (var rolm:Int=0; rolm<maxLm; rolm++) {
                             val normAux = nrm*temp(ind++);
                             /*atomic*/ dk(rolm) += scdmn*normAux; 
-                            auxIntMat(tmu+rolm*N,tnu) = normAux;                            
+                            auxIntMat(tmu*roK+rolm,tnu) = normAux;                            
                         } 
                     }
 
@@ -216,7 +216,7 @@ public class GMatrixROmem3 extends DenseMatrix{self.M==self.N} {
                     val maxLm=(maxLron+1)*(maxLron+1); 
                     for (var tmu:Int=sp.mu; tmu<=sp.mu2; tmu++) for (var tnu:Int=sp.nu; tnu<=sp.nu2; tnu++) /*for ([tmu,tnu] in (sp.mu..sp.mu2)*(sp.nu..sp.nu2))*/ {
                         var jContrib:Double=0.;
-                        for (var rolm:Int=0; rolm<maxLm; rolm++) jContrib+=dk(rolm)*auxIntMat(tmu+rolm*N,tnu);
+                        for (var rolm:Int=0; rolm<maxLm; rolm++) jContrib+=dk(rolm)*auxIntMat(tmu*roK+rolm,tnu);
                         /*atomic*/ jMatrix(tmu,tnu) += jContrib;
                     } 
                 }
@@ -225,9 +225,9 @@ public class GMatrixROmem3 extends DenseMatrix{self.M==self.N} {
         
             if (ron<=roNK) { //This produces K/2
                 timer.start(TIMER_KMATRIX);  
-                /*atomic*/ DenseMatrixBLAS.compMultTrans(auxIntMat, mos, halfAuxMat, [N*roK, nOrbital, N], false);
-                val halfAuxMat2 = new DenseMatrix(N, roK*nOrbital, halfAuxMat.d);
-                /*atomic*/ DenseMatrixBLAS.compMultTrans(halfAuxMat2, halfAuxMat2, kMatrix, [N, N, roK*nOrbital], true);
+                /*atomic*/ DenseMatrixBLAS.compMultTrans(mos, auxIntMat, halfAuxMat, [nOrbital,N*roK, N], false);
+                val halfAuxMat2 = new DenseMatrix(roK*nOrbital, N, halfAuxMat.d);
+                /*atomic*/ DenseMatrixBLAS.compTransMult(halfAuxMat2, halfAuxMat2, kMatrix, [N, N, roK*nOrbital], true);
                 timer.stop(TIMER_KMATRIX); tK+=(timer.last(TIMER_KMATRIX) as Double)/1e9;
             }
         }
