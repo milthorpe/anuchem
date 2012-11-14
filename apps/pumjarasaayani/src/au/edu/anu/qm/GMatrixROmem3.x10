@@ -185,22 +185,22 @@ public class GMatrixROmem3 extends DenseMatrix{self.M==self.N} {
                 if (maxLron>=0) {
                     val maxLm=(maxLron+1)*(maxLron+1); var ind:Int=0;                                                              
                     aux.genClass(sp.aang, sp.bang, sp.aPoint, sp.bPoint, sp.zetaA, sp.zetaB, sp.conA, sp.conB, sp.dconA, sp.dconB, temp, ron, maxLron,ylms(spInd).y, ylms(spInd).maxL);
-                    if (sp.mu!=sp.nu) for (var tmu:Int=sp.mu; tmu<=sp.mu2; tmu++) for (var tnu:Int=sp.nu; tnu<=sp.nu2; tnu++)/*for ([tmu,tnu] in (sp.mu..sp.mu2)*(sp.nu..sp.nu2))*/ {
-                        val scdmn=density(tmu,tnu)*2.;
-                        val nrm=norm(tmu)*norm(tnu);
+                    if (sp.mu!=sp.nu) for (var tmu:Int=sp.mu; tmu<=sp.mu2; tmu++) for (var tnu:Int=sp.nu; tnu<=sp.nu2; tnu++)/*/for ([tmu,tnu] in (sp.mu..sp.mu2)*(sp.nu..sp.nu2))*/ {
+                        val scdmn=density(tmu,tnu)*2.; val nrm=norm(tmu)*norm(tnu); 
+                        val tmuroK=tmu*roK; val tnuroK=tnu*roK;
                         for (var rolm:Int=0; rolm<maxLm; rolm++) {
                             val normAux = nrm*temp(ind++); 
                             /*atomic*/ dk(rolm) += scdmn*normAux; 
-                            auxIntMat(tmu*roK+rolm,tnu) = auxIntMat(tnu*roK+rolm,tmu) = normAux;                            
+                            auxIntMat(tmuroK+rolm,tnu) = auxIntMat(tnuroK+rolm,tmu) = normAux;                            
                         } 
                     }
-                    else for (var tmu:Int=sp.mu; tmu<=sp.mu2; tmu++) for (var tnu:Int=sp.nu; tnu<=sp.nu2; tnu++) /*for ([tmu,tnu] in (sp.mu..sp.mu2)*(sp.nu..sp.nu2))*/ {
-                        val scdmn=density(tmu,tnu);
-                        val nrm=norm(tmu)*norm(tnu);
+                    else for (var tmu:Int=sp.mu; tmu<=sp.mu2; tmu++) for (var tnu:Int=sp.nu; tnu<=sp.nu2; tnu++) /*/for ([tmu,tnu] in (sp.mu..sp.mu2)*(sp.nu..sp.nu2))*/ {
+                        val scdmn=density(tmu,tnu); val nrm=norm(tmu)*norm(tnu);
+                        val tmuroK=tmu*roK; 
                         for (var rolm:Int=0; rolm<maxLm; rolm++) {
                             val normAux = nrm*temp(ind++);
                             /*atomic*/ dk(rolm) += scdmn*normAux; 
-                            auxIntMat(tmu*roK+rolm,tnu) = normAux;                            
+                            auxIntMat(tmuroK+rolm,tnu) = normAux;                            
                         } 
                     }
 
@@ -214,9 +214,9 @@ public class GMatrixROmem3 extends DenseMatrix{self.M==self.N} {
                 val maxLron=sp.maxL(ron);
                 if (sp.maxL(ron)>=0) { 
                     val maxLm=(maxLron+1)*(maxLron+1); 
-                    for (var tmu:Int=sp.mu; tmu<=sp.mu2; tmu++) for (var tnu:Int=sp.nu; tnu<=sp.nu2; tnu++) /*for ([tmu,tnu] in (sp.mu..sp.mu2)*(sp.nu..sp.nu2))*/ {
-                        var jContrib:Double=0.;
-                        for (var rolm:Int=0; rolm<maxLm; rolm++) jContrib+=dk(rolm)*auxIntMat(tmu*roK+rolm,tnu);
+                    for (var tmu:Int=sp.mu; tmu<=sp.mu2; tmu++) for (var tnu:Int=sp.nu; tnu<=sp.nu2; tnu++) /*/for ([tmu,tnu] in (sp.mu..sp.mu2)*(sp.nu..sp.nu2))*/ {
+                        var jContrib:Double=0.; val tmuroK=tmu*roK;
+                        for (var rolm:Int=0; rolm<maxLm; rolm++) jContrib+=dk(rolm)*auxIntMat(tmuroK+rolm,tnu);
                         /*atomic*/ jMatrix(tmu,tnu) += jContrib;
                     } 
                 }
@@ -241,7 +241,7 @@ public class GMatrixROmem3 extends DenseMatrix{self.M==self.N} {
         // Fix the whole matrix ==> if (sp.mu!=sp.nu)
         for (spInd in 0..(numSigShellPairs-1)) {
             val sp=shellPairs(spInd);
-            if (sp.mu!=sp.nu) for (var tmu:Int=sp.mu; tmu<=sp.mu2; tmu++) for (var tnu:Int=sp.nu; tnu<=sp.nu2; tnu++) /*for ([tmu,tnu] in (sp.mu..sp.mu2)*(sp.nu..sp.nu2))*/
+            if (sp.mu!=sp.nu) for (var tmu:Int=sp.mu; tmu<=sp.mu2; tmu++) for (var tnu:Int=sp.nu; tnu<=sp.nu2; tnu++) /*/for ([tmu,tnu] in (sp.mu..sp.mu2)*(sp.nu..sp.nu2))*/
                 jMatrix(tnu,tmu) = jMatrix(tmu,tnu);
         }
         // Use the upper half of J and K to form G
