@@ -168,19 +168,36 @@ public abstract class Octant implements Comparable[Octant] {
     }
 
     /** Estimates the number of octants in an octant's V-list, given the octant id. */
-    private static def estimateVListSize(id:OctantId, dMax:UByte):Int {
-        val maxExtent = (1U << dMax) - 1U;
-        val nearX = (id.x > 0U && id.x < maxExtent) ? 3 : 2;
-        val nearY = (id.y > 0U && id.y < maxExtent) ? 3 : 2;
-        val nearZ = (id.z > 0U && id.z < maxExtent) ? 3 : 2;
-        val neighbours = nearX * nearY * nearX;
+    private static def estimateVListSize(id:OctantId, ws:Int):Int {
+        val near = 2*ws+1;
+        val farHalo = 4*ws+2;
+        val maxExtent = (1 << id.level) - 1;
+        val x = id.x as Int;
+        val y = id.y as Int;
+        val z = id.z as Int;
+        val xOffset = x%2 == 1 ? -1 : 0;
+        val yOffset = y%2 == 1 ? -1 : 0;
+        val zOffset = z%2 == 1 ? -1 : 0;
+        val nearMinX = Math.max(0, x-ws);
+        val nearMaxX = Math.min(maxExtent, x+ws);
+        val nearMinY = Math.max(0, y-ws);
+        val nearMaxY = Math.min(maxExtent, y+ws);
+        val nearMinZ = Math.max(0, z-ws);
+        val nearMaxZ = Math.min(maxExtent, z+ws);
+        
+        val neighbours = (nearMaxX-nearMinX+1) * (nearMaxY-nearMinY+1) * (nearMaxZ-nearMinZ+1);
 
-        val leagueX = (id.x > 1U && id.x < (maxExtent-1U)) ? 6 : 4;
-        val leagueY = (id.y > 1U && id.y < (maxExtent-1U)) ? 6 : 4;
-        val leagueZ = (id.z > 1U && id.z < (maxExtent-1U)) ? 6 : 4;
-        val colleagues = leagueX * leagueY * leagueZ;
+        val farExtent = 2*ws;
 
-        //Console.OUT.println("vList for " + id + " size = " + (colleagues - neighbours));
+        val farMinX = Math.max(0, x+xOffset-farExtent);
+        val farMaxX = Math.min(maxExtent, x+xOffset+farExtent+1);
+        val farMinY = Math.max(0, y+yOffset-farExtent);
+        val farMaxY = Math.min(maxExtent, y+yOffset+farExtent+1);
+        val farMinZ = Math.max(0, z+zOffset-farExtent);
+        val farMaxZ = Math.min(maxExtent, z+zOffset+farExtent+1);
+        
+        val colleagues = (farMaxX-farMinX+1) * (farMaxY-farMinY+1) * (farMaxZ-farMinZ+1);
+
         return colleagues - neighbours;
     }
 
@@ -212,24 +229,26 @@ public abstract class Octant implements Comparable[Octant] {
      * well-separated from the parent.
      */
     private def createVList(ws:Int, dMax:UByte) {
+        val vList = new Array[OctantId](estimateVListSize(id, ws));
         val levelDim = Math.pow2(id.level);
         val xOffset = id.x%2 == 1UY ? -1 : 0;
         val yOffset = id.y%2 == 1UY ? -1 : 0;
         val zOffset = id.z%2 == 1UY ? -1 : 0;
-        val vList = new ArrayList[OctantId](estimateVListSize(id, dMax));
-        for (x in Math.max(0,id.x-2*ws+xOffset)..Math.min(levelDim-1,id.x+2*ws+1+xOffset)) {
+        val extent = 2*ws;
+        var i:Int=0;
+        for (x in Math.max(0,id.x+xOffset-extent)..Math.min(levelDim-1,id.x+xOffset+extent+1)) {
             val x2 = x as UByte;
-            for (y in Math.max(0,id.y-2*ws+yOffset)..Math.min(levelDim-1,id.y+2*ws+1+yOffset)) {
+            for (y in Math.max(0,id.y+yOffset-extent)..Math.min(levelDim-1,id.y+yOffset+extent+1)) {
                 val y2 = y as UByte;
-                for (z in Math.max(0,id.z-2*ws+zOffset)..Math.min(levelDim-1,id.z+2*ws+1+zOffset)) {
+                for (z in Math.max(0,id.z+zOffset-extent)..Math.min(levelDim-1,id.z+zOffset+extent+1)) {
                     val z2 = z as UByte;
                     if (wellSeparated(ws, x, y, z)) {
-                        vList.add(OctantId(x2,y2,z2,id.level));
+                        vList(i++) = OctantId(x2,y2,z2,id.level);
                     }
                 }
             }
         }
-        return vList.toArray();
+        return vList;
     }
 
     public def getVList() = this.vList;
