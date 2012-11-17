@@ -12,6 +12,8 @@ package au.edu.anu.qm;
 
 import x10.compiler.Ifdef;
 import x10.compiler.Ifndef;
+import x10.compiler.Native;
+import x10.compiler.NativeCPPInclude;
 
 import x10.util.ArrayList;
 import x10.util.ArrayUtils;
@@ -34,6 +36,7 @@ import au.edu.anu.qm.ro.Integral_Pack;
 
 import edu.utk.cs.papi.PAPI;
 
+@NativeCPPInclude("mkl_math.h")
 public class GMatrixROmem3 extends DenseMatrix{self.M==self.N} {
     // Timer & PAPI performance counters
     public val timer = new StatisticalTimer(4);
@@ -168,8 +171,18 @@ public class GMatrixROmem3 extends DenseMatrix{self.M==self.N} {
             aux.genClassY(sh.aPoint, sh.bPoint, sh.zetaA, sh.zetaB, sh.dconA, sh.dconB, roL, tempY);
             ylms(i) = new Ylm(tempY,roL);
         }
-        rawShellPairs = null; // Deallocate this variable     
+        rawShellPairs = null; // Deallocate this variable
+
+@Ifdef("__MKL__") {
+        Console.OUT.println("MKL DGEMM using " + mklGetMaxThreads() + " threads");
+}  
     }
+
+    @Native("c++", "mkl_get_max_threads()")
+    private native static def mklGetMaxThreads():Int;
+
+    @Native("c++", "mkl_set_num_threads(#a)")
+    private native static def mklSetNumThreads(a:Int):void;
 
     public def compute(density:Density{self.N==this.N}, mos:MolecularOrbitals{self.N==this.N}) {
         val result = Runtime.execForRead("date"); Console.OUT.printf("\nGMatrixROmem.x10 'public def compute' %s...\n",result.readLine()); 

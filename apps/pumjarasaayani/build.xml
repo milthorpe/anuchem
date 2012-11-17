@@ -77,7 +77,15 @@
         <istrue value="${heapprofile}" />
     </condition>
 
-    <condition property="post.lapack" value="-L$MKL/lib/em64t -lmkl_intel_lp64 -lmkl_sequential -lmkl_core -lmkl_lapack -lpthread -lm" else="-L${lapackHome} -L/usr/lib -llapack -lblas">
+    <condition property="post.lapack" value="-L${env.MKL}/lib/em64t -lmkl_intel_lp64 -lmkl_sequential -lmkl_core -lmkl_lapack -lpthread -lm" else="-L${lapackHome} -L/usr/lib -llapack -lblas">
+        <istrue value="${usemkl}"/>
+    </condition>
+
+    <condition property="define.mkl" value="-define __MKL__" else="">
+        <istrue value="${usemkl}"/>
+    </condition>
+
+    <condition property="post.define.mkl" value="-D __MKL__" else="">
         <istrue value="${usemkl}"/>
     </condition>
     
@@ -145,11 +153,11 @@
         <pathconvert property="src.list" refid="changed.src.files" dirsep="/" pathsep=" ">
             <map from="${basedir}${file.separator}src${file.separator}" to=""/>
         </pathconvert>
-        <echo message="x10c++ -x10rt ${x10rt} ${x10c.debug} ${x10c.profile} ${x10c.optimize} ${x10c.nochecks} ${define.papi} ${define.verbose} -classpath ${gml.lib} -x10lib ${gml.props} -x10lib ${xla.props} -x10lib ${anuchem.props} -x10lib ${x10papi.props} -sourcepath . ${basedir}/${testclass}"/>
+        <echo message="x10c++ -x10rt ${x10rt} ${x10c.debug} ${x10c.profile} ${x10c.optimize} ${x10c.nochecks} ${define.papi} ${define.mkl} ${define.verbose} -classpath ${gml.lib} -x10lib ${gml.props} -x10lib ${xla.props} -x10lib ${anuchem.props} -x10lib ${x10papi.props} -sourcepath . ${basedir}/${testclass}"/>
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/src">
             <arg value="-c"/> 
-            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.debug} ${x10c.profile} ${x10c.optimize} ${x10c.nochecks} ${define.papi} ${define.verbose} -report postcompile=1 -classpath ${gml.lib} -x10lib ${gml.props} -x10lib ${xla.props} -x10lib ${anuchem.props} -x10lib ${x10papi.props} -sourcepath . -post '# # ${post.cpuprofile} ${post.heapprofile} ${post.papi} -L/usr/lib -L${lib} -lintpack # -L${lapackHome} ${post.lapack} -lpapi' -d ${target-src} ${basedir}/${testclass}"/>
+            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.debug} ${x10c.profile} ${x10c.optimize} ${x10c.nochecks} ${define.papi} ${define.mkl} ${define.verbose} -report postcompile=1 -classpath ${gml.lib} -x10lib ${gml.props} -x10lib ${xla.props} -x10lib ${anuchem.props} -x10lib ${x10papi.props} -sourcepath . -post '# # ${post.define.mkl} ${post.cpuprofile} ${post.heapprofile} ${post.papi} -L/usr/lib -L${lib} -lintpack # -L${lapackHome} ${post.lapack} -lpapi' -d ${target-src} ${basedir}/${testclass}"/>
         </exec>
     </target>
 
