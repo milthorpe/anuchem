@@ -110,6 +110,22 @@ public struct OctantId(x:UByte, y:UByte, z:UByte, level:UByte) implements Compar
         return id;
     }
 
+    public static def getFromLeafMortonId(mortonId:UInt, dMax:UByte):OctantId {
+        //Console.OUT.printf("getFromMortonId = %32s\n", mortonId.toBinaryString());
+        var x:UInt = 0U;
+        var y:UInt = 0U;
+        var z:UInt = 0U;
+        var shift:Int = 16;
+        var bitmask:UInt = 1U << 23;
+        for (i in 0..7) {
+            x |= (mortonId & bitmask) >> shift--; bitmask = bitmask >> 1;
+            y |= (mortonId & bitmask) >> shift--; bitmask = bitmask >> 1;
+            z |= (mortonId & bitmask) >> shift;   bitmask = bitmask >> 1;
+        }
+        //Console.OUT.printf("x %8s y %8s z %8s level %8s\n", (x as UByte).toBinaryString(), (y as UByte).toBinaryString(), (z as UByte).toBinaryString(), (dMax).toBinaryString());
+        return OctantId(x as UByte, y as UByte, z as UByte, dMax);
+    }
+
     /** @return the octant ID of the parent of this octant */
     public def getParentId():OctantId {
         return new OctantId(x/2UY, y/2UY, z/2UY, level-1UY);

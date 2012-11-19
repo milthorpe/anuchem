@@ -474,11 +474,12 @@ public class FastMultipoleMethod {
         for(i in 0..(octantLoads.size-1)) {
             if (octantLoads(i) > 0) {
                 val mortonId = i as UInt;
-                //Console.OUT.println(OctantId.getFromMortonId(mortonId) + " particles " + octantLoads(i) + " uList " + (octantLoads(i) * LeafOctant.estimateUListSize(mortonId, dMax) * q * uListCost) + " vList " + Octant.estimateVListSize(mortonId, dMax) * vListCost);
+                val id = OctantId.getFromLeafMortonId(mortonId, dMax);
+                //Console.OUT.println(id + " particles " + octantLoads(i) + " uList " + (octantLoads(i) * LeafOctant.estimateUListSize(id, dMax) * q * uListCost) + " vList size " + Octant.estimateVListSize(id, ws) + " cost " + Octant.estimateVListSize(id, ws) * vListCost);
                 // octantLoad = uListInteractions * costP2P + vListInteractions * costM2L 
                 octantLoads(i) = 
-                        octantLoads(i) * LeafOctant.estimateUListSize(mortonId, dMax) * q * uListCost 
-                      + Octant.estimateVListSize(mortonId, dMax) * vListCost;
+                        octantLoads(i) * LeafOctant.estimateUListSize(id, dMax) * q * uListCost 
+                      + Octant.estimateVListSize(id, ws) * vListCost;
             }
         }
 
@@ -499,11 +500,11 @@ public class FastMultipoleMethod {
                 }
             }
             firstLeafOctant(p) = i as UInt;
-/*
+
             if (here == Place.FIRST_PLACE) {
                 Console.OUT.println("place " + (p-1) + " first " + firstLeafOctant(p-1) + " last " + (firstLeafOctant(p)-1) + " load " + load);
             }
-*/
+
         }
 
         local.timer.stop(FmmLocalData.TIMER_INDEX_BALANCE);

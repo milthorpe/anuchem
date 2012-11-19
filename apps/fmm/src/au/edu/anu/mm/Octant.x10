@@ -162,13 +162,13 @@ public abstract class Octant implements Comparable[Octant] {
     }
 
     /** Estimates the number of octants in an octant's V-list, given the octant id. */
-    public static def estimateVListSize(mortonId:UInt, dMax:UByte):Int {
+    public static def estimateVListSize(mortonId:UInt):Int {
         val id = OctantId.getFromMortonId(mortonId);
-        return estimateVListSize(id, dMax);
+        return estimateVListSize(id, 1);
     }
 
     /** Estimates the number of octants in an octant's V-list, given the octant id. */
-    private static def estimateVListSize(id:OctantId, ws:Int):Int {
+    public static def estimateVListSize(id:OctantId, ws:Int):Int {
         val near = 2*ws+1;
         val farHalo = 4*ws+2;
         val maxExtent = (1 << id.level) - 1;

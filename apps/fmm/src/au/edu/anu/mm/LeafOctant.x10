@@ -318,7 +318,7 @@ public class LeafOctant extends Octant implements Comparable[LeafOctant] {
         return estimateUListSize(id, dMax);
     }
 
-    private static def estimateUListSize(id:OctantId, dMax:UByte):Int {
+    public static def estimateUListSize(id:OctantId, dMax:UByte):Int {
         val maxExtent = (1U << dMax) - 1U;
         val xExtent = (id.x > 0U && id.x < maxExtent) ? 3 : 2;
         val yExtent = (id.y > 0U && id.y < maxExtent) ? 3 : 2;
