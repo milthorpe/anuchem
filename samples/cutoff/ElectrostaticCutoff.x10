@@ -11,19 +11,16 @@
 import x10x.vector.Point3d;
 import x10x.vector.Vector3d;
 import au.edu.anu.chem.PointCharge;
-import au.edu.anu.chem.mm.MMAtom;
 import au.edu.anu.util.Timer;
-import au.edu.anu.chem.mm.TestElectrostatic;
 
 import x10.util.ArrayList;
-import x10.util.HashMap;
-import x10.util.Pair;
+import x10.util.Random;
 
 /**
  * This class implements electrostatic potential calculation with cutoff
  * and periodic boundary conditions.
  */
-public class ElectrostaticCutoff extends TestElectrostatic {
+public class ElectrostaticCutoff {
     // TODO enum - XTENLANG-1118
     public static val TIMER_INDEX_TOTAL : Int = 0;
     public static val TIMER_INDEX_DIRECT : Int = 1;
@@ -31,8 +28,11 @@ public class ElectrostaticCutoff extends TestElectrostatic {
     /** A multi-timer for the several segments of a single getEnergy invocation, indexed by the constants above. */
     public val timer = new Timer(3);
 
+    /** The side length of the cubic simulation space. */
+    private val size:Double;
+
     /** The direct sum cutoff distance in Angstroms */
-    private val cutoff : Double;
+    private val cutoff:Double;
 
     /** 
      * Translation vectors for neighbouring unit cells 
@@ -42,7 +42,7 @@ public class ElectrostaticCutoff extends TestElectrostatic {
      * 1: y translation
      * 2: z translation
      */
-    private val imageTranslations : Array[Vector3d](3){rect};
+    private val imageTranslations:Array[Vector3d](3){rect};
 
 
     /** 
@@ -56,18 +56,17 @@ public class ElectrostaticCutoff extends TestElectrostatic {
      * Dimensions of the array region are (x,y,z)
      * TODO assumes cubic unit cell
      */
-    private val subCells : Array[Rail[PointCharge]](3){rect,zeroBased};
+    private val subCells:Array[Rail[PointCharge]](3){rect,zeroBased};
 
     /** The number of sub-cells per side of the unit cell. */
-    private val numSubCells : Int;
+    private val numSubCells:Int;
 
     /**
      * @param size the length of a side of the cubic simulation space
      * @param cutoff the distance in Angstroms beyond which direct interactions are ignored
      */
-    public def this(size:Double,
-            cutoff : Double) {
-
+    public def this(size:Double, cutoff : Double) {
+        this.size = size;
         this.cutoff = cutoff;
         this.imageTranslations = new Array[Vector3d](-1..1 * -1..1 * -1..1, 
                 ([i,j,k] : Point(3)) => Vector3d(i*size, j*size, k*size));
@@ -89,7 +88,7 @@ public class ElectrostaticCutoff extends TestElectrostatic {
      * Divide the atoms into a grid of sub-cells for direct sum calculation.
      * Each sub-cell is half the cutoff distance on every side.
      */
-    private def assignAtomsToSubCells(atoms: Rail[MMAtom]) {
+    private def assignAtomsToSubCells(atoms: Rail[PointCharge]) {
         timer.start(TIMER_INDEX_SETUP);
         val halfCutoff = (cutoff / 2.0);
         val subCellsTemp = new Array[ArrayList[PointCharge]](subCells.region, (Point) => new ArrayList[PointCharge]());
@@ -97,12 +96,11 @@ public class ElectrostaticCutoff extends TestElectrostatic {
         for (l in 0..(atoms.size-1)) {
             val atom = atoms(l);
             val centre = atom.centre;
-            val charge = atom.charge;
             // get subcell i,j,k
             val i = (centre.i / halfCutoff) as Int + halfNumSubCells;
             val j = (centre.j / halfCutoff) as Int + halfNumSubCells;
             val k = (centre.k / halfCutoff) as Int + halfNumSubCells;
-            subCellsTemp(i,j,k).add(new PointCharge(centre, charge));
+            subCellsTemp(i,j,k).add(atom);
         }
         for([i,j,k] in subCells) {
             subCells(i,j,k) = subCellsTemp(i,j,k).toArray();
@@ -181,29 +179,47 @@ public class ElectrostaticCutoff extends TestElectrostatic {
         return directEnergy();
     }
 
-    public static def main(args : Rail[String]) {
+    /**
+     * Generate an array of PointCharges, randomly distributed within a
+     * size^3 cube centred at the origin.
+     */
+    private def generateAtoms(numAtoms:Int, seed:Int) : Rail[PointCharge] {
+        val rand = seed > 0 ? new Random(seed) : new Random();
+        Console.OUT.println("size of cluster =  " + size);
+        val atoms = new Rail[PointCharge](numAtoms, (i:Int) => new PointCharge(Point3d((rand.nextDouble() - 0.5) * size, 
+                                                    (rand.nextDouble() - 0.5) * size, 
+                                                    (rand.nextDouble() - 0.5) * size), 
+                                                i%2==0 ? 1.0 : -1.0));
+        return atoms;
+    }
+
+    public static def main(args:Rail[String]) {
         val size:Double = 80.0;
-        var numAtoms : Int;
-        var cutoff : Double = 10.0;
+        var numAtoms:Int;
+        var cutoff:Double = 10.0;
+        var randomSeed:Int = 0;
         if (args.size > 0) {
             numAtoms = Int.parseInt(args(0));
             if (args.size > 1) {
                 cutoff = Double.parseDouble(args(1));
+                if (args.size > 2) {
+                    randomSeed = Int.parseInt(args(2));
+                }
             }
         } else {
-            Console.ERR.println("usage: cutoff numAtoms [cutoff]");
+            Console.ERR.println("usage: cutoff numAtoms [cutoff] [randomSeed]");
             return;
         }
         Console.OUT.println("electrostatics for " + numAtoms + " atoms with cutoff " + cutoff + " (total size " + size + ")");
-        new ElectrostaticCutoff(size, cutoff).test(numAtoms);
+        new ElectrostaticCutoff(size, cutoff).test(numAtoms, randomSeed);
     }
 
-    public def test(numAtoms:Int) {
-        val atoms = generateAtoms(numAtoms);
-        assignAtomsToSubCells(atoms(0));
+    public def test(numAtoms:Int, randomSeed:Int) {
+        val atoms = generateAtoms(numAtoms, randomSeed);
+        assignAtomsToSubCells(atoms);
         Console.OUT.println("Total PE: " + getEnergy());
-        logTime("Setup",             ElectrostaticCutoff.TIMER_INDEX_SETUP,         timer);
-        logTime("Direct",            ElectrostaticCutoff.TIMER_INDEX_DIRECT,        timer);
+        Console.OUT.printf("setup: %g seconds\n", (timer.mean(ElectrostaticCutoff.TIMER_INDEX_SETUP) as Double) / 1e9);
+        Console.OUT.printf("getEnergy: %g seconds\n", (timer.mean(ElectrostaticCutoff.TIMER_INDEX_DIRECT) as Double) / 1e9);
     }
 
 }
