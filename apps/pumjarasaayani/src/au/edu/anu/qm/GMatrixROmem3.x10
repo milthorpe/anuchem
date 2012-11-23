@@ -47,13 +47,21 @@ public class GMatrixROmem3 extends DenseMatrix{self.M==self.N} {
 
     // RO stuff 
     transient val aux:Integral_Pack;
+transient val aux1:Integral_Pack;
+transient val aux2:Integral_Pack;
+transient val aux3:Integral_Pack;
+transient val aux4:Integral_Pack;
+transient val aux5:Integral_Pack;
+transient val aux6:Integral_Pack;
+transient val aux7:Integral_Pack;
+
     var roN:Int; var roNK:Int; var roL:Int; // 'var' because it can be overridden
     val roK:Int; val roZ:Double; 
     val auxIntMat:DenseMatrix; 
     val halfAuxMat:DenseMatrix; 
     val ylms:Rail[Ylm];   
-    val dk:Rail[Double];
     //val temp:Rail[Double];
+    val dk:Rail[Double];
    
 
     // Standard conventional stuff
@@ -70,7 +78,7 @@ public class GMatrixROmem3 extends DenseMatrix{self.M==self.N} {
     val maxTh:Int;
     val tjMatrix : Rail[DenseMatrix];
     val ttemp : Rail[Rail[Double]]; 
-    // val tdk : Rail[Rail[Double]]; 
+    val tdk : Rail[Rail[Double]]; 
     //transient val taux:Array[Integral_Pack]; 
 
     public def this(N:Int, bfs:BasisFunctions, molecule:Molecule[QMAtom], nOrbital:Int, omega:Double,roThresh:Double):GMatrixROmem3{self.M==N,self.N==N} {     
@@ -87,10 +95,22 @@ public class GMatrixROmem3 extends DenseMatrix{self.M==self.N} {
         @Ifdef("__DEBUG__") { Console.OUT.printf("roThresh=%e\n",roThresh); } 
         val jd = JobDefaults.getInstance();
         val l_n = new Rail[Int](jd.roN+3);
-        //taux = new Array[Integral_Pack](maxTh,(Int)=>new Integral_Pack(jd.roN,jd.roL,omega,roThresh,jd.rad,jd.roZ));  
+        //taux = new Array[Integral_Pack](maxTh,(Int)=>new Integral_Pack(jd.roN,jd.roL,omega,roThresh,jd.rad,jd.roZ));
+        /*taux = new Rail[Integral_Pack](maxTh);
+        for (thNo in 0..(maxTh-1))  {
+            val a=new Integral_Pack(jd.roN,jd.roL,omega,roThresh,jd.rad,jd.roZ);
+            taux(thNo) = a;
+        }*/
         aux = new Integral_Pack(jd.roN,jd.roL,omega,roThresh,jd.rad,jd.roZ);               
+aux1 = new Integral_Pack(jd.roN,jd.roL,omega,roThresh,jd.rad,jd.roZ);   
+aux2 = new Integral_Pack(jd.roN,jd.roL,omega,roThresh,jd.rad,jd.roZ);               
+aux3 = new Integral_Pack(jd.roN,jd.roL,omega,roThresh,jd.rad,jd.roZ);               
+aux4 = new Integral_Pack(jd.roN,jd.roL,omega,roThresh,jd.rad,jd.roZ);               
+aux5 = new Integral_Pack(jd.roN,jd.roL,omega,roThresh,jd.rad,jd.roZ);               
+aux6 = new Integral_Pack(jd.roN,jd.roL,omega,roThresh,jd.rad,jd.roZ);               
+aux7 = new Integral_Pack(jd.roN,jd.roL,omega,roThresh,jd.rad,jd.roZ);               
         if (omega>0.) { // long-range Ewald operator
-            /*taux(0)*/aux.getNL(l_n);
+            /*taux(0)/*/aux.getNL(l_n);
             roN=roNK=l_n(0);
             roL=l_n(roN+2);  
             this.roNK=roN;
@@ -110,9 +130,11 @@ public class GMatrixROmem3 extends DenseMatrix{self.M==self.N} {
         for (thNo in 0..(maxTh-1)) ttemp(thNo) = new Rail[Double](maxam1*maxam1*roK);
         //ttemp = new Rail[Rail[Double]](maxTh,(Int)=>new Rail[Double](maxam1*maxam1*roK));  
         //'this' or 'super' cannot escape via a closure during construction.
-
+        tdk = new Rail[Rail[Double]](maxTh);
+        for (thNo in 0..(maxTh-1)) tdk(thNo) = new Rail[Double](roK);
         //temp = new Rail[Double](maxam1*maxam1*roK);            
         dk = new Rail[Double](roK); // eqn 15b in RO#7
+
         var maxint:Rail[Double] = new Rail[Double](roK*(roN+1)); 
      
         this.norm = bfs.getNormalizationFactors();
@@ -211,21 +233,32 @@ public class GMatrixROmem3 extends DenseMatrix{self.M==self.N} {
 
         for (; ron<=roN; ron++) {
             @Ifdef("__DEBUG__") {Console.OUT.printf("ron=%d...\n",ron); }
-            dk.clear();     
+
+            finish for (thNo in 0..(maxTh-1)) async  tdk(thNo).clear();     
 
             timer.start(TIMER_GENCLASS); 
             finish for (thNo in 0..(maxTh-1)) async 
             for (var spInd:Int=thNo; spInd<numSigShellPairs; spInd+=maxTh) {
                 val sp=shellPairs(spInd); val maxLron=sp.maxL(ron);                    
                 if (maxLron>=0) {
-                    val maxLm=(maxLron+1)*(maxLron+1); var ind:Int=0; val temp=ttemp(thNo); //val aux=taux(thNo); 
-                    aux.genClass(sp.aang, sp.bang, sp.aPoint, sp.bPoint, sp.zetaA, sp.zetaB, sp.conA, sp.conB, sp.dconA, sp.dconB, temp, ron, maxLron,ylms(spInd).y, ylms(spInd).maxL);
+                    val maxLm=(maxLron+1)*(maxLron+1); var ind:Int=0; val temp=ttemp(thNo); val myThreaddk=tdk(thNo); //val aux=taux(thNo); 
+                    switch (thNo) {
+case 0: aux.genClass(sp.aang, sp.bang, sp.aPoint, sp.bPoint, sp.zetaA, sp.zetaB, sp.conA, sp.conB, sp.dconA, sp.dconB, temp, ron, maxLron,ylms(spInd).y, ylms(spInd).maxL); break;
+case 1: aux1.genClass(sp.aang, sp.bang, sp.aPoint, sp.bPoint, sp.zetaA, sp.zetaB, sp.conA, sp.conB, sp.dconA, sp.dconB, temp, ron, maxLron,ylms(spInd).y, ylms(spInd).maxL); break;
+case 2: aux2.genClass(sp.aang, sp.bang, sp.aPoint, sp.bPoint, sp.zetaA, sp.zetaB, sp.conA, sp.conB, sp.dconA, sp.dconB, temp, ron, maxLron,ylms(spInd).y, ylms(spInd).maxL); break;
+case 3: aux3.genClass(sp.aang, sp.bang, sp.aPoint, sp.bPoint, sp.zetaA, sp.zetaB, sp.conA, sp.conB, sp.dconA, sp.dconB, temp, ron, maxLron,ylms(spInd).y, ylms(spInd).maxL); break;
+case 4: aux4.genClass(sp.aang, sp.bang, sp.aPoint, sp.bPoint, sp.zetaA, sp.zetaB, sp.conA, sp.conB, sp.dconA, sp.dconB, temp, ron, maxLron,ylms(spInd).y, ylms(spInd).maxL); break;
+case 5: aux5.genClass(sp.aang, sp.bang, sp.aPoint, sp.bPoint, sp.zetaA, sp.zetaB, sp.conA, sp.conB, sp.dconA, sp.dconB, temp, ron, maxLron,ylms(spInd).y, ylms(spInd).maxL); break;
+case 6: aux6.genClass(sp.aang, sp.bang, sp.aPoint, sp.bPoint, sp.zetaA, sp.zetaB, sp.conA, sp.conB, sp.dconA, sp.dconB, temp, ron, maxLron,ylms(spInd).y, ylms(spInd).maxL); break;
+case 7: atomic aux7.genClass(sp.aang, sp.bang, sp.aPoint, sp.bPoint, sp.zetaA, sp.zetaB, sp.conA, sp.conB, sp.dconA, sp.dconB, temp, ron, maxLron,ylms(spInd).y, ylms(spInd).maxL); break;
+default: atomic aux7.genClass(sp.aang, sp.bang, sp.aPoint, sp.bPoint, sp.zetaA, sp.zetaB, sp.conA, sp.conB, sp.dconA, sp.dconB, temp, ron, maxLron,ylms(spInd).y, ylms(spInd).maxL); break;
+}
                     if (sp.mu!=sp.nu) for (var tmu:Int=sp.mu; tmu<=sp.mu2; tmu++) for (var tnu:Int=sp.nu; tnu<=sp.nu2; tnu++) {
                         val scdmn=density(tmu,tnu)*2.; val nrm=norm(tmu)*norm(tnu); 
                         val tmuroK=tmu*roK; val tnuroK=tnu*roK;
                         for (var rolm:Int=0; rolm<maxLm; rolm++) {
                             val normAux = nrm*temp(ind++); 
-                            atomic dk(rolm) += scdmn*normAux; 
+                            myThreaddk(rolm) += scdmn*normAux; 
                             auxIntMat(tmuroK+rolm,tnu) = auxIntMat(tnuroK+rolm,tmu) = normAux;                            
                         } 
                     }
@@ -234,18 +267,19 @@ public class GMatrixROmem3 extends DenseMatrix{self.M==self.N} {
                         val tmuroK=tmu*roK; 
                         for (var rolm:Int=0; rolm<maxLm; rolm++) {
                             val normAux = nrm*temp(ind++);
-                            atomic dk(rolm) += scdmn*normAux; 
+                            myThreaddk(rolm) += scdmn*normAux; 
                             auxIntMat(tmuroK+rolm,tnu) = normAux;                            
                         } 
                     }
 
                 }
             }
-            /*  finish for (thNo in 0..(maxTh-1)) async for (thNo2 in 0..(maxTh-1)) {
+            dk.clear();
+            finish for (thNo in 0..(maxTh-1)) async for (thNo2 in 0..(maxTh-1)) {
                 val myThreaddk = tdk(thNo2);
-                for (var rolm:Int=thNo; rolm<maxLm; rolm+=maxTh) 
+                for (var rolm:Int=thNo; rolm<roK; rolm+=maxTh) 
                     dk(rolm)+=myThreaddk(rolm);
-            }*/
+            }
 
             timer.stop(TIMER_GENCLASS); tINT+=(timer.last(TIMER_GENCLASS) as Double)/1e9;
 
