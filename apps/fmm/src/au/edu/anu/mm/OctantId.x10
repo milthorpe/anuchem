@@ -10,6 +10,8 @@
  */
 package au.edu.anu.mm;
 
+import x10.compiler.Inline;
+
 import x10x.vector.Point3d;
 
 public struct OctantId(x:UByte, y:UByte, z:UByte, level:UByte) implements Comparable[OctantId] {
@@ -39,9 +41,10 @@ public struct OctantId(x:UByte, y:UByte, z:UByte, level:UByte) implements Compar
     }
 
     public def getMortonId():UInt {
-        val x = this.x as UInt;
-        val y = this.y as UInt;
-        val z = this.z as UInt;
+        return getMortonId(x as UInt, y as UInt, z as UInt, level as UInt);
+    }
+
+    public @Inline static def getMortonId(x:UInt, y:UInt, z:UInt, level:UInt):UInt {
         //Console.OUT.printf("x %8s y %8s z %8s level %8s\n", x.toBinaryString(), y.toBinaryString(), z.toBinaryString(), level.toBinaryString());
         var id:UInt = 0U;
         var bitmask:UInt = 1U;
@@ -52,7 +55,7 @@ public struct OctantId(x:UByte, y:UByte, z:UByte, level:UByte) implements Compar
             id |= (bitmask & x) << shift;
             bitmask = bitmask << 1;
         }
-        id |= (level as UInt) << 24;
+        id |= level << 24;
         //Console.OUT.printf("Morton id = %32s\n", id.toBinaryString());
         return id;
     }
@@ -73,7 +76,11 @@ public struct OctantId(x:UByte, y:UByte, z:UByte, level:UByte) implements Compar
         //Console.OUT.printf("x %8s y %8s z %8s level %8s\n", (x as UByte).toBinaryString(), (y as UByte).toBinaryString(), (z as UByte).toBinaryString(), (level as UByte).toBinaryString());
         return OctantId(x as UByte, y as UByte, z as UByte, level as UByte);
     }
-        
+
+    /** 
+     * Gets the leaf Morton ID, which does not include the octant's level.
+     * Equivalent to mortonId & LEAF_MASK
+     */     
     public def getLeafMortonId():UInt {
         val x = this.x as UInt;
         val y = this.y as UInt;
@@ -106,24 +113,8 @@ public struct OctantId(x:UByte, y:UByte, z:UByte, level:UByte) implements Compar
             id |= (bitmask & x) << shift;
             bitmask = bitmask << 1;
         }
-        //Console.OUT.printf("leaf Morton id = %32s\n", id.toBinaryString());
+        //Console.OUT.printf("morton id = %32s\n", id.toBinaryString());
         return id;
-    }
-
-    public static def getFromLeafMortonId(mortonId:UInt, dMax:UByte):OctantId {
-        //Console.OUT.printf("getFromMortonId = %32s\n", mortonId.toBinaryString());
-        var x:UInt = 0U;
-        var y:UInt = 0U;
-        var z:UInt = 0U;
-        var shift:Int = 16;
-        var bitmask:UInt = 1U << 23;
-        for (i in 0..7) {
-            x |= (mortonId & bitmask) >> shift--; bitmask = bitmask >> 1;
-            y |= (mortonId & bitmask) >> shift--; bitmask = bitmask >> 1;
-            z |= (mortonId & bitmask) >> shift;   bitmask = bitmask >> 1;
-        }
-        //Console.OUT.printf("x %8s y %8s z %8s level %8s\n", (x as UByte).toBinaryString(), (y as UByte).toBinaryString(), (z as UByte).toBinaryString(), (dMax).toBinaryString());
-        return OctantId(x as UByte, y as UByte, z as UByte, dMax);
     }
 
     /** @return the octant ID of the parent of this octant */

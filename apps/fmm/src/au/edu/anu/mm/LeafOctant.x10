@@ -35,7 +35,7 @@ public class LeafOctant extends Octant implements Comparable[LeafOctant] {
     private var sources:Rail[Double];
 
     /** The U-list consists of all leaf octants not well-separated from this octant. */
-    private var uList:Rail[OctantId];
+    private var uList:Rail[UInt];
 
     public def this(id:OctantId, numTerms:Int, ws:Int, dMax:UByte) {
         super(id, numTerms, ws, dMax);
@@ -157,7 +157,7 @@ public class LeafOctant extends Octant implements Comparable[LeafOctant] {
             val lowestLevelDim = Math.pow2(dMax);
             for (p in 0..(uList.size-1)) {
                 val octantIndex2 = uList(p);
-                val octant2Atoms = myLET.getAtomDataForOctant(uList(p).getMortonId());
+                val octant2Atoms = myLET.getAtomDataForOctant(uList(p));
                 if (octant2Atoms != null) {
                     val translation = getTranslation(lowestLevelDim, size, octantIndex2.x, octantIndex2.y, octantIndex2.z);
                     for (octant2AtomsIndex in 0..(octant2Atoms.size-1)) {
@@ -189,7 +189,7 @@ public class LeafOctant extends Octant implements Comparable[LeafOctant] {
         } else {
             //Console.OUT.println(id + " uList " + uList.size);
             for (p in 0..(uList.size-1)) {
-                val oct2Data = myLET.getAtomDataForOctant(uList(p).getMortonId());
+                val oct2Data = myLET.getAtomDataForOctant(uList(p));
                 if (oct2Data != null) {
                     directEnergy += p2pKernel(oct2Data);
                 }
@@ -362,21 +362,26 @@ public class LeafOctant extends Octant implements Comparable[LeafOctant] {
      * The U-list consists of all leaf octants not well-separated from this octant.
      */
     private def createUList(ws:Int, dMax:UByte) {
-        val tempUList = new ArrayList[OctantId](estimateUListSize(id, dMax));
+        val uList = new Rail[UInt](estimateUListSize(id, dMax));
+        val level = id.level as UInt;
         val levelDim = Math.pow2(id.level);
+        val x1 = id.x as UInt;
+        val y1 = id.y as UInt;
+        val z1 = id.z as UInt;
+        var i:Int = 0;
         for (x in Math.max(0,id.x-ws)..Math.min(levelDim-1,id.x+ws)) {
-            val x2 = x as UByte;
+            val x2 = x as UInt;
             for (y in Math.max(0,id.y-ws)..Math.min(levelDim-1,id.y+ws)) {
-                val y2 = y as UByte;
+                val y2 = y as UInt;
                 for (z in Math.max(0,id.z-ws)..Math.min(levelDim-1,id.z+ws)) {
-                    val z2 = z as UByte;
-                    if (!(x2==id.x && y2==id.y && z2==id.z)) {
-                        tempUList.add(OctantId(x2,y2,z2,id.level));
+                    val z2 = z as UInt;
+                    if (!(x2==x1 && y2==y1 && z2==z1)) {
+                        uList(i++) = OctantId.getMortonId(x2,y2,z2,level);
                     }
                 }
             }
         }
-        return tempUList.toArray();
+        return uList;
     }
 
     public def getUList() = this.uList;

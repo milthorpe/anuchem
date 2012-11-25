@@ -88,7 +88,12 @@ public class FmmLocalData {
 
     /** @return the ID of the place to which the given leaf octant is assigned */
     public def getPlaceId(leafOctantId:OctantId) {
-        var placeId:Int = ArrayUtils.binarySearch[UInt](firstLeafOctant, leafOctantId.getLeafMortonId());
+        return getPlaceId(leafOctantId.getMortonId());
+    }
+
+    /** @return the ID of the place to which the given leaf octant is assigned */
+    public def getPlaceId(mortonId:UInt) {
+        var placeId:Int = ArrayUtils.binarySearch[UInt](firstLeafOctant, mortonId & OctantId.LEAF_MASK);
         if (placeId < 0) placeId = -(placeId+2);
         return placeId;
     }
@@ -102,14 +107,11 @@ public class FmmLocalData {
     }
 
     public def getCombinedUList(ws:Int) {
-        val uMin = new Array[Int](3, Int.MAX_VALUE);
-        val uMax = new Array[Int](3, Int.MIN_VALUE);
         val combinedUSet = new HashSet[UInt]();
         for(octant in leafOctants) {
             val uList = octant.getUList();
             for ([p] in uList) {
-                val adjacentOctantMortonId = uList(p).getMortonId();
-                combinedUSet.add(adjacentOctantMortonId);
+                combinedUSet.add(uList(p));
             }
         }
 
