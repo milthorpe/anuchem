@@ -76,6 +76,7 @@ transient val aux7:Integral_Pack;
 
     // parallel stuff
     val maxTh:Int;
+    val maxPl:Int;
     val tjMatrix : Rail[DenseMatrix];
     val ttemp : Rail[Rail[Double]]; 
     val tdk : Rail[Rail[Double]]; 
@@ -86,7 +87,7 @@ transient val aux7:Integral_Pack;
         val result = Runtime.execForRead("date"); Console.OUT.printf("\nGMatrixROmem.x10 'public def this' %s...\n",result.readLine()); 
         this.bfs = bfs; this.mol = molecule; this.nOrbital = nOrbital;     
         maxTh=Runtime.NTHREADS;
-
+        maxPl=Place.MAX_PLACES;
         @Ifdef("__PAPI__") { 
             papi.initialize();
             papi.countFlops();
@@ -102,13 +103,13 @@ transient val aux7:Integral_Pack;
             taux(thNo) = a;
         }*/
         aux = new Integral_Pack(jd.roN,jd.roL,omega,roThresh,jd.rad,jd.roZ);               
-aux1 = new Integral_Pack(jd.roN,jd.roL,omega,roThresh,jd.rad,jd.roZ);   
-aux2 = new Integral_Pack(jd.roN,jd.roL,omega,roThresh,jd.rad,jd.roZ);               
-aux3 = new Integral_Pack(jd.roN,jd.roL,omega,roThresh,jd.rad,jd.roZ);               
-aux4 = new Integral_Pack(jd.roN,jd.roL,omega,roThresh,jd.rad,jd.roZ);               
-aux5 = new Integral_Pack(jd.roN,jd.roL,omega,roThresh,jd.rad,jd.roZ);               
-aux6 = new Integral_Pack(jd.roN,jd.roL,omega,roThresh,jd.rad,jd.roZ);               
-aux7 = new Integral_Pack(jd.roN,jd.roL,omega,roThresh,jd.rad,jd.roZ);               
+if (maxTh>1) aux1 = new Integral_Pack(jd.roN,jd.roL,omega,roThresh,jd.rad,jd.roZ);  else aux1=aux; // if set to null - compilation error
+if (maxTh>2) aux2 = new Integral_Pack(jd.roN,jd.roL,omega,roThresh,jd.rad,jd.roZ);  else aux2=aux;        
+if (maxTh>3) aux3 = new Integral_Pack(jd.roN,jd.roL,omega,roThresh,jd.rad,jd.roZ);  else aux3=aux;             
+if (maxTh>4) aux4 = new Integral_Pack(jd.roN,jd.roL,omega,roThresh,jd.rad,jd.roZ);  else aux4=aux;             
+if (maxTh>5) aux5 = new Integral_Pack(jd.roN,jd.roL,omega,roThresh,jd.rad,jd.roZ);  else aux5=aux;             
+if (maxTh>6) aux6 = new Integral_Pack(jd.roN,jd.roL,omega,roThresh,jd.rad,jd.roZ);  else aux6=aux;             
+if (maxTh>7) aux7 = new Integral_Pack(jd.roN,jd.roL,omega,roThresh,jd.rad,jd.roZ);  else aux7=aux;             
         if (omega>0.) { // long-range Ewald operator
             /*taux(0)/*/aux.getNL(l_n);
             roN=roNK=l_n(0);
@@ -233,7 +234,7 @@ aux7 = new Integral_Pack(jd.roN,jd.roL,omega,roThresh,jd.rad,jd.roZ);
         timer.start(TIMER_TOTAL); var tINT:Double=0.,tJ:Double=0.,tK:Double=0.;
         jMatrix.reset(); kMatrix.reset(); var ron:Int=0;
 
-        for (; ron<=roN; ron++) {
+        for (; ron<=roN; ron++) /*at (ron%maxPl)*/ {
             @Ifdef("__DEBUG__") {Console.OUT.printf("ron=%d...\n",ron); }
 
             finish for (thNo in 0..(maxTh-1)) async  tdk(thNo).clear();     
