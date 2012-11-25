@@ -217,13 +217,15 @@ aux7 = new Integral_Pack(jd.roN,jd.roL,omega,roThresh,jd.rad,jd.roZ);
 
 @Ifdef("__MKL__") {
         Console.OUT.println("MKL DGEMM using " + mklGetMaxThreads() + " threads");
+        mklSetNumThreads(maxTh);
+        Console.OUT.println("MKL DGEMM using " + mklGetMaxThreads() + " threads");
 }  
     }
 
     @Native("c++", "mkl_get_max_threads()")
     private native static def mklGetMaxThreads():Int;
 
-    @Native("c++", "mkl_set_num_threads(#a)")
+    @Native("c++", "MKL_Set_Num_Threads(#a)")
     private native static def mklSetNumThreads(a:Int):void;
 
     public def compute(density:Density{self.N==this.N}, mos:MolecularOrbitals{self.N==this.N}) {
