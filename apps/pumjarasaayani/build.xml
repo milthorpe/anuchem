@@ -77,7 +77,7 @@
         <istrue value="${heapprofile}" />
     </condition>
 
-    <condition property="post.lapack" value="-L${env.MKL}/lib/em64t -lmkl_intel_lp64 -lmkl_sequential -lmkl_core -lmkl_lapack -lpthread -lm" else="-L${lapackHome} -L/usr/lib -llapack -lblas">
+    <condition property="post.lapack" value="-L${env.MKL}/lib/em64t -lmkl_intel_lp64 -lmkl -fopenmp -liomp5  -lmkl_core -lmkl_lapack -lpthread -lm" else="-L${lapackHome} -L/usr/lib -llapack -lblas">
         <istrue value="${usemkl}"/>
     </condition>
 
