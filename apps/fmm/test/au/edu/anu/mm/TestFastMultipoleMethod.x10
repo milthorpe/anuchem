@@ -17,7 +17,7 @@ import au.edu.anu.chem.mm.MMAtom;
 import au.edu.anu.chem.mm.ElectrostaticDirectMethod;
 import au.edu.anu.chem.mm.TestElectrostatic;
 import au.edu.anu.util.Timer;
-import edu.utk.cs.papi.PAPI;
+//import edu.utk.cs.papi.PAPI;
 
 /**
  * Tests the new distributed FMM implementation.
@@ -109,6 +109,7 @@ public class TestFastMultipoleMethod extends TestElectrostatic {
         }
         //fmm.countOctants();
 
+/*
         val papi = new PAPI();
 @Ifdef("__PAPI__")
 {
@@ -116,6 +117,7 @@ public class TestFastMultipoleMethod extends TestElectrostatic {
         papi.countFlops();
         papi.start();
 }
+*/
         val energy = fmm.calculateEnergy();
 /*
         finish ateach(place in Dist.makeUnique()) {
@@ -125,12 +127,14 @@ public class TestFastMultipoleMethod extends TestElectrostatic {
             }
       }
 */
+/*
 @Ifdef("__PAPI__")
 {
         papi.stop();
         papi.printFlops();
         papi.shutDown();
 }
+*/
 
         fmm.reduceMaxTimes();
         
