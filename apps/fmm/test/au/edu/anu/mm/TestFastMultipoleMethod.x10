@@ -109,7 +109,7 @@ public class TestFastMultipoleMethod extends TestElectrostatic {
         }
         //fmm.countOctants();
 
-/*
+/* 
         val papi = new PAPI();
 @Ifdef("__PAPI__")
 {
