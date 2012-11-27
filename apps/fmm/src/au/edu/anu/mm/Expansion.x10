@@ -62,7 +62,7 @@ public class Expansion {
      * This operation is not atomic, therefore not thread-safe.
      */
     @Inline def unsafeAdd(e : Expansion) {
-        for (i in terms) {
+        for ([i] in terms) {
             terms(i) += e.terms(i);
         }
     }
