@@ -231,14 +231,15 @@ public class GMatrixROmem3 extends DenseMatrix{self.M==self.N} {
         this.reset();
         finish for (pid in (0..(maxPl-1))) async { val gVal = at(Place.place(pid)) {
             val gMat = new DenseMatrix(N,N);
+            // initialization of aux int array should be here
             for (var ron:Int=pid; ron<=roN; ron+=maxPl)  {            
                  @Ifdef("__DEBUG__") {Console.OUT.printf("ron=%d...\n",ron); }
                  finish for (thNo in 0..(maxTh-1)) async  tdk(thNo).clear();     
 
                  timer.start(TIMER_GENCLASS); 
                  finish for (thNo in 0..(maxTh-1)) async {
-val aux = new Integral_Pack(jd.roN,jd.roL,omega,roThresh,jd.rad,jd.roZ); //should be an array
-                      //val aux=taux(thNo);
+                      //should take on from the array like val aux=taux(thNo);
+                      val aux = new Integral_Pack(jd.roN,jd.roL,omega,roThresh,jd.rad,jd.roZ);                      
                       for (var spInd:Int=thNo; spInd<numSigShellPairs; spInd+=maxTh) {
                            val sp=shellPairs(spInd); val maxLron=sp.maxL(ron);                    
                            if (maxLron>=0) {
@@ -315,13 +316,13 @@ val aux = new Integral_Pack(jd.roN,jd.roL,omega,roThresh,jd.rad,jd.roZ); //shoul
 
         // Fix upper half of J (see the definition of shellPairs) ==> sp.mu>sp.nu
         // Fix the whole matrix ==> if (sp.mu!=sp.nu)
-        for (spInd in 0..(numSigShellPairs-1)) {
+        finish for (thNo in 0..(maxTh-1)) async for (var spInd:Int=thNo; spInd<numSigShellPairs; spInd+=maxTh) {
             val sp=shellPairs(spInd);
             if (sp.mu!=sp.nu) for (var tmu:Int=sp.mu; tmu<=sp.mu2; tmu++) for (var tnu:Int=sp.nu; tnu<=sp.nu2; tnu++) 
                 jMatrix(tnu,tmu) = jMatrix(tmu,tnu);
         }
         // Use the upper half of J and K to form G
-        for (var tmu:Int=0; tmu<N; tmu++) for (var tnu:Int=tmu; tnu<N; tnu++) 
+        finish for (thNo in 0..(maxTh-1)) async for (var tmu:Int=thNo; tmu<N; tmu+=maxTh) for (var tnu:Int=tmu; tnu<N; tnu++) 
             gMat(tnu,tmu)=gMat(tmu,tnu)=jMatrix(tmu,tnu)-kMatrix(tmu,tnu);
 
         @Ifdef("__DEBUG__") {
