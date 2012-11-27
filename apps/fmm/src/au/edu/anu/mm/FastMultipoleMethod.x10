@@ -279,7 +279,7 @@ public class FastMultipoleMethod {
             val localAtoms = new Array[Pair[UInt,MMAtom]](myAtoms.size);
             val invSideLength = lowestLevelDim / size;
             val offset = lowestLevelDim / 2.0;
-            for (i in myAtoms) {
+            for ([i] in myAtoms) {
                 val atom = myAtoms(i);
                 val mortonId = OctantId.getLeafMortonId(atom.centre, invSideLength, offset);
                 localAtoms(i) = (new Pair[UInt,MMAtom](mortonId, atom));
@@ -395,7 +395,7 @@ public class FastMultipoleMethod {
         val octantLoads = local.octantLoads;
         octantLoads.clear();
         var filled:Int = 0;
-        for (i in localAtoms) {
+        for ([i] in localAtoms) {
             val leafMortonId = localAtoms(i).first as Int;
             if (octantLoads(leafMortonId)++ == 0L) filled++;
             //Console.OUT.println("sorting atom in octant " + mortonId);
@@ -418,7 +418,7 @@ public class FastMultipoleMethod {
             var currentOctant:Pair[UInt,ArrayList[MMAtom]] = new Pair[UInt,ArrayList[MMAtom]](firstMortonId, new ArrayList[MMAtom](density));
             octantAtoms.add(currentOctant);
 
-            for (i in sortedAtoms) {
+            for ([i] in sortedAtoms) {
                 val atom = sortedAtoms(i);
                 val leafMortonId = atom.first;
 

@@ -39,7 +39,7 @@ public class ParentOctant extends Octant implements Comparable[ParentOctant] {
 
     public def countOctants():Int {
         var octants:Int = 0;
-        for (i in children) {
+        for ([i] in children) {
             val child = children(i);
             if (child != null) {
                 octants += child.countOctants();
@@ -50,7 +50,7 @@ public class ParentOctant extends Octant implements Comparable[ParentOctant] {
 
     public def ghostOctants():Int {
         var ghostOctants:Int = 0;
-        for (i in children) {
+        for ([i] in children) {
             val child = children(i);
             if (child != null) {
                 ghostOctants += child.ghostOctants();
@@ -73,7 +73,7 @@ public class ParentOctant extends Octant implements Comparable[ParentOctant] {
 
         val childExpansions = new Array[Pair[Int,MultipoleExpansion]](8);
         finish {
-            for (i in children) {
+            for ([i] in children) {
                 val child = children(i);
                 if (child != null) async {
                     childExpansions(i) = child.upward();
