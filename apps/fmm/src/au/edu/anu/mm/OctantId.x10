@@ -23,12 +23,26 @@ public struct OctantId(x:UByte, y:UByte, z:UByte, level:UByte) implements Compar
     }
 
     public def compareTo(b:OctantId):Int {
-        val comp = this.getLeafMortonId().compareTo(b.getLeafMortonId());
-        if (comp == 0) {
-            return this.level.compareTo(b.level);
-        } else {
-            return comp;
+        val levelComp = this.level.compareTo(b.level);
+        if (levelComp == 0) {
+            val cX = Math.log2(this.x ^ b.x);
+            val cY = Math.log2(this.y ^ b.y);
+            val cZ = Math.log2(this.z ^ b.z);
+            if (cX >= cY) {
+                 if (cX >= cZ) {
+                    return x.compareTo(b.x);
+                 } else {
+                    return z.compareTo(b.z);
+                 }
+            } else {
+                if (cY >= cZ) {
+                    return y.compareTo(b.y);
+                } else {
+                    return z.compareTo(b.z);
+                }
+            }
         }
+        return levelComp;
     }
 
     public operator this < (x:OctantId) = (this.compareTo(x) < 0);

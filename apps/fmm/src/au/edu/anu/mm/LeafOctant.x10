@@ -35,11 +35,10 @@ public class LeafOctant extends Octant implements Comparable[LeafOctant] {
     private var sources:Rail[Double];
 
     /** The U-list consists of all leaf octants not well-separated from this octant. */
-    private var uList:Rail[UInt];
+    private var uList:UList;
 
     public def this(id:OctantId, numTerms:Int, ws:Int, dMax:UByte) {
         super(id, numTerms, ws, dMax);
-        this.uList = createUList(ws, dMax);
     }
 
     public def makeSources() {
@@ -72,7 +71,6 @@ public class LeafOctant extends Octant implements Comparable[LeafOctant] {
      * N.B. must only be called once per pass
      */
     protected def upward():Pair[Int,MultipoleExpansion] {
-        //Console.OUT.println("at " + here + " LeafOctant.upward for " + id + " numAtoms = " + numAtoms());
         if (atoms.size() > 0) {
             multipoleExp.clear();
             localExp.clear();
@@ -98,7 +96,6 @@ public class LeafOctant extends Octant implements Comparable[LeafOctant] {
     }
 
     protected def downward(parentLocalExpansion:LocalExpansion):Double {
-        //Console.OUT.println("at " + here + " LeafOctant.downward for " + id + " numAtoms = " + numAtoms());
         this.multipoleReady = false; // reset
 
         if (atoms.size() > 0) {
@@ -152,47 +149,10 @@ public class LeafOctant extends Octant implements Comparable[LeafOctant] {
 
         val periodic = false; // TODO
         // direct calculation with all atoms in non-well-separated octants
-        if (periodic) {
-/*
-            val lowestLevelDim = Math.pow2(dMax);
-            for (p in 0..(uList.size-1)) {
-                val octantIndex2 = uList(p);
-                val octant2Atoms = myLET.getAtomDataForOctant(uList(p));
-                if (octant2Atoms != null) {
-                    val translation = getTranslation(lowestLevelDim, size, octantIndex2.x, octantIndex2.y, octantIndex2.z);
-                    for (octant2AtomsIndex in 0..(octant2Atoms.size-1)) {
-                        val atom2 = octant2Atoms(octant2AtomsIndex);
-                        val translatedCentre = atom2.centre + translation;
-                        for (atomIndex1 in 0..(atoms.size()-1)) {
-                            val atom1 = atoms(atomIndex1);
-                            val rVec = translatedCentre - atom1.centre;
-                            val r2 = rVec.lengthSquared();
-                            if (r2 != 0.0) { // don't include dipole-balancing charges at same point
-@Ifdef("__BGP__") {
-                                val invR = rsqrt(r2);
-                                val invR2 = invR * invR;
-}
-@Ifndef("__BGP__") {
-                                val invR2 = 1.0 / r2;
-                                val invR = Math.sqrt(invR2);
-}
-                                val e = atom1.charge * atom2.charge * invR;
-                                directEnergy += e;
-                                val pairForce = e * invR2 * rVec;
-                                atom1.force += pairForce;
-                            }
-                        }
-                    }
-                }
-            }
-*/
-        } else {
-            //Console.OUT.println(id + " uList " + uList.size);
-            for (p in 0..(uList.size-1)) {
-                val oct2Data = myLET.getAtomDataForOctant(uList(p));
-                if (oct2Data != null) {
-                    directEnergy += p2pKernel(oct2Data);
-                }
+        for (mortonId in uList) {
+            val oct2Data = myLET.getAtomDataForOctant(mortonId);
+            if (oct2Data != null) {
+                directEnergy += p2pKernel(oct2Data);
             }
         }
 
@@ -246,7 +206,6 @@ public class LeafOctant extends Octant implements Comparable[LeafOctant] {
             var fiy:Double = atomI.force.j;
             var fiz:Double = atomI.force.k;
 
-            //Console.OUT.println("at " + here + " calculating direct for " + id + " against " + uList(p));
             for (var j:Int=0; j<oct2Data.size; j+=4) {
                 val xj = oct2Data(j);
                 val yj = oct2Data(j+1);
@@ -323,7 +282,6 @@ public class LeafOctant extends Octant implements Comparable[LeafOctant] {
         val xExtent = (id.x > 0U && id.x < maxExtent) ? 3 : 2;
         val yExtent = (id.y > 0U && id.y < maxExtent) ? 3 : 2;
         val zExtent = (id.z > 0U && id.z < maxExtent) ? 3 : 2;
-        //Console.OUT.println("uList for " + id + " size = " + xExtent * yExtent * zExtent);
         return xExtent * yExtent * zExtent;
     }
 
@@ -357,34 +315,85 @@ public class LeafOctant extends Octant implements Comparable[LeafOctant] {
         return perInt;
     }
 
-    /**
-     * Creates the U-list for this octant.
-     * The U-list consists of all leaf octants not well-separated from this octant.
-     */
-    private def createUList(ws:Int, dMax:UByte) {
-        val uList = new Rail[UInt](estimateUListSize(id, dMax));
-        val level = id.level as UInt;
-        val levelDim = Math.pow2(id.level);
-        val x1 = id.x as UInt;
-        val y1 = id.y as UInt;
-        val z1 = id.z as UInt;
-        var i:Int = 0;
-        for (x in Math.max(0,id.x-ws)..Math.min(levelDim-1,id.x+ws)) {
-            val x2 = x as UInt;
-            for (y in Math.max(0,id.y-ws)..Math.min(levelDim-1,id.y+ws)) {
-                val y2 = y as UInt;
-                for (z in Math.max(0,id.z-ws)..Math.min(levelDim-1,id.z+ws)) {
-                    val z2 = z as UInt;
-                    if (!(x2==x1 && y2==y1 && z2==z1)) {
-                        uList(i++) = OctantId.getMortonId(x2,y2,z2,level);
-                    }
-                }
-            }
-        }
-        return uList;
+    public def createUList(ws:Int) {
+        uList = new UList(id, ws);
     }
 
-    public def getUList() = this.uList;
+    public def getUList() = uList;
+
+    /** 
+     * The U-list consists of all leaf octants not well-separated from this octant.
+     */
+    public class UList implements Iterable[UInt] {
+        val level:UByte;
+        val minX:UByte;
+        val maxX:UByte;
+        val minY:UByte;
+        val maxY:UByte;
+        val minZ:UByte;
+        val maxZ:UByte;
+
+        public def this(id:OctantId, ws:Int) {
+            val levelDim = Math.pow2(id.level);
+            minX = Math.max(0,id.x-ws) as UByte;
+            maxX = Math.min(levelDim-1,id.x+ws) as UByte;
+            minY = Math.max(0,id.y-ws) as UByte;
+            maxY = Math.min(levelDim-1,id.y+ws) as UByte;
+            minZ = Math.max(0,id.z-ws) as UByte;
+            maxZ = Math.min(levelDim-1,id.z+ws) as UByte;
+            this.level = id.level;
+        }
+
+        public def iterator() = new UListIterator();
+
+        public class UListIterator implements Iterator[UInt] {
+            var x:UByte;
+            var y:UByte;
+            var z:UByte;
+            public def this() {
+                x = minX;
+                y = minY;
+                z = minZ;
+            }
+
+            public def hasNext():Boolean {
+                if (x <= maxX) {
+                    if (!(x==id.x && y==id.y && z==id.z)) {
+                        return true;
+                    } else {
+                        moveToNext();
+                        if (x <= maxX && !(x==id.x && y==id.y && z==id.z)) return true;
+                    }
+                }
+                return false;
+            }
+            
+            public def next():UInt {
+                if (x <= maxX && !(x==id.x && y==id.y && z==id.z)) {
+                    val res = OctantId.getMortonId(x, y, z, level);
+                    moveToNext();
+                    return res;
+                } else {
+                    throw new UnsupportedOperationException("reached end of uList for " + LeafOctant.this.id);
+                }
+            }
+
+            private def moveToNext() {
+                do {
+                    if (z < maxZ) {
+                        z++;
+                    } else if (y < maxY) {
+                        z = minZ;
+                        y++;
+                    } else {
+                        z = minZ;
+                        y = minY;
+                        x++;
+                    }
+                } while(x <= maxX && (x==id.x && y==id.y && z==id.z));
+            }
+        }
+    }
 
     public def toString(): String {
         return "LeafOctant " + id;
