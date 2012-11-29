@@ -110,8 +110,8 @@ public class FmmLocalData {
         val combinedUSet = new HashSet[UInt]();
         for(octant in leafOctants) {
             val uList = octant.getUList();
-            for ([p] in uList) {
-                combinedUSet.add(uList(p));
+            for (mortonId in uList) {
+                combinedUSet.add(mortonId);
             }
         }
 
