@@ -28,17 +28,14 @@ public abstract class Octant implements Comparable[Octant] {
 
     public var parent:Octant;
 
-    /** 
-     * The V-list consists of the children of those boxes 
-     * not well-separated from this box's parent.
-     */
-    private val vList:Rail[OctantId];
-
     /** The multipole expansion of the charges within this box. */
     public val multipoleExp:MultipoleExpansion;
 
     /** The Taylor expansion of the potential within this box due to particles in well separated boxes. */
     public val localExp:LocalExpansion;
+
+    /** The V-list for this octant, or null if this is a ghost octant. */
+    public var vList:VList;
 
     /** 
      * Flag set to true when octant multipole expansion is consistent i.e.
@@ -54,7 +51,6 @@ public abstract class Octant implements Comparable[Octant] {
         this.id = id;
         this.multipoleExp = new MultipoleExpansion(numTerms);
         this.localExp = new LocalExpansion(numTerms);
-        this.vList = createVList(ws, dMax);
     }
 
     /**
@@ -64,7 +60,6 @@ public abstract class Octant implements Comparable[Octant] {
         this.id = id;
         this.multipoleExp = null;
         this.localExp = null;
-        this.vList = null;
     }
 
     public def compareTo(b:Octant):Int = id.compareTo(b.id);
@@ -103,10 +98,7 @@ public abstract class Octant implements Comparable[Octant] {
         // transform and add multipole expansions from same level
         val numTerms = localExp.p;
         val scratch = FmmScratch.getWorkerLocal();
-        val vList = getVList();
-        //Console.OUT.println(id + " vList " + vList.size);
-        for ([p] in vList) {
-            val octantIndex2 = vList(p);
+        for (octantIndex2 in vList) {
             val box2MultipoleExp = locallyEssentialTree.getMultipoleForOctant(octantIndex2.getMortonId());
            
             if (box2MultipoleExp != null) {
@@ -117,7 +109,6 @@ public abstract class Octant implements Comparable[Octant] {
                 localExp.transformAndAddToLocal(scratch.exp, scratch.array,
 			        Vector3d(dx2*sideLength, dy2*sideLength, dz2*sideLength), 
 					myComplexK(dx2,dy2,dz2), box2MultipoleExp, myWignerB(dx2,dy2,dz2) );
-                //Console.OUT.println("at " + here + " added multipole for " + octantIndex2 + " to " + id);
             }
         }
 
@@ -134,17 +125,17 @@ public abstract class Octant implements Comparable[Octant] {
     }
 
     protected def sendMultipole() {
+        if (vList != null) {
         // async send this box's multipole expansion to V-list
         //Console.OUT.println("at " + here + " sending multipole for " + id);
-        if (vList != null) {
             val local = FastMultipoleMethod.localData;
             val mortonId = id.getMortonId();
             val multipoleExp = this.multipoleExp;
             val vListPlaces = new HashSet[Int]();
-            for ([p] in vList) {
-                val placeId = local.getPlaceId(vList(p).getAnchor(local.dMax));
+            for (octantId in vList) {
+                val placeId = local.getPlaceId(octantId.getAnchor(local.dMax));
                 if (placeId >= 0 && placeId < Place.MAX_PLACES) {
-                    //Console.OUT.println("at " + here + " sending multipole for " + id + " " + vList(p) + " held at " + placeId);
+                    //Console.OUT.println("at " + here + " sending multipole for " + id + " to " + octantId + " held at " + placeId);
                     vListPlaces.add(placeId);
                 }
             }
@@ -153,7 +144,6 @@ public abstract class Octant implements Comparable[Octant] {
                     local.locallyEssentialTree.setMultipoleForOctant(mortonId, multipoleExp);
                 } else {
                     at(Place(placeId)) async {
-                        //Console.OUT.println("at " + here + " sending multipole for " + id + " to place " + placeId);
                         FastMultipoleMethod.localData.locallyEssentialTree.setMultipoleForOctant(mortonId, multipoleExp);
                     }
                 }
@@ -201,6 +191,10 @@ public abstract class Octant implements Comparable[Octant] {
         return colleagues - neighbours;
     }
 
+    public def createVList(ws:Int, dMax:UByte) {
+        vList = new VList(id, ws, dMax);
+    }
+
     /**
      * Returns a cost estimate per interaction (in ns) of V-list calculation.
      */
@@ -223,47 +217,6 @@ public abstract class Octant implements Comparable[Octant] {
         return (stop-start)/10L;
     }
 
-    /**
-     * Creates the V-list for this box.
-     * The V-list consists of the children of those boxes not 
-     * well-separated from the parent.
-     */
-    private def createVList(ws:Int, dMax:UByte) {
-        val vList = new Array[OctantId](estimateVListSize(id, ws));
-        val levelDim = Math.pow2(id.level);
-        val xOffset = id.x%2 == 1UY ? -1 : 0;
-        val yOffset = id.y%2 == 1UY ? -1 : 0;
-        val zOffset = id.z%2 == 1UY ? -1 : 0;
-        val extent = 2*ws;
-        var i:Int=0;
-        for (x in Math.max(0,id.x+xOffset-extent)..Math.min(levelDim-1,id.x+xOffset+extent+1)) {
-            val x2 = x as UByte;
-            for (y in Math.max(0,id.y+yOffset-extent)..Math.min(levelDim-1,id.y+yOffset+extent+1)) {
-                val y2 = y as UByte;
-                for (z in Math.max(0,id.z+zOffset-extent)..Math.min(levelDim-1,id.z+zOffset+extent+1)) {
-                    val z2 = z as UByte;
-                    if (wellSeparated(ws, x, y, z)) {
-                        vList(i++) = OctantId(x2,y2,z2,id.level);
-                    }
-                }
-            }
-        }
-        return vList;
-    }
-
-    public def getVList() = this.vList;
-
-    /**
-     * Returns true if this box is well-separated from <code>x,y,z</code>
-     * on the same level, i.e. if there are at least <code>ws</code>
-     * boxes separating them.
-     */
-    private def wellSeparated(ws:Int, x2:Int, y2:Int, z2:Int) : Boolean {
-        return Math.abs(id.x - x2) > ws 
-            || Math.abs(id.y - y2) > ws 
-            || Math.abs(id.z - z2) > ws;
-    }
-
     static struct SumReducer implements Reducible[Double] {
         public def zero() = 0.0;
         public operator this(a:Double, b:Double) = (a + b);
@@ -271,6 +224,98 @@ public abstract class Octant implements Comparable[Octant] {
 
     public def toString(): String {
         return "Octant " + id;
+    }
+
+    /** 
+     * The V-list consists of the children of those boxes 
+     * not well-separated from this box's parent.
+     */
+    private class VList implements Iterable[OctantId] {
+        val ws:Int;
+        val level:UByte;
+        val minX:UByte;
+        val maxX:UByte;
+        val minY:UByte;
+        val maxY:UByte;
+        val minZ:UByte;
+        val maxZ:UByte;
+
+        public def this(id:OctantId, ws:Int, dMax:UByte) {
+            val levelDim = Math.pow2(id.level);
+            val xOffset = id.x%2 == 1UY ? -1 : 0;
+            val yOffset = id.y%2 == 1UY ? -1 : 0;
+            val zOffset = id.z%2 == 1UY ? -1 : 0;
+            val extent = 2*ws;
+            minX = Math.max(0,id.x+xOffset-extent) as UByte;
+            maxX = Math.min(levelDim-1,id.x+xOffset+extent+1) as UByte;
+            minY = Math.max(0,id.y+yOffset-extent) as UByte;
+            maxY = Math.min(levelDim-1,id.y+yOffset+extent+1) as UByte;
+            minZ = Math.max(0,id.z+zOffset-extent) as UByte;
+            maxZ = Math.min(levelDim-1,id.z+zOffset+extent+1) as UByte;
+            this.ws = ws;
+            this.level = id.level;
+        }
+
+        /**
+         * Returns true if this box is well-separated from <code>x,y,z</code>
+         * on the same level, i.e. if there are at least <code>ws</code>
+         * boxes separating them.
+         */
+        private def wellSeparated(ws:Int, x2:Int, y2:Int, z2:Int) : Boolean {
+            return Math.abs(Octant.this.id.x - x2) > ws 
+                || Math.abs(Octant.this.id.y - y2) > ws 
+                || Math.abs(Octant.this.id.z - z2) > ws;
+        }
+
+        public def iterator() = new VListIterator();
+
+        public class VListIterator implements Iterator[OctantId] {
+            var x:UByte;
+            var y:UByte;
+            var z:UByte;
+            public def this() {
+                x = minX;
+                y = minY;
+                z = minZ;
+            }
+
+            public def hasNext():Boolean {
+                if (x <= maxX) {
+                    if (wellSeparated(ws, x, y, z)) {
+                        return true;
+                    } else {
+                        moveToNext();
+                        if (x <= maxX && wellSeparated(ws, x, y, z)) return true;
+                    }
+                }
+                return false;
+            }
+            
+            public def next():OctantId {
+                if (x <= maxX && wellSeparated(ws, x, y, z)) {
+                    val res = new OctantId(x, y, z, level);
+                    moveToNext();
+                    return res;
+                } else {
+                    throw new UnsupportedOperationException("reached end of vList for " + Octant.this.id);
+                }
+            }
+
+            private def moveToNext() {
+                do {
+                    if (z < maxZ) {
+                        z++;
+                    } else if (y < maxY) {
+                        z = minZ;
+                        y++;
+                    } else {
+                        z = minZ;
+                        y = minY;
+                        x++;
+                    }
+                } while(x <= maxX && !wellSeparated(ws, x, y, z));
+            }
+        }
     }
 }
 
