@@ -229,29 +229,27 @@ public class PenningTrap {
                 // timestep using Boris integrator
                 val chargeMassRatio = atom.charge / atom.mass * CHARGE_MASS_FACTOR;
 
-                // get the electric field at ion centre due to other ions
                 /*
-                var E:Vector3d = Vector3d.NULL;
-                for (j in 0..(boxAtoms.size-1)) {
-                    if (i == j) continue;
-                    val atomJ = boxAtoms(j);
-                    if (atomJ != null) {
+                // get the electric field at ion centre due to other ions
+                for (j in 0..(leafOctant.atoms.size()-1)) {
+                    val atomJ = leafOctant.atoms(j);
+                    if (atom != atomJ && atomJ != null) {
                         val r = atom.centre - atomJ.centre;
                         val r2 = r.lengthSquared();
                         val absR = Math.sqrt(r2);
                         val atomContribution = COULOMB_FACTOR * atomJ.charge / r2 / absR * r;
-                        //Console.OUT.println(j + " => " + i + " = " + atomContribution);
-                        E = E + atomContribution;
+                        Console.OUT.println(atomJ.centre + " => " + atom.centre + " = " + atomContribution);
                     }
                 }
-                var Ef:Vector3d = getElectrostaticField(atom.centre);
+                //var E:Vector3d = getElectrostaticField(atom.centre);
                 //Console.OUT.println("Ef(" + i + ") = " + Ef.length() + " Ej = " + E.length() + " proportion " + Ef.length()/E.length());
-                E += Ef;
+                //E += Ef;
                 */
+                
                 val E = getElectrostaticField(atom.centre);
 
-                //Console.OUT.println("E = " + E);
-                val halfA = 0.5 * dt * chargeMassRatio * E;
+                //Console.OUT.println("atom at " + atom.centre + " E = " + E + " pairwise = " + COULOMB_FACTOR * atom.force);
+                val halfA = 0.5 * dt * chargeMassRatio * (E + COULOMB_FACTOR * atom.force);
                 val vMinus = atom.velocity + halfA; // m
 
                 //val larmorFreq = chargeMassRatio * magB;

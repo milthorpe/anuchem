@@ -64,10 +64,8 @@ public class FastMultipoleMethod {
     /** The well-separatedness parameter ws. */
     public val ws:Int;
 
-    /**
-     * Are boundary conditions periodic?
-     */
-    val periodic:boolean;
+    /** Verbose logging */
+    val verbose:boolean;
 
     public static val localData = new FmmLocalData();
 
@@ -105,10 +103,10 @@ public class FastMultipoleMethod {
                     ws:Int,
                     size:Double,
                     topLevel:Int,
-                    periodic:boolean) {
+                    verbose:Boolean
+                    ) {
         this.density = density as Int;
         this.topLevel = topLevel as UByte;
-        this.periodic = periodic;
         this.dMax = dMax as UByte;
 
         val lowestLevelDim = Math.pow2(dMax);
@@ -118,6 +116,7 @@ public class FastMultipoleMethod {
         this.ws = ws;
 
         this.size = size;
+        this.verbose = verbose;
     }
     
     public def calculateEnergy():Double {
@@ -144,7 +143,9 @@ public class FastMultipoleMethod {
         }
         val potential = downwardPass();
         timer.stop(FmmLocalData.TIMER_INDEX_TOTAL);
-        Console.OUT.printf("at %d: prefetch %.3G upward %.3G downward %.3G\n", here.id, timer.mean(FmmLocalData.TIMER_INDEX_PREFETCH) / 1e9, timer.mean(FmmLocalData.TIMER_INDEX_UPWARD) / 1e9, timer.mean(FmmLocalData.TIMER_INDEX_DOWNWARD) / 1e9);
+        if (verbose) {
+            Console.OUT.printf("at %d: prefetch %.3G upward %.3G downward %.3G\n", here.id, timer.mean(FmmLocalData.TIMER_INDEX_PREFETCH) / 1e9, timer.mean(FmmLocalData.TIMER_INDEX_UPWARD) / 1e9, timer.mean(FmmLocalData.TIMER_INDEX_DOWNWARD) / 1e9);
+        }
 
         return 0.5 * potential;
 
