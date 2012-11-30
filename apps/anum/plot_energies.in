@@ -1,0 +1,22 @@
+set title "Kinetic energy distribution in ion packet after 400ns"
+
+set output 'energies.ps'
+set terminal postscript enhanced 22
+
+binwidth=0.000001
+bin(x,width)=width*floor(x/width)
+set xlabel 'energy (fJ)'
+
+set ylabel 'number'
+
+mean = 0.0104
+stddev = 3.9E-5
+
+set arrow from mean,0 to mean,18 nohead
+set label "mean" at mean,17
+
+set arrow from mean-stddev,0 to mean-stddev,18 nohead lt 2
+set arrow from mean+stddev,0 to mean+stddev,18 nohead lt 2
+
+plot "./energies_400.dat" using (bin($4,binwidth)):(1.0) smooth freq with boxes notitle
+

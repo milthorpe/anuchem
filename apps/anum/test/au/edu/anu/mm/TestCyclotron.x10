@@ -52,7 +52,7 @@ public class TestCyclotron {
      * edgeLength <side length of cubic Penning trap>
      * dt <timestep in ns>
      * steps <number of timesteps>
-     * + fmmDensity <number of particles per lowest level box>
+     * + fmmDMax <number of particles per lowest level box>
      * + fmmTerms <number of terms in FMM expansions>
      * * species <name> <mass> <charge> <number of ions>
      */
@@ -124,11 +124,6 @@ public class TestCyclotron {
             line = fil.readLine();
         }
 
-        if (line.startsWith("fmmDensity")) {
-            fmmDensity = getDoubleParam(line);
-            line = fil.readLine();
-        }
-
         if (line.startsWith("fmmDMax")) {
             fmmDMax = getIntParam(line);
             line = fil.readLine();
@@ -197,12 +192,12 @@ public class TestCyclotron {
 
         fil.close();
 
-        Console.OUT.printf("# FMM density %4.3f numTerms %i\n", fmmDensity, fmmTerms);
+        Console.OUT.printf("# FMM dMax %d numTerms %i\n", fmmDMax, fmmTerms);
 
         val distAtoms = DistArray.make[Rail[MMAtom]](Dist.makeUnique(), (Point) => new Array[MMAtom](0));
         distAtoms(0) = atoms; // assign all atoms to place 0 to start - they will be reassigned
 
-        val trap = new PenningTrap(totalIons, distAtoms, V, new Vector3d(0.0, 0.0, B), edgeLength, fmmDensity, fmmDMax, fmmTerms);
+        val trap = new PenningTrap(totalIons, distAtoms, V, new Vector3d(0.0, 0.0, B), edgeLength, fmmDMax, fmmTerms);
         trap.mdRun(dt, steps, logSteps);
     }
 

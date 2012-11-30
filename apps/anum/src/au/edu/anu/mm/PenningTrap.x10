@@ -80,11 +80,13 @@ public class PenningTrap {
                     trappingPotential:Double,
                     magneticField:Vector3d,
                     edgeLength:Double,
-                    fmmDensity:Double,
                     fmmDMax:Int,
                     fmmNumTerms:Int) {
         this.numAtoms = numAtoms;
         val wellSeparatedParam = 2;
+        val fmmNumBoxes = Math.pow(8.0, fmmDMax);
+        val fmmDensity = Math.ceil(numAtoms / fmmNumBoxes);
+        Console.OUT.println("fmm num levels = " + fmmDMax + " density = " + fmmDensity);
         this.fmm = new FastMultipoleMethod(fmmDensity, fmmDMax, fmmNumTerms, wellSeparatedParam, edgeLength);
         fmm.initialAssignment(numAtoms, atoms);
         this.V_T = trappingPotential;
@@ -93,7 +95,7 @@ public class PenningTrap {
         this.eNorm = V_T * PenningTrap.ALPHA_PRIME / (edgeLength * edgeLength);
         this.eFieldNorm = -BETA_PRIME / edgeLength;
         this.magB = magneticField.magnitude();
-        Console.OUT.println("fmm num levels = " + fmmDMax);
+
     }
 
     /**
@@ -115,6 +117,10 @@ public class PenningTrap {
         val endTime = (timestep * numSteps) as Int;
         val endPosHeaderPrinter = new Printer(new FileWriter(new File("positions_" + endTime + ".dat"), false));
         endPosHeaderPrinter.println("# positions at time " + endTime);
+
+        // intitalise energy file
+        val energiesHeaderPrinter = new Printer(new FileWriter(new File("energies_" + endTime + ".dat"), false));
+        endPosHeaderPrinter.println("# energies at time " + endTime);
 
         finish ateach(place in Dist.makeUnique()) {
             var step:Int = 0;
@@ -143,6 +149,7 @@ public class PenningTrap {
             }
 
             printEndPositions(timestep * step);
+            printEnergies(timestep * step);
 
             Team.WORLD.allreduce[Long](here.id, timer.count, 0, timer.count, 0, timer.count.size, Team.ADD);
             Team.WORLD.allreduce[Long](here.id, timer.total, 0, timer.total, 0, timer.total.size, Team.ADD);
@@ -182,6 +189,19 @@ public class PenningTrap {
         for (leafOctant in leafOctants) {
             printPositions(time, leafOctant.atoms, endPosPrinter);
         }
+    }
+
+    private def printEnergies(time:Double) {
+        // print end positions
+        val timeInt = (time) as Int;
+        val energiesPrinter = new Printer(new FileWriter(new File("energies_" + timeInt + ".dat"), true));
+        var stats:Statistics = new Statistics();
+        val leafOctants = FastMultipoleMethod.localData.leafOctants;
+        for (leafOctant in leafOctants) {
+            val s = printEnergies(time, leafOctant.atoms, energiesPrinter);
+            stats.add(s);
+        }
+        energiesPrinter.printf("mean energy %.5g stddev %.4g", stats.mean(), stats.stdDev());
     }
 
     /**
@@ -330,6 +350,26 @@ public class PenningTrap {
         }
     }
 
+    /** 
+     * Prints the energies of all particles in the list.  Also returns
+     * Statistics on the energy.
+     */
+    private def printEnergies(time:Double, myAtoms:ArrayList[MMAtom], printer:Printer):Statistics {
+        val timeInt = time as Int;
+        var stats:Statistics = new Statistics();
+        for ([i] in 0..(myAtoms.size()-1)) {
+            val atom = myAtoms(i);
+            if (atom != null) {
+                val energy = 0.5 * 1.66053892173e-12 /* Da->kg * 10^15fJ */ * atom.mass * atom.velocity.lengthSquared();
+                printer.printf("%i %i %s %12.8f\n", here.id, i, atom.symbol, energy);
+                stats.n++; 
+                stats.sum += energy;
+                stats.sumOfSquares += energy*energy;
+            }
+        }
+        return stats;
+    }
+
     private def reduceAndPrintProperties(time:Double, props:SystemProperties) {
         Team.WORLD.allreduce[Double](here.id, props.raw, 0, props.raw, 0, props.raw.size, Team.ADD);
         if (here == Place.FIRST_PLACE) {
@@ -455,6 +495,29 @@ public class PenningTrap {
                 "E (fJ)",
                 "I (pA)"); 
         }
+    }
+
+    public static class Statistics {
+        public var n:Int;
+        public var sum:Double;
+        public var sumOfSquares:Double;
+
+        public def add(a:Statistics) {
+            n += a.n;
+            sum += a.sum;
+            sumOfSquares += a.sumOfSquares;
+        }
+
+        public def mean() = sum / n;
+
+        public def variance() {
+            val mean = mean();
+            return (sumOfSquares / n - mean*mean);
+        }
+
+        public def stdDev() {
+            return Math.sqrt(variance());
+        } 
     }
 }
 
