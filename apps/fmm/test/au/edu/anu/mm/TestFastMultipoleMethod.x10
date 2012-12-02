@@ -98,7 +98,7 @@ public class TestFastMultipoleMethod extends TestElectrostatic {
         }
 
         val atoms = generateAtoms(numAtoms, false);
-        val fmm = new FastMultipoleMethod(density, dMax, numTerms, wellSpaced, SIZE, verbose);
+        val fmm = new FastMultipoleMethod(density, dMax, numTerms, wellSpaced, SIZE, 2, verbose);
         fmm.initialAssignment(numAtoms, atoms);
 
         finish ateach(place in Dist.makeUnique()) {
