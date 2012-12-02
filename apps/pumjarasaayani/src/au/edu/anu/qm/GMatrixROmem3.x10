@@ -46,15 +46,6 @@ public class GMatrixROmem3 extends DenseMatrix{self.M==self.N} {
     transient var papi:PAPI = new PAPI(); 
 
     // RO stuff 
-    
-//transient val aux1:Integral_Pack;
-//transient val aux2:Integral_Pack;
-//transient val aux3:Integral_Pack;
-//transient val aux4:Integral_Pack;
-//transient val aux5:Integral_Pack;
-//transient val aux6:Integral_Pack;
-//transient val aux7:Integral_Pack;
-
     var roN:Int; var roNK:Int; var roL:Int; // 'var' because it can be overridden
     val roK:Int; val roZ:Double; val omega:Double; val roThresh:Double;
     val auxIntMat:DenseMatrix; 
@@ -62,7 +53,6 @@ public class GMatrixROmem3 extends DenseMatrix{self.M==self.N} {
     val ylms:Rail[Ylm];   
     //val temp:Rail[Double];
     val dk:Rail[Double];
-   
 
     // Standard conventional stuff
     private val bfs : BasisFunctions;
@@ -77,9 +67,9 @@ public class GMatrixROmem3 extends DenseMatrix{self.M==self.N} {
     // parallel stuff
     val maxTh:Int;
     val maxPl:Int;
-    val tjMatrix : Rail[DenseMatrix];
-    val ttemp : Rail[Rail[Double]]; 
-    val tdk : Rail[Rail[Double]]; 
+    val tjMatrix:Rail[DenseMatrix];
+    val ttemp:Rail[Rail[Double]]; 
+    val tdk:Rail[Rail[Double]]; 
     //transient val taux:Array[Integral_Pack]; 
 
     public def this(N:Int, bfs:BasisFunctions, molecule:Molecule[QMAtom], nOrbital:Int, omega:Double,roThresh:Double):GMatrixROmem3{self.M==N,self.N==N} {     
@@ -96,16 +86,11 @@ public class GMatrixROmem3 extends DenseMatrix{self.M==self.N} {
         @Ifdef("__DEBUG__") { Console.OUT.printf("roThresh=%e\n",roThresh); } 
         val jd = JobDefaults.getInstance();
         val l_n = new Rail[Int](jd.roN+3);
-        //taux = new Array[Integral_Pack](maxTh,(Int)=>new Integral_Pack(jd.roN,jd.roL,omega,roThresh,jd.rad,jd.roZ));
-        /*taux = new Rail[Integral_Pack](maxTh);
-        for (thNo in 0..(maxTh-1))  {
-            val a=new Integral_Pack(jd.roN,jd.roL,omega,roThresh,jd.rad,jd.roZ);
-            taux(thNo) = a;
-        }*/ this.omega=omega; this.roThresh=roThresh;
+        this.omega=omega; this.roThresh=roThresh;
         val aux = new Integral_Pack(jd.roN,jd.roL,omega,roThresh,jd.rad,jd.roZ);               
            
         if (omega>0.) { // long-range Ewald operator
-            /*taux(0)/*/aux.getNL(l_n);
+            aux.getNL(l_n);
             roN=roNK=l_n(0);
             roL=l_n(roN+2);  
             this.roNK=roN;
@@ -205,7 +190,7 @@ public class GMatrixROmem3 extends DenseMatrix{self.M==self.N} {
             val sh=rawShellPairs(i); 
             shellPairs(i)=sh;            
             val tempY=new Rail[Double](sh.dconA*sh.dconB*(roL+1)*(roL+1));
-            /*taux(0)*/aux.genClassY(sh.aPoint, sh.bPoint, sh.zetaA, sh.zetaB, sh.dconA, sh.dconB, roL, tempY);
+            aux.genClassY(sh.aPoint, sh.bPoint, sh.zetaA, sh.zetaB, sh.dconA, sh.dconB, roL, tempY);
             ylms(i) = new Ylm(tempY,roL);
         }
         rawShellPairs = null; // Deallocate this variable
