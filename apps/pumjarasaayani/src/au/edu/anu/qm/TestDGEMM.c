@@ -6,7 +6,7 @@
 
 int main(int argc, char* argv[]) {
    int N=700,nOrbital=25,roK=196;
-   int i,j;
+   int i,j,nt;
 
    double (*K)[N],(*auxIntMat)[N],(*halfAuxMat)[N*roK],(*mos)[N];
 
@@ -14,6 +14,8 @@ int main(int argc, char* argv[]) {
    auxIntMat = (double (*)[N]) malloc(sizeof(double)*N*N*roK);
    halfAuxMat = (double (*)[N*roK]) malloc(sizeof(double)*N*nOrbital*roK);
    mos = (double (*)[N]) malloc(sizeof(double)*N*nOrbital);
+
+for (nt=1; nt<=4; nt++) {
 
    for (i=0; i<N; i++) for (j=0; j<N; j++)
        K[i][j]=0.;
@@ -37,12 +39,12 @@ int main(int argc, char* argv[]) {
    // MKL_Set_Num_Threads(8);
    // printf("mkl_get_max_threads()=%d\n",mkl_get_max_threads());
 
-for (i=1; i<=4; i++) {
 
    printf("blas_get_cpu_number()=%d\n",blas_get_cpu_number());
    printf("get_num_nodes()=%d\n",get_num_nodes());
    //printf("omp_get_num_procs()=%d\n",omp_get_num_procs());
-   goto_set_num_threads(i);
+   goto_set_num_threads(nt);
+   openblas_set_num_threads(nt);
    printf("blas_get_cpu_number()=%d\n",blas_get_cpu_number());
    printf("get_num_nodes()=%d\n",get_num_nodes());
 
