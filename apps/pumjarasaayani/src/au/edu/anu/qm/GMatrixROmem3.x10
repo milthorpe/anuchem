@@ -211,11 +211,12 @@ public class GMatrixROmem3 extends DenseMatrix{self.M==self.N} {
     public def compute(density:Density{self.N==this.N}, mos:MolecularOrbitals{self.N==this.N}) {
         val result = Runtime.execForRead("date"); Console.OUT.printf("\nGMatrixROmem.x10 'public def compute' %s...\n",result.readLine()); 
         timer.start(TIMER_TOTAL); 
-        jMatrix.reset(); kMatrix.reset(); //var tINT:Double=0.,tJ:Double=0.,tK:Double=0.;
+        jMatrix.reset(); kMatrix.reset(); //
         val jd = JobDefaults.getInstance();
         this.reset();
-        finish for (pid in (0..(maxPl-1))) async { 
+        finish for (pid in (0..(maxPl-1))) async {             
             val gVal = at(Place.place(pid)) {
+                 var tINT:Double=0.,tJ:Double=0.,tK:Double=0.;
                  val gMat = new DenseMatrix(N,N);
                  // initialization of aux int array should be here
                  
@@ -260,7 +261,7 @@ public class GMatrixROmem3 extends DenseMatrix{self.M==self.N} {
                                 dk(rolm)+=myThreaddk(rolm);
                       }
 
-                      //timer.stop(TIMER_GENCLASS); tINT+=(timer.last(TIMER_GENCLASS) as Double)/1e9;
+                      timer.stop(TIMER_GENCLASS); tINT+=(timer.last(TIMER_GENCLASS) as Double)/1e9;
 
                       // J
                       timer.start(TIMER_JMATRIX);       
@@ -288,7 +289,7 @@ public class GMatrixROmem3 extends DenseMatrix{self.M==self.N} {
                               jMatrix(tmu,tnu)+=myThreadJMat(tmu,tnu);
                       }
 
-                      //timer.stop(TIMER_JMATRIX); tJ+=(timer.last(TIMER_JMATRIX) as Double)/1e9;
+                      timer.stop(TIMER_JMATRIX); tJ+=(timer.last(TIMER_JMATRIX) as Double)/1e9;
 
                       // K
                       if (ron<=roNK) { //This produces K/2
@@ -296,7 +297,7 @@ public class GMatrixROmem3 extends DenseMatrix{self.M==self.N} {
                           DenseMatrixBLAS.compMultTrans(mos, auxIntMat, halfAuxMat, [nOrbital,N*roK, N], false);
                           val halfAuxMat2 = new DenseMatrix(roK*nOrbital, N, halfAuxMat.d);
                           DenseMatrixBLAS.compTransMult(halfAuxMat2, halfAuxMat2, kMatrix, [N, N, roK*nOrbital], true);
-                          //timer.stop(TIMER_KMATRIX); tK+=(timer.last(TIMER_KMATRIX) as Double)/1e9;
+                          timer.stop(TIMER_KMATRIX); tK+=(timer.last(TIMER_KMATRIX) as Double)/1e9;
                       }
                  }
 
@@ -322,10 +323,12 @@ public class GMatrixROmem3 extends DenseMatrix{self.M==self.N} {
                           eK-=.25*density(tmu,tmu)*kMatrix(tmu,tmu);
                       }
                       Console.OUT.printf("  EJ = %.10f a.u.\n  EK = %.10f a.u.\n", eJ/roZ, eK/roZ);
-                      //Console.OUT.printf("  Time INT = %.2f s J = %.2f s K = %.2f s\n", tINT, tJ, tK);
+                      //
                  }*/
+                 Console.OUT.printf("pid=%d:  Time INT = %.2f s J = %.2f s K = %.2f s\n",pid, tINT, tJ, tK);
                  gMat
              };
+
              atomic this.cellAdd(gVal); //super.cellAdd(gVal) ==> Compilation error
         }
 
