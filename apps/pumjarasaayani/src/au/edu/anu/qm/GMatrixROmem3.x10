@@ -215,7 +215,12 @@ public class GMatrixROmem3 extends DenseMatrix{self.M==self.N} {
         val jd = JobDefaults.getInstance();
         this.reset();
         finish for (pid in (0..(maxPl-1))) async {             
-            val gVal = at(Place.place(pid)) {
+            val gVal =  at(Place.place(pid))  {
+@Ifdef("__MKL__") {
+        Console.OUT.println("MKL DGEMM using " + mklGetMaxThreads() + " threads");
+        mklSetNumThreads(maxTh);
+        Console.OUT.println("MKL DGEMM using " + mklGetMaxThreads() + " threads");
+}  
                  var tINT:Double=0.,tJ:Double=0.,tK:Double=0.;
                  val gMat = new DenseMatrix(N,N);
                  // initialization of aux int array should be here
