@@ -203,7 +203,7 @@ public class GMatrixROmem3 extends DenseMatrix{self.M==self.N} {
         jMatrix.reset(); kMatrix.reset();
         val jd = JobDefaults.getInstance();
         this.reset(); val gVal = GlobalRef(this);
-        finish for (pid in (0..(maxPl-1))) async at(Place.place(pid)) { 
+        finish for (pid in (0..(maxPl-1))) at(Place.place(pid)) async { 
             var tINT:Double=0.,tJ:Double=0.,tK:Double=0.;
             val gMat = new DenseMatrix(N,N);
             // initialization of auxint array should be here
