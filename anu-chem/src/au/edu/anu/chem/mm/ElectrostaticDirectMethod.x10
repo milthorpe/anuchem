@@ -197,7 +197,7 @@ public class ElectrostaticDirectMethod {
             val atomsHere = atoms(p1);
             for (i in 0..(atomsHere.size-1)) {
                 val atom = atomsHere(i);
-                Console.OUT.println(atom.symbol + " force = " + atom.force + " magnitude " + atom.force.length());
+                Console.OUT.println(atom.species + " force = " + atom.force + " magnitude " + atom.force.length());
             }
         }
     }

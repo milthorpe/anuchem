@@ -69,7 +69,7 @@ public abstract class SCFMethod {
         val ai = AtomInfo.getInstance();
         
         for(i=0; i<noOfAtoms; i++) {
-            atomicNumbers(i) = ai.getAtomicNumber(molecule.getAtom(i));
+            atomicNumbers(i) = molecule.getAtom(i).species;
         } // end for
         
         // and compute nuclear energy

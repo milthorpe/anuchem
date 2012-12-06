@@ -12,6 +12,7 @@ package au.edu.anu.mm;
 
 import x10.compiler.Inline;
 import x10.io.File;
+import x10.io.FileReader;
 import x10.io.FileWriter;
 import x10.io.IOException;
 import x10.io.Printer;
@@ -69,6 +70,9 @@ public class PenningTrap {
     /** The maximum calculated error in particle x displacement. */
     private var maxErrorX:Double = 0.0;
 
+    /** All species of ion represented in the trap. */
+    private val speciesList:Rail[SpeciesSpec];
+
     /** 
      * Creates a new Penning trap containing the given atoms.
      * @param trappingPotential the axial confinement potential in V applied to the end plates
@@ -76,26 +80,25 @@ public class PenningTrap {
      * @param edgeLength the side length of the cubic trap
      */
     public def this(numAtoms:Int,
-                    atoms:DistArray[Rail[MMAtom]](1),
                     trappingPotential:Double,
                     magneticField:Vector3d,
                     edgeLength:Double,
                     fmmDMax:Int,
-                    fmmNumTerms:Int) {
+                    fmmNumTerms:Int,
+					speciesList:Rail[SpeciesSpec]) {
         this.numAtoms = numAtoms;
         val wellSeparatedParam = 2;
         val fmmNumBoxes = Math.pow(8.0, fmmDMax);
         val fmmDensity = Math.ceil(numAtoms / fmmNumBoxes);
-        Console.OUT.println("fmm num levels = " + fmmDMax + " density = " + fmmDensity);
+        Console.OUT.println("fmm dMax = " + fmmDMax + " num terms = " + fmmNumTerms + " density = " + fmmDensity);
         this.fmm = new FastMultipoleMethod(fmmDensity, fmmDMax, fmmNumTerms, wellSeparatedParam, edgeLength);
-        fmm.initialAssignment(numAtoms, atoms);
         this.V_T = trappingPotential;
         this.B = magneticField;
         this.edgeLength = edgeLength;
         this.eNorm = V_T * PenningTrap.ALPHA_PRIME / (edgeLength * edgeLength);
         this.eFieldNorm = -BETA_PRIME / edgeLength;
         this.magB = magneticField.magnitude();
-
+        this.speciesList = speciesList;
     }
 
     /**
@@ -104,15 +107,21 @@ public class PenningTrap {
      * @param timestep length in ns
      * @param numSteps number of timesteps to simulate
      */
-    public def mdRun(timestep:Double, numSteps:Int, logSteps:Int) {
+    public def mdRun(timestep:Double, numSteps:Int, resumeStep:Int, logSteps:Int, atoms:DistArray[Rail[MMAtom]](1)) {
+        fmm.initialAssignment(numAtoms, atoms);
+
         Console.OUT.println("# Timestep = " + timestep + "ns, number of steps = " + numSteps);
         val timer = new StatisticalTimer(3);
  
         SystemProperties.printHeader();
 
         // initialise position files
-        val startPosHeaderPrinter = new Printer(new FileWriter(new File("positions_0.dat"), false));
-        startPosHeaderPrinter.println("# positions at time 0");
+        if (resumeStep > 0) {
+            Console.OUT.println("# resuming at " + resumeStep);
+        } else {
+            val startPosHeaderPrinter = new Printer(new FileWriter(new File("positions_0.dat"), false));
+            startPosHeaderPrinter.println("# positions at time 0");
+        }
 
         val endTime = (timestep * numSteps) as Int;
         val endPosHeaderPrinter = new Printer(new FileWriter(new File("positions_" + endTime + ".dat"), false));
@@ -123,9 +132,11 @@ public class PenningTrap {
         endPosHeaderPrinter.println("# energies at time " + endTime);
 
         finish ateach(place in Dist.makeUnique()) {
-            var step:Int = 0;
+            var step:Int = resumeStep;
             val props = new SystemProperties();
-            printStartPositions(props);
+            if (resumeStep == 0) {
+                printStartPositions(props);
+            }
 
             val current = new Array[Double](numSteps);
 
@@ -136,6 +147,7 @@ public class PenningTrap {
                 mdStepLocal(step, timeStepSecs, current, accumProps, props, timer);
                 if (accumProps) {
                     reduceAndPrintProperties(timestep * step, props);
+					writeSnapshot(step);
                 } else {
                     Team.WORLD.barrier(here.id); // TODO is this really required?
                 }
@@ -178,6 +190,7 @@ public class PenningTrap {
             // print start positions
             printPositions(0, octantAtoms, startPosPrinter);
         }
+        startPosPrinter.close();
         reduceAndPrintProperties(0, props);
     }
 
@@ -338,12 +351,80 @@ public class PenningTrap {
         return ion.charge * ion.velocity.j * eFieldNorm;
     }
 
+
+    /** Snapshot files are in the following format:
+     * timesteps:Int
+     * numAtoms:Int
+     * repeat -
+     *   atomIndex:Int
+     *   speciesId:Int
+     *   atomCentre:Int[3]
+     *   atomVelocity:Int[3]
+     */
+    private def writeSnapshot(timesteps:Int) {
+        // print end positions
+        val snapshotWriter = new FileWriter(new File("snapshot_" + timesteps + ".dat"));
+        snapshotWriter.writeInt(timesteps);
+        snapshotWriter.writeInt(numAtoms);
+        val leafOctants = FastMultipoleMethod.localData.leafOctants;
+        for (leafOctant in leafOctants) {
+            writeSnapshot(leafOctant.atoms, snapshotWriter);
+        }
+        snapshotWriter.close();
+    }
+
+    private def writeSnapshot(myAtoms:ArrayList[MMAtom], writer:FileWriter) {
+        for ([i] in 0..(myAtoms.size()-1)) {
+            val atom = myAtoms(i);
+            if (atom != null) {
+                writer.writeInt(atom.index);
+                writer.writeInt(atom.species);
+				writer.writeDouble(atom.centre.i);
+				writer.writeDouble(atom.centre.j);
+				writer.writeDouble(atom.centre.k);
+				writer.writeDouble(atom.velocity.i);
+				writer.writeDouble(atom.velocity.j);
+				writer.writeDouble(atom.velocity.k);
+            }
+        }
+    }
+
+    public def loadFromSnapshot(snapshotFileName:String, atoms:Rail[MMAtom]):Int {
+        Console.OUT.println("loading from snapshot file " + snapshotFileName);
+        val reader = new FileReader(new File(snapshotFileName));
+        val timesteps = reader.readInt();
+        val numAtoms = reader.readInt();
+        Console.OUT.println("reading " + numAtoms + " atoms");
+        var i:Int = 0;
+        try {
+            for (i=0; i < numAtoms; i++) {
+                val index = reader.readInt();
+                val speciesId = reader.readInt();
+                val species = speciesList(speciesId);
+			    val x = reader.readDouble();
+			    val y = reader.readDouble();
+			    val z = reader.readDouble();
+                val dx = reader.readDouble();
+                val dy = reader.readDouble();
+                val dz = reader.readDouble();
+                val ion = new MMAtom(index, Point3d(x, y, z), species.mass, species.charge);
+                ion.velocity = Vector3d(dx, dy, dz);
+                atoms(i) = ion;
+            }
+        } catch (e:Exception) {
+            // no more atoms
+            throw new Exception("incomplete snapshot file: " + snapshotFileName + " (read " + i + " atoms)");
+        }
+        reader.close();
+        return timesteps;
+    }
+
     private def printPositions(time:Double, myAtoms:ArrayList[MMAtom], printer:Printer) {
         val timeInt = time as Int;
         for ([i] in 0..(myAtoms.size()-1)) {
             val atom = myAtoms(i);
             if (atom != null) {
-                printer.printf("%i %i %s %12.8f %12.8f %12.8f\n", here.id, i, atom.symbol, atom.centre.i*1.0e3, atom.centre.j*1.0e3, atom.centre.k*1.0e3);
+                printer.printf("%i %i %d %12.8f %12.8f %12.8f\n", here.id, i, atom.species, atom.centre.i*1.0e3, atom.centre.j*1.0e3, atom.centre.k*1.0e3);
             }
         }
     }
@@ -359,7 +440,7 @@ public class PenningTrap {
             val atom = myAtoms(i);
             if (atom != null) {
                 val energy = 0.5 * 1.66053892173e-12 /* Da->kg * 10^15fJ */ * atom.mass * atom.velocity.lengthSquared();
-                printer.printf("%i %i %s %12.8f\n", here.id, i, atom.symbol, energy);
+                printer.printf("%i %i %d %12.8f\n", here.id, i, atom.species, energy);
                 stats.n++; 
                 stats.sum += energy;
                 stats.sumOfSquares += energy*energy;
@@ -373,6 +454,7 @@ public class PenningTrap {
         if (here == Place.FIRST_PLACE) {
             props.print(time);
         }
+        numAtoms = props.raw(0) as Int;
         props.reset();
     }
 
@@ -516,6 +598,19 @@ public class PenningTrap {
         public def stdDev() {
             return Math.sqrt(variance());
         } 
+    }
+
+    public static class SpeciesSpec {
+        public val name:String;
+        public val mass:Double;
+        public val charge:Int;
+        public val number:Int;
+        public def this(name:String, mass:Double, charge:Int, number:Int) {
+            this.name = name;
+            this.mass = mass;
+            this.charge = charge;
+            this.number = number;
+        }
     }
 }
 

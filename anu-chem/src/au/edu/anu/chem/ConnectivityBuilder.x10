@@ -6,7 +6,7 @@
  *  You may obtain a copy of the License at
  *      http://www.opensource.org/licenses/eclipse-1.0.php
  *
- * (C) Copyright Australian National University 2010.
+ * (C) Copyright Australian National University 2010-2012.
  */
 package au.edu.anu.chem;
 
@@ -27,19 +27,21 @@ public class ConnectivityBuilder[T]{T <: Atom} {
     */
    public def buildConnectivity(mol:Molecule[T]) {
        val noOfAtoms = mol.getNumberOfAtoms();
-       val ai = AtomInfo.getInstance();
+        val ai = AtomInfo.getInstance();
 
        finish for(atom in mol.getAtoms()) async {
            val conn = new ConnectivitySupport();
            val idx  = atom.getIndex();
+            val species = ai.getSpecies(atom.species);    
 
            for(var i:Int=0; i<idx; i++) {
               // check for bond between atom and mol.getAtom(i)
-              val atomI = mol.getAtom(i);              
+              val atomI = mol.getAtom(i); 
+                val speciesI = ai.getSpecies(atomI.species);             
               
               if (conn.canFormBond(atom, atomI)) {
-                 conn.covalentRadiusSum = ai.getCovalentRadius(atom) + ai.getCovalentRadius(atomI);
-                 conn.vdwRadiusSum      = ai.getVdwRadius(atom) + ai.getVdwRadius(atomI);
+                 conn.covalentRadiusSum = species.covalentRadius + speciesI.covalentRadius;
+                 conn.vdwRadiusSum      = species.vdWRadius + speciesI.vdWRadius;
 
                  // classify  
                  if (conn.isSingleBondPresent()) {
@@ -58,23 +60,25 @@ public class ConnectivityBuilder[T]{T <: Atom} {
     * detect weak bonds in the molecule object 
     */
    public def detectWeakBonds(mol:Molecule[T]) {
+        val ai = AtomInfo.getInstance();
        // TODO:
        val noOfAtoms = mol.getNumberOfAtoms();
-       val ai = AtomInfo.getInstance();
        val WEAK_BOND_AXIS_REJECTION_FACTOR = 0.1;
        val WEAK_BOND_ANGLE_TOLERANCE = 1.222;
 
        finish for(atom in mol.getAtoms()) async {
            val conn = new ConnectivitySupport();
            val idx  = atom.getIndex();
+            val species = ai.getSpecies(atom.species);
 
            for(var i:Int=0; i<idx; i++) {
               // check for bond between atom and mol.getAtom(i)
               val atomI = mol.getAtom(i);
+                val speciesI = ai.getSpecies(atomI.species);
 
               if (conn.canFormBond(atom, atomI)) {
-                 conn.covalentRadiusSum = ai.getCovalentRadius(atom) + ai.getCovalentRadius(atomI);
-                 conn.vdwRadiusSum      = ai.getVdwRadius(atom) + ai.getVdwRadius(atomI);
+                 conn.covalentRadiusSum = species.covalentRadius + speciesI.covalentRadius;
+                 conn.vdwRadiusSum      = species.vdWRadius + speciesI.vdWRadius;
 
                  if (conn.isWeekBondPresent() && (!conn.isSingleBondPresent())) {
                     // TODO: make it specific to type of atoms

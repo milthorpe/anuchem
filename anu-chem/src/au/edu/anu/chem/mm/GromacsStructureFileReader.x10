@@ -40,13 +40,16 @@ public class GromacsStructureFileReader {
         var molecule : Molecule[MMAtom] = new Molecule[MMAtom](title(0));
         for(var i:Int=0; i<numAtoms; i++) {
             val line = file.readLine();
+            var species:Int=-1;
             val atomType = line.substring(10,15).trim();
             val charge : Double;
             val mass : Double;
             if (atomType.startsWith("OW")) {
+                species = 0;
                 charge = -0.82;
                 mass = 15.99491461956;
             } else if (atomType.startsWith("HW")) {
+                species = 1;
                 charge = 0.41;
                 mass = 1.00794;
             } else {
@@ -55,7 +58,7 @@ public class GromacsStructureFileReader {
                 charge = 0.0;
             }
             // multiply coords by 10 to convert nm to Angstroms
-            molecule.addAtom(new MMAtom(atomType,
+            molecule.addAtom(new MMAtom(species,
                                          Point3d(Double.parseDouble(line.substring(20,28)) * 10.0,
                                                  Double.parseDouble(line.substring(28,36)) * 10.0,
                                                  Double.parseDouble(line.substring(36,44)) * 10.0
