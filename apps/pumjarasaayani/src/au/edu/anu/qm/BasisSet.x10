@@ -16,6 +16,7 @@ import x10.io.FileReader;
 import x10.util.ArrayList;
 import x10.util.HashMap;
 import au.edu.anu.chem.Atom;
+import au.edu.anu.chem.AtomInfo;
 import au.edu.anu.util.StringSplitter;
 import x10.matrix.DenseMatrix;
 
@@ -28,15 +29,15 @@ import x10.matrix.DenseMatrix;
  */
 public class BasisSet { 
     val name:String;
-    val basisInfo:HashMap[String, AtomicBasis];
-    val basisAtomicDensity:HashMap[String, DenseMatrix];
+    val basisInfo:HashMap[Int, AtomicBasis];
+    val basisAtomicDensity:HashMap[Int, DenseMatrix];
     val roZ:Double;
 
     public def this(name:String, basisDir:String) {
         //Console.OUT.println("\tReading in basis info. for " + name + " from " + basisDir);
 
-        basisInfo = new HashMap[String, AtomicBasis]();
-	    basisAtomicDensity = new HashMap[String, DenseMatrix]();
+        basisInfo = new HashMap[Int, AtomicBasis]();
+	    basisAtomicDensity = new HashMap[Int, DenseMatrix]();
  
         this.name = name;
         val jd = JobDefaults.getInstance();
@@ -82,6 +83,7 @@ public class BasisSet {
 
     /** Read the center definition block for a single atom type. */
     private def readCenterDefinitionBlock(fil:FileReader):AtomicBasis {
+        val ai = AtomInfo.getInstance();
         try {
             var line:String = fil.readLine();
             while (line != null) {
@@ -127,7 +129,8 @@ public class BasisSet {
 
                     val atomBasis = new AtomicBasis(orbitalList.toArray());
 
-                    basisInfo.put(symbol, atomBasis);
+                    val species = ai.getSpecies(symbol);
+                    basisInfo.put(species.atomicNumber, atomBasis);
 
                     return atomBasis;
                 }
@@ -144,10 +147,12 @@ public class BasisSet {
         val fileName = basisDir + File.SEPARATOR + name + ".P";
         val fil = new FileReader(new File(fileName));       
         val noOfAtoms = Int.parseInt(fil.readLine());
+        val ai = AtomInfo.getInstance();
 
         for(var i:Int=0; i<noOfAtoms; i++) {
             val words = StringSplitter.splitOnWhitespace(fil.readLine());
             val symbol = words(0);
+            val species = ai.getSpecies(symbol).atomicNumber;
             val noOfFunctions = Int.parseInt(words(1));
 
             val density = new DenseMatrix(noOfFunctions, noOfFunctions);
@@ -158,7 +163,7 @@ public class BasisSet {
                 }
             }
 
-            basisAtomicDensity.put(symbol, density);
+            basisAtomicDensity.put(species, density);
         } // end for
 
         fil.close();
@@ -166,8 +171,8 @@ public class BasisSet {
 
     public def getName() = this.name;
 
-    public def getBasis(atom:Atom) = basisInfo.getOrElse(atom.symbol, null);
-    public def getDensity(atom:Atom) = basisAtomicDensity.getOrElse(atom.symbol, null);
+    public def getBasis(atom:Atom) = basisInfo.getOrElse(atom.species, null);
+    public def getDensity(atom:Atom) = basisAtomicDensity.getOrElse(atom.species, null);
 
 }
 

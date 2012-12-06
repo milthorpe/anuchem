@@ -23,7 +23,7 @@ import x10x.vector.Point3d;
  *
  * @author milthorpe
  */
-@NativeRep("c++", "::au::edu::anu::qm::ro::Integral_Pack *", "::au::edu::anu::qm::ro::Integral_Pack", null)
+@NativeRep("c++", "au::edu::anu::qm::ro::Integral_Pack *", "au::edu::anu::qm::ro::Integral_Pack", null)
 public class Integral_Pack {
 
     //@Native("c++","(#this)->Integral_Pack->_make((#1),(#2),(#3),(#4),(#5),(#6)->raw().raw())") // doesn't work

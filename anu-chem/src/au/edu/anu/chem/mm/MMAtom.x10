@@ -34,8 +34,8 @@ public class MMAtom extends Atom {
     /** The effective charge in atomic units. */
     public val charge : Double;
 
-    public def this(symbol : String, centre : Point3d, mass:Double, charge : Double) {
-        super(symbol, centre);
+    public def this(species:Int, centre:Point3d, mass:Double, charge:Double) {
+        super(species, centre);
         this.mass = mass;
         this.charge = charge;
         this.force = Vector3d.NULL;
@@ -77,14 +77,14 @@ public class MMAtom extends Atom {
      * Does not include force or velocity, as these
      * are not commonly required at remote places.
      */
-    public static struct PackedRepresentation(symbol : String, charge : Double, centre : Point3d) { 
-        public def this(symbol : String, charge : Double, centre : Point3d) {
-            property(symbol, charge, centre);
+    public static struct PackedRepresentation(species:Int, charge:Double, centre:Point3d) { 
+        public def this(species:Int, charge : Double, centre : Point3d) {
+            property(species, charge, centre);
         }
     }
 
     public def getPackedRepresentation() {
-        return PackedRepresentation(symbol, charge, centre);
+        return PackedRepresentation(species, charge, centre);
     }
 }
 

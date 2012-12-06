@@ -13,6 +13,7 @@ package au.edu.anu.qm;
 import x10.util.ArrayList;
 
 import x10.matrix.DenseMatrix;
+import au.edu.anu.chem.AtomInfo;
 import au.edu.anu.chem.Molecule;
 
 /**
@@ -48,7 +49,7 @@ public struct BasisFunctions {
             val atom = molecule.getAtom(atmno);
             val aDensity = basisSet.getDensity(atom);
             if (aDensity == null) {
-                throw new Exception("No density matrix found for atom type " + atom.symbol);
+                throw new Exception("No density matrix found for atom type " + atom.species);
             }
             val matsize = aDensity.M;
             for ([i,j] in 0..(matsize-1)*0..(matsize-1)) {
@@ -67,7 +68,7 @@ public struct BasisFunctions {
             val atom      = molecule.getAtom(atmno);
             val atomBasis = basisSet.getBasis(atom);
             if (atomBasis == null) {
-                throw new Exception("No basis found for atom type " + atom.symbol);
+                throw new Exception("No basis found for atom type " + atom.species);
             }
             val orbitals  = atomBasis.orbitals;
             val atombfs   = new ArrayList[ContractedGaussian]();

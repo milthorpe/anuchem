@@ -26,19 +26,25 @@ public class Atom {
     /** The location of the atomic nucleus. */
     public var centre : Point3d;
 
-    /** The symbol for this atom species. */
-    public val symbol : String;
-
     /** A list of atoms to which this atom is bonded. */
     private var bonds : ArrayList[Pair[BondType, Atom]];
 
-    public def this(symbol : String, centre : Point3d) { 
-        this.symbol = symbol;
+    /** The unique identifier for this atom species within a given simulation. */
+    public val species:Int;
+
+    /** Index of this atom within a molecule or system. */
+    public var index:Int;
+
+    public def setIndex(i:Int) { index = i; }
+    public def getIndex() = index;
+
+    public def this(species:Int, centre : Point3d) { 
+        this.species = species;
         this.centre = centre;
     }
 
     public def this(centre : Point3d) { 
-        this.symbol = "";
+        this.species = -1;
         this.centre = centre;
     }
 
@@ -47,7 +53,7 @@ public class Atom {
      * but transferring all fields to the current place.
      */
     public def this(atom : Atom) {
-        this.symbol = atom.symbol;
+        this.species = atom.species;
         this.centre = atom.centre;
         if (atom.bonds != null) {
             this.bonds = ArrayList.make(atom.bonds);
@@ -79,13 +85,8 @@ public class Atom {
         bonds.add(Pair[BondType, Atom](bondType, atom));
     }
 
-    /** index of this atom in a molecule */
-    public var index:Int;
-    public def setIndex(i:Int) { index = i; }
-    public def getIndex() = index;
-
     public def toString() : String {
-        return String.format("%s %#10.5f %#10.5f %#10.5f", [symbol, centre.i, centre.j, centre.k]);
+        return String.format("%d %#10.5f %#10.5f %#10.5f", [species, centre.i, centre.j, centre.k]);
     }
 }
 

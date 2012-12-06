@@ -308,7 +308,7 @@ public class FastMultipoleMethod {
         for (i in 0..(estimate.size-1)) {
             cost(i) = estimate(i) / Place.numPlaces();
         }
-        if (here == Place.FIRST_PLACE) {
+        if (verbose && here == Place.FIRST_PLACE) {
             Console.OUT.println("u-List cost " + cost(FmmLocalData.ESTIMATE_P2P));
             Console.OUT.println("v-List cost " + cost(FmmLocalData.ESTIMATE_M2L));
         }

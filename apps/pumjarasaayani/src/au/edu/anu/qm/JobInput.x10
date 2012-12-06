@@ -13,6 +13,8 @@ package au.edu.anu.qm;
 import x10.io.File;
 import x10.io.FileReader;
 import x10.io.EOFException;
+
+import au.edu.anu.chem.AtomInfo;
 import au.edu.anu.chem.Molecule;
 import au.edu.anu.util.StringSplitter;
 import x10x.vector.Point3d;
@@ -97,13 +99,14 @@ public class JobInput {
         }
 
         molecule = new Molecule[QMAtom](title,charge,multiplicity);
-        
+        val ai = AtomInfo.getInstance();
 
         line = fil.readLine();
         try {
             while (line != null && !line.startsWith("end")) {
                 val wrd = StringSplitter.splitOnWhitespace(line);
-                molecule.addAtom(new QMAtom(wrd(0), 
+				val species = ai.getSpecies(wrd(0));
+                molecule.addAtom(new QMAtom(species.atomicNumber, 
                                    Point3d(Double.parseDouble(wrd(1))/conversion/jd.roZ,
                                             Double.parseDouble(wrd(2))/conversion/jd.roZ,
                                             Double.parseDouble(wrd(3))/conversion/jd.roZ

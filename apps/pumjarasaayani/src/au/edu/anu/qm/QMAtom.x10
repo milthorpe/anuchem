@@ -6,7 +6,7 @@
  *  You may obtain a copy of the License at
  *      http://www.opensource.org/licenses/eclipse-1.0.php
  *
- * (C) Copyright Australian National University 2010.
+ * (C) Copyright Australian National University 2010-2102.
  */
 package au.edu.anu.qm;
 
@@ -24,8 +24,8 @@ public class QMAtom extends Atom {
 
     val dummy:Boolean;
 
-    public def this(symbol : String, centre : Point3d) {
-        super(symbol, centre);
+    public def this(species:Int, centre : Point3d) {
+        super(species, centre);
         index = 0;
         dummy = false;        
     }
@@ -36,8 +36,8 @@ public class QMAtom extends Atom {
         dummy = false;
     }
 
-    public def this(symbol : String, centre : Point3d, dummy : Boolean) {
-        super(symbol, centre);
+    public def this(species:Int, centre:Point3d, dummy:Boolean) {
+        super(species, centre);
         index = 0;
         this.dummy = dummy;
     }

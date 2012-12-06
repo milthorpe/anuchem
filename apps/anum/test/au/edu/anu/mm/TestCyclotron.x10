@@ -36,9 +36,13 @@ public class TestCyclotron {
     public static def main(args : Array[String](1)) {
         if (args.size > 0) {
             val inputFile = args(0);
-            runFromInput(inputFile);
+            var snapshotFile:String = null;
+            if (args.size > 1) {
+                snapshotFile = args(1);
+            }
+            runFromInput(inputFile, snapshotFile);
         } else {
-            Console.ERR.println("usage: anum <inputFile>");
+            Console.ERR.println("usage: anum <inputFile> [snapshotFile]");
         }
     }
 
@@ -56,7 +60,7 @@ public class TestCyclotron {
      * + fmmTerms <number of terms in FMM expansions>
      * * species <name> <mass> <charge> <number of ions>
      */
-    public static def runFromInput(fileName:String) { 
+    public static def runFromInput(fileName:String, snapshotFileName:String) { 
         val fil = new FileReader(new File(fileName));
 
         var line:String = fil.readLine();
@@ -135,7 +139,7 @@ public class TestCyclotron {
         }
 
         var totalIons:Int = 0;
-        val speciesList = new ArrayList[SpeciesSpec]();
+        val speciesList = new ArrayList[PenningTrap.SpeciesSpec]();
         try {
             while (line != null && line.startsWith("species")) {
                 val wrd = StringSplitter.splitOnWhitespace(line);
@@ -145,7 +149,7 @@ public class TestCyclotron {
                 val numIons = Int.parseInt(wrd(4));
                 totalIons += numIons;
 
-                speciesList.add(new SpeciesSpec(name, mass, charge, numIons));
+                speciesList.add(new PenningTrap.SpeciesSpec(name, mass, charge, numIons));
 
                 line = fil.readLine();
             }
@@ -155,15 +159,17 @@ public class TestCyclotron {
         if (speciesList.isEmpty()) {
             throw new Exception("Invalid input: expected at least one species. Next line was:\n"+line);
         }
+        fil.close();
 
         Console.OUT.printf("# Testing %s: cyclotron trapping potential: %2.1f V magnetic field: %6.4f T edgeLength %4.1f mm\n", title, V, B, edgeLength*1e3);
         Console.OUT.println("# species:");
 
         val rand = new Random(27178281L);
 
-        val atoms = new Array[MMAtom](totalIons);
+        val atoms = new Rail[MMAtom](totalIons);
         var i:Int = 0;
-        for (species in speciesList) {
+        for (speciesId in 0..(speciesList.size()-1)) {
+            val species = speciesList(speciesId);
             val omega_c = species.charge * B / species.mass * (PenningTrap.CHARGE_MASS_FACTOR);
             val omega_z = Math.sqrt(2.0 * PenningTrap.ALPHA_PRIME * species.charge * V / (species.mass * edgeLength*edgeLength) * PenningTrap.CHARGE_MASS_FACTOR);
             val omega_plus = omega_c / 2.0 + Math.sqrt(omega_c*omega_c / 4 - omega_z*omega_z / 2);
@@ -174,31 +180,36 @@ public class TestCyclotron {
             Console.OUT.printf("# %6i %10s mass %8.5f charge %i ", species.number, species.name, species.mass, species.charge);
             Console.OUT.printf("omega_c = %7i rad/s omega_z = %6i rad/s omega_+ = %7i rad/s nu_+ = %7i v = %9.3g m/s\n", omega_c as Int, omega_z as Int, omega_plus as Int, nu_plus as Int, v);
 
-            for (j in 0..(species.number-1)) {
-                // distribution for each species is uniform 1mm cylinder along
-                // z dimension centred at [x=-(excitation radius), y=0, z=0]
-                val er = rand.nextDouble() * 1.0e-3;
-                val theta = rand.nextDouble() * Math.PI * 2.0;
-                val ex = Math.cos(theta) * er;
-                val ey = Math.sin(theta) * er;
-                val ion = new MMAtom(species.name, Point3d(-radius+ex, ey, perturbation(rand, 1e-3)), species.mass, species.charge);
+            if (snapshotFileName == null) {
+                for (j in 0..(species.number-1)) {
+                    // distribution for each species is uniform 1mm cylinder along
+                    // z dimension centred at [x=-(excitation radius), y=0, z=0]
+                    val er = rand.nextDouble() * 1.0e-3;
+                    val theta = rand.nextDouble() * Math.PI * 2.0;
+                    val ex = Math.cos(theta) * er;
+                    val ey = Math.sin(theta) * er;
+                    val ion = new MMAtom(speciesId, Point3d(-radius+ex, ey, perturbation(rand, 1e-3)), species.mass, species.charge);
 
-                // velocity is Maxwellian distribution with addition of velocity v in y direction
-                val ev = maxwellianVelocity(rand, species.mass);
-                ion.velocity = Vector3d(ev.i, v+ev.j, ev.k);
-                atoms(i++) = ion;
+                    // velocity is Maxwellian distribution with addition of velocity v in y direction
+                    val ev = maxwellianVelocity(rand, species.mass);
+                    ion.velocity = Vector3d(ev.i, v+ev.j, ev.k);
+                    atoms(i) = ion;
+                    ion.index = i++;
+                }
             }
         }
 
-        fil.close();
+        val trap = new PenningTrap(totalIons, V, new Vector3d(0.0, 0.0, B), edgeLength, fmmDMax, fmmTerms, speciesList.toArray());
 
-        Console.OUT.printf("# FMM dMax %d numTerms %i\n", fmmDMax, fmmTerms);
+        var resumeStep:Int = 0;
+        if (snapshotFileName != null) {
+            resumeStep = trap.loadFromSnapshot(snapshotFileName, atoms);
+        }
 
         val distAtoms = DistArray.make[Rail[MMAtom]](Dist.makeUnique(), (Point) => new Array[MMAtom](0));
         distAtoms(0) = atoms; // assign all atoms to place 0 to start - they will be reassigned
 
-        val trap = new PenningTrap(totalIons, distAtoms, V, new Vector3d(0.0, 0.0, B), edgeLength, fmmDMax, fmmTerms);
-        trap.mdRun(dt, steps, logSteps);
+        trap.mdRun(dt, steps, resumeStep, logSteps, distAtoms);
     }
 
     private static def perturbation(rand:Random, max:Double) {
@@ -228,19 +239,6 @@ public class TestCyclotron {
         val u2 = rand.nextDouble();
         val z0 = Math.sqrt(-2.0 * Math.log(u1)) * Math.cos(2.0 * Math.PI * u2);
         return variance * z0;
-    }
-
-    private static class SpeciesSpec {
-        public val name:String;
-        public val mass:Double;
-        public val charge:Int;
-        public val number:Int;
-        public def this(name:String, mass:Double, charge:Int, number:Int) {
-            this.name = name;
-            this.mass = mass;
-            this.charge = charge;
-            this.number = number;
-        }
     }
 
     private static def getIntParam(line:String) = Int.parseInt(StringSplitter.splitOnWhitespace(line)(1));

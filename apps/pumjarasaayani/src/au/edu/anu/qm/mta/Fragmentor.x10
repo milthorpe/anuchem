@@ -277,7 +277,7 @@ public class Fragmentor {
        val atoms = fragment.getAtoms();
 
        for(atom in atoms) { 
-           if (ai.getAtomicNumber(atom) > 2) continue;
+           if (ai.getAtomicNumber(atom.species) > 2) continue;
 
            // find connected atoms that are present in the fragment
            val bonds = atom.getBonds(); 
@@ -300,7 +300,7 @@ public class Fragmentor {
        val boundaryAtoms = new ArrayList[QMAtom]();
  
        val ai = AtomInfo.getInstance(); 
-       val hRadius = ai.getCovalentRadius(new QMAtom("H", Point3d(0,0,0), true));
+       val hRadius = ai.getCovalentRadius("H");
 
        // find out boundary atoms in this fragment
        for(atom in fragment.getAtoms()) {
@@ -313,7 +313,7 @@ public class Fragmentor {
        // then add dummy atoms at appropriate positions
        for(atom in boundaryAtoms) {
            val bonds = atom.getBonds();
-           val bondDistance = hRadius + ai.getCovalentRadius(atom);
+           val bondDistance = hRadius + ai.getCovalentRadius(atom.species);
 
            for(bond in bonds) {
               val bondedAtom = bond.second as QMAtom;
@@ -324,7 +324,7 @@ public class Fragmentor {
                                          vec.j*bondDistance + atom.centre.j, 
                                          vec.k*bondDistance + atom.centre.k);
 
-                 fragment.addAtom(new QMAtom("H", newcentre, true));
+                 fragment.addAtom(new QMAtom(1, newcentre, true));
               } // end if
            } // end for
        } // end for

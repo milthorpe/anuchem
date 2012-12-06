@@ -77,7 +77,7 @@ public class OneElectronIntegrals(numBasisFunctions:Int) {
        val atms = molecule.getAtoms();
 
        for(var i:Int=0; i<nat; i++) 
-           atno(i) = ai.getAtomicNumber(atms.get(i));
+           atno(i) = atms.get(i).species;
 
        for([i, j] in 0..(hCore.M-1)*0..(hCore.N-1)) {
               val bfi = bfs.get(i);

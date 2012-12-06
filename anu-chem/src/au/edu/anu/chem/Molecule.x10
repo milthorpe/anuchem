@@ -32,6 +32,8 @@ public class Molecule[T]{T <: Atom} {
 
     val ringList = new ArrayList[Ring[T]]();
 
+	public val speciesList = new ArrayList[String]();
+
     /** 
      * Measures the maximum absolute value of any coordinate x,y,z
      * of all atoms. This is used to estimate a rough cubic box size.
@@ -58,6 +60,7 @@ public class Molecule[T]{T <: Atom} {
 
     public def addAtom(atm:T) : void {
         atomList.add(atm); 
+		atm.index = atomList.size();
         maxExtent = Math.max(maxExtent, Math.abs(atm.centre.i));
         maxExtent = Math.max(maxExtent, Math.abs(atm.centre.j));
         maxExtent = Math.max(maxExtent, Math.abs(atm.centre.k));      
@@ -75,21 +78,21 @@ public class Molecule[T]{T <: Atom} {
     public def getNumberOfElectrons() : int {
        val ai = AtomInfo.getInstance();
        var ne:Int = 0;
-
        for(atm:T in atomList)
-          ne += ai.getAtomicNumber(atm);
+          ne += ai.getAtomicNumber(atm.species);
 
        return ne-charge;
     }
 
     public def getMaxExtent() = maxExtent;
 
-    public def getCoords() : Rail[Pair[String,Point3d]] {
-        val coords = new ArrayList[Pair[String,Point3d]](atomList.size());
-        for(atom in atomList) {
-            coords.add(Pair[String,Point3d](atom.symbol, atom.centre));
+    public def getCoords() : Rail[Pair[Int,Point3d]] {
+        val coords = new Rail[Pair[Int,Point3d]](atomList.size());
+        for(i in 0..(atomList.size()-1)) {
+            val atom = atomList(i);
+            coords(i) = Pair[Int,Point3d](atom.species, atom.centre);
         }
-        return coords.toArray();
+        return coords;
     }
 
     public def centreOfMass() : Point3d {
@@ -98,7 +101,7 @@ public class Molecule[T]{T <: Atom} {
         var massSum:Double = 0.0;
 
         for(atm:T in atomList) {
-            val mass = ai.getAtomicMass(atm);
+            val mass = ai.getAtomicMass(atm.species);
             x += mass * atm.centre.i;
             y += mass * atm.centre.j;
             z += mass * atm.centre.k;
@@ -115,7 +118,7 @@ public class Molecule[T]{T <: Atom} {
         var chargeSum:Double = 0.0;
 
         for(atm:T in atomList) {
-            val nuclearCharge = ai.getAtomicNumber(atm);
+            val nuclearCharge = ai.getAtomicNumber(atm.species);
             x += nuclearCharge * atm.centre.i;
             y += nuclearCharge * atm.centre.j;
             z += nuclearCharge * atm.centre.k;
@@ -127,9 +130,9 @@ public class Molecule[T]{T <: Atom} {
     }
 
     public def getCentreOfVDW(roZ:Double):Point3d {
+        val ai = AtomInfo.getInstance();
         var step:Double = 0.1/roZ; // Atomic Unit
         val initialguess =  centreOfMass();
-        val ai = AtomInfo.getInstance();
         var x:Double = -initialguess.i, y:Double = -initialguess.j, z:Double = -initialguess.k;
         var isConverged:Boolean=false;
 
@@ -138,7 +141,7 @@ public class Molecule[T]{T <: Atom} {
             
             for(atm:T in atomList) {
                 val atmvec=Vector3d(atm.centre.i+x,atm.centre.j+y,atm.centre.k+z);
-                val distance=atmvec.magnitude()+ai.getVdwRadius(atm)/roZ;
+                val distance=atmvec.magnitude()+ai.getVdWRadius(atm.species)/roZ;
                 if (rad1<distance) { 
                     rad1=distance;
                     dx=-atm.centre.i/atmvec.magnitude()*step;
@@ -148,7 +151,7 @@ public class Molecule[T]{T <: Atom} {
             }
             for(atm:T in atomList) {
                 val atmvec= Vector3d(atm.centre.i+x+dx,atm.centre.j+y+dy,atm.centre.k+z+dz);
-                val distance=atmvec.magnitude()+ai.getVdwRadius(atm)/roZ;
+                val distance=atmvec.magnitude()+ai.getVdWRadius(atm.species)/roZ;
                 if (rad2<distance) rad2=distance;                    
             }
             @Ifdef("__DEBUG__") {Console.OUT.printf("rad1=%e, rad2=%e, step=%e\n",rad1,rad2,step);}
@@ -178,16 +181,24 @@ public class Molecule[T]{T <: Atom} {
     }
 
     public def getRadius(roZ:Double):Double {
-        var rad:Double=0.;
         val ai = AtomInfo.getInstance();
+        var rad:Double=0.;
         for(atm:T in atomList) {
             val atmvec= Vector3d(atm.centre.i,atm.centre.j,atm.centre.k);
-            val distance=atmvec.magnitude()+ai.getVdwRadius(atm)/roZ;
+            val distance=atmvec.magnitude()+ai.getVdWRadius(atm.species)/roZ;
             if (rad<distance) rad=distance;
         }
         Console.OUT.printf("radius = %f  scaled radius = %f\n",rad*roZ,rad);
         return rad; 
     }
+
+	public def lookupSpecies(symbol:String):Int {
+		for (i in 0..(speciesList.size()-1)) {
+			if (speciesList(i) == symbol) return i;
+		}
+		speciesList.add(symbol);
+		return (speciesList.size()-1);
+	}
 
     public def toString() : String {
         var str:String = "";
