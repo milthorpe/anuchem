@@ -121,15 +121,18 @@ public class PenningTrap {
         } else {
             val startPosHeaderPrinter = new Printer(new FileWriter(new File("positions_0.dat"), false));
             startPosHeaderPrinter.println("# positions at time 0");
+            startPosHeaderPrinter.close();
         }
 
         val endTime = (timestep * numSteps) as Int;
         val endPosHeaderPrinter = new Printer(new FileWriter(new File("positions_" + endTime + ".dat"), false));
         endPosHeaderPrinter.println("# positions at time " + endTime);
+        endPosHeaderPrinter.close();
 
         // intitalise energy file
         val energiesHeaderPrinter = new Printer(new FileWriter(new File("energies_" + endTime + ".dat"), false));
-        endPosHeaderPrinter.println("# energies at time " + endTime);
+        energiesHeaderPrinter.println("# energies at time " + endTime);
+        energiesHeaderPrinter.close();
 
         finish ateach(place in Dist.makeUnique()) {
             var step:Int = resumeStep;
@@ -180,7 +183,7 @@ public class PenningTrap {
     }
 
     private def printStartPositions(props:SystemProperties) {
-        val startPosPrinter = new Printer(new FileWriter(new File("positions_0.dat"), false));
+        val startPosPrinter = new Printer(new FileWriter(new File("positions_0.dat"), true));
         val leafOctants = FastMultipoleMethod.localData.leafOctants;
         for (leafOctant in leafOctants) {
             val octantAtoms = leafOctant.atoms;
@@ -214,7 +217,7 @@ public class PenningTrap {
             val s = printEnergies(time, leafOctant.atoms, energiesPrinter);
             stats.add(s);
         }
-        energiesPrinter.printf("mean energy %.5g stddev %.4g", stats.mean(), stats.stdDev());
+        energiesPrinter.printf("# mean %.5g stddev %.4g", stats.mean(), stats.stdDev());
     }
 
     /**
@@ -424,7 +427,7 @@ public class PenningTrap {
         for ([i] in 0..(myAtoms.size()-1)) {
             val atom = myAtoms(i);
             if (atom != null) {
-                printer.printf("%i %i %d %12.8f %12.8f %12.8f\n", here.id, i, atom.species, atom.centre.i*1.0e3, atom.centre.j*1.0e3, atom.centre.k*1.0e3);
+                printer.printf("%i %i %12.8f %12.8f %12.8f\n", atom.index, atom.species, atom.centre.i*1.0e3, atom.centre.j*1.0e3, atom.centre.k*1.0e3);
             }
         }
     }
@@ -440,7 +443,7 @@ public class PenningTrap {
             val atom = myAtoms(i);
             if (atom != null) {
                 val energy = 0.5 * 1.66053892173e-12 /* Da->kg * 10^15fJ */ * atom.mass * atom.velocity.lengthSquared();
-                printer.printf("%i %i %d %12.8f\n", here.id, i, atom.species, energy);
+                printer.printf("%i %i %12.8f\n", atom.index, atom.species, energy);
                 stats.n++; 
                 stats.sum += energy;
                 stats.sumOfSquares += energy*energy;
