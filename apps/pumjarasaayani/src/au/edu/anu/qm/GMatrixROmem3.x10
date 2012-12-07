@@ -204,6 +204,8 @@ public class GMatrixROmem3 extends DenseMatrix{self.M==self.N} {
         val jd = JobDefaults.getInstance();
         this.reset(); val gVal = GlobalRef(this);
         finish for (pid in (0..(maxPl-1))) at(Place.place(pid)) async { 
+            Console.OUT.println("pid=" + pid);
+            //System.sleep(500);
             var tINT:Double=0.,tJ:Double=0.,tK:Double=0.;
             val gMat = new DenseMatrix(N,N);
             // initialization of auxint array should be here
@@ -214,7 +216,7 @@ public class GMatrixROmem3 extends DenseMatrix{self.M==self.N} {
                  
             for (var ron:Int=pid; ron<=roN; ron+=maxPl)  {            
                 @Ifdef("__DEBUG__") {Console.OUT.printf("ron=%d...\n",ron); }
-                finish for (thNo in 0..(maxTh-1)) async  tdk(thNo).clear();     
+                finish for (thNo in 0..(maxTh-1)) async tdk(thNo).clear();     
                       
                 timer.start(TIMER_GENCLASS); 
                 finish for (thNo in 0..(maxTh-1)) async {
@@ -302,6 +304,7 @@ public class GMatrixROmem3 extends DenseMatrix{self.M==self.N} {
             // Use the upper half of J and K to form G
             finish for (thNo in 0..(maxTh-1)) async for (var tmu:Int=thNo; tmu<N; tmu+=maxTh) for (var tnu:Int=tmu; tnu<N; tnu++) 
                 gMat(tnu,tmu)=gMat(tmu,tnu)=jMatrix(tmu,tnu)-kMatrix(tmu,tnu);
+            //System.sleep(2000);
             at(gVal) async atomic gVal().cellAdd(gMat); 
             Console.OUT.printf("pid=%d Time INT = %.2f s J = %.2f s K = %.2f s\n", pid, tINT, tJ, tK);
         }

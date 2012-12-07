@@ -14,9 +14,21 @@ import x10.matrix.blas.DenseMatrixBLAS;
 import au.edu.anu.util.Timer;
 import au.edu.anu.util.StatisticalTimer;
 
+import x10.compiler.Native;
+import x10.compiler.NativeCPPInclude;
+
+//@NativeCPPInclude("mkl_math.h")
+
 public class TestDGEMM{
+
+
     public static def main(args:Array[String](1)){
+finish for (pid in (0..(Place.MAX_PLACES-1))) at(Place.place(pid)) async { 
         Console.OUT.println("Hello World!");
+
+        //Console.OUT.print("mklGetMaxThreads() was " + mklGetMaxThreads() + " and is now set to"); mklSetNumThreads(Runtime.NTHREADS);
+        //Console.OUT.println(" " + mklGetMaxThreads() + " thread(s).");
+
         val timer = new StatisticalTimer(5);
 
         val N=700; val nOrbital=25; val roK=196; // if numbers are big => GC Warning: Out of Memory!  Returning NIL!, if it's really big ==> Segmentation fault (core dumped)
@@ -26,6 +38,12 @@ public class TestDGEMM{
         val auxIntMat=new DenseMatrix(N*roK,N);
         val halfAuxMat=new DenseMatrix(nOrbital,N*roK);
         val mos=new DenseMatrix(nOrbital,N);
+
+        finish for (tid in (0..(Runtime.NTHREADS-1))) async {
+            kMatrix.reset();
+            mos.reset();
+        }
+
         timer.stop(0);
         Console.OUT.println("Variables allocated. " + (timer.last(0) as Double)/1e9 + " s");      
 
@@ -53,5 +71,10 @@ public class TestDGEMM{
         DenseMatrixBLAS.compTransMult(halfAuxMat2, halfAuxMat2, kMatrix, [N, N, roK*nOrbital], true);
         timer.stop(4); 
         Console.OUT.println("2nd DGEMM done. "+ (timer.last(4) as Double)/1e9 + " s");
-    }
 }
+    }
+
+// @Native("c++", "mkl_get_max_threads()") private native static def mklGetMaxThreads():Int;
+// @Native("c++", "MKL_Set_Num_Threads(#a)") private native static def mklSetNumThreads(a:Int):void;
+}
+
