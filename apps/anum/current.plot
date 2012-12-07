@@ -11,4 +11,4 @@ set xrange [1:800]
 
 set xzeroaxis
 
-plot 'current.dat' using 1 with lines notitle lt rgb "blue"
+plot 'current_2500000_3.dat' using 1 with lines notitle lt rgb "blue"
