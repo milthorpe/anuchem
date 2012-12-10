@@ -48,11 +48,11 @@ public class GMatrixROmem3 extends DenseMatrix{self.M==self.N} {
     // RO stuff 
     var roN:Int; var roNK:Int; var roL:Int; // 'var' because it can be overridden
     val roK:Int; val roZ:Double; val omega:Double; val roThresh:Double;
-    val auxIntMat:DenseMatrix; 
-    val halfAuxMat:DenseMatrix; 
+    //val auxIntMat:DenseMatrix; 
+    //val halfAuxMat:DenseMatrix; 
     val ylms:Rail[Ylm];   
+    //val dk:Rail[Double];
     //val temp:Rail[Double];
-    val dk:Rail[Double];
 
     // Standard conventional stuff
     private val bfs : BasisFunctions;
@@ -61,15 +61,16 @@ public class GMatrixROmem3 extends DenseMatrix{self.M==self.N} {
     val norm:Rail[Double]; 
     val emptyRailD = new Rail[Double](0), emptyRailI = new Rail[Int](0); 
     val shellPairs:Rail[ShellPair]; 
-    val jMatrix:DenseMatrix{self.M==self.N,self.N==this.N};
-    val kMatrix:DenseMatrix{self.M==self.N,self.N==this.N};
+    // val jMatrix:DenseMatrix{self.M==self.N,self.N==this.N};
+    // val kMatrix:DenseMatrix{self.M==self.N,self.N==this.N};
 
     // parallel stuff
     val maxTh:Int;
     val maxPl:Int;
-    val tjMatrix : Rail[DenseMatrix];
-    val ttemp : Rail[Rail[Double]]; 
-    val tdk : Rail[Rail[Double]]; 
+    //val tjMatrix : Rail[DenseMatrix];
+    //val ttemp : Rail[Rail[Double]]; 
+    //val tdk : Rail[Rail[Double]]; 
+val maxam1:Int;
     //transient val taux:Array[Integral_Pack]; 
 
     public def this(N:Int, bfs:BasisFunctions, molecule:Molecule[QMAtom], nOrbital:Int, omega:Double,roThresh:Double):GMatrixROmem3{self.M==N,self.N==N} {     
@@ -95,25 +96,8 @@ public class GMatrixROmem3 extends DenseMatrix{self.M==self.N} {
         roK = (roL+1)*(roL+1); roZ=jd.roZ;      
         val maxam = bfs.getShellList().getMaximumAngularMomentum();
         val mdc=bfs.getShellList().getMaximumDegreeOfContraction();
-        val maxam1 = (maxam+1)*(maxam+2)/2;
-
-        this.norm = bfs.getNormalizationFactors();
-        this.jMatrix = new DenseMatrix(N, N);
-        this.kMatrix = new DenseMatrix(N, N);
-        this.dk = new Rail[Double](roK); // eqn 15b in RO#7
-        this.ttemp = new Rail[Rail[Double]](maxTh); this.tdk = new Rail[Rail[Double]](maxTh);
-        this.tjMatrix = new Rail[DenseMatrix](maxTh, (Int)=>new DenseMatrix(N,N));
-        for (thNo in 0..(maxTh-1)) this.ttemp(thNo) = new Rail[Double](maxam1*maxam1*roK);
-        for (thNo in 0..(maxTh-1)) this.tdk(thNo) = new Rail[Double](roK);
-        // temp = new Rail[Double](maxam1*maxam1*roK);  
-        // ttemp = new Rail[Rail[Double]](maxTh,(Int)=>new Rail[Double](maxam1*maxam1*roK));  
-        // 'this' or 'super' cannot escape via a closure during construction.
-
-        @Ifdef("__DEBUG__") { Console.OUT.printf("GMatrixROmem3.x10 Memory O(N^2) allocated sucessfully...\n"); }
-
-        this.auxIntMat = new DenseMatrix(N*roK,N);
-        this.halfAuxMat = new DenseMatrix(nOrbital,N*roK);
-        @Ifdef("__DEBUG__") { Console.OUT.printf("GMatrixROmem3.x10 Memory O(N^2 K) allocated sucessfully...\n"); }        
+        /*val*/ maxam1 = (maxam+1)*(maxam+2)/2;
+        this.norm = bfs.getNormalizationFactors(); 
 
         // Shell/Shellpair business 
         Console.OUT.printf("GMatrixROmem.x10 Screening shellpairs...\n");        
@@ -200,12 +184,24 @@ public class GMatrixROmem3 extends DenseMatrix{self.M==self.N} {
     public def compute(density:Density{self.N==this.N}, mos:MolecularOrbitals{self.N==this.N}) {
         val result = Runtime.execForRead("date"); Console.OUT.printf("\nGMatrixROmem.x10 'public def compute' %s...\n",result.readLine()); 
         timer.start(TIMER_TOTAL); 
-        jMatrix.reset(); kMatrix.reset();
+        //jMatrix.reset(); kMatrix.reset();
         val jd = JobDefaults.getInstance();
         this.reset(); val gVal = GlobalRef(this);
         finish for (pid in (0..(maxPl-1))) at(Place.place(pid)) async { 
             Console.OUT.println("pid=" + pid);
-            //System.sleep(500);
+            System.sleep(500);
+        val auxIntMat = new DenseMatrix(N*roK,N);
+        val halfAuxMat = new DenseMatrix(nOrbital,N*roK);
+
+        val jMatrix = new DenseMatrix(N, N);
+        val kMatrix = new DenseMatrix(N, N);
+        val dk = new Rail[Double](roK); // eqn 15b in RO#7
+        val ttemp = new Rail[Rail[Double]](maxTh); val tdk = new Rail[Rail[Double]](maxTh);
+        val tjMatrix = new Rail[DenseMatrix](maxTh, (Int)=>new DenseMatrix(N,N));
+        for (thNo in 0..(maxTh-1)) ttemp(thNo) = new Rail[Double](maxam1*maxam1*roK);
+        for (thNo in 0..(maxTh-1)) tdk(thNo) = new Rail[Double](roK);
+
+
             var tINT:Double=0.,tJ:Double=0.,tK:Double=0.;
             val gMat = new DenseMatrix(N,N);
             // initialization of auxint array should be here

@@ -214,7 +214,7 @@ public class HartreeFockSCFMethod extends SCFMethod {
             Console.OUT.printf("Long-range - Conventional\n");
             val gMatrixL = new GMatrix(N, bfs, molecule,jd.roZ*jd.omega,roZ*jd.thresh); // RO Thesis Eq (2.22)
             gMatrixL.compute(density);   
-            Console.OUT.printf("j=%.5e %.5e k=%.5e %.5e\n",gMatrixL.jMatrix(0,0),gMatrixRoL.jMatrix(0,0),gMatrixL.kMatrix(0,0),gMatrixRoL.kMatrix(0,0));
+            /*Console.OUT.printf("j=%.5e %.5e k=%.5e %.5e\n",gMatrixL.jMatrix(0,0),gMatrixRoL.jMatrix(0,0),gMatrixL.kMatrix(0,0),gMatrixRoL.kMatrix(0,0));
             var jrms:Double=0.,krms:Double=0.,jmax:Double=0.,kmax:Double=0.;
             for ([x,y] in 0..(N-1)*0..(N-1)) {
                 val dj=Math.abs(.5*gMatrixL.jMatrix(x,y)-gMatrixRoL.jMatrix(x,y));
@@ -228,7 +228,7 @@ public class HartreeFockSCFMethod extends SCFMethod {
             jrms=Math.pow(jrms/NN,.5);
             krms=Math.pow(krms/NN,.5);
             Console.OUT.printf("j=%.5e (%.5e) k=%.5e (%.5e)\n",jrms,jmax,krms,kmax);
-            Console.OUT.printf("log: j=%.5e (%.5e) k=%.5e (%.5e)\n",-Math.log10(jrms),-Math.log10(jmax),-Math.log10(krms),-Math.log10(kmax));       
+            Console.OUT.printf("log: j=%.5e (%.5e) k=%.5e (%.5e)\n",-Math.log10(jrms),-Math.log10(jmax),-Math.log10(krms),-Math.log10(kmax));       */
         }
         //Console.OUT.println("after conventional = " + System.heapSize());
         //fock.compute(hCore, gMatrixRo);
