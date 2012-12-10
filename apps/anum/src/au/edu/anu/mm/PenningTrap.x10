@@ -17,6 +17,7 @@ import x10.io.FileWriter;
 import x10.io.IOException;
 import x10.io.Printer;
 import x10.util.ArrayList;
+import x10.util.Pair;
 import x10.util.Team;
 import x10x.vector.Point3d;
 import x10x.vector.Vector3d;
@@ -392,12 +393,13 @@ public class PenningTrap {
         }
     }
 
-    public def loadFromSnapshot(snapshotFileName:String, atoms:Rail[MMAtom]):Int {
+    public def loadFromSnapshot(snapshotFileName:String):Pair[Int, Rail[MMAtom]] {
         Console.OUT.println("loading from snapshot file " + snapshotFileName);
         val reader = new FileReader(new File(snapshotFileName));
         val timesteps = reader.readInt();
-        val numAtoms = reader.readInt();
+        numAtoms = reader.readInt();
         Console.OUT.println("reading " + numAtoms + " atoms");
+        val atoms = new Rail[MMAtom](numAtoms);
         var i:Int = 0;
         try {
             for (i=0; i < numAtoms; i++) {
@@ -419,7 +421,7 @@ public class PenningTrap {
             throw new Exception("incomplete snapshot file: " + snapshotFileName + " (read " + i + " atoms)");
         }
         reader.close();
-        return timesteps;
+        return Pair[Int, Rail[MMAtom]](timesteps, atoms);
     }
 
     private def printPositions(time:Double, myAtoms:ArrayList[MMAtom], printer:Printer) {

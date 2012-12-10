@@ -8,6 +8,6 @@ dt 25.0
 steps 100000
 logSteps 100
 fmmDMax 6
-fmmTerms 6
+fmmTerms 8
 species glutamine 147.07698 1 5000
 species lysine 147.11336 1 5000

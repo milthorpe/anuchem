@@ -14,6 +14,7 @@ import x10.io.File;
 import x10.io.FileReader;
 import x10.io.EOFException;
 import x10.util.ArrayList;
+import x10.util.Pair;
 import x10.util.Random;
 
 import x10x.vector.Point3d;
@@ -166,7 +167,10 @@ public class TestCyclotron {
 
         val rand = new Random(27178281L);
 
-        val atoms = new Rail[MMAtom](totalIons);
+        var atoms:Rail[MMAtom] = null;
+        if (snapshotFileName == null) {
+            atoms = new Rail[MMAtom](totalIons);
+        }
         var i:Int = 0;
         for (speciesId in 0..(speciesList.size()-1)) {
             val species = speciesList(speciesId);
@@ -203,7 +207,9 @@ public class TestCyclotron {
 
         var resumeStep:Int = 0;
         if (snapshotFileName != null) {
-            resumeStep = trap.loadFromSnapshot(snapshotFileName, atoms);
+            val state = trap.loadFromSnapshot(snapshotFileName);
+            resumeStep = state.first;
+            atoms = state.second;
         }
 
         val distAtoms = DistArray.make[Rail[MMAtom]](Dist.makeUnique(), (Point) => new Array[MMAtom](0));
