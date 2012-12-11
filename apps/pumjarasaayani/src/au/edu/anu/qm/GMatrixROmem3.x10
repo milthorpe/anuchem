@@ -187,20 +187,19 @@ val maxam1:Int;
         //jMatrix.reset(); kMatrix.reset();
         val jd = JobDefaults.getInstance();
         this.reset(); val gVal = GlobalRef(this);
-        finish for (pid in (0..(maxPl-1))) at(Place.place(pid)) async { 
+        finish for (pid in (0..(maxPl-1))) ateach(Place.place(pid)) async { 
             Console.OUT.println("pid=" + pid);
-            System.sleep(500);
-        val auxIntMat = new DenseMatrix(N*roK,N);
-        val halfAuxMat = new DenseMatrix(nOrbital,N*roK);
+            
+            val auxIntMat = new DenseMatrix(N*roK,N);
+            val halfAuxMat = new DenseMatrix(nOrbital,N*roK);
 
-        val jMatrix = new DenseMatrix(N, N);
-        val kMatrix = new DenseMatrix(N, N);
-        val dk = new Rail[Double](roK); // eqn 15b in RO#7
-        val ttemp = new Rail[Rail[Double]](maxTh); val tdk = new Rail[Rail[Double]](maxTh);
-        val tjMatrix = new Rail[DenseMatrix](maxTh, (Int)=>new DenseMatrix(N,N));
-        for (thNo in 0..(maxTh-1)) ttemp(thNo) = new Rail[Double](maxam1*maxam1*roK);
-        for (thNo in 0..(maxTh-1)) tdk(thNo) = new Rail[Double](roK);
-
+            val jMatrix = new DenseMatrix(N, N);
+            val kMatrix = new DenseMatrix(N, N);
+            val dk = new Rail[Double](roK); // eqn 15b in RO#7
+            val ttemp = new Rail[Rail[Double]](maxTh); val tdk = new Rail[Rail[Double]](maxTh);
+            val tjMatrix = new Rail[DenseMatrix](maxTh, (Int)=>new DenseMatrix(N,N));
+            for (thNo in 0..(maxTh-1)) ttemp(thNo) = new Rail[Double](maxam1*maxam1*roK);
+            for (thNo in 0..(maxTh-1)) tdk(thNo) = new Rail[Double](roK);
 
             var tINT:Double=0.,tJ:Double=0.,tK:Double=0.;
             val gMat = new DenseMatrix(N,N);
