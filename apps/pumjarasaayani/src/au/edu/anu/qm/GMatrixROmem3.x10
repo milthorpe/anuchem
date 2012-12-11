@@ -48,11 +48,7 @@ public class GMatrixROmem3 extends DenseMatrix{self.M==self.N} {
     // RO stuff 
     var roN:Int; var roNK:Int; var roL:Int; // 'var' because it can be overridden
     val roK:Int; val roZ:Double; val omega:Double; val roThresh:Double;
-    //val auxIntMat:DenseMatrix; 
-    //val halfAuxMat:DenseMatrix; 
     val ylms:Rail[Ylm];   
-    //val dk:Rail[Double];
-    //val temp:Rail[Double];
 
     // Standard conventional stuff
     private val bfs : BasisFunctions;
@@ -61,24 +57,17 @@ public class GMatrixROmem3 extends DenseMatrix{self.M==self.N} {
     val norm:Rail[Double]; 
     val emptyRailD = new Rail[Double](0), emptyRailI = new Rail[Int](0); 
     val shellPairs:Rail[ShellPair]; 
-    // val jMatrix:DenseMatrix{self.M==self.N,self.N==this.N};
-    // val kMatrix:DenseMatrix{self.M==self.N,self.N==this.N};
 
     // parallel stuff
-    val maxTh:Int;
-    val maxPl:Int;
-    //val tjMatrix : Rail[DenseMatrix];
-    //val ttemp : Rail[Rail[Double]]; 
-    //val tdk : Rail[Rail[Double]]; 
-val maxam1:Int;
-    //transient val taux:Array[Integral_Pack]; 
+    val maxam1:Int;
+
 
     public def this(N:Int, bfs:BasisFunctions, molecule:Molecule[QMAtom], nOrbital:Int, omega:Double,roThresh:Double):GMatrixROmem3{self.M==N,self.N==N} {     
         super(N, N);        
         this.bfs = bfs; this.mol = molecule; this.nOrbital = nOrbital; this.omega=omega; this.roThresh=roThresh;  
-        this.maxTh=Runtime.NTHREADS; this.maxPl=Place.MAX_PLACES;
+        
         val result = Runtime.execForRead("date"); Console.OUT.printf("\nGMatrixROmem.x10 'public def this' %s...\n",result.readLine()); 
-
+        //val maxTh=Runtime.NTHREADS; val maxPl=Place.MAX_PLACES;
         val jd = JobDefaults.getInstance();
         val l_n = new Rail[Int](jd.roN+3);
         val aux = new Integral_Pack(jd.roN,jd.roL,omega,roThresh,jd.rad,jd.roZ);         
@@ -184,16 +173,15 @@ val maxam1:Int;
     public def compute(density:Density{self.N==this.N}, mos:MolecularOrbitals{self.N==this.N}) {
         val result = Runtime.execForRead("date"); Console.OUT.printf("\nGMatrixROmem.x10 'public def compute' %s...\n",result.readLine()); 
         timer.start(TIMER_TOTAL); 
-        //jMatrix.reset(); kMatrix.reset();
         val jd = JobDefaults.getInstance();
         this.reset(); val gVal = GlobalRef(this);
+
         finish ateach(place in Dist.makeUnique()) async {
-            val pid = here.id; 
-            Console.OUT.println("pid=" + pid);
-            
+            val pid = here.id; Console.OUT.println("pid=" + pid);
+            val maxTh=Runtime.NTHREADS; val maxPl=Place.MAX_PLACES;
+
             val auxIntMat = new DenseMatrix(N*roK,N);
             val halfAuxMat = new DenseMatrix(nOrbital,N*roK);
-
             val jMatrix = new DenseMatrix(N, N);
             val kMatrix = new DenseMatrix(N, N);
             val dk = new Rail[Double](roK); // eqn 15b in RO#7
@@ -300,7 +288,7 @@ val maxam1:Int;
             // Use the upper half of J and K to form G
             finish for (thNo in 0..(maxTh-1)) async for (var tmu:Int=thNo; tmu<N; tmu+=maxTh) for (var tnu:Int=tmu; tnu<N; tnu++) 
                 gMat(tnu,tmu)=gMat(tmu,tnu)=jMatrix(tmu,tnu)-kMatrix(tmu,tnu);
-            //System.sleep(2000);
+            
             at(gVal) async atomic gVal().cellAdd(gMat); 
             Console.OUT.printf("pid=%d Time INT = %.2f s J = %.2f s K = %.2f s\n", pid, tINT, tJ, tK);
         }
