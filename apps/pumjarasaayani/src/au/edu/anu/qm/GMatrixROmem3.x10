@@ -187,7 +187,8 @@ val maxam1:Int;
         //jMatrix.reset(); kMatrix.reset();
         val jd = JobDefaults.getInstance();
         this.reset(); val gVal = GlobalRef(this);
-        finish for (pid in (0..(maxPl-1))) ateach(Place.place(pid)) async { 
+        finish ateach(place in Dist.makeUnique()) async {
+            val pid = here.id; 
             Console.OUT.println("pid=" + pid);
             
             val auxIntMat = new DenseMatrix(N*roK,N);
