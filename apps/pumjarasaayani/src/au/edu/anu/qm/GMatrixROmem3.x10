@@ -40,8 +40,7 @@ import edu.utk.cs.papi.PAPI;
 public class GMatrixROmem3 extends DenseMatrix{self.M==self.N} {
     // Timer & PAPI performance counters
     public val timer = new StatisticalTimer(4);
-    static TIMER_TOTAL = 0; static TIMER_JMATRIX = 1;
-    static TIMER_KMATRIX = 2; static TIMER_GENCLASS = 3;
+
     // @Ifdef("__PAPI__") // XTENLANG-3132
     transient var papi:PAPI = new PAPI(); 
 
@@ -63,11 +62,10 @@ public class GMatrixROmem3 extends DenseMatrix{self.M==self.N} {
 
 
     public def this(N:Int, bfs:BasisFunctions, molecule:Molecule[QMAtom], nOrbital:Int, omega:Double,roThresh:Double):GMatrixROmem3{self.M==N,self.N==N} {     
-        super(N, N);        
-        this.bfs = bfs; this.mol = molecule; this.nOrbital = nOrbital; this.omega=omega; this.roThresh=roThresh;  
-        
+        super(N, N);              
         val result = Runtime.execForRead("date"); Console.OUT.printf("\nGMatrixROmem.x10 'public def this' %s...\n",result.readLine()); 
-        //val maxTh=Runtime.NTHREADS; val maxPl=Place.MAX_PLACES;
+        this.bfs = bfs; this.mol = molecule; this.nOrbital = nOrbital; this.omega=omega; this.roThresh=roThresh;  
+
         val jd = JobDefaults.getInstance();
         val l_n = new Rail[Int](jd.roN+3);
         val aux = new Integral_Pack(jd.roN,jd.roL,omega,roThresh,jd.rad,jd.roZ);         
@@ -85,7 +83,7 @@ public class GMatrixROmem3 extends DenseMatrix{self.M==self.N} {
         roK = (roL+1)*(roL+1); roZ=jd.roZ;      
         val maxam = bfs.getShellList().getMaximumAngularMomentum();
         val mdc=bfs.getShellList().getMaximumDegreeOfContraction();
-        /*val*/ maxam1 = (maxam+1)*(maxam+2)/2;
+        maxam1 = (maxam+1)*(maxam+2)/2;
         this.norm = bfs.getNormalizationFactors(); 
 
         // Shell/Shellpair business 
@@ -172,6 +170,9 @@ public class GMatrixROmem3 extends DenseMatrix{self.M==self.N} {
 
     public def compute(density:Density{self.N==this.N}, mos:MolecularOrbitals{self.N==this.N}) {
         val result = Runtime.execForRead("date"); Console.OUT.printf("\nGMatrixROmem.x10 'public def compute' %s...\n",result.readLine()); 
+        val timer=this.timer; val shellPairs=this.shellPairs; val maxam1=this.maxam1; val numSigShellPairs=this.numSigShellPairs; val ylms=this.ylms;
+        val TIMER_TOTAL = 0; val TIMER_JMATRIX = 1; val TIMER_KMATRIX = 2; val TIMER_GENCLASS = 3;
+        
         timer.start(TIMER_TOTAL); 
         val jd = JobDefaults.getInstance();
         this.reset(); val gVal = GlobalRef(this);
