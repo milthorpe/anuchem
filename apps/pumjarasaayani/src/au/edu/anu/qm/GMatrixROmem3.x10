@@ -154,7 +154,7 @@ public class GMatrixROmem3 extends DenseMatrix{self.M==self.N} {
         rawShellPairs = null; // Deallocate this variable
 
         @Ifdef("__MKL__") {
-            Console.OUT.print("mklGetMaxThreads() was " + mklGetMaxThreads() + " and is now set to"); mklSetNumThreads(maxTh);
+            Console.OUT.print("mklGetMaxThreads() was " + mklGetMaxThreads() + " and is now set to"); mklSetNumThreads(Runtime.NTHREADS);
             Console.OUT.println(" " + mklGetMaxThreads() + " thread(s).");
         }  
 
