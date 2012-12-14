@@ -43,7 +43,7 @@ public class AtomInfo {
     /** Atom properties stored in order of atomic number.  0 is a placeholder! */
     private val bySpecies:Rail[AtomProps];
 
-    private def this() {
+    private def this() {             // Symbol, Atomic No., Covalent, Van der Waals (in atomic unit) , mass
         bySymbol.put("H",  new AtomProps("H",  1,  0.718, 2.268, 1.0079));
         bySymbol.put("He", new AtomProps("He", 2,  0.605, 2.646, 4.0026));
         bySymbol.put("Li", new AtomProps("Li", 3,  2.532, 3.439, 6.941 ));
@@ -62,6 +62,8 @@ public class AtomInfo {
         bySymbol.put("S",  new AtomProps("S",  16, 2.003, 3.402, 32.06));
         bySymbol.put("Cl", new AtomProps("Cl", 17, 1.871, 3.307, 35.45));
         bySymbol.put("Ar", new AtomProps("Ar", 18, 1.833, 3.553, 39.948));
+        bySymbol.put("K",  new AtomProps("K",  19, 3.70386, 5.967, 39.09831));
+        bySymbol.put("Ca", new AtomProps("Ca", 20, 3.2881, 4.365, 40.0784));
         bySymbol.put("Br", new AtomProps("Br", 35, 2.154, 3.496, 79.904));
 
         bySpecies = new Rail[AtomProps](36);
