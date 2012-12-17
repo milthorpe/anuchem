@@ -201,7 +201,7 @@ public class GMatrixROmem3 extends DenseMatrix{self.M==self.N} {
                 Console.OUT.println(" " + mklGetMaxThreads() + " thread(s).");
             }  
                  
-            for (var ron:Int=pid; ron<=roN; ron+=maxPl)  {            
+            for (var ron:Int=maxPl-pid-1/*pid*/; ron<=roN; ron+=maxPl)  {            
                 @Ifdef("__DEBUG__") {Console.OUT.printf("ron=%d...\n",ron); }
                 finish for (thNo in 0..(maxTh-1)) async tdk(thNo).clear();     
                       

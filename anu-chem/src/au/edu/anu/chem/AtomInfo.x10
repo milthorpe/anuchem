@@ -65,7 +65,7 @@ public class AtomInfo {
         bySymbol.put("K",  new AtomProps("K",  19, 3.70386, 5.967, 39.09831));
         bySymbol.put("Ca", new AtomProps("Ca", 20, 3.2881, 4.365, 40.0784));
         bySymbol.put("Br", new AtomProps("Br", 35, 2.154, 3.496, 79.904));
-
+        // TODO: Expand to cover 6-311g - iodine is also important
         bySpecies = new Rail[AtomProps](36);
         for (entry in bySymbol.entries()) {
             val props = entry.getValue();
