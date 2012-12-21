@@ -5,6 +5,7 @@
     <property name="x10rt" value="sockets" />
     <property name="xla" location="../../xla"/>
     <property name="xla.props" location="${xla}/xla_${x10rt}.properties"/>
+    <property name="x10.stdlib" location="${env.X10_HOME}/stdlib/include"/>
     <property name="x10.testlib" location="${env.X10_HOME}/../x10.tests/examples/x10lib"/>
     <property name="anuchem" location="../../anu-chem"/>
     <property name="anuchem.src" location="${anuchem}/src"/>
@@ -157,7 +158,7 @@
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/src">
             <arg value="-c"/> 
-            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.debug} ${x10c.profile} ${x10c.optimize} ${x10c.nochecks} ${define.papi} ${define.mkl} ${define.verbose} -report postcompile=1 -classpath ${gml.lib} -x10lib ${gml.props} -x10lib ${xla.props} -x10lib ${anuchem.props} -x10lib ${x10papi.props} -sourcepath . -post '# # ${post.define.mkl} ${post.cpuprofile} ${post.heapprofile} ${post.papi} -L/usr/lib -L${lib} -lintpack # -L${lapackHome} ${post.lapack} -lpapi' -d ${target-src} ${basedir}/${testclass}"/>
+            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.debug} ${x10c.profile} ${x10c.optimize} ${x10c.nochecks} ${define.papi} ${define.mkl} ${define.verbose} -report postcompile=1 -classpath ${gml.lib} -x10lib ${gml.props} -x10lib ${xla.props} -x10lib ${anuchem.props} -x10lib ${x10papi.props} -sourcepath . -post '# # -D__X10_HEADERS ${post.define.mkl} ${post.cpuprofile} ${post.heapprofile} ${post.papi} -L/usr/lib -L${lib} -lintpack # -L${lapackHome} ${post.lapack} -lpapi' -d ${target-src} ${basedir}/${testclass}"/>
         </exec>
     </target>
 
@@ -192,7 +193,7 @@
 
         <exec executable="${bash.exe}" failonerror="true" dir="${lib}">
             <arg value="-c"/> 
-            <arg value="g++ -Wall -c -g -O2 -funroll-loops Integral_Pack.cc bessel4.cc"/>
+            <arg value="g++ -Wall -c -g -O2 -funroll-loops -D__X10_HEADERS -I${x10.stdlib} Integral_Pack.cc bessel4.cc"/>
         </exec>
 
         <exec executable="${bash.exe}" failonerror="true" dir="${lib}">

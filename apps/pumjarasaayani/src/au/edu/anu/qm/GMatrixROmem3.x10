@@ -188,14 +188,13 @@ public class GMatrixROmem3 extends DenseMatrix{self.M==self.N} {
             val jMatrix = new DenseMatrix(N, N);
             val kMatrix = new DenseMatrix(N, N);
             val dk = new Rail[Double](roK); // eqn 15b in RO#7
-            val ttemp = new Rail[Rail[Double]](maxTh); val tdk = new Rail[Rail[Double]](maxTh);
-            val tjMatrix = new Rail[DenseMatrix](maxTh, (Int)=>new DenseMatrix(N,N));
-            for (thNo in 0..(maxTh-1)) ttemp(thNo) = new Rail[Double](maxam1*maxam1*roK);
-            for (thNo in 0..(maxTh-1)) tdk(thNo) = new Rail[Double](roK);
+            val ttemp = new Rail[Rail[Double]](maxTh, (Int) => new Rail[Double](maxam1*maxam1*roK));
+            val tdk = new Rail[Rail[Double]](maxTh, (Int) => new Rail[Double](roK));
+            val tjMatrix = new Rail[DenseMatrix](maxTh, (Int) => new DenseMatrix(N,N));
 
             var tINT:Double=0.,tJ:Double=0.,tK:Double=0.;
             val gMat = new DenseMatrix(N,N);
-            // initialization of auxint array should be here
+            val taux = new Rail[Integral_Pack](maxTh, (Int) => new Integral_Pack(jd.roN, jd.roL, omega, roThresh, jd.rad, jd.roZ));
             @Ifdef("__MKL__") {
                 Console.OUT.print("mklGetMaxThreads() was " + mklGetMaxThreads() + " and is now set to"); mklSetNumThreads(maxTh);
                 Console.OUT.println(" " + mklGetMaxThreads() + " thread(s).");
@@ -207,8 +206,7 @@ public class GMatrixROmem3 extends DenseMatrix{self.M==self.N} {
                       
                 timer.start(TIMER_GENCLASS); 
                 finish for (thNo in 0..(maxTh-1)) async {
-                    //should take aux from an array like val aux=taux(thNo);
-                    val aux = new Integral_Pack(jd.roN, jd.roL, omega, roThresh, jd.rad, jd.roZ); 
+                    val aux = taux(thNo); 
                     for (var spInd:Int=thNo; spInd<numSigShellPairs; spInd+=maxTh) {
                         val sp=shellPairs(spInd); val maxLron=sp.maxL(ron);                    
                         if (maxLron>=0) {
