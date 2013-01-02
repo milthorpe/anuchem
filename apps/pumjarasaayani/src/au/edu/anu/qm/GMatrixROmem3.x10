@@ -292,6 +292,7 @@ public class GMatrixROmem3 extends DenseMatrix{self.M==self.N} {
             
             at(gVal) async atomic gVal().cellAdd(gMat); 
             Console.OUT.printf("pid=%d Time INT = %.2f s J = %.2f s K = %.2f s\n", pid, tINT, tJ, tK);
+            Console.OUT.flush();
         }
 
         @Ifdef("__PAPI__"){
