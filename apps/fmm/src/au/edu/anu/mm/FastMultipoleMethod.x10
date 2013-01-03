@@ -439,24 +439,6 @@ public class FastMultipoleMethod {
         return octantAtoms;
     }
 
-    private def allReduceOctantLoads(myOctantLoads:Rail[Long]) {
-        //Team.WORLD.allreduce[Int](here.id, octantLoads, 0, octantLoads, 0, maxLeafOctants, Team.ADD);
-        Team.WORLD.barrier(here.id);
-
-        if (here == Place.FIRST_PLACE) {
-            for (p in 1..(Place.MAX_PLACES-1)) {
-                val pLoads = at(Place(p)) FastMultipoleMethod.localData.octantLoads;
-                myOctantLoads.map(myOctantLoads, pLoads, (x:Long,y:Long)=>x+y);
-            }
-            finish for(p in 1..(Place.MAX_PLACES-1)) at(Place(p)) async {
-                Array.copy[Long](myOctantLoads, FastMultipoleMethod.localData.octantLoads);
-            }
-
-        }
-
-        Team.WORLD.barrier(here.id);
-    }
-
     private def determineLoadBalanceLocal(octantAtoms:ArrayList[Pair[UInt,ArrayList[MMAtom]]]) {
         val local = FastMultipoleMethod.localData;
         local.timer.start(FmmLocalData.TIMER_INDEX_BALANCE);
@@ -466,7 +448,7 @@ public class FastMultipoleMethod {
             val leafMortonId = octant.first as Int;
             octantLoads(leafMortonId) = octant.second.size();
         }
-        allReduceOctantLoads(octantLoads);
+        Team.WORLD.allreduce[Long](here.id, octantLoads, 0, octantLoads, 0, octantLoads.size, Team.ADD);
         val numAtoms = octantLoads.reduce[Long]((a:Long,b:Long)=>a+b, 0L);
         val uListCost = local.cost(FmmLocalData.ESTIMATE_P2P);
         val q = numAtoms / octantLoads.size; // average particles per lowest-level octant
