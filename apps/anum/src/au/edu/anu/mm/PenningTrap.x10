@@ -412,7 +412,8 @@ public class PenningTrap {
                 val dx = reader.readDouble();
                 val dy = reader.readDouble();
                 val dz = reader.readDouble();
-                val ion = new MMAtom(index, Point3d(x, y, z), species.mass, species.charge);
+                val ion = new MMAtom(speciesId, Point3d(x, y, z), species.mass, species.charge);
+                ion.index = index;
                 ion.velocity = Vector3d(dx, dy, dz);
                 atoms(i) = ion;
             }
