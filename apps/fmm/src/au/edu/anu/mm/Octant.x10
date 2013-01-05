@@ -6,7 +6,7 @@
  *  You may obtain a copy of the License at
  *      http://www.opensource.org/licenses/eclipse-1.0.php
  *
- * (C) Copyright Josh Milthorpe 2012.
+ * (C) Copyright Josh Milthorpe 2012-2013.
  */
 package au.edu.anu.mm;
 
@@ -87,15 +87,17 @@ public abstract class Octant implements Comparable[Octant] {
      */
     abstract protected def upward():Pair[Int,MultipoleExpansion];
 
-    protected def constructLocalExpansion(parentLocalExpansion:LocalExpansion) {
+    /*
+     * Transform and add multipole expansions from same level
+     */
+    public def multipolesToLocal() {
         val local = FastMultipoleMethod.localData;
         val sideLength = local.size / Math.pow2(id.level);
         val myComplexK = local.fmmOperators.complexK;
         val myWignerB = local.fmmOperators.wignerB;
-        val myWignerC = local.fmmOperators.wignerC;
         val locallyEssentialTree = local.locallyEssentialTree;
 
-        // transform and add multipole expansions from same level
+
         val numTerms = localExp.p;
         val scratch = FmmScratch.getWorkerLocal();
         for (octantIndex2 in vList) {
@@ -111,8 +113,17 @@ public abstract class Octant implements Comparable[Octant] {
 					myComplexK(dx2,dy2,dz2), box2MultipoleExp, myWignerB(dx2,dy2,dz2) );
             }
         }
+    }
 
+    protected def addParentExpansion(parentLocalExpansion:LocalExpansion) {
         if (parentLocalExpansion != null) {
+            val local = FastMultipoleMethod.localData;
+            val sideLength = local.size / Math.pow2(id.level);
+            val myComplexK = local.fmmOperators.complexK;
+            val myWignerC = local.fmmOperators.wignerC;
+
+            val numTerms = localExp.p;
+            val scratch = FmmScratch.getWorkerLocal();
             // translate and add parent local expansion
             val dx = 2*(id.x%2)-1;
             val dy = 2*(id.y%2)-1;

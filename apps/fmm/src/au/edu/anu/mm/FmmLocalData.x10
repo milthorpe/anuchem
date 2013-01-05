@@ -6,7 +6,7 @@
  *  You may obtain a copy of the License at
  *      http://www.opensource.org/licenses/eclipse-1.0.php
  *
- * (C) Copyright Josh Milthorpe 2012.
+ * (C) Copyright Josh Milthorpe 2012-2013.
  */
 
 package au.edu.anu.mm;
@@ -23,13 +23,14 @@ public class FmmLocalData {
     public static val TIMER_INDEX_TOTAL:Int = 0;
     public static val TIMER_INDEX_PREFETCH:Int = 1;
     public static val TIMER_INDEX_UPWARD:Int = 2;
-    public static val TIMER_INDEX_DOWNWARD:Int = 3;
-    public static val TIMER_INDEX_TREE:Int = 4;
-    public static val TIMER_INDEX_SORT:Int = 5;
-    public static val TIMER_INDEX_BALANCE:Int = 6;
-    public static val TIMER_INDEX_REDIST:Int = 7;
-    public static val TIMER_INDEX_PARENTS:Int = 8;
-    public static val TIMER_INDEX_LET:Int = 9;
+    public static val TIMER_INDEX_M2L:Int = 3;
+    public static val TIMER_INDEX_DOWNWARD:Int = 4;
+    public static val TIMER_INDEX_TREE:Int = 5;
+    public static val TIMER_INDEX_SORT:Int = 6;
+    public static val TIMER_INDEX_BALANCE:Int = 7;
+    public static val TIMER_INDEX_REDIST:Int = 8;
+    public static val TIMER_INDEX_PARENTS:Int = 9;
+    public static val TIMER_INDEX_LET:Int = 10;
 
     /** The maximum number of levels in the octree. */
     public var dMax:UByte;
@@ -75,7 +76,7 @@ public class FmmLocalData {
     public static val ESTIMATE_M2L=1;
 
     /** A multi-timer for the several segments of a single getEnergy invocation, indexed by the constants above. */
-    public val timer = new Timer(10);
+    public val timer = new Timer(11);
 
     public def init(numTerms:Int, dMax:UByte, ws:Int, size:Double) {
         this.dMax = dMax;

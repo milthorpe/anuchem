@@ -6,7 +6,7 @@
  *  You may obtain a copy of the License at
  *      http://www.opensource.org/licenses/eclipse-1.0.php
  *
- * (C) Copyright Josh Milthorpe 2012.
+ * (C) Copyright Josh Milthorpe 2012-2013.
  */
 package au.edu.anu.mm;
 
@@ -120,13 +120,23 @@ public class ParentOctant extends Octant implements Comparable[ParentOctant] {
         return Pair[Int,MultipoleExpansion](numAtoms, this.multipoleExp);
     }
 
+    public def multipolesToLocal() {
+        for ([i] in children) {
+            val child = children(i);
+            if (child != null && !(child instanceof GhostOctant)) {
+                async child.multipolesToLocal();
+            }
+        }
+        super.multipolesToLocal();
+    }
+
     protected def downward(parentLocalExpansion:LocalExpansion):Double {
         //Console.OUT.println("at " + here + " ParentOctant.downward for " + id + " numAtoms = " + numAtoms);
 
         this.multipoleReady = false; // reset
 
         if (numAtoms > 0) {
-            constructLocalExpansion(parentLocalExpansion);
+            addParentExpansion(parentLocalExpansion);
 
             val parentExp = localExp;
             val farField = finish (SumReducer()) {

@@ -6,7 +6,7 @@
  *  You may obtain a copy of the License at
  *      http://www.opensource.org/licenses/eclipse-1.0.php
  *
- * (C) Copyright Josh Milthorpe 2012.
+ * (C) Copyright Josh Milthorpe 2012-2013.
  */
 package au.edu.anu.mm;
 
@@ -138,13 +138,12 @@ public class FastMultipoleMethod {
                 prefetchRemoteAtoms();
             }
             upwardPass();
-            Team.WORLD.barrier(here.id);
-
+            multipolesToLocal();
         }
         val potential = downwardPass();
         timer.stop(FmmLocalData.TIMER_INDEX_TOTAL);
         if (verbose) {
-            Console.OUT.printf("at %d: prefetch %.3G upward %.3G downward %.3G\n", here.id, timer.mean(FmmLocalData.TIMER_INDEX_PREFETCH) / 1e9, timer.mean(FmmLocalData.TIMER_INDEX_UPWARD) / 1e9, timer.mean(FmmLocalData.TIMER_INDEX_DOWNWARD) / 1e9);
+            Console.OUT.printf("at %d: prefetch %.3G upward %.3G M2L %.3G downward %.3G\n", here.id, timer.mean(FmmLocalData.TIMER_INDEX_PREFETCH) / 1e9, timer.mean(FmmLocalData.TIMER_INDEX_UPWARD) / 1e9, timer.mean(FmmLocalData.TIMER_INDEX_M2L) / 1e9, timer.mean(FmmLocalData.TIMER_INDEX_DOWNWARD) / 1e9);
         }
 
         return 0.5 * potential;
@@ -250,7 +249,19 @@ public class FastMultipoleMethod {
         finish for (topLevelOctant in local.topLevelOctants) async {
             topLevelOctant.upward();
         }
+        // force completion of sendMultipoles at all places
+        Team.WORLD.barrier(here.id);
         local.timer.stop(FmmLocalData.TIMER_INDEX_UPWARD);
+    }
+
+    protected def multipolesToLocal() {
+        val local = FastMultipoleMethod.localData;
+        local.timer.start(FmmLocalData.TIMER_INDEX_M2L);
+
+        finish for (topLevelOctant in local.topLevelOctants) async {
+            topLevelOctant.multipolesToLocal();
+        }
+        local.timer.stop(FmmLocalData.TIMER_INDEX_M2L);
     }
 
     protected def downwardPass() {

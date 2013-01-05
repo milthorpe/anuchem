@@ -6,7 +6,7 @@
  *  You may obtain a copy of the License at
  *      http://www.opensource.org/licenses/eclipse-1.0.php
  *
- * (C) Copyright Josh Milthorpe 2012.
+ * (C) Copyright Josh Milthorpe 2012-2013.
  */
 package au.edu.anu.mm;
 
@@ -99,7 +99,7 @@ public class LeafOctant extends Octant implements Comparable[LeafOctant] {
         this.multipoleReady = false; // reset
 
         if (atoms.size() > 0) {
-            constructLocalExpansion(parentLocalExpansion);
+            addParentExpansion(parentLocalExpansion);
 
             val local = FastMultipoleMethod.localData;
             var potential: Double = farField(local.size);
