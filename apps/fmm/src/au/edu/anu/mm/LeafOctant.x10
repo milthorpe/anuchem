@@ -29,7 +29,7 @@ import au.edu.anu.chem.mm.MMAtom;
  * in the 3D division of space for the fast multipole method.
  * @author milthorpe
  */
-@NativeCPPInclude("bgp_math.h")
+@NativeCPPInclude("bg_math.h")
 public class LeafOctant extends Octant implements Comparable[LeafOctant] {
     public var atoms:ArrayList[MMAtom];
     private var sources:Rail[Double];
@@ -166,11 +166,11 @@ public class LeafOctant extends Octant implements Comparable[LeafOctant] {
                 val rVec = sameBoxAtom.centre - atom1.centre;
                 val invR:Double;
                 val invR2:Double;
-@Ifdef("__BGP__") {
+@Ifdef("__BG__") {
                                 invR = rsqrt(rVec.lengthSquared());
                                 invR2 = invR * invR;
 }
-@Ifndef("__BGP__") {
+@Ifndef("__BG__") {
                                 invR2 = 1.0 / rVec.lengthSquared();
                                 invR = Math.sqrt(invR2);
 }
@@ -220,11 +220,11 @@ public class LeafOctant extends Octant implements Comparable[LeafOctant] {
                 val r2 = (dx*dx + dy*dy + dz*dz);
                 val invR:Double;
                 val invR2:Double;
-@Ifdef("__BGP__") {
+@Ifdef("__BG__") {
                                 invR = rsqrt(r2);
                                 invR2 = invR * invR;
 }
-@Ifndef("__BGP__") {
+@Ifndef("__BG__") {
                                 invR2 = 1.0 / r2;
                                 invR = Math.sqrt(invR2);
 }

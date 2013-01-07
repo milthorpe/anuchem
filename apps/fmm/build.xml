@@ -3,7 +3,8 @@
 <project name="Fast Multipole Method" default="build" basedir=".">
     &buildfile;
     <property environment="env"/>
-    <property name="x10rt" value="mpi" />
+    <property name="x10rt" value="sockets" />
+    <property name="bgq" value="false" />
     <property name="bgp" value="false" />
     <property name="x10x.xla" location="../../xla"/>
 	<property name="xla.props" location="${x10x.xla}/xla_${x10rt}.properties"/>
@@ -23,7 +24,7 @@
     <property name="workstealing" value="false" />
     <property name="nochecks" value="true"/>
     <property name="unroll" value="false"/>
-    <property name="debug" value="false"/>
+    <property name="debug" value="true"/>
     <property name="profile"  value="false"/>
     <property name="cpuprofile"  value="false"/>
     <property name="perftoolsHome" location="${user.home}/perftools"/>
@@ -51,18 +52,36 @@
         <istrue value="${workstealing}"/>
     </condition>
 
-    <condition property="x10c.bgp" value="-define __BGP__" else="">
-        <istrue value="${bgp}"/>
+    <condition property="bg" value="true" else="">
+      <or>
+        <istrue value="${bgp}" />
+        <istrue value="${bgq}" />
+      </or>
+    </condition>
+
+    <condition property="x10c.bg" value="-define __BG__" else="">
+        <istrue value="${bg}"/>
+    </condition>
+
+    <condition property="post.define.bg" value="-D __BG__" else="">
+        <istrue value="${bg}"/>
     </condition>
 
     <condition property="cxx.bgp" value="-I/opt/ibmcmp/xlmass/bg/4.4/include" else="">
         <istrue value="${bgp}"/>
     </condition>
 
+    <condition property="cxx.bgq" value="-I/opt/ibmcmp/xlmass/bg/7.3/include" else="">
+        <istrue value="${bgq}"/>
+    </condition>
+
     <condition property="ld.bgp" value="-L/opt/ibmcmp/xlmass/bg/4.4/bglib -lmass" else="">
         <istrue value="${bgp}"/>
     </condition>
 
+    <condition property="ld.bgq" value="-L/opt/ibmcmp/xlmass/bg/7.3/bglib64 -lmass" else="">
+        <istrue value="${bgq}"/>
+    </condition>
 
     <condition property="x10c.debug" value="-DEBUG" else="">
         <istrue value="${debug}"/>
@@ -144,11 +163,11 @@
         <pathconvert property="src.list" refid="src.files" dirsep="/" pathsep=" ">
             <map from="${basedir}${file.separator}src${file.separator}" to=""/>
         </pathconvert>
-        <echo message="x10c++ -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} ${x10c.bgp} ${x10c.debug} ${x10c.profile} -x10lib ${xla.props} -x10lib ${anuchem.props} ${x10lib.papi} -sourcepath . -buildx10lib ../. ${src.list} -d ../include -o ${x10lib-cpp}"/>
+        <echo message="x10c++ -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} ${x10c.bg} ${x10c.debug} ${x10c.profile} -x10lib ${xla.props} -x10lib ${anuchem.props} ${x10lib.papi} -sourcepath . -buildx10lib ../. ${src.list} -d ../include -o ${x10lib-cpp}"/>
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/src">
             <arg value="-c"/>
-            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} ${x10c.bgp} ${x10c.debug} ${x10c.profile} -report postcompile=1 -x10lib ${xla.props} -x10lib ${anuchem.props} ${x10lib.papi} -sourcepath . -buildx10lib ../. ${src.list} -d ../include -o ${x10lib-cpp}"/>
+            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} ${x10c.bg} ${x10c.debug} ${x10c.profile} -report postcompile=1 -x10lib ${xla.props} -x10lib ${anuchem.props} ${x10lib.papi} -sourcepath . -buildx10lib ../. ${src.list} -d ../include -o ${x10lib-cpp}"/>
         </exec>
 
         <jar jarfile="${x10lib-cpp}.jar">
@@ -159,11 +178,11 @@
     <target name="build-src-cpp" depends="check-src-cpp" unless="src.uptodate.cpp">
         <echo message="Building source tree"/>
 
-        <echo message="x10c++ -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} ${x10c.workstealing} ${x10c.bgp} ${x10c.debug} ${x10c.cpuprofile} ${x10c.profile} ${define.papi} ${define.exclude_near} -x10lib ${xla.props} -x10lib ${anuchem.props} ${x10lib.papi} -sourcepath . '${basedir}/${testclass}'"/>
+        <echo message="x10c++ -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} ${x10c.workstealing} ${x10c.bg} ${x10c.debug} ${x10c.cpuprofile} ${x10c.profile} ${define.papi} ${define.exclude_near} -x10lib ${xla.props} -x10lib ${anuchem.props} ${x10lib.papi} -sourcepath . '${basedir}/${testclass}'"/>
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/src">
             <arg value="-c"/>
-            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} ${x10c.workstealing} ${x10c.bgp} ${x10c.debug} ${x10c.cpuprofile} ${x10c.profile} ${define.papi} ${define.exclude_near} -report postcompile=1 -post '# ${post.unroll} ${cxx.bgp} # ${ld.bgp} ${link.mpiPprofile} ${post.cpuprofile}' -x10lib ${xla.props} -x10lib ${anuchem.props} ${x10lib.papi} -sourcepath . -d '${target-src}' '${basedir}/${testclass}'"/>
+            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} ${x10c.workstealing} ${x10c.bg} ${x10c.debug} ${x10c.cpuprofile} ${x10c.profile} ${define.papi} ${define.exclude_near} -report postcompile=1 -post '# # ${post.define.bg} ${post.unroll} ${cxx.bgp} ${cxx.bgq} # ${ld.bgp} ${ld.bgq} ${link.mpiPprofile} ${post.cpuprofile}' -x10lib ${xla.props} -x10lib ${anuchem.props} ${x10lib.papi} -sourcepath . -d '${target-src}' '${basedir}/${testclass}'"/>
         </exec>
     </target>
 

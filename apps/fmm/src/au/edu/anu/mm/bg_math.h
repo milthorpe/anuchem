@@ -1,3 +1,3 @@
-#ifdef __BGP__
+#ifdef __BG__
 #include "mass.h"
 #endif
