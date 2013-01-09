@@ -101,7 +101,10 @@ public class GMatrixROmem3 extends DenseMatrix{self.M==self.N} {
        
         val dummySignificantPair = new ShellPair(0, 0, zeroPoint, zeroPoint, emptyRailD, emptyRailD, emptyRailD, emptyRailD, 0, 0, 0, 0, emptyRailI, threshold);
         var mu:Int=0,nu:Int=0,ind:Int=0; 
+
+        var aIndex2SP:Rail[Int](0..(noOfAtoms-1)),totFunc:Int=0;
         for(var a:Int=0; a<noOfAtoms; a++) { // centre a  
+            aIndex2SP(a)=totFunc;
             val aFunc = mol.getAtom(a).getBasisFunctions();
             val naFunc = aFunc.size();          
             for(var i:Int=0; i<naFunc; i++) { // basis functions on a
@@ -115,31 +118,38 @@ public class GMatrixROmem3 extends DenseMatrix{self.M==self.N} {
                         var aaFunc:ContractedGaussian=iaFunc,bbFunc:ContractedGaussian=jbFunc;
                         val aa=iaFunc.getTotalAngularMomentum(); val bb=jbFunc.getTotalAngularMomentum();                       
                         val maxbraa = (aa+1)*(aa+2)/2; val maxbrab = (bb+1)*(bb+2)/2;                                          
-                        //if (aa>bb || (aa==bb && mu>=nu)) { // Careful this is a tricky condition                            
-                            val aang = aaFunc.getTotalAngularMomentum(); val bang = bbFunc.getTotalAngularMomentum();
-                            val aPoint = aaFunc.origin; val bPoint = bbFunc.origin; 
-                            val zetaA = aaFunc.exponents; val zetaB = bbFunc.exponents; 
-                            val conA = aaFunc.coefficients; val conB = bbFunc.coefficients; 
-                            val dConA = conA.size; val dConB = conB.size;
-                            var contrib : Double = 0.; // ss = conservative estimate
-                            val R2 = Math.pow(aPoint.i-bPoint.i,2.)+Math.pow(aPoint.j-bPoint.j,2.)+Math.pow(aPoint.k-bPoint.k,2.);
-                            for (var ii:Int=0; ii<dConA; ii++) for (var jj:Int=0; jj<dConB; jj++) 
-                                contrib+=conA(ii)*conB(jj)*Math.exp(-zetaA(ii)*zetaB(jj)/(zetaA(ii)+zetaB(jj))*R2)
-                                        /Math.pow(jd.roZ,aang+bang);  // See Szabo Ostlund 3.284-3.286 
-                            contrib=Math.abs(contrib);
-                            if (contrib>=threshold) {
-                                val maxL = new Rail[Int](roN+1); for (var ron:Int=0; ron<=roN; ron++) maxL(ron)=roL;
-                                rawShellPairs(ind) = new ShellPair(aang,bang,aPoint,bPoint,zetaA,zetaB,conA,conB,dConA,dConB,mu,nu,maxL,contrib);     
-                                ind++;
-                            }               
-                        //}
- 
-                        if (b!=noOfAtoms-1 || j!=nbFunc-1) nu+=maxbrab;
-                        else {mu+=maxbraa; nu=0;}
+                            
+                        val aang = aaFunc.getTotalAngularMomentum(); val bang = bbFunc.getTotalAngularMomentum();
+                        val aPoint = aaFunc.origin; val bPoint = bbFunc.origin; 
+                        val zetaA = aaFunc.exponents; val zetaB = bbFunc.exponents; 
+                        val conA = aaFunc.coefficients; val conB = bbFunc.coefficients; 
+                        val dConA = conA.size; val dConB = conB.size;
+                        var contrib : Double = 0.; // ss = conservative estimate
+                        val R2 = Math.pow(aPoint.i-bPoint.i,2.)+Math.pow(aPoint.j-bPoint.j,2.)+Math.pow(aPoint.k-bPoint.k,2.);
+                        for (var ii:Int=0; ii<dConA; ii++) for (var jj:Int=0; jj<dConB; jj++) 
+                            contrib+=conA(ii)*conB(jj)*Math.exp(-zetaA(ii)*zetaB(jj)/(zetaA(ii)+zetaB(jj))*R2)
+                                     /Math.pow(jd.roZ,aang+bang);  // See Szabo Ostlund 3.284-3.286 
+                        contrib=Math.abs(contrib);
+                        if (contrib>=threshold) {
+                            val maxL = new Rail[Int](roN+1); for (var ron:Int=0; ron<=roN; ron++) maxL(ron)=roL;
+                            rawShellPairs(ind) = new ShellPair(aang,bang,aPoint,bPoint,zetaA,zetaB,conA,conB,dConA,dConB,mu,nu,maxL,contrib);     
+                            ind++;
+                            totFunc+=maxbraa*maxbrab; // *(roN+1)*(roL+1)*(roL+1)
+                        }               
+                        
+                        if (b!=noOfAtoms-1 || j!=nbFunc-1) nu+=maxbrab; else {mu+=maxbraa; nu=0;}
                     }    
                 }
             }   
         }   
+        val nPlaces=Place.MAX_PLACES;
+        var nIndex2atom:Rail[Int](0..(nPlaces-1)),placeID=nPlaces;
+        for (a:Int=noOfAtoms-1; a>=0; a--) {
+             if (aIndex2SP(a)<(placeID-1)*totFunc/nPlaces)
+                 nIndex2atom(placeID--)=a;
+        }
+        nIndex2atom(0)=0;
+
         this.numSigShellPairs = ind;
         Console.OUT.printf("Found %d significant shellpairs.\n",numSigShellPairs);
         this.shellPairs = new Rail[ShellPair](numSigShellPairs);    
