@@ -41,12 +41,6 @@ public class FastMultipoleMethod {
     /** The maximum number of levels in the octree. */
     public val dMax:UByte;
 
-    /** 
-     * Return the top level of octants actually used in the method.
-     * This is 0 for the periodic FMM and 2 for the non-periodic FMM.
-     */
-    protected val topLevel:UByte;
-
     /** The number of lowest level octants along one side of the cube. */
     public val lowestLevelDim:Int;
 
@@ -83,8 +77,7 @@ public class FastMultipoleMethod {
                     numTerms:Int,
                     ws:Int,
                     size:Double) {
-        // topLevel in regular FMM is 2 (octants higher than this cannot be well-spaced)
-        this(density, dMax, numTerms, ws, size, 2, false);
+        this(density, dMax, numTerms, ws, size, false);
     }
 
     /**
@@ -95,18 +88,15 @@ public class FastMultipoleMethod {
      * @param ws well-separated parameter
      * @param size length of a side of the simulation cube
      * @param atoms the atoms for which to calculate electrostatics
-     * @param topLevel the topmost level for which octant in the octree are used
      */
     protected def this(density:Double, 
                     dMax:Int,
                     numTerms:Int,
                     ws:Int,
                     size:Double,
-                    topLevel:Int,
                     verbose:Boolean
                     ) {
         this.density = density as Int;
-        this.topLevel = topLevel as UByte;
         this.dMax = dMax as UByte;
 
         val lowestLevelDim = Math.pow2(dMax);

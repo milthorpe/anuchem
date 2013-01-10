@@ -6,7 +6,7 @@
  *  You may obtain a copy of the License at
  *      http://www.opensource.org/licenses/eclipse-1.0.php
  *
- * (C) Copyright Josh Milthorpe 2012.
+ * (C) Copyright Josh Milthorpe 2012-2013.
  */
 package au.edu.anu.mm;
 
@@ -16,6 +16,11 @@ import x10x.vector.Point3d;
 
 public struct OctantId(x:UByte, y:UByte, z:UByte, level:UByte) implements Comparable[OctantId] {
     static LEAF_MASK = 16777215U; // octant ID without level
+
+    /** 
+     * Return the top level of octants actually used in the method.
+     * TODO This should be 0 for the periodic FMM and 2 for the non-periodic FMM.
+     */
     static TOP_LEVEL = 2UY;
 
     public def this(x:UByte, y:UByte, z:UByte, level:UByte) {
@@ -25,9 +30,9 @@ public struct OctantId(x:UByte, y:UByte, z:UByte, level:UByte) implements Compar
     public def compareTo(b:OctantId):Int {
         val levelComp = this.level.compareTo(b.level);
         if (levelComp == 0) {
-            val cX = Math.log2(this.x ^ b.x);
-            val cY = Math.log2(this.y ^ b.y);
-            val cZ = Math.log2(this.z ^ b.z);
+            val cX = OctantId.log2(this.x ^ b.x);
+            val cY = OctantId.log2(this.y ^ b.y);
+            val cZ = OctantId.log2(this.z ^ b.z);
             if (cX >= cY) {
                  if (cX >= cZ) {
                     return x.compareTo(b.x);
@@ -43,6 +48,16 @@ public struct OctantId(x:UByte, y:UByte, z:UByte, level:UByte) implements Compar
             }
         }
         return levelComp;
+    }
+
+    /**
+     * Copied from x10.lang.Math.log2 - but without 'assert powerOf2(p);' 
+     * @return ceil[log2(p)]
+     */
+    private static @Inline def log2(var p:Int):Int {
+        var i:Int = 0;
+        while (p > 1) { p = p/2; i++; }
+        return i;
     }
 
     public operator this < (x:OctantId) = (this.compareTo(x) < 0);
