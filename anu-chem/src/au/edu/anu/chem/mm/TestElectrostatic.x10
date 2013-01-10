@@ -61,27 +61,32 @@ public class TestElectrostatic {
     public def generateAtoms(numAtoms:Int, perturb:Boolean) : DistArray[Rail[MMAtom]](1) {
         val charge = 1.0 / numAtoms; // keep charge density constant
         //Console.OUT.println("size of cluster =  " + sizeOfCentralCluster());
-        val tempAtoms = DistArray.make[ArrayList[MMAtom]](Dist.makeUnique(), (Point) => new ArrayList[MMAtom]());
         val gridSize = (Math.ceil(Math.cbrt(numAtoms)) as Int);
         // assign atoms to a central cluster of size "sizeOfCentralCluster()"
         val clusterStart = -sizeOfCentralCluster() / 2.0;
-        var gridPoint : Int = 0; // running total of assigned grid points
-        finish for (var i : Int = 0; i < numAtoms; i++) {
-            val gridX = gridPoint / (gridSize * gridSize);
-            val gridY = (gridPoint - (gridX * gridSize * gridSize)) / gridSize;
-            val gridZ = gridPoint - (gridX * gridSize * gridSize) - (gridY * gridSize);
-            val x = clusterStart + (gridX + 0.5) * (sizeOfCentralCluster() / gridSize) + (perturb ? randomNoise(): 0.0);
-            val y = clusterStart + (gridY + 0.5) * (sizeOfCentralCluster() / gridSize) + (perturb ? randomNoise(): 0.0);
-            val z = clusterStart + (gridZ + 0.5) * (sizeOfCentralCluster() / gridSize) + (perturb ? randomNoise(): 0.0);
-            //Console.OUT.println(x + " " + y + " " + z);
-            val p = getPlaceId(x, y, z);
-            at(Place.place(p)) async {
-                val atom = new MMAtom(Point3d(x, y, z), 1.0, charge);
-                atomic { tempAtoms(p).add(atom); }
+
+        // generate particles at each place in slabs, divide space by X coordinate
+        val atoms = DistArray.make[Rail[MMAtom]](Dist.makeUnique());
+        finish ateach(place in Dist.makeUnique()) {
+            val chunkSize = (numAtoms / Place.MAX_PLACES) + ((numAtoms % Place.MAX_PLACES > 0) ? 1 : 0);
+            val startHere = here.id * chunkSize;
+            val endHere = Math.min(numAtoms, (here.id+1) * chunkSize);
+            val numAtomsHere = Math.max(0, endHere-startHere-1);
+            val atomsHere = new Rail[MMAtom](numAtomsHere);
+            var i:Int = 0;
+            for(var gridPoint:Int=startHere; gridPoint<endHere; gridPoint++) {
+                val gridX = gridPoint / (gridSize * gridSize);
+                val gridY = (gridPoint - (gridX * gridSize * gridSize)) / gridSize;
+                val gridZ = gridPoint - (gridX * gridSize * gridSize) - (gridY * gridSize);
+                val x = clusterStart + (gridX + 0.5) * (sizeOfCentralCluster() / gridSize) + (perturb ? randomNoise(): 0.0);
+                val y = clusterStart + (gridY + 0.5) * (sizeOfCentralCluster() / gridSize) + (perturb ? randomNoise(): 0.0);
+                val z = clusterStart + (gridZ + 0.5) * (sizeOfCentralCluster() / gridSize) + (perturb ? randomNoise(): 0.0);
+                //Console.OUT.println(here.id + ": " + x + " " + y + " " + z);
+                atomsHere(i++) = new MMAtom(Point3d(x, y, z), 1.0, charge);
             }
-            gridPoint++;
+            atoms(here.id) = atomsHere;
         }
-        val atoms = DistArray.make[Rail[MMAtom]](Dist.makeUnique(), ([p] : Point) => (tempAtoms(p) as ArrayList[MMAtom]).toArray());
+
         return atoms;
     }
 
