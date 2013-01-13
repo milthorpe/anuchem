@@ -1,13 +1,12 @@
 #!/bin/bash
-# Vayu job script: test FMM scaling to 256 places (1 place per 4 core Nehalem)
+# Vayu job script: test FTICR on 1,128 places (1 place per 4 core Nehalem)
 #PBS -P y42 
 #PBS -q normal 
 #PBS -l walltime=01:00:00,vmem=256GB,ncpus=256
 #PBS -wd
 #module load ipm
 #module load hpctoolkit
-i=1
-while [ $i -le 256 ]
+for i in 1 16
 do
   export X10_NPLACES=$i
   export X10_NTHREADS=4
