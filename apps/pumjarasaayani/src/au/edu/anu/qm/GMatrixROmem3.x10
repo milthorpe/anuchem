@@ -115,7 +115,7 @@ public class GMatrixROmem3 extends DenseMatrix{self.M==self.N} {
                         var aaFunc:ContractedGaussian=iaFunc,bbFunc:ContractedGaussian=jbFunc;
                         val aa=iaFunc.getTotalAngularMomentum(); val bb=jbFunc.getTotalAngularMomentum();                       
                         val maxbraa = (aa+1)*(aa+2)/2; val maxbrab = (bb+1)*(bb+2)/2;                                          
-                        if (aa>bb || (aa==bb && mu>=nu)) { // Careful this is a tricky condition                            
+                        if (mu>=nu) {                            
                             val aang = aaFunc.getTotalAngularMomentum(); val bang = bbFunc.getTotalAngularMomentum();
                             val aPoint = aaFunc.origin; val bPoint = bbFunc.origin; 
                             val zetaA = aaFunc.exponents; val zetaB = bbFunc.exponents; 
