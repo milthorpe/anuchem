@@ -24,6 +24,7 @@ import x10x.vector.Vector3d;
 import au.edu.anu.chem.Molecule;
 import au.edu.anu.chem.mm.MMAtom;
 import au.edu.anu.util.StatisticalTimer;
+import au.edu.anu.util.Timer;
 import edu.mit.fftw.FFTW;
 
 /**
@@ -86,7 +87,7 @@ public class PenningTrap {
                     edgeLength:Double,
                     fmmDMax:Int,
                     fmmNumTerms:Int,
-					speciesList:Rail[SpeciesSpec]) {
+                    speciesList:Rail[SpeciesSpec]) {
         this.numAtoms = numAtoms;
         val wellSeparatedParam = 2;
         val fmmNumBoxes = Math.pow(8.0, fmmDMax);
@@ -110,6 +111,12 @@ public class PenningTrap {
      */
     public def mdRun(timestep:Double, numSteps:Int, resumeStep:Int, logSteps:Int, atoms:DistArray[Rail[MMAtom]](1)) {
         fmm.initialAssignment(numAtoms, atoms);
+        finish ateach(place in Dist.makeUnique()) {
+            for (timerId in 4..9) {
+                FastMultipoleMethod.localData.timer.clear(timerId);
+            }
+        }
+
 
         Console.OUT.println("# Timestep = " + timestep + "ns, number of steps = " + numSteps);
         val timer = new StatisticalTimer(3);
@@ -151,7 +158,7 @@ public class PenningTrap {
                 mdStepLocal(step, timeStepSecs, current, accumProps, props, timer);
                 if (accumProps) {
                     reduceAndPrintProperties(timestep * step, props);
-					writeSnapshot(step);
+                    writeSnapshot(step);
                 } else {
                     Team.WORLD.barrier(here.id); // TODO is this really required?
                 }
@@ -178,9 +185,28 @@ public class PenningTrap {
                 timer.printSeconds(1);
                 Console.OUT.println("reassign:");
                 timer.printSeconds(2);
+
+                fmm.reduceMaxTimes();
+
+            logTime("tree    ",  FmmLocalData.TIMER_INDEX_TREE,     FastMultipoleMethod.localData.timer);
+            logTime("  (sort)   ", FmmLocalData.TIMER_INDEX_SORT,      FastMultipoleMethod.localData.timer);
+            logTime("  (balance)", FmmLocalData.TIMER_INDEX_BALANCE,   FastMultipoleMethod.localData.timer);
+            logTime("  (redist) ", FmmLocalData.TIMER_INDEX_REDIST,    FastMultipoleMethod.localData.timer);
+            logTime("  (parents)", FmmLocalData.TIMER_INDEX_PARENTS,   FastMultipoleMethod.localData.timer);
+            logTime("  (LET)    ", FmmLocalData.TIMER_INDEX_LET,       FastMultipoleMethod.localData.timer);
+
+            logTime("Prefetch",  FmmLocalData.TIMER_INDEX_PREFETCH,  FastMultipoleMethod.localData.timer);
+            logTime("Upward  ",  FmmLocalData.TIMER_INDEX_UPWARD,    FastMultipoleMethod.localData.timer);
+            logTime("M2L     ",  FmmLocalData.TIMER_INDEX_M2L,       FastMultipoleMethod.localData.timer);
+            logTime("Downward",  FmmLocalData.TIMER_INDEX_DOWNWARD,  FastMultipoleMethod.localData.timer);
+            logTime("Total   ",  FmmLocalData.TIMER_INDEX_TOTAL,     FastMultipoleMethod.localData.timer);
             }
         }
 
+    }
+
+    public def logTime(desc : String, timerIndex : Int, timer : Timer) {
+        Console.OUT.printf(desc + ": %g seconds\n", (timer.mean(timerIndex) as Double) / 1e9);
     }
 
     private def printStartPositions(props:SystemProperties) {
@@ -383,12 +409,12 @@ public class PenningTrap {
             if (atom != null) {
                 writer.writeInt(atom.index);
                 writer.writeInt(atom.species);
-				writer.writeDouble(atom.centre.i);
-				writer.writeDouble(atom.centre.j);
-				writer.writeDouble(atom.centre.k);
-				writer.writeDouble(atom.velocity.i);
-				writer.writeDouble(atom.velocity.j);
-				writer.writeDouble(atom.velocity.k);
+                writer.writeDouble(atom.centre.i);
+                writer.writeDouble(atom.centre.j);
+                writer.writeDouble(atom.centre.k);
+                writer.writeDouble(atom.velocity.i);
+                writer.writeDouble(atom.velocity.j);
+                writer.writeDouble(atom.velocity.k);
             }
         }
     }
@@ -406,9 +432,9 @@ public class PenningTrap {
                 val index = reader.readInt();
                 val speciesId = reader.readInt();
                 val species = speciesList(speciesId);
-			    val x = reader.readDouble();
-			    val y = reader.readDouble();
-			    val z = reader.readDouble();
+                val x = reader.readDouble();
+                val y = reader.readDouble();
+                val z = reader.readDouble();
                 val dx = reader.readDouble();
                 val dy = reader.readDouble();
                 val dz = reader.readDouble();
