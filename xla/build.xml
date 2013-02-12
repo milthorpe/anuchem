@@ -15,7 +15,7 @@
 	<property name="target-test" location="${target}/test-classes" />
 	<property name="lib" location="${basedir}/lib" />
 	<property name="jar" value="xla.jar"/>
-    <property name="x10lib-cpp" value="xla_${x10rt}" />
+    <property name="x10lib-cpp" value="xla" />
     <property name="ar" value="xla.a"/>
     <property name="testclass" value="test/x10x/matrix/BenchmarkMatrix.x10"/>
 
@@ -97,11 +97,11 @@
         <pathconvert property="src.list" refid="src.files" dirsep="/" pathsep=" ">
             <map from="${basedir}${file.separator}src${file.separator}" to=""/>
         </pathconvert>
-        <echo message="x10c++ -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} -sourcepath . -buildx10lib ../. ${src.list} -d ../include -o ${x10lib-cpp}"/>
+        <echo message="x10c++ ${x10c.optimize} ${x10c.nochecks} -sourcepath . -buildx10lib ../. ${src.list} -d ../include -o ${x10lib-cpp}"/>
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/src">
             <arg value="-c"/>
-            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} -report postcompile=1 -sourcepath . -buildx10lib ../. ${src.list} -d ../include -o ${x10lib-cpp}"/>
+            <arg value="'x10c++' ${x10c.optimize} ${x10c.nochecks} -report postcompile=1 -sourcepath . -buildx10lib ../. ${src.list} -d ../include -o ${x10lib-cpp}"/>
         </exec>
 
         <jar jarfile="${x10lib-cpp}.jar">

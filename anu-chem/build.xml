@@ -4,7 +4,7 @@
     <property environment="env"/>
     <property name="x10rt" value="sockets"/>
     <property name="x10x.xla" location="../xla"/>
-	<property name="xla.props" location="${x10x.xla}/xla_${x10rt}.properties"/>
+	<property name="xla.props" location="${x10x.xla}/xla.properties"/>
     <property name="x10home" location="${env.X10_HOME}" />
     <property name="x10.testlib" location="${env.X10_HOME}/../x10.tests/examples/x10lib"/>
     <property name="bash.exe" value="bash"/>
@@ -20,7 +20,7 @@
 	<property name="target-test" location="${target}/test-classes" />
 	<property name="lib" location="${basedir}/lib" />
 	<property name="jar" value="anu-chem.jar"/>
-    <property name="x10lib-cpp" value="anuchem_${x10rt}" />
+    <property name="x10lib-cpp" value="anuchem" />
     <property name="bin" location="${basedir}/bin"/>
 	<property name="exe" value="direct"/>
     <property name="testclass" value="test/au/edu/anu/chem/mm/TestDirectElectrostatic.x10"/>
@@ -144,11 +144,11 @@
         <pathconvert property="src.list" refid="src.files" dirsep="/" pathsep=" ">
             <map from="${basedir}${file.separator}src${file.separator}" to=""/>
         </pathconvert>
-        <echo message="x10c++ -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} ${x10c.debug} ${x10c.profile} -x10lib ${xla.props} -sourcepath . -buildx10lib ../. ${src.list} -d ../include -o ${x10lib-cpp}"/>
+        <echo message="x10c++ ${x10c.optimize} ${x10c.nochecks} ${x10c.debug} ${x10c.profile} -x10lib ${xla.props} -sourcepath . -buildx10lib ../. ${src.list} -d ../include -o ${x10lib-cpp}"/>
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/src">
             <arg value="-c"/>
-            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} ${x10c.debug} ${x10c.profile} -report postcompile=1 -x10lib ${xla.props} -sourcepath . -buildx10lib ../. ${src.list} -d ../include -o ${x10lib-cpp}"/>
+            <arg value="'x10c++' ${x10c.optimize} ${x10c.nochecks} ${x10c.debug} ${x10c.profile} -report postcompile=1 -x10lib ${xla.props} -sourcepath . -buildx10lib ../. ${src.list} -d ../include -o ${x10lib-cpp}"/>
         </exec>
 
         <jar jarfile="${x10lib-cpp}.jar">

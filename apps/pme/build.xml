@@ -4,15 +4,15 @@
     <property environment="env"/>
     <property name="x10rt" value="sockets" />
     <property name="x10x.xla" location="../../xla"/>
-	<property name="xla.props" location="${x10x.xla}/xla_${x10rt}.properties"/>
+	<property name="xla.props" location="${x10x.xla}/xla.properties"/>
 	<property name="xla.src" location="${x10x.xla}/src"/>
     <property name="anuchem" location="../../anu-chem"/>
-    <property name="anuchem.props" location="${anuchem}/anuchem_${x10rt}.properties"/>
+    <property name="anuchem.props" location="${anuchem}/anuchem.properties"/>
 	<property name="anuchem.src" location="${anuchem}/src"/>
 	<property name="anuchem.lib" location="${anuchem}/lib/anu-chem.jar"/>
     <property name="x10.testlib" location="${env.X10_HOME}/../x10.tests/examples/x10lib"/>
     <property name="fftw" location="../../fftw_wrapper"/>
-    <property name="fftw.props" location="${fftw}/fftw_${x10rt}.properties" />
+    <property name="fftw.props" location="${fftw}/fftw.properties" />
     <property name="fftw3.include" location="${user.home}/fftw/include" />
     <property environment="env"/>
     <property name="bash.exe" value="bash"/>    

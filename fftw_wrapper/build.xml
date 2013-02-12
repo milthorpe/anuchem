@@ -9,7 +9,7 @@
     <property name="optimize" value="true"/>
     <property name="nochecks" value="true"/>
     <property name="debug" value="false"/>
-    <property name="x10lib-cpp" value="fftw_${x10rt}" />
+    <property name="x10lib-cpp" value="fftw" />
 
     <condition property="x10c.optimize" value="-O" else="">
         <istrue value="${optimize}"/>
@@ -35,7 +35,7 @@
         <pathconvert property="src.list" refid="src.files" dirsep="/" pathsep=" ">
             <map from="${basedir}${file.separator}src${file.separator}" to=""/>
         </pathconvert>
-        <echo message="x10c++ -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} -sourcepath . -buildx10lib ../. ${src.list} -d include -o ${x10lib-cpp}"/>
+        <echo message="x10c++ ${x10c.optimize} ${x10c.nochecks} -sourcepath . -buildx10lib ../. ${src.list} -d include -o ${x10lib-cpp}"/>
 
         <copy todir="include">
             <fileset id="cpp.files" dir="${basedir}/src" includes="**/*.h,**/*.struct_h,**/*.cc"/>
@@ -43,7 +43,7 @@
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/src">
             <arg value="-c"/>
-            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} -report postcompile=1 -sourcepath . -buildx10lib ../. ${src.list} -d ../include -post '# &quot;-I${fftw3.include}&quot; # &quot;-L${fftw3.lib}&quot; # -lfftw3' -o ${x10lib-cpp}"/>
+            <arg value="'x10c++' ${x10c.optimize} ${x10c.nochecks} -report postcompile=1 -sourcepath . -buildx10lib ../. ${src.list} -d ../include -post '# &quot;-I${fftw3.include}&quot; # &quot;-L${fftw3.lib}&quot; # -lfftw3' -o ${x10lib-cpp}"/>
         </exec>
 
         <jar jarfile="${x10lib-cpp}.jar">
