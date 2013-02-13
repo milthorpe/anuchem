@@ -1,0 +1,9 @@
+This example code calculates electrostatic potential energy for a system of charged particles with periodic boundary conditions, using a simple cutoff.
+
+Dependencies
+------------
+This example assumes you have built the X10Libs for XLA and ANUChem.
+
+$ cd ~/x10-apps/xla && ant buildx10lib-cpp
+$ cd ~/x10-apps/anu-chem && ant buildx10lib-cpp
+
