@@ -57,10 +57,6 @@
         <istrue value="${cpuprofile}"/>
     </condition>
 
-    <condition property="post.cpuprofile" value="-L${perftoolsHome}/lib -Wl,--no-as-needed -lprofiler -Wl,--as-needed" else="">
-        <istrue value="${cpuprofile}"/>
-    </condition>
-
     <condition property="link.mpiPprofile" value="-L${binutilsHome}/lib -L${mpiPHome}/lib -lmpiP -lbfd -liberty -lm" else="">
         <istrue value="${mpiPprofile}"/>
     </condition>
@@ -107,7 +103,7 @@
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/src">
             <arg value="-c"/>
-            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} ${x10c.debug} ${x10c.cpuprofile} ${x10c.profile}  ${x10c.workstealing} -report postcompile=1 -post '# &quot;-I${fftw3.include}&quot; ${link.mpiPprofile} ${post.cpuprofile}' -x10lib ${xla.props} -x10lib ${anuchem.props} -x10lib ${fftw.props} -sourcepath . -d '${target-src}' '${basedir}/${testclass}'"/>
+            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} ${x10c.debug} ${x10c.cpuprofile} ${x10c.profile}  ${x10c.workstealing} -report postcompile=1 -post '# &quot;-I${fftw3.include}&quot; ${link.mpiPprofile}' -x10lib ${xla.props} -x10lib ${anuchem.props} -x10lib ${fftw.props} -sourcepath . -d '${target-src}' '${basedir}/${testclass}'"/>
         </exec>
     </target>
 

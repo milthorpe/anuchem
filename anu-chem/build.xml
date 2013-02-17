@@ -45,7 +45,7 @@
         <istrue value="${profile}" />
     </condition>
 
-    <condition property="post.cpuprofile" value="-L${perftoolsHome}/lib -lprofiler" else="">
+    <condition property="x10c.cpuprofile" value="-gpt" else="">
         <istrue value="${cpuprofile}"/>
     </condition>
 
@@ -130,7 +130,7 @@
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/src">
             <arg value="-c"/>
-            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} ${x10c.workstealing} ${x10c.debug} ${x10c.profile} -report postcompile=1 -post '# -g ${x10c.optimize} -funroll-loops # ${post.cpuprofile} #' -x10lib ${xla.props} -sourcepath . -d '${target-src}' '${basedir}/${testclass}'"/>
+            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} ${x10c.workstealing} ${x10c.debug} ${x10c.cpuprofile} ${x10c.profile} -report postcompile=1 -post '# -g ${x10c.optimize} -funroll-loops # #' -x10lib ${xla.props} -sourcepath . -d '${target-src}' '${basedir}/${testclass}'"/>
         </exec>
     </target>
 

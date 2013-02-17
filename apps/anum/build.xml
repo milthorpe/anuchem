@@ -55,10 +55,6 @@
         <istrue value="${cpuprofile}"/>
     </condition>
 
-    <condition property="post.cpuprofile" value="-L${perftoolsHome}/lib -Wl,--no-as-needed -lprofiler -Wl,--as-needed" else="">
-        <istrue value="${cpuprofile}"/>
-    </condition>
-
     <condition property="post.profile" value="-pg" else="">
         <istrue value="${profile}" />
     </condition>
@@ -127,7 +123,7 @@
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/src">
             <arg value="-c"/>
-            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} ${x10c.debug} ${x10c.cpuprofile} -report postcompile=1 -post '# -I${fftw3.include} ${post.profile} # ${link.mpiPprofile} ${post.cpuprofile} # -L${fftw3.lib} -lfftw3 ${ld.bgp} ${ld.bgq}' -x10lib ${xla.props} -x10lib ${anuchem.props} -x10lib ${fmm.props} -x10lib ${fftw.props} -sourcepath . -d ${target-src} ${basedir}/${testclass}"/>
+            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} ${x10c.debug} ${x10c.cpuprofile} -report postcompile=1 -post '# -I${fftw3.include} ${post.profile} # ${link.mpiPprofile} # -L${fftw3.lib} -lfftw3 ${ld.bgp} ${ld.bgq}' -x10lib ${xla.props} -x10lib ${anuchem.props} -x10lib ${fmm.props} -x10lib ${fftw.props} -sourcepath . -d ${target-src} ${basedir}/${testclass}"/>
         </exec>
     </target>
 

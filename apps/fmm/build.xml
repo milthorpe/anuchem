@@ -95,10 +95,6 @@
         <istrue value="${cpuprofile}"/>
     </condition>
 
-    <condition property="post.cpuprofile" value="-L${perftoolsHome}/lib -Wl,--no-as-needed -lprofiler -Wl,--as-needed" else="">
-        <istrue value="${cpuprofile}"/>
-    </condition>
-
     <condition property="x10lib.papi" value="-x10lib ${x10papi.props}" else="">
         <istrue value="${papi}"/>
     </condition>
@@ -182,7 +178,7 @@
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/src">
             <arg value="-c"/>
-            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} ${x10c.workstealing} ${x10c.bg} ${x10c.debug} ${x10c.cpuprofile} ${x10c.profile} ${define.papi} ${define.exclude_near} -report postcompile=1 -post '# # ${post.define.bg} ${post.unroll} ${cxx.bgp} ${cxx.bgq} # ${ld.bgp} ${ld.bgq} ${link.mpiPprofile} ${post.cpuprofile}' -x10lib ${xla.props} -x10lib ${anuchem.props} ${x10lib.papi} -sourcepath . -d '${target-src}' '${basedir}/${testclass}'"/>
+            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} ${x10c.workstealing} ${x10c.bg} ${x10c.debug} ${x10c.cpuprofile} ${x10c.profile} ${define.papi} ${define.exclude_near} -report postcompile=1 -post '# # ${post.define.bg} ${post.unroll} ${cxx.bgp} ${cxx.bgq} # ${ld.bgp} ${ld.bgq} ${link.mpiPprofile}' -x10lib ${xla.props} -x10lib ${anuchem.props} ${x10lib.papi} -sourcepath . -d '${target-src}' '${basedir}/${testclass}'"/>
         </exec>
     </target>
 
