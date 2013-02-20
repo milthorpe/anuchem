@@ -56,6 +56,7 @@ public class GMatrixROmem3 extends DenseMatrix{self.M==self.N} {
     val norm:Rail[Double]; 
     val emptyRailD = new Rail[Double](0), emptyRailI = new Rail[Int](0); 
     val shellPairs:Rail[ShellPair]; 
+    val place2ShellPair:Rail[Int];
 
     // parallel stuff
     val maxam1:Int;
@@ -182,16 +183,14 @@ public class GMatrixROmem3 extends DenseMatrix{self.M==self.N} {
         Console.OUT.printf("\nGMatrixROmem.x10 'public def compute' %s...\n", getDateString()); 
         val timer=this.timer; val shellPairs=this.shellPairs; val maxam1=this.maxam1; val numSigShellPairs=this.numSigShellPairs; val ylms=this.ylms;
         val N=this.N;val nOrbital=this.nOrbital; val roN=this.roN; val roNK=this.roNK; val roL=this.roL; val roK=this.roK; val roZ=this.roZ; val omega=this.omega; val roThresh=this.roThresh; val norm=this.norm;
-
+        val place2ShellPair=this.place2ShellPair;
         val TIMER_TOTAL = 0; val TIMER_JMATRIX = 1; val TIMER_KMATRIX = 2; val TIMER_GENCLASS = 3;
         
         timer.start(TIMER_TOTAL); 
         val jd = JobDefaults.getInstance();
         this.reset(); val gVal = GlobalRef(this);
 
-        finish ateach(place in Dist.makeUnique()) async {
-            val pid = here.id; Console.OUT.println("pid=" + pid);
-            val maxTh=Runtime.NTHREADS; val maxPl=Place.MAX_PLACES;
+        val maxTh=Runtime.NTHREADS; val maxPl=Place.MAX_PLACES;            
 
             val auxIntMat = new DenseMatrix(N*roK,N);
             val halfAuxMat = new DenseMatrix(nOrbital,N*roK);
@@ -204,18 +203,22 @@ public class GMatrixROmem3 extends DenseMatrix{self.M==self.N} {
 
             var tINT:Double=0.,tJ:Double=0.,tK:Double=0.;
             val gMat = new DenseMatrix(N,N);
-            val taux = new Rail[Integral_Pack](maxTh, (Int) => new Integral_Pack(jd.roN, jd.roL, omega, roThresh, jd.rad, jd.roZ));
-            @Ifdef("__MKL__") {
-                Console.OUT.print("mklGetMaxThreads() was " + mklGetMaxThreads() + " and is now set to"); mklSetNumThreads(maxTh);
-                Console.OUT.println(" " + mklGetMaxThreads() + " thread(s).");
-            }  
-                 
-            for (var ron:Int=0; ron<=roN; ron++l)  {            
+
+        for (var ron:Int=0; ron<=roN; ron++)  {  
+            Console.OUT.println("ron=" + ron);
+
                 @Ifdef("__DEBUG__") {Console.OUT.printf("ron=%d...\n",ron); }
                 finish for (thNo in 0..(maxTh-1)) async tdk(thNo).clear();     
                       
                 timer.start(TIMER_GENCLASS); 
-                // add for at async
+            finish ateach(place in Dist.makeUnique()) async {
+                val pid = here.id; Console.OUT.println("pid=" + pid);
+            @Ifdef("__MKL__") {
+                Console.OUT.print("mklGetMaxThreads() was " + mklGetMaxThreads() + " and is now set to"); mklSetNumThreads(maxTh);
+                Console.OUT.println(" " + mklGetMaxThreads() + " thread(s).");
+            }  
+
+                val taux = new Rail[Integral_Pack](maxTh, (Int) => new Integral_Pack(jd.roN, jd.roL, omega, roThresh, jd.rad, jd.roZ));
                 finish for (thNo in 0..(maxTh-1)) async {
                     val aux = taux(thNo); 
                     for (var spInd:Int=thNo; spInd<numSigShellPairs; spInd+=maxTh) {
@@ -250,6 +253,7 @@ public class GMatrixROmem3 extends DenseMatrix{self.M==self.N} {
                     for (var rolm:Int=thNo; rolm<roK; rolm+=maxTh) 
                         dk(rolm)+=myThreaddk(rolm);
                 }
+                }// pid async
                 timer.stop(TIMER_GENCLASS); tINT+=(timer.last(TIMER_GENCLASS) as Double)/1e9;
 
                 // J
