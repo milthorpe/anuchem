@@ -144,14 +144,13 @@ public class GMatrixROmem3 extends DenseMatrix{self.M==self.N} {
              val aa=sp.aang, bb=sp.bang;
              val maxbraa = (aa+1)*(aa+2)/2; val maxbrab = (bb+1)*(bb+2)/2;
              func+=maxbraa*maxbrab;
-             if (totFunc-func<(placeID-1)*fpp)
+             if (totFunc-func<(Place.MAX_PLACES-placeID+1)*fpp)
                  place2ShellPair(placeID--)=spID;
         }
         place2ShellPair(0)=0;
         // if there are too few shellpairs this might break down
 
-
-        this.numSigShellPairs = ind;
+        this.numSigShellPairs=ind;
         Console.OUT.printf("Found %d significant shellpairs.\n",numSigShellPairs);
         this.shellPairs = new Rail[ShellPair](numSigShellPairs);    
         this.ylms = new Rail[Ylm](numSigShellPairs);     
@@ -211,11 +210,12 @@ public class GMatrixROmem3 extends DenseMatrix{self.M==self.N} {
                 Console.OUT.println(" " + mklGetMaxThreads() + " thread(s).");
             }  
                  
-            for (var ron:Int=maxPl-pid-1/*pid*/; ron<=roN; ron+=maxPl)  {            
+            for (var ron:Int=0; ron<=roN; ron++l)  {            
                 @Ifdef("__DEBUG__") {Console.OUT.printf("ron=%d...\n",ron); }
                 finish for (thNo in 0..(maxTh-1)) async tdk(thNo).clear();     
                       
                 timer.start(TIMER_GENCLASS); 
+                // add for at async
                 finish for (thNo in 0..(maxTh-1)) async {
                     val aux = taux(thNo); 
                     for (var spInd:Int=thNo; spInd<numSigShellPairs; spInd+=maxTh) {
@@ -253,7 +253,8 @@ public class GMatrixROmem3 extends DenseMatrix{self.M==self.N} {
                 timer.stop(TIMER_GENCLASS); tINT+=(timer.last(TIMER_GENCLASS) as Double)/1e9;
 
                 // J
-                timer.start(TIMER_JMATRIX);       
+                timer.start(TIMER_JMATRIX);   
+                // add for at async    
                 finish for (thNo in 0..(maxTh-1)) async tjMatrix(thNo).reset();
 
                 finish for (thNo in 0..(maxTh-1)) async {
@@ -280,7 +281,7 @@ public class GMatrixROmem3 extends DenseMatrix{self.M==self.N} {
 
                 timer.stop(TIMER_JMATRIX); tJ+=(timer.last(TIMER_JMATRIX) as Double)/1e9;
 
-                // K
+                // K - change to SUMMA
                 if (ron<=roNK) { //This produces K/2
                      timer.start(TIMER_KMATRIX);  
                      DenseMatrixBLAS.compMultTrans(mos, auxIntMat, halfAuxMat, [nOrbital,N*roK, N], false);
