@@ -6,7 +6,7 @@
  *  You may obtain a copy of the License at
  *      http://www.opensource.org/licenses/eclipse-1.0.php
  *
- * (C) Copyright Australian National University 2010-2012.
+ * (C) Copyright Australian National University 2010-2013.
  */
 package au.edu.anu.qm;
 
@@ -60,7 +60,6 @@ public class GMatrixROmem3 extends DenseMatrix{self.M==self.N} {
     // parallel stuff
     val maxam1:Int;
 
-
     public def this(N:Int, bfs:BasisFunctions, molecule:Molecule[QMAtom], nOrbital:Int, omega:Double,roThresh:Double):GMatrixROmem3{self.M==N,self.N==N} {     
         super(N, N);
         Console.OUT.printf("\nGMatrixROmem.x10 'public def this' %s...\n", getDateString());
@@ -100,11 +99,8 @@ public class GMatrixROmem3 extends DenseMatrix{self.M==self.N} {
         val zeroPoint = Point3d(0.0, 0.0, 0.0);
        
         val dummySignificantPair = new ShellPair(0, 0, zeroPoint, zeroPoint, emptyRailD, emptyRailD, emptyRailD, emptyRailD, 0, 0, 0, 0, emptyRailI, threshold);
-        var mu:Int=0,nu:Int=0,ind:Int=0; 
-
-        var aIndex2SP:Rail[Int](0..(noOfAtoms-1)),totFunc:Int=0;
+        var mu:Int=0,nu:Int=0,ind:Int=0,totFunc:Int=0;
         for(var a:Int=0; a<noOfAtoms; a++) { // centre a  
-            aIndex2SP(a)=totFunc;
             val aFunc = mol.getAtom(a).getBasisFunctions();
             val naFunc = aFunc.size();          
             for(var i:Int=0; i<naFunc; i++) { // basis functions on a
@@ -114,10 +110,10 @@ public class GMatrixROmem3 extends DenseMatrix{self.M==self.N} {
                     val nbFunc = bFunc.size();                    
                     for(var j:Int=0; j<nbFunc; j++) { // basis functions on b
                         val jbFunc = bFunc.get(j);
-                        //Console.OUT.printf("a=%d i=%d b=%d j=%d [naFunc=%d nbFunc=%d]\n", a,i,b,j,naFunc,nbFunc);
                         var aaFunc:ContractedGaussian=iaFunc,bbFunc:ContractedGaussian=jbFunc;
                         val aa=iaFunc.getTotalAngularMomentum(); val bb=jbFunc.getTotalAngularMomentum();                       
-                        val maxbraa = (aa+1)*(aa+2)/2; val maxbrab = (bb+1)*(bb+2)/2;                                                                      
+                        val maxbraa = (aa+1)*(aa+2)/2; val maxbrab = (bb+1)*(bb+2)/2;     
+                        // Symetric with respect to mu/nu - but we make the list redundant 
                         val aang = aaFunc.getTotalAngularMomentum(); val bang = bbFunc.getTotalAngularMomentum();
                         val aPoint = aaFunc.origin; val bPoint = bbFunc.origin; 
                         val zetaA = aaFunc.exponents; val zetaB = bbFunc.exponents; 
@@ -141,13 +137,19 @@ public class GMatrixROmem3 extends DenseMatrix{self.M==self.N} {
                 }
             }   
         }   
-        val nPlaces=Place.MAX_PLACES;
-        var nIndex2atom:Rail[Int](0..(nPlaces-1)),placeID=nPlaces;
-        for (a:Int=noOfAtoms-1; a>=0; a--) {
-             if (aIndex2SP(a)<(placeID-1)*totFunc/nPlaces)
-                 nIndex2atom(placeID--)=a;
+        val fpp=totFunc/Place.MAX_PLACES;
+        var place2ShellPair:Rail[Int](0..(nPlaces-1)),placeID=nPlaces,func=0;
+        for (spID:Int=ind-1; spID>=0; spID--) {
+             val sp=rawShellPairs(spID);
+             val aa=sp.aang, bb=sp.bang;
+             val maxbraa = (aa+1)*(aa+2)/2; val maxbrab = (bb+1)*(bb+2)/2;
+             func+=maxbraa*maxbrab;
+             if (totFunc-func<(placeID-1)*fpp)
+                 place2ShellPair(placeID--)=spID;
         }
-        nIndex2atom(0)=0;
+        place2ShellPair(0)=0;
+        // if there are too few shellpairs this might break down
+
 
         this.numSigShellPairs = ind;
         Console.OUT.printf("Found %d significant shellpairs.\n",numSigShellPairs);
