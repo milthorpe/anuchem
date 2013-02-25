@@ -75,11 +75,11 @@ public class HartreeFockSCFMethod extends SCFMethod {
         val jd = JobDefaults.getInstance();
 
         val gMatrix:GMatrix{self.N==N};
-        val gMatrixRo:GMatrixROmem3{self.N==N};
+        val gMatrixRo:GMatrixROmem3{self.N==N}; // change version here
         val roThresh=jd.roThresh;
         val thresh=jd.thresh;
         if (jd.roOn>0 && maxIteration>0) {
-            gMatrixRo = new GMatrixROmem3(N, bfs, molecule, noOfOccupancies,0.,roZ*roThresh);
+            gMatrixRo = new GMatrixROmem3(N, bfs, molecule, noOfOccupancies,0.,roZ*roThresh); // change version here
         } else {
             gMatrixRo = null;
         }
@@ -207,7 +207,7 @@ public class HartreeFockSCFMethod extends SCFMethod {
     
         // long range energy
         //Console.OUT.println("before RO heapSize = " + System.heapSize());
-        val gMatrixRoL = new GMatrixROmem3(N, bfs, molecule, noOfOccupancies,jd.roZ*jd.omega,roZ*jd.roThresh); // RO Thesis Eq (2.22)
+        val gMatrixRoL = new GMatrixROmem3(N, bfs, molecule, noOfOccupancies,jd.roZ*jd.omega,roZ*jd.roThresh); // RO Thesis Eq (2.22) // change version here
         gMatrixRoL.compute(density, mos);
 
         if (jd.compareRo) {

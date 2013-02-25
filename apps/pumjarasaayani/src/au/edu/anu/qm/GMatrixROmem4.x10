@@ -37,7 +37,7 @@ import au.edu.anu.qm.ro.Integral_Pack;
 import edu.utk.cs.papi.PAPI;
 
 @NativeCPPInclude("mkl_math.h")
-public class GMatrixROmem3 extends DenseMatrix{self.M==self.N} {
+public class GMatrixROmem4 extends DenseMatrix{self.M==self.N} {
     // Timer & PAPI performance counters
     public val timer = new StatisticalTimer(4);
 
@@ -57,18 +57,17 @@ public class GMatrixROmem3 extends DenseMatrix{self.M==self.N} {
     val emptyRailD = new Rail[Double](0), emptyRailI = new Rail[Int](0); 
     val shellPairs:Rail[ShellPair]; 
     val place2ShellPair:Rail[Int];
-
-    // parallel stuff
     val maxam1:Int;
 
-    public def this(N:Int, bfs:BasisFunctions, molecule:Molecule[QMAtom], nOrbital:Int, omega:Double,roThresh:Double):GMatrixROmem3{self.M==N,self.N==N} {     
+    public def this(N:Int, bfs:BasisFunctions, molecule:Molecule[QMAtom], nOrbital:Int, omega:Double,roThresh:Double):GMatrixROmem4{self.M==N,self.N==N} {     
         super(N, N);
         Console.OUT.printf("\nGMatrixROmem.x10 'public def this' %s...\n", getDateString());
         this.bfs = bfs; this.mol = molecule; this.nOrbital = nOrbital; this.omega=omega; this.roThresh=roThresh;  
 
+        // Set up RO N and L
         val jd = JobDefaults.getInstance();
         val l_n = new Rail[Int](jd.roN+3);
-        val aux = new Integral_Pack(jd.roN,jd.roL,omega,roThresh,jd.rad,jd.roZ);         
+        val aux = new Integral_Pack(jd.roN, jd.roL, omega, roThresh, jd.rad, jd.roZ);
         if (omega>0.) { // long-range Ewald operator
             aux.getNL(l_n);
             roN=roNK=l_n(0);
@@ -81,13 +80,14 @@ public class GMatrixROmem3 extends DenseMatrix{self.M==self.N} {
             if (jd.roNK==-1) this.roNK=roN; else this.roNK=jd.roNK; 
         }
         roK = (roL+1)*(roL+1); roZ=jd.roZ;      
+
         val maxam = bfs.getShellList().getMaximumAngularMomentum();
         val mdc=bfs.getShellList().getMaximumDegreeOfContraction();
         maxam1 = (maxam+1)*(maxam+2)/2;
-        this.norm = bfs.getNormalizationFactors(); 
+        this.norm = bfs.getNormalizationFactors(); // Vector
 
-        // Shell/Shellpair business 
-        Console.OUT.printf("GMatrixROmem.x10 Screening shellpairs...\n");        
+        // Shell/Shellpair business
+        Console.OUT.printf("GMatrixROmem.x10 Screening shellpairs...\n");
         val threshold = roThresh*jd.roZ*jd.roZ*1e-3; // ** must be relative to roThresh *** otherwise Z scaling will cause a problem
         // This is effectively a density threshold RO Thesis (2.26)
         var nShell:Int=0;
@@ -138,15 +138,19 @@ public class GMatrixROmem3 extends DenseMatrix{self.M==self.N} {
                 }
             }   
         }   
+        val nPlaces:Int=Place.MAX_PLACES;
         val fpp=totFunc/Place.MAX_PLACES;
-        var place2ShellPair:Rail[Int](0..(nPlaces-1)),placeID=nPlaces,func=0;
-        for (spID:Int=ind-1; spID>=0; spID--) {
+        place2ShellPair=new Rail[Int](nPlaces);
+        var placeID:Int=nPlaces, func:Int=0;
+        for (var spID:Int=ind-1; spID>=0; spID--) {
              val sp=rawShellPairs(spID);
              val aa=sp.aang, bb=sp.bang;
              val maxbraa = (aa+1)*(aa+2)/2; val maxbrab = (bb+1)*(bb+2)/2;
              func+=maxbraa*maxbrab;
-             if (totFunc-func<(Place.MAX_PLACES-placeID+1)*fpp)
-                 place2ShellPair(placeID--)=spID;
+             if (totFunc-func<(Place.MAX_PLACES-placeID+1)*fpp) {
+                 place2ShellPair(placeID)=spID;
+                 placeID--;
+             }
         }
         place2ShellPair(0)=0;
         // if there are too few shellpairs this might break down
@@ -191,7 +195,7 @@ public class GMatrixROmem3 extends DenseMatrix{self.M==self.N} {
         this.reset(); val gVal = GlobalRef(this);
 
         val maxTh=Runtime.NTHREADS; val maxPl=Place.MAX_PLACES;            
-
+/*
             val auxIntMat = new DenseMatrix(N*roK,N);
             val halfAuxMat = new DenseMatrix(nOrbital,N*roK);
             val jMatrix = new DenseMatrix(N, N);
@@ -317,7 +321,7 @@ public class GMatrixROmem3 extends DenseMatrix{self.M==self.N} {
         }
 
         timer.stop(TIMER_TOTAL);
-        Console.OUT.printf("    Time to construct GMatrix with RO: %.3g seconds\n", (timer.last(TIMER_TOTAL) as Double) / 1e9);
+        Console.OUT.printf("    Time to construct GMatrix with RO: %.3g seconds\n", (timer.last(TIMER_TOTAL) as Double) / 1e9);*/
     }
 
     private def getDateString() {
