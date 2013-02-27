@@ -61,7 +61,7 @@ public class GMatrixROmem4 extends DenseMatrix{self.M==self.N} {
 
     public def this(N:Int, bfs:BasisFunctions, molecule:Molecule[QMAtom], nOrbital:Int, omega:Double,roThresh:Double):GMatrixROmem4{self.M==N,self.N==N} {     
         super(N, N);
-        Console.OUT.printf("\nGMatrixROmem.x10 'public def this' %s...\n", getDateString());
+        Console.OUT.printf("\nGMatrixROmem4.x10 'public def this' %s...\n", getDateString());
         this.bfs = bfs; this.mol = molecule; this.nOrbital = nOrbital; this.omega=omega; this.roThresh=roThresh;  
 
         // Set up RO N and L
@@ -87,7 +87,7 @@ public class GMatrixROmem4 extends DenseMatrix{self.M==self.N} {
         this.norm = bfs.getNormalizationFactors(); // Vector
 
         // Shell/Shellpair business
-        Console.OUT.printf("GMatrixROmem.x10 Screening shellpairs...\n");
+        Console.OUT.printf("GMatrixROmem4.x10 Screening shellpairs...\n");
         val threshold = roThresh*jd.roZ*jd.roZ*1e-3; // ** must be relative to roThresh *** otherwise Z scaling will cause a problem
         // This is effectively a density threshold RO Thesis (2.26)
         var nShell:Int=0;
@@ -96,7 +96,9 @@ public class GMatrixROmem4 extends DenseMatrix{self.M==self.N} {
             val aFunc = mol.getAtom(a).getBasisFunctions();
             nShell+=aFunc.size();
         }
-        var rawShellPairs:Rail[ShellPair] = new Array[ShellPair](nShell*(nShell+1)/2); 
+        Console.OUT.printf("nShell=%d...\n", nShell);
+
+        var rawShellPairs:Rail[ShellPair] = new Array[ShellPair](nShell*nShell); // redundant list 
         val zeroPoint = Point3d(0.0, 0.0, 0.0);
        
         val dummySignificantPair = new ShellPair(0, 0, zeroPoint, zeroPoint, emptyRailD, emptyRailD, emptyRailD, emptyRailD, 0, 0, 0, 0, emptyRailI, threshold);
@@ -111,7 +113,7 @@ public class GMatrixROmem4 extends DenseMatrix{self.M==self.N} {
                     val nbFunc = bFunc.size();                    
                     for(var j:Int=0; j<nbFunc; j++) { // basis functions on b
                         val jbFunc = bFunc.get(j);
-                        var aaFunc:ContractedGaussian=iaFunc,bbFunc:ContractedGaussian=jbFunc;
+                        var aaFunc:ContractedGaussian=iaFunc, bbFunc:ContractedGaussian=jbFunc;
                         val aa=iaFunc.getTotalAngularMomentum(); val bb=jbFunc.getTotalAngularMomentum();                       
                         val maxbraa = (aa+1)*(aa+2)/2; val maxbrab = (bb+1)*(bb+2)/2;     
                         // Symetric with respect to mu/nu - but we make the list redundant 
@@ -139,17 +141,18 @@ public class GMatrixROmem4 extends DenseMatrix{self.M==self.N} {
             }   
         }   
         val nPlaces:Int=Place.MAX_PLACES;
-        val fpp=totFunc/Place.MAX_PLACES;
+        val fpp:Int=Math.ceil(totFunc/nPlaces) as Int;
         place2ShellPair=new Rail[Int](nPlaces);
-        var placeID:Int=nPlaces, func:Int=0;
-        for (var spID:Int=ind-1; spID>=0; spID--) {
+        var placeID:Int=nPlaces-1, func:Int=0;
+        Console.OUT.printf("totFunc=%d, nPlace=%d, fpp=%d, ind=%d...\n", totFunc, nPlaces, fpp, ind);
+        for (var spID:Int=ind-1; spID>0 && placeID>0; spID--) {
              val sp=rawShellPairs(spID);
              val aa=sp.aang, bb=sp.bang;
              val maxbraa = (aa+1)*(aa+2)/2; val maxbrab = (bb+1)*(bb+2)/2;
              func+=maxbraa*maxbrab;
-             if (totFunc-func<(Place.MAX_PLACES-placeID+1)*fpp) {
-                 place2ShellPair(placeID)=spID;
-                 placeID--;
+             if (totFunc-func>(nPlaces-placeID+1)*fpp) {
+                 Console.OUT.printf("place %d : spID %d...\n", placeID, spID);
+                 place2ShellPair(placeID--)=spID;
              }
         }
         place2ShellPair(0)=0;
