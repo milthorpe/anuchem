@@ -12,7 +12,7 @@ final public class Timer {
     }
 
     public def start(id:Int) { total(id) -= System.nanoTime(); }
-    public def clear(id:Int) { total(id) = 0; count(id) = 0; }
+    public def clear(id:Int) { total(id) = 0L; count(id) = 0L; }
     public def stop(id:Int) { total(id) += System.nanoTime(); count(id)++; }
     public def mean(id:Int) {
         if (count(id) == 0L) return 0L;

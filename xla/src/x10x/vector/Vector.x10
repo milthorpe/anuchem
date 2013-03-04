@@ -7,7 +7,7 @@
  *      http://www.opensource.org/licenses/eclipse-1.0.php
  *
  * (C) Copyright Australian National University 2010.
- * (C) Copyright Josh Milthorpe 2011.
+ * (C) Copyright Josh Milthorpe 2011-2013.
  */
 package x10x.vector;
 
@@ -22,20 +22,26 @@ import x10x.matrix.Matrix;
  */
 public class Vector { 
     val vec:Rail[Double];
-    property region() = vec.region;
 
     /**
-     * Construct a Vector of dimention N
+     * Construct a Vector of dimension N
      */
     public def this(siz:Int) { 
-        vec = new Array[Double](siz);
+        vec = new Rail[Double](siz);
     }
 
     /**
-     * Construct a Vector of dimention N
+     * Construct a Vector from given backing storage
      */
-    public def this(region:Region(1){rect,zeroBased,rail}) { 
-        vec = new Array[Double](region);
+    public def this(vec:Rail[Double]) { 
+        this.vec = vec;
+    }
+
+    private static def makeUnsafe(size:Int) {
+        return new Vector(size);
+        // TODO for X10 2.4
+        //val store = Unsafe.allocRailUninitialized[Double](size);
+        //return new Vector(store);
     }
 
     /**
@@ -61,11 +67,11 @@ public class Vector {
      */
     public def getVector() = vec;
 
-    public @Inline operator this(i0:int) : Double {
+    public @Inline operator this(i0:Int) : Double {
         return vec(i0);
     }
 
-    public @Inline operator this(i0:int)=(v:Double) : Double {
+    public @Inline operator this(i0:Int)=(v:Double) : Double {
         vec(i0) = v;
         return v;
     }
@@ -82,7 +88,7 @@ public class Vector {
      */
     public def dot(b:Vector) : Double {
         var res : Double = 0.0;
-        for([i] in vec) {
+        for(i in 0..(vec.size-1)) {
             res += vec(i) * b.vec(i);
         }
         return res;
@@ -92,11 +98,10 @@ public class Vector {
      * add two vectors: this + b 
      */
     public def add(b:Vector) : Vector {
-        val res = new Vector(this.region);
-
-        val plus = ((a : Double, b : Double) => a + b);
-        vec.map[Double,Double](res.vec, b.vec, plus);
-
+        val res = Vector.makeUnsafe(vec.size);
+        for(i in 0..(vec.size-1)) {
+            res(i) = vec(i) + b.vec(i);
+        }
         return res;
     }
 
@@ -104,9 +109,10 @@ public class Vector {
      * subtract two vectors: this - b
      */
     public def sub(b:Vector) : Vector {
-        val res = new Vector(this.region);
-        val minus = ((a : Double, b : Double) => a - b);
-        vec.map[Double,Double](res.vec, b.vec, minus);
+        val res = Vector.makeUnsafe(vec.size);
+        for(i in 0..(vec.size-1)) {
+            res(i) = vec(i) - b.vec(i);
+        }
 
         return res;
     }
@@ -115,8 +121,11 @@ public class Vector {
      * magnitude of this vector
      */
     public def magnitude() : Double {
-        val magSquared = ((res : Double, a : Double) => res + a*a);
-        return Math.sqrt(vec.reduce(magSquared, 0.0));
+        var magSquared:Double = 0.0;
+        for(i in 0..(vec.size-1)) {
+            magSquared += vec(i) * vec(i);
+        }
+        return Math.sqrt(magSquared);
     }
 
     /**
@@ -124,9 +133,10 @@ public class Vector {
      */
     public def normalize() : Vector {
         val mag = magnitude();
-        val res = new Vector(this.region);
-        val norm = ((a : Double) => a / mag);
-        vec.map[Double](res.vec, norm);
+        val res = Vector.makeUnsafe(vec.size);
+        for(i in 0..(vec.size-1)) {
+            res(i) = vec(i) / mag;
+        }
         return res;
     }
 
@@ -134,19 +144,21 @@ public class Vector {
      * return (-1) . V
      */
     public def negate() : Vector {
-        val n = new Vector(this.region);
-        val neg = ((a : Double) => -a);
-        vec.map[Double](n.vec, neg);
-        return n;
+        val res = Vector.makeUnsafe(vec.size);
+        for(i in 0..(vec.size-1)) {
+            res(i) = -vec(i);
+        }
+        return res;
     }
 
     /**
      * Multiply this vector by a constant k
      */
     public def mul(k:Double) : Vector {
-        val res = new Vector(this.region);
-        val mulK = ((a : Double) => a * k);
-        vec.map[Double](res.vec, mulK);
+        val res = Vector.makeUnsafe(vec.size);
+        for(i in 0..(vec.size-1)) {
+            res(i) = vec(i) * k;
+        }
         return res;
     }
 
@@ -154,15 +166,18 @@ public class Vector {
      * max norm of this vector
      */
     public def maxNorm() : Double {
-        val max = ((res : Double, a : Double) => Math.max(Math.abs(a), res));
-        return vec.reduce(max, -1.0); 
+        var max:Double = 0.0;
+        for(i in 0..(vec.size-1)) {
+            max = Math.max(Math.abs(vec(i)), max);
+        }
+        return max;
     }
 
     public def toString() : String {
         var str : String = "";
 
-        for([i] in vec.region) {
-            str += "" + vec(i) + " ";
+        for(v in vec) {
+            str += "" + v + " ";
         }
 
         return str;

@@ -32,13 +32,13 @@ public class ElectrostaticDirectMethod {
 
     private val asyncComms = true;
 
-    /** The charges in the simulation, divided up into an array of ValRails, one for each place. */
+    /** The charges in the simulation, divided into separate Rails for each place. */
     private val atoms : DistArray[Rail[MMAtom]](1);
     private val otherAtoms : DistArray[Rail[Rail[PointCharge]]](1);
 
     /**
      * Creates a new electrostatic direct method.
-     * @param atoms the atoms in the unit cell, divided into separate Arrays for each place
+     * @param atoms the atoms in the unit cell, divided into separate Rails for each place
      */
     public def this(atoms : DistArray[Rail[MMAtom]](1)) {
 		this.atoms = atoms;
@@ -49,8 +49,8 @@ public class ElectrostaticDirectMethod {
     public def expectationValue(twoParticleFunction:(a:MMAtom,b:MMAtom) => Double):Double {
         var total:Double = 0.0;
         val a = atoms(here.id);
-        for ([i] in a) {
-            for ([j] in a) {
+        for (i in 0..(a.size-1)) {
+            for (j in 0..(a.size-1)) {
                 if (i != j) {
                     total += twoParticleFunction(a(i), a(j));
                 }
@@ -72,7 +72,7 @@ public class ElectrostaticDirectMethod {
             if (asyncComms) {
                 ateach([p1] in atoms) {
                     val myAtoms = atoms(p1);
-                    val myCharges = new Array[PointCharge](myAtoms.size, (i:Int)=>PointCharge(myAtoms(i).centre, myAtoms(i).charge));
+                    val myCharges = new Rail[PointCharge](myAtoms.size as Int, (i:Int)=>PointCharge(myAtoms(i).centre, myAtoms(i).charge));
                     var energyThisPlace : Double = 0.0;
 
                     // before starting computation, send my atoms to next place
@@ -147,7 +147,7 @@ public class ElectrostaticDirectMethod {
                             var energyWithOther : Double = 0.0;
                             val otherPlaceAtoms = at(atoms.dist(p2)) {
                                 val atomsHere = atoms(p2);
-                                val chargesHere = new Array[PointCharge](atomsHere.size, (i:Int)=>PointCharge(atomsHere(i).centre, atomsHere(i).charge));
+                                val chargesHere = new Rail[PointCharge](atomsHere.size as Int, (i:Int)=>PointCharge(atomsHere(i).centre, atomsHere(i).charge));
                                 chargesHere
                             };
                             for (j in 0..(otherPlaceAtoms.size-1)) {

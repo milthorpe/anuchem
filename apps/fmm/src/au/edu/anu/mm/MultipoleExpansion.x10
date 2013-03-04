@@ -6,7 +6,7 @@
  *  You may obtain a copy of the License at
  *      http://www.opensource.org/licenses/eclipse-1.0.php
  *
- * (C) Copyright Josh Milthorpe 2010-2012.
+ * (C) Copyright Josh Milthorpe 2010-2013.
  */
 package au.edu.anu.mm;
 
@@ -127,7 +127,7 @@ public class MultipoleExpansion extends Expansion {
     /**
      * This is Operator A implementing rotations so that the actual translation occurs parallel with the z-axis
      * @param scratch, a MultipoleExpansion in which to perform temporary calculations
-     * @param temp, a Complex array in which to store temporary results
+     * @param temp, a Complex Rail in which to store temporary results
      * @param v is the vector through which the source should be translated
      * @param complexK is the pre calculated values of exp(i*-k*phi)
      * @param source is the multipole to add
@@ -167,7 +167,7 @@ public class MultipoleExpansion extends Expansion {
      */
     public def translateAndAddMultipole(v : Vector3d, source : MultipoleExpansion) {
         val scratch = new MultipoleExpansion(p);
-        val temp = new Array[Complex](p+1);
+        val temp = new Rail[Complex](p+1);
     	val polar = Polar3d.getPolar3d(v);
     	translateAndAddMultipole(scratch, temp, v, genComplexK(polar.phi, p), source, WignerRotationMatrix.getACollection(polar.theta, p) );
     }
@@ -215,7 +215,7 @@ public class MultipoleExpansion extends Expansion {
      */
     public def rotate(theta : Double, phi : Double) {
     	val target = new MultipoleExpansion(p);
-        val temp = new Array[Complex](p+1);
+        val temp = new Rail[Complex](p+1);
     	this.rotate(temp, genComplexK(phi, p)(1) , WignerRotationMatrix.getACollection(theta, p)(0), target);
     	return target;
     }

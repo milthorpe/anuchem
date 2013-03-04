@@ -105,7 +105,7 @@ public class JacobiDiagonalizer {
              } // end if
            }} // end for
 
-          for([ip] in b) {
+          for(ip in 0..(b.size-1)) {
              b(ip) += z(ip);
              eigenValues(ip) = b(ip);
              z(ip) = 0.0;

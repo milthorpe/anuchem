@@ -6,7 +6,7 @@
  *  You may obtain a copy of the License at
  *      http://www.opensource.org/licenses/eclipse-1.0.php
  *
- * (C) Copyright Josh Milthorpe 2012.
+ * (C) Copyright Josh Milthorpe 2012-2013.
  */
 package au.edu.anu.mm;
 
@@ -43,7 +43,7 @@ public class LET {
         this.combinedUList = combinedUList;
         this.multipoleCopies = new HashMap[UInt,MultipoleExpansion](combinedUList.size); // guess that V-List is at least as big as U-List
 
-        this.cachedAtoms = new Array[Rail[Double]](combinedUList.size);
+        this.cachedAtoms = new Rail[Rail[Double]](combinedUList.size);
     }
 
     public def getMultipoleForOctant(mortonId:UInt) {

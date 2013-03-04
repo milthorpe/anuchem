@@ -56,10 +56,10 @@ public class FmmLocalData {
     val topLevelOctants = new ArrayList[Octant]();
 
     /** 
-     * An array holding the Octant ID of the first leaf octant at each place.
+     * A Rail holding the Octant ID of the first leaf octant at each place.
      * The final elements is the ID of the last leaf octant plus one.
      */
-    val firstLeafOctant:Rail[UInt] = new Array[UInt](Place.MAX_PLACES+1);
+    val firstLeafOctant:Rail[UInt] = new Rail[UInt](Place.MAX_PLACES+1);
 
     /** 
      * The locally essential tree at this place. 
@@ -71,7 +71,7 @@ public class FmmLocalData {
     var fmmOperators:FmmOperators;
 
     /** cost estimates (in ns) per interaction = [P2P, M2L] */
-    val cost:Rail[Long] = new Array[Long](2);
+    val cost:Rail[Long] = new Rail[Long](2);
     public static val ESTIMATE_P2P=0;
     public static val ESTIMATE_M2L=1;
 
@@ -83,7 +83,7 @@ public class FmmLocalData {
         this.size = size;
         fmmOperators = new FmmOperators(numTerms, ws);
         val maxLeafOctants = Math.pow(8.0, dMax) as Int;
-        octantLoads = new Array[Long](maxLeafOctants);
+        octantLoads = new Rail[Long](maxLeafOctants);
         // TODO construct LET
     }
 
@@ -117,7 +117,7 @@ public class FmmLocalData {
         }
 
         //Console.OUT.println("at " + here + " combined U-list:");
-        val combinedUList = new Array[UInt](combinedUSet.size());
+        val combinedUList = new Rail[UInt](combinedUSet.size());
         var j : Int = 0;
         for (mortonId in combinedUSet) {
             combinedUList(j++) = mortonId;

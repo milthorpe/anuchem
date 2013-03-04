@@ -15,7 +15,7 @@ public class GaussianElimination extends LinearEquationSolver {
 
     private var row:Rail[Int];
     private var a:Array[Double]{rank==2};
-    private var x:Array[Double]{rank==1};
+    private var x:Rail[Double];
 
     private var matrixA:Matrix;
     
@@ -48,7 +48,7 @@ public class GaussianElimination extends LinearEquationSolver {
         n  = this.matrixA.getRowCount()-1;
         n1 = this.matrixA.getColCount()-1;
 
-        row = new Array[Int](this.matrixA.getRowCount(), (Int)=>0);
+        row = new Rail[Int](this.matrixA.getRowCount(), 0);
         
         // initilize row vector
         for(j=1; j<=n; j++) 

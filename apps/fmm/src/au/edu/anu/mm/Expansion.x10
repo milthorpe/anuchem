@@ -6,7 +6,7 @@
  *  You may obtain a copy of the License at
  *      http://www.opensource.org/licenses/eclipse-1.0.php
  *
- * (C) Copyright Josh Milthorpe 2010-2012.
+ * (C) Copyright Josh Milthorpe 2010-2013.
  */
 package au.edu.anu.mm;
 
@@ -31,12 +31,12 @@ public class Expansion {
     public val p : Int;
 
     public def this(p : Int) {
-        this.terms = new Array[Complex]((p+1)*(p+1));
+        this.terms = new Rail[Complex]((p+1)*(p+1));
         this.p = p;
     }
 
     public def this(e : Expansion) { 
-	    this.terms = new Array[Complex](e.terms);
+	    this.terms = new Rail[Complex](e.terms);
         this.p = e.p;
     }
 
@@ -84,13 +84,13 @@ public class Expansion {
     /**
      * Code to calculate the exponentials ( exp(i*k*phi) ) required to do a rotation around z-axis given an angle, used in Fmm3d and also for test cases where once-off angles are needed
      * @param phi, k
-     * @return array of Complex first indexed by forward (0), backward (1) then by k
+     * @return Rail of Complex first indexed by forward (0), backward (1) then by k
      * @see Dachsel 2006, eqn 4 & 5
      */
     public static def genComplexK(phi:Double, p:Int):Rail[Rail[Complex]] { 
-        val complexK = new Array[Rail[Complex]](2);
+        val complexK = new Rail[Rail[Complex]](2);
     	for (r in 0..1) {
-            complexK(r) = new Array[Complex](p+1);
+            complexK(r) = new Rail[Complex](p+1);
             for (k in 0..p) complexK(r)(k) = Math.exp(Complex.I * k * phi * ((r==0)?1:-1) );
 	    }
     	return complexK;
@@ -100,7 +100,7 @@ public class Expansion {
      * Rotates this expansion (local and multipole are differentiated by different precalculated wigner matrices) in three dimensions.
      * Performs rotation around z-axis first, THEN rotation around x-axis (for "forwards" rotation)
      * @param temp an Rail[Complex] of size at least p+1 in which to perform temporary calculations
-     * @param wigner, precalculated wigner matrices, an array of WignerMatrices, indexed first by p from 0 to max terms in expansion
+     * @param wigner, precalculated wigner matrices, a Rail of WignerMatrices, indexed first by p from 0 to max terms in expansion
      * @param complexK, values of exp(i*k*phi)
      * @see Dachsel 2006 eqn 4 & 5
      */
@@ -128,7 +128,7 @@ public class Expansion {
      * Rotates this expansion (local and multipole are differentiated by different precalculated wigner matrices) in three dimensions.
      * Performs rotation around x-axis first, THEN rotation around z-axis (for "backwards" rotation)
      * @param temp an Rail[Complex] of size at least p+1 in which to perform temporary calculations
-     * @param wigner, precalculated wigner matrices, an array of WignerMatrices, indexed first by p from 0 to max terms in expansion
+     * @param wigner, precalculated wigner matrices, a Rail of WignerMatrices, indexed first by p from 0 to max terms in expansion
      * @param complexK, values of exp(i*k*phi)
      * @see Dachsel 2006 eqn 4 & 5
      */
@@ -155,7 +155,7 @@ public class Expansion {
     /** 
      * Rotates this expansion (local and multipole are differentiated by different precalculated wigner matrices) in three dimensions and adds to the given target expansion
      * Performs rotation around x-axis first, THEN rotation around z-axis (for "backwards" rotation)
-     * @param wigner, precalculated wigner matrices, an array of WignerMatrices, indexed first by p from 0 to max terms in expansion
+     * @param wigner, precalculated wigner matrices, a Rail of WignerMatrices, indexed first by p from 0 to max terms in expansion
      * @param complexK, values of exp(i*k*phi)
      * @see Dachsel 2006 eqn 4 & 5
      */
