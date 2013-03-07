@@ -22,6 +22,8 @@ import x10.util.concurrent.AtomicInteger;
 
 import x10.matrix.DenseMatrix;
 import x10.matrix.blas.DenseMatrixBLAS;
+import x10.matrix.dist.DistDenseMatrix;
+import x10.matrix.dist.summa.SummaDense;
 
 import x10x.vector.Vector;
 import x10x.vector.Point3d;
@@ -142,7 +144,7 @@ public class GMatrixROmem4 extends DenseMatrix{self.M==self.N} {
         }   
         val nPlaces:Int=Place.MAX_PLACES;
         val fpp:Int=Math.ceil(totFunc/nPlaces) as Int;
-        place2ShellPair=new Rail[Int](nPlaces);
+        place2ShellPair=new Rail[Int](nPlaces+1);
         var placeID:Int=nPlaces-1, func:Int=0;
         Console.OUT.printf("totFunc=%d, nPlace=%d, fpp=%d, ind=%d...\n", totFunc, nPlaces, fpp, ind);
         for (var spID:Int=ind-1; spID>0 && placeID>0; spID--) {
@@ -150,17 +152,20 @@ public class GMatrixROmem4 extends DenseMatrix{self.M==self.N} {
              val aa=sp.aang, bb=sp.bang;
              val maxbraa = (aa+1)*(aa+2)/2; val maxbrab = (bb+1)*(bb+2)/2;
              func+=maxbraa*maxbrab;
-             if (totFunc-func>(nPlaces-placeID+1)*fpp) {
+             if (totFunc-func<placeID*fpp) {
                  Console.OUT.printf("place %d : spID %d...\n", placeID, spID);
                  place2ShellPair(placeID--)=spID;
              }
         }
-        place2ShellPair(0)=0;
+        place2ShellPair(0)=0; place2ShellPair(nPlaces)=ind;
+        Console.OUT.printf("***By default place 0 : spID 0***\n");
         // if there are too few shellpairs this might break down
+        // Should check integrity of the list  place2ShellPair
 
         this.numSigShellPairs=ind;
         Console.OUT.printf("Found %d significant shellpairs.\n",numSigShellPairs);
         this.shellPairs = new Rail[ShellPair](numSigShellPairs);    
+        // this calculation should be distributed too
         this.ylms = new Rail[Ylm](numSigShellPairs);     
         for (i in 0..(numSigShellPairs-1)) {
             val sh=rawShellPairs(i); 
@@ -198,41 +203,37 @@ public class GMatrixROmem4 extends DenseMatrix{self.M==self.N} {
         this.reset(); val gVal = GlobalRef(this);
 
         val maxTh=Runtime.NTHREADS; val maxPl=Place.MAX_PLACES;            
-/*
-            val auxIntMat = new DenseMatrix(N*roK,N);
-            val halfAuxMat = new DenseMatrix(nOrbital,N*roK);
-            val jMatrix = new DenseMatrix(N, N);
-            val kMatrix = new DenseMatrix(N, N);
-            val dk = new Rail[Double](roK); // eqn 15b in RO#7
-            val ttemp = new Rail[Rail[Double]](maxTh, (Int) => new Rail[Double](maxam1*maxam1*roK));
-            val tdk = new Rail[Rail[Double]](maxTh, (Int) => new Rail[Double](roK));
-            val tjMatrix = new Rail[DenseMatrix](maxTh, (Int) => new DenseMatrix(N,N));
 
-            var tINT:Double=0.,tJ:Double=0.,tK:Double=0.;
-            val gMat = new DenseMatrix(N,N);
+        val auxIntMat = DistDenseMatrix.make(N*roK,N);
+        val halfAuxMat = DistDenseMatrix.make(nOrbital,N*roK);
+        val jMatrix = new DenseMatrix(N, N);
+        val kMatrix = DistDenseMatrix.make(N, N);
+        val dk = new Rail[Double](roK); // eqn 15b in RO#7
+        val ttemp = new Rail[Rail[Double]](maxTh, (Int) => new Rail[Double](maxam1*maxam1*roK));
+        val tdk = new Rail[Rail[Double]](maxTh, (Int) => new Rail[Double](roK));
+        val tjMatrix = new Rail[DenseMatrix](maxTh, (Int) => new DenseMatrix(N,N));
+
+        var tINT:Double=0.,tJ:Double=0.,tK:Double=0.;
+        val gMat = new DenseMatrix(N,N);
 
         for (var ron:Int=0; ron<=roN; ron++)  {  
-            Console.OUT.println("ron=" + ron);
-
-                @Ifdef("__DEBUG__") {Console.OUT.printf("ron=%d...\n",ron); }
-                finish for (thNo in 0..(maxTh-1)) async tdk(thNo).clear();     
+            @Ifdef("__DEBUG__") {Console.OUT.printf("ron=%d...\n",ron); }
+            finish for (thNo in 0..(maxTh-1)) async tdk(thNo).clear();     
                       
-                timer.start(TIMER_GENCLASS); 
+            timer.start(TIMER_GENCLASS); 
+val lron=ron; 
+// Local variable is accessed at a different place, and therefore it must be an initialized val.       [exec]      	 Variable name: ron
             finish ateach(place in Dist.makeUnique()) async {
-                val pid = here.id; Console.OUT.println("pid=" + pid);
-            @Ifdef("__MKL__") {
-                Console.OUT.print("mklGetMaxThreads() was " + mklGetMaxThreads() + " and is now set to"); mklSetNumThreads(maxTh);
-                Console.OUT.println(" " + mklGetMaxThreads() + " thread(s).");
-            }  
+                val pid = here.id; Console.OUT.println("pid=" + pid); 
 
                 val taux = new Rail[Integral_Pack](maxTh, (Int) => new Integral_Pack(jd.roN, jd.roL, omega, roThresh, jd.rad, jd.roZ));
                 finish for (thNo in 0..(maxTh-1)) async {
                     val aux = taux(thNo); 
-                    for (var spInd:Int=thNo; spInd<numSigShellPairs; spInd+=maxTh) {
-                        val sp=shellPairs(spInd); val maxLron=sp.maxL(ron);                    
+                    for (var spInd:Int=thNo+place2ShellPair(pid); spInd<place2ShellPair(pid+1); spInd+=maxTh) {
+                        val sp=shellPairs(spInd); val maxLron=sp.maxL(lron);                    
                         if (maxLron>=0) {
                             val maxLm=(maxLron+1)*(maxLron+1); var ind:Int=0; val temp=ttemp(thNo); val myThreaddk=tdk(thNo);  
-                            aux.genClass(sp.aang, sp.bang, sp.aPoint, sp.bPoint, sp.zetaA, sp.zetaB, sp.conA, sp.conB, sp.dconA, sp.dconB, temp, ron, maxLron,ylms(spInd).y, ylms(spInd).maxL); 
+                            aux.genClass(sp.aang, sp.bang, sp.aPoint, sp.bPoint, sp.zetaA, sp.zetaB, sp.conA, sp.conB, sp.dconA, sp.dconB, temp, lron, maxLron,ylms(spInd).y, ylms(spInd).maxL); 
                             if (sp.mu!=sp.nu) for (var tmu:Int=sp.mu; tmu<=sp.mu2; tmu++) for (var tnu:Int=sp.nu; tnu<=sp.nu2; tnu++) {
                                 val scdmn=density(tmu,tnu)*2.; val nrm=norm(tmu)*norm(tnu); 
                                 val tmuroK=tmu*roK; val tnuroK=tnu*roK;
@@ -260,61 +261,63 @@ public class GMatrixROmem4 extends DenseMatrix{self.M==self.N} {
                     for (var rolm:Int=thNo; rolm<roK; rolm+=maxTh) 
                         dk(rolm)+=myThreaddk(rolm);
                 }
-                }// pid async
-                timer.stop(TIMER_GENCLASS); tINT+=(timer.last(TIMER_GENCLASS) as Double)/1e9;
+            }
+            timer.stop(TIMER_GENCLASS); tINT+=(timer.last(TIMER_GENCLASS) as Double)/1e9;
 
-                // J
-                timer.start(TIMER_JMATRIX);   
-                // add for at async    
-                finish for (thNo in 0..(maxTh-1)) async tjMatrix(thNo).reset();
+            // J
+            timer.start(TIMER_JMATRIX);   
+            // add for at async    
+            finish for (thNo in 0..(maxTh-1)) async tjMatrix(thNo).reset();
 
-                finish for (thNo in 0..(maxTh-1)) async {
-                    val myThreadJMat = tjMatrix(thNo);      
-                    for (var spInd:Int=thNo; spInd<numSigShellPairs; spInd+=maxTh) {
-                        val sp=shellPairs(spInd);
-                        val maxLron=sp.maxL(ron);
-                        if (sp.maxL(ron)>=0) { 
-                            val maxLm=(maxLron+1)*(maxLron+1); 
-                            for (var tmu:Int=sp.mu; tmu<=sp.mu2; tmu++) for (var tnu:Int=sp.nu; tnu<=sp.nu2; tnu++) {
-                                var jContrib:Double=0.; val tmuroK=tmu*roK;
-                                for (var rolm:Int=0; rolm<maxLm; rolm++) jContrib+=dk(rolm)*auxIntMat(tmuroK+rolm,tnu);
-                                    myThreadJMat(tmu,tnu) += jContrib;
-                            } 
-                        }
+            finish for (thNo in 0..(maxTh-1)) async {
+                val myThreadJMat = tjMatrix(thNo);      
+                for (var spInd:Int=thNo; spInd<numSigShellPairs; spInd+=maxTh) {
+                    val sp=shellPairs(spInd);
+                    val maxLron=sp.maxL(ron);
+                    if (sp.maxL(ron)>=0) { 
+                        val maxLm=(maxLron+1)*(maxLron+1); 
+                        for (var tmu:Int=sp.mu; tmu<=sp.mu2; tmu++) for (var tnu:Int=sp.nu; tnu<=sp.nu2; tnu++) {
+                            var jContrib:Double=0.; val tmuroK=tmu*roK;
+                            for (var rolm:Int=0; rolm<maxLm; rolm++) jContrib+=dk(rolm)*auxIntMat(tmuroK+rolm,tnu);
+                                myThreadJMat(tmu,tnu) += jContrib;
+                        } 
                     }
                 }
-
-                finish for (thNo in 0..(maxTh-1)) async for (thNo2 in 0..(maxTh-1)) {
-                    val myThreadJMat = tjMatrix(thNo2);
-                    for (var tnu:Int=thNo; tnu<N; tnu+=maxTh) for (var tmu:Int=0; tmu<N; tmu++)
-                        jMatrix(tmu,tnu)+=myThreadJMat(tmu,tnu);
-                }
-
-                timer.stop(TIMER_JMATRIX); tJ+=(timer.last(TIMER_JMATRIX) as Double)/1e9;
-
-                // K - change to SUMMA
-                if (ron<=roNK) { //This produces K/2
-                     timer.start(TIMER_KMATRIX);  
-                     DenseMatrixBLAS.compMultTrans(mos, auxIntMat, halfAuxMat, [nOrbital,N*roK, N], false);
-                     val halfAuxMat2 = new DenseMatrix(roK*nOrbital, N, halfAuxMat.d);
-                     DenseMatrixBLAS.compTransMult(halfAuxMat2, halfAuxMat2, kMatrix, [N, N, roK*nOrbital], true);
-                     timer.stop(TIMER_KMATRIX); tK+=(timer.last(TIMER_KMATRIX) as Double)/1e9;
-                }
             }
 
+            finish for (thNo in 0..(maxTh-1)) async for (thNo2 in 0..(maxTh-1)) {
+                val myThreadJMat = tjMatrix(thNo2);
+                for (var tnu:Int=thNo; tnu<N; tnu+=maxTh) for (var tmu:Int=0; tmu<N; tmu++)
+                    jMatrix(tmu,tnu)+=myThreadJMat(tmu,tnu);
+            }
+
+            timer.stop(TIMER_JMATRIX); tJ+=(timer.last(TIMER_JMATRIX) as Double)/1e9;
+
+            // K - change to SUMMA
+            if (ron<=roNK) { //This produces K/2
+                 timer.start(TIMER_KMATRIX);  
+                 //DenseMatrixBLAS.compMultTrans(mos, auxIntMat, halfAuxMat, [nOrbital,N*roK, N], false);
+
+                 //This may present futhur difficulty when we change to DistMatrix
+                 //val halfAuxMat2 = new DenseMatrix(roK*nOrbital, N, halfAuxMat.d);
+
+                 //DenseMatrixBLAS.compTransMult(halfAuxMat2, halfAuxMat2, kMatrix, [N, N, roK*nOrbital], true);
+                 timer.stop(TIMER_KMATRIX); tK+=(timer.last(TIMER_KMATRIX) as Double)/1e9;
+            }
+        
             // Fix upper half of J (see the definition of shellPairs) ==> sp.mu>sp.nu
             // Fix the whole matrix ==> if (sp.mu!=sp.nu)
-            finish for (thNo in 0..(maxTh-1)) async for (var spInd:Int=thNo; spInd<numSigShellPairs; spInd+=maxTh) {
-                val sp=shellPairs(spInd);
-                if (sp.mu!=sp.nu) for (var tmu:Int=sp.mu; tmu<=sp.mu2; tmu++) for (var tnu:Int=sp.nu; tnu<=sp.nu2; tnu++) 
-                    jMatrix(tnu,tmu) = jMatrix(tmu,tnu);
-            }
+            // finish for (thNo in 0..(maxTh-1)) async for (var spInd:Int=thNo; spInd<numSigShellPairs; spInd+=maxTh) {
+            //    val sp=shellPairs(spInd);
+            //    if (sp.mu!=sp.nu) for (var tmu:Int=sp.mu; tmu<=sp.mu2; tmu++) for (var tnu:Int=sp.nu; tnu<=sp.nu2; tnu++) 
+            //        jMatrix(tnu,tmu) = jMatrix(tmu,tnu);
+            //}
             // Use the upper half of J and K to form G
             finish for (thNo in 0..(maxTh-1)) async for (var tmu:Int=thNo; tmu<N; tmu+=maxTh) for (var tnu:Int=tmu; tnu<N; tnu++) 
                 gMat(tnu,tmu)=gMat(tmu,tnu)=jMatrix(tmu,tnu)-kMatrix(tmu,tnu);
             
             at(gVal) async atomic gVal().cellAdd(gMat); 
-            Console.OUT.printf("pid=%d Time INT = %.2f s J = %.2f s K = %.2f s\n", pid, tINT, tJ, tK);
+            Console.OUT.printf("Time INT = %.2f s J = %.2f s K = %.2f s\n", tINT, tJ, tK);
             Console.OUT.flush();
         }
 
@@ -324,7 +327,7 @@ public class GMatrixROmem4 extends DenseMatrix{self.M==self.N} {
         }
 
         timer.stop(TIMER_TOTAL);
-        Console.OUT.printf("    Time to construct GMatrix with RO: %.3g seconds\n", (timer.last(TIMER_TOTAL) as Double) / 1e9);*/
+        Console.OUT.printf("    Time to construct GMatrix with RO: %.3g seconds\n", (timer.last(TIMER_TOTAL) as Double) / 1e9);
     }
 
     private def getDateString() {
