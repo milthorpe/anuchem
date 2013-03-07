@@ -9,11 +9,12 @@
  *  (C) Copyright Australian National University 2013.
  */
 
+import x10.compiler.Pragma;
 import x10.util.IndexedMemoryChunk;
 import x10.util.RemoteIndexedMemoryChunk;
 
 /**
- * Standard "ping-pong" benchmark for X10 communication performance.
+ * Standard "ping/pong" benchmark for X10 communication performance.
  * This benchmark operates in two phases: the first uses remote array
  * copies and the second uses active messages/remote activities.
  * @author milthorpe 02/13
@@ -25,8 +26,8 @@ public class Pong {
         Console.OUT.println("Ping-pong using Remote Array Copy...");
         val dsrc = DistArray.make[Rail[Double]](Dist.makeUnique());
         val ddst = DistArray.make[Rail[Double]](Dist.makeUnique());
-        val dremoteSrc = DistArray.make[Rail[RemoteIndexedMemoryChunk[Double]]](Dist.makeUnique());
-        val dremoteDst = DistArray.make[Rail[RemoteIndexedMemoryChunk[Double]]](Dist.makeUnique());
+        val dremoteSrc = DistArray.make[Rail[RemoteIndexedMemoryChunk[Double]]](Dist.makeUnique(), (Point)=> new Rail[RemoteIndexedMemoryChunk[Double]](Place.MAX_PLACES));
+        val dremoteDst = DistArray.make[Rail[RemoteIndexedMemoryChunk[Double]]](Dist.makeUnique(), (Point)=> new Rail[RemoteIndexedMemoryChunk[Double]](Place.MAX_PLACES));
         for (var s:Int=8; s<=8388608; s *= 2) {
             val size = s;
             // set up arrays at each place
@@ -61,10 +62,11 @@ public class Pong {
             }
 
             at(here.next()) {
+                val nextDst = ddst(here.id).raw();
                 val prevId = here.prev().id;
-                for (i in 0..(localDst.length()-1)) {
-                    if (localDst(i) != prevId as Double) {
-                        throw new Exception("at next incorrect value for element " + i + ": " + localDst(i));
+                for (i in 0..(nextDst.length()-1)) {
+                    if (nextDst(i) != prevId as Double) {
+                        throw new Exception("at " + here + " incorrect value for element " + i + ": " + nextDst(i));
                     }
                 }
             }
