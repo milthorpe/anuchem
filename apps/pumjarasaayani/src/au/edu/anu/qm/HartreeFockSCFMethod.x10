@@ -75,11 +75,11 @@ public class HartreeFockSCFMethod extends SCFMethod {
         val jd = JobDefaults.getInstance();
 
         val gMatrix:GMatrix{self.N==N};
-        val gMatrixRo:GMatrixROmem3{self.N==N}; // change version here
+        val gMatrixRo:GMatrixROmem3{self.N==N}; // change version here 1/3
         val roThresh=jd.roThresh;
         val thresh=jd.thresh;
         if (jd.roOn>0 && maxIteration>0) {
-            gMatrixRo = new GMatrixROmem3(N, bfs, molecule, noOfOccupancies,0.,roZ*roThresh); // change version here
+            gMatrixRo = new GMatrixROmem3(N, bfs, molecule, noOfOccupancies,0.,roZ*roThresh); // change version here 2/3
         } else {
             gMatrixRo = null;
         }
@@ -207,7 +207,7 @@ public class HartreeFockSCFMethod extends SCFMethod {
     
         // long range energy
         //Console.OUT.println("before RO heapSize = " + System.heapSize());
-        val gMatrixRoL = new GMatrixROmem3(N, bfs, molecule, noOfOccupancies,jd.roZ*jd.omega,roZ*jd.roThresh); // RO Thesis Eq (2.22) // change version here
+        val gMatrixRoL = new GMatrixROmem3(N, bfs, molecule, noOfOccupancies,jd.roZ*jd.omega,roZ*jd.roThresh); // RO Thesis Eq (2.22) // change version here 3/3
         gMatrixRoL.compute(density, mos);
 
         if (jd.compareRo) {
@@ -228,7 +228,7 @@ public class HartreeFockSCFMethod extends SCFMethod {
             jrms=Math.pow(jrms/NN,.5);
             krms=Math.pow(krms/NN,.5);
             Console.OUT.printf("j=%.5e (%.5e) k=%.5e (%.5e)\n",jrms,jmax,krms,kmax);
-            Console.OUT.printf("log: j=%.5e (%.5e) k=%.5e (%.5e)\n",-Math.log10(jrms),-Math.log10(jmax),-Math.log10(krms),-Math.log10(kmax));       */
+            Console.OUT.printf("log: j=%.5e (%.5e) k=%.5e (%.5e)\n",-Math.log10(jrms),-Math.log10(jmax),-Math.log10(krms),-Math.log10(kmax));    */   
         }
         //Console.OUT.println("after conventional = " + System.heapSize());
         //fock.compute(hCore, gMatrixRo);

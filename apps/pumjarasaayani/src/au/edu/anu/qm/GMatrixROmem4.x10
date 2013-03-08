@@ -16,6 +16,7 @@ import x10.compiler.Native;
 import x10.compiler.NativeCPPInclude;
 import x10.io.IOException;
 import x10.util.ArrayList;
+import x10.array.DistArray;
 import x10.util.ArrayUtils;
 import x10.util.Team;
 import x10.util.concurrent.AtomicInteger;
@@ -40,6 +41,7 @@ import edu.utk.cs.papi.PAPI;
 
 @NativeCPPInclude("mkl_math.h")
 public class GMatrixROmem4 extends DenseMatrix{self.M==self.N} {
+
     // Timer & PAPI performance counters
     public val timer = new StatisticalTimer(4);
 
@@ -65,7 +67,6 @@ public class GMatrixROmem4 extends DenseMatrix{self.M==self.N} {
         super(N, N);
         Console.OUT.printf("\nGMatrixROmem4.x10 'public def this' %s...\n", getDateString());
         this.bfs = bfs; this.mol = molecule; this.nOrbital = nOrbital; this.omega=omega; this.roThresh=roThresh;  
-
         // Set up RO N and L
         val jd = JobDefaults.getInstance();
         val l_n = new Rail[Int](jd.roN+3);
@@ -119,6 +120,8 @@ public class GMatrixROmem4 extends DenseMatrix{self.M==self.N} {
                         val aa=iaFunc.getTotalAngularMomentum(); val bb=jbFunc.getTotalAngularMomentum();                       
                         val maxbraa = (aa+1)*(aa+2)/2; val maxbrab = (bb+1)*(bb+2)/2;     
                         // Symetric with respect to mu/nu - but we make the list redundant 
+                        // Asymmetric
+                        if (mu>=nu) {
                         val aang = aaFunc.getTotalAngularMomentum(); val bang = bbFunc.getTotalAngularMomentum();
                         val aPoint = aaFunc.origin; val bPoint = bbFunc.origin; 
                         val zetaA = aaFunc.exponents; val zetaB = bbFunc.exponents; 
@@ -136,7 +139,7 @@ public class GMatrixROmem4 extends DenseMatrix{self.M==self.N} {
                             ind++;
                             totFunc+=maxbraa*maxbrab; // *(roN+1)*(roL+1)*(roL+1)
                         }               
-                        
+                        } // Asym
                         if (b!=noOfAtoms-1 || j!=nbFunc-1) nu+=maxbrab; else {mu+=maxbraa; nu=0;}
                     }    
                 }
@@ -200,7 +203,7 @@ public class GMatrixROmem4 extends DenseMatrix{self.M==self.N} {
         
         timer.start(TIMER_TOTAL); 
         val jd = JobDefaults.getInstance();
-        this.reset(); val gVal = GlobalRef(this);
+        this.reset(); val gVal = GlobalRef(this); 
 
         val maxTh=Runtime.NTHREADS; val maxPl=Place.MAX_PLACES;            
 
@@ -209,6 +212,7 @@ public class GMatrixROmem4 extends DenseMatrix{self.M==self.N} {
         val jMatrix = new DenseMatrix(N, N);
         val kMatrix = DistDenseMatrix.make(N, N);
         val dk = new Rail[Double](roK); // eqn 15b in RO#7
+        val dkval =GlobalRef(dk);
         val ttemp = new Rail[Rail[Double]](maxTh, (Int) => new Rail[Double](maxam1*maxam1*roK));
         val tdk = new Rail[Rail[Double]](maxTh, (Int) => new Rail[Double](roK));
         val tjMatrix = new Rail[DenseMatrix](maxTh, (Int) => new DenseMatrix(N,N));
@@ -221,6 +225,7 @@ public class GMatrixROmem4 extends DenseMatrix{self.M==self.N} {
             finish for (thNo in 0..(maxTh-1)) async tdk(thNo).clear();     
                       
             timer.start(TIMER_GENCLASS); 
+dk.clear();
 val lron=ron; 
 // Local variable is accessed at a different place, and therefore it must be an initialized val.       [exec]      	 Variable name: ron
             finish ateach(place in Dist.makeUnique()) async {
@@ -255,11 +260,12 @@ val lron=ron;
                         }
                     }
                 }
-                dk.clear();
+                
                 finish for (thNo in 0..(maxTh-1)) async for (thNo2 in 0..(maxTh-1)) {
                     val myThreaddk = tdk(thNo2);
-                    for (var rolm:Int=thNo; rolm<roK; rolm+=maxTh) 
-                        dk(rolm)+=myThreaddk(rolm);
+                    for (var rolm:Int=thNo; rolm<roK; rolm+=maxTh) { val rolmm=rolm;
+                        //at (gVal) async atomic dk(rolmm)+=myThreaddk(rolmm);}
+                        at(dkval.home) async atomic (dkval())(rolmm)+=myThreaddk(rolmm); }
                 }
             }
             timer.stop(TIMER_GENCLASS); tINT+=(timer.last(TIMER_GENCLASS) as Double)/1e9;
@@ -268,7 +274,6 @@ val lron=ron;
             timer.start(TIMER_JMATRIX);   
             // add for at async    
             finish for (thNo in 0..(maxTh-1)) async tjMatrix(thNo).reset();
-
             finish for (thNo in 0..(maxTh-1)) async {
                 val myThreadJMat = tjMatrix(thNo);      
                 for (var spInd:Int=thNo; spInd<numSigShellPairs; spInd+=maxTh) {
@@ -307,18 +312,24 @@ val lron=ron;
         
             // Fix upper half of J (see the definition of shellPairs) ==> sp.mu>sp.nu
             // Fix the whole matrix ==> if (sp.mu!=sp.nu)
-            // finish for (thNo in 0..(maxTh-1)) async for (var spInd:Int=thNo; spInd<numSigShellPairs; spInd+=maxTh) {
-            //    val sp=shellPairs(spInd);
-            //    if (sp.mu!=sp.nu) for (var tmu:Int=sp.mu; tmu<=sp.mu2; tmu++) for (var tnu:Int=sp.nu; tnu<=sp.nu2; tnu++) 
-            //        jMatrix(tnu,tmu) = jMatrix(tmu,tnu);
-            //}
+            finish for (thNo in 0..(maxTh-1)) async for (var spInd:Int=thNo; spInd<numSigShellPairs; spInd+=maxTh) {
+                val sp=shellPairs(spInd);
+                if (sp.mu!=sp.nu) for (var tmu:Int=sp.mu; tmu<=sp.mu2; tmu++) for (var tnu:Int=sp.nu; tnu<=sp.nu2; tnu++) 
+                    jMatrix(tnu,tmu) = jMatrix(tmu,tnu);
+            }
             // Use the upper half of J and K to form G
             finish for (thNo in 0..(maxTh-1)) async for (var tmu:Int=thNo; tmu<N; tmu+=maxTh) for (var tnu:Int=tmu; tnu<N; tnu++) 
-                gMat(tnu,tmu)=gMat(tmu,tnu)=jMatrix(tmu,tnu)-kMatrix(tmu,tnu);
+                gMat(tnu,tmu)+=gMat(tmu,tnu)=jMatrix(tmu,tnu)-kMatrix(tmu,tnu);
             
-            at(gVal) async atomic gVal().cellAdd(gMat); 
+            //at(gVal) async atomic gVal().cellAdd(gMat); 
+            //at(gVal) async atomic gVal().cellAdd(jMatrix); 
             Console.OUT.printf("Time INT = %.2f s J = %.2f s K = %.2f s\n", tINT, tJ, tK);
             Console.OUT.flush();
+        }
+
+        @Ifdef("__DEBUG__") {
+        val eJ = density.clone().mult(density, jMatrix).trace();
+        Console.OUT.printf("  EJ = %.10f a.u.\n", .25*eJ/jd.roZ);
         }
 
         @Ifdef("__PAPI__"){
