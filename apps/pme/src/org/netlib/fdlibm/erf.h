@@ -16,5 +16,5 @@
 double fdlibm_erf(double);
 double fdlibm_erfc(double);
 
-double fabs(double);
+double fdlibm_fabs(double);
 double __ieee754_exp(double);

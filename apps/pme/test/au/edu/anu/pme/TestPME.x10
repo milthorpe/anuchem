@@ -77,7 +77,7 @@ public class TestPME extends TestElectrostatic {
         for (i in 1..ITERS) {
             energy = pme.getEnergy();
         }
-        Console.OUT.println("energy = " + energy);
+        Console.OUT.printf("energy %12.3g\n", energy);
 
         logTime("Grid charges",      PME.TIMER_INDEX_GRIDCHARGES,   pme.timer);
         logTime("Inverse FFT",       PME.TIMER_INDEX_INVFFT,        pme.timer);
