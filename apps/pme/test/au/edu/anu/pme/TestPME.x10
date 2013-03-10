@@ -6,14 +6,13 @@
  *  You may obtain a copy of the License at
  *      http://www.opensource.org/licenses/eclipse-1.0.php
  *
- * (C) Copyright Josh Milthorpe 2010.
+ * (C) Copyright Josh Milthorpe 2010-2013.
  */
 package au.edu.anu.pme;
 
 import x10x.vector.Point3d;
 import x10x.vector.Vector3d;
 import au.edu.anu.chem.mm.MMAtom;
-//import au.edu.anu.chem.mm.ElectrostaticDirectMethod;
 import au.edu.anu.chem.mm.TestElectrostatic;
 import au.edu.anu.util.Timer;
 

@@ -471,21 +471,20 @@ public class PME {
         val gridSize = this.gridSize; // TODO shouldn't be necessary XTENLANG-1913
         val numSubCells = this.numSubCells; // TODO shouldn't be necessary XTENLANG-1913
         val splineOrder = this.splineOrder; // TODO shouldn't be necessary XTENLANG-1913
-        val subCells = this.subCells; // TODO shouldn't be necessary XTENLANG-1913
         val scalingVector = this.scalingVector; // TODO shouldn't be necessary XTENLANG-1913
         val Q = this.Q; // TODO shouldn't be necessary XTENLANG-1913
         val atomsCache = this.atomsCache; // TODO shouldn't be necessary XTENLANG-1913
+        val subCellRegion = subCells.region as Region(3){rect};
         finish ateach(place1 in Dist.makeUnique()) {
             val qLocal = Q.getLocalPortion() as Array[Complex](3){rect};
             val localGridRegion = qLocal.region as Region(3){rect};
-            val subCellRegion = subCells.region as Region(3){rect};
             if (!localGridRegion.isEmpty()) {
                 qLocal.clear();
                 val gridSize0 = gridSize(0);
                 val gridSize1 = gridSize(1);
                 val gridSize2 = gridSize(2);
-                val localSubCells = subCells.getLocalPortion();
                 val myAtomsCache = atomsCache(here.id);
+
                 val subCellHaloRegion = PME.getSubcellHaloRegionForPlace(gridSize0, numSubCells, splineOrder, localGridRegion, subCellRegion);
                 //Console.OUT.println("subCellHaloRegion at " + here + " = " + subCellHaloRegion);
                 val iSpline = new Array[Double](splineOrder);
