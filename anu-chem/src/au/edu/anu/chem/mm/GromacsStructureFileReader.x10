@@ -6,7 +6,7 @@
  *  You may obtain a copy of the License at
  *      http://www.opensource.org/licenses/eclipse-1.0.php
  *
- * (C) Copyright Josh Milthorpe 2010.
+ * (C) Copyright Josh Milthorpe 2010-2013.
  */
 package au.edu.anu.chem.mm;
 
@@ -15,12 +15,14 @@ import x10.io.FileReader;
 import au.edu.anu.chem.Molecule;
 import au.edu.anu.chem.mm.MMAtom;
 import x10x.vector.Point3d;
+import x10x.vector.Vector3d;
 
 /**
  * This class reads GROMACS coordinate files of the following format:
  *  <title>
  *  <number of atoms>
  *  <residue number> <residue name> <atom name> <atom number> x y z [vx vy vz]// repeated
+ *  <box x> <box y> <box z>
  * N.B. GROMACS coordinates are in nm; these are converted to Angstroms for use in ANU-Chem
  * TODO bonding, velocity
  * TODO charges are hardcoded to -0.82 for OW, +0.41 for HW
@@ -28,6 +30,7 @@ import x10x.vector.Point3d;
  */
 public class GromacsStructureFileReader { 
     var fileName : String;
+    public var boxEdges:Vector3d;
 
     public def this(fileName : String) { 
         this.fileName = fileName;
@@ -67,8 +70,16 @@ public class GromacsStructureFileReader {
                                         charge
                         ));
         }
-       file.close();
-       return molecule;
+
+        // read box edge lengths
+        val boxLine = file.readLine();
+        val x = Double.parseDouble(boxLine.substring( 0,10).trim()) * 10.0;
+        val y = Double.parseDouble(boxLine.substring(10,20).trim()) * 10.0;
+        val z = Double.parseDouble(boxLine.substring(20,30).trim()) * 10.0;
+        this.boxEdges = Vector3d(x,y,z);
+        
+        file.close();
+        return molecule;
     }
 
     public def setFileName(fileName : String) {

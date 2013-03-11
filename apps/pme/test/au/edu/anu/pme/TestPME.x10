@@ -27,7 +27,7 @@ public class TestPME extends TestElectrostatic {
     public static def main(args : Array[String](1)) {
         var numAtoms : Int;
         var ewaldCoefficient : Double = 0.35;
-        var cutoff : Double = 10.0;
+        var cutoff : Double = 8.0;
         var gridSize : Int = 64;
         var splineOrder : Int = 4;
         if (args.size > 0) {

@@ -29,13 +29,14 @@ import au.edu.anu.util.Timer;
  * @author milthorpe
  */
 public class TestPMEWaterBox extends TestElectrostatic {
-    public def sizeOfCentralCluster() : Double = 80.0;
+    var size:Double = 80.0;
+    public def sizeOfCentralCluster() { return size; }
 
     public static def main(args : Array[String](1)) {
         var structureFileName : String;
         var ewaldCoefficient : Double = 0.35;
         var cutoff : Double = 10.0;
-        var gridSize : Int = 64;
+        var gridSize : Int = 72;
         var splineOrder : Int = 4;
         if (args.size > 0) {
             structureFileName = args(0);
@@ -65,7 +66,11 @@ public class TestPMEWaterBox extends TestElectrostatic {
 
     public def test(structureFileName : String, ewaldCoefficient : Double, cutoff : Double, gridSize : Int, splineOrder : Int) {
 
-        val edges = [Vector3d(SIZE, 0.0, 0.0), Vector3d(0.0, SIZE, 0.0), Vector3d(0.0, 0.0, SIZE)];
+        val gmxFileReader = new GromacsStructureFileReader(structureFileName);
+        val molecule = gmxFileReader.readMolecule();
+        this.size = gmxFileReader.boxEdges.i; // TODO assume cubic box
+
+        val edges = [Vector3d(size, 0.0, 0.0), Vector3d(0.0, size, 0.0), Vector3d(0.0, 0.0, size)];
         val g = gridSize;
         val gridSizes = new Array[Int](3, g);
 
@@ -73,8 +78,6 @@ public class TestPMEWaterBox extends TestElectrostatic {
             + "\nBox edges: " + edges(0) + "," + edges(1) + "," + edges(2)
             + "\nGrid size: " + gridSize
             + "\nspline order: " + splineOrder + " Beta: " + ewaldCoefficient + " Cutoff: " + cutoff);
-
-        val molecule = new GromacsStructureFileReader(structureFileName).readMolecule();
 
         val molAtoms = molecule.getAtoms();
         Console.OUT.println("read " + molAtoms.size() + " atoms.");
@@ -85,15 +88,15 @@ public class TestPMEWaterBox extends TestElectrostatic {
             val centre = atom.centre;
 
             // normalise coordinates to fit inside box
-            val x = (centre.i < 0.0) ? centre.i + SIZE : (centre.i >= SIZE) ? centre.i - SIZE : centre.i;
-            val y = (centre.j < 0.0) ? centre.j + SIZE : (centre.j >= SIZE) ? centre.j - SIZE : centre.j;
-            val z = (centre.k < 0.0) ? centre.k + SIZE : (centre.k >= SIZE) ? centre.k - SIZE : centre.k;
+            val x = -size/2.0 + ((centre.i < 0.0) ? centre.i + size : (centre.i >= size) ? centre.i - size : centre.i);
+            val y = -size/2.0 + ((centre.j < 0.0) ? centre.j + size : (centre.j >= size) ? centre.j - size : centre.j);
+            val z = -size/2.0 + ((centre.k < 0.0) ? centre.k + size : (centre.k >= size) ? centre.k - size : centre.k);
 
             val charge = atom.charge;
             val p = getPlaceId(x, y, z);
             if (p >= 0 && p < Place.MAX_PLACES) {
                 at(Place.place(p)) async {
-                    val atom = new MMAtom(Point3d(x,y,z), charge);
+                    atom.centre = Point3d(x,y,z);
                     //Console.OUT.println(atom);
                     atomic { tempAtoms(p).add(atom); }
                 }
