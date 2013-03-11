@@ -33,7 +33,8 @@ public class TestElectrostatic {
      * to produce a central cluster of particles surrounded
      * by a large empty shell.
      */
-    public def sizeOfCentralCluster() : Double = SIZE;
+    public def sizeOfCentralCluster():Double = SIZE;
+    public def boxSize():Double = SIZE;
 
     public def logTime(desc : String, timerIndex : Int, timer : Timer, printNewline : Boolean) {
         if (printNewline) {
@@ -95,7 +96,7 @@ public class TestElectrostatic {
      * Currently just splits them up into slices by X coordinate.
      */
     protected def getPlaceId(x : Double, y : Double, z : Double) : Int {
-        return (((x + SIZE/2.0) / SIZE) * Place.MAX_PLACES) as Int;
+        return (((x + boxSize()/2.0) / boxSize()) * Place.MAX_PLACES) as Int;
     }
 
     /** 

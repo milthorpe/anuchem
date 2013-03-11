@@ -11,6 +11,8 @@ final public class Timer {
         count = new Rail[Long](n);
     }
 
+    public def clear() { total.clear(); count.clear(); }
+
     public def start(id:Int) { total(id) -= System.nanoTime(); }
     public def clear(id:Int) { total(id) = 0L; count(id) = 0L; }
     public def stop(id:Int) { total(id) += System.nanoTime(); count(id)++; }
