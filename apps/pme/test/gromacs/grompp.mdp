@@ -12,7 +12,7 @@ include                  =
 define                   = 
 
 ; RUN CONTROL PARAMETERS
-integrator               = steep
+integrator               = md
 ; Start time and timestep in ps
 tinit                    = 0
 dt                       = 0.002
