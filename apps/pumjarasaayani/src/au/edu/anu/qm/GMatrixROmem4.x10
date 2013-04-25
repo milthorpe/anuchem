@@ -301,12 +301,17 @@ val lron=ron;
             // K - change to SUMMA
             if (ron<=roNK) { //This produces K/2
                  timer.start(TIMER_KMATRIX);  
+
                  //DenseMatrixBLAS.compMultTrans(mos, auxIntMat, halfAuxMat, [nOrbital,N*roK, N], false);
+                 halfAuxMat.mulTrans(0, 0., mos, auxIntMat, halfAuxMat);
 
                  //This may present futhur difficulty when we change to DistMatrix
                  //val halfAuxMat2 = new DenseMatrix(roK*nOrbital, N, halfAuxMat.d);
+                 val halfAuxMat2 = DistDenseMatrix.make(roK*nOrbital, N);
 
                  //DenseMatrixBLAS.compTransMult(halfAuxMat2, halfAuxMat2, kMatrix, [N, N, roK*nOrbital], true);
+                 kMatrix.transMult(0, 1., halfAuxMat2, halfAuxMat2, kMatrix);
+
                  timer.stop(TIMER_KMATRIX); tK+=(timer.last(TIMER_KMATRIX) as Double)/1e9;
             }
         
