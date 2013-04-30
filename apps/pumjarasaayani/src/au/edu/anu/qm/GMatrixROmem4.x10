@@ -337,14 +337,13 @@ public class GMatrixROmem4 extends DenseMatrix{self.M==self.N} {
             }
             // Use the upper half of J and K to form G
             finish for (thNo in 0..(maxTh-1)) async for (var tmu:Int=thNo; tmu<N; tmu+=maxTh) for (var tnu:Int=tmu; tnu<N; tnu++) 
-                gMat(tnu,tmu)+=gMat(tmu,tnu)=jMatrix(tmu,tnu)-kMatrix(tmu,tnu);
-            
-            //at(gVal) async atomic gVal().cellAdd(gMat); 
-            //at(gVal) async atomic gVal().cellAdd(jMatrix); 
+                gMat(tnu,tmu)+=gMat(tmu,tnu)=jMatrix(tmu,tnu)-kMatrix(tmu,tnu);          
+             
+
             Console.OUT.printf("Time INT = %.2f s J = %.2f s K = %.2f s\n", tINT, tJ, tK);
             Console.OUT.flush();
         }
-
+        this.cellAdd(gMat);
         @Ifdef("__DEBUG__") {
         val eJ = density.clone().mult(density, jMatrix).trace();
         Console.OUT.printf("  EJ = %.10f a.u.\n", .25*eJ/jd.roZ);
