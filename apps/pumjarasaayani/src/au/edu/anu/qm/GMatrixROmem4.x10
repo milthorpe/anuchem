@@ -195,7 +195,7 @@ public class GMatrixROmem4 extends DenseMatrix{self.M==self.N} {
     @Native("c++", "MKL_Set_Num_Threads(#a)") private native static def mklSetNumThreads(a:Int):void;
 
     public def compute(density:Density{self.N==this.N}, mos:MolecularOrbitals{self.N==this.N}) {
-        Console.OUT.printf("\nGMatrixROmem.x10 'public def compute' %s...\n", getDateString()); 
+        Console.OUT.printf("\nGMatrixROmem4.x10 'public def compute' %s...\n", getDateString()); 
         val timer=this.timer; val shellPairs=this.shellPairs; val maxam1=this.maxam1; val numSigShellPairs=this.numSigShellPairs; val ylms=this.ylms;
         val N=this.N;val nOrbital=this.nOrbital; val roN=this.roN; val roNK=this.roNK; val roL=this.roL; val roK=this.roK; val roZ=this.roZ; val omega=this.omega; val roThresh=this.roThresh; val norm=this.norm;
         val place2ShellPair=this.place2ShellPair;
@@ -225,11 +225,11 @@ public class GMatrixROmem4 extends DenseMatrix{self.M==self.N} {
             finish for (thNo in 0..(maxTh-1)) async tdk(thNo).clear();     
                       
             timer.start(TIMER_GENCLASS); 
-dk.clear();
-val lron=ron; 
-// Local variable is accessed at a different place, and therefore it must be an initialized val.       [exec]      	 Variable name: ron
+            dk.clear();
+            val lron=ron; 
+            // Local variable is accessed at a different place, and therefore it must be an initialized val.       [exec]      	 Variable name: ron
             finish ateach(place in Dist.makeUnique()) async {
-                val pid = here.id; Console.OUT.println("pid=" + pid); 
+                val pid = here.id; Console.OUT.println("pid=" + pid + " starts..."); 
 
                 val taux = new Rail[Integral_Pack](maxTh, (Int) => new Integral_Pack(jd.roN, jd.roL, omega, roThresh, jd.rad, jd.roZ));
                 finish for (thNo in 0..(maxTh-1)) async {
@@ -260,7 +260,8 @@ val lron=ron;
                         }
                     }
                 }
-                
+
+                Console.OUT.println("at stage 2"); 
                 finish for (thNo in 0..(maxTh-1)) async for (thNo2 in 0..(maxTh-1)) {
                     val myThreaddk = tdk(thNo2);
                     for (var rolm:Int=thNo; rolm<roK; rolm+=maxTh) { val rolmm=rolm;
@@ -271,6 +272,7 @@ val lron=ron;
             timer.stop(TIMER_GENCLASS); tINT+=(timer.last(TIMER_GENCLASS) as Double)/1e9;
 
             // J
+            Console.OUT.println("at J"); 
             timer.start(TIMER_JMATRIX);   
             // add for at async    
             finish for (thNo in 0..(maxTh-1)) async tjMatrix(thNo).reset();
@@ -299,22 +301,33 @@ val lron=ron;
             timer.stop(TIMER_JMATRIX); tJ+=(timer.last(TIMER_JMATRIX) as Double)/1e9;
 
             // K - change to SUMMA
+            Console.OUT.println("at K"); 
             if (ron<=roNK) { //This produces K/2
                  timer.start(TIMER_KMATRIX);  
 
-                 //DenseMatrixBLAS.compMultTrans(mos, auxIntMat, halfAuxMat, [nOrbital,N*roK, N], false);
-                 halfAuxMat.mulTrans(0, 0., mos, auxIntMat, halfAuxMat);
+                 val dMos = DistDenseMatrix.make(nOrbital, N);
+                 for ([i,j] in ( (0..(nOrbital-1))*(0..(N-1)) ) )
+                     dMos(i,j)=mos(i,j);
+                 Console.OUT.println("mos copied...");
+                 
+                 //DenseMatrixBLAS.compMultTrans(mos, auxIntMat, halfAuxMat, [nOrbital, N*roK, N], false);
+                 SummaDense.multTrans(0, 0., dMos, auxIntMat, halfAuxMat);
+                 Console.OUT.println("multTrans.. done");
 
                  //This may present futhur difficulty when we change to DistMatrix
                  //val halfAuxMat2 = new DenseMatrix(roK*nOrbital, N, halfAuxMat.d);
-                 val halfAuxMat2 = DistDenseMatrix.make(roK*nOrbital, N);
+                 val halfAuxMat2 = DistDenseMatrix.make(nOrbital*roK, N);
+                 for ([a, b, c] in ( (0..(nOrbital-1))*(0..(roK-1))*(0..(N-1)) ) )
+                      halfAuxMat2(a+b*nOrbital, c)=halfAuxMat(a, b+c*roK);
+                 Console.OUT.println("halfAuxMat copied...");
 
                  //DenseMatrixBLAS.compTransMult(halfAuxMat2, halfAuxMat2, kMatrix, [N, N, roK*nOrbital], true);
-                 kMatrix.transMult(0, 1., halfAuxMat2, halfAuxMat2, kMatrix);
+                 SummaDense.transMult(0, 0.0, halfAuxMat2, halfAuxMat2, kMatrix);
+                 Console.OUT.println("transMult.. done");                 
 
                  timer.stop(TIMER_KMATRIX); tK+=(timer.last(TIMER_KMATRIX) as Double)/1e9;
             }
-        
+            Console.OUT.println("after K"); 
             // Fix upper half of J (see the definition of shellPairs) ==> sp.mu>sp.nu
             // Fix the whole matrix ==> if (sp.mu!=sp.nu)
             finish for (thNo in 0..(maxTh-1)) async for (var spInd:Int=thNo; spInd<numSigShellPairs; spInd+=maxTh) {
