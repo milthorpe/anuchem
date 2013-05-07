@@ -6,8 +6,7 @@ H 0.0 0.0 0.0
 H 1.0 0.0 0.0
 end
 use_RO 1
-compare_RO
-RO_N 150
+RO_N 76
 RO_L 13
 gmat_parallel_scheme 0
 scf_max 100

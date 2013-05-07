@@ -1,14 +1,12 @@
 He1
-basis cc-pVDZ
+basis 321g
 units 0.5291772109217
 RO_Z 1.0
 molecule
-He	     0.000	     0.000	     0.000
+He	     0.100	     0.020	     0.003
 end
-scf_max 0
 guess core
 use_RO 1
-compare_RO 
 RO_N 27
 RO_L 39
 RO_thresh 1e-6
