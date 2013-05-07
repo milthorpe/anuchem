@@ -63,7 +63,7 @@ public class GMatrixROmem3 extends DenseMatrix{self.M==self.N} {
 
     public def this(N:Int, bfs:BasisFunctions, molecule:Molecule[QMAtom], nOrbital:Int, omega:Double,roThresh:Double):GMatrixROmem3{self.M==N,self.N==N} {     
         super(N, N);
-        Console.OUT.printf("\nGMatrixROmem.x10 'public def this' %s...\n", getDateString());
+        Console.OUT.printf("\nGMatrixROmem3.x10 'public def this' %s...\n", getDateString());
         this.bfs = bfs; this.mol = molecule; this.nOrbital = nOrbital; this.omega=omega; this.roThresh=roThresh;  
 
         val jd = JobDefaults.getInstance();
@@ -87,7 +87,7 @@ public class GMatrixROmem3 extends DenseMatrix{self.M==self.N} {
         this.norm = bfs.getNormalizationFactors(); 
 
         // Shell/Shellpair business 
-        Console.OUT.printf("GMatrixROmem.x10 Screening shellpairs...\n");        
+        Console.OUT.printf("GMatrixROmem3.x10 Screening shellpairs...\n");        
         val threshold = roThresh*jd.roZ*jd.roZ*1e-3; // ** must be relative to roThresh *** otherwise Z scaling will cause a problem
         // This is effectively a density threshold RO Thesis (2.26)
         var nShell:Int=0;
@@ -169,7 +169,7 @@ public class GMatrixROmem3 extends DenseMatrix{self.M==self.N} {
     @Native("c++", "MKL_Set_Num_Threads(#a)") private native static def mklSetNumThreads(a:Int):void;
 
     public def compute(density:Density{self.N==this.N}, mos:MolecularOrbitals{self.N==this.N}) {
-        Console.OUT.printf("\nGMatrixROmem.x10 'public def compute' %s...\n", getDateString()); 
+        Console.OUT.printf("\nGMatrixROmem3.x10 'public def compute' %s...\n", getDateString()); 
         val timer=this.timer; val shellPairs=this.shellPairs; val maxam1=this.maxam1; val numSigShellPairs=this.numSigShellPairs; val ylms=this.ylms;
         val N=this.N;val nOrbital=this.nOrbital; val roN=this.roN; val roNK=this.roNK; val roL=this.roL; val roK=this.roK; val roZ=this.roZ; val omega=this.omega; val roThresh=this.roThresh; val norm=this.norm;
 
@@ -178,6 +178,8 @@ public class GMatrixROmem3 extends DenseMatrix{self.M==self.N} {
         timer.start(TIMER_TOTAL); 
         val jd = JobDefaults.getInstance();
         this.reset(); val gVal = GlobalRef(this);
+        val eJ=new Rail[Double](1); val eK=new Rail[Double](1); 
+        val eJval =  GlobalRef(eJ); val eKval =  GlobalRef(eK);
 
         finish ateach(place in Dist.makeUnique()) async {
             val pid = here.id; Console.OUT.println("pid=" + pid);
@@ -290,7 +292,11 @@ public class GMatrixROmem3 extends DenseMatrix{self.M==self.N} {
             finish for (thNo in 0..(maxTh-1)) async for (var tmu:Int=thNo; tmu<N; tmu+=maxTh) for (var tnu:Int=tmu; tnu<N; tnu++) 
                 gMat(tnu,tmu)=gMat(tmu,tnu)=jMatrix(tmu,tnu)-kMatrix(tmu,tnu);
             
-            at(gVal) async atomic gVal().cellAdd(gMat); 
+            at(gVal) async {
+                atomic gVal().cellAdd(gMat); 
+                 atomic eJval()(0)+=density.clone().mult(density, jMatrix).trace();
+                 atomic eKval()(0)+=density.clone().mult(density, kMatrix).trace();
+            }
             Console.OUT.printf("pid=%d Time INT = %.2f s J = %.2f s K = %.2f s\n", pid, tINT, tJ, tK);
             Console.OUT.flush();
         }
@@ -301,6 +307,7 @@ public class GMatrixROmem3 extends DenseMatrix{self.M==self.N} {
         }
 
         timer.stop(TIMER_TOTAL);
+        Console.OUT.printf("    eJ=%.10f eK=%.10f\n", eJ(0)*.25/jd.roZ, eK(0)*.25/jd.roZ);
         Console.OUT.printf("    Time to construct GMatrix with RO: %.3g seconds\n", (timer.last(TIMER_TOTAL) as Double) / 1e9);
     }
 
