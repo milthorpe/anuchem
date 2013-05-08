@@ -63,7 +63,9 @@ public class HartreeFockSCFMethod extends SCFMethod {
         val hCore   = oneE.getHCore();
         val overlap = oneE.getOverlap();
         @Ifdef("__DEBUG__") {
-            Console.OUT.printf("Checking the ovelap matrix...\n");
+            // See3.4.5 Orthogonalization of the Basis pp.142-145 SO Book
+            Console.OUT.printf("Checking the ovelap matrix...\n"); 
+            // overlap.debugPrint("Overlap");
             val diag = new GMLDiagonalizer();
             diag.diagonalize(overlap);
             val eigval =  diag.getEigenValues().d;;
