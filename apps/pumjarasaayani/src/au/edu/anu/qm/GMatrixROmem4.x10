@@ -346,6 +346,7 @@ public class GMatrixROmem4 extends DenseMatrix{self.M==self.N} {
 
         this.reset();
         this.cellAdd(gMat);
+
         @Ifdef("__DEBUG__") {
         val eJ = density.clone().mult(density, jMatrix).trace();
         val kDmat = new DenseMatrix(N,N);

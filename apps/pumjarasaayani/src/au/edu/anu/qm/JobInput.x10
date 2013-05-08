@@ -105,15 +105,12 @@ public class JobInput {
         try {
             while (line != null && !line.startsWith("end")) {
                 val wrd = StringSplitter.splitOnWhitespace(line);
-				val species = ai.getSpecies(wrd(0));
+		val species = ai.getSpecies(wrd(0));
                 molecule.addAtom(new QMAtom(species.atomicNumber, 
                                    Point3d(Double.parseDouble(wrd(1))/conversion/jd.roZ,
                                             Double.parseDouble(wrd(2))/conversion/jd.roZ,
-                                            Double.parseDouble(wrd(3))/conversion/jd.roZ
-                                    )
-                                ));
-
-                line = fil.readLine();
+                                            Double.parseDouble(wrd(3))/conversion/jd.roZ)));
+               line = fil.readLine();
             }
             line = fil.readLine();
             while (line != null && !line.startsWith("end")) {

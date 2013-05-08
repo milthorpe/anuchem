@@ -142,7 +142,7 @@ public class Molecule[T]{T <: Atom} {
             for(atm:T in atomList) {
                 val atmvec=Vector3d(atm.centre.i+x,atm.centre.j+y,atm.centre.k+z);
                 val distance=atmvec.magnitude()+ai.getVdWRadius(atm.species)/roZ;
-                if (rad1<distance) { 
+                if (rad1<distance && atmvec.magnitude()>1e-15) { //Guard for single atom molecule which produce NaN
                     rad1=distance;
                     dx=-atm.centre.i/atmvec.magnitude()*step;
                     dy=-atm.centre.j/atmvec.magnitude()*step;
@@ -184,7 +184,7 @@ public class Molecule[T]{T <: Atom} {
         val ai = AtomInfo.getInstance();
         var rad:Double=0.;
         for(atm:T in atomList) {
-            val atmvec= Vector3d(atm.centre.i,atm.centre.j,atm.centre.k);
+            val atmvec= Vector3d(atm.centre.i, atm.centre.j, atm.centre.k);
             val distance=atmvec.magnitude()+ai.getVdWRadius(atm.species)/roZ;
             if (rad<distance) rad=distance;
         }

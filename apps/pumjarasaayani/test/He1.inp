@@ -3,7 +3,7 @@ basis 321g
 units 0.5291772109217
 RO_Z 1.0
 molecule
-He	     0.100	     0.020	     0.003
+He	     0.000	     0.000	     0.000
 end
 guess core
 use_RO 1
