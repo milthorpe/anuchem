@@ -327,42 +327,42 @@ public class GMatrixROmem4 extends DenseMatrix{self.M==self.N} {
 
                  timer.stop(TIMER_KMATRIX); tK+=(timer.last(TIMER_KMATRIX) as Double)/1e9;
             }
-       }
-            Console.OUT.println("G matrix"); 
-            // Fix upper half of J (see the definition of shellPairs) ==> sp.mu>sp.nu
-            // Fix the whole matrix ==> if (sp.mu!=sp.nu)
-            finish for (thNo in 0..(maxTh-1)) async for (var spInd:Int=thNo; spInd<numSigShellPairs; spInd+=maxTh) {
-                val sp=shellPairs(spInd);
-                if (sp.mu!=sp.nu) for (var tmu:Int=sp.mu; tmu<=sp.mu2; tmu++) for (var tnu:Int=sp.nu; tnu<=sp.nu2; tnu++) 
-                    jMatrix(tnu,tmu) = jMatrix(tmu,tnu);
-            }
-            // Use the upper half of J and K to form G
-            finish for (thNo in 0..(maxTh-1)) async for (var tmu:Int=thNo; tmu<N; tmu+=maxTh) for (var tnu:Int=tmu; tnu<N; tnu++) 
-                gMat(tnu,tmu)=gMat(tmu,tnu)=jMatrix(tmu,tnu)-kMatrix(tmu,tnu);
+        }
 
-            Console.OUT.printf("Time INT = %.2f s J = %.2f s K = %.2f s\n", tINT, tJ, tK);
-            Console.OUT.flush();
-        //}
+        Console.OUT.println("G matrix"); 
+        // Fix upper half of J (see the definition of shellPairs) ==> sp.mu>sp.nu
+        // Fix the whole matrix ==> if (sp.mu!=sp.nu)
+        finish for (thNo in 0..(maxTh-1)) async for (var spInd:Int=thNo; spInd<numSigShellPairs; spInd+=maxTh) {
+            val sp=shellPairs(spInd);
+            if (sp.mu!=sp.nu) for (var tmu:Int=sp.mu; tmu<=sp.mu2; tmu++) for (var tnu:Int=sp.nu; tnu<=sp.nu2; tnu++) 
+                jMatrix(tnu,tmu) = jMatrix(tmu,tnu);
+        }
+        // Use the upper half of J and K to form G
+        finish for (thNo in 0..(maxTh-1)) async for (var tmu:Int=thNo; tmu<N; tmu+=maxTh) for (var tnu:Int=tmu; tnu<N; tnu++) 
+            gMat(tnu,tmu)=gMat(tmu,tnu)=jMatrix(tmu,tnu)-kMatrix(tmu,tnu);
 
         this.reset();
         this.cellAdd(gMat);
 
-        @Ifdef("__DEBUG__") {
-        val eJ = density.clone().mult(density, jMatrix).trace();
-        val kDmat = new DenseMatrix(N,N);
-        for ([i,j] in ( (0..(N-1))*(0..(N-1)) ) )
-            kDmat(i,j)=kMatrix(i,j);
-        val eK = density.clone().mult(density, kDmat).trace();
-        Console.OUT.printf("  EJ = %.10f EK=%.10f\n", .25*eJ/jd.roZ, .25*eK/jd.roZ);
-        }
+        Console.OUT.printf("Time INT = %.2f s J = %.2f s K = %.2f s\n", tINT, tJ, tK);
+        Console.OUT.flush();
 
+        timer.stop(TIMER_TOTAL);
+        Console.OUT.printf("    Time to construct GMatrix with RO: %.3g seconds\n", (timer.last(TIMER_TOTAL) as Double) / 1e9);
+ 
         @Ifdef("__PAPI__"){
             papi.printFlops();
             papi.printMemoryOps();
         }
 
-        timer.stop(TIMER_TOTAL);
-        Console.OUT.printf("    Time to construct GMatrix with RO: %.3g seconds\n", (timer.last(TIMER_TOTAL) as Double) / 1e9);
+        @Ifdef("__DEBUG__") {
+            val eJ = density.clone().mult(density, jMatrix).trace();
+            val kDmat = new DenseMatrix(N,N);
+            for ([i,j] in ( (0..(N-1))*(0..(N-1)) ) )
+                kDmat(i,j)=kMatrix(i,j);
+            val eK = density.clone().mult(density, kDmat).trace();
+            Console.OUT.printf("  EJ = %.10f EK=%.10f\n", .25*eJ/jd.roZ, .25*eK/jd.roZ);
+        }
     }
 
     private def getDateString() {
