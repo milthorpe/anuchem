@@ -16,7 +16,7 @@
     <property name="fmm" location="../fmm"/>
     <property name="fmm.props" location="${fmm}/fmm.properties"/>
     <property name="fftw" location="../../fftw_wrapper"/>
-    <property name="fftw.props" location="${fftw}/fftw_${x10rt}.properties" />
+    <property name="fftw.props" location="${fftw}/fftw.properties" />
     <property name="fftw3.include" location="${user.home}/fftw/include" />
     <property name="fftw3.lib" location="${user.home}/fftw/lib" />
     <property name="x10.testlib" location="${env.X10_HOME}/../x10.tests/examples/x10lib"/>
