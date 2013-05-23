@@ -6,7 +6,7 @@
  *  You may obtain a copy of the License at
  *      http://www.opensource.org/licenses/eclipse-1.0.php
  *
- * (C) Copyright Australian National University 2010.
+ * (C) Copyright Australian National University 2010-2013.
  * (C) Copyright Josh Milthorpe 2010.
  */
 package au.edu.anu.chem;
@@ -22,20 +22,19 @@ import x10.util.Pair;
  * @author milthorpe, V. Ganesh
  */
 public class Atom { 
-
     /** The location of the atomic nucleus. */
-    public var centre : Point3d;
+    public var centre:Point3d;
 
     /** A list of atoms to which this atom is bonded. */
-    private var bonds : ArrayList[Pair[BondType, Atom]];
+    private var bonds:ArrayList[Pair[BondType, Atom]];
 
     /** The unique identifier for this atom species within a given simulation. */
     public val species:Int;
 
     /** Index of this atom within a molecule or system. */
-    public var index:Int;
+    public var index:Long;
 
-    public def setIndex(i:Int) { index = i; }
+    public def setIndex(i:Long) { index = i; }
     public def getIndex() = index;
 
     public def this(species:Int, centre : Point3d) { 

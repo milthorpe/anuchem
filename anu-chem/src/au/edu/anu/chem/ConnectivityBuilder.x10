@@ -6,7 +6,7 @@
  *  You may obtain a copy of the License at
  *      http://www.opensource.org/licenses/eclipse-1.0.php
  *
- * (C) Copyright Australian National University 2010-2012.
+ * (C) Copyright Australian National University 2010-2013.
  */
 package au.edu.anu.chem;
 
@@ -85,7 +85,7 @@ public class ConnectivityBuilder[T]{T <: Atom} {
                     val bonds1 = atom.getBonds();
                     val bonds2 = atomI.getBonds();
 
-                    if ((bonds1.size()==0) || (bonds2.size()==0)) {
+                    if ((bonds1.size()==0L) || (bonds2.size()==0L)) {
                        atom.addBond(BondType.WEAK_BOND, atomI);
                        continue;
                     } // end if
@@ -142,10 +142,10 @@ public class ConnectivityBuilder[T]{T <: Atom} {
        val noOfAtoms = mol.getNumberOfAtoms();
        
        val color  = new Rail[Int](noOfAtoms, WHITE);
-       val parent = new Rail[Int](noOfAtoms, -1);
+       val parent = new Rail[Long](noOfAtoms, -1L);
 
        // detect rings
-       for(var i:Int=0; i<noOfAtoms; i++) {
+       for(var i:Long=0; i<noOfAtoms; i++) {
           if (color(i) == WHITE) {
              traverseAndRecordRing(mol, i, color, parent);   
           } // end if 
@@ -189,14 +189,14 @@ public class ConnectivityBuilder[T]{T <: Atom} {
        } // end for
    }
 
-   private def traverseAndRecordRing(mol:Molecule[T], v:Int, color:Rail[Int], parent:Rail[Int]) {
+   private def traverseAndRecordRing(mol:Molecule[T], v:Long, color:Rail[Int], parent:Rail[Long]) {
         color(v) = GRAY;  // this vertex is to be processed now
         
         val bonds = mol.getAtom(v).getBonds();
-        var atomIndex:Int;
+        var atomIndex:Long;
         
         // traverse the strongly connected ones only
-        for(bond in bonds) {
+        for (bond in bonds) {
             atomIndex = bond.second.getIndex();
             
             if (bond.first != BondType.WEAK_BOND || bond.first != BondType.NO_BOND) {
@@ -208,13 +208,13 @@ public class ConnectivityBuilder[T]{T <: Atom} {
                     
                     theRing.addAtom(mol.getAtom(atomIndex));
                     
-                    var vertex:Int = atomIndex;
+                    var vertex:Long = atomIndex;
                     
                     // record the cycle
                     while(true) {
                         vertex = parent(vertex);
                         
-                        if (vertex == -1) { 
+                        if (vertex == -1L) { 
                             break;
                         } else if (vertex == v) {
                             theRing.addAtom(mol.getAtom(vertex));

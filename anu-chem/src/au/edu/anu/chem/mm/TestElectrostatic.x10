@@ -10,8 +10,11 @@
  */
 package au.edu.anu.chem.mm;
 
+import x10.array.Dist;
+import x10.array.DistArray;
 import x10.util.Random;
 import x10.util.ArrayList;
+
 import x10x.vector.Point3d;
 import au.edu.anu.chem.mm.MMAtom;
 import au.edu.anu.util.Timer;

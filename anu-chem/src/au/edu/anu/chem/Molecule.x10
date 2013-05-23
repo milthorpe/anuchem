@@ -66,16 +66,16 @@ public class Molecule[T]{T <: Atom} {
         maxExtent = Math.max(maxExtent, Math.abs(atm.centre.k));      
     }
 
-    public def getAtom(index:Int) : T = atomList.get(index);
+    public def getAtom(index:Long):T = atomList.get(index);
     public def getAtoms() = atomList;
-    public def getNumberOfAtoms() : Int = atomList.size();
+    public def getNumberOfAtoms():Long = atomList.size();
     public def getCharge() : Int = charge;
     public def getMultiplicity() : Int = multiplicity;
 
     public def addRing(r:Ring[T]) { ringList.add(r); }
     public def getRings() : ArrayList[Ring[T]] = ringList;
 
-    public def getNumberOfElectrons() : int {
+    public def getNumberOfElectrons():Int {
        val ai = AtomInfo.getInstance();
        var ne:Int = 0;
        for(atm:T in atomList)
@@ -192,7 +192,7 @@ public class Molecule[T]{T <: Atom} {
         return rad; 
     }
 
-	public def lookupSpecies(symbol:String):Int {
+	public def lookupSpecies(symbol:String):Long {
 		for (i in 0..(speciesList.size()-1)) {
 			if (speciesList(i) == symbol) return i;
 		}
