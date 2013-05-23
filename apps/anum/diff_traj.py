@@ -53,7 +53,7 @@ for snap in range(1,numSnapshots+1):
     normv = 0.0
     j=0
     for i in range(0,natoms1[0]):
-        while (atoms2[j][0] < atoms1[i][0]):
+        while (j < natoms2[0] and atoms2[j][0] < atoms1[i][0]):
             j = j+1
         if (j >= natoms2[0]):
             break
