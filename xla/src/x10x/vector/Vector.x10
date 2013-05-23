@@ -6,7 +6,7 @@
  *  You may obtain a copy of the License at
  *      http://www.opensource.org/licenses/eclipse-1.0.php
  *
- * (C) Copyright Australian National University 2010.
+ * (C) Copyright Australian National University 2010-2013.
  * (C) Copyright Josh Milthorpe 2011-2013.
  */
 package x10x.vector;
@@ -26,7 +26,7 @@ public class Vector {
     /**
      * Construct a Vector of dimension N
      */
-    public def this(siz:Int) { 
+    public def this(siz:Long) { 
         vec = new Rail[Double](siz);
     }
 
@@ -37,11 +37,9 @@ public class Vector {
         this.vec = vec;
     }
 
-    private static def makeUnsafe(size:Int) {
-        return new Vector(size);
-        // TODO for X10 2.4
-        //val store = Unsafe.allocRailUninitialized[Double](size);
-        //return new Vector(store);
+    private static def makeUnsafe(size:Long) {
+        val store = Unsafe.allocRailUninitialized[Double](size);
+        return new Vector(store);
     }
 
     /**
@@ -50,10 +48,10 @@ public class Vector {
     public def this(mat:Matrix) {
         this(mat.getRowCount()*mat.getColCount());
          
-        var ii:Int = 0;
+        var ii:Long = 0;
         val m = mat.getMatrix();
 
-        for([i,j] in m.region)
+        for([i,j] in m.indices())
             vec(ii++) =  m(i, j);
     }
  
@@ -67,11 +65,11 @@ public class Vector {
      */
     public def getVector() = vec;
 
-    public @Inline operator this(i0:Int) : Double {
+    public @Inline operator this(i0:Long) : Double {
         return vec(i0);
     }
 
-    public @Inline operator this(i0:Int)=(v:Double) : Double {
+    public @Inline operator this(i0:Long)=(v:Double) : Double {
         vec(i0) = v;
         return v;
     }
