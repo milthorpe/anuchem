@@ -10,8 +10,8 @@
  */
 package au.edu.anu.chem.mm;
 
-import x10.array.Dist;
-import x10.array.DistArray;
+import x10.regionarray.Dist;
+import x10.regionarray.DistArray;
 import x10.util.Random;
 import x10.util.ArrayList;
 
@@ -52,7 +52,7 @@ public class TestElectrostatic {
     }
 
 
-    public def generateAtoms(numAtoms:Int) : DistArray[Rail[MMAtom]](1) {
+    public def generateAtoms(numAtoms:Long) : DistArray[Rail[MMAtom]](1) {
         return generateAtoms(numAtoms, true);
     }
 
@@ -62,7 +62,7 @@ public class TestElectrostatic {
      * Locate all particles within a small displacement from points on 
      * a cbrt(N) grid of size SIZE, centered at the origin.
      */
-    public def generateAtoms(numAtoms:Int, perturb:Boolean) : DistArray[Rail[MMAtom]](1) {
+    public def generateAtoms(numAtoms:Long, perturb:Boolean) : DistArray[Rail[MMAtom]](1) {
         val charge = 1.0 / numAtoms; // keep charge density constant
         //Console.OUT.println("size of cluster =  " + sizeOfCentralCluster());
         val gridSize = (Math.ceil(Math.cbrt(numAtoms)) as Int);
@@ -75,10 +75,10 @@ public class TestElectrostatic {
             val chunkSize = (numAtoms / Place.MAX_PLACES) + ((numAtoms % Place.MAX_PLACES > 0) ? 1 : 0);
             val startHere = here.id * chunkSize;
             val endHere = Math.min(numAtoms, (here.id+1) * chunkSize);
-            val numAtomsHere = Math.max(0, endHere-startHere-1);
+            val numAtomsHere = Math.max(0L, endHere-startHere-1);
             val atomsHere = new Rail[MMAtom](numAtomsHere);
             var i:Int = 0;
-            for(var gridPoint:Int=startHere; gridPoint<endHere; gridPoint++) {
+            for(gridPoint in startHere..(endHere-1)) {
                 val gridX = gridPoint / (gridSize * gridSize);
                 val gridY = (gridPoint - (gridX * gridSize * gridSize)) / gridSize;
                 val gridZ = gridPoint - (gridX * gridSize * gridSize) - (gridY * gridSize);

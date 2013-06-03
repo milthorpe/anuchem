@@ -10,6 +10,13 @@
  */
 package au.edu.anu.pme;
 
+import x10.compiler.Inline;
+import x10.regionarray.Dist;
+import x10.regionarray.DistArray;
+import x10.util.ArrayList;
+import x10.util.HashMap;
+import x10.util.Pair;
+
 import x10x.vector.Point3d;
 import x10x.vector.Vector3d;
 import au.edu.anu.chem.PointCharge;
@@ -17,11 +24,6 @@ import au.edu.anu.chem.mm.MMAtom;
 import au.edu.anu.fft.Distributed3dFft;
 import au.edu.anu.util.Timer;
 //import org.netlib.fdlibm.Erf;
-
-import x10.compiler.Inline;
-import x10.util.ArrayList;
-import x10.util.HashMap;
-import x10.util.Pair;
 
 /**
  * This class implements a Smooth Particle Mesh Ewald method to calculate
@@ -147,8 +149,8 @@ public class PME {
         val K2 = gridSize(1) as Double;
         val K3 = gridSize(2) as Double;
         this.edges = edges;
-        this.edgeLengths = new Array[Double](3, (i : Int) => edges(i).length());
-        this.edgeReciprocals = new Array[Vector3d](3, (i : Int) => edges(i).inverse());
+        this.edgeLengths = new Rail[Double](3, (i : Int) => edges(i).length());
+        this.edgeReciprocals = new Rail[Vector3d](3, (i : Int) => edges(i).inverse());
         this.scalingVector = Vector3d(edges(0).inverse().i * K1, edges(1).inverse().j * K2, edges(2).inverse().k * K3);
         this.K1 = K1;
         this.K2 = K2;
@@ -292,7 +294,7 @@ public class PME {
         }
         val subCells = this.subCells; // TODO shouldn't be necessary XTENLANG-1913
         finish ateach([i,j,k] in subCells) {
-            subCells(i,j,k) = subCellsTemp(i,j,k).toArray();
+            subCells(i,j,k) = subCellsTemp(i,j,k).toRail();
         }
     }
 
@@ -324,7 +326,7 @@ public class PME {
                 finish for (placeEntry in haloPlaces.entries()) async {
                     val placeId = placeEntry.getKey();
                     val haloForPlace = placeEntry.getValue();
-                    val haloListArray = haloForPlace.toArray();
+                    val haloListArray = haloForPlace.toRail();
                     if (placeId == here.id) {
                         // atoms cache is just a set of pointers to sub cells that are here
                         for (i in 0..(haloListArray.size-1)) {
@@ -349,7 +351,7 @@ public class PME {
 	 * TODO should use instance fields instead of all those parameters - XTENLANG-1913
      */
     private static def getAtomsForSubcellList(subCells : DistArray[Rail[PointCharge]](3), boxList : Rail[Point(3)]) {
-        val atoms = new Array[Rail[PointCharge]](boxList.size, 
+        val atoms = new Rail[Rail[PointCharge]](boxList.size, 
                                                  (i : Int) => subCells(boxList(i)));
         return atoms;
     }
@@ -487,9 +489,9 @@ public class PME {
 
                 val subCellHaloRegion = PME.getSubcellHaloRegionForPlace(gridSize0, numSubCells, splineOrder, localGridRegion, subCellRegion);
                 //Console.OUT.println("subCellHaloRegion at " + here + " = " + subCellHaloRegion);
-                val iSpline = new Array[Double](splineOrder);
-                val jSpline = new Array[Double](splineOrder);
-                val kSpline = new Array[Double](splineOrder);
+                val iSpline = new Rail[Double](splineOrder);
+                val jSpline = new Rail[Double](splineOrder);
+                val kSpline = new Rail[Double](splineOrder);
 
                 val qiMin = localGridRegion.min(0);
                 val qiMax = localGridRegion.max(0);
@@ -627,7 +629,7 @@ public class PME {
 		val K2 = this.K2; // TODO shouldn't be necessary XTENLANG-1913;
 		val K3 = this.K3; // TODO shouldn't be necessary XTENLANG-1913;
         finish ateach(place1 in Dist.makeUnique()) {
-            val splines = new Array[Double](splineOrder);
+            val splines = new Rail[Double](splineOrder);
             for (k in 1..(splineOrder-1)) {
                 splines(k) = bSpline(splineOrder, k);
             }

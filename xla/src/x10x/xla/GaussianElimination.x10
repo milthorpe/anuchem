@@ -10,7 +10,7 @@
  */
 package x10x.xla;
 
-import x10.simplearray.Array_2;
+import x10.array.Array_2;
 
 import x10x.vector.Vector;
 import x10x.matrix.Matrix;

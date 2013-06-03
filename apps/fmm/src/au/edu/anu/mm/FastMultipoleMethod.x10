@@ -359,7 +359,7 @@ public class FastMultipoleMethod {
                 }
             }
         }
-        assignAtomsToOctantsLocal(localAtoms.toArray());
+        assignAtomsToOctantsLocal(localAtoms.toRail());
 
         Team.WORLD.barrier(here.id);
         FastMultipoleMethod.localData.timer.stop(FmmLocalData.TIMER_INDEX_TREE);
@@ -726,7 +726,7 @@ public class FastMultipoleMethod {
         finish for (placeEntry in uListPlaces.entries()) async {
             val placeId = placeEntry.getKey();
             val uListForPlace = placeEntry.getValue();
-            val uListArray = uListForPlace.toArray();
+            val uListArray = uListForPlace.toRail();
             val atomsForPlace = (placeId == here.id) ?
                 FastMultipoleMethod.getAtomsForOctantList(uListArray) :
                 at(Place.place(placeId)) { FastMultipoleMethod.getAtomsForOctantList(uListArray)};

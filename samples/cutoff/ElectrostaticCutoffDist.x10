@@ -138,7 +138,7 @@ public class ElectrostaticCutoffDist extends TestElectrostatic {
         }
         val subCells = this.subCells; // TODO shouldn't be necessary XTENLANG-1913
         finish ateach([i,j,k] in subCells) {
-            subCells(i,j,k) = subCellsTemp(i,j,k).toArray();
+            subCells(i,j,k) = subCellsTemp(i,j,k).toRail();
         }
         timer.stop(TIMER_INDEX_SETUP);
     }
@@ -176,7 +176,7 @@ public class ElectrostaticCutoffDist extends TestElectrostatic {
                 finish for (placeEntry in haloPlaces.entries()) async {
                     val placeId = placeEntry.getKey();
                     val haloForPlace = placeEntry.getValue();
-                    val haloListArray = haloForPlace.toArray();
+                    val haloListArray = haloForPlace.toRail();
                     if (placeId == here.id) {
                         // atoms cache is just a set of pointers to sub cells that are here
                         for (i in 0..(haloListArray.size-1)) {

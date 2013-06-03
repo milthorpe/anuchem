@@ -10,6 +10,8 @@
  */
 package au.edu.anu.pme;
 
+import x10.regionarray.Dist;
+import x10.regionarray.DistArray;
 import x10.util.ArrayList;
 
 import x10x.vector.Point3d;
@@ -34,7 +36,7 @@ public class TestPMEWaterBox extends TestElectrostatic {
     public def sizeOfCentralCluster() { return size; }
     public def boxSize() { return size; }
 
-    public static def main(args : Array[String](1)) {
+    public static def main(args:Rail[String]) {
         var structureFileName : String;
         var ewaldCoefficient : Double = 0.35;
         var cutoff : Double = 10.0;
@@ -74,7 +76,7 @@ public class TestPMEWaterBox extends TestElectrostatic {
 
         val edges = [Vector3d(size, 0.0, 0.0), Vector3d(0.0, size, 0.0), Vector3d(0.0, 0.0, size)];
         val g = gridSize;
-        val gridSizes = new Array[Int](3, g);
+        val gridSizes = new Rail[Int](3, g);
 
         Console.OUT.println("Testing PME with structure file " + structureFileName
             + "\nBox edges: " + edges(0) + "," + edges(1) + "," + edges(2)
@@ -106,7 +108,7 @@ public class TestPMEWaterBox extends TestElectrostatic {
                 Console.ERR.println("could not map atom to place: " + atom.centre);
             }
         }
-        val atoms = DistArray.make[Rail[MMAtom]](Dist.makeUnique(), ([p] : Point) => tempAtoms(p).toArray());
+        val atoms = DistArray.make[Rail[MMAtom]](Dist.makeUnique(), ([p] : Point) => tempAtoms(p).toRail());
 
         val pme = new PME(edges, gridSizes, atoms, splineOrder, ewaldCoefficient, cutoff);
         pme.setup();

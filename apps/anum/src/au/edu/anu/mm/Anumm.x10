@@ -149,7 +149,7 @@ public class Anumm {
                 atomic { tempAtoms(p).add(remoteAtom); }
             }
         }
-        val atoms = DistArray.make[Rail[MMAtom]](Dist.makeUnique(), ([p] : Point) => tempAtoms(p).toArray());
+        val atoms = DistArray.make[Rail[MMAtom]](Dist.makeUnique(), ([p] : Point) => tempAtoms(p).toRail());
         return atoms;
     }
 

@@ -78,7 +78,7 @@ public struct ShellList {
             for(var i:Int=0; i<sp.size(); i++) shellPrimitives.add(sp(i));
         }
 
-        return shellPrimitives.toArray();
+        return shellPrimitives.toRail();
     }
 
     public def getNumberOfShellPairs() : Int {

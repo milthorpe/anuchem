@@ -103,7 +103,7 @@ public class ElectrostaticCutoff {
             subCellsTemp(i,j,k).add(atom);
         }
         for([i,j,k] in subCells) {
-            subCells(i,j,k) = subCellsTemp(i,j,k).toArray();
+            subCells(i,j,k) = subCellsTemp(i,j,k).toRail();
         }
         timer.stop(TIMER_INDEX_SETUP);
     }

@@ -203,7 +203,7 @@ public class TestCyclotron {
             }
         }
 
-        val trap = new PenningTrap(totalIons, V, new Vector3d(0.0, 0.0, B), edgeLength, fmmDMax, fmmTerms, speciesList.toArray());
+        val trap = new PenningTrap(totalIons, V, new Vector3d(0.0, 0.0, B), edgeLength, fmmDMax, fmmTerms, speciesList.toRail());
 
         var resumeStep:Int = 0;
         if (snapshotFileName != null) {

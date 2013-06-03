@@ -10,8 +10,8 @@
  */
 package au.edu.anu.chem.mm;
 
-import x10.array.Dist;
-import x10.array.DistArray;
+import x10.regionarray.Dist;
+import x10.regionarray.DistArray;
 import x10.compiler.Uncounted;
 import x10.util.Team;
 

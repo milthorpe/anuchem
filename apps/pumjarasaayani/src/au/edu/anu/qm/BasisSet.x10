@@ -127,7 +127,7 @@ public class BasisSet {
                         line = fil.readLine();
                     }
 
-                    val atomBasis = new AtomicBasis(orbitalList.toArray());
+                    val atomBasis = new AtomicBasis(orbitalList.toRail());
 
                     val species = ai.getSpecies(symbol);
                     basisInfo.put(species.atomicNumber, atomBasis);
