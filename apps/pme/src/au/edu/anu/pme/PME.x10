@@ -11,8 +11,11 @@
 package au.edu.anu.pme;
 
 import x10.compiler.Inline;
+import x10.regionarray.Array;
 import x10.regionarray.Dist;
 import x10.regionarray.DistArray;
+import x10.regionarray.Region;
+import x10.regionarray.PeriodicDist;
 import x10.util.ArrayList;
 import x10.util.HashMap;
 import x10.util.Pair;
@@ -149,15 +152,15 @@ public class PME {
         val K2 = gridSize(1) as Double;
         val K3 = gridSize(2) as Double;
         this.edges = edges;
-        this.edgeLengths = new Rail[Double](3, (i : Int) => edges(i).length());
-        this.edgeReciprocals = new Rail[Vector3d](3, (i : Int) => edges(i).inverse());
+        this.edgeLengths = new Rail[Double](3, (i:Long) => edges(i).length());
+        this.edgeReciprocals = new Rail[Vector3d](3, (i:Long) => edges(i).inverse());
         this.scalingVector = Vector3d(edges(0).inverse().i * K1, edges(1).inverse().j * K2, edges(2).inverse().k * K3);
         this.K1 = K1;
         this.K2 = K2;
         this.K3 = K3;
 
         this.atoms = atoms;
-        val gridRegion = (0..(gridSize(0)-1)) * (0..(gridSize(1)-1)) * (0..(gridSize(2)-1));
+        val gridRegion = Region.makeRectangular([0..(gridSize(0)-1) as IntRange, 0..(gridSize(1)-1), 0..(gridSize(2)-1)]);
         val gridDist = Dist.makeBlockBlock(gridRegion, 0, 1);
         this.gridDist = gridDist;
         this.splineOrder = splineOrder;
@@ -165,7 +168,7 @@ public class PME {
         this.cutoff = cutoff;
         this.imageTranslations = DistArray.make[Array[Vector3d](3){rect}](
             Dist.makeUnique(), 
-            new Array[Vector3d](-1..1 * -1..1 * -1..1, 
+            new Array[Vector3d](Region.makeRectangular([-1..1 as IntRange, -1..1, -1..1]), 
                 ([i,j,k] : Point(3)) => (edges(0).mul(i)).add(edges(1).mul(j)).add(edges(2).mul(k))) 
         );
 
@@ -173,7 +176,7 @@ public class PME {
             Console.ERR.println("warning: edge length " + edgeLengths(0) + " is not an exact multiple of (cutoff/2.0) " + (cutoff/2.0));
         }
         val numSubCells = Math.ceil(edgeLengths(0) / (cutoff/2.0)) as Int;
-        val subCellRegion = 0..(numSubCells-1) * 0..(numSubCells-1) * 0..(numSubCells-1);
+        val subCellRegion = Region.makeRectangular([0..(numSubCells-1) as IntRange, 0..(numSubCells-1), 0..(numSubCells-1)]);
         val subCells = DistArray.make[Rail[PointCharge]](new PeriodicDist(Dist.makeBlockBlock(subCellRegion, 0, 1)));
         //Console.OUT.println("subCells dist = " + subCells.dist);
         this.subCells = subCells;
@@ -309,7 +312,7 @@ public class PME {
         finish ateach(p in atomsCache) {
             val myAtomsCache = atomsCache(here.id);
             if (myAtomsCache != null) {
-                val haloPlaces = new HashMap[Int,ArrayList[Point(3)]](8); // a place may have up to 8 immediate neighbours in the two block-divided dimensions
+                val haloPlaces = new HashMap[Long,ArrayList[Point(3)]](8); // a place may have up to 8 immediate neighbours in the two block-divided dimensions
                 
                 // separate the halo subcells into partial lists stored at each nearby place
                 for (boxIndex in myAtomsCache.region) {
@@ -352,7 +355,7 @@ public class PME {
      */
     private static def getAtomsForSubcellList(subCells : DistArray[Rail[PointCharge]](3), boxList : Rail[Point(3)]) {
         val atoms = new Rail[Rail[PointCharge]](boxList.size, 
-                                                 (i : Int) => subCells(boxList(i)));
+                                                 (i:Long) => subCells(boxList(i)));
         return atoms;
     }
 
@@ -372,19 +375,19 @@ public class PME {
             for ([x,y,z] in localRegion) async {
                 val thisCell = cachedAtoms(x,y,z) as Rail[PointCharge];
                 var myDirectEnergy : Double = 0.0;
-                for (var i : Int = x-2; i<=x; i++) {
+                for (var i:Long = x-2; i<=x; i++) {
                     var n1 : Int = 0;
                     if (i < 0) {
                         n1 = -1;
                     } // can't have (i > numSubCells+1)
-                    for (var j : Int = y-2; j<=y+2; j++) {
+                    for (var j:Long = y-2; j<=y+2; j++) {
                         var n2 : Int = 0;
                         if (j < 0) {
                             n2 = -1;
                         } else if (j > numSubCells-1) {
                             n2 = 1;
                         }
-                        for (var k : Int = z-2; k<=z+2; k++) {
+                        for (var k:Long = z-2; k<=z+2; k++) {
                             var n3 : Int = 0;
                             if (k < 0) {
                                 n3 = -1;
