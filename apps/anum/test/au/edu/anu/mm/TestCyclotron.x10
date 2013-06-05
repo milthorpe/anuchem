@@ -34,7 +34,7 @@ import au.edu.anu.util.StringSplitter;
  * @author milthorpe
  */
 public class TestCyclotron {
-    public static def main(args : Array[String](1)) {
+    public static def main(args:Rail[String]) {
         if (args.size > 0) {
             val inputFile = args(0);
             var snapshotFile:String = null;

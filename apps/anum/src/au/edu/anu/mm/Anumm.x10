@@ -86,7 +86,7 @@ public class Anumm {
         }
     }
 
-    public static def main(args : Array[String](1)) {
+    public static def main(args:Rail[String]) {
         var structureFileName : String = null;
         var timestep : Double = 0.2;
         var numSteps : Int = 200;

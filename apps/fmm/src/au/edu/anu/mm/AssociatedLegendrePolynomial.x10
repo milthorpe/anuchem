@@ -25,7 +25,7 @@ public class AssociatedLegendrePolynomial {
     public val p : Int;
 
     public def this(p : Int) {
-        this.terms = new Array[Double]((p+1)*(p+1));
+        this.terms = new Rail[Double]((p+1)*(p+1));
         this.p = p;
     }
 

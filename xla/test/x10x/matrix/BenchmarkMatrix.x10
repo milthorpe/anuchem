@@ -56,7 +56,7 @@ public class BenchmarkMatrix extends x10Test {
         return a;
     }
 
-    public static def main(args : Array[String](1)) {
+    public static def main(args:Rail[String]) {
         var N : Int = 70;
         if (args.size > 0) {
             N = Int.parseInt(args(0));

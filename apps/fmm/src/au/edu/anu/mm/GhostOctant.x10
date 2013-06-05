@@ -57,16 +57,16 @@ public class GhostOctant extends Octant implements Comparable[Octant] {
     /** 
      * Go to home place of this octant and return multipole expansion (once computed).
      */
-    protected def upward():Pair[Int,MultipoleExpansion] {
+    protected def upward():Pair[Long,MultipoleExpansion] {
         val mortonId = id.getMortonId();
         val result = at(Place(placeId)) GhostOctant.upwardRemote(mortonId);
         if (result != null) {
             numAtoms = result.numAtoms;
             target = result.target;
             //Console.OUT.println("at " + here + " GhostOctant.upward for " + id + " held at " + placeId + " numAtoms = " + numAtoms);
-            return Pair[Int,MultipoleExpansion](result.numAtoms, result.multipoleExp);
+            return Pair[Long,MultipoleExpansion](result.numAtoms, result.multipoleExp);
         } else {
-            return Pair[Int,MultipoleExpansion](0, null);
+            return Pair[Long,MultipoleExpansion](0L, null);
         }
     }
 

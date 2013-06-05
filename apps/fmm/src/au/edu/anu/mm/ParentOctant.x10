@@ -24,10 +24,10 @@ import x10x.vector.Vector3d;
  */
 public class ParentOctant extends Octant implements Comparable[ParentOctant] {
 
-    public val children:Rail[Octant] = new Array[Octant](8);
+    public val children:Rail[Octant] = new Rail[Octant](8);
 
     /** The number of atoms in all boxes below this box. */
-    private var numAtoms:Int;
+    private var numAtoms:Long;
 
     /**
      * Creates a new FmmBox with multipole and local expansions
@@ -39,8 +39,7 @@ public class ParentOctant extends Octant implements Comparable[ParentOctant] {
 
     public def countOctants():Int {
         var octants:Int = 0;
-        for ([i] in children) {
-            val child = children(i);
+        for (child in children) {
             if (child != null) {
                 octants += child.countOctants();
             }
@@ -50,8 +49,7 @@ public class ParentOctant extends Octant implements Comparable[ParentOctant] {
 
     public def ghostOctants():Int {
         var ghostOctants:Int = 0;
-        for ([i] in children) {
-            val child = children(i);
+        for (child in children) {
             if (child != null) {
                 ghostOctants += child.ghostOctants();
             }
@@ -67,13 +65,13 @@ public class ParentOctant extends Octant implements Comparable[ParentOctant] {
      * For each shared octant, combines multipole expansions for <= 8 child
      * octants into a single multipole expansion for the parent octant.
      */
-    protected def upward():Pair[Int,MultipoleExpansion] {
+    protected def upward():Pair[Long,MultipoleExpansion] {
         //Console.OUT.println("at " + here + " ParentOctant.upward for " + id + " children.size = " + children.size);
         numAtoms = 0; // reset
 
-        val childExpansions = new Array[Pair[Int,MultipoleExpansion]](8);
+        val childExpansions = new Rail[Pair[Long,MultipoleExpansion]](8);
         finish {
-            for ([i] in children) {
+            for (i in 0..(children.size-1)) {
                 val child = children(i);
                 if (child != null) async {
                     childExpansions(i) = child.upward();
@@ -115,14 +113,13 @@ public class ParentOctant extends Octant implements Comparable[ParentOctant] {
         if (nonNullChildren) {
             sendMultipole();
         } else {
-            return Pair[Int,MultipoleExpansion](0, null);
+            return Pair[Long,MultipoleExpansion](0L, null);
         }
-        return Pair[Int,MultipoleExpansion](numAtoms, this.multipoleExp);
+        return Pair[Long,MultipoleExpansion](numAtoms, this.multipoleExp);
     }
 
     public def multipolesToLocal() {
-        for ([i] in children) {
-            val child = children(i);
+        for (child in children) {
             if (child != null && !(child instanceof GhostOctant)) {
                 async child.multipolesToLocal();
             }

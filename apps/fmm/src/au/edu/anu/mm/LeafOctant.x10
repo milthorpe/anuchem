@@ -42,7 +42,7 @@ public class LeafOctant extends Octant implements Comparable[LeafOctant] {
     }
 
     public def makeSources() {
-        this.sources = new Array[Double](atoms.size()*4);
+        this.sources = new Rail[Double](atoms.size()*4);
         for (i in 0..(atoms.size()-1)) {
             val atom = atoms(i);
             val idx = i*4;
@@ -70,7 +70,7 @@ public class LeafOctant extends Octant implements Comparable[LeafOctant] {
      * simply the sum of the contributions of the particles in the octant.
      * N.B. must only be called once per pass
      */
-    protected def upward():Pair[Int,MultipoleExpansion] {
+    protected def upward():Pair[Long,MultipoleExpansion] {
         if (atoms.size() > 0) {
             multipoleExp.clear();
             localExp.clear();
@@ -89,9 +89,9 @@ public class LeafOctant extends Octant implements Comparable[LeafOctant] {
 
             sendMultipole();
 
-            return Pair[Int,MultipoleExpansion](atoms.size(), this.multipoleExp);
+            return Pair[Long,MultipoleExpansion](atoms.size(), this.multipoleExp);
         } else {
-            return Pair[Int,MultipoleExpansion](0, null);
+            return Pair[Long,MultipoleExpansion](0L, null);
         }
     }
 
@@ -303,7 +303,7 @@ public class LeafOctant extends Octant implements Comparable[LeafOctant] {
 
         // interact with dummy singly-charged ions in random positions offset by [39,39,39]
         val dummyData = new Rail[Double](q*4, 
-                (i:Int) => (i%4==3)? 1.0 : rand.nextDouble()+39.0);
+                (i:Long) => (i%4==3L)? 1.0 : rand.nextDouble()+39.0);
 
         val start = System.nanoTime();
         for (i in 0..1000) {
@@ -336,7 +336,7 @@ public class LeafOctant extends Octant implements Comparable[LeafOctant] {
         val maxZ:UByte;
 
         public def this(id:OctantId, ws:Int) {
-            val levelDim = Math.pow2(id.level);
+            val levelDim = 1UY << id.level;
             minX = Math.max(0,id.x-ws) as UByte;
             maxX = Math.min(levelDim-1,id.x+ws) as UByte;
             minY = Math.max(0,id.y-ws) as UByte;

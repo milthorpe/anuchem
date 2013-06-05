@@ -172,7 +172,7 @@ public class PumjaRasaayani {
         return inputFileDir + "basis";
     }
 
-    public static def main(args : Array[String](1)) {
+    public static def main(args:Rail[String]) {
         if (args.size != 1) {
             Console.ERR.println("usage: pumjarasaayani <inputFile>");
             System.setExitCode(1);

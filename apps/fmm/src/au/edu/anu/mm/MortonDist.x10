@@ -157,7 +157,7 @@ public final class MortonDist extends Dist(3) {
     }
 
     public def regions():Sequence[Region(rank)] {
-        return new Array[Region(rank)](pg.numPlaces(), (i:Int)=>mortonRegionForPlace(pg(i))).sequence();
+        return new Rail[Region(rank)](pg.numPlaces(), (i:Int)=>mortonRegionForPlace(pg(i))).sequence();
     }
 
     public def restriction(r:Region(rank)):Dist(rank) {

@@ -10,7 +10,9 @@
  */
 package au.edu.anu.mm;
 
-import x10x.vector.*;
+import x10.regionarray.Array;
+
+import x10x.vector.Vector3d;
 import x10x.polar.Polar3d;
 
 /**

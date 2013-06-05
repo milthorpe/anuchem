@@ -32,7 +32,7 @@ public class TestQM {
         Console.OUT.println("Test result: " + equalsTo(runInput(path + "h2.inp", 1), -1.010695544230642, 1e-5));
     }
 
-    public static def main(args : Array[String](1)) {
+    public static def main(args:Rail[String]) {
         new TestQM().run();
     } 
 }

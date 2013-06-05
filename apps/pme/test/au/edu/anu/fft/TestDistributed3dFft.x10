@@ -14,7 +14,7 @@ package au.edu.anu.fft;
  * Tests distributed Fast Fourier Transform.
  */
 public class TestDistributed3dFft {
-    public static def main(args : Array[String](1)) {
+    public static def main(args:Rail[String]) {
         testFft3d();
     }
 

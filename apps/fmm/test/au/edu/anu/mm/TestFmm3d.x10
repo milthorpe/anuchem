@@ -23,7 +23,7 @@ import au.edu.anu.util.Timer;
 public class TestFmm3d extends TestElectrostatic {
     public def sizeOfCentralCluster() : Double = 80.0;
 
-    public static def main(args : Array[String](1)) {
+    public static def main(args:Rail[String]) {
         var numAtoms:Int;
         var density:Double = 60.0;
         var numTerms:Int = 10;

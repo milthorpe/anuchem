@@ -67,9 +67,9 @@ public abstract class Octant implements Comparable[Octant] {
     public abstract def numAtoms():Int;
     
     public def getCentre(size:Double):Point3d {
-        dim:Int = Math.pow2(id.level);
-        sideLength:Double = size / dim;
-        offset:Double = 0.5 * size;
+        val dim = 1UY << id.level;
+        val sideLength = size / dim;
+        val offset = 0.5 * size;
         return Point3d( (id.x + 0.5) * sideLength - offset,
                         (id.y + 0.5) * sideLength - offset,
                         (id.z + 0.5) * sideLength - offset);
@@ -85,14 +85,14 @@ public abstract class Octant implements Comparable[Octant] {
      * expansion for this box. Note: non-blocking - the top-level call to this 
      * method must be enclosed in a finish statement.
      */
-    abstract protected def upward():Pair[Int,MultipoleExpansion];
+    abstract protected def upward():Pair[Long,MultipoleExpansion];
 
     /*
      * Transform and add multipole expansions from same level
      */
     public def multipolesToLocal() {
         val local = FastMultipoleMethod.localData;
-        val sideLength = local.size / Math.pow2(id.level);
+        val sideLength = local.size / (1UY << id.level);
         val myComplexK = local.fmmOperators.complexK;
         val myWignerB = local.fmmOperators.wignerB;
         val locallyEssentialTree = local.locallyEssentialTree;
@@ -118,7 +118,7 @@ public abstract class Octant implements Comparable[Octant] {
     protected def addParentExpansion(parentLocalExpansion:LocalExpansion) {
         if (parentLocalExpansion != null) {
             val local = FastMultipoleMethod.localData;
-            val sideLength = local.size / Math.pow2(id.level);
+            val sideLength = local.size / (1UY << id.level);
             val myComplexK = local.fmmOperators.complexK;
             val myWignerC = local.fmmOperators.wignerC;
 
@@ -142,7 +142,7 @@ public abstract class Octant implements Comparable[Octant] {
             val local = FastMultipoleMethod.localData;
             val mortonId = id.getMortonId();
             val multipoleExp = this.multipoleExp;
-            val vListPlaces = new HashSet[Int]();
+            val vListPlaces = new HashSet[Long]();
             for (octantId in vList) {
                 val placeId = local.getPlaceId(octantId.getAnchor(local.dMax));
                 if (placeId >= 0 && placeId < Place.MAX_PLACES) {
@@ -252,10 +252,10 @@ public abstract class Octant implements Comparable[Octant] {
         val maxZ:UByte;
 
         public def this(id:OctantId, ws:Int, dMax:UByte) {
-            val levelDim = Math.pow2(id.level);
-            val xOffset = id.x%2 == 1UY ? -1 : 0;
-            val yOffset = id.y%2 == 1UY ? -1 : 0;
-            val zOffset = id.z%2 == 1UY ? -1 : 0;
+            val levelDim = 1UY << id.level;
+            val xOffset = id.x%2UY == 1UY ? -1 : 0;
+            val yOffset = id.y%2UY == 1UY ? -1 : 0;
+            val zOffset = id.z%2UY == 1UY ? -1 : 0;
             val extent = 2*ws;
             minX = Math.max(0,id.x+xOffset-extent) as UByte;
             maxX = Math.min(levelDim-1,id.x+xOffset+extent+1) as UByte;

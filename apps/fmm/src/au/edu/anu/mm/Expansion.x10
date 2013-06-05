@@ -11,6 +11,7 @@
 package au.edu.anu.mm;
 
 import x10.compiler.Inline;
+import x10.regionarray.Array;
 import x10.util.StringBuilder;
 
 /**
@@ -62,7 +63,7 @@ public class Expansion {
      * This operation is not atomic, therefore not thread-safe.
      */
     @Inline def unsafeAdd(e : Expansion) {
-        for ([i] in terms) {
+        for (i in 0..(terms.size-1)) {
             terms(i) += e.terms(i);
         }
     }

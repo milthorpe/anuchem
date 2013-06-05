@@ -23,7 +23,7 @@ import au.edu.anu.util.Timer;
  * @author milthorpe
  */
 public class TestHarmonicOscillator {
-    public static def main(args : Array[String](1)) {
+    public static def main(args:Rail[String]) {
 
         Console.OUT.println("Testing simple HF harmonic oscillator.");
 
