@@ -20,17 +20,19 @@ import x10.util.Pair;
  * @author milthorpe
  */
 public class GhostOctant extends Octant implements Comparable[Octant] {
-    val placeId:Int;
+    /** The host place of the target octant for which this GhostOctant is a proxy. */
+    val placeId:Long;
+
+    /** The target octant. */
+    private var target:GlobalRef[Octant];
 
     /** The number of atoms in all boxes below this box. */
-    private var numAtoms:Int;
-
-    private var target:GlobalRef[Octant];
+    private var numAtoms:Long;
 
     /**
      * Creates a new GhostOctant for an octant at the given place.
      */
-    public def this(id:OctantId, placeId:Int) {
+    public def this(id:OctantId, placeId:Long) {
         super(id);
         this.placeId = placeId;
     }
@@ -44,12 +46,12 @@ public class GhostOctant extends Octant implements Comparable[Octant] {
     public def numAtoms() = numAtoms;
 
     static class GhostUpward(
-        numAtoms:Int,
+        numAtoms:Long,
         multipoleExp:MultipoleExpansion,
         target:GlobalRef[Octant]
     ) {
 
-        public def this(numAtoms:Int, multipoleExp:MultipoleExpansion, target:GlobalRef[Octant]) {
+        public def this(numAtoms:Long, multipoleExp:MultipoleExpansion, target:GlobalRef[Octant]) {
             property(numAtoms, multipoleExp, target);
         }
     }

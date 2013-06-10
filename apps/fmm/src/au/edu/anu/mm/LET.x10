@@ -22,6 +22,11 @@ import au.edu.anu.chem.PointCharge;
  * @author milthorpe
  */
 public class LET {
+    /** 
+     * The combined U-List for this place. 
+     * Consists of the octant IDs for all lowest-level octants that are not
+     * well separated from some octant held at this place.
+     */
     public val combinedUList:Rail[UInt];
 
     /**

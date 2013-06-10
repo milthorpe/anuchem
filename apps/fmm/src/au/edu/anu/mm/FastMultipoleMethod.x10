@@ -407,8 +407,14 @@ public class FastMultipoleMethod {
             //Console.OUT.println("sorting atom in octant " + mortonId);
         }
         //Console.OUT.println("filled " + filled + " octants");
-        octantLoads.scan(octantLoads, (a:Long,b:Long)=>a+b, 0L);
-
+        val scan = (op:(Long,Long)=>Long, init:Long, v:Rail[Long]) =>
+        {
+            for (i in 1..(v.size-1)) {
+                v(i) = op(v(i-1),v(i));
+            }
+        };
+        scan((a:Long,b:Long)=>a+b, 0L, octantLoads);
+        
         val sortedAtoms = new Rail[Pair[UInt,MMAtom]](octantLoads(octantLoads.size-1) as Int);
         for (var i:Long=localAtoms.size-1; i>=0; i--) {
             val atom = localAtoms(i);
@@ -453,7 +459,16 @@ public class FastMultipoleMethod {
             octantLoads(leafMortonId) = octant.second.size();
         }
         Team.WORLD.allreduce[Long](octantLoads, 0L, octantLoads, 0L, octantLoads.size, Team.ADD);
-        val numAtoms = octantLoads.reduce[Long]((a:Long,b:Long)=>a+b, 0L);
+        val reduce = (op:(Long,Long)=>Long, init:Long, v:Rail[Long]) =>
+        {
+            var result:Long = init;
+            for (i in 0..(v.size-1)) {
+                result = op(result, v(i));
+            }
+            return result;
+        };
+
+        val numAtoms = reduce((a:Long,b:Long)=>a+b, 0L, octantLoads);
         val uListCost = local.cost(FmmLocalData.ESTIMATE_P2P);
         val q = numAtoms / octantLoads.size; // average particles per lowest-level octant
         val vListCost = local.cost(FmmLocalData.ESTIMATE_M2L);
@@ -471,7 +486,7 @@ public class FastMultipoleMethod {
             }
         }
 
-        val total = octantLoads.reduce[Long]((a:Long,b:Long)=>a+b, 0L);
+        val total = reduce((a:Long,b:Long)=>a+b, 0L, octantLoads);
         val placeShare = total / Place.MAX_PLACES;
         val leftOver = total % Place.MAX_PLACES;
 
@@ -712,8 +727,8 @@ public class FastMultipoleMethod {
         val uListPlaces = new HashMap[Long,ArrayList[UInt]](26); // a place may have up to 26 immediate neighbours
         
         // separate the uList into partial lists stored at each nearby place
-        for ([p] in myCombinedUList) {
-            val placeId = local.getPlaceId(myCombinedUList(p));
+        for (octantId in myCombinedUList) {
+            val placeId = local.getPlaceId(octantId);
             if (placeId >= 0 && placeId < Place.MAX_PLACES) {
                 // leaf octant exists at Place(placeId)
                 var uListForPlace : ArrayList[UInt] = uListPlaces.getOrElse(placeId, null);
@@ -721,7 +736,7 @@ public class FastMultipoleMethod {
                     uListForPlace = new ArrayList[UInt]();
                     uListPlaces.put(placeId, uListForPlace);
                 }
-                uListForPlace.add(myCombinedUList(p));
+                uListForPlace.add(octantId);
             }
         }
 

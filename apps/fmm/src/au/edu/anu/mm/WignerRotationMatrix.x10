@@ -11,6 +11,7 @@
 package au.edu.anu.mm;
 
 import x10.regionarray.Array;
+import x10.regionarray.Region;
 
 /**
  * This class calculates the Wigner rotation matrix D^l_{mk}.
@@ -21,9 +22,9 @@ import x10.regionarray.Array;
  * @author milthorpe
  */
 public class WignerRotationMatrix {
-        public static val OPERATOR_A : Int = 0;
-        public static val OPERATOR_B : Int = -1;
-        public static val OPERATOR_C : Int = 2;
+    public static val OPERATOR_A : Int = 0;
+    public static val OPERATOR_B : Int = -1;
+    public static val OPERATOR_C : Int = 2;
 
 	/**
 	 * Calculate Wigner rotation matrix D_{mk}(theta, l) for m: [-l..l], k: [-l..l]
@@ -33,7 +34,7 @@ public class WignerRotationMatrix {
 		    throw new IllegalArgumentException("abs(x) > 2*PI: Wigner rotation matrix is only defined on [0..2*PI].");
 		}
 
-		val D = new Array[Double]((-l..l) * (-l..l));
+		val D = new Array[Double](Region.make(-l..l, -l..l));
 
 		if (theta == 0.0) {
 		    // Eq. 30

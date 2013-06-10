@@ -64,7 +64,7 @@ public abstract class Octant implements Comparable[Octant] {
 
     public def compareTo(b:Octant):Int = id.compareTo(b.id);
 
-    public abstract def numAtoms():Int;
+    public abstract def numAtoms():Long;
     
     public def getCentre(size:Double):Point3d {
         val dim = 1UY << id.level;
