@@ -278,10 +278,10 @@ public class GMatrixROmem4 extends DenseMatrix{self.M==self.N} {
             }
             timer.stop(TIMER_GENCLASS); tINT+=(timer.last(TIMER_GENCLASS) as Double)/1e9;
 
-            // J - single place
+            // J - at head node - muti-threading
             Console.OUT.println("J - single place"); 
             timer.start(TIMER_JMATRIX);   
-            // add for at async    
+  
             finish for (thNo in 0..(maxTh-1)) async tjMatrix(thNo).reset();
             finish for (thNo in 0..(maxTh-1)) async {
                 val myThreadJMat = tjMatrix(thNo);      
@@ -305,7 +305,7 @@ public class GMatrixROmem4 extends DenseMatrix{self.M==self.N} {
             }
             timer.stop(TIMER_JMATRIX); tJ+=(timer.last(TIMER_JMATRIX) as Double)/1e9;
 
-            // K - distributed by SUMMA
+            // K - distributed by SUMMA - muti-threading by BLAS library
             Console.OUT.println("K - SUMMA"); 
             if (ron<=roNK) { // This produces K/2
                  timer.start(TIMER_KMATRIX);  
@@ -329,6 +329,7 @@ public class GMatrixROmem4 extends DenseMatrix{self.M==self.N} {
             }
         }
 
+        // G - at head node - muti-threading
         Console.OUT.println("G matrix"); 
         // Fix upper half of J (see the definition of shellPairs) ==> sp.mu>sp.nu
         // Fix the whole matrix ==> if (sp.mu!=sp.nu)
