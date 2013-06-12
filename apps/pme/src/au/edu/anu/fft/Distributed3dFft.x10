@@ -69,21 +69,21 @@ public class Distributed3dFft {
                 val oneDTarget = new Rail[Complex](dataSize);
                 if (dribble) {
                     do1DFftAndTranspose(source, target, oneDSource, oneDTarget, forward);
-                    Team.WORLD.barrier(here.id);
+                    Team.WORLD.barrier();
                     do1DFftAndTranspose(target, temp, oneDSource, oneDTarget, forward);
-                    Team.WORLD.barrier(here.id);
+                    Team.WORLD.barrier();
                     do1DFftAndTranspose(temp, target, oneDSource, oneDTarget, forward);
                 } else {
                     val plan : FFTW.FFTWPlan = FFTW.fftwPlan1d(dataSize, oneDSource, oneDTarget, forward);
                     do1DFftToTemp(source, oneDSource, oneDTarget, plan);
                     transposeTempToTarget();
-                    Team.WORLD.barrier(here.id);
+                    Team.WORLD.barrier();
                     do1DFftToTemp(target, oneDSource, oneDTarget, plan);
-                    Team.WORLD.barrier(here.id);
+                    Team.WORLD.barrier();
                     transposeTempToTarget();
-                    Team.WORLD.barrier(here.id);
+                    Team.WORLD.barrier();
                     do1DFftToTemp(target, oneDSource, oneDTarget, plan);
-                    Team.WORLD.barrier(here.id);
+                    Team.WORLD.barrier();
                     transposeTempToTarget();
                     FFTW.fftwDestroyPlan(plan);
                 }

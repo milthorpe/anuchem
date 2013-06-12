@@ -37,9 +37,9 @@
 
 	<target name="test-fmm" depends="fmm"
     description="Test the Fast Multipole Method app code">
-        <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/apps/fmm/bin">
+        <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/apps/fmm">
             <arg value="-c"/>
-            <arg value="./fmm 51396"/>
+            <arg value="bin/fmm 51396"/>
         </exec>
     </target>
 
@@ -49,9 +49,9 @@
 
 	<target name="test-pme" depends="pme"
     description="Test the Particle Mesh Ewald app code">
-        <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/apps/pme/bin">
+        <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/apps/pme">
             <arg value="-c"/>
-            <arg value="./pme 51396"/>
+            <arg value="bin/pme test/gromacs/box100k.gro"/>
         </exec>
     </target>
 

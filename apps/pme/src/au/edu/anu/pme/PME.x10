@@ -160,7 +160,7 @@ public class PME {
         this.K3 = K3;
 
         this.atoms = atoms;
-        val gridRegion = Region.makeRectangular([0..(gridSize(0)-1) as IntRange, 0..(gridSize(1)-1), 0..(gridSize(2)-1)]);
+        val gridRegion = Region.make(0..(gridSize(0)-1), 0..(gridSize(1)-1), 0..(gridSize(2)-1));
         val gridDist = Dist.makeBlockBlock(gridRegion, 0, 1);
         this.gridDist = gridDist;
         this.splineOrder = splineOrder;
@@ -168,7 +168,7 @@ public class PME {
         this.cutoff = cutoff;
         this.imageTranslations = DistArray.make[Array[Vector3d](3){rect}](
             Dist.makeUnique(), 
-            new Array[Vector3d](Region.makeRectangular([-1..1 as IntRange, -1..1, -1..1]), 
+            new Array[Vector3d](Region.make(-1..1, -1..1, -1..1), 
                 ([i,j,k] : Point(3)) => (edges(0).mul(i)).add(edges(1).mul(j)).add(edges(2).mul(k))) 
         );
 
@@ -176,7 +176,7 @@ public class PME {
             Console.ERR.println("warning: edge length " + edgeLengths(0) + " is not an exact multiple of (cutoff/2.0) " + (cutoff/2.0));
         }
         val numSubCells = Math.ceil(edgeLengths(0) / (cutoff/2.0)) as Int;
-        val subCellRegion = Region.makeRectangular([0..(numSubCells-1) as IntRange, 0..(numSubCells-1), 0..(numSubCells-1)]);
+        val subCellRegion = Region.make(0..(numSubCells-1), 0..(numSubCells-1), 0..(numSubCells-1));
         val subCells = DistArray.make[Rail[PointCharge]](new PeriodicDist(Dist.makeBlockBlock(subCellRegion, 0, 1)));
         //Console.OUT.println("subCells dist = " + subCells.dist);
         this.subCells = subCells;
@@ -186,9 +186,10 @@ public class PME {
         finish ateach(p in atomsCache) {
             val mySubCellRegion = subCells.dist(here);
             if (! mySubCellRegion.isEmpty()) {
-                val directRequiredRegion = ((mySubCellRegion.min(0) - 2)..(mySubCellRegion.max(0) + 2))
-                                         * ((mySubCellRegion.min(1) - 2)..(mySubCellRegion.max(1) + 2))
-                                         * ((mySubCellRegion.min(2) - 2)..(mySubCellRegion.max(2) + 2));
+                val directRequiredRegion = 
+                    Region.make((mySubCellRegion.min(0) - 2)..(mySubCellRegion.max(0) + 2),
+                                (mySubCellRegion.min(1) - 2)..(mySubCellRegion.max(1) + 2),
+                                (mySubCellRegion.min(2) - 2)..(mySubCellRegion.max(2) + 2));
                 atomsCache(p) = new Array[Rail[PointCharge]](directRequiredRegion);
             }
         }
@@ -549,8 +550,8 @@ public class PME {
 
         val subCellMinX = Math.floor(gridRegion.min(0) / gridPointsPerSubCell) as Int;
 
-        val fullX = gridRegion.min(0) == 0 && gridRegion.max(0) == (gridSize-1);
-        val subCellMaxX:Int;
+        val fullX = gridRegion.min(0) == 0L && gridRegion.max(0) as Int == (gridSize-1);
+        val subCellMaxX:Long;
         if (fullX) {
             subCellMaxX = subCellRegion.max(0);
         } else {
@@ -559,8 +560,8 @@ public class PME {
         }
 
         val subCellMinY = Math.floor(gridRegion.min(1) / gridPointsPerSubCell) as Int;
-        val fullY = gridRegion.min(1) == 0 && gridRegion.max(1) == (gridSize-1);
-        val subCellMaxY:Int;
+        val fullY = gridRegion.min(1) == 0L && gridRegion.max(1) as Int == (gridSize-1);
+        val subCellMaxY:Long;
         if (fullY) {
             subCellMaxY = subCellRegion.max(1);
         } else {
@@ -568,7 +569,10 @@ public class PME {
             subCellMaxY = Math.ceil(maxY / gridPointsPerSubCell) as Int;
         }
         // each place holds a full pencil of subcells through Z dimension
-        val subCellHaloRegion = (subCellMinX..subCellMaxX) * (subCellMinY..subCellMaxY) * (subCellRegion.min(2)..subCellRegion.max(2));
+        val subCellHaloRegion = 
+            Region.make((subCellMinX..subCellMaxX),
+                        (subCellMinY..subCellMaxY),
+                        (subCellRegion.min(2)..subCellRegion.max(2)));
         return subCellHaloRegion;
     }
 

@@ -9,19 +9,19 @@ import x10.regionarray.DistArray;
 @NativeCPPCompilationUnit("FFTW.cc")
 @NativeRep("c++", "::edu::mit::fftw::FFTWWrapper", "::edu::mit::fftw::FFTWWrapper", null)
 public class FFTW {
-    @Native("c++", "::edu::mit::fftw::FFTWWrapper::fftwPlanDft1d(#1, reinterpret_cast<fftw_complex*>(#2->raw().data), reinterpret_cast<fftw_complex*>(#3->raw().data), #4)")
+    @Native("c++", "::edu::mit::fftw::FFTWWrapper::fftwPlanDft1d(#1, reinterpret_cast<fftw_complex*>(#2->raw), reinterpret_cast<fftw_complex*>(#3->raw), #4)")
     @Native("java", "null")
     public native static def fftwPlan1d(n : Int, input : Rail[Complex], output : Rail[Complex], forward : Boolean) : FFTWPlan;
 
-    @Native("c++", "::edu::mit::fftw::FFTWWrapper::fftwPlanDft1d(#1, reinterpret_cast<double*>(#2->raw().data), reinterpret_cast<fftw_complex*>(#3->raw().data))")
+    @Native("c++", "::edu::mit::fftw::FFTWWrapper::fftwPlanDft1d(#1, reinterpret_cast<double*>(#2->raw), reinterpret_cast<fftw_complex*>(#3->raw))")
     @Native("java", "null")
     public native static def fftwPlan1d(n : Int, input : Rail[Double], output : Rail[Complex]) : FFTWPlan;
 
-    @Native("c++", "::edu::mit::fftw::FFTWWrapper::fftwPlanDft1d(#1, reinterpret_cast<fftw_complex*>(#2->raw().data), reinterpret_cast<double*>(#3->raw().data))")
+    @Native("c++", "::edu::mit::fftw::FFTWWrapper::fftwPlanDft1d(#1, reinterpret_cast<fftw_complex*>(#2->raw), reinterpret_cast<double*>(#3->raw))")
     @Native("java", "null")
     public native static def fftwPlan1d(n : Int, input : Rail[Complex], output : Rail[Double]) : FFTWPlan;
 
-    @Native("c++", "::edu::mit::fftw::FFTWWrapper::fftwPlanDft3d(#1, #2, #3, reinterpret_cast<fftw_complex*>(#4->raw().data), reinterpret_cast<fftw_complex*>(#5->raw().data), #6)")
+    @Native("c++", "::edu::mit::fftw::FFTWWrapper::fftwPlanDft3d(#1, #2, #3, reinterpret_cast<fftw_complex*>(#4->raw()->raw), reinterpret_cast<fftw_complex*>(#5->raw()->raw), #6)")
     @Native("java", "null")
     public native static def fftwPlan3d(n1 : Int, n2 : Int, n3 : Int, input : DistArray[Complex], output : DistArray[Complex], forward : Boolean) : FFTWPlan;
     
