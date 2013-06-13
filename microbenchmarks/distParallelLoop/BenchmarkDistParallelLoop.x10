@@ -9,7 +9,9 @@
  *  (C) Copyright Josh Milthorpe 2011-2012.
  */
 import x10.compiler.Inline;
-import x10.io.File;
+import x10.regionarray.Dist;
+import x10.regionarray.DistArray;
+import x10.regionarray.Region;
 
 /**
  * Benchmarks dist array iteration using a variety 
@@ -130,11 +132,11 @@ public class BenchmarkDistParallelLoop(size : Int, print:Boolean) {
                 if (max > min) {
                     // bisect on this dimension
                     val halfway = (max-min+1) / 2;
-                    val firstMax = new Array[Int](r.rank, (i:Int)=> i==dim ? (halfway-1) : r.max(i));
-                    val firstCut = Region.makeRectangular(new Array[Int](r.rank, (i:Int)=>r.min(i)), firstMax);
+                    val firstMax = new Rail[Int](r.rank, (i:Int)=> i==dim ? (halfway-1) : r.max(i));
+                    val firstCut = Region.makeRectangular(new Rail[Int](r.rank, (i:Int)=>r.min(i)), firstMax);
                     firstHalf = r && firstCut;
-                    val secondMin = new Array[Int](r.rank, (i:Int)=> i==dim ? halfway : r.min(i));
-                    val secondCut = Region.makeRectangular(secondMin, new Array[Int](r.rank, (i:Int)=>r.max(i)));
+                    val secondMin = new Rail[Int](r.rank, (i:Int)=> i==dim ? halfway : r.min(i));
+                    val secondCut = Region.makeRectangular(secondMin, new Rail[Int](r.rank, (i:Int)=>r.max(i)));
                     secondHalf = r && secondCut;
                 }
             }
@@ -156,11 +158,11 @@ public class BenchmarkDistParallelLoop(size : Int, print:Boolean) {
         val size = b.size();
         if (size == 1) {
             val r = b.r;
-            closure(Point.make(new Array[Int](r.rank, (i:Int)=>r.max(i))));
+            closure(Point.make(new Rail[Int](r.rank, (i:Int)=>r.max(i))));
         } else if (size == 2) {
             val r = b.r;
-            async closure(Point.make(new Array[Int](r.rank, (i:Int)=>r.max(i))));
-            closure(Point.make(new Array[Int](r.rank, (i:Int)=>r.min(i))));
+            async closure(Point.make(new Rail[Int](r.rank, (i:Int)=>r.max(i))));
+            closure(Point.make(new Rail[Int](r.rank, (i:Int)=>r.min(i))));
         } else {
             val firstHalf = new RegionBisection(b.firstHalf);
             val secondHalf = new RegionBisection(b.secondHalf);
@@ -217,7 +219,7 @@ public class BenchmarkDistParallelLoop(size : Int, print:Boolean) {
         }
     }
 
-	public static def main(var args: Array[String](1)): void = {
+	public static def main(var args:Rail[String]): void = {
         var size:Int = 8000;
         var print:Boolean = false;
         if (args.size > 0) {
@@ -228,5 +230,4 @@ public class BenchmarkDistParallelLoop(size : Int, print:Boolean) {
         }
 		new BenchmarkDistParallelLoop(size, print).testAll();
 	}
-
 }

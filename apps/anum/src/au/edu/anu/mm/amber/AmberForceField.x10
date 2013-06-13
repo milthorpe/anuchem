@@ -10,6 +10,7 @@
  */
 package au.edu.anu.mm.amber;
 
+import x10.regionarray.DistArray;
 import x10.util.HashMap;
 import x10.util.Pair;
 import x10x.vector.Vector3d;

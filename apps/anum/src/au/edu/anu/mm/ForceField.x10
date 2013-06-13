@@ -10,6 +10,7 @@
  */
 package au.edu.anu.mm;
 
+import x10.regionarray.DistArray;
 import au.edu.anu.chem.mm.MMAtom;
 
 /**
@@ -25,7 +26,7 @@ public interface ForceField {
     public def getPotentialAndForces(atoms: DistArray[Rail[MMAtom]](1)) : Double;
 
     /**
-     * @return the mass of the given atom type e.g. 1.00794 for H
+     * @return the mass of the given atom type e.g. 1.00794 for H=1
      */
-    public def getAtomMass(symbol : String) : Double;
+    public def getAtomMass(species:Int) : Double;
 }

@@ -1,21 +1,21 @@
-package x10.array;
+package x10.regionarray;
 
 public class TriangularRegion extends Region{rect} {
 // TODO not really rect! should be 'dense' XTENLANG-3000
     // XTENLANG-49
     static type TriangularRegion(rank:Int) = TriangularRegion{self.rank==rank,rect};
 
-    val dim : Int;
-    val rowMin : Int;
-    val colMin : Int;
-    val lower : Boolean;
+    val dim:Long;
+    val rowMin:Long;
+    val colMin:Long;
+    val lower:Boolean;
 
     /**
      * Constructs a new TriangularRegion 
      * @param p the dimension of the triangular array
      */
-    public def this(rowMin: Int, colMin: Int, size: Int, lower: Boolean): TriangularRegion(2) {
-        super(2, true, (rowMin==0&&colMin==0));
+    public def this(rowMin:Long, colMin:Long, size:Long, lower: Boolean): TriangularRegion(2) {
+        super(2, true, (rowMin==0L&&colMin==0L));
         this.dim = size;
         this.rowMin = rowMin;
         this.colMin = colMin;
@@ -31,27 +31,27 @@ public class TriangularRegion extends Region{rect} {
     }
 
     public def indexOf(pt:Point) {
-        if (pt.rank != 2) return -1;
+        if (pt.rank != 2) return -1L;
         return indexOf(pt(0), pt(1));
     }
 
-    public def indexOf(i0:Int, i1:Int) {
+    public def indexOf(i0:Long, i1:Long) {
         return ((i0)*(i0+1))/2 + i1;
     }
 
-    public def min():(int)=>int = (i:int)=> {
+    public def min():(Int)=>Long = (i:Int)=> {
         if (i==0) return rowMin;
         else if (i==1) return colMin;
         else throw new ArrayIndexOutOfBoundsException("min: "+i+" is not a valid rank for "+this);
     };
 
-    public def max():(int)=>int = (i:int)=> {
+    public def max():(Int)=>Long = (i:Int)=> {
         if (i==0) return rowMin+dim;
         else if (i==1) return colMin+dim;
         else throw new ArrayIndexOutOfBoundsException("max: "+i+" is not a valid rank for "+this);
     };
 
-    public def size() : Int { 
+    public def size():Long { 
         return dim * (dim + 1) / 2;
     }
 
@@ -101,9 +101,9 @@ public class TriangularRegion extends Region{rect} {
     public def projection(axis: Int): Region(1) {
         switch (axis) {
             case 0:
-                return rowMin..(rowMin+dim);
+                return Region.make(rowMin..(rowMin+dim));
             case 1:
-                return colMin..(colMin+dim);
+                return Region.make(colMin..(colMin+dim));
             default:
                 throw new UnsupportedOperationException("projection(" + axis + ")");
         }
@@ -112,21 +112,21 @@ public class TriangularRegion extends Region{rect} {
     public def eliminate(axis: Int): Region(1) {
         switch (axis) {
             case 0:
-                return colMin..(colMin+dim);
+                return Region.make(colMin..(colMin+dim));
             case 1:
-                return rowMin..(rowMin+dim);
+                return Region.make(rowMin..(rowMin+dim));
             default:
                 throw new UnsupportedOperationException("projection(" + axis + ")");
         }
     }
 
     public def boundingBox(): Region(rank) {
-        val r = (rowMin..(rowMin+dim) * colMin..(colMin+dim)) as Region(2);
+        val r = Region.make(rowMin..(rowMin+dim), colMin..(colMin+dim));
         return r;
     }
 
     protected def computeBoundingBox(): Region(rank) {
-        val r = (rowMin..(rowMin+dim) * colMin..(colMin+dim)) as Region(2);
+        val r = Region.make(rowMin..(rowMin+dim), colMin..(colMin+dim));
         return r;
     }
 
@@ -135,10 +135,10 @@ public class TriangularRegion extends Region{rect} {
     }
 
     private class TriangularRegionIterator implements Iterator[Point(2)] {
-        val dim : Int;
-        val lower : Boolean;
-        var i : Int;
-        var j : Int;
+        val dim :Long;
+        val lower:Boolean;
+        var i:Long;
+        var j:Long;
 
         def this(r : TriangularRegion) {
             this.dim = r.dim;

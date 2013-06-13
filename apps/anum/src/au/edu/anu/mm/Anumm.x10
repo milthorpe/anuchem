@@ -10,11 +10,11 @@
  */
 package au.edu.anu.mm;
 
-import x10.util.*;
+import x10.regionarray.Dist;
+import x10.regionarray.DistArray;
+import x10.util.ArrayList;
 import x10.io.IOException;
-import x10x.vector.Point3d;
-import x10x.vector.Vector3d;
-import x10x.vector.Tuple3d;
+
 import au.edu.anu.chem.Molecule;
 import au.edu.anu.chem.mm.MMAtom;
 import au.edu.anu.util.Timer;
@@ -68,7 +68,7 @@ public class Anumm {
             val myAtoms = atoms(p);
             for (i in 0..(myAtoms.size-1)) {
                 val atom = myAtoms(i);
-                val invMass = 1.0 / forceField.getAtomMass(atom.symbol);
+                val invMass = 1.0 / forceField.getAtomMass(atom.species);
                 atom.velocity = atom.velocity + 0.5 * t * invMass * atom.force;
                 atom.centre = atom.centre + atom.velocity * t;
                 //Console.OUT.print(atom.centre.i + " " + atom.centre.j + " " + atom.centre.k + " ");
@@ -79,7 +79,7 @@ public class Anumm {
             val myAtoms = atoms(p);
             for (i in 0..(myAtoms.size-1)) {
                 val atom = myAtoms(i);
-                val invMass = 1.0 / forceField.getAtomMass(atom.symbol);
+                val invMass = 1.0 / forceField.getAtomMass(atom.species);
                 atom.velocity = atom.velocity + 0.5 * t * invMass * atom.force;
                 //Console.OUT.print(atom + " ");
             }
@@ -102,18 +102,20 @@ public class Anumm {
             Console.ERR.println("usage: anumm structureFile [timestep(fs)] [numSteps]");
             return;
         }
+
+        val dummySpeciesList = new Rail[SpeciesSpec](); // TODO
         var moleculeTemp : Molecule[MMAtom] = null;
         if (structureFileName.length() > 4) {
             val fileExtension = structureFileName.substring(structureFileName.length()-4, structureFileName.length());
             if (fileExtension.equals(".xyz")) {
                 try {
-                    moleculeTemp = new XYZStructureFileReader(structureFileName).readMolecule();
+                    moleculeTemp = new XYZStructureFileReader(structureFileName).readMolecule(dummySpeciesList);
                 } catch (e:IOException) {
                     Console.ERR.println(e);
                 }
             } else if (fileExtension.equals(".mol") || fileExtension.equals(".sdf")) {
                 try {
-                    moleculeTemp = new MOLStructureFileReader(structureFileName).readMolecule();
+                    moleculeTemp = new MOLStructureFileReader(structureFileName).readMolecule(dummySpeciesList);
                 } catch (e:IOException) {
                     Console.ERR.println(e);
                 }
@@ -160,6 +162,5 @@ public class Anumm {
     private static def getPlaceId(x : Double, y : Double, z : Double, size : Double) : Int {
         return ((x / (size * 2) + 0.5) * Place.MAX_PLACES) as Int;
     }
-
 }
 

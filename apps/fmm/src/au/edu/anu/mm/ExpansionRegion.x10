@@ -10,10 +10,12 @@
  */
 package au.edu.anu.mm;
 
+import x10.regionarray.Region;
+
 public class ExpansionRegion extends Region{rect} {
 // TODO not really rect! should be 'dense' XTENLANG-3000
     static type ExpansionRegion(rank:Int) = ExpansionRegion{self.rank==rank,rect==true};
-    val p : Int;
+    val p:Long;
 
     /**
      * Constructs a new ExpansionRegion for a multipole
@@ -33,13 +35,13 @@ public class ExpansionRegion extends Region{rect} {
         return false;
     }
 
-    public def min():(int)=>int = (i:int)=> {
-        if (i==0) return 0;
+    public def min():(Int)=>Long = (i:Int)=> {
+        if (i==0) return 0L;
         else if (i==1) return -p;
         else throw new ArrayIndexOutOfBoundsException("min: "+i+" is not a valid rank for "+this);
     };
 
-    public def max():(int)=>int = (i:int)=> {
+    public def max():(Int)=>Long = (i:Int)=> {
         if (i==0) return p;
         else if (i==1) return p;
         else throw new ArrayIndexOutOfBoundsException("max: "+i+" is not a valid rank for "+this);
@@ -51,7 +53,7 @@ public class ExpansionRegion extends Region{rect} {
      * (X10 gives it as (x0+x1>=0 && x0-x1>=0 && x0<=3),
      * which gives a size of (p+1)^2.
      */
-    public def size() : Int { 
+    public def size():Long { 
         return (p+1) * (p+1);
     }
 
@@ -111,11 +113,11 @@ public class ExpansionRegion extends Region{rect} {
     }
 
     public def indexOf(pt:Point) {
-	    if (pt.rank != 2) return -1;
+	    if (pt.rank != 2) return -1L;
         return indexOf(pt(0), pt(1));
     }
 
-    public final def indexOf(i0:Int, i1:Int) {
+    public final def indexOf(i0:Long, i1:Long) {
         return i0*(i0+1) + i1;
     }
 
@@ -124,7 +126,7 @@ public class ExpansionRegion extends Region{rect} {
     }
 
     protected def computeBoundingBox(): Region(rank) {
-        val r = ((0..p) * (-p..p)) as Region(2);
+        val r = Region.make(0..p, -p..p);
         return r;
     }
 
@@ -133,14 +135,14 @@ public class ExpansionRegion extends Region{rect} {
     }
 
     private class ExpansionRegionIterator implements Iterator[Point(2)] {
-        val p : Int;
-        var l : Int;
-        var m : Int;
+        val p:Long;
+        var l:Long;
+        var m:Long;
 
         def this(val r : ExpansionRegion) {
             this.p = r.p;
-            this.l = 0;
-            this.m = 0;
+            this.l = 0L;
+            this.m = 0L;
         }
 
         final public def hasNext(): boolean {

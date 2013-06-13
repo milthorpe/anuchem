@@ -10,11 +10,15 @@
  */
 package au.edu.anu.mm;
 
+import x10.regionarray.DistArray;
 import x10.util.Pair;
 import x10x.vector.Vector3d;
 import au.edu.anu.chem.mm.MMAtom;
 
 public class DiatomicForceField implements ForceField {
+    public static SPECIES_H = 0;
+    public static SPECIES_F = 1;
+
     val diatomicPotentials : Rail[DiatomicPotential];
 
     public def this(diatomicPotentials : Rail[DiatomicPotential]) {
@@ -30,13 +34,14 @@ public class DiatomicForceField implements ForceField {
         return V;
     }
 
-    public def getAtomMass(symbol : String) : Double {
-        if (symbol.equals("H")) {
-            return 1.0079;
-        } else if (symbol.equals("F")) {
-            return 18.9984;
-        } else {
-            throw new IllegalArgumentException("no atom mass found for symbol " + symbol);
+    public def getAtomMass(species:Int) : Double {
+        switch(species) {
+            case SPECIES_H :
+                return 1.0079;
+            case SPECIES_F :
+                return 18.9984;
+            default :
+                throw new IllegalArgumentException("no atom mass found for species " + species);
         }
     }
 }
