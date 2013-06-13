@@ -18,9 +18,9 @@ import x10.matrix.DenseMatrix;
  * @author: V.Ganesh
  */
 public class Density extends DenseMatrix{self.M==self.N} {
-    private val noOfOccupancies:Int;
+    private val noOfOccupancies:Long;
 
-    public def this(n:Int, noOfOccupancies:Int):Density{self.M==n,self.N==n} {
+    public def this(n:Long, noOfOccupancies:Long):Density{self.M==n,self.N==n} {
         super(n, n);
         this.noOfOccupancies = noOfOccupancies;
     }
@@ -28,17 +28,12 @@ public class Density extends DenseMatrix{self.M==self.N} {
     /**
      * Creates a density matrix with each element initialised to v.
      */
-    public def this(n:Int, noOfOccupancies:Int, v:Double):Density{self.M==n,self.N==n} {
+    public def this(n:Long, noOfOccupancies:Long, v:Double):Density{self.M==n,self.N==n} {
         // TODO GML new constructor for DenseMatrix
-        super(n, n, new Array[Double](n*n, (Int)=> v));
+        super(n, n, new Rail[Double](n*n, v));
         this.noOfOccupancies = noOfOccupancies;
     }
-/* TODO needed?
-    public def this(d:Density) {
-        super(d.M, d.N, d);
-        this.noOfOccupancies = d.getNoOfOccupancies();
-    }
-*/
+
     public def getNoOfOccupancies() = noOfOccupancies;
 
     public def compute(mos:MolecularOrbitals{self.N==this.N}) : void {
@@ -46,7 +41,7 @@ public class Density extends DenseMatrix{self.M==self.N} {
         val dVector = new DenseMatrix(noOfOccupancies, this.N);
         DenseMatrix.copyRows(mos, 0, dVector, 0, noOfOccupancies);
         super.transMult(dVector, dVector, false);
-        for([x,y] in 0..(N-1)*0..(N-1)) this(x,y)=2.*this(x,y); // Closed-shell
+        this.scale(2.0);
     }
 
     public def applyGuess(SAD:DenseMatrix)  {

@@ -101,9 +101,9 @@ public class BasisSet {
                         val scaleFactor = Double.parseDouble(shellWords(2)); // TODO what to do with scaleFactor
 
                         if (shellType.equals("SP")) {
-                            val exps = new Array[Double](numGaussians);
-                            val sCoeffs = new Array[Double](numGaussians);
-                            val pCoeffs = new Array[Double](numGaussians);
+                            val exps = new Rail[Double](numGaussians);
+                            val sCoeffs = new Rail[Double](numGaussians);
+                            val pCoeffs = new Rail[Double](numGaussians);
                             for (i in 0..(numGaussians-1)) {
                                 line = fil.readLine();
                                 val gaussianWords = StringSplitter.splitOnWhitespace(line);
@@ -114,8 +114,8 @@ public class BasisSet {
                             orbitalList.add(new Orbital("S", exps, sCoeffs));
                             orbitalList.add(new Orbital("P", exps, pCoeffs));
                         } else {
-                            val exps = new Array[Double](numGaussians);
-                            val coeffs = new Array[Double](numGaussians);
+                            val exps = new Rail[Double](numGaussians);
+                            val coeffs = new Rail[Double](numGaussians);
                             for (i in 0..(numGaussians-1)) {
                                 line = fil.readLine();
                                 val gaussianWords = StringSplitter.splitOnWhitespace(line);

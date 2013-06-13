@@ -18,7 +18,7 @@ import x10.matrix.DenseMatrix;
  * @author: V.Ganesh
  */
 public class Fock extends DenseMatrix{self.M==self.N} {
-    public def this(n:Int):Fock{self.M==n,self.N==n} {
+    public def this(n:Long):Fock{self.M==n,self.N==n} {
         super(n,n);
     }
   

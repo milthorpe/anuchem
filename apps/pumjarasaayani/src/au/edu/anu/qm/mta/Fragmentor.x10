@@ -60,7 +60,7 @@ public class Fragmentor {
        // TODO: reorder the atom indices, depending on nearness to the 
        // centre of mass of the molecule so as to ensure a more 
        // consistant ordering that is indipendent of the input order
-       val sortedAtomIndices = new Array[Int](noOfAtoms);
+       val sortedAtomIndices = new Rail[Int](noOfAtoms);
        for(var i:Int=0; i<noOfAtoms; i++) { 
           mol.getAtom(i).setIndex(i);
           sortedAtomIndices(i) = i;
@@ -126,7 +126,7 @@ public class Fragmentor {
 
        finish for (atom1 in mol.getAtoms()) async {
            val aFragment = new Fragment();
-           aFragment.centreedOn = atom1.getIndex();
+           aFragment.centredOn = atom1.getIndex();
            aFragment.addAtom(atom1);
 
            for(var i:Int=0; i<noOfAtoms; i++) {
@@ -149,7 +149,7 @@ public class Fragmentor {
    /** merge fragments along the connectivity path */
    def mergeAlongConnectivity(mol:Molecule[QMAtom], sortedAtomIndices:Rail[Int], fragList:ArrayList[Fragment]) {
        val noOfAtoms = mol.getNumberOfAtoms(); 
-       val visited = new Array[Boolean](noOfAtoms, (Int)=>false);        
+       val visited = new Rail[Boolean](noOfAtoms, false);        
         
        for(var i:Int=0; i<noOfAtoms; i++) {
            val idx = sortedAtomIndices(i);
@@ -174,17 +174,17 @@ public class Fragmentor {
           Console.OUT.println("Processing " + i);
           val bondedAtom = sortedAtomIndices((bonds.get(i).second as QMAtom).getIndex());
 
-          mergeFragmentscentreedOn(v, bondedAtom, fragList);
+          mergeFragmentscentredOn(v, bondedAtom, fragList);
           visited(bondedAtom) = true;
           Console.OUT.println("Done processing " + i);
        } //  end for
    }
 
    /** merge fragments centred on the given atom indices */
-   def mergeFragmentscentreedOn(a:Int, b:Int, fragList:ArrayList[Fragment]) {
+   def mergeFragmentscentredOn(a:Int, b:Int, fragList:ArrayList[Fragment]) {
        Console.OUT.println("Merging " + a + " and " + b + " ...");
-       val f1 = findFragmentcentreedOn(a, fragList);
-       val f2 = findFragmentcentreedOn(b, fragList);
+       val f1 = findFragmentCentredOn(a, fragList);
+       val f2 = findFragmentCentredOn(b, fragList);
 
        if (f1 == null || f2 == null) return;
 
@@ -196,14 +196,14 @@ public class Fragmentor {
        fragList.remove(f1);
        fragList.remove(f2);
 
-       f1f2.centreedOn = f1.centreedOn;
+       f1f2.centredOn = f1.centredOn;
        fragList.add(f1f2);
    } 
 
    /** return the atom centreed fragment */
-   def findFragmentcentreedOn(idx:Int, fragList:ArrayList[Fragment]) : Fragment {
+   def findFragmentCentredOn(idx:Long, fragList:ArrayList[Fragment]) : Fragment {
        for(frag in fragList) {
-           if (frag.centreedOn == idx) return (frag);
+           if (frag.centredOn == idx) return (frag);
        } // end for
 
        return null;  // should never come here!
@@ -214,9 +214,9 @@ public class Fragmentor {
        var doneMerging:Boolean = false;
 
        while(!doneMerging) {
-           outer_loop: for(var i:Int=0; i<fragList.size(); i++) {
+           outer_loop: for(var i:Long=0; i<fragList.size(); i++) {
               val fi = fragList.get(i);
-              for(var j:Int=0; j<fragList.size(); j++) {
+              for(var j:Long=0; j<fragList.size(); j++) {
                   val fj = fragList.get(j);
                   doneMerging = (i == fragList.size()-1) && (j == fragList.size()-1);
 
@@ -239,7 +239,7 @@ public class Fragmentor {
    /** include any missed atoms, that violate conditions like double bond breaking
        or breaking rings at inappropriate positions */
    def includeMissedAtoms(fragList:ArrayList[Fragment]) : Boolean {
-       val includedMissedAtoms = new Array[Boolean](1, (Int)=>false);
+       val includedMissedAtoms = new Rail[Boolean](1, false);
 
        // TODO: 
 
@@ -249,7 +249,7 @@ public class Fragmentor {
            for(atom in fragment.getAtoms()) {
               for(bond in atom.getBonds()) {
                   val bondedAtom = bond.second;
-                  val nBonds = bondedAtom.getBonds().size();
+                  val nBonds = bondedAtom.getBonds().size() as Int;
 
                   if ((nBonds == 1) && (bond.first != BondType.WEAK_BOND)) { 
                       if (!fragment.contains(bondedAtom as QMAtom)) {
@@ -304,7 +304,7 @@ public class Fragmentor {
 
        // find out boundary atoms in this fragment
        for(atom in fragment.getAtoms()) {
-           val nBonds  = atom.getBonds().size();
+           val nBonds  = atom.getBonds().size() as Int;
            val nfBonds = fragment.getBondOrder(atom);
 
            if (nBonds != nfBonds) boundaryAtoms.add(atom);

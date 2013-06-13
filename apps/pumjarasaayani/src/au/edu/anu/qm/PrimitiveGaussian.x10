@@ -143,19 +143,19 @@ public final class PrimitiveGaussian {
         val rABSquared = origin.distanceSquared(pg.origin);
         val rCPSquared = centre.distanceSquared(prod.origin);
 
-        val ax = new Array[Double](power.l + pg.power.l + 1);
+        val ax = new Rail[Double](power.l + pg.power.l + 1);
         fillAArray(ax, power.l, pg.power.l,
                      prod.origin.i - origin.i,
                      prod.origin.i - pg.origin.i,
                      prod.origin.i - centre.i, prod.exponent);
 
-        val ay = new Array[Double](power.m + pg.power.m + 1);
+        val ay = new Rail[Double](power.m + pg.power.m + 1);
         fillAArray(ay, power.m, pg.power.m,
                      prod.origin.j - origin.j,
                      prod.origin.j - pg.origin.j,
                      prod.origin.j - centre.j, prod.exponent);
 
-        val az = new Array[Double](power.n + pg.power.n + 1);
+        val az = new Rail[Double](power.n + pg.power.n + 1);
         fillAArray(az, power.n, pg.power.n,
                      prod.origin.k - origin.k,
                      prod.origin.k - pg.origin.k,

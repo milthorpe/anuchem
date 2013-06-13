@@ -60,8 +60,7 @@ public class GMatrixROmem3 extends DenseMatrix{self.M==self.N} {
     // parallel stuff
     val maxam1:Int;
 
-
-    public def this(N:Int, bfs:BasisFunctions, molecule:Molecule[QMAtom], nOrbital:Int, omega:Double,roThresh:Double):GMatrixROmem3{self.M==N,self.N==N} {     
+    public def this(N:Long, bfs:BasisFunctions, molecule:Molecule[QMAtom], nOrbital:Int, omega:Double,roThresh:Double):GMatrixROmem3{self.M==N,self.N==N} {     
         super(N, N);
         Console.OUT.printf("\nGMatrixROmem3.x10 'public def this' %s...\n", getDateString());
         this.bfs = bfs; this.mol = molecule; this.nOrbital = nOrbital; this.omega=omega; this.roThresh=roThresh;  
@@ -96,7 +95,7 @@ public class GMatrixROmem3 extends DenseMatrix{self.M==self.N} {
             val aFunc = mol.getAtom(a).getBasisFunctions();
             nShell+=aFunc.size();
         }
-        var rawShellPairs:Rail[ShellPair] = new Array[ShellPair](nShell*(nShell+1)/2); 
+        var rawShellPairs:Rail[ShellPair] = new Rail[ShellPair](nShell*(nShell+1)/2); 
         val zeroPoint = Point3d(0.0, 0.0, 0.0);
        
         val dummySignificantPair = new ShellPair(0, 0, zeroPoint, zeroPoint, emptyRailD, emptyRailD, emptyRailD, emptyRailD, 0, 0, 0, 0, emptyRailI, threshold);

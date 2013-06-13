@@ -73,7 +73,7 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
     val halfAuxMat:DenseMatrix;//(nOrbital,N*roK);
     val halfAuxMat2:DenseMatrix;//(N,nOrbital*roK);
 
-    public def this(N:Int, bfs:BasisFunctions, molecule:Molecule[QMAtom], nOrbital:Int, omega:Double,roThresh:Double):GMatrixROmem2{self.M==N,self.N==N} {     
+    public def this(N:Long, bfs:BasisFunctions, molecule:Molecule[QMAtom], nOrbital:Int, omega:Double,roThresh:Double):GMatrixROmem2{self.M==N,self.N==N} {     
         super(N, N); 
         val result = Runtime.execForRead("date"); Console.OUT.printf("GMatrixROmem.x10 init %s...\n",result.readLine()); 
         this.bfs = bfs; this.mol = molecule; this.nOrbital = nOrbital;     

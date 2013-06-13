@@ -20,7 +20,7 @@ import x10.matrix.DenseMatrix;
 public class Overlap extends DenseMatrix{self.M==self.N} {
     var sHalf:DenseMatrix{self.M==this.M,self.N==this.N} = null;
 
-    public def this(n:Int):Overlap{self.M==n,self.N==n} {
+    public def this(n:Long):Overlap{self.M==n,self.N==n} {
         super(n, n);
     }
 

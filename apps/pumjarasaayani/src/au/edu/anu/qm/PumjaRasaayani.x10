@@ -173,7 +173,7 @@ public class PumjaRasaayani {
     }
 
     public static def main(args:Rail[String]) {
-        if (args.size != 1) {
+        if (args.size != 1L) {
             Console.ERR.println("usage: pumjarasaayani <inputFile>");
             System.setExitCode(1);
         } else {

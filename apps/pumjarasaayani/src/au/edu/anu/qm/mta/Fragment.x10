@@ -26,19 +26,19 @@ import au.edu.anu.chem.Molecule;
  */
 public class Fragment extends Molecule[QMAtom] {
 
-     public var centreedOn:Int;
+     public var centredOn:Long;
 
      public var energy:Double;
 
      public var cardinalitySign:Int;
      
      public def this() {
-          centreedOn = -1;
+          centredOn = -1L;
           cardinalitySign = 1;
      }
 
-     public def getNumberOfTrueAtoms() : Int {
-          var nAtoms:Int = 0;
+     public def getNumberOfTrueAtoms() : Long {
+          var nAtoms:Long = 0;
  
           for(atom in getAtoms()) 
              if (!(atom as QMAtom).isDummy()) nAtoms++;

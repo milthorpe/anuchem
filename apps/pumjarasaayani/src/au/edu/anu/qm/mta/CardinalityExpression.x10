@@ -34,8 +34,8 @@ public class CardinalityExpression {
 
    /** add cardinality fragments */
    public def addCardinalityFragments(fragList:ArrayList[Fragment]) {
-       val noOfFragments = fragList.size();
-       val combs = new Array[Int](noOfFragments, (Int)=>-1);
+       val noOfFragments = fragList.size() as Int;
+       val combs = new Rail[Int](noOfFragments, -1);
        val cfList = new ArrayList[Fragment]();
        var l:Int, pos:Int, m:Int;
 
@@ -95,7 +95,7 @@ public class CardinalityExpression {
        for(var i:Int=1; i<=nTerms; i++) {
            fInter = fInter.intersection(fragList.get(combs(i)));
 
-           if (fInter.getNumberOfTrueAtoms() == 0) return false;
+           if (fInter.getNumberOfTrueAtoms() == 0L) return false;
        } // end for
 
        addFragmentToList(fragList, cfList, fInter, sign);
