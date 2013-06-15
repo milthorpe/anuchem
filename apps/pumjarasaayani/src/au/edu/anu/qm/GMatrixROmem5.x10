@@ -257,6 +257,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
         val jMatrix = new DenseMatrix(N, N);
         val kMatrix = new DenseMatrix(N, N);
         val kval = GlobalRef(kMatrix);
+        val jval = GlobalRef(jMatrix);
         val dk = new Rail[Double](roK); // eqn 15b in RO#7
         val dkval = GlobalRef(dk);
         val ttemp = new Rail[Rail[Double]](maxTh, (Int) => new Rail[Double](maxam1*maxam1*roK));
@@ -309,30 +310,37 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
             }
             timer.stop(TIMER_GENCLASS); tINT+=(timer.last(TIMER_GENCLASS) as Double)/1e9;
 
-            // J - at place 0 - muti-threading // VERY SLOW because of auxIntMat access 
-            Console.OUT.println("J - single place"); 
+            // J - distributed
+            Console.OUT.println("J - distributed"); 
             timer.start(TIMER_JMATRIX);   
-  
-            finish for (thNo in 0..(maxTh-1)) async tjMatrix(thNo).reset();
-            finish for (thNo in 0..(maxTh-1)) async {
-                val myThreadJMat = tjMatrix(thNo);      
-                for (var spInd:Int=thNo; spInd<numSigShellPairs; spInd+=maxTh) {
-                    val sp=shellPairs(spInd);
-                    val maxLron=sp.maxL(ron);
-                    if (sp.maxL(ron)>=0) { 
-                        val maxLm=(maxLron+1)*(maxLron+1); 
-                        for (var tmu:Int=sp.mu; tmu<=sp.mu2; tmu++) for (var tnu:Int=sp.nu; tnu<=sp.nu2; tnu++) {
-                            var jContrib:Double=0.; 
-                            for (var rolm:Int=0; rolm<maxLm; rolm++) jContrib += dk(rolm)*auxIntMat(tmu, tnu*roK+rolm);
-                            myThreadJMat(tmu,tnu) += jContrib;
-                        } 
+            finish ateach(place in Dist.makeUnique()) async {
+                val pid = here.id;            
+                finish for (thNo in 0..(maxTh-1)) async tjMatrix(thNo).reset();
+                finish for (thNo in 0..(maxTh-1)) async {
+                    val myThreadJMat = tjMatrix(thNo);      
+                    for (var spInd:Int=thNo+place2ShellPair(pid); spInd<place2ShellPair(pid+1); spInd+=maxTh) {
+                        val sp=shellPairs(spInd);
+                        val maxLron=sp.maxL(lron);
+                        if (sp.maxL(lron)>=0) { 
+                            val maxLm=(maxLron+1)*(maxLron+1); 
+                            for (var tmu:Int=sp.mu; tmu<=sp.mu2; tmu++) for (var tnu:Int=sp.nu; tnu<=sp.nu2; tnu++) {
+                                var jContrib:Double=0.;  val tnuroK=tnu*roK;
+                                for (var rolm:Int=0; rolm<maxLm; rolm++) jContrib += dk(rolm)*auxIntMat(tmu, tnuroK+rolm);
+                                myThreadJMat(tmu,tnu) += jContrib;
+                            } 
+                        }
                     }
                 }
-            }
-            finish for (thNo in 0..(maxTh-1)) async for (thNo2 in 0..(maxTh-1)) {
-                val myThreadJMat = tjMatrix(thNo2);
-                for (var tnu:Int=thNo; tnu<N; tnu+=maxTh) for (var tmu:Int=0; tmu<N; tmu++)
-                    jMatrix(tmu,tnu)+=myThreadJMat(tmu,tnu);
+
+                for (thNo in 1..(maxTh-1)) {
+                    val myThreadJMat = tjMatrix(thNo);
+                    for (var tnu:Int=0; tnu<N; tnu++) for (var tmu:Int=offsetAtPlace(pid); tmu<offsetAtPlace(pid+1); tmu++)
+                        (tjMatrix(0))(tmu,tnu)+=myThreadJMat(tmu, tnu);
+                }
+                val myThreadJMat = tjMatrix(0);
+                at (jval.home) for (var tnu:Int=0; tnu<N; tnu++) for (var tmu:Int=offsetAtPlace(pid); tmu<offsetAtPlace(pid+1); tmu++)
+                    (jval())(tmu, tnu)+=myThreadJMat(tmu, tnu);
+
             }
             timer.stop(TIMER_JMATRIX); tJ+=(timer.last(TIMER_JMATRIX) as Double)/1e9;
 
