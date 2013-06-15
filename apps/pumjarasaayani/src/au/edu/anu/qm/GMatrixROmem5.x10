@@ -205,7 +205,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
         numSigShellPairs=place2ShellPair(placeID)=ind; 
         funcAtPlace(placeID-1) = mu-offsetAtPlace(placeID-1); 
         Console.OUT.printf("#basis fucntions1 =%5d #basis fucntions2 =%5d\n", funcAtPlace(placeID-1), totFunc);
-        Console.OUT.printf("place %3d: offset=%5d shellpair #%5d\n", nPlaces,offsetAtPlace(placeID-1)+totFunc, place2ShellPair(nPlaces));
+        Console.OUT.printf("place %3d: offset=%5d shellpair #%5d\n", nPlaces,mu+1, place2ShellPair(nPlaces));
       
         Console.OUT.printf("Found %d significant shellpairs.\n", numSigShellPairs);
         this.shellPairs = new Rail[ShellPair](numSigShellPairs);    
@@ -278,7 +278,6 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
             finish ateach(place in Dist.makeUnique()) async {
                 val pid = here.id; 
                 @Ifdef("__DEBUG__") {Console.OUT.println("pid=" + pid + " starts..."); }
-                //val auxIntMat = new DenseMatrix(N*roK,funcAtPlace(pid));
                 val taux = new Rail[Integral_Pack](maxTh, (Int) => new Integral_Pack(jd.roN, jd.roL, omega, roThresh, jd.rad, jd.roZ));
                 finish for (thNo in 0..(maxTh-1)) async {
                     val aux = taux(thNo); 
@@ -292,10 +291,9 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                                 for (var rolm:Int=0; rolm<maxLm; rolm++) {
                                     val normAux = nrm*temp(ind++); 
                                     myThreaddk(rolm) += scdmn*normAux; 
-                                    auxIntMat(tmu,rolm*N+tnu) = normAux;                                                               
+                                    auxIntMat(tmu,tnu*roK+rolm) = normAux;                                                               
                                 } 
                             }
-
                         }
                     }
                 }
@@ -311,7 +309,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
             }
             timer.stop(TIMER_GENCLASS); tINT+=(timer.last(TIMER_GENCLASS) as Double)/1e9;
 
-            // J - at place 0 - muti-threading
+            // J - at place 0 - muti-threading // VERY SLOW because of auxIntMat access 
             Console.OUT.println("J - single place"); 
             timer.start(TIMER_JMATRIX);   
   
@@ -325,7 +323,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                         val maxLm=(maxLron+1)*(maxLron+1); 
                         for (var tmu:Int=sp.mu; tmu<=sp.mu2; tmu++) for (var tnu:Int=sp.nu; tnu<=sp.nu2; tnu++) {
                             var jContrib:Double=0.; 
-                            for (var rolm:Int=0; rolm<maxLm; rolm++) jContrib += dk(rolm)*auxIntMat(tmu, rolm*N+tnu);
+                            for (var rolm:Int=0; rolm<maxLm; rolm++) jContrib += dk(rolm)*auxIntMat(tmu, tnu*roK+rolm);
                             myThreadJMat(tmu,tnu) += jContrib;
                         } 
                     }
@@ -354,7 +352,8 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                      DenseMatrixBLAS.compMultTrans(A, mos, B, [funcAtPlace(pid)*roK, nOrbital, N], false);
                  }   
 
-                 val mult=Math.ceil(nPlaces*.5+.5);
+                 val mult=Math.ceil(nPlaces*.5+.5) as Int;
+                 Console.OUT.println("mult=" + mult);  
                  finish ateach(place in Dist.makeUnique()) async {
                      val pid = here.id; Console.OUT.println("pid=" + pid + " starts...");   
                      val a=halfAuxMat.local();                   
