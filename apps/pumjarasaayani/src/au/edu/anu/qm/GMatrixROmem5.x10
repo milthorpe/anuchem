@@ -250,7 +250,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
         val maxTh=Runtime.NTHREADS; val nPlaces=Place.MAX_PLACES;            
 
         val cbs_auxInt= new Rail[Int](1);  cbs_auxInt(0)=N*roK;
-        @Ifdef("__DEBUG__") {  for (i in (0..(nPlaces-1))) Console.OUT.printf("%d %d\n",i,funcAtPlace(i)); Console.OUT.printf("%d\n",cbs_auxInt(0));}
+        //@Ifdef("__DEBUG__") {  for (i in (0..(nPlaces-1))) Console.OUT.printf("%d %d\n",i,funcAtPlace(i)); Console.OUT.printf("%d\n",cbs_auxInt(0));}
         val auxIntGrid = new Grid(funcAtPlace, cbs_auxInt);
         val auxIntMat = DistDenseMatrix.make(auxIntGrid);
 
@@ -276,9 +276,10 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
             val lron=ron; 
 
             // Distributed Generation of AuxMat
+            Console.OUT.println("Aux - distributed"); 
             finish ateach(place in Dist.makeUnique()) async {
                 val pid = here.id; 
-                @Ifdef("__DEBUG__") {Console.OUT.println("pid=" + pid + " starts..."); }
+                //@Ifdef("__DEBUG__") {Console.OUT.println("pid=" + pid + " starts..."); }
                 val taux = new Rail[Integral_Pack](maxTh, (Int) => new Integral_Pack(jd.roN, jd.roL, omega, roThresh, jd.rad, jd.roZ));
                 finish for (thNo in 0..(maxTh-1)) async {
                     val aux = taux(thNo); 
@@ -299,7 +300,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                     }
                 }
 
-                Console.OUT.println(pid + " Collecting dkvalue..."); 
+                //Console.OUT.println(pid + " Collecting dkvalue..."); 
                 finish for (thNo in 0..(maxTh-1)) async for (thNo2 in 0..(maxTh-1)) {
                     val myThreaddk = tdk(thNo2);
                     for (var rolm:Int=thNo; rolm<roK; rolm+=maxTh) { val rolmm=rolm;
@@ -345,7 +346,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
             timer.stop(TIMER_JMATRIX); tJ+=(timer.last(TIMER_JMATRIX) as Double)/1e9;
 
             // K
-            Console.OUT.println("K "); 
+            Console.OUT.println("K - distributed"); 
             if (ron<=roNK) { // This produces K/2
                  timer.start(TIMER_KMATRIX);  
 
@@ -354,16 +355,16 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                  val halfAuxMat = DistDenseMatrix.make(halfAuxGrid);
 
                  finish ateach(place in Dist.makeUnique()) async {
-                     val pid = here.id; Console.OUT.println("pid=" + pid + " starts..."); 
+                     val pid = here.id; //Console.OUT.println("pid=" + pid + " starts..."); 
                      val A=new DenseMatrix(funcAtPlace(pid)*roK, N, auxIntMat.local().d);
                      val B=new DenseMatrix(funcAtPlace(pid)*roK, nOrbital, halfAuxMat.local().d);
                      DenseMatrixBLAS.compMultTrans(A, mos, B, [funcAtPlace(pid)*roK, nOrbital, N], false);
                  }   
 
                  val mult=Math.ceil(nPlaces*.5+.5) as Int;
-                 Console.OUT.println("mult=" + mult);  
+                 //Console.OUT.println("mult=" + mult);  
                  finish ateach(place in Dist.makeUnique()) async {
-                     val pid = here.id; Console.OUT.println("pid=" + pid + " starts...");   
+                     val pid = here.id; //Console.OUT.println("pid=" + pid + " starts...");   
                      val a=halfAuxMat.local();                   
                      val moff=offsetAtPlace(pid);
                      for (var blk:Int=0; blk<mult; blk++) {
