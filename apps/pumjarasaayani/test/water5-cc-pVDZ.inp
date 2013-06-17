@@ -1,7 +1,7 @@
 5water
 basis cc-pVDZ
 units 0.5291772109217
-RO_Z 300.0
+RO_Z 1.0
 molecule
           O       -0.571270    2.322980   -0.003174
           O        2.038411    1.261129   -0.102281
@@ -23,10 +23,10 @@ compare_RO
 scf_max 0
 guess core
 use_RO 1
-RO_N 300
-RO_L 200
+RO_N 9
+RO_L 13
 compare_RO
 RO_thresh 6
 thresh 14
-omega 1.
+omega .3
 gmat_parallel_scheme 0

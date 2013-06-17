@@ -1,0 +1,9 @@
+He
+basis 321g
+molecule 
+He 0.0 0.0 0.0
+end
+use_RO 1
+RO_N 76
+RO_L 13
+guess core

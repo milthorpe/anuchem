@@ -268,7 +268,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
         val gMat = new DenseMatrix(N,N);
 
         for (var ron:Int=0; ron<=roN; ron++)  {  
-            @Ifdef("__DEBUG__") { Console.OUT.printf("."); }
+            // @Ifdef("__DEBUG__") { Console.OUT.printf("ron=%d\n",ron); }
             finish for (thNo in 0..(maxTh-1)) async tdk(thNo).clear();     
                       
             timer.start(TIMER_GENCLASS); 
@@ -289,12 +289,13 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                         if (maxLron>=0) {
                             val maxLm=(maxLron+1)*(maxLron+1); var ind:Int=0; val temp=ttemp(thNo); val myThreaddk=tdk(thNo);  
                             aux.genClass(sp.aang, sp.bang, sp.aPoint, sp.bPoint, sp.zetaA, sp.zetaB, sp.conA, sp.conB, sp.dconA, sp.dconB, temp, lron, maxLron,ylms(spInd).y, ylms(spInd).maxL); 
-                            for (var tmu:Int=sp.mu; tmu<=sp.mu2; tmu++) for (var tnu:Int=sp.nu; tnu<=sp.nu2; tnu++) {
+                            for (var tmu:Int=sp.mu-offsetAtPlace(pid); tmu<=sp.mu2-offsetAtPlace(pid); tmu++) 
+                            for (var tnu:Int=sp.nu; tnu<=sp.nu2; tnu++) {
                                 val scdmn=density(tmu,tnu) ; val nrm=norm(tmu)*norm(tnu); 
                                 for (var rolm:Int=0; rolm<maxLm; rolm++) {
                                     val normAux = nrm*temp(ind++); 
                                     myThreaddk(rolm) += scdmn*normAux; 
-                                    localMat(tmu-offsetAtPlace(pid),tnu*roK+rolm) = normAux;                                             
+                                    localMat(tmu,tnu*roK+rolm) = normAux;
                                 } 
                             }
                         }
@@ -326,10 +327,11 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                         val maxLron=sp.maxL(lron);
                         if (sp.maxL(lron)>=0) { 
                             val maxLm=(maxLron+1)*(maxLron+1); 
-                            for (var tmu:Int=sp.mu; tmu<=sp.mu2; tmu++) for (var tnu:Int=sp.nu; tnu<=sp.nu2; tnu++) {
+                            for (var tmu:Int=sp.mu-offsetAtPlace(pid); tmu<=sp.mu2-offsetAtPlace(pid); tmu++) 
+                            for (var tnu:Int=sp.nu; tnu<=sp.nu2; tnu++) {
                                 var jContrib:Double=0.;  val tnuroK=tnu*roK;
                                 for (var rolm:Int=0; rolm<maxLm; rolm++) 
-                                    jContrib += dk(rolm)*localMat(tmu-offsetAtPlace(pid), tnuroK+rolm);
+                                    jContrib += dk(rolm)*localMat(tmu, tnuroK+rolm);
                                 myThreadJMat(tmu,tnu) += jContrib;
                             } 
                         }
