@@ -277,7 +277,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
 
             // Distributed Generation of AuxMat
             // Console.OUT.println("Aux - distributed"); 
-            finish ateach(place in Dist.makeUnique()) async {
+            finish ateach(place in Dist.makeUnique()) {
                 val pid = here.id; 
                 val localMat=auxIntMat.local();
                 //@Ifdef("__DEBUG__") {Console.OUT.println("pid=" + pid + " starts..."); }
@@ -316,7 +316,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
             // J - distributed
             // Console.OUT.println("J - distributed"); 
             timer.start(TIMER_JMATRIX);   
-            finish ateach(place in Dist.makeUnique()) async {
+            finish ateach(place in Dist.makeUnique()) {
                 val pid = here.id; 
                 val localMat=auxIntMat.local();      
                 finish for (thNo in 0..(maxTh-1)) async tjMatrix(thNo).reset();
@@ -359,7 +359,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                  val halfAuxGrid = new Grid(funcAtPlace, cbs_HalfAuxInt);
                  val halfAuxMat = DistDenseMatrix.make(halfAuxGrid);
 
-                 finish ateach(place in Dist.makeUnique()) async {
+                 finish ateach(place in Dist.makeUnique())  {
                      val pid = here.id; //Console.OUT.println("pid=" + pid + " starts..."); 
                      val A=new DenseMatrix(funcAtPlace(pid)*roK, N, auxIntMat.local().d);
                      val B=new DenseMatrix(funcAtPlace(pid)*roK, nOrbital, halfAuxMat.local().d);
@@ -368,7 +368,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
 
                  val mult=Math.ceil(nPlaces*.5+.5) as Int;
                  //Console.OUT.println("mult=" + mult);  
-                 finish ateach(place in Dist.makeUnique()) async {
+                 finish ateach(place in Dist.makeUnique())  {
                      val pid = here.id; //Console.OUT.println("pid=" + pid + " starts...");   
                      val a=halfAuxMat.local();                   
                      val moff=offsetAtPlace(pid);
