@@ -310,8 +310,8 @@ public class PME {
                 val haloPlaces = new HashMap[Int,ArrayList[Point(3)]](8); // a place may have up to 8 immediate neighbours in the two block-divided dimensions
                 
                 // separate the halo subcells into partial lists stored at each nearby place
-                for (boxIndex in myAtomsCache.region) {
-                    val placeId = subCells.dist(boxIndex).id;
+                for (boxIndex[x,y,z] in myAtomsCache.region) {
+                    val placeId = subCells.dist(x,y,z).id;
                     var haloForPlace : ArrayList[Point(3)] = haloPlaces.getOrElse(placeId, null);
                     if (haloForPlace == null) {
                         haloForPlace = new ArrayList[Point(3)]();
@@ -430,7 +430,6 @@ public class PME {
                 directEnergy <- myDirectEnergy;
             }
         }
-        
         timer.stop(TIMER_INDEX_DIRECT);
         return directEnergy();
     }
@@ -503,10 +502,10 @@ public class PME {
                         val q = atom.charge;
                         val u = atom.centre.scale(scalingVector) + Vector3d(K1, K2, K3); // Eq. 3.1 TODO general non-cubic
                         val u1i = u.i as Int;
-                        val u2i = u.j as Int;
-                        val u3i = u.k as Int;
                         PME.fillSpline(1.0 - (u.i - u1i), iSpline, splineOrder);
+                        val u2i = u.j as Int;
                         PME.fillSpline(1.0 - (u.j - u2i), jSpline, splineOrder);
+                        val u3i = u.k as Int;
                         PME.fillSpline(1.0 - (u.k - u3i), kSpline, splineOrder);
                         for (i in 0..(splineOrder-1)) {
                             val k1 = (u1i - i + gridSize0) % gridSize0;
