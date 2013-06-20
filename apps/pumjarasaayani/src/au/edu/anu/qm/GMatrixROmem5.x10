@@ -254,6 +254,9 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
         val auxIntGrid = new Grid(funcAtPlace, cbs_auxInt);
         val auxIntMat = DistDenseMatrix.make(auxIntGrid);
 
+        val auxIntGrid2 = new Grid(cbs_auxInt,funcAtPlace);
+        val auxIntMat2 = DistDenseMatrix.make(auxIntGrid2);
+
         val jMatrix = new DenseMatrix(N, N);
         val kMatrix = new DenseMatrix(N, N);
         val kval = GlobalRef(kMatrix);
@@ -279,25 +282,35 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
             // Console.OUT.println("Aux - distributed"); 
             finish ateach(place in Dist.makeUnique()) {
                 val pid = here.id; 
-                val localMat=auxIntMat.local();
+                val localMat=auxIntMat.local(); val localMat2=auxIntMat2.local();
                 //@Ifdef("__DEBUG__") {Console.OUT.println("pid=" + pid + " starts..."); }
                 val taux = new Rail[Integral_Pack](maxTh, (Int) => new Integral_Pack(jd.roN, jd.roL, omega, roThresh, jd.rad, jd.roZ)); //change jd.roN, jd.roL ?
                 finish for (thNo in 0..(maxTh-1)) async {
-                    val aux = taux(thNo); 
+                    val aux = taux(thNo); val temp2= new Rail[Double](maxam1*maxam1*roK);
                     for (var spInd:Int=thNo+place2ShellPair(pid); spInd<place2ShellPair(pid+1); spInd+=maxTh) {
                         val sp=shellPairs(spInd); val maxLron=sp.maxL(lron);                    
                         if (maxLron>=0) {
-                            val maxLm=(maxLron+1)*(maxLron+1); var ind:Int=0; val temp=ttemp(thNo); val myThreaddk=tdk(thNo);  
+                            val maxLm=(maxLron+1)*(maxLron+1);  val temp=ttemp(thNo); val myThreaddk=tdk(thNo);  
                             aux.genClass(sp.aang, sp.bang, sp.aPoint, sp.bPoint, sp.zetaA, sp.zetaB, sp.conA, sp.conB, sp.dconA, sp.dconB, temp, lron, maxLron,ylms(spInd).y, ylms(spInd).maxL); 
-                            for (var tmu:Int=sp.mu-offsetAtPlace(pid); tmu<=sp.mu2-offsetAtPlace(pid); tmu++) 
-                            for (var tnu:Int=sp.nu; tnu<=sp.nu2; tnu++) {
+
+                            var ind:Int=0;
+                            val musize=sp.mu2-sp.mu+1; val nusize=sp.nu2-sp.nu+1;
+                            for (var tmu:Int=sp.mu; tmu<=sp.mu2; tmu++)for (var tnu:Int=sp.nu; tnu<=sp.nu2; tnu++)  {
                                 val scdmn=density(tmu,tnu) ; val nrm=norm(tmu)*norm(tnu); 
+                                val ttmu=tmu-sp.mu; val ttnu=tnu-sp.nu;
                                 for (var rolm:Int=0; rolm<maxLm; rolm++) {
-                                    val normAux = nrm*temp(ind++); 
+                                    val normAux = nrm*temp(ind++);       
                                     myThreaddk(rolm) += scdmn*normAux; 
-                                    localMat(tmu,tnu*roK+rolm) = normAux;
-                                } 
-                            }
+                                    temp2((ttnu*roK+rolm)*musize+ttmu) = normAux;  
+                                    localMat2(tnu*roK+rolm, tmu)=normAux;
+                                }
+                            }                    
+
+                            ind=0;
+                            for (var tnu:Int=sp.nu; tnu<=sp.nu2; tnu++) 
+                                for (var rolm:Int=0; rolm<maxLm; rolm++) 
+                                    for (var tmu:Int=sp.mu-offsetAtPlace(pid); tmu<=sp.mu2-offsetAtPlace(pid); tmu++)
+                                        localMat(tmu,tnu*roK+rolm) = temp2(ind++);                            
                         }
                     }
                 }
@@ -322,7 +335,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
             timer.start(TIMER_JMATRIX);   
             finish ateach(place in Dist.makeUnique()) {
                 val pid = here.id; 
-                val localMat=auxIntMat.local();      
+                val localMat=auxIntMat2.local();      
                 finish for (thNo in 0..(maxTh-1)) async tjMatrix(thNo).reset();
                 finish for (thNo in 0..(maxTh-1)) async {
                     val myThreadJMat = tjMatrix(thNo);      
@@ -335,7 +348,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                             for (var tnu:Int=sp.nu; tnu<=sp.nu2; tnu++) {
                                 var jContrib:Double=0.;  val tnuroK=tnu*roK;
                                 for (var rolm:Int=0; rolm<maxLm; rolm++) 
-                                    jContrib += dk(rolm)*localMat(tmu, tnuroK+rolm);
+                                    jContrib += dk(rolm)*localMat(tnuroK+rolm, tmu);
                                 myThreadJMat(tmu,tnu) += jContrib;
                             } 
                         }
