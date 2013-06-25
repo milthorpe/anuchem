@@ -583,7 +583,7 @@ public class PME {
 
         val scale = 1.0 / (K1 * K2 * K3);
         val reciprocalEnergy = new Accumulator[Double](Reducible.SumReducer[Double]());
-        finish for(place in Place.places()) at(place){
+        finish ateach(place in Dist.makeUnique()) {
             var myReciprocalEnergy : Double = 0.0;
             val localQ = Q.getLocalPortion();
             val localThetaRecConvQ = thetaRecConvQ.getLocalPortion();
