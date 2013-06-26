@@ -18,7 +18,7 @@ import x10.io.IOException;
 import x10.regionarray.Dist;
 import x10.regionarray.DistArray;
 import x10.util.ArrayList;
-import x10.util.ArrayUtils;
+import x10.util.RailUtils;
 import x10.util.Team;
 import x10.util.concurrent.AtomicInteger;
 

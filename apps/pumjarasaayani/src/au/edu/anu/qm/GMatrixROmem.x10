@@ -11,7 +11,7 @@
 package au.edu.anu.qm;
 
 import x10.util.ArrayList;
-import x10.util.ArrayUtils;
+import x10.util.RailUtils;
 import x10.util.Team;
 import x10.util.concurrent.AtomicInteger;
 
@@ -187,8 +187,8 @@ public class GMatrixROmem extends DenseMatrix{self.M==self.N} {
         for (i in 0..(numSigShellPairs-1))
             shellPairs(i)=rawShellPairs(i); // TODO delete rawShellPairs
         // val compareShellPairContribs = (y:ShellPair,x:ShellPair) => x.contrib.compareTo(y.contrib);
-        // ArrayUtils.sort[ShellPair](shellPairs, compareShellPairContribs);
-        // numSigShellPairs = Math.abs(ArrayUtils.binarySearch[ShellPair](rawShellPairs, dummySignificantPair, compareShellPairContribs));
+        // RailUtils.sort[ShellPair](shellPairs, compareShellPairContribs);
+        // numSigShellPairs = Math.abs(RailUtils.binarySearch[ShellPair](rawShellPairs, dummySignificantPair, compareShellPairContribs));
 
         // Find MaxL(n) -- This screening is a gold standard but slow
         val THRESH=1.0e-8;                        

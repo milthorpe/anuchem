@@ -10,7 +10,7 @@
  */
 package au.edu.anu.mm;
 
-import x10.util.ArrayUtils;
+import x10.util.RailUtils;
 import x10.util.HashMap;
 
 import au.edu.anu.chem.PointCharge;
@@ -60,7 +60,7 @@ public class LET {
     }
 
     public def getAtomDataForOctant(mortonId:UInt) {
-        val cacheIndex = ArrayUtils.binarySearch(combinedUList, mortonId);
+        val cacheIndex = RailUtils.binarySearch(combinedUList, mortonId);
         if (cacheIndex >= 0) {
             return cachedAtoms(cacheIndex);
         } else {
@@ -69,7 +69,7 @@ public class LET {
     }
 
     public def setAtomDataForOctant(mortonId:UInt, atoms:Rail[Double]) {
-        val cacheIndex = ArrayUtils.binarySearch(combinedUList, mortonId);
+        val cacheIndex = RailUtils.binarySearch(combinedUList, mortonId);
         if (cacheIndex >= 0) {
             cachedAtoms(cacheIndex) = atoms;
         }

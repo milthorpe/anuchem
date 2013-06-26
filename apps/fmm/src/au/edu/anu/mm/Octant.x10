@@ -11,7 +11,7 @@
 package au.edu.anu.mm;
 
 import x10.util.ArrayList;
-import x10.util.ArrayUtils;
+import x10.util.RailUtils;
 import x10.util.HashSet;
 import x10.util.Pair;
 
