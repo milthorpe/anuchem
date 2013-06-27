@@ -84,13 +84,13 @@ public class PME {
     /** 
      * Translation vectors for neighbouring unit cells 
      * (the 26 cells surrounding the origin cell).
-     * These are replicated across all places in a DistArray with a unique dist.
+     * These are replicated across all places using a PlaceLocalHandle.
      * Dimensions of the enclosed array are:
      * 0: x translation (difference between x-coordinate of sub-cells
      * 1: y translation
      * 2: z translation
      */
-    private val imageTranslations : DistArray[Array[Vector3d](3){rect}](1);
+    private val imageTranslations : PlaceLocalHandle[Array[Vector3d](3){rect}];
 
     /** The atoms in the simulation, divided up into a distributed array of Arrays, one for each place. */
     private val atoms : DistArray[Rail[MMAtom]](1);
@@ -166,9 +166,9 @@ public class PME {
         this.splineOrder = splineOrder;
         this.beta = beta;
         this.cutoff = cutoff;
-        this.imageTranslations = DistArray.make[Array[Vector3d](3){rect}](
-            Dist.makeUnique(), 
-            new Array[Vector3d](Region.make(-1..1, -1..1, -1..1), 
+        this.imageTranslations = PlaceLocalHandle.make[Array[Vector3d](3){rect}](
+            PlaceGroup.WORLD, 
+            () => new Array[Vector3d](-1..1 * -1..1 * -1..1, 
                 ([i,j,k] : Point(3)) => (edges(0).mul(i)).add(edges(1).mul(j)).add(edges(2).mul(k))) 
         );
 
@@ -371,7 +371,7 @@ public class PME {
         val directEnergy = new Accumulator[Double](Reducible.SumReducer[Double]());
         finish ateach(place in Dist.makeUnique()) {
             val cachedAtoms = atomsCache(here.id);
-            val translations = imageTranslations(here.id);
+            val translations = imageTranslations();
             val localRegion = subCellsDist(here) as Region(3){rect};
             for ([x,y,z] in localRegion) async {
                 val thisCell = cachedAtoms(x,y,z) as Rail[PointCharge];
@@ -549,8 +549,8 @@ public class PME {
 
         val subCellMinX = Math.floor(gridRegion.min(0) / gridPointsPerSubCell) as Int;
 
-        val fullX = gridRegion.min(0) == 0L && gridRegion.max(0) as Int == (gridSize-1);
-        val subCellMaxX:Long;
+        val fullX = gridRegion.min(0) == 0 && gridRegion.max(0) == (gridSize-1);
+        val subCellMaxX:Int;
         if (fullX) {
             subCellMaxX = subCellRegion.max(0);
         } else {
@@ -559,8 +559,8 @@ public class PME {
         }
 
         val subCellMinY = Math.floor(gridRegion.min(1) / gridPointsPerSubCell) as Int;
-        val fullY = gridRegion.min(1) == 0L && gridRegion.max(1) as Int == (gridSize-1);
-        val subCellMaxY:Long;
+        val fullY = gridRegion.min(1) == 0 && gridRegion.max(1) == (gridSize-1);
+        val subCellMaxY:Int;
         if (fullY) {
             subCellMaxY = subCellRegion.max(1);
         } else {
