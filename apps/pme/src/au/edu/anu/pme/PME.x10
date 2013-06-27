@@ -24,7 +24,7 @@ import x10x.vector.Point3d;
 import x10x.vector.Vector3d;
 import au.edu.anu.chem.PointCharge;
 import au.edu.anu.chem.mm.MMAtom;
-import au.edu.anu.fft.Distributed3dFft;
+import au.edu.anu.fft.DistributedReal3dFft;
 import au.edu.anu.util.Timer;
 //import org.netlib.fdlibm.Erf;
 
@@ -100,7 +100,7 @@ public class PME {
     private val BdotC : DistArray[Double]{self.dist==gridDist};
 
     /** The gridded charge array Q as defined in Eq. 4.6 */
-    private val Q : DistArray[Complex]{self.dist==gridDist};
+    private val Q : DistArray[Double]{self.dist==gridDist};
 
     /** The inverse DFT of the Q array.  TODO this should be a scoped local variable in getEnergy() XTENLANG-??? */
     private val Qinv : DistArray[Complex]{self.dist==gridDist};
@@ -197,7 +197,7 @@ public class PME {
 
         //Console.OUT.println("gridDist = " + gridDist);
 
-        Q = DistArray.make[Complex](gridDist);
+        Q = DistArray.make[Double](gridDist);
         BdotC = DistArray.make[Double](gridDist);
 
         // TODO following arrays should be scoped local variables XTENLANG-???
@@ -232,7 +232,7 @@ public class PME {
             gridCharges();
 
             timer.start(TIMER_INDEX_INVFFT);
-            new Distributed3dFft(gridSize(0), Q, Qinv, temp).doFFT3d(false);
+            DistributedReal3dFft.doFFT3d(Q, Qinv, temp);
             timer.stop(TIMER_INDEX_INVFFT);
 
             timer.start(TIMER_INDEX_THETARECCONVQ);
@@ -252,12 +252,12 @@ public class PME {
                 }
             }
 
-            // and do inverse FFT
-            new Distributed3dFft(gridSize(0), thetaRecConvQ, thetaRecConvQ, temp).doFFT3d(true);
+            // and do forward FFT
+            DistributedReal3dFft.doFFT3d(thetaRecConvQ, thetaRecConvQReal, temp, temp2);
             timer.stop(TIMER_INDEX_THETARECCONVQ);
         }
 
-        val reciprocalEnergy = getReciprocalEnergy(thetaRecConvQ);
+        val reciprocalEnergy = getReciprocalEnergy(thetaRecConvQReal);
         val selfEnergy = getSelfEnergy();
         val directEnergy = getDirectEnergy();
 
@@ -481,7 +481,7 @@ public class PME {
         val atomsCache = this.atomsCache; // TODO shouldn't be necessary XTENLANG-1913
         val subCellRegion = subCells.region as Region(3){rect};
         finish ateach(place1 in Dist.makeUnique()) {
-            val qLocal = Q.getLocalPortion() as Array[Complex](3){rect};
+            val qLocal = Q.getLocalPortion() as Array[Double](3){rect};
             val localGridRegion = qLocal.region as Region(3){rect};
             if (!localGridRegion.isEmpty()) {
                 qLocal.clear();
@@ -578,7 +578,7 @@ public class PME {
     /**
      * @return the approximation to the reciprocal energy ~E_rec as defined in Eq. 4.7
      */
-    private def getReciprocalEnergy(thetaRecConvQ : DistArray[Complex]{self.dist==gridDist}) {
+    private def getReciprocalEnergy(thetaRecConvQ:DistArray[Double]{self.dist==gridDist}) {
         timer.start(TIMER_INDEX_RECIPROCAL);
 
 	val gridDist = this.gridDist; // TODO shouldn't be necessary XTENLANG-1913
@@ -591,14 +591,13 @@ public class PME {
             val localThetaRecConvQ = thetaRecConvQ.getLocalPortion();
             val localRegion = localQ.region as Region(3){rect};
             for ([i,j,k] in localRegion) {
-                val gridPointContribution = localQ(i,j,k) * localThetaRecConvQ(i,j,k);
-                myReciprocalEnergy += localQ(i,j,k).re * localThetaRecConvQ(i,j,k).re;
+                myReciprocalEnergy += localQ(i,j,k) * localThetaRecConvQ(i,j,k);
             }
             reciprocalEnergy <- myReciprocalEnergy;
         }
 
         timer.stop(TIMER_INDEX_RECIPROCAL);
-        return reciprocalEnergy() / 2.0;
+        return scale * reciprocalEnergy() / 2.0;
     }
 
     private static @Inline def fillSpline(offset:Double, spline:Rail[Double], splineOrder:Int) {
@@ -635,7 +634,7 @@ public class PME {
 		val K2 = this.K2; // TODO shouldn't be necessary XTENLANG-1913;
 		val K3 = this.K3; // TODO shouldn't be necessary XTENLANG-1913;
         finish ateach(place1 in Dist.makeUnique()) {
-            val splines = new Rail[Double](splineOrder);
+            val splines = new Array[Double](splineOrder);
             for (k in 1..(splineOrder-1)) {
                 splines(k) = bSpline(splineOrder, k);
             }

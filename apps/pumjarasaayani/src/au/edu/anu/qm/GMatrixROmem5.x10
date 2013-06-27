@@ -254,6 +254,9 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
         val auxIntGrid = new Grid(funcAtPlace, cbs_auxInt);
         val auxIntMat = DistDenseMatrix.make(auxIntGrid);
 
+        val auxIntGrid2 = new Grid(cbs_auxInt,funcAtPlace);
+        val auxIntMat2 = DistDenseMatrix.make(auxIntGrid2);
+
         val jMatrix = new DenseMatrix(N, N);
         val kMatrix = new DenseMatrix(N, N);
         val kval = GlobalRef(kMatrix);
@@ -277,48 +280,62 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
 
             // Distributed Generation of AuxMat
             // Console.OUT.println("Aux - distributed"); 
-            finish ateach(place in Dist.makeUnique()) async {
+            finish ateach(place in Dist.makeUnique()) {
                 val pid = here.id; 
-                val localMat=auxIntMat.local();
+                val localMat=auxIntMat.local(); val localMat2=auxIntMat2.local();
                 //@Ifdef("__DEBUG__") {Console.OUT.println("pid=" + pid + " starts..."); }
-                val taux = new Rail[Integral_Pack](maxTh, (Int) => new Integral_Pack(jd.roN, jd.roL, omega, roThresh, jd.rad, jd.roZ));
+                val taux = new Rail[Integral_Pack](maxTh, (Int) => new Integral_Pack(jd.roN, jd.roL, omega, roThresh, jd.rad, jd.roZ)); //change jd.roN, jd.roL ?
                 finish for (thNo in 0..(maxTh-1)) async {
-                    val aux = taux(thNo); 
+                    val aux = taux(thNo); val temp2= new Rail[Double](maxam1*maxam1*roK);
                     for (var spInd:Int=thNo+place2ShellPair(pid); spInd<place2ShellPair(pid+1); spInd+=maxTh) {
                         val sp=shellPairs(spInd); val maxLron=sp.maxL(lron);                    
                         if (maxLron>=0) {
-                            val maxLm=(maxLron+1)*(maxLron+1); var ind:Int=0; val temp=ttemp(thNo); val myThreaddk=tdk(thNo);  
+                            val maxLm=(maxLron+1)*(maxLron+1);  val temp=ttemp(thNo); val myThreaddk=tdk(thNo);  
                             aux.genClass(sp.aang, sp.bang, sp.aPoint, sp.bPoint, sp.zetaA, sp.zetaB, sp.conA, sp.conB, sp.dconA, sp.dconB, temp, lron, maxLron,ylms(spInd).y, ylms(spInd).maxL); 
-                            for (var tmu:Int=sp.mu-offsetAtPlace(pid); tmu<=sp.mu2-offsetAtPlace(pid); tmu++) 
-                            for (var tnu:Int=sp.nu; tnu<=sp.nu2; tnu++) {
+
+                            var ind:Int=0;
+                            val musize=sp.mu2-sp.mu+1; val nusize=sp.nu2-sp.nu+1;
+                            for (var tmu:Int=sp.mu; tmu<=sp.mu2; tmu++)for (var tnu:Int=sp.nu; tnu<=sp.nu2; tnu++)  {
                                 val scdmn=density(tmu,tnu) ; val nrm=norm(tmu)*norm(tnu); 
+                                val ttmu=tmu-sp.mu; val ttnu=tnu-sp.nu;
                                 for (var rolm:Int=0; rolm<maxLm; rolm++) {
-                                    val normAux = nrm*temp(ind++); 
+                                    val normAux = nrm*temp(ind++);       
                                     myThreaddk(rolm) += scdmn*normAux; 
-                                    localMat(tmu,tnu*roK+rolm) = normAux;
-                                } 
-                            }
+                                    temp2((ttnu*roK+rolm)*musize+ttmu) = normAux;  
+                                    localMat2(tnu*roK+rolm, tmu)=normAux;
+                                }
+                            }                    
+
+                            ind=0;
+                            for (var tnu:Int=sp.nu; tnu<=sp.nu2; tnu++) 
+                                for (var rolm:Int=0; rolm<maxLm; rolm++) 
+                                    for (var tmu:Int=sp.mu-offsetAtPlace(pid); tmu<=sp.mu2-offsetAtPlace(pid); tmu++)
+                                        localMat(tmu,tnu*roK+rolm) = temp2(ind++);                            
                         }
                     }
                 }
 
                 //Console.OUT.println(pid + " Collecting dkvalue..."); 
-                finish for (thNo in 0..(maxTh-1)) async for (thNo2 in 0..(maxTh-1)) {
-                    val myThreaddk = tdk(thNo2);
-                    for (var rolm:Int=thNo; rolm<roK; rolm+=maxTh) { val rolmm=rolm;
-                        //at (gVal) async atomic dk(rolmm)+=myThreaddk(rolmm);}
-                        at(dkval.home) async atomic (dkval())(rolmm)+=myThreaddk(rolmm); 
-                    }
+                for (thNo in 1..(maxTh-1)) {
+                    val dk0 = tdk(0); val dkx = tdk(thNo);
+                    for (var rolm:Int=0; rolm<roK; rolm++) dk0(rolm)+=dkx(rolm);
                 }
+                
+                at(dkval.home) async {
+                    val des =(dkval()); val src=tdk(0);
+                    for (var rolm:Int=0; rolm<roK; rolm++) 
+                        atomic des(rolm)+=src(rolm); 
+                }
+                // Will convert to WorkerLocalHandle or PlaceLocalHandle
             }
             timer.stop(TIMER_GENCLASS); tINT+=(timer.last(TIMER_GENCLASS) as Double)/1e9;
 
             // J - distributed
             // Console.OUT.println("J - distributed"); 
             timer.start(TIMER_JMATRIX);   
-            finish ateach(place in Dist.makeUnique()) async {
+            finish ateach(place in Dist.makeUnique()) {
                 val pid = here.id; 
-                val localMat=auxIntMat.local();      
+                val localMat=auxIntMat2.local();      
                 finish for (thNo in 0..(maxTh-1)) async tjMatrix(thNo).reset();
                 finish for (thNo in 0..(maxTh-1)) async {
                     val myThreadJMat = tjMatrix(thNo);      
@@ -331,7 +348,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                             for (var tnu:Int=sp.nu; tnu<=sp.nu2; tnu++) {
                                 var jContrib:Double=0.;  val tnuroK=tnu*roK;
                                 for (var rolm:Int=0; rolm<maxLm; rolm++) 
-                                    jContrib += dk(rolm)*localMat(tmu, tnuroK+rolm);
+                                    jContrib += dk(rolm)*localMat(tnuroK+rolm, tmu);
                                 myThreadJMat(tmu,tnu) += jContrib;
                             } 
                         }
@@ -344,9 +361,12 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                         (tjMatrix(0))(tmu,tnu)+=myThreadJMat(tmu, tnu);
                 }
                 val myThreadJMat = tjMatrix(0);
-                at (jval.home) for (var tnu:Int=0; tnu<N; tnu++) for (var tmu:Int=offsetAtPlace(pid); tmu<offsetAtPlace(pid+1); tmu++)
-                    (jval())(tmu, tnu)+=myThreadJMat(tmu, tnu);
-
+                at (jval.home) {
+                    val jj=(jval());
+                    for (var tnu:Int=0; tnu<N; tnu++) for (var tmu:Int=offsetAtPlace(pid); tmu<offsetAtPlace(pid+1); tmu++)
+                    jj(tmu, tnu)+=myThreadJMat(tmu, tnu);
+                }
+                // Will convert to WorkerLocalHandle or PlaceLocalHandle
             }
             timer.stop(TIMER_JMATRIX); tJ+=(timer.last(TIMER_JMATRIX) as Double)/1e9;
 
@@ -359,7 +379,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                  val halfAuxGrid = new Grid(funcAtPlace, cbs_HalfAuxInt);
                  val halfAuxMat = DistDenseMatrix.make(halfAuxGrid);
 
-                 finish ateach(place in Dist.makeUnique()) async {
+                 finish ateach(place in Dist.makeUnique())  {
                      val pid = here.id; //Console.OUT.println("pid=" + pid + " starts..."); 
                      val A=new DenseMatrix(funcAtPlace(pid)*roK, N, auxIntMat.local().d);
                      val B=new DenseMatrix(funcAtPlace(pid)*roK, nOrbital, halfAuxMat.local().d);
@@ -368,7 +388,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
 
                  val mult=Math.ceil(nPlaces*.5+.5) as Int;
                  //Console.OUT.println("mult=" + mult);  
-                 finish ateach(place in Dist.makeUnique()) async {
+                 finish ateach(place in Dist.makeUnique())  {
                      val pid = here.id; //Console.OUT.println("pid=" + pid + " starts...");   
                      val a=halfAuxMat.local();                   
                      val moff=offsetAtPlace(pid);
