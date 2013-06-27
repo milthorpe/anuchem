@@ -268,7 +268,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
         val gMat = new DenseMatrix(N,N);
 
         for (var ron:Int=0; ron<=roN; ron++)  {  
-            @Ifdef("__DEBUG__") {Console.OUT.printf("ron=%d...\n",ron); }
+            // @Ifdef("__DEBUG__") { Console.OUT.printf("ron=%d\n",ron); }
             finish for (thNo in 0..(maxTh-1)) async tdk(thNo).clear();     
                       
             timer.start(TIMER_GENCLASS); 
@@ -276,9 +276,10 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
             val lron=ron; 
 
             // Distributed Generation of AuxMat
-            Console.OUT.println("Aux - distributed"); 
+            // Console.OUT.println("Aux - distributed"); 
             finish ateach(place in Dist.makeUnique()) async {
                 val pid = here.id; 
+                val localMat=auxIntMat.local();
                 //@Ifdef("__DEBUG__") {Console.OUT.println("pid=" + pid + " starts..."); }
                 val taux = new Rail[Integral_Pack](maxTh, (Int) => new Integral_Pack(jd.roN, jd.roL, omega, roThresh, jd.rad, jd.roZ));
                 finish for (thNo in 0..(maxTh-1)) async {
@@ -288,12 +289,13 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                         if (maxLron>=0) {
                             val maxLm=(maxLron+1)*(maxLron+1); var ind:Int=0; val temp=ttemp(thNo); val myThreaddk=tdk(thNo);  
                             aux.genClass(sp.aang, sp.bang, sp.aPoint, sp.bPoint, sp.zetaA, sp.zetaB, sp.conA, sp.conB, sp.dconA, sp.dconB, temp, lron, maxLron,ylms(spInd).y, ylms(spInd).maxL); 
-                            for (var tmu:Int=sp.mu; tmu<=sp.mu2; tmu++) for (var tnu:Int=sp.nu; tnu<=sp.nu2; tnu++) {
+                            for (var tmu:Int=sp.mu-offsetAtPlace(pid); tmu<=sp.mu2-offsetAtPlace(pid); tmu++) 
+                            for (var tnu:Int=sp.nu; tnu<=sp.nu2; tnu++) {
                                 val scdmn=density(tmu,tnu) ; val nrm=norm(tmu)*norm(tnu); 
                                 for (var rolm:Int=0; rolm<maxLm; rolm++) {
                                     val normAux = nrm*temp(ind++); 
                                     myThreaddk(rolm) += scdmn*normAux; 
-                                    auxIntMat(tmu,tnu*roK+rolm) = normAux;                                                               
+                                    localMat(tmu,tnu*roK+rolm) = normAux;
                                 } 
                             }
                         }
@@ -312,10 +314,11 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
             timer.stop(TIMER_GENCLASS); tINT+=(timer.last(TIMER_GENCLASS) as Double)/1e9;
 
             // J - distributed
-            Console.OUT.println("J - distributed"); 
+            // Console.OUT.println("J - distributed"); 
             timer.start(TIMER_JMATRIX);   
             finish ateach(place in Dist.makeUnique()) async {
-                val pid = here.id;            
+                val pid = here.id; 
+                val localMat=auxIntMat.local();      
                 finish for (thNo in 0..(maxTh-1)) async tjMatrix(thNo).reset();
                 finish for (thNo in 0..(maxTh-1)) async {
                     val myThreadJMat = tjMatrix(thNo);      
@@ -324,9 +327,11 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                         val maxLron=sp.maxL(lron);
                         if (sp.maxL(lron)>=0) { 
                             val maxLm=(maxLron+1)*(maxLron+1); 
-                            for (var tmu:Int=sp.mu; tmu<=sp.mu2; tmu++) for (var tnu:Int=sp.nu; tnu<=sp.nu2; tnu++) {
+                            for (var tmu:Int=sp.mu-offsetAtPlace(pid); tmu<=sp.mu2-offsetAtPlace(pid); tmu++) 
+                            for (var tnu:Int=sp.nu; tnu<=sp.nu2; tnu++) {
                                 var jContrib:Double=0.;  val tnuroK=tnu*roK;
-                                for (var rolm:Int=0; rolm<maxLm; rolm++) jContrib += dk(rolm)*auxIntMat(tmu, tnuroK+rolm);
+                                for (var rolm:Int=0; rolm<maxLm; rolm++) 
+                                    jContrib += dk(rolm)*localMat(tmu, tnuroK+rolm);
                                 myThreadJMat(tmu,tnu) += jContrib;
                             } 
                         }
@@ -346,7 +351,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
             timer.stop(TIMER_JMATRIX); tJ+=(timer.last(TIMER_JMATRIX) as Double)/1e9;
 
             // K
-            Console.OUT.println("K - distributed"); 
+            // Console.OUT.println("K - distributed"); 
             if (ron<=roNK) { // This produces K/2
                  timer.start(TIMER_KMATRIX);  
 
@@ -387,7 +392,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
         }
 
         // G - at place 0 - muti-threading
-        Console.OUT.println("G matrix"); 
+        Console.OUT.printf("\nG matrix\n"); 
         // Fix upper half of J (see the definition of shellPairs) ==> sp.mu>sp.nu
         // Fix the whole matrix ==> if (sp.mu!=sp.nu)
         finish for (thNo in 0..(maxTh-1)) async for (var spInd:Int=thNo; spInd<numSigShellPairs; spInd+=maxTh) {
