@@ -10,6 +10,9 @@
  */
 package au.edu.anu.mm;
 
+import x10.regionarray.Array;
+import x10.regionarray.Region;
+
 /**
  * This class calculates the Wigner rotation matrix D^l_{mk}.
  * @see Dachsel (1996).
@@ -19,9 +22,9 @@ package au.edu.anu.mm;
  * @author milthorpe
  */
 public class WignerRotationMatrix {
-        public static val OPERATOR_A : Int = 0;
-        public static val OPERATOR_B : Int = -1;
-        public static val OPERATOR_C : Int = 2;
+    public static val OPERATOR_A : Int = 0;
+    public static val OPERATOR_B : Int = -1;
+    public static val OPERATOR_C : Int = 2;
 
 	/**
 	 * Calculate Wigner rotation matrix D_{mk}(theta, l) for m: [-l..l], k: [-l..l]
@@ -31,7 +34,7 @@ public class WignerRotationMatrix {
 		    throw new IllegalArgumentException("abs(x) > 2*PI: Wigner rotation matrix is only defined on [0..2*PI].");
 		}
 
-		val D = new Array[Double]((-l..l) * (-l..l));
+		val D = new Array[Double](Region.make(-l..l, -l..l));
 
 		if (theta == 0.0) {
 		    // Eq. 30
@@ -151,7 +154,7 @@ public class WignerRotationMatrix {
 			for (l in 0..numTerms) { 
 				R(l) = WignerRotationMatrix.getDmk( (r==0)?theta:(2*Math.PI - theta) , l);
 			}
-        		collection(r) = R;
+            collection(r) = R;
 		}
 		return collection;
         }
@@ -164,16 +167,18 @@ public class WignerRotationMatrix {
 	public static def getExpandedCollection(theta : double, numTerms : int, op : int) {
 		val collection = getCollection(theta, numTerms);
 		var F_mk : Double;
-		for ([rev,l] in (0..1)*(0..numTerms)) { 
-			val R = collection(rev)(l);
-			for ([m, k] in R.region) {
-				/* this is the corresponding factor for rotating a multipole expansion ... */
-				F_mk = Math.sqrt( Factorial.getFactorial(l - k) * Factorial.getFactorial(l + k) / ( Factorial.getFactorial(l - m) * Factorial.getFactorial(l + m) ) );
-				/* if this is for rotating a local expansion (i.e. operator C or the backwards rotation of operator B), adjust the factor */
-				if ( op == OPERATOR_C || (rev == 1 && op == OPERATOR_B) ) F_mk = 1 / F_mk;
+		for (rev in 0..1) {
+            for (l in 0..numTerms) {
+			    val R = collection(rev)(l);
+			    for ([m, k] in R.region) {
+				    /* this is the corresponding factor for rotating a multipole expansion ... */
+				    F_mk = Math.sqrt( Factorial.getFactorial(l - k) * Factorial.getFactorial(l + k) / ( Factorial.getFactorial(l - m) * Factorial.getFactorial(l + m) ) );
+				    /* if this is for rotating a local expansion (i.e. operator C or the backwards rotation of operator B), adjust the factor */
+				    if ( op == OPERATOR_C || (rev == 1 && op == OPERATOR_B) ) F_mk = 1 / F_mk;
 
-				R(m, k) = R(m, k) * F_mk;
-			}
+				    R(m, k) = R(m, k) * F_mk;
+			    }
+            }
 		}
 		return collection;
 	}

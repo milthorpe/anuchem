@@ -16,6 +16,8 @@ import x10.io.FileReader;
 import x10.io.FileWriter;
 import x10.io.IOException;
 import x10.io.Printer;
+import x10.regionarray.Dist;
+import x10.regionarray.DistArray;
 import x10.util.ArrayList;
 import x10.util.Pair;
 import x10.util.Team;
@@ -149,7 +151,7 @@ public class PenningTrap {
                 printStartPositions(props);
             }
 
-            val current = new Array[Double](numSteps);
+            val current = new Rail[Double](numSteps);
 
             val timeStepSecs = timestep * 1.0e-9;
             while(step < numSteps) {
@@ -160,12 +162,12 @@ public class PenningTrap {
                     reduceAndPrintProperties(timestep * step, props);
                     writeSnapshot(step);
                 } else {
-                    Team.WORLD.barrier(here.id); // TODO is this really required?
+                    Team.WORLD.barrier(); // TODO is this really required?
                 }
             }
 
             // gather current data
-            Team.WORLD.allreduce[Double](here.id, current, 0, current, 0, current.size, Team.ADD);
+            Team.WORLD.allreduce[Double](current, 0, current, 0, current.size, Team.ADD);
             if (here == Place.FIRST_PLACE) {
                 printCurrent(timestep, current);
                 printMassSpectrum(timestep, current);
@@ -174,11 +176,11 @@ public class PenningTrap {
             printEndPositions(timestep * step);
             printEnergies(timestep * step);
 
-            Team.WORLD.allreduce[Long](here.id, timer.count, 0, timer.count, 0, timer.count.size, Team.ADD);
-            Team.WORLD.allreduce[Long](here.id, timer.total, 0, timer.total, 0, timer.total.size, Team.ADD);
-            Team.WORLD.allreduce[Long](here.id, timer.min, 0, timer.min, 0, timer.min.size, Team.MIN);
-            Team.WORLD.allreduce[Long](here.id, timer.max, 0, timer.max, 0, timer.max.size, Team.MAX);
-            Team.WORLD.allreduce[Double](here.id, timer.sumOfSquares, 0, timer.sumOfSquares, 0, timer.sumOfSquares.size, Team.ADD);
+            Team.WORLD.allreduce[Long](timer.count, 0, timer.count, 0, timer.count.size, Team.ADD);
+            Team.WORLD.allreduce[Long](timer.total, 0, timer.total, 0, timer.total.size, Team.ADD);
+            Team.WORLD.allreduce[Long](timer.min, 0, timer.min, 0, timer.min.size, Team.MIN);
+            Team.WORLD.allreduce[Long](timer.max, 0, timer.max, 0, timer.max.size, Team.MAX);
+            Team.WORLD.allreduce[Double](timer.sumOfSquares, 0, timer.sumOfSquares, 0, timer.sumOfSquares.size, Team.ADD);
             if (here == Place.FIRST_PLACE) {
                 timer.printSeconds();
                 Console.OUT.println("fmm:");
@@ -252,11 +254,11 @@ public class PenningTrap {
      * using the velocity-Verlet algorithm. 
      * @param step the current step
      * @param dt time in s
-     * @param current the current array at this place
+     * @param current the current rail at this place
      * @param whether to accumulate system properties for this step
      * @param props the system properties to evaluate
      */
-    public def mdStepLocal(step:Int, dt:Double, current:Array[Double], accumProps:Boolean, props:SystemProperties, timer:StatisticalTimer) {
+    public def mdStepLocal(step:Int, dt:Double, current:Rail[Double], accumProps:Boolean, props:SystemProperties, timer:StatisticalTimer) {
         timer.start(0);
         timer.start(2);
         fmm.reassignAtoms(step);
@@ -307,7 +309,7 @@ public class PenningTrap {
             }
         }
 
-        Team.WORLD.barrier(here.id);
+        Team.WORLD.barrier();
 
         var currentLocal:Double = 0.0;
 
@@ -404,10 +406,10 @@ public class PenningTrap {
     }
 
     private def writeSnapshot(myAtoms:ArrayList[MMAtom], writer:FileWriter) {
-        for ([i] in 0..(myAtoms.size()-1)) {
+        for (i in 0..(myAtoms.size()-1)) {
             val atom = myAtoms(i);
             if (atom != null) {
-                writer.writeInt(atom.index);
+                writer.writeInt(atom.index as Int);
                 writer.writeInt(atom.species);
                 writer.writeDouble(atom.centre.i);
                 writer.writeDouble(atom.centre.j);
@@ -453,7 +455,7 @@ public class PenningTrap {
 
     private def printPositions(time:Double, myAtoms:ArrayList[MMAtom], printer:Printer) {
         val timeInt = time as Int;
-        for ([i] in 0..(myAtoms.size()-1)) {
+        for (i in 0..(myAtoms.size()-1)) {
             val atom = myAtoms(i);
             if (atom != null) {
                 printer.printf("%i %i %12.8f %12.8f %12.8f\n", atom.index, atom.species, atom.centre.i*1.0e3, atom.centre.j*1.0e3, atom.centre.k*1.0e3);
@@ -468,7 +470,7 @@ public class PenningTrap {
     private def printEnergies(time:Double, myAtoms:ArrayList[MMAtom], printer:Printer):Statistics {
         val timeInt = time as Int;
         var stats:Statistics = new Statistics();
-        for ([i] in 0..(myAtoms.size()-1)) {
+        for (i in 0..(myAtoms.size()-1)) {
             val atom = myAtoms(i);
             if (atom != null) {
                 val energy = 0.5 * 1.66053892173e-12 /* Da->kg * 10^15fJ */ * atom.mass * atom.velocity.lengthSquared();
@@ -482,7 +484,7 @@ public class PenningTrap {
     }
 
     private def reduceAndPrintProperties(time:Double, props:SystemProperties) {
-        Team.WORLD.allreduce[Double](here.id, props.raw, 0, props.raw, 0, props.raw.size, Team.ADD);
+        Team.WORLD.allreduce[Double](props.raw, 0, props.raw, 0, props.raw.size, Team.ADD);
         if (here == Place.FIRST_PLACE) {
             props.print(time);
         }
@@ -493,16 +495,16 @@ public class PenningTrap {
 
     private def printCurrent(timestep:Double, current:Rail[Double]) {
         val currentFilePrinter = new Printer(new FileWriter(new File("current.dat")));
-        for ([i] in current) {
-            current(i) *= 1.6021765314e-7; // e->C * 10^12; pA
-            currentFilePrinter.printf("%16.8f\n", current(i));
+        for (currentReading in current) {
+            val currentInPicoAmps = currentReading * 1.6021765314e-7; // e->C * 10^12; pA
+            currentFilePrinter.printf("%16.8f\n", currentInPicoAmps);
             //currentFilePrinter.printf("%10.2f %16.8f\n", i*timestep, I);
         }
     }
 
     private def printMassSpectrum(timestep:Double, current:Rail[Double]) {
-        val massSpectrum = new Array[Complex](current.size/2 + 1);
-        val plan : FFTW.FFTWPlan = FFTW.fftwPlan1d(current.size, current, massSpectrum);
+        val massSpectrum = new Rail[Complex](current.size/2 + 1);
+        val plan : FFTW.FFTWPlan = FFTW.fftwPlan1d(current.size as Int, current, massSpectrum);
         FFTW.fftwExecute(plan);
         FFTW.fftwDestroyPlan(plan);
 
@@ -511,12 +513,12 @@ public class PenningTrap {
         val invN = 1.0e9/(current.size as Double);
         val sampleFreq = 1.0 / timestep * invN;
 
-        val freq = new Array[Double](massSpectrum.size);
-        val amplitude = new Array[Double](massSpectrum.size);
+        val freq = new Rail[Double](massSpectrum.size);
+        val amplitude = new Rail[Double](massSpectrum.size);
         mzPrinter.println("# Mass spectrum for FT-ICR.  Peaks at:");
         var peak:Double = 0.0;
         var increasing:Boolean = false;
-        for ([i] in massSpectrum) {
+        for (i in 0..(massSpectrum.size-1)) {
             freq(i) = (i as Double) * sampleFreq;
             amplitude(i) = massSpectrum(i).abs();
             if (increasing && amplitude(i) <= peak) {
@@ -541,7 +543,7 @@ public class PenningTrap {
     static class SystemProperties { 
         public val raw:Rail[Double];
         public def this() {
-            raw = new Array[Double](7);
+            raw = new Rail[Double](7);
         }
 
         /**
@@ -630,19 +632,6 @@ public class PenningTrap {
         public def stdDev() {
             return Math.sqrt(variance());
         } 
-    }
-
-    public static class SpeciesSpec {
-        public val name:String;
-        public val mass:Double;
-        public val charge:Int;
-        public val number:Int;
-        public def this(name:String, mass:Double, charge:Int, number:Int) {
-            this.name = name;
-            this.mass = mass;
-            this.charge = charge;
-            this.number = number;
-        }
     }
 }
 

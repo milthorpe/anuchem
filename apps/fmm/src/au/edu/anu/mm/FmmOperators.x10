@@ -10,6 +10,9 @@
  */
 package au.edu.anu.mm;
 
+import x10.regionarray.Array;
+import x10.regionarray.Region;
+
 import x10x.polar.Polar3d;
 import x10x.vector.Vector3d;
 
@@ -61,12 +64,12 @@ class FmmOperators {
     	this.complexK = precomputeComplex(numTerms, ws);
     }
 
-/** 
+    /** 
      * Precomputes wigner rotation matrices premultiplied by appropriate factors for use 
      * in applying operator A. This is replicated in a unique dist across all places.
      */
     private def precomputeWignerA(numTerms : Int) {
-        val wignerA = new Array[Rail[Rail[Array[Double](2){rect}]]]((0..1)*(0..1)*(0..1));
+        val wignerA = new Array[Rail[Rail[Array[Double](2){rect}]]](Region.make((0..1), (0..1), (0..1)));
         for ([i,j,k] in wignerA) {
     		val theta = Polar3d.getPolar3d( Vector3d(i*2-1,j*2-1,k*2-1) ).theta;
 	        wignerA(i, j, k) = WignerRotationMatrix.getACollection(theta, numTerms);
@@ -75,7 +78,7 @@ class FmmOperators {
     }
 
     private def precomputeWignerB(numTerms : Int, ws : Int) {
-        val wignerB = new Array[Rail[Rail[Array[Double](2){rect}]]]((-(2*ws+1))..(2*ws+1) * (-(2*ws+1))..(2*ws+1) * (-(2*ws+1))..(2*ws+1));
+        val wignerB = new Array[Rail[Rail[Array[Double](2){rect}]]](Region.make((-(2*ws+1))..(2*ws+1), (-(2*ws+1))..(2*ws+1), (-(2*ws+1))..(2*ws+1)));
         for ([i,j,k] in wignerB) {
             val theta = Polar3d.getPolar3d ( Vector3d(i, j, k) ).theta;
 	        wignerB(i, j, k) = WignerRotationMatrix.getBCollection(theta, numTerms);
@@ -84,7 +87,7 @@ class FmmOperators {
     }
 
     private def precomputeWignerC(numTerms : Int) {
-        val wignerC = new Array[Rail[Rail[Array[Double](2){rect}]]]((0..1)*(0..1)*(0..1));
+        val wignerC = new Array[Rail[Rail[Array[Double](2){rect}]]](Region.make((0..1), (0..1), (0..1)));
         for ([i,j,k] in wignerC) {
 		    val theta = Polar3d.getPolar3d( Vector3d(i*2-1,j*2-1,k*2-1) ).theta;
 	        wignerC(i, j, k) = WignerRotationMatrix.getCCollection(theta, numTerms);
@@ -97,7 +100,7 @@ class FmmOperators {
      * and replicates to all places using a unique dist
      */
     private def precomputeComplex(numTerms : Int, ws : Int) {
-        val complexK = new Array[Rail[Rail[Complex]]]((-(2*ws+1))..(2*ws+1) * (-(2*ws+1))..(2*ws+1) * (-(2*ws+1))..(2*ws+1));
+        val complexK = new Array[Rail[Rail[Complex]]](Region.make((-(2*ws+1))..(2*ws+1), (-(2*ws+1))..(2*ws+1), (-(2*ws+1))..(2*ws+1)));
         for ([i,j,k] in complexK) {
             val phi = Polar3d.getPolar3d ( Vector3d(i, j, k) ).phi;
             complexK(i, j, k) = Expansion.genComplexK(phi, numTerms);

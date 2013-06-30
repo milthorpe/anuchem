@@ -6,11 +6,11 @@
  *  You may obtain a copy of the License at
  *      http://www.opensource.org/licenses/eclipse-1.0.php
  *
- * (C) Copyright Australian National University 2010-2012.
+ * (C) Copyright Australian National University 2010-2013.
  */
 package au.edu.anu.util;
 
-import x10.util.concurrent.AtomicInteger;
+import x10.util.concurrent.AtomicLong;
 
 /**
  * A simple shared counter.
@@ -27,23 +27,23 @@ import x10.util.concurrent.AtomicInteger;
  * @author milthorpe
  */
 public class SharedCounter {
-    private var counter : GlobalRef[AtomicInteger];
+    private var counter:GlobalRef[AtomicLong];
 
     public def this() {
-        val a = new AtomicInteger();
-        counter = GlobalRef[AtomicInteger](a);
+        val a = new AtomicLong();
+        counter = GlobalRef[AtomicLong](a);
     }
 
     public def getAndIncrement() { 
-        return at(counter) {(counter as GlobalRef[AtomicInteger]{self.home==here})().getAndIncrement()};
+        return at(counter) {(counter as GlobalRef[AtomicLong]{self.home==here})().getAndIncrement()};
     }
  
     public def get() {
-        return at(counter) {(counter as GlobalRef[AtomicInteger]{self.home==here})().get()};
+        return at(counter) {(counter as GlobalRef[AtomicLong]{self.home==here})().get()};
     }
 
-    public def set(v : Int) {
-        at(counter) {(counter as GlobalRef[AtomicInteger]{self.home==here})().set(v);};
+    public def set(v:Long) {
+        at(counter) {(counter as GlobalRef[AtomicLong]{self.home==here})().set(v);};
     }
 }
 

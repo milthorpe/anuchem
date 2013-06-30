@@ -35,7 +35,7 @@ public class PowerList {
     public final def generatePowerList(maxAngularMomentum:Int) : Rail[Power] {
         var n:Int = ((maxAngularMomentum+1)*(maxAngularMomentum+2)/2);
 
-        val pList = new Array[Power](n);
+        val pList = new Rail[Power](n);
 
         var idx:Int = 0;
         // for(var i:Int=maxAngularMomentum; i>=0; i--) {

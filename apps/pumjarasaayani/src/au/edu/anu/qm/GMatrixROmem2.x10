@@ -14,7 +14,7 @@ import x10.compiler.Ifdef;
 import x10.compiler.Ifndef;
 
 import x10.util.ArrayList;
-import x10.util.ArrayUtils;
+import x10.util.RailUtils;
 import x10.util.Team;
 import x10.util.concurrent.AtomicInteger;
 
@@ -73,7 +73,7 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
     val halfAuxMat:DenseMatrix;//(nOrbital,N*roK);
     val halfAuxMat2:DenseMatrix;//(N,nOrbital*roK);
 
-    public def this(N:Int, bfs:BasisFunctions, molecule:Molecule[QMAtom], nOrbital:Int, omega:Double,roThresh:Double):GMatrixROmem2{self.M==N,self.N==N} {     
+    public def this(N:Long, bfs:BasisFunctions, molecule:Molecule[QMAtom], nOrbital:Int, omega:Double,roThresh:Double):GMatrixROmem2{self.M==N,self.N==N} {     
         super(N, N); 
         val result = Runtime.execForRead("date"); Console.OUT.printf("GMatrixROmem.x10 init %s...\n",result.readLine()); 
         this.bfs = bfs; this.mol = molecule; this.nOrbital = nOrbital;     
@@ -221,8 +221,8 @@ public class GMatrixROmem2 extends DenseMatrix{self.M==self.N} {
         rawShellPairs = null; // Deallocate this variable 
 
         // val compareShellPairContribs = (y:ShellPair,x:ShellPair) => x.contrib.compareTo(y.contrib);
-        // ArrayUtils.sort[ShellPair](shellPairs, compareShellPairContribs);
-        // numSigShellPairs = Math.abs(ArrayUtils.binarySearch[ShellPair](rawShellPairs, dummySignificantPair, compareShellPairContribs));
+        // RailUtils.sort[ShellPair](shellPairs, compareShellPairContribs);
+        // numSigShellPairs = Math.abs(RailUtils.binarySearch[ShellPair](rawShellPairs, dummySignificantPair, compareShellPairContribs));
 
         // Find MaxL(n) -- This screening is a gold standard but slow                            
         var fCost:Double=0.; var wCost:Double=0.; var mCost:Double=0.;

@@ -10,6 +10,7 @@
  */
 package au.edu.anu.mm;
 
+import x10.regionarray.DistArray;
 import x10.util.Pair;
 import x10x.vector.Vector3d;
 import au.edu.anu.chem.mm.MMAtom;

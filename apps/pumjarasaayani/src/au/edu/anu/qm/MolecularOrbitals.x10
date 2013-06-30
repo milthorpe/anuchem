@@ -20,7 +20,7 @@ import x10.matrix.DenseMatrix;
 public class MolecularOrbitals extends DenseMatrix{self.M==self.N} {
     private var orbitalEnergies:Rail[Double];
 
-    public def this(n:Int):MolecularOrbitals{self.M==n,self.N==n} {
+    public def this(n:Long):MolecularOrbitals{self.M==n,self.N==n} {
         super(n, n);
     }
 

@@ -12,7 +12,7 @@
 package au.edu.anu.mm;
 
 import x10.util.ArrayList;
-import x10.util.ArrayUtils;
+import x10.util.RailUtils;
 import x10.util.HashMap;
 import x10.util.HashSet;
 
@@ -94,7 +94,7 @@ public class FmmLocalData {
 
     /** @return the ID of the place to which the given leaf octant is assigned */
     public def getPlaceId(mortonId:UInt) {
-        var placeId:Int = ArrayUtils.binarySearch[UInt](firstLeafOctant, mortonId & OctantId.LEAF_MASK);
+        var placeId:Long = RailUtils.binarySearch[UInt](firstLeafOctant, mortonId & OctantId.LEAF_MASK);
         if (placeId < 0) placeId = -(placeId+2);
         return placeId;
     }
@@ -123,7 +123,7 @@ public class FmmLocalData {
             combinedUList(j++) = mortonId;
             //Console.OUT.println(mortonId);
         }
-        ArrayUtils.sort(combinedUList);
+        RailUtils.sort(combinedUList);
         return combinedUList;
     }
 }

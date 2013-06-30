@@ -18,14 +18,14 @@ import x10.compiler.Inline;
  * @author haigh
  */
 public class Factorial { 
-	public static val factorial : Rail[Double] = Factorial.calcFact();
+    public static val factorial = Factorial.calcFact();
 
     private static final def calcFact() { 
-        val fact = new Array[Double](100);
-		fact(0) = 1.0;
-		for (i in 1..99) fact(i) = i * fact(i-1);
+        val fact = new Rail[Double](100);
+	    fact(0) = 1.0;
+	    for (i in 1..99) fact(i) = i * fact(i-1);
         return fact;
-	}
+    }
 
-	@Inline public static def getFactorial(i : int) = factorial(i); 
+    @Inline public static def getFactorial(i:Long) = factorial(i); 
 }

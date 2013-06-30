@@ -14,7 +14,7 @@ package au.edu.anu.fft;
  * Tests regular (non-fast) Discrete Fourier Transforms.
  */
 public class TestDFT {
-    public static def main(args : Array[String](1)) {
+    public static def main(args:Rail[String]) {
         testDft1D();
         testDft3D();
     }

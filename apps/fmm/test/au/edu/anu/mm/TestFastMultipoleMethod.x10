@@ -10,6 +10,7 @@
  */
 package au.edu.anu.mm;
 
+import x10.regionarray.Dist;
 import x10.compiler.Ifdef;
 
 import x10x.vector.Point3d;
@@ -26,7 +27,7 @@ import au.edu.anu.util.Timer;
 public class TestFastMultipoleMethod extends TestElectrostatic {
     public def sizeOfCentralCluster() : Double = 80.0;
 
-    public static def main(args : Array[String](1)) {
+    public static def main(args:Rail[String]) {
         var numAtoms:Int;
         var dMax:Int = 3;
         var numTerms:Int = 12;

@@ -17,7 +17,7 @@ package edu.utk.cs.papi;
  * @author milthorpe
  */
 public class TestPAPI {
-    public static def main(args : Array[String](1)) {
+    public static def main(args:Rail[String]) {
         val N = 1000000;
         val a = new Array[Double](N, 1.00001);
 

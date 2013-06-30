@@ -6,16 +6,16 @@
  *  You may obtain a copy of the License at
  *      http://www.opensource.org/licenses/eclipse-1.0.php
  *
- * (C) Copyright Australian National University 2010.
+ * (C) Copyright Australian National University 2010-2013.
  * (C) Copyright Josh Milthorpe 2011.
  */
 package x10x.matrix;
 
-import x10x.xla.*;
-import x10x.vector.Vector;
-
-import x10.array.Array;
+import x10.array.Array_2;
 import x10.compiler.Inline;
+
+import x10x.vector.Vector;
+import x10x.xla.JacobiDiagonalizer;
 
 /**
  * This class represents an (NxM)  Matrix.
@@ -24,16 +24,15 @@ import x10.compiler.Inline;
  * @author V.Ganesh, milthorpe
  */
 public class Matrix { 
-    protected val mat:Array[Double](2){rect,zeroBased};
-    property region() = mat.region;
+    protected val mat:Array_2[Double];
 
     /**
      * Make instance of Matrix class 
      * 
      * @param siz the size of this matrix
      */
-    public def this(siz:Int) {
-        mat = new Array[Double]((0..(siz-1)) * (0..(siz-1)));
+    public def this(siz:Long) {
+        mat = new Array_2[Double](siz-1,siz-1);
     }
 
     /**
@@ -41,28 +40,26 @@ public class Matrix {
      *
      * @param siz the size of this matrix
      */
-    public def this(row:Int, col:Int) {
-        mat = new Array[Double]((0..(row-1)) * (0..(col-1)));
+    public def this(row:Long, col:Long) {
+        mat = new Array_2[Double](row-1, col-1);
     }
 
     /**
      * Construct a Matrix as a copy of an existing Matrix
      */
     public def this(source : Matrix) {
-        val sourceMat = source.getMatrix();
-        mat = new Array[Double](sourceMat.region);
-        Array.copy[Double](sourceMat, mat);
+        mat = new Array_2[Double](source.getMatrix());
     }
 
     public def getMatrix() = mat;
-    public def getRowCount() = region.max(0)+1;
-    public def getColCount() = region.max(1)+1;
+    public def getRowCount() = mat.numElems_1;
+    public def getColCount() = mat.numElems_2;
 
-    public @Inline operator this(i0:int, i1:int) : Double {
+    public @Inline operator this(i0:Long, i1:Long) : Double {
         return mat(i0,i1);
     }
 
-    public @Inline operator this(i0:int, i1:int)=(v:Double) : Double {
+    public @Inline operator this(i0:Long, i1:Long)=(v:Double) : Double {
         mat(i0,i1) = v;
         return v;
     }
@@ -79,7 +76,7 @@ public class Matrix {
         val eigenVectors  = diag.getEigenVectors();
         val sHalf         = new Matrix(rowCount);
 
-        for (i in 0..region.max(0)) {
+        for (i in 0..(mat.numElems_1-1)) {
             sHalf.mat(i,i) = 1.0 / Math.sqrt(eigenValues(i));
         }
 
@@ -91,7 +88,7 @@ public class Matrix {
      */
     public def makeIdentity() : void {
         mat.clear();
-        for (i in 0..region.max(0)) {
+        for (i in 0..(mat.numElems_1-1)) {
             mat(i,i) = 1.0;
         }
     }
@@ -127,9 +124,9 @@ public class Matrix {
         val M   = b.getColCount();
         val res = new Matrix(N, M);
 
-        for([i,j] in res.mat) {
+        for([i,j] in res.mat.indices()) {
             var cij:Double = 0.0;
-            for(var k:Int=0; k<N1; k++) {
+            for(var k:Long=0; k<N1; k++) {
                cij += mat(i, k) * b.mat(k, j);
             }
             res.mat(i, j) = cij;
@@ -145,9 +142,9 @@ public class Matrix {
     public def mulInPlace(a:Matrix, b:Matrix) {
         val N1  = b.getRowCount();
 
-        for([i,j] in mat) {
+        for([i,j] in mat.indices()) {
             var cij:Double = 0.0;
-            for(var k:Int=0; k<N1; k++) {
+            for(var k:Long=0; k<N1; k++) {
                cij += a.mat(i, k) * b.mat(k, j);
             }
             mat(i, j) = cij;
@@ -162,7 +159,10 @@ public class Matrix {
         val M   = getColCount();
 
         val res = new Matrix(N, M);
-        mat.map[Double](mat, (a : Double) => a * fac);
+        for([i,j] in mat.indices()) {
+            mat(i,j) *= fac;
+        }
+        //mat.map[Double](mat, (a : Double) => a * fac);
         return res;
     }
 
@@ -174,22 +174,31 @@ public class Matrix {
         val N   = getRowCount();
         val M   = getColCount();
         val res = new Matrix(N, M);
-        mat.map[Double,Double](res.mat, x.mat, (a : Double, b : Double) => a + b);
+        for([i,j] in mat.indices()) {
+            res.mat(i,j) = mat(i,j) + x.mat(i,j);
+        }
+        //mat.map[Double,Double](res.mat, x.mat, (a : Double, b : Double) => a + b);
         return res;
     }
 
     /**
      * set this = this + X
      */
-    public def addInPlace(x:Matrix)  {
-        mat.map[Double,Double](mat, x.mat, (a : Double, b : Double) => a + b);
+    public def addInPlace(x:Matrix) {
+        for([i,j] in mat.indices()) {
+            mat(i,j) = mat(i,j) + x.mat(i,j);
+        }
+        //mat.map[Double,Double](mat, x.mat, (a : Double, b : Double) => a + b);
     }
 
     /**
      * set this = X + Y
      */
     public def addInPlace(x:Matrix, y:Matrix)  {
-        x.mat.map[Double,Double](mat, y.mat, (a : Double, b : Double) => a + b);
+        for([i,j] in mat.indices()) {
+            mat(i,j) = x.mat(i,j) + y.mat(i,j);
+        }
+        //x.mat.map[Double,Double](mat, y.mat, (a : Double, b : Double) => a + b);
     }
 
     /**
@@ -199,7 +208,10 @@ public class Matrix {
         val N   = getRowCount();
         val M   = getColCount();
         val res = new Matrix(N, M);
-        mat.map[Double,Double](res.mat, x.mat, (a : Double, b : Double) => a - b);
+        for([i,j] in mat.indices()) {
+            res.mat(i,j) = mat(i,j) - x.mat(i,j);
+        }
+        //mat.map[Double,Double](res.mat, x.mat, (a : Double, b : Double) => a - b);
         return res;
     }
 
@@ -211,7 +223,7 @@ public class Matrix {
         val M   = getColCount();
         val res = new Matrix(M, N);
 
-        for([i,j] in res.mat) {
+        for([i,j] in res.mat.indices()) {
             res.mat(i, j) = mat(j, i);
         }
  
@@ -224,7 +236,7 @@ public class Matrix {
     public def trace() : Double {
         var tr : Double = 0.0;
 
-        for (i in 0..region.max(0)) {
+        for (i in 0..(mat.numElems_1-1)) {
             tr += mat(i, i);
         }
 
@@ -238,8 +250,8 @@ public class Matrix {
         var sum : Double = 0.0;
         val N = getRowCount();
 
-        for (i in 0..region.max(0)) {
-            for (j in (i+1)..region.max(1)) {
+        for (i in 0..(mat.numElems_1-1)) {
+            for (j in (i+1)..(mat.numElems_2-1)) {
                 sum += Math.abs(mat(i, j));
             }
         }
@@ -247,13 +259,13 @@ public class Matrix {
         return sum; 
     }
 
-    public def getRowVector(rowIdx:Int) : Vector {
+    public def getRowVector(rowIdx:Long) : Vector {
        val N = getColCount();
 
        val vec = new Vector(N);
        val vecVal = vec.getVector();
 
-       for(var i:Int=0; i<N; i++)
+       for(var i:Long=0; i<N; i++)
            vecVal(i) = mat(rowIdx, i);
 
        return vec;
@@ -264,8 +276,8 @@ public class Matrix {
 
         val N = getRowCount();
 
-        for(var i:Int=0; i<N; i++) {
-            for(var j:Int=0; j<i; j++) {
+        for(var i:Long=0; i<N; i++) {
+            for(var j:Long=0; j<i; j++) {
                 if (mat(i, j) != 0.0) {
                     return false;
                 }
@@ -275,7 +287,7 @@ public class Matrix {
         return true;
     }
 
-    public def isSingular(p:Int, row:Rail[Int]) : Boolean {
+    public def isSingular(p:Long, row:Rail[Long]) : Boolean {
         val N = getColCount();
         for(i in p..N) {
             if (mat(row(p), i) != 0.0 && Math.abs(mat(row(p),i))>1e-15) {
@@ -291,8 +303,8 @@ public class Matrix {
          val N = getRowCount();
          val M = getColCount();
         
-         for(var i:Int=0; i<N; i++) {
-            for(var j:Int=0; j<M; j++)  
+         for(var i:Long=0; i<N; i++) {
+            for(var j:Long=0; j<M; j++)  
                str += "" + mat(i, j) + " ";
             str += "\n";
          }
@@ -313,11 +325,11 @@ public class Matrix {
     /**
      * Get a row of this matrix
      */
-    //@Incomplete public def getRow(row:Int) : Vector;
+    //@Incomplete public def getRow(row:Long) : Vector;
 
     /**
      * Get a column of this matrix
      */
-    //@Incomplete public def getColumn(col:Int) : Vector;
+    //@Incomplete public def getColumn(col:Long) : Vector;
 }
 

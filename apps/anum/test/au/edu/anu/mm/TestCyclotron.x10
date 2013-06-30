@@ -6,6 +6,7 @@
  *  You may obtain a copy of the License at
  *      http://www.opensource.org/licenses/eclipse-1.0.php
  *
+ * (C) Copyright Australian National University 2013.
  * (C) Copyright Josh Milthorpe 2012.
  */
 package au.edu.anu.mm;
@@ -13,6 +14,8 @@ package au.edu.anu.mm;
 import x10.io.File;
 import x10.io.FileReader;
 import x10.io.EOFException;
+import x10.regionarray.Dist;
+import x10.regionarray.DistArray;
 import x10.util.ArrayList;
 import x10.util.Pair;
 import x10.util.Random;
@@ -31,10 +34,9 @@ import au.edu.anu.util.StringSplitter;
  *   experimentally observed frequency shifts between ions of the same mass-to-
  *   charge in Fourier Transform Ion Cyclotron Resonance Mass Spectrometry".
  *   J. Am. Soc. Mass Spectrometry 21 (2), 203-208 
- * @author milthorpe
  */
 public class TestCyclotron {
-    public static def main(args : Array[String](1)) {
+    public static def main(args:Rail[String]) {
         if (args.size > 0) {
             val inputFile = args(0);
             var snapshotFile:String = null;
@@ -140,7 +142,7 @@ public class TestCyclotron {
         }
 
         var totalIons:Int = 0;
-        val speciesList = new ArrayList[PenningTrap.SpeciesSpec]();
+        val speciesList = new ArrayList[SpeciesSpec]();
         try {
             while (line != null && line.startsWith("species")) {
                 val wrd = StringSplitter.splitOnWhitespace(line);
@@ -150,7 +152,7 @@ public class TestCyclotron {
                 val numIons = Int.parseInt(wrd(4));
                 totalIons += numIons;
 
-                speciesList.add(new PenningTrap.SpeciesSpec(name, mass, charge, numIons));
+                speciesList.add(new SpeciesSpec(name, mass, charge, numIons));
 
                 line = fil.readLine();
             }
@@ -192,7 +194,7 @@ public class TestCyclotron {
                     val theta = rand.nextDouble() * Math.PI * 2.0;
                     val ex = Math.cos(theta) * er;
                     val ey = Math.sin(theta) * er;
-                    val ion = new MMAtom(speciesId, Point3d(-radius+ex, ey, perturbation(rand, 1e-3)), species.mass, species.charge);
+                    val ion = new MMAtom(speciesId as Int, Point3d(-radius+ex, ey, perturbation(rand, 1e-3)), species.mass, species.charge);
 
                     // velocity is Maxwellian distribution with addition of velocity v in y direction
                     val ev = maxwellianVelocity(rand, species.mass);
@@ -203,7 +205,7 @@ public class TestCyclotron {
             }
         }
 
-        val trap = new PenningTrap(totalIons, V, new Vector3d(0.0, 0.0, B), edgeLength, fmmDMax, fmmTerms, speciesList.toArray());
+        val trap = new PenningTrap(totalIons, V, new Vector3d(0.0, 0.0, B), edgeLength, fmmDMax, fmmTerms, speciesList.toRail());
 
         var resumeStep:Int = 0;
         if (snapshotFileName != null) {
@@ -212,7 +214,7 @@ public class TestCyclotron {
             atoms = state.second;
         }
 
-        val distAtoms = DistArray.make[Rail[MMAtom]](Dist.makeUnique(), (Point) => new Array[MMAtom](0));
+        val distAtoms = DistArray.make[Rail[MMAtom]](Dist.makeUnique(), (Point) => new Rail[MMAtom](0));
         distAtoms(0) = atoms; // assign all atoms to place 0 to start - they will be reassigned
 
         trap.mdRun(dt, steps, resumeStep, logSteps, distAtoms);

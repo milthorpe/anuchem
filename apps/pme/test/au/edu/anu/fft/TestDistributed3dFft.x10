@@ -17,7 +17,7 @@ import au.edu.anu.util.Timer;
  * Tests distributed Fast Fourier Transform.
  */
 public class TestDistributed3dFft {
-    public static def main(args : Array[String](1)) {
+    public static def main(args:Rail[String]) {
         testFft3d();
         testRealFft3d();
         val timer = new Timer(1); // dummy, to work around XTENLANG-3153

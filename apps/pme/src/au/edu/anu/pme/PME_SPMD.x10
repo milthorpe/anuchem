@@ -283,7 +283,7 @@ public class PME_SPMD {
         }
         val subCells = this.subCells; // TODO shouldn't be necessary XTENLANG-1913
         finish ateach([i,j,k] in subCells) {
-            subCells(i,j,k) = subCellsTemp(i,j,k).toArray();
+            subCells(i,j,k) = subCellsTemp(i,j,k).toRail();
         }
     }
 
@@ -327,7 +327,7 @@ public class PME_SPMD {
         finish for (placeEntry in haloPlaces.entries()) async {
             val placeId = placeEntry.getKey();
             val haloForPlace = placeEntry.getValue();
-            val haloListArray = haloForPlace.toArray();
+            val haloListArray = haloForPlace.toRail();
             val packedForPlace = at(Place.place(placeId)) { getPackedAtomsForSubcellList(subCells, haloListArray)};
             for (i in 0..(haloListArray.size-1)) {
                 myPackedAtoms(haloListArray(i)) = packedForPlace(i);

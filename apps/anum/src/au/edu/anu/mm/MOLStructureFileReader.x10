@@ -36,7 +36,7 @@ public class MOLStructureFileReader {
         this.fileName = fileName;
     }
 
-    public def readMolecule() : Molecule[MMAtom] {
+    public def readMolecule(speciesSpecs:Rail[SpeciesSpec]) : Molecule[MMAtom] {
         val file = new FileReader(new File(fileName));
         val title = file.readLine();
         file.readLine(); // line 2 contains file meta-info
@@ -51,7 +51,18 @@ public class MOLStructureFileReader {
             val y = Double.parseDouble(line.substring(10,20));
             val z = Double.parseDouble(line.substring(20,30));
             val symbol = line.substring(31,34).trim();
-            molecule.addAtom(new MMAtom(symbol, Point3d(x, y, z), 0.0, 0.0)); // TODO mass
+            var species:Int = -1;
+            var speciesSpec:SpeciesSpec = null;
+            for (j in 0..(speciesSpecs.size-1)) {
+                if (symbol.equals(speciesSpecs(j).name)) {
+                    species = j as Int;
+                    break;
+                }
+            }
+            if (species == -1) {
+                throw new IllegalArgumentException("no species found for symbol " + symbol);
+            }
+            molecule.addAtom(new MMAtom(species, Point3d(x, y, z), speciesSpec.mass, speciesSpec.charge));
         }
         // following lines until "M  END" contain bonds
         var line : String = file.readLine();

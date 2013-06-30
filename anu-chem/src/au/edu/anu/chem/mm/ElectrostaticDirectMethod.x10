@@ -10,6 +10,8 @@
  */
 package au.edu.anu.chem.mm;
 
+import x10.regionarray.Dist;
+import x10.regionarray.DistArray;
 import x10.compiler.Uncounted;
 import x10.util.Team;
 
@@ -72,7 +74,7 @@ public class ElectrostaticDirectMethod {
             if (asyncComms) {
                 ateach([p1] in atoms) {
                     val myAtoms = atoms(p1);
-                    val myCharges = new Rail[PointCharge](myAtoms.size as Int, (i:Int)=>PointCharge(myAtoms(i).centre, myAtoms(i).charge));
+                    val myCharges = new Rail[PointCharge](myAtoms.size, (i:Long)=>PointCharge(myAtoms(i).centre, myAtoms(i).charge));
                     var energyThisPlace : Double = 0.0;
 
                     // before starting computation, send my atoms to next place
@@ -147,7 +149,7 @@ public class ElectrostaticDirectMethod {
                             var energyWithOther : Double = 0.0;
                             val otherPlaceAtoms = at(atoms.dist(p2)) {
                                 val atomsHere = atoms(p2);
-                                val chargesHere = new Rail[PointCharge](atomsHere.size as Int, (i:Int)=>PointCharge(atomsHere(i).centre, atomsHere(i).charge));
+                                val chargesHere = new Rail[PointCharge](atomsHere.size, (i:Long)=>PointCharge(atomsHere(i).centre, atomsHere(i).charge));
                                 chargesHere
                             };
                             for (j in 0..(otherPlaceAtoms.size-1)) {

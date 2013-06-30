@@ -10,9 +10,11 @@
  */
 package au.edu.anu.qm;
 
+import x10.regionarray.Dist;
+import x10.regionarray.DistArray;
 import x10.util.ArrayList;
 import x10.util.Team;
-import x10.util.concurrent.AtomicInteger;
+import x10.util.concurrent.AtomicLong;
 
 import x10.matrix.DenseMatrix;
 import au.edu.anu.chem.Molecule;
@@ -47,7 +49,7 @@ public class GMatrix extends DenseMatrix{self.M==self.N} {
     val jMatrix:DenseMatrix{self.M==self.N,self.N==this.N};
     val kMatrix:DenseMatrix{self.M==self.N,self.N==this.N};
 
-    public def this(N:Int, bfs:BasisFunctions, molecule:Molecule[QMAtom], omega:Double, thresh:Double):GMatrix{self.M==N,self.N==N} {
+    public def this(N:Long, bfs:BasisFunctions, molecule:Molecule[QMAtom], omega:Double, thresh:Double):GMatrix{self.M==N,self.N==N} {
         super(N, N);
         this.bfs = bfs;
         this.mol = molecule;
@@ -106,7 +108,7 @@ jMatrix = new DenseMatrix(N, N);
             val aFunc = mol.getAtom(a).getBasisFunctions();
             val naFunc = aFunc.size();
             // basis functions on a
-            for(var i:Int=0; i<naFunc; i++) {
+            for(var i:Long=0; i<naFunc; i++) {
                 val iaFunc = aFunc.get(i);
 
                 // centre b
@@ -114,7 +116,7 @@ jMatrix = new DenseMatrix(N, N);
                     val bFunc = mol.getAtom(b).getBasisFunctions();
                     val nbFunc = (b<a) ? bFunc.size() : i+1;
                     // basis functions on b
-                    for(var j:Int=0; j<nbFunc; j++) {
+                    for(var j:Long=0; j<nbFunc; j++) {
                         val jbFunc = bFunc.get(j);
                         twoE.compute2EAndRecord(iaFunc, jbFunc, iaFunc, jbFunc, shellList, qCut, dCut, fakeDensity);
                     }
@@ -191,13 +193,14 @@ jMatrix = new DenseMatrix(N, N);
         Console.OUT.println("    totInt = "+totInt);
         // form the G matrix
         val jt= computeThread.getJMat();
+        jt.copyTo(jMatrix);
         val kt= computeThread.getKMat();
-        for([x,y] in 0..(N-1)*0..(N-1)) {
-            jMatrix(x,y)=jt(x,y);
-            kMatrix(x,y)=kt(x,y);
-        }
-        for([x,y] in 0..(M-1)*0..(N-1)) {
-           this(x,y) = (0.5*jMatrix(x,y)) - (0.125*kMatrix(x,y));
+        kt.copyTo(kMatrix);
+
+        for (x in 0..(M-1)) {
+            for (y in 0..(N-1)) {
+                this(x,y) = (0.5*jMatrix(x,y)) - (0.125*kMatrix(x,y));
+            }
         }
 
         val eJ = density.clone().mult(density, jMatrix).trace();
@@ -222,7 +225,7 @@ jMatrix = new DenseMatrix(N, N);
             val aFunc = mol.getAtom(a).getBasisFunctions();
             val naFunc = aFunc.size();
             // basis functions on a
-            for(var i:Int=0; i<naFunc; i++) {
+            for(var i:Long=0; i<naFunc; i++) {
                val iaFunc = aFunc.get(i);
 
                // centre b
@@ -230,7 +233,7 @@ jMatrix = new DenseMatrix(N, N);
                    val bFunc = mol.getAtom(b).getBasisFunctions();
                    val nbFunc = (b<a) ? bFunc.size() : i+1;
                    // basis functions on b
-                   for(var j:Int=0; j<nbFunc; j++) {
+                   for(var j:Long=0; j<nbFunc; j++) {
                        val jbFunc = bFunc.get(j);
 
                        // centre c
@@ -238,7 +241,7 @@ jMatrix = new DenseMatrix(N, N);
                            val cFunc = mol.getAtom(c).getBasisFunctions();
                            val ncFunc = cFunc.size();
                            // basis functions on c
-                           for(var k:Int=0; k<ncFunc; k++) {
+                           for(var k:Long=0; k<ncFunc; k++) {
                                val kcFunc = cFunc.get(k);
 
                                // centre d
@@ -246,7 +249,7 @@ jMatrix = new DenseMatrix(N, N);
                                    val dFunc = mol.getAtom(d).getBasisFunctions();
                                    val ndFunc = (d<c) ? dFunc.size() : k+1;
                                    // basis functions on d
-                                   for(var l:Int=0; l<ndFunc; l++) {
+                                   for(var l:Long=0; l<ndFunc; l++) {
                                        val ldFunc = dFunc.get(l);
 
                                        var setIt:Boolean = false;
@@ -276,8 +279,10 @@ jMatrix = new DenseMatrix(N, N);
             val jMat = computeThreads(idx).getJMat();
             val kMat = computeThreads(idx).getKMat();
              
-            for([x,y] in 0..(M-1)*0..(N-1)) {
-               this(x,y) = (0.5*jMatrix(x,y)) - (0.125*kMatrix(x,y));
+            for (x in 0..(M-1)) {
+                for (y in 0..(N-1)) {
+                    this(x,y) = (0.5*jMatrix(x,y)) - (0.125*kMatrix(x,y));
+                }
             }
         } // end for
     }
@@ -374,8 +379,8 @@ jMatrix = new DenseMatrix(N, N);
 
                 val comp_loc = computeInst(placeId);
                 comp_loc.reset(density);
-                val start = placeId < remainder ? (placeId * (workPerPlace + 1)) : (firstChunk + (placeId-remainder) * workPerPlace);
-                val end = start + workPerPlace + (placeId < remainder ? 1 : 0);
+                val start = (placeId < remainder ? (placeId * (workPerPlace + 1)) : (firstChunk + (placeId-remainder) * workPerPlace)) as Int;
+                val end = (start + workPerPlace + (placeId < remainder ? 1 : 0)) as Int;
                 comp_loc.compute(start, end);
 
                 //placeTimer.stop(0);
@@ -411,7 +416,7 @@ jMatrix = new DenseMatrix(N, N);
                 comp_loc.reset();
                 val computeThread = comp_loc.computeThreads(0);
 
-                var myG : Int = placeId;
+                var myG:Long = placeId;
 
                 val shellList = computeThread.shellList;
                 val shellPrimitives = shellList.getShellPrimitives();
@@ -420,7 +425,7 @@ jMatrix = new DenseMatrix(N, N);
 
                 var placePairs:Int = 0;
                 var placeInts:Long = 0;
-                for(var i:Int=myG; i<numPairs; i++) {
+                for(var i:Long=myG; i<numPairs; i++) {
                     if (i == myG) {
                         finish {
                           async placeInts += computeThread.computeOneShellPair(i, numPrimitives, shellPrimitives);
@@ -516,11 +521,11 @@ jMatrix = new DenseMatrix(N, N);
                 val numPrimitives = shellList.getNumberOfShellPrimitives();
                 val numPairs = shellList.getNumberOfShellPairs();
 
-                var myG : Int = placeId;
+                var myG:Long = placeId;
 
                 var placePairs:Int = 0;
                 var placeInts:Long = 0;
-                for(var i:Int=myG; i<numPairs; i++) {
+                for(var i:Long=myG; i<numPairs; i++) {
                     if (i == myG) {
                         finish {
                           async myG = G.getAndIncrement();
@@ -558,9 +563,9 @@ jMatrix = new DenseMatrix(N, N);
         private var thresh2:Double;
         private val thresh:Double;
 
-        public val computeThreads = new Array[ComputeThread](Runtime.NTHREADS);
+        public val computeThreads = new Rail[ComputeThread](Runtime.NTHREADS);
 
-        public def this(N : Int, mol:Molecule[QMAtom], bfs:BasisFunctions, qCut:DenseMatrix, dCut:DenseMatrix, maxEst:Double, omega:Double, thresh:Double) {
+        public def this(N:Long, mol:Molecule[QMAtom], bfs:BasisFunctions, qCut:DenseMatrix, dCut:DenseMatrix, maxEst:Double, omega:Double, thresh:Double) {
             this.mol = mol;
             this.qCut = qCut;
             this.dCut = dCut;
@@ -605,7 +610,7 @@ jMatrix = new DenseMatrix(N, N);
         public def reset() {
             // TODO should use ateach broadcast - XTENLANG-1725
             val densityMatrix = density.d;
-            Team.WORLD.bcast[Double](here.id, 0, densityMatrix, 0, densityMatrix, 0, densityMatrix.size);
+            Team.WORLD.bcast[Double](Place.FIRST_PLACE, densityMatrix, 0L, densityMatrix, 0L, densityMatrix.size);
             gMatrixContribution.reset();
             jMatrixContribution.reset();
             kMatrixContribution.reset();
@@ -621,7 +626,7 @@ jMatrix = new DenseMatrix(N, N);
          */
         public def allreduceGMat() {
             val gmat = getGMatContributionArray().d;
-            Team.WORLD.allreduce[Double](here.id, gmat, 0, gmat, 0, gmat.size, Team.ADD);
+            Team.WORLD.allreduce[Double](gmat, 0L, gmat, 0L, gmat.size, Team.ADD);
         }
 
         private def recomputeDCut() {
@@ -635,7 +640,7 @@ jMatrix = new DenseMatrix(N, N);
                 val aFunc = mol.getAtom(a).getBasisFunctions();
                 val naFunc = aFunc.size();
                 // basis functions on a
-                for(var i:Int=0; i<naFunc; i++) {
+                for(var i:Long=0; i<naFunc; i++) {
                     val iaFunc = aFunc.get(i);
 
                     // centre b
@@ -643,7 +648,7 @@ jMatrix = new DenseMatrix(N, N);
                         val bFunc = mol.getAtom(b).getBasisFunctions();
                         val nbFunc = (b<a) ? bFunc.size() : i+1;
                         // basis functions on b
-                        for(var j:Int=0; j<nbFunc; j++) {
+                        for(var j:Long=0; j<nbFunc; j++) {
                             val jbFunc = bFunc.get(j);
                             val bAng  = jbFunc.getMaximumAngularMomentum();
                             val aAng  = iaFunc.getMaximumAngularMomentum();
@@ -672,13 +677,15 @@ jMatrix = new DenseMatrix(N, N);
             computeJMatContribution();
             computeKMatContribution();
              
-            for([x,y] in 0..(gMatrixContribution.M-1)*0..(gMatrixContribution.N-1)) {
-               gMatrixContribution(x,y) = jMatrixContribution(x,y) - (0.25*kMatrixContribution(x,y));
+            for (x in 0..(gMatrixContribution.M-1)) {
+                for (y in 0..(gMatrixContribution.N-1)) {
+                    gMatrixContribution(x,y) = jMatrixContribution(x,y) - (0.25*kMatrixContribution(x,y));
+                }
             }
             return gMatrixContribution;
         }
 
-        public def setValue(a:Int, b:Int, c:Int, d:Int, i:Int, j:Int, k:Int, l:Int) : Boolean {
+        public def setValue(a:Long, b:Long, c:Long, d:Long, i:Long, j:Long, k:Long, l:Long) : Boolean {
             val iFunc = mol.getAtom(a).getBasisFunctions().get(i);
             val jFunc = mol.getAtom(b).getBasisFunctions().get(j);
             val kFunc = mol.getAtom(c).getBasisFunctions().get(k);
@@ -706,7 +713,7 @@ jMatrix = new DenseMatrix(N, N);
              val aFunc = mol.getAtom(a).getBasisFunctions();
              val naFunc = aFunc.size();
              // basis functions on a
-             for(var i:Int=0; i<naFunc; i++) {
+             for(var i:Long=0; i<naFunc; i++) {
                val iaFunc = aFunc.get(i);
 
                // centre b
@@ -714,7 +721,7 @@ jMatrix = new DenseMatrix(N, N);
                    val bFunc = mol.getAtom(b).getBasisFunctions();
                    val nbFunc = (b<a) ? bFunc.size() : i+1;
                    // basis functions on b
-                   for(var j:Int=0; j<nbFunc; j++) {
+                   for(var j:Long=0; j<nbFunc; j++) {
                        val jbFunc = bFunc.get(j);
 
                        // centre c
@@ -722,7 +729,7 @@ jMatrix = new DenseMatrix(N, N);
                            val cFunc = mol.getAtom(c).getBasisFunctions();
                            val ncFunc = cFunc.size();
                            // basis functions on c
-                           for(var k:Int=0; k<ncFunc; k++) {
+                           for(var k:Long=0; k<ncFunc; k++) {
                                val kcFunc = cFunc.get(k);
 
                                // centre d
@@ -730,7 +737,7 @@ jMatrix = new DenseMatrix(N, N);
                                    val dFunc = mol.getAtom(d).getBasisFunctions();
                                    val ndFunc = (d<c) ? dFunc.size() : k+1;
                                    // basis functions on d
-                                   for(var l:Int=0; l<ndFunc; l++) {
+                                   for(var l:Long=0; l<ndFunc; l++) {
                                        val ldFunc = dFunc.get(l);
 
                                        // TODO: 
@@ -755,7 +762,7 @@ jMatrix = new DenseMatrix(N, N);
             val numPrimitives = shellList.getNumberOfShellPrimitives();
             val numPairs = shellList.getNumberOfShellPairs();
 
-            for(var i:Int=here.id; i<numPairs; i+=Place.MAX_PLACES) {
+            for(var i:Long=here.id; i<numPairs; i+=Place.MAX_PLACES) {
                 totInt += computeThread.computeOneShellPair(i, numPrimitives, shellPrimitives);
             }
             return totInt;
@@ -777,7 +784,7 @@ jMatrix = new DenseMatrix(N, N);
             return kMatrixContribution;
         }
 
-        public def computeOneShellPairThreaded(shellPair:Int, nPrimitives:Int, shellPrimitives:Rail[ContractedGaussian]):Long {
+        public def computeOneShellPairThreaded(shellPair:Long, nPrimitives:Int, shellPrimitives:Rail[ContractedGaussian]):Long {
             val a = shellPair / nPrimitives;
             val b = shellPair % nPrimitives;
 
@@ -804,14 +811,14 @@ jMatrix = new DenseMatrix(N, N);
 
             val radiusABSquared = aFunc.distanceSquaredFrom(bFunc);
 
-            val currentTriplet = new AtomicInteger(computeThreads.size);
-            finish for ([threadNum] in computeThreads) async {
+            val currentTriplet = new AtomicLong(computeThreads.size);
+            finish for (threadNum in 0..(computeThreads.size-1)) async {
                 val computeThread = computeThreads(threadNum);
 
                 var threadInts:Long = 0;
 
-                var myTriplet:Int = threadNum;
-                var i:Int = -1;
+                var myTriplet:Long = threadNum;
+                var i:Long = -1L;
                 for (c in 0..(nPrimitives-1)) {
                     val cFunc = shellPrimitives(c);
                     val cStrt = cFunc.intIndex;
@@ -847,7 +854,7 @@ jMatrix = new DenseMatrix(N, N);
         private var thresh2:Double;
         private var thresh:Double;
 
-        def this(N: Int, bfs:BasisFunctions, qCut:DenseMatrix, dCut:DenseMatrix, omega:Double, thresh:Double) {
+        def this(N:Long, bfs:BasisFunctions, qCut:DenseMatrix, dCut:DenseMatrix, omega:Double, thresh:Double) {
             val shellList = bfs.getShellList();
             this.thresh=thresh;
             this.twoEI = new TwoElectronIntegrals(shellList.getMaximumAngularMomentum(), bfs.getNormalizationFactors(),  omega, thresh);
@@ -911,7 +918,7 @@ jMatrix = new DenseMatrix(N, N);
             return true;
         }
 
-        public def computeOneShellPair(shellPair:Int, nPrimitives:Int, shellPrimitives:Rail[ContractedGaussian]):Long {
+        public def computeOneShellPair(shellPair:Long, nPrimitives:Int, shellPrimitives:Rail[ContractedGaussian]):Long {
             val a = shellPair / nPrimitives;
             val b = shellPair % nPrimitives;
 

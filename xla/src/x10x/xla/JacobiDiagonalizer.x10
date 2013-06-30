@@ -10,6 +10,7 @@
  */
 package x10x.xla;
 
+import x10.array.Array_2;
 import x10.compiler.Inline;
 
 import x10x.vector.Vector;
@@ -25,7 +26,7 @@ public class JacobiDiagonalizer {
     var eigenValuesVec:Vector; 
     var eigenVectorsMat:Matrix;
 
-    val maxIterations : Int = 100;
+    val maxIterations:Int = 100;
 
     public def diagonalize(mat:Matrix) : void {
        val matrix = mat.getMatrix();
@@ -48,7 +49,7 @@ public class JacobiDiagonalizer {
        val b = bVec.getVector();
        val z = zVec.getVector();
 
-        for (i in 0..a.region.max(0)) {
+        for (i in 0..(a.numElems_1-1)) {
             eigenValues(i) = b(i) = a(i,i);
             z(i) = 0.0;
         }
@@ -65,7 +66,7 @@ public class JacobiDiagonalizer {
           val sweeps = sweepsIdx;
           val zeroTol = zeroTolerance;
 
-          for(var ip:Int = 0; ip<n-1; ip++) { for(var iq:Int = ip+1; iq<n; iq++) {
+          for(var ip:Long = 0; ip<n-1; ip++) { for(var iq:Long = ip+1; iq<n; iq++) {
              if ((iq >= ip+1) && (ip < n-1)) { 
 
                 val g:Double = 100.0 * Math.abs(a(ip,iq));
@@ -96,10 +97,10 @@ public class JacobiDiagonalizer {
 
                      a(ip,iq) = 0.0;
 
-                     for(var j:Int = 0; j<ip; j++)    doRotate(a, j, ip, j, iq, sin, tau);
-                     for(var j:Int = ip+1; j<iq; j++) doRotate(a, ip, j, j, iq, sin, tau);
-                     for(var j:Int = iq+1; j<n; j++)  doRotate(a, ip, j, iq, j, sin, tau);
-                     for(var j:Int = 0; j<n; j++)     doRotate(eigenVectors, j, ip, j, iq, sin, tau);
+                     for(var j:Long = 0; j<ip; j++)    doRotate(a, j, ip, j, iq, sin, tau);
+                     for(var j:Long = ip+1; j<iq; j++) doRotate(a, ip, j, j, iq, sin, tau);
+                     for(var j:Long = iq+1; j<n; j++)  doRotate(a, ip, j, iq, j, sin, tau);
+                     for(var j:Long = 0; j<n; j++)     doRotate(eigenVectors, j, ip, j, iq, sin, tau);
                    } // end if
                 } // end if
              } // end if
@@ -116,7 +117,7 @@ public class JacobiDiagonalizer {
        eigenVectorsMat = eigenVectorsMat.transpose();
     }
 
-    private @Inline static def doRotate(a:Array[Double](2){rect,zeroBased}, i:Int, j:Int, k:Int, l:Int,
+    private @Inline static def doRotate(a:Array_2[Double], i:Long, j:Long, k:Long, l:Long,
                                 sin:Double, tau:Double) : void {
        val g = a(i,j);
        val h = a(k,l);
@@ -125,7 +126,7 @@ public class JacobiDiagonalizer {
     }
 
     private def sortEigenValues() {
-        var i:Int, j:Int, k:Int;
+        var i:Long, j:Long, k:Long;
         var p:Double;
         val n = eigenValuesVec.getSize();
         val eigenValues = eigenValuesVec.getVector();

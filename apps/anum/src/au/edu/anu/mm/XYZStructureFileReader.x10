@@ -28,7 +28,7 @@ public class XYZStructureFileReader {
         this.fileName = fileName;
     }
 
-    public def readMolecule() : Molecule[MMAtom] {
+    public def readMolecule(speciesSpecs:Rail[SpeciesSpec]) : Molecule[MMAtom] {
         val file = new FileReader(new File(fileName));
         // line 1: number of atoms
         val numAtoms = Int.parseInt(file.readLine());
@@ -38,13 +38,25 @@ public class XYZStructureFileReader {
         // lines 3..*: atom positions
         for(var i:Int=0; i<numAtoms; i++) {
             val words = file.readLine().split(" ");
-            molecule.addAtom(new MMAtom(words(0),
+            val symbol = words(0);
+            var species:Int = -1;
+            var speciesSpec:SpeciesSpec = null;
+            for (j in 0..(speciesSpecs.size-1)) {
+                if (symbol.equals(speciesSpecs(j).name)) {
+                    species = j as Int;
+                    break;
+                }
+            }
+            if (species == -1) {
+                throw new IllegalArgumentException("no species found for symbol " + symbol);
+            }
+            molecule.addAtom(new MMAtom(species,
                                          Point3d(Double.parseDouble(words(1)),
                                                  Double.parseDouble(words(2)),
                                                  Double.parseDouble(words(3))
                                          ),
-                                        0.0, // TODO mass
-                                        0.0
+                                        speciesSpec.mass,
+                                        speciesSpec.charge
                         ));
         }
        file.close();

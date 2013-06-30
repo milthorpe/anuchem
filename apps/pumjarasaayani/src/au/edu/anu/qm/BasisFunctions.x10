@@ -52,8 +52,10 @@ public struct BasisFunctions {
                 throw new Exception("No density matrix found for atom type " + atom.species);
             }
             val matsize = aDensity.M;
-            for ([i,j] in 0..(matsize-1)*0..(matsize-1)) {
-                SADMatrix(i+shift,j+shift) = aDensity(i,j);
+            for (i in 0..(matsize-1)) {
+                for (j in 0..(matsize-1)) {
+                    SADMatrix(i+shift,j+shift) = aDensity(i,j);
+                }
             }
             shift+=matsize;
         }
@@ -84,7 +86,7 @@ public struct BasisFunctions {
 
                 for(var l:Int=0; l<pList.size; l++) {
                     val power = pList(l);
-                    val primitives = new Array[PrimitiveGaussian](coeffs.size);
+                    val primitives = new Rail[PrimitiveGaussian](coeffs.size);
                     for(var i:Int=0; i<coeffs.size; i++) {
                         primitives(i) = new PrimitiveGaussian(centre, power, exps(i), coeffs(i), true);
                     }
@@ -93,11 +95,11 @@ public struct BasisFunctions {
                 } // end for
 
                 val am = orb.angularMomentum;
-                val atomPrimitives = new Array[PrimitiveGaussian](coeffs.size);
+                val atomPrimitives = new Rail[PrimitiveGaussian](coeffs.size);
                 for(var i:Int=0; i<coeffs.size; i++) {
                     atomPrimitives(i) = new PrimitiveGaussian(centre, Power(am, 0, 0), exps(i), coeffs(i), false);
                 }
-                val atomCoeffs = new Array[Double](coeffs); // note: atom coefficents are subsequently normalized
+                val atomCoeffs = new Rail[Double](coeffs); // note: atom coefficents are subsequently normalized
                 val acg = new ContractedGaussian(centre, Power(am, 0, 0), exps, atomCoeffs, intIndx, false);
                 atombfs.add(acg);
 
@@ -155,7 +157,7 @@ public struct BasisFunctions {
     }
 
     public def getNormalizationFactors():Rail[Double] {
-        val norms = new Array[Double](basisFunctions.size());
+        val norms = new Rail[Double](basisFunctions.size());
         for(var i:Int=0; i<basisFunctions.size(); i++) {
             val power = basisFunctions(i).power;
              for(var j:Int=0; j<1; j++) {

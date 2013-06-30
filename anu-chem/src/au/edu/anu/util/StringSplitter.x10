@@ -31,7 +31,7 @@ public class StringSplitter {
             offset++;
         }
         if (word) words.add(s.substring(startOffset, offset));
-        return words.toArray();
+        return words.toRail();
         // TODO for X10 2.4
         //return words.toRail();
     }

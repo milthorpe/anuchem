@@ -10,7 +10,7 @@
  */
 package au.edu.anu.mm;
 
-import x10.util.ArrayUtils;
+import x10.util.RailUtils;
 import x10.util.HashMap;
 
 import au.edu.anu.chem.PointCharge;
@@ -22,6 +22,11 @@ import au.edu.anu.chem.PointCharge;
  * @author milthorpe
  */
 public class LET {
+    /** 
+     * The combined U-List for this place. 
+     * Consists of the octant IDs for all lowest-level octants that are not
+     * well separated from some octant held at this place.
+     */
     public val combinedUList:Rail[UInt];
 
     /**
@@ -55,7 +60,7 @@ public class LET {
     }
 
     public def getAtomDataForOctant(mortonId:UInt) {
-        val cacheIndex = ArrayUtils.binarySearch(combinedUList, mortonId);
+        val cacheIndex = RailUtils.binarySearch(combinedUList, mortonId);
         if (cacheIndex >= 0) {
             return cachedAtoms(cacheIndex);
         } else {
@@ -64,7 +69,7 @@ public class LET {
     }
 
     public def setAtomDataForOctant(mortonId:UInt, atoms:Rail[Double]) {
-        val cacheIndex = ArrayUtils.binarySearch(combinedUList, mortonId);
+        val cacheIndex = RailUtils.binarySearch(combinedUList, mortonId);
         if (cacheIndex >= 0) {
             cachedAtoms(cacheIndex) = atoms;
         }

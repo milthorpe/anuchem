@@ -23,7 +23,7 @@ public class TestMultipoleRotation {
     static val RANDOM_SEED = 10101110L;
     static val R = new Random(RANDOM_SEED);
 
-    public static def main(args : Array[String](1)) {
+    public static def main(args:Rail[String]) {
 	    val args_doub = new Array[Double](0..7, 0);
 	    if (args.size() == 2) { 
 		    // Rotate multipole and back

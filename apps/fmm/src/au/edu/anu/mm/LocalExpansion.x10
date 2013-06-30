@@ -10,8 +10,10 @@
  */
 package au.edu.anu.mm;
 
+import x10.regionarray.Array;
+
 import au.edu.anu.chem.mm.MMAtom;
-import x10x.vector.*;
+import x10x.vector.Vector3d;
 import x10x.polar.Polar3d;
 
 /**

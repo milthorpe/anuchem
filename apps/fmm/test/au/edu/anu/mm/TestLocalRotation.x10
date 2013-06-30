@@ -23,7 +23,7 @@ public class TestLocalRotation {
     static val RANDOM_SEED = 10101111L;
     static val R = new Random(RANDOM_SEED);
 
-    public static def main(args : Array[String](1)) {
+    public static def main(args:Rail[String]) {
 	    val args_doub = new Array[Double](0..7, 0);
         if (args.size == 0) { 
 		    for (j in 0..5) args_doub(j) = R.nextDouble() * 0.5;

@@ -24,7 +24,7 @@ public class TestPME extends TestElectrostatic {
     public static ITERS = 10;
     public def sizeOfCentralCluster() : Double = 80.0;
 
-    public static def main(args : Array[String](1)) {
+    public static def main(args:Rail[String]) {
         var numAtoms : Int;
         var ewaldCoefficient : Double = 0.35;
         var cutoff : Double = 8.0;

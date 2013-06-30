@@ -25,7 +25,7 @@ import x10.matrix.lapack.DenseMatrixLAPACK;
  *
  * @author: V.Ganesh
  */
-public class DIISFockExtrapolator(N:Int) {
+public class DIISFockExtrapolator(N:Long) {
     static MIN_NON_DIIS_STEP:Int = 0;
     static MAX_NON_DIIS_STEP:Int = 2;
 
@@ -47,7 +47,7 @@ public class DIISFockExtrapolator(N:Int) {
 
     var oldFock:Fock;
 
-    public def this(N:Int) {
+    public def this(N:Long) {
         property(N);
         fockMatrixList  = new ArrayList[Fock]();
         errorVectorList = new ArrayList[Vector]();
@@ -147,7 +147,7 @@ public class DIISFockExtrapolator(N:Int) {
         A(noOfIterations,noOfIterations) = 0.0;
         B(noOfIterations) = -1.0;
 
-        val permutation = new Array[Int](M);
+        val permutation = new Rail[Int](M);
         val result = DenseMatrixLAPACK.solveLinearEquation(A, B, permutation);
 
         for (var i:Int=0; i < noOfIterations; i++) {

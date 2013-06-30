@@ -11,6 +11,8 @@
 package au.edu.anu.mm;
 
 import x10.compiler.CompilerFlags;
+import x10.regionarray.Dist;
+import x10.regionarray.Region;
 
 /**
  * This class represents a Morton- or Z-ordering of a dense 3-dimensional cubic array.  
@@ -35,9 +37,9 @@ public final class MortonDist extends Dist(3) {
     private transient var regionForHere:Region(this.rank);
 
     public class MortonSubregion extends Region {
-        val start : Int;
-        val end : Int;
-        public def this(start : Int, end : Int) : MortonSubregion{self.rank==3} {
+        val start:Long;
+        val end:Long;
+        public def this(start:Long, end:Long) : MortonSubregion{self.rank==3} {
             super(3, false, false);
             this.start = start;
             this.end = end;
@@ -47,11 +49,11 @@ public final class MortonDist extends Dist(3) {
         public def totalLength() = MortonDist.this.region.size();
         public def isConvex() = true;
         public def isEmpty() = (end < start);
-        public def indexOf(pt:Point):Int {
+        public def indexOf(pt:Point):Long {
             if (pt.rank != 3) return -1;
             return MortonDist.this.getMortonIndex(pt) - start;
         }
-        public def indexOf(i0:Int, i1:Int, i2:Int):Int {
+        public def indexOf(i0:Long, i1:Long, i2:Long):Long {
             return MortonDist.this.getMortonIndex(i0,i1,i2) - start;
         }
 
@@ -87,7 +89,7 @@ public final class MortonDist extends Dist(3) {
         }
 
         private class MortonSubregionIterator implements Iterator[Point(3)] {
-            var index : Int;
+            var index:Long;
 
             def this(val r : MortonSubregion) {
                 this.index = r.start-1;
@@ -109,8 +111,8 @@ public final class MortonDist extends Dist(3) {
 
         // TODO proper implementations for following methods - currently unused
         protected  def computeBoundingBox(): Region(rank) {throw new UnsupportedOperationException("computeBoundingBox()");}
-        public def min():(Int)=>Int = (i:Int)=> 0;
-        public def max():(Int)=>Int = (i:Int)=> Math.pow2(MortonDist.this.dimDigits);
+        public def min():(Int)=>Long = (i:Int)=> 0L;
+        public def max():(Int)=>Long = (i:Int)=> Math.pow2(MortonDist.this.dimDigits) as Long;
         public def complement(): Region(rank) {throw new UnsupportedOperationException("complement()");}
         public def product(that:Region): Region{self!=null} {throw new UnsupportedOperationException("product(Region)");}
         public def projection(axis:Int): Region(1) {throw new UnsupportedOperationException("projection(axis : Int)");}
@@ -134,7 +136,7 @@ public final class MortonDist extends Dist(3) {
 
     public def places():PlaceGroup = pg;
 
-    public def numPlaces():Int = pg.numPlaces();
+    public def numPlaces():Long = pg.numPlaces();
 
     public def get(p:Place):Region(rank) {
         if (p == here) {
@@ -156,8 +158,8 @@ public final class MortonDist extends Dist(3) {
         }
     }
 
-    public def regions():Sequence[Region(rank)] {
-        return new Array[Region(rank)](pg.numPlaces(), (i:Int)=>mortonRegionForPlace(pg(i))).sequence();
+    public def regions():Iterable[Region(rank)] {
+        return new Rail[Region(rank)](pg.numPlaces(), (i:Long)=>mortonRegionForPlace(pg(i)));
     }
 
     public def restriction(r:Region(rank)):Dist(rank) {
@@ -182,10 +184,10 @@ public final class MortonDist extends Dist(3) {
      * (1, 1, 2) = (01, 01, 10)    = 001110
      * (1, 1, 0) = (01, 01, 00)    = 000110
      */
-    public def getMortonIndex(p:Point/*(rank)*/):Int {
+    public def getMortonIndex(p:Point/*(rank)*/):Long {
         if (p.rank != 3) throw new UnsupportedOperationException("getMortonIndex(p{self.rank!=3})");
-        var index : Int = 0;
-        var digitMask : Int = Math.pow2(dimDigits-1);
+        var index:Long = 0L;
+        var digitMask:Long = Math.pow2(dimDigits-1);
         for (var digit : Int = dimDigits; digit > 0; digit--) {
             for (var dim : Int = 0; dim < 3; dim++) {
                 val thisDim = digitMask & p(dim);
@@ -205,8 +207,8 @@ public final class MortonDist extends Dist(3) {
      * (1, 1, 2) = (01, 01, 10)    = 001110
      * (1, 1, 0) = (01, 01, 00)    = 000110
      */
-    public def getMortonIndex(i0:Int, i1:Int, i2:Int):Int {
-        var index : Int = 0;
+    public def getMortonIndex(i0:Long, i1:Long, i2:Long):Long {
+        var index:Long = 0L;
         var digitMask : Int = Math.pow2(dimDigits-1);
         for (var digit : Int = dimDigits; digit > 0; digit--) {
             val dim0 = digitMask & i0;
@@ -224,9 +226,9 @@ public final class MortonDist extends Dist(3) {
      * Returns a Point(3) corresponding to the given Morton index.
      * @param index the Morton index into the 3D array
      */
-    public def getPoint(index:Int) : Point(3) {
-        val p = new Array[Int](3);
-        var digitMask : Int = region.size() / 2; 
+    public def getPoint(index:Long):Point(3) {
+        val p = new Rail[Long](3);
+        var digitMask:Long = region.size() / 2; 
         for (var digit : Int = dimDigits; digit > 0; digit--) {
             for (var dim : Int = 0; dim < 3; dim++) {
                 val thisDim = digitMask & index;
@@ -237,7 +239,7 @@ public final class MortonDist extends Dist(3) {
         return Point.make(p);
     }
 
-    public def getPlaceStart(placeId : Int) {
+    public def getPlaceStart(placeId:Long) {
         val blockSize = region.size() / Place.MAX_PLACES;
         val numLargerBlocks = region.size() % Place.MAX_PLACES;
         if (placeId < numLargerBlocks) {
@@ -248,7 +250,7 @@ public final class MortonDist extends Dist(3) {
         }
     }
 
-    public def getPlaceEnd(placeId : Int) {
+    public def getPlaceEnd(placeId:Long) {
         val blockSize = region.size() / Place.MAX_PLACES;
         val numLargerBlocks = region.size() % Place.MAX_PLACES;
         if (placeId < numLargerBlocks) {
@@ -259,14 +261,14 @@ public final class MortonDist extends Dist(3) {
         }
     }
 
-    private final def getPlaceForIndex(index : Int) : Place {
+    private final def getPlaceForIndex(index:Long) : Place {
         val blockSize = region.size() / Place.MAX_PLACES;
         val numLargerBlocks = region.size() % Place.MAX_PLACES;
         val firstPart = numLargerBlocks * (blockSize + 1);
         if (index > firstPart) {
-            return Place.place(numLargerBlocks + (((index - firstPart) / blockSize) as Int));
+            return Place.place(numLargerBlocks + (((index - firstPart) / blockSize) as Long));
         } else {
-            return Place.place((index / (blockSize + 1)) as Int);
+            return Place.place((index / (blockSize + 1)) as Long);
         }
     } 
 
@@ -276,9 +278,9 @@ public final class MortonDist extends Dist(3) {
     // replicated from superclass to workaround xlC bug with using & itables
     // These are actually unreachable (due to rank constraints), but the compiler 
     // isn't smart enough to understand that and supress the using declaration in the generated code
-    public operator this(i0:int):Place { throw new UnsupportedOperationException("Unreachable Code!"); }
-    public operator this(i0:int, i1:int):Place { throw new UnsupportedOperationException("Unreachable Code!"); }
-    public operator this(i0:int, i1:int, i2:int, i3:int):Place { throw new UnsupportedOperationException("Unreachable Code!"); }
+    public operator this(i0:Long):Place { throw new UnsupportedOperationException("Unreachable Code!"); }
+    public operator this(i0:Long, i1:Long):Place { throw new UnsupportedOperationException("Unreachable Code!"); }
+    public operator this(i0:Long, i1:Long, i2:Long, i3:Long):Place { throw new UnsupportedOperationException("Unreachable Code!"); }
 
     public operator this(pt:Point(rank)):Place {
         if (CompilerFlags.checkBounds() && !region.contains(pt)) raiseBoundsError(pt);
@@ -286,26 +288,26 @@ public final class MortonDist extends Dist(3) {
         return getPlaceForIndex(index);
     }
 
-    public operator this(i0:int, i1:int, i2:int){rank==3}:Place {
+    public operator this(i0:Long, i1:Long, i2:Long){rank==3}:Place {
         if (CompilerFlags.checkBounds() && !region.contains(i0, i1, i2)) raiseBoundsError(i0,i1,i2);
         val index = getMortonIndex(i0,i1,i2);
         return getPlaceForIndex(index);
     } 
 
-    public def offset(pt:Point(rank)):Int {
+    public def offset(pt:Point(rank)):Long {
         // assumes regionForHere is already initialised
         val offset = get(here).indexOf(pt);
-        if (offset == -1) {
+        if (offset == -1L) {
             if (CompilerFlags.checkBounds() && !region.contains(pt)) raiseBoundsError(pt);
                 if (CompilerFlags.checkPlace()) raisePlaceError(pt);
         }
         return offset;
     }
 
-    public def offset(i0:Int, i1:Int, i2:Int){rank==3}:Int {
+    public def offset(i0:Long, i1:Long, i2:Long){rank==3}:Long {
         // assumes regionForHere is already initialised
         val offset = get(here).indexOf(i0,i1,i2);
-        if (offset == -1) {
+        if (offset == -1L) {
             if (CompilerFlags.checkBounds() && !region.contains(i0,i1,i2)) raiseBoundsError(i0,i1,i2);
                 if (CompilerFlags.checkPlace()) raisePlaceError(i0,i1,i2);
         }

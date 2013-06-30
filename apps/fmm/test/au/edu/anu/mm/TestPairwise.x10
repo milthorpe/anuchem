@@ -23,7 +23,7 @@ import au.edu.anu.util.Timer;
 public class TestPairwise extends TestElectrostatic {
     public def sizeOfCentralCluster() : Double = 80.0;
 
-    public static def main(args : Array[String](1)) {
+    public static def main(args:Rail[String]) {
         var numAtoms : Int;
         if (args.size > 0) {
             numAtoms = Int.parseInt(args(0));
