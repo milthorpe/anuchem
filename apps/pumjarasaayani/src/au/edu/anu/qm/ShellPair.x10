@@ -19,7 +19,6 @@ import x10x.vector.Point3d;
  *
  * @author: T. Limpanuparb, J. Milthorpe
  */
-
 public struct ShellPair {
     public val aang : Int; // Angular momentum at a
     public val bang : Int; // Angular momentum at b
@@ -31,26 +30,25 @@ public struct ShellPair {
     public val conB : Rail[Double]; // Contraction coefficient(s) for b
     public val dconA : Int; // Degree of contraction on a
     public val dconB : Int; // Degree of contraction on b
-    public val mu : Int;
-    public val nu : Int;
-    public val mu2 : Int;
-    public val nu2 : Int;
+    public val mu : Long;
+    public val nu : Long;
+    public val mu2 : Long;
+    public val nu2 : Long;
     public val maxbraa : Int;
     public val maxbrab : Int;
-    public val maxL : Rail[Int];
+    public val maxL : Rail[Long];
     public val contrib : Double;
 
-
     public def this(a:Int, b:Int, A:Point3d, B:Point3d, zetaA:Rail[Double], zetaB:Rail[Double], conA:Rail[Double], conB:Rail[Double], 
-                    dconA:Int, dconB:Int, mu:Int, nu:Int, maxL:Rail[Int], contrib:Double) {
+                    dconA:Int, dconB:Int, mu:Long, nu:Long, maxL:Rail[Long], contrib:Double) {
         this.aang=a;
         this.bang=b;
         this.aPoint=A;
         this.bPoint=B;
-        this.zetaA=zetaA; // What does this mean? address or data assigment?
-        this.zetaB=zetaB; // 
-        this.conA=conA; // 
-        this.conB=conB; // 
+        this.zetaA=zetaA;
+        this.zetaB=zetaB;
+        this.conA=conA;
+        this.conB=conB;
         this.dconA=dconA; 
         this.dconB=dconB; 
         this.mu=mu;
@@ -62,6 +60,5 @@ public struct ShellPair {
         this.maxL=maxL;
         this.contrib = contrib;
     }
-
 }
 
