@@ -14,7 +14,6 @@ import x10.compiler.Native;
 import x10.compiler.NativeRep;
 import x10.compiler.NativeCPPCompilationUnit;
 import x10.compiler.NativeCPPInclude;
-import x10.util.IndexedMemoryChunk;
 
 /**
  * C++ Wrapper for PAPI
