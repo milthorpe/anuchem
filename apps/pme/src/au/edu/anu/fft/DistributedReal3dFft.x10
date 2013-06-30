@@ -11,6 +11,10 @@
 package au.edu.anu.fft;
 
 import x10.compiler.NativeCPPInclude;
+import x10.regionarray.Dist;
+import x10.regionarray.DistArray;
+import x10.regionarray.Region;
+
 import x10.util.Team;
 import edu.mit.fftw.FFTW;
 
@@ -32,8 +36,8 @@ public class DistributedReal3dFft {
      * to indicate that the target array has its dimensions transposed.
      */
     public static def doFFT3d(source:DistArray[Double](3), target:DistArray[Complex](3){self.dist==source.dist}, temp:DistArray[Complex](3){self.dist==source.dist}) {
-        val dataSize = (source.region.max(0)-source.region.min(0))+1;
-        if (Place.MAX_PLACES==1) {
+        val dataSize = (source.region.max(0)-source.region.min(0)) as Int + 1;
+        if (Place.MAX_PLACES==1L) {
             // all source data at one place.  use local 3D FFT rather than distributed
             val plan : FFTW.FFTWPlan = FFTW.fftwPlan3d(dataSize, dataSize, dataSize, source, target);
             FFTW.fftwExecute(plan);
@@ -43,7 +47,7 @@ public class DistributedReal3dFft {
                 val localSource = source.getLocalPortion();
                 val localRegion = localSource.region as Region(3){rect};
                 val gridRegionWithoutZ = (localRegion.eliminate(2)) as Region(2){rect};
-                val howMany = gridRegionWithoutZ.size();
+                val howMany = gridRegionWithoutZ.size() as Int;
 
                 val planR2C:FFTW.FFTWPlan = FFTW.fftwPlan1d(dataSize, howMany, source, temp);
                 FFTW.fftwExecute(planR2C);
@@ -57,14 +61,14 @@ public class DistributedReal3dFft {
                     }
                 }
                 transpose[Complex](temp, target);
-                Team.WORLD.barrier(here.id);
+                Team.WORLD.barrier();
                 val planC2C:FFTW.FFTWPlan = FFTW.fftwPlan1d(dataSize, howMany, target, temp, true);
                 FFTW.fftwExecute(planC2C);
-                Team.WORLD.barrier(here.id);
+                Team.WORLD.barrier();
                 transpose[Complex](temp, target);
-                Team.WORLD.barrier(here.id);
+                Team.WORLD.barrier();
                 FFTW.fftwExecute(planC2C);
-                Team.WORLD.barrier(here.id);
+                Team.WORLD.barrier();
                 transpose[Complex](temp, target);
                 FFTW.fftwDestroyPlan(planR2C);
                 FFTW.fftwDestroyPlan(planC2C);
@@ -73,8 +77,8 @@ public class DistributedReal3dFft {
     }
 
     public static def doFFT3d(source:DistArray[Complex](3), target:DistArray[Double](3){self.dist==source.dist}, temp:DistArray[Complex](3){self.dist==source.dist}, temp2:DistArray[Double](3){self.dist==source.dist}) {
-        val dataSize = (source.region.max(0)-source.region.min(0))+1;
-        if (Place.MAX_PLACES==1) {
+        val dataSize = (source.region.max(0)-source.region.min(0)) as Int + 1;
+        if (Place.MAX_PLACES==1L) {
             // all source data at one place.  use local 3D FFT rather than distributed
             val plan : FFTW.FFTWPlan = FFTW.fftwPlan3d(dataSize, dataSize, dataSize, source, target);
             FFTW.fftwExecute(plan);
@@ -84,17 +88,17 @@ public class DistributedReal3dFft {
                 val localTarget = source.getLocalPortion();
                 val localRegion = localTarget.region as Region(3){rect};
                 val gridRegionWithoutZ = (localRegion.eliminate(2)) as Region(2){rect};
-                val howMany = gridRegionWithoutZ.size();
+                val howMany = gridRegionWithoutZ.size() as Int;
 
                 val planC2C:FFTW.FFTWPlan = FFTW.fftwPlan1d(dataSize, howMany, source, temp, false);
                 FFTW.fftwExecute(planC2C);
-                Team.WORLD.barrier(here.id);
+                Team.WORLD.barrier();
                 transpose[Complex](temp, source);
-                Team.WORLD.barrier(here.id);
+                Team.WORLD.barrier();
                 FFTW.fftwExecute(planC2C);
-                Team.WORLD.barrier(here.id);
+                Team.WORLD.barrier();
                 transpose[Complex](temp, source);
-                Team.WORLD.barrier(here.id);
+                Team.WORLD.barrier();
                 val planC2R:FFTW.FFTWPlan = FFTW.fftwPlan1d(dataSize, howMany, source, temp2);
                 FFTW.fftwExecute(planC2R);
                 transpose[Double](temp2, target);
@@ -127,7 +131,7 @@ public class DistributedReal3dFft {
                 val startZ = targetDist.region.min(0);
                 val endZ = targetDist.region.max(0);
 
-                val transferRegion = (startX..endX) * (startY..endY) * (startZ..endZ);
+                val transferRegion = Region.make(startX..endX, startY..endY, startZ..endZ);
                 if (transferRegion.size() > 0) {
                     if (p2 == here) {
                         val localTarget = target.getLocalPortion();
@@ -138,13 +142,13 @@ public class DistributedReal3dFft {
                     } else {
                         // collect elements to transfer to remote place
                         val elementsToTransfer = new Rail[T](transferRegion.size());
-                        var i : Int = 0;
+                        var i : Long = 0;
                         for ([x,y,z] in transferRegion) {
                             elementsToTransfer(i++) = localSource(x,y,z);
                         }
                         at(p2) async {
                             val localTarget = target.getLocalPortion();
-                            var i2 : Int = 0;
+                            var i2 : Long = 0;
                             for ([x,y,z] in transferRegion) {
                                 // transpose dimensions
                                 localTarget(z,x,y) = elementsToTransfer(i2++);

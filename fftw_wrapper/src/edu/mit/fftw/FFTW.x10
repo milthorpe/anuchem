@@ -31,15 +31,15 @@ public class FFTW {
     @Native("java", "null")
     public native static def fftwPlan1d(n:Int, input:Rail[Complex], output:Rail[Double]):FFTWPlan;
 
-    @Native("c++", "::edu::mit::fftw::FFTWWrapper::fftwPlanDft1d(#1, #2, reinterpret_cast<fftw_complex*>(#3->raw().data), reinterpret_cast<fftw_complex*>(#4->raw().data), #5)")
+    @Native("c++", "::edu::mit::fftw::FFTWWrapper::fftwPlanDft1d(#1, #2, reinterpret_cast<fftw_complex*>(#3->raw()->raw), reinterpret_cast<fftw_complex*>(#4->raw()->raw), #5)")
     @Native("java", "null")
     public native static def fftwPlan1d(n:Int, howMany:Int, input:DistArray[Complex], output:DistArray[Complex], forward:Boolean):FFTWPlan;
 
-    @Native("c++", "::edu::mit::fftw::FFTWWrapper::fftwPlanDft1d(#1, #2, reinterpret_cast<double*>(#3->raw().data), reinterpret_cast<fftw_complex*>(#4->raw().data))")
+    @Native("c++", "::edu::mit::fftw::FFTWWrapper::fftwPlanDft1d(#1, #2, reinterpret_cast<double*>(#3->raw()->raw), reinterpret_cast<fftw_complex*>(#4->raw()->raw))")
     @Native("java", "null")
     public native static def fftwPlan1d(n:Int, howMany:Int, input:DistArray[Double], output:DistArray[Complex]):FFTWPlan;
 
-    @Native("c++", "::edu::mit::fftw::FFTWWrapper::fftwPlanDft1d(#1, #2, reinterpret_cast<fftw_complex*>(#3->raw().data), reinterpret_cast<double*>(#4->raw().data))")
+    @Native("c++", "::edu::mit::fftw::FFTWWrapper::fftwPlanDft1d(#1, #2, reinterpret_cast<fftw_complex*>(#3->raw()->raw), reinterpret_cast<double*>(#4->raw()->raw))")
     @Native("java", "null")
     public native static def fftwPlan1d(n:Int, howMany:Int, input:DistArray[Complex], output:DistArray[Double]):FFTWPlan;
 
@@ -47,11 +47,11 @@ public class FFTW {
     @Native("java", "null")
     public native static def fftwPlan3d(n1:Int, n2:Int, n3:Int, input:DistArray[Complex], output:DistArray[Complex], forward:Boolean):FFTWPlan;
 
-    @Native("c++", "::edu::mit::fftw::FFTWWrapper::fftwPlanDft3d(#1, #2, #3, reinterpret_cast<double*>(#4->raw().data), reinterpret_cast<fftw_complex*>(#5->raw().data))")
+    @Native("c++", "::edu::mit::fftw::FFTWWrapper::fftwPlanDft3d(#1, #2, #3, reinterpret_cast<double*>(#4->raw()->raw), reinterpret_cast<fftw_complex*>(#5->raw()->raw))")
     @Native("java", "null")
     public native static def fftwPlan3d(n1:Int, n2:Int, n3:Int, input:DistArray[Double], output:DistArray[Complex]):FFTWPlan;
 
-    @Native("c++", "::edu::mit::fftw::FFTWWrapper::fftwPlanDft3d(#1, #2, #3, reinterpret_cast<fftw_complex*>(#4->raw().data), reinterpret_cast<double*>(#5->raw().data))")
+    @Native("c++", "::edu::mit::fftw::FFTWWrapper::fftwPlanDft3d(#1, #2, #3, reinterpret_cast<fftw_complex*>(#4->raw()->raw), reinterpret_cast<double*>(#5->raw()->raw))")
     @Native("java", "null")
     public native static def fftwPlan3d(n1:Int, n2:Int, n3:Int, input:DistArray[Complex], output:DistArray[Double]):FFTWPlan;
     

@@ -31,7 +31,7 @@ import au.edu.anu.util.Timer;
  * @author milthorpe
  */
 public class TestPMEWaterBox extends TestElectrostatic {
-    public static ITERS = 10;
+    public static ITERS = 1000;
     var size:Double = 80.0;
     public def sizeOfCentralCluster() { return size; }
     public def boxSize() { return size; }
@@ -40,7 +40,7 @@ public class TestPMEWaterBox extends TestElectrostatic {
         var structureFileName : String;
         var ewaldCoefficient : Double = 0.35;
         var cutoff : Double = 10.0;
-        var gridSize : Int = 72;
+        var gridSize : Long = 72;
         var splineOrder : Int = 4;
         if (args.size > 0) {
             structureFileName = args(0);
@@ -49,7 +49,7 @@ public class TestPMEWaterBox extends TestElectrostatic {
                 if (args.size > 2) {
                     cutoff = Double.parseDouble(args(2));
                     if (args.size > 3) {
-                        gridSize = Int.parseInt(args(3));
+                        gridSize = Long.parseLong(args(3));
                         if (args.size > 4) {
                             splineOrder = Int.parseInt(args(4));
                         }
@@ -68,7 +68,7 @@ public class TestPMEWaterBox extends TestElectrostatic {
         new TestPMEWaterBox().test(structureFileName, ewaldCoefficient, cutoff, gridSize, splineOrder);
     }
 
-    public def test(structureFileName : String, ewaldCoefficient : Double, cutoff : Double, gridSize : Int, splineOrder : Int) {
+    public def test(structureFileName : String, ewaldCoefficient : Double, cutoff : Double, gridSize : Long, splineOrder : Int) {
 
         val gmxFileReader = new GromacsStructureFileReader(structureFileName);
         val molecule = gmxFileReader.readMolecule();
@@ -76,7 +76,7 @@ public class TestPMEWaterBox extends TestElectrostatic {
 
         val edges = [Vector3d(size, 0.0, 0.0), Vector3d(0.0, size, 0.0), Vector3d(0.0, 0.0, size)];
         val g = gridSize;
-        val gridSizes = new Rail[Int](3, g);
+        val gridSizes = new Rail[Long](3, g);
 
         Console.OUT.println("Testing PME with structure file " + structureFileName
             + "\nBox edges: " + edges(0) + "," + edges(1) + "," + edges(2)

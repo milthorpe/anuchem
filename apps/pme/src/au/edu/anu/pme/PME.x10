@@ -50,7 +50,7 @@ public class PME {
     public val timer = new Timer(9);
 
     /** The number of grid lines in each dimension of the simulation unit cell. */
-    private val gridSize : Rail[Int];
+    private val gridSize : Rail[Long];
 
     /** Double representations of the various grid dimensions */
     private val K1 : Double;
@@ -107,9 +107,11 @@ public class PME {
 
     /** thetaRecConvQ as used in Eq. 4.7.  TODO this should be a scoped local variable in getEnergy() XTENLANG-??? */
     private val thetaRecConvQ : DistArray[Complex]{self.dist==gridDist};
+    private val thetaRecConvQReal : DistArray[Double]{self.dist==gridDist};
 
     /** Scratch array for use during 3D FFT.  TODO this should be a scoped local variable in getEnergy() XTENLANG-??? */
     private val temp : DistArray[Complex]{self.dist==gridDist};
+    private val temp2 : DistArray[Double]{self.dist==gridDist};
 
     /** 
      * An array of box divisions within the unit cell, with a side length
@@ -124,7 +126,7 @@ public class PME {
      */
     private val subCells : DistArray[Rail[PointCharge]](3);
     /** The number of sub-cells per side of the unit cell. */
-    private val numSubCells : Int;
+    private val numSubCells : Long;
 
     /** 
      * A cache of atoms from subcells stored at other places.  
@@ -142,7 +144,7 @@ public class PME {
      * @param cutoff the distance in Angstroms beyond which direct interactions are ignored
      */
     public def this(edges : Rail[Vector3d],
-            gridSize : Rail[Int],
+            gridSize : Rail[Long],
             atoms: DistArray[Rail[MMAtom]](1),
             splineOrder : Int,
             beta : Double,
@@ -168,14 +170,14 @@ public class PME {
         this.cutoff = cutoff;
         this.imageTranslations = PlaceLocalHandle.make[Array[Vector3d](3){rect}](
             PlaceGroup.WORLD, 
-            () => new Array[Vector3d](-1..1 * -1..1 * -1..1, 
+            () => new Array[Vector3d](Region.make(-1..1, -1..1, -1..1), 
                 ([i,j,k] : Point(3)) => (edges(0).mul(i)).add(edges(1).mul(j)).add(edges(2).mul(k))) 
         );
 
         if (edgeLengths(0) % (cutoff/2.0) != 0.0) {
             Console.ERR.println("warning: edge length " + edgeLengths(0) + " is not an exact multiple of (cutoff/2.0) " + (cutoff/2.0));
         }
-        val numSubCells = Math.ceil(edgeLengths(0) / (cutoff/2.0)) as Int;
+        val numSubCells = Math.ceil(edgeLengths(0) / (cutoff/2.0)) as Long;
         val subCellRegion = Region.make(0..(numSubCells-1), 0..(numSubCells-1), 0..(numSubCells-1));
         val subCells = DistArray.make[Rail[PointCharge]](new PeriodicDist(Dist.makeBlockBlock(subCellRegion, 0, 1)));
         //Console.OUT.println("subCells dist = " + subCells.dist);
@@ -203,7 +205,9 @@ public class PME {
         // TODO following arrays should be scoped local variables XTENLANG-???
         Qinv = DistArray.make[Complex](gridDist);
         thetaRecConvQ = DistArray.make[Complex](gridDist);
+        thetaRecConvQReal = DistArray.make[Double](gridDist);
         temp = DistArray.make[Complex](gridDist);
+        temp2 = DistArray.make[Double](gridDist);
         B = DistArray.make[Double](gridDist);
         C = DistArray.make[Double](gridDist);
     }
@@ -362,6 +366,7 @@ public class PME {
 
     public def getDirectEnergy() : Double {
         timer.start(TIMER_INDEX_DIRECT);
+/*
         val cutoffSquared = cutoff*cutoff;
 		val subCellsDist = this.subCells.dist;
 		val numSubCells = this.numSubCells; // TODO shouldn't be necessary XTENLANG-1913
@@ -436,8 +441,9 @@ public class PME {
                 directEnergy <- myDirectEnergy;
             }
         }
+*/
         timer.stop(TIMER_INDEX_DIRECT);
-        return directEnergy();
+        return 0.0;//directEnergy();
     }
 
     /**
@@ -544,28 +550,28 @@ public class PME {
      * Some of this region will be resident at the given place; other parts
      * may be held as ghost cells.
      */
-    private static def getSubcellHaloRegionForPlace(gridSize : Int, numSubCells : Int, splineOrder : Int, gridRegion : Region(3){rect}, subCellRegion : Region(3){rect}) {
+    private static def getSubcellHaloRegionForPlace(gridSize:Long, numSubCells:Long, splineOrder:Int, gridRegion:Region(3){rect}, subCellRegion:Region(3){rect}) {
         val gridPointsPerSubCell = (gridSize as Double) / numSubCells;
 
         val subCellMinX = Math.floor(gridRegion.min(0) / gridPointsPerSubCell) as Int;
 
-        val fullX = gridRegion.min(0) == 0 && gridRegion.max(0) == (gridSize-1);
-        val subCellMaxX:Int;
+        val fullX = gridRegion.min(0) == 0L && gridRegion.max(0) == (gridSize-1);
+        val subCellMaxX:Long;
         if (fullX) {
             subCellMaxX = subCellRegion.max(0);
         } else {
             val maxX = gridRegion.max(0) + (splineOrder-1);
-            subCellMaxX = Math.ceil(maxX / gridPointsPerSubCell) as Int;
+            subCellMaxX = Math.ceil(maxX / gridPointsPerSubCell) as Long;
         }
 
-        val subCellMinY = Math.floor(gridRegion.min(1) / gridPointsPerSubCell) as Int;
-        val fullY = gridRegion.min(1) == 0 && gridRegion.max(1) == (gridSize-1);
-        val subCellMaxY:Int;
+        val subCellMinY = Math.floor(gridRegion.min(1) / gridPointsPerSubCell) as Long;
+        val fullY = gridRegion.min(1) == 0L && gridRegion.max(1) == (gridSize-1);
+        val subCellMaxY:Long;
         if (fullY) {
             subCellMaxY = subCellRegion.max(1);
         } else {
             val maxY = gridRegion.max(1) + (splineOrder-1);
-            subCellMaxY = Math.ceil(maxY / gridPointsPerSubCell) as Int;
+            subCellMaxY = Math.ceil(maxY / gridPointsPerSubCell) as Long;
         }
         // each place holds a full pencil of subcells through Z dimension
         val subCellHaloRegion = 
@@ -584,6 +590,7 @@ public class PME {
 	val gridDist = this.gridDist; // TODO shouldn't be necessary XTENLANG-1913
 	val Q = this.Q; // TODO shouldn't be necessary XTENLANG-1913
 
+        val scale = 1.0 / (K1 * K2 * K3);
         val reciprocalEnergy = new Accumulator[Double](Reducible.SumReducer[Double]());
         finish ateach(place in Dist.makeUnique()) {
             var myReciprocalEnergy : Double = 0.0;
