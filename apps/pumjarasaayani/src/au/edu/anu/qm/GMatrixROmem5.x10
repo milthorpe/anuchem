@@ -20,6 +20,7 @@ import x10.regionarray.DistArray;
 import x10.util.ArrayList;
 import x10.util.RailUtils;
 import x10.util.Team;
+import x10.util.WorkerLocalHandle;
 import x10.util.concurrent.AtomicInteger;
 
 import x10.matrix.DenseMatrix;
@@ -152,7 +153,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
         place2ShellPair=new Rail[Long](nPlaces+1);
         place2ShellPair(0)=0; placeID=1; 
         offsetAtPlace(0)=0; offsetAtPlace(nPlaces)=N;
-        Console.OUT.printf("place %3d: offset=%5d shellpair #%5d\n",0,0,place2ShellPair(0));
+        Console.OUT.printf("place %3d: offset = %5d shellpair #%5d\n",0,0,place2ShellPair(0));
         for(var a:Long=0; a<noOfAtoms; a++) { // centre a  
             val aFunc = mol.getAtom(a).getBasisFunctions();
             val naFunc = aFunc.size();          
@@ -168,9 +169,9 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                 if (a==place2atom(placeID) && i==place2func(placeID)) {
                     place2ShellPair(placeID)=ind;                    
                     funcAtPlace(placeID-1) = mu-offsetAtPlace(placeID-1);  
-                    Console.OUT.printf("#basis fucntions1 =%5d #basis fucntions2 =%5d\n",funcAtPlace(placeID-1),totFunc); totFunc=0;
+                    Console.OUT.printf("#basis functions1 = %5d #basis functions2 = %5d\n",funcAtPlace(placeID-1),totFunc); totFunc=0;
                     offsetAtPlace(placeID)= mu;          
-                    Console.OUT.printf("place %3d: offset=%5d shellpair #%5d\n",placeID,offsetAtPlace(placeID),ind);
+                    Console.OUT.printf("place %3d: offset = %5d shellpair #%5d\n",placeID,offsetAtPlace(placeID),ind);
                     placeID++;
                 }          
                 for(var b:Long=0; b<noOfAtoms; b++) { // centre b
@@ -205,8 +206,8 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
         }   
         numSigShellPairs=place2ShellPair(placeID)=ind; 
         funcAtPlace(placeID-1) = mu-offsetAtPlace(placeID-1); 
-        Console.OUT.printf("#basis fucntions1 =%5d #basis fucntions2 =%5d\n", funcAtPlace(placeID-1), totFunc);
-        Console.OUT.printf("place %3d: offset=%5d shellpair #%5d\n", nPlaces,mu+1, place2ShellPair(nPlaces));
+        Console.OUT.printf("#basis fucntions1 = %5d #basis fucntions2 = %5d\n", funcAtPlace(placeID-1), totFunc);
+        Console.OUT.printf("place %3d: offset = %5d shellpair #%5d\n", nPlaces,mu+1, place2ShellPair(nPlaces));
       
         Console.OUT.printf("Found %d significant shellpairs.\n", numSigShellPairs);
         this.shellPairs = new Rail[ShellPair](numSigShellPairs);    
@@ -264,16 +265,16 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
         val jval = GlobalRef(jMatrix);
         val dk = new Rail[Double](roK); // eqn 15b in RO#7
         val dkval = GlobalRef(dk);
-        val ttemp = new Rail[Rail[Double]](maxTh, (Long) => new Rail[Double](maxam1*maxam1*roK));
-        val tdk = new Rail[Rail[Double]](maxTh, (Long) => new Rail[Double](roK));
-        val tjMatrix = new Rail[DenseMatrix](maxTh, (Long) => new DenseMatrix(N,N));
+        val dummy = new Rail[Rail[Double]](0);
+        val ttemp = new WorkerLocalHandle[Rail[Double]](() => new Rail[Double](maxam1*maxam1*roK));
+        val tdk = new WorkerLocalHandle[Rail[Double]](() => new Rail[Double](roK));
+        val tjMatrix = new WorkerLocalHandle[DenseMatrix](() => new DenseMatrix(N,N));
 
         var tINT:Double=0.,tJ:Double=0.,tK:Double=0.;
         val gMat = new DenseMatrix(N,N);
 
         for (var ron:Long=0; ron<=roN; ron++)  {  
             // @Ifdef("__DEBUG__") { Console.OUT.printf("ron=%d\n",ron); }
-            finish for (thNo in 0..(maxTh-1)) async tdk(thNo).clear();     
                       
             timer.start(TIMER_GENCLASS); 
             dk.clear();
@@ -283,6 +284,8 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
             // Console.OUT.println("Aux - distributed"); 
             finish ateach(place in Dist.makeUnique()) {
                 val pid = here.id; 
+
+                tdk.applyLocal((dk:Rail[Double]) => { dk.clear(); });
                 val localMat=auxIntMat.local(); val localMat2=auxIntMat2.local();
                 //@Ifdef("__DEBUG__") {Console.OUT.println("pid=" + pid + " starts..."); }
                 val taux = new Rail[Integral_Pack](maxTh, (Long) => new Integral_Pack(jd.roN, jd.roL, omega, roThresh, jd.rad, jd.roZ)); //change jd.roN, jd.roL ?
@@ -291,7 +294,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                     for (var spInd:Long=thNo+place2ShellPair(pid); spInd<place2ShellPair(pid+1); spInd+=maxTh) {
                         val sp=shellPairs(spInd); val maxLron=sp.maxL(lron);                    
                         if (maxLron>=0) {
-                            val maxLm=(maxLron+1)*(maxLron+1);  val temp=ttemp(thNo); val myThreaddk=tdk(thNo);  
+                            val maxLm=(maxLron+1)*(maxLron+1);  val temp=ttemp(); val myThreaddk=tdk();  
                             aux.genClass(sp.aang, sp.bang, sp.aPoint, sp.bPoint, sp.zetaA, sp.zetaB, sp.conA, sp.conB, sp.dconA, sp.dconB, temp, lron as Int, maxLron as Int, ylms(spInd).y, ylms(spInd).maxL); 
 
                             var ind:Long=0;
@@ -317,15 +320,12 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                 }
 
                 //Console.OUT.println(pid + " Collecting dkvalue..."); 
-                for (thNo in 1..(maxTh-1)) {
-                    val dk0 = tdk(0); val dkx = tdk(thNo);
-                    for (var rolm:Long=0; rolm<roK; rolm++) dk0(rolm)+=dkx(rolm);
-                }
+                val srcDk = tdk.reduceLocal((a:Rail[Double],b:Rail[Double]) => RailUtils.map(a, b, a, (x:Double,y:Double)=>x+y));
                 
                 at(dkval.home) async {
-                    val des =(dkval()); val src=tdk(0);
-                    for (var rolm:Long=0; rolm<roK; rolm++) 
-                        atomic des(rolm)+=src(rolm); 
+                    val dstDk = (dkval());
+                    atomic for (var rolm:Long=0; rolm<roK; rolm++) 
+                        dstDk(rolm)+=srcDk(rolm);
                 }
                 // Will convert to WorkerLocalHandle or PlaceLocalHandle
             }
@@ -336,10 +336,10 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
             timer.start(TIMER_JMATRIX);   
             finish ateach(place in Dist.makeUnique()) {
                 val pid = here.id; 
-                val localMat=auxIntMat2.local();      
-                finish for (thNo in 0..(maxTh-1)) async tjMatrix(thNo).reset();
+                val localMat=auxIntMat2.local();
+                tjMatrix.applyLocal((j:DenseMatrix) => { j.reset(); });
                 finish for (thNo in 0..(maxTh-1)) async {
-                    val myThreadJMat = tjMatrix(thNo);      
+                    val myThreadJMat = tjMatrix();
                     for (var spInd:Long=thNo+place2ShellPair(pid); spInd<place2ShellPair(pid+1); spInd+=maxTh) {
                         val sp=shellPairs(spInd);
                         val maxLron=sp.maxL(lron);
@@ -356,16 +356,13 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                     }
                 }
 
-                for (thNo in 1..(maxTh-1)) {
-                    val myThreadJMat = tjMatrix(thNo);
-                    for (var tnu:Long=0; tnu<N; tnu++) for (var tmu:Long=offsetAtPlace(pid); tmu<offsetAtPlace(pid+1); tmu++)
-                        (tjMatrix(0))(tmu,tnu)+=myThreadJMat(tmu, tnu);
-                }
-                val myThreadJMat = tjMatrix(0);
+                val partialJMatrix = tjMatrix.reduceLocal((a:DenseMatrix,b:DenseMatrix) => a.cellAdd(b));
+
                 at (jval.home) {
                     val jj=(jval());
+                    // TODO is all of jMatrix required from each place?
                     for (var tnu:Long=0; tnu<N; tnu++) for (var tmu:Long=offsetAtPlace(pid); tmu<offsetAtPlace(pid+1); tmu++)
-                    jj(tmu, tnu)+=myThreadJMat(tmu, tnu);
+                    jj(tmu, tnu)+=partialJMatrix(tmu, tnu);
                 }
                 // Will convert to WorkerLocalHandle or PlaceLocalHandle
             }
@@ -450,13 +447,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
 
         @Ifdef("__DEBUG__") {
             val eJ = density.clone().mult(density, jMatrix).trace();
-            val kDmat = new DenseMatrix(N,N);
-            for (i in 0..(N-1)) {
-                for (j in 0..(N-1) ) {
-                    kDmat(i,j)=kMatrix(i,j);
-                }
-            }
-            val eK = density.clone().mult(density, kDmat).trace();
+            val eK = density.clone().mult(density, kMatrix).trace();
             Console.OUT.printf("  EJ = %.10f EK=%.10f\n", .25*eJ/jd.roZ, .25*eK/jd.roZ);
         }       
  
