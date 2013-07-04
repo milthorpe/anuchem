@@ -6,13 +6,9 @@
  *  You may obtain a copy of the License at
  *      http://www.opensource.org/licenses/eclipse-1.0.php
  *
- * (C) Copyright Australian National University 2010-2012.
+ * (C) Copyright Australian National University 2010-2013.
  */
 package au.edu.anu.qm;
-
-import x10.compiler.NonEscaping;
-import x10.util.ArrayList;
-import x10x.vector.Point3d;
 
 /**
  * Represents a list of ShellPair
