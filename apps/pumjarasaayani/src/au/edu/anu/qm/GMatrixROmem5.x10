@@ -55,7 +55,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
     transient var papi:PAPI = new PAPI(); 
 
     // RO stuff 
-    var roN:Long; var roNK:Long; var roL:Long; // 'var' because it can be overridden
+    var roN:Int; var roNK:Int; var roL:Int; // 'var' because it can be overridden
     val roK:Long; val roZ:Double; val omega:Double; val roThresh:Double;
     val ylms:Rail[Ylm];   
     val place2atom:Rail[Long]; val place2func:Rail[Long]; val funcAtPlace:Rail[Long]; val offsetAtPlace:Rail[Long];
@@ -221,8 +221,8 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
             val sh=rawShellPairs(i); 
             this.shellPairs(i)=sh;            
             val tempY=new Rail[Double](sh.dconA*sh.dconB*(roL+1)*(roL+1));
-            aux.genClassY(sh.aPoint, sh.bPoint, sh.zetaA, sh.zetaB, sh.dconA, sh.dconB, roL as Int, tempY);
-            ylms(i) = new Ylm(tempY,roL as Int);
+            aux.genClassY(sh.aPoint, sh.bPoint, sh.zetaA, sh.zetaB, sh.dconA, sh.dconB, roL, tempY);
+            ylms(i) = new Ylm(tempY, roL);
         }
         rawShellPairs = null; // Deallocate this variable
 
@@ -287,6 +287,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
         val dkval = GlobalRef(dk);
         val dummy = new Rail[Rail[Double]](0);
         val ttemp = new WorkerLocalHandle[Rail[Double]](() => new Rail[Double](maxam1*maxam1*roK));
+        val ttemp2= new WorkerLocalHandle[Rail[Double]](() => new Rail[Double](maxam1*maxam1*roK));
         val tdk = new WorkerLocalHandle[Rail[Double]](() => new Rail[Double](roK));
         val tjMatrix = new WorkerLocalHandle[DenseMatrix](() => new DenseMatrix(N,N));
 
@@ -308,19 +309,22 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                 tdk.applyLocal((dk:Rail[Double]) => { dk.clear(); });
                 val localMat=auxIntMat.local(); val localMat2=auxIntMat2.local();
                 //@Ifdef("__DEBUG__") {Console.OUT.println("pid=" + pid + " starts..."); }
-                val taux = new Rail[Integral_Pack](maxTh, (Long) => new Integral_Pack(jd.roN, jd.roL, omega, roThresh, jd.rad, jd.roZ)); //change jd.roN, jd.roL ?
+                val taux = new WorkerLocalHandle[Integral_Pack](() => new Integral_Pack(jd.roN, jd.roL, omega, roThresh, jd.rad, jd.roZ)); //change jd.roN, jd.roL ?
                 finish for (thNo in 0..(maxTh-1)) async {
-                    val aux = taux(thNo); val temp2= new Rail[Double](maxam1*maxam1*roK);
+                    val aux = taux(); val temp=ttemp(); val temp2=ttemp2(); val myThreaddk=tdk();
+                    
                     for (var spInd:Long=thNo+place2ShellPair(pid); spInd<place2ShellPair(pid+1); spInd+=maxTh) {
                         val sp=shp(spInd); val maxLron=sp.maxL(lron);                    
                         if (maxLron>=0) {
-                            val maxLm=(maxLron+1)*(maxLron+1);  val temp=ttemp(); val myThreaddk=tdk();  
+
+                            val maxLm=(maxLron+1)*(maxLron+1);  //val temp=ttemp(); val myThreaddk=tdk();  
                             aux.genClass(sp.aang, sp.bang, sp.aPoint, sp.bPoint, sp.zetaA, sp.zetaB, sp.conA, sp.conB, sp.dconA, sp.dconB, temp, lron as Int, maxLron as Int, ylmp(spInd).y, ylmp(spInd).maxL); 
+
 
                             var ind:Long=0;
                             val musize=sp.mu2-sp.mu+1; val nusize=sp.nu2-sp.nu+1;
-                            for (var tmu:Long=sp.mu; tmu<=sp.mu2; tmu++)for (var tnu:Long=sp.nu; tnu<=sp.nu2; tnu++)  {
-                                val scdmn=density(tmu,tnu) ; val nrm=norm(tmu)*norm(tnu); 
+                            for (var tmu:Long=sp.mu; tmu<=sp.mu2; tmu++) for (var tnu:Long=sp.nu; tnu<=sp.nu2; tnu++) {
+                                val scdmn=density(tmu,tnu); val nrm=norm(tmu)*norm(tnu); 
                                 val ttmu=tmu-sp.mu; val ttnu=tnu-sp.nu;
                                 for (var rolm:Long=0; rolm<maxLm; rolm++) {
                                     val normAux = nrm*temp(ind++);       
@@ -344,10 +348,8 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                 
                 at(dkval.home) async {
                     val dstDk = (dkval());
-                    atomic for (var rolm:Long=0; rolm<roK; rolm++) 
-                        dstDk(rolm)+=srcDk(rolm);
+                    atomic RailUtils.map(dstDk, srcDk, dstDk, (x:Double,y:Double)=>x+y);
                 }
-                // Will convert to WorkerLocalHandle or PlaceLocalHandle
             }
             timer.stop(TIMER_GENCLASS); tINT+=(timer.last(TIMER_GENCLASS) as Double)/1e9;
 
