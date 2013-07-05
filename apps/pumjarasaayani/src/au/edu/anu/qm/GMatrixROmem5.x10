@@ -21,6 +21,7 @@ import x10.util.ArrayList;
 import x10.util.RailUtils;
 import x10.util.Team;
 import x10.util.WorkerLocalHandle;
+import x10.lang.PlaceLocalHandle;
 import x10.util.concurrent.AtomicInteger;
 
 import x10.matrix.DenseMatrix;
@@ -66,6 +67,9 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
     val norm:Rail[Double]; 
     val emptyRailD = new Rail[Double](0), emptyRailI = new Rail[Long](0); 
     val shellPairs:Rail[ShellPair]; 
+    val shellPairsPLH:PlaceLocalHandle[Rail[ShellPair]];
+    val ylmPLH:PlaceLocalHandle[Rail[Ylm]]; 
+
     val place2ShellPair:Rail[Long];
     val numSigShellPairs:Long;
     val maxam1:Long;
@@ -222,6 +226,10 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
         }
         rawShellPairs = null; // Deallocate this variable
 
+        val ind2=ind;
+        shellPairsPLH = PlaceLocalHandle.make[Rail[ShellPair]](PlaceGroup.WORLD, ()=>new Rail[ShellPair](ind2));
+        ylmPLH = PlaceLocalHandle.make[Rail[Ylm]](PlaceGroup.WORLD, ()=>new Rail[Ylm](ind2));
+
         @Ifdef("__MKL__") {
             Console.OUT.print("mklGetMaxThreads() was " + mklGetMaxThreads() + " and is now set to"); mklSetNumThreads(Runtime.NTHREADS);
             Console.OUT.println(" " + mklGetMaxThreads() + " thread(s).");
@@ -243,7 +251,19 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
         val place2ShellPair=this.place2ShellPair; val shellPairs=this.shellPairs; val maxam1=this.maxam1; val numSigShellPairs=this.numSigShellPairs; val ylms=this.ylms;
         val N=this.N;val nOrbital=this.nOrbital; val roN=this.roN; val roNK=this.roNK; val roL=this.roL; val roK=this.roK; val roZ=this.roZ; val omega=this.omega; val roThresh=this.roThresh; val norm=this.norm;
         val funcAtPlace=this.funcAtPlace; val offsetAtPlace=this.offsetAtPlace;
+
+        val shellPairsPLH=this.shellPairsPLH; val ylmPLH=this.ylmPLH;
+        finish ateach(place in Dist.makeUnique()) {
+            val shp=shellPairsPLH(); val ylmp = ylmPLH();
+            for (i in 0..(numSigShellPairs-1)) {
+                shp(i)=shellPairs(i);
+                ylmp(i)=ylms(i);
+            }
+        }
+
+
         val TIMER_TOTAL = 0; val TIMER_JMATRIX = 1; val TIMER_KMATRIX = 2; val TIMER_GENCLASS = 3;
+
         
         timer.start(TIMER_TOTAL); 
         val jd = JobDefaults.getInstance();
@@ -283,7 +303,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
             // Distributed Generation of AuxMat
             // Console.OUT.println("Aux - distributed"); 
             finish ateach(place in Dist.makeUnique()) {
-                val pid = here.id; 
+                val pid = here.id; val shp=shellPairsPLH(); val ylmp = ylmPLH();
 
                 tdk.applyLocal((dk:Rail[Double]) => { dk.clear(); });
                 val localMat=auxIntMat.local(); val localMat2=auxIntMat2.local();
@@ -292,10 +312,10 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                 finish for (thNo in 0..(maxTh-1)) async {
                     val aux = taux(thNo); val temp2= new Rail[Double](maxam1*maxam1*roK);
                     for (var spInd:Long=thNo+place2ShellPair(pid); spInd<place2ShellPair(pid+1); spInd+=maxTh) {
-                        val sp=shellPairs(spInd); val maxLron=sp.maxL(lron);                    
+                        val sp=shp(spInd); val maxLron=sp.maxL(lron);                    
                         if (maxLron>=0) {
                             val maxLm=(maxLron+1)*(maxLron+1);  val temp=ttemp(); val myThreaddk=tdk();  
-                            aux.genClass(sp.aang, sp.bang, sp.aPoint, sp.bPoint, sp.zetaA, sp.zetaB, sp.conA, sp.conB, sp.dconA, sp.dconB, temp, lron as Int, maxLron as Int, ylms(spInd).y, ylms(spInd).maxL); 
+                            aux.genClass(sp.aang, sp.bang, sp.aPoint, sp.bPoint, sp.zetaA, sp.zetaB, sp.conA, sp.conB, sp.dconA, sp.dconB, temp, lron as Int, maxLron as Int, ylmp(spInd).y, ylmp(spInd).maxL); 
 
                             var ind:Long=0;
                             val musize=sp.mu2-sp.mu+1; val nusize=sp.nu2-sp.nu+1;
@@ -335,13 +355,13 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
             // Console.OUT.println("J - distributed"); 
             timer.start(TIMER_JMATRIX);   
             finish ateach(place in Dist.makeUnique()) {
-                val pid = here.id; 
+                val pid = here.id; val shp=shellPairsPLH();
                 val localMat=auxIntMat2.local();
                 tjMatrix.applyLocal((j:DenseMatrix) => { j.reset(); });
                 finish for (thNo in 0..(maxTh-1)) async {
                     val myThreadJMat = tjMatrix();
                     for (var spInd:Long=thNo+place2ShellPair(pid); spInd<place2ShellPair(pid+1); spInd+=maxTh) {
-                        val sp=shellPairs(spInd);
+                        val sp=shp(spInd);
                         val maxLron=sp.maxL(lron);
                         if (sp.maxL(lron)>=0) { 
                             val maxLm=(maxLron+1)*(maxLron+1); 
