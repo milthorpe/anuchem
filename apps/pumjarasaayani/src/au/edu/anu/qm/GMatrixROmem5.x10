@@ -279,6 +279,10 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
         val auxIntGrid2 = new Grid(cbs_auxInt,funcAtPlace);
         val auxIntMat2 = DistDenseMatrix.make(auxIntGrid2);
 
+        val cbs_HalfAuxInt= new Rail[Long](1);  cbs_HalfAuxInt(0)=nOrbital*roK;
+        val halfAuxGrid = new Grid(funcAtPlace, cbs_HalfAuxInt);
+        val halfAuxMat = DistDenseMatrix.make(halfAuxGrid);
+
         val jMatrix = new DenseMatrix(N, N);
         val kMatrix = new DenseMatrix(N, N);
         val kval = GlobalRef(kMatrix);
@@ -395,9 +399,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
             if (ron<=roNK) { // This produces K/2
                  timer.start(TIMER_KMATRIX);  
 
-                 val cbs_HalfAuxInt= new Rail[Long](1);  cbs_HalfAuxInt(0)=nOrbital*roK;
-                 val halfAuxGrid = new Grid(funcAtPlace, cbs_HalfAuxInt);
-                 val halfAuxMat = DistDenseMatrix.make(halfAuxGrid);
+
 
                  finish ateach(place in Dist.makeUnique())  {
                      val pid = here.id; //Console.OUT.println("pid=" + pid + " starts..."); 
