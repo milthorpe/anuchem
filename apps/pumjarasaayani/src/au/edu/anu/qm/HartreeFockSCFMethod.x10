@@ -147,7 +147,7 @@ public class HartreeFockSCFMethod extends SCFMethod {
             timer.start(TIMER_M);
             // compute the new MOs
             mos.compute(fock, overlap);
-            timer.stop(TIMER_F);
+            timer.stop(TIMER_M);
             Console.OUT.println ("    Time to form MOS: " + (timer.total(TIMER_M) as Double) / 1e9 + " seconds");
          
             // compute the total energy 
