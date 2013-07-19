@@ -364,11 +364,10 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                         val maxLron=sp.maxL(lron);
                         if (sp.maxL(lron)>=0) { 
                             val maxLm=(maxLron+1)*(maxLron+1); 
-                            for (var tmu:Long=sp.mu-offsetAtPlace(pid); tmu<=sp.mu2-offsetAtPlace(pid); tmu++) 
-                            for (var tnu:Long=sp.nu; tnu<=sp.nu2; tnu++) {
-                                var jContrib:Double=0.;  val tnuroK=tnu*roK;
+                            for (var tmu:Long=sp.mu; tmu<=sp.mu2; tmu++) for (var tnu:Long=sp.nu; tnu<=sp.nu2; tnu++) {
+                                var jContrib:Double=0.;  val tnuroK=tnu*roK; val tmuoff = tmu-offsetAtPlace(pid);
                                 for (var rolm:Long=0; rolm<maxLm; rolm++) 
-                                    jContrib += dk(rolm)*localMat(tnuroK+rolm, tmu);
+                                    jContrib += dk(rolm)*localMat(tnuroK+rolm, tmuoff);
                                 myThreadJMat(tmu,tnu) += jContrib;
                             } 
                         }
