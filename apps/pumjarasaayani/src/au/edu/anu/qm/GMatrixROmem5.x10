@@ -322,12 +322,12 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                             val musize=sp.mu2-sp.mu+1; val nusize=sp.nu2-sp.nu+1;
                             for (var tmu:Long=sp.mu; tmu<=sp.mu2; tmu++) for (var tnu:Long=sp.nu; tnu<=sp.nu2; tnu++) {
                                 val scdmn=density(tmu,tnu); val nrm=norm(tmu)*norm(tnu); 
-                                val ttmu=tmu-sp.mu; val ttnu=tnu-sp.nu;
+                                val ttmu=tmu-sp.mu; val ttnu=tnu-sp.nu; val tmuoff=tmu-offsetAtPlace(pid);
                                 for (var rolm:Long=0; rolm<maxLm; rolm++) {
                                     val normAux = nrm*temp(ind++);       
                                     myThreaddk(rolm) += scdmn*normAux; 
                                     temp2((ttnu*roK+rolm)*musize+ttmu) = normAux;  
-                                    localMat2(tnu*roK+rolm, tmu)=normAux;
+                                    localMat2(tnu*roK+rolm, tmuoff)=normAux;
                                 }
                             }                    
 
