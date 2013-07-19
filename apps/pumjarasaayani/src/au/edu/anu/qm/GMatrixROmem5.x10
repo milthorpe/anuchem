@@ -430,12 +430,18 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
         Console.OUT.printf("\nG matrix\n"); 
         // Fix upper half of J (see the definition of shellPairs) ==> sp.mu>sp.nu
         // Fix the whole matrix ==> if (sp.mu!=sp.nu)
-        val shp = shellPairs();
-        finish for (thNo in 0..(maxTh-1)) async for (var spInd:Long=thNo; spInd<numSigShellPairs; spInd+=maxTh) {
-            val sp=shp(spInd);
-            if (sp.mu!=sp.nu) for (var tmu:Long=sp.mu; tmu<=sp.mu2; tmu++) for (var tnu:Long=sp.nu; tnu<=sp.nu2; tnu++) 
-                jMatrix(tnu,tmu) = jMatrix(tmu,tnu);
-        }
+        /*finish ateach(place in Dist.makeUnique()) {
+            val shp = shellPairs(); val numSp=place2ShellPair(here.id+1)-place2ShellPair(here.id);
+            for (thNo in 0..(maxTh-1)) async for (var spInd:Long=thNo; spInd<numSp; spInd+=maxTh) {
+                val sp=shp(spInd);
+                if (sp.mu!=sp.nu) 
+                at (jval.home) {
+                    val jj=(jval());
+                    for (var tmu:Long=sp.mu; tmu<=sp.mu2; tmu++) for (var tnu:Long=sp.nu; tnu<=sp.nu2; tnu++) 
+                        jj(tnu,tmu) = jj(tmu,tnu);
+                }
+            }
+        }*/
 
         val mult=Math.ceil(nPlaces*.5+.5);
         for (var p:Long=0; p<nPlaces; p++) for (var blk:Long=0; blk<mult; blk++) {
