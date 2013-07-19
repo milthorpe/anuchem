@@ -228,7 +228,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
             ()=>new Rail[Ylm](place2ShellPair(here.id+1)-place2ShellPair(here.id),
                 (i:Long) => 
                 {
-                    val sh = shellPairs()(i+place2ShellPair(here.id));
+                    val sh = shellPairs()(i);
                     val tempY = new Rail[Double](sh.dconA*sh.dconB*(roL_val+1)*(roL_val+1));
                     taux().genClassY(sh.aPoint, sh.bPoint, sh.zetaA, sh.zetaB, sh.dconA, sh.dconB, roL_val, tempY);
                     new Ylm(tempY, roL_val)
