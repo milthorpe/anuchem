@@ -31,7 +31,7 @@ import au.edu.anu.util.Timer;
  * @author milthorpe
  */
 public class TestPMEWaterBox extends TestElectrostatic {
-    public static ITERS = 1000;
+    public static ITERS = 10;
     var size:Double = 80.0;
     public def sizeOfCentralCluster() { return size; }
     public def boxSize() { return size; }

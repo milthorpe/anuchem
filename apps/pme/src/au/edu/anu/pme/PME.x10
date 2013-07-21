@@ -366,7 +366,6 @@ public class PME {
 
     public def getDirectEnergy() : Double {
         timer.start(TIMER_INDEX_DIRECT);
-/*
         val cutoffSquared = cutoff*cutoff;
 		val subCellsDist = this.subCells.dist;
 		val numSubCells = this.numSubCells; // TODO shouldn't be necessary XTENLANG-1913
@@ -441,9 +440,9 @@ public class PME {
                 directEnergy <- myDirectEnergy;
             }
         }
-*/
+
         timer.stop(TIMER_INDEX_DIRECT);
-        return 0.0;//directEnergy();
+        return directEnergy();
     }
 
     /**
