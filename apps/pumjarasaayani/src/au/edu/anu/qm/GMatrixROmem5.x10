@@ -312,11 +312,9 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                     for (var spInd:Long=thNo+place2ShellPair(pid); spInd<place2ShellPair(pid+1); spInd+=maxTh) {
                         val sp=shp(spInd-place2ShellPair(pid)); val maxLron=sp.maxL(lron);                    
                         if (maxLron>=0) {
-
                             val maxLm=(maxLron+1)*(maxLron+1);
                             val y=ylmp(spInd-place2ShellPair(pid));
                             aux.genClass(sp.aang, sp.bang, sp.aPoint, sp.bPoint, sp.zetaA, sp.zetaB, sp.conA, sp.conB, sp.dconA, sp.dconB, temp, lron as Int, maxLron as Int, y.y, y.maxL); 
-
 
                             var ind:Long=0;
                             val musize=sp.mu2-sp.mu+1; val nusize=sp.nu2-sp.nu+1;
@@ -332,10 +330,11 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                             }                    
 
                             ind=0;
-                            for (var tnu:Long=sp.nu; tnu<=sp.nu2; tnu++) 
-                                for (var rolm:Long=0; rolm<maxLm; rolm++) 
-                                    for (var tmu:Long=sp.mu-offsetAtPlace(pid); tmu<=sp.mu2-offsetAtPlace(pid); tmu++)
-                                        localMat(tmu,tnu*roK+rolm) = temp2(ind++);                            
+                            val rows = sp.mu2-sp.mu+1;
+                            for (var tnu:Long=sp.nu; tnu<=sp.nu2; tnu++) {
+                                DenseMatrix.copySubset(temp2, ind, localMat, sp.mu-offsetAtPlace(pid), tnu*roK, rows, maxLm);
+                                ind += rows*maxLm;
+                            }
                         }
                     }
                 }
