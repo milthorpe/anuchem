@@ -9,6 +9,7 @@
  *  (C) Copyright Australian National University 2013.
  */
 import x10.compiler.Inline;
+import x10.util.WorkerLocalHandle;
 
 /**
  * Benchmarks reducing worker local data
@@ -98,7 +99,7 @@ public class BenchmarkWorkerLocalReduce(N:Int, print:Boolean) {
         Console.OUT.printf("collecting finish double: %g ms\n", ((stop-start) as Double) / 1e6 / ITERS);
 	}
 
-	public static def main(var args: Array[String](1)): void = {
+	public static def main(args:Rail[String]): void = {
         var size:Int = 100000;
         var print:Boolean = false;
         if (args.size > 0) {
