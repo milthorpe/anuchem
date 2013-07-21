@@ -120,7 +120,10 @@ public class DistributedReal3dFft {
         val sourceEndY = sourceDist.region.max(1);
         val localSource = source.getLocalPortion();
         finish {
-            for (p2 in source.dist.places()) {
+            // transpose elements to every place, starting with next place
+            // and ending with 'here'
+            var p2:Place = here.next();
+            do {
                 val targetDist = source.dist | p2;
                 val startX = Math.max(sourceStartX, targetDist.region.min(1));
                 val endX = Math.min(sourceEndX, targetDist.region.max(1));
@@ -133,7 +136,7 @@ public class DistributedReal3dFft {
                 if (transferRegion.size() > 0) {
                     if (p2 == here) {
                         val localTarget = target.getLocalPortion();
-                        // do a synchronous in-place transpose from source to target
+                        // synchronous in-place transpose from source to target
                         for ([x,y,z] in transferRegion) {
                             localTarget(z,x,y) = localSource(x,y,z);
                         }
@@ -146,7 +149,7 @@ public class DistributedReal3dFft {
                         }
                         at(p2) async {
                             val localTarget = target.getLocalPortion();
-                            var i2 : Long = 0;
+                            var i2:Long = 0;
                             for ([x,y,z] in transferRegion) {
                                 // transpose dimensions
                                 localTarget(z,x,y) = elementsToTransfer(i2++);
@@ -154,7 +157,8 @@ public class DistributedReal3dFft {
                         }
                     }
                 }
-            }
+                p2 = p2.next();
+            } while (p2 != here.next());
         }
     }
 }
