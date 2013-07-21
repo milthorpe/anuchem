@@ -251,9 +251,7 @@ public class PME {
                 val localThetaRecConvQ = thetaRecConvQ.getLocalPortion();
                 val localQinv = Qinv.getLocalPortion();
                 val localRegion = localBdotC.region as Region(3){rect};
-                for ([x,y,z] in localRegion) {
-                    localThetaRecConvQ(x,y,z) = localBdotC(x,y,z) * localQinv(x,y,z);
-                }
+                localBdotC.map[Complex,Complex](localThetaRecConvQ, localQinv, (a:Double, b:Complex) => a * b);
             }
 
             // and do forward FFT
@@ -441,7 +439,6 @@ public class PME {
                 }
             }
         };
-
         timer.stop(TIMER_INDEX_DIRECT);
         return directEnergy;
     }
