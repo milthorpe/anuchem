@@ -287,7 +287,7 @@ public class PME {
         val halfNumSubCells = this.numSubCells / 2;
         finish ateach(p in atoms) {
             val localAtoms = atoms(p);
-            for (l in 0..(localAtoms.size-1)) {
+            finish for (l in 0..(localAtoms.size-1)) {
                 val atom = localAtoms(l);
                 val centre = atom.centre;
                 val charge = atom.charge;
@@ -372,77 +372,78 @@ public class PME {
 		val atomsCache = this.atomsCache; // TODO shouldn't be necessary XTENLANG-1913
 		val imageTranslations = this.imageTranslations; // TODO shouldn't be necessary XTENLANG-1913
 		val beta = this.beta; // TODO shouldn't be necessary XTENLANG-1913
-        val directEnergy = new Accumulator[Double](Reducible.SumReducer[Double]());
-        finish ateach(place in Dist.makeUnique()) {
-            val cachedAtoms = atomsCache(here.id);
-            val translations = imageTranslations();
-            val localRegion = subCellsDist(here) as Region(3){rect};
-            for ([x,y,z] in localRegion) async {
-                val thisCell = cachedAtoms(x,y,z) as Rail[PointCharge];
-                var myDirectEnergy : Double = 0.0;
-                for (var i:Long = x-2; i<=x; i++) {
-                    var n1 : Int = 0;
-                    if (i < 0) {
-                        n1 = -1;
-                    } // can't have (i > numSubCells+1)
-                    for (var j:Long = y-2; j<=y+2; j++) {
-                        var n2 : Int = 0;
-                        if (j < 0) {
-                            n2 = -1;
-                        } else if (j > numSubCells-1) {
-                            n2 = 1;
-                        }
-                        for (var k:Long = z-2; k<=z+2; k++) {
-                            var n3 : Int = 0;
-                            if (k < 0) {
-                                n3 = -1;
-                            } else if (k > numSubCells-1) {
-                                n3 = 1;
+        val directEnergy = finish (Reducible.SumReducer[Double]()) {
+            ateach(place in Dist.makeUnique()) {
+                val cachedAtoms = atomsCache(here.id);
+                val translations = imageTranslations();
+                val localRegion = subCellsDist(here) as Region(3){rect};
+                for ([x,y,z] in localRegion) async {
+                    val thisCell = cachedAtoms(x,y,z) as Rail[PointCharge];
+                    var myDirectEnergy : Double = 0.0;
+                    for (var i:Long = x-2; i<=x; i++) {
+                        var n1 : Int = 0;
+                        if (i < 0) {
+                            n1 = -1;
+                        } // can't have (i > numSubCells+1)
+                        for (var j:Long = y-2; j<=y+2; j++) {
+                            var n2 : Int = 0;
+                            if (j < 0) {
+                                n2 = -1;
+                            } else if (j > numSubCells-1) {
+                                n2 = 1;
                             }
-                            // interact with "left half" of other boxes i.e. only boxes with i<=x
-                            if (i < x || (i == x && j < y) || (i == x && j == y && k < z)) {
-                                val translation = translations(n1,n2,n3);
-                                val otherCell : Rail[PointCharge] = cachedAtoms(i,j,k);
-                                for (otherAtomIndex in 0..(otherCell.size-1)) {
-                                    val otherAtom = otherCell(otherAtomIndex);
-                                    val imageLoc = otherAtom.centre + translation;
-                                    val otherAtomCharge = otherAtom.charge;
-                                    for (thisAtomIndex in 0..(thisCell.size-1)) {
-                                        val thisAtom = thisCell(thisAtomIndex);
-                                        val rSquared = thisAtom.centre.distanceSquared(imageLoc);
-                                        if (rSquared < cutoffSquared) {
-                                            val r = Math.sqrt(rSquared);
-                                            val chargeProduct = thisAtom.charge * otherAtomCharge;
-                                            val imageDirectComponent = chargeProduct * Math.erfc(beta * r) / r;
-                                            myDirectEnergy += imageDirectComponent;
+                            for (var k:Long = z-2; k<=z+2; k++) {
+                                var n3 : Int = 0;
+                                if (k < 0) {
+                                    n3 = -1;
+                                } else if (k > numSubCells-1) {
+                                    n3 = 1;
+                                }
+                                // interact with "left half" of other boxes i.e. only boxes with i<=x
+                                if (i < x || (i == x && j < y) || (i == x && j == y && k < z)) {
+                                    val translation = translations(n1,n2,n3);
+                                    val otherCell : Rail[PointCharge] = cachedAtoms(i,j,k);
+                                    for (otherAtomIndex in 0..(otherCell.size-1)) {
+                                        val otherAtom = otherCell(otherAtomIndex);
+                                        val imageLoc = otherAtom.centre + translation;
+                                        val otherAtomCharge = otherAtom.charge;
+                                        for (thisAtomIndex in 0..(thisCell.size-1)) {
+                                            val thisAtom = thisCell(thisAtomIndex);
+                                            val rSquared = thisAtom.centre.distanceSquared(imageLoc);
+                                            if (rSquared < cutoffSquared) {
+                                                val r = Math.sqrt(rSquared);
+                                                val chargeProduct = thisAtom.charge * otherAtomCharge;
+                                                val imageDirectComponent = chargeProduct * Math.erfc(beta * r) / r;
+                                                myDirectEnergy += imageDirectComponent;
+                                            }
                                         }
                                     }
                                 }
                             }
                         }
                     }
-                }
 
-                // atoms in same cell
-                for (i in 0..(thisCell.size-1)) {
-                    val thisAtom = thisCell(i);
-                    for (j in 0..(i-1)) {
-                        val otherAtom = thisCell(j);
-                        val rjri = otherAtom.centre - thisAtom.centre;
-                        val rSquared = rjri.lengthSquared();
-                        if (rSquared < cutoffSquared) {
-                            val r = Math.sqrt(rSquared);
-                            val directComponent = thisAtom.charge * otherAtom.charge * Math.erfc(beta * r) / r;
-                            myDirectEnergy += directComponent;
+                    // atoms in same cell
+                    for (i in 0..(thisCell.size-1)) {
+                        val thisAtom = thisCell(i);
+                        for (j in 0..(i-1)) {
+                            val otherAtom = thisCell(j);
+                            val rjri = otherAtom.centre - thisAtom.centre;
+                            val rSquared = rjri.lengthSquared();
+                            if (rSquared < cutoffSquared) {
+                                val r = Math.sqrt(rSquared);
+                                val directComponent = thisAtom.charge * otherAtom.charge * Math.erfc(beta * r) / r;
+                                myDirectEnergy += directComponent;
+                            }
                         }
                     }
+                    offer myDirectEnergy;
                 }
-                directEnergy <- myDirectEnergy;
             }
-        }
+        };
 
         timer.stop(TIMER_INDEX_DIRECT);
-        return directEnergy();
+        return directEnergy;
     }
 
     /**
@@ -453,21 +454,22 @@ public class PME {
     public def getSelfEnergy() : Double {
         timer.start(TIMER_INDEX_SELF);
 		val subCells = this.subCells; // TODO shouldn't be necessary XTENLANG-1913
-        val selfEnergy = new Accumulator[Double](Reducible.SumReducer[Double]());
-        finish ateach(place in Dist.makeUnique()) {
-            val localSubCells = subCells.getLocalPortion();
-            val localRegion = localSubCells.region as Region(3){rect};
-            var mySelfEnergy : Double = 0.0;
-            for ([i,j,k] in localRegion) {
-                val thisCell = localSubCells(i,j,k) as Rail[PointCharge];
-                for (thisAtom in 0..(thisCell.size-1)) {
-                    mySelfEnergy += thisCell(thisAtom).charge * thisCell(thisAtom).charge;
+        val selfEnergy = finish (Reducible.SumReducer[Double]()) {
+            ateach(place in Dist.makeUnique()) {
+                val localSubCells = subCells.getLocalPortion();
+                val localRegion = localSubCells.region as Region(3){rect};
+                var mySelfEnergy : Double = 0.0;
+                for ([i,j,k] in localRegion) {
+                    val thisCell = localSubCells(i,j,k) as Rail[PointCharge];
+                    for (thisAtom in 0..(thisCell.size-1)) {
+                        mySelfEnergy += thisCell(thisAtom).charge * thisCell(thisAtom).charge;
+                    }
                 }
+                offer mySelfEnergy;
             }
-            selfEnergy <- mySelfEnergy;
-        }
+        };
         timer.stop(TIMER_INDEX_SELF);
-        return selfEnergy() * -beta / Math.sqrt(Math.PI);
+        return selfEnergy * -beta / Math.sqrt(Math.PI);
     }
 
     /** 
@@ -590,20 +592,21 @@ public class PME {
 	val Q = this.Q; // TODO shouldn't be necessary XTENLANG-1913
 
         val scale = 1.0 / (K1 * K2 * K3);
-        val reciprocalEnergy = new Accumulator[Double](Reducible.SumReducer[Double]());
-        finish ateach(place in Dist.makeUnique()) {
-            var myReciprocalEnergy : Double = 0.0;
-            val localQ = Q.getLocalPortion();
-            val localThetaRecConvQ = thetaRecConvQ.getLocalPortion();
-            val localRegion = localQ.region as Region(3){rect};
-            for ([i,j,k] in localRegion) {
-                myReciprocalEnergy += localQ(i,j,k) * localThetaRecConvQ(i,j,k);
+        val reciprocalEnergy = finish (Reducible.SumReducer[Double]()) {
+            ateach(place in Dist.makeUnique()) {
+                var myReciprocalEnergy : Double = 0.0;
+                val localQ = Q.getLocalPortion();
+                val localThetaRecConvQ = thetaRecConvQ.getLocalPortion();
+                val localRegion = localQ.region as Region(3){rect};
+                for ([i,j,k] in localRegion) {
+                    myReciprocalEnergy += localQ(i,j,k) * localThetaRecConvQ(i,j,k);
+                }
+                offer myReciprocalEnergy;
             }
-            reciprocalEnergy <- myReciprocalEnergy;
-        }
+        };
 
         timer.stop(TIMER_INDEX_RECIPROCAL);
-        return scale * reciprocalEnergy() / 2.0;
+        return scale * reciprocalEnergy / 2.0;
     }
 
     private static @Inline def fillSpline(offset:Double, spline:Rail[Double], splineOrder:Int) {

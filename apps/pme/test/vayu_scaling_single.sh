@@ -9,7 +9,7 @@ i=1
 while [ $i -le 256 ]
 do
   export X10_NPLACES=$i
-  export VMEM=${i}000MB
+  export VMEM=$((NCPUS*2))GB # could be 3GB/CPU, but go easy
   qsub -wd -lwalltime=00:10:00 -lncpus=$i -lvmem=$VMEM -V test/run_three.sh
   echo ""
   i=$(( i*2 ))
