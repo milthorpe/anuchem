@@ -53,11 +53,9 @@ public class DistributedReal3dFft {
                 FFTW.fftwExecute(planR2C);
                 // FFTW only computes half-complex DFT.  fill in the other half
                 val diagonal = dataSize/2+1;
-                for (i in 0..(dataSize-1)) {
-                    for (j in 0..(dataSize-1)) {
-                        for (k in diagonal..(dataSize-1)) {
-                            temp(i,j,k) = temp(i,j,dataSize-k).conjugate();
-                        }
+                for ([i,j] in gridRegionWithoutZ) {
+                    for (k in diagonal..(dataSize-1)) {
+                        temp(i,j,k) = temp(i,j,dataSize-k).conjugate();
                     }
                 }
                 transpose[Complex](temp, target);
