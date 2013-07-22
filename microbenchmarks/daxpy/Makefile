@@ -2,7 +2,7 @@ X10CPP := x10c++
 X10CPPFLAGS := -O -NO_CHECKS
 
 CXX 	 = g++
-CXXFLAGS = -O3 -ftree-vectorizer-verbose=6 #-ftree-vectorize 
+CXXFLAGS = -O2 -ftree-vectorizer-verbose=6 -ftree-vectorize 
 LDFLAGS = 
 
 run:    daxpy daxpy_c
