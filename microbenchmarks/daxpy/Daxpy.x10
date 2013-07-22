@@ -21,6 +21,12 @@ public class Daxpy(N:Int) {
         property(N);
     }
 
+    private def daxpy(alpha:Double, x:Rail[Double], y:Rail[Double]) {
+        for (i in 0..(x.size-1)) {
+            x(i) = alpha * x(i) + y(i);
+        }
+    }
+
 	public def testAll() {
         var start:Long;
         var stop:Long;
@@ -30,9 +36,7 @@ public class Daxpy(N:Int) {
         val y = new Rail[Double](N, (i:Long) => i as Double);
         start = System.nanoTime();
         for (iter in 1..ITERS) {
-            for (i in 0..(N-1)) {
-                x(i) = alpha * x(i) + y(i);
-            }
+            daxpy(alpha, x, y);
         }
         stop = System.nanoTime();
         Console.OUT.printf("X10 DAXPY for vectors length %d: %g ms\n", N, ((stop-start) as Double) / 1e6 / ITERS);
