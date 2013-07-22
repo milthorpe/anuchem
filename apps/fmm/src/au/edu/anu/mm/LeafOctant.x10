@@ -208,7 +208,7 @@ public class LeafOctant extends Octant implements Comparable[LeafOctant] {
             var fiy:Double = atomI.force.j;
             var fiz:Double = atomI.force.k;
 
-            for (var j:Int=0; j<oct2Data.size; j+=4) {
+            for (var j:Long=0; j<oct2Data.size; j+=4) {
                 val xj = oct2Data(j);
                 val yj = oct2Data(j+1);
                 val zj = oct2Data(j+2);
