@@ -19,13 +19,12 @@ molecule
           H       -1.429035   -1.432872   -0.018620
           H       -1.832579    0.928012   -0.044919
 end
-compare_RO
 scf_max 0
 guess core
 use_RO 1
 RO_N 300
-RO_L 40
-RO_thresh 1e-6
-thresh 1e-14
+RO_L 13
+RO_thresh 6
+thresh 14
 omega 0.3
 gmat_parallel_scheme 0

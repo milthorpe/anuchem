@@ -38,8 +38,8 @@ scf_max 0
 guess core
 use_RO 1
 RO_N 300
-RO_L 100
-RO_thresh 1e-6
-thresh 1e-14
-omega 0.1
+RO_L 16
+RO_thresh 6
+thresh 14
+omega 0.3
 gmat_parallel_scheme 0
