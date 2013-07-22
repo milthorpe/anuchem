@@ -414,8 +414,9 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                          //Console.OUT.printf("moff=%d, noff=%d\n", moff, noff);
                          //c.debugPrint("c");
                          at (kval.home) {
+                             val kk=(kval());
                              for (var i:Long=0; i<c.M; i++) for (var j:Long=0; j<c.N; j++)
-                                 (kval())(moff+i,noff+j)+=c(i,j);
+                                 kk(moff+i,noff+j)+=c(i,j);
                          }
                      }
                  }
