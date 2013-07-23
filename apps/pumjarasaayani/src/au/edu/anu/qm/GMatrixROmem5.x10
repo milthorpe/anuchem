@@ -306,35 +306,33 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                 tdk.applyLocal((dk:Rail[Double]) => { dk.clear(); });
                 val localMat=auxIntMat.local(); val localMat2=auxIntMat2.local();
                 //@Ifdef("__DEBUG__") {Console.OUT.println("pid=" + pid + " starts..."); }
-                finish for (thNo in 0..(maxTh-1)) async {
-                    val aux = taux(); val temp=ttemp(); val temp2=ttemp2(); val myThreaddk=tdk();
-                    
-                    for (var spInd:Long=thNo+place2ShellPair(pid); spInd<place2ShellPair(pid+1); spInd+=maxTh) {
-                        val sp=shp(spInd-place2ShellPair(pid)); val maxLron=sp.maxL(lron);                    
-                        if (maxLron>=0) {
-                            val maxLm=(maxLron+1)*(maxLron+1);
-                            val y=ylmp(spInd-place2ShellPair(pid));
-                            aux.genClass(sp.aang, sp.bang, sp.aPoint, sp.bPoint, sp.zetaA, sp.zetaB, sp.conA, sp.conB, sp.dconA, sp.dconB, temp, lron as Int, maxLron as Int, y.y, y.maxL); 
+                finish for (spInd in 0..(shp.size-1)) async {
+                    val sp=shp(spInd);
+                    val maxLron=sp.maxL(lron);                    
+                    if (maxLron>=0) {
+                        val aux = taux(); val temp=ttemp(); val temp2=ttemp2(); val myThreaddk=tdk();
+                        val maxLm=(maxLron+1)*(maxLron+1);
+                        val y=ylmp(spInd);
+                        aux.genClass(sp.aang, sp.bang, sp.aPoint, sp.bPoint, sp.zetaA, sp.zetaB, sp.conA, sp.conB, sp.dconA, sp.dconB, temp, lron as Int, maxLron as Int, y.y, y.maxL); 
 
-                            var ind:Long=0;
-                            val musize=sp.mu2-sp.mu+1; val nusize=sp.nu2-sp.nu+1;
-                            for (var tmu:Long=sp.mu; tmu<=sp.mu2; tmu++) for (var tnu:Long=sp.nu; tnu<=sp.nu2; tnu++) {
-                                val scdmn=density(tmu,tnu); val nrm=norm(tmu)*norm(tnu); 
-                                val ttmu=tmu-sp.mu; val ttnu=tnu-sp.nu; val tmuoff=tmu-offsetAtPlace(pid);
-                                for (var rolm:Long=0; rolm<maxLm; rolm++) {
-                                    val normAux = nrm*temp(ind++);       
-                                    myThreaddk(rolm) += scdmn*normAux; 
-                                    temp2((ttnu*roK+rolm)*musize+ttmu) = normAux;  
-                                    localMat2(tnu*roK+rolm, tmuoff)=normAux;
-                                }
-                            }                    
-
-                            ind=0;
-                            val rows = sp.mu2-sp.mu+1;
-                            for (var tnu:Long=sp.nu; tnu<=sp.nu2; tnu++) {
-                                DenseMatrix.copySubset(temp2, ind, localMat, sp.mu-offsetAtPlace(pid), tnu*roK, rows, maxLm);
-                                ind += rows*maxLm;
+                        var ind:Long=0;
+                        val musize=sp.mu2-sp.mu+1; val nusize=sp.nu2-sp.nu+1;
+                        for (var tmu:Long=sp.mu; tmu<=sp.mu2; tmu++) for (var tnu:Long=sp.nu; tnu<=sp.nu2; tnu++) {
+                            val scdmn=density(tmu,tnu); val nrm=norm(tmu)*norm(tnu); 
+                            val ttmu=tmu-sp.mu; val ttnu=tnu-sp.nu; val tmuoff=tmu-offsetAtPlace(pid);
+                            for (var rolm:Long=0; rolm<maxLm; rolm++) {
+                                val normAux = nrm*temp(ind++);       
+                                myThreaddk(rolm) += scdmn*normAux; 
+                                temp2((ttnu*roK+rolm)*musize+ttmu) = normAux;  
+                                localMat2(tnu*roK+rolm, tmuoff)=normAux;
                             }
+                        }                    
+
+                        ind=0;
+                        val rows = sp.mu2-sp.mu+1;
+                        for (var tnu:Long=sp.nu; tnu<=sp.nu2; tnu++) {
+                            DenseMatrix.copySubset(temp2, ind, localMat, sp.mu-offsetAtPlace(pid), tnu*roK, rows, maxLm);
+                            ind += rows*maxLm;
                         }
                     }
                 }
@@ -356,20 +354,18 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                 val pid = here.id; val shp=shellPairs();
                 val localMat=auxIntMat2.local();
                 tjMatrix.applyLocal((j:DenseMatrix) => { j.reset(); });
-                finish for (thNo in 0..(maxTh-1)) async {
+
+                finish for (sp in shp) async {
                     val myThreadJMat = tjMatrix();
-                    for (var spInd:Long=thNo+place2ShellPair(pid); spInd<place2ShellPair(pid+1); spInd+=maxTh) {
-                        val sp=shp(spInd-place2ShellPair(pid));
-                        val maxLron=sp.maxL(lron);
-                        if (sp.maxL(lron)>=0) { 
-                            val maxLm=(maxLron+1)*(maxLron+1); 
-                            for (var tmu:Long=sp.mu; tmu<=sp.mu2; tmu++) for (var tnu:Long=sp.nu; tnu<=sp.nu2; tnu++) {
-                                var jContrib:Double=0.;  val tnuroK=tnu*roK; val tmuoff = tmu-offsetAtPlace(pid);
-                                for (var rolm:Long=0; rolm<maxLm; rolm++) 
-                                    jContrib += dk(rolm)*localMat(tnuroK+rolm, tmuoff);
-                                myThreadJMat(tmu,tnu) += jContrib;
-                            } 
-                        }
+                    val maxLron=sp.maxL(lron);
+                    if (sp.maxL(lron)>=0) { 
+                        val maxLm=(maxLron+1)*(maxLron+1); 
+                        for (var tmu:Long=sp.mu; tmu<=sp.mu2; tmu++) for (var tnu:Long=sp.nu; tnu<=sp.nu2; tnu++) {
+                            var jContrib:Double=0.;  val tnuroK=tnu*roK; val tmuoff = tmu-offsetAtPlace(pid);
+                            for (var rolm:Long=0; rolm<maxLm; rolm++) 
+                                jContrib += dk(rolm)*localMat(tnuroK+rolm, tmuoff);
+                            myThreadJMat(tmu,tnu) += jContrib;
+                        } 
                     }
                 }
 
