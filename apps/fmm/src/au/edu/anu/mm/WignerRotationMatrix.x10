@@ -90,13 +90,13 @@ public class WignerRotationMatrix {
 		}
 
 		// Eq. 26
-		for (var k:Int=l; k> -l; k--) {
+		for (var k:Long=l; k> -l; k--) {
 		    D(l,k-1) = (l+k) / Math.sqrt(l*(l+1.0) - k*(k-1.0)) * sinTheta / (1.0 + cosTheta) * D(l,k);
 		}
 
 		// Eq. 25
-		for (var m:Int=l-1; m>=0; m--) {
-		    for (var k:Int=l; k> -l; k--) {
+		for (var m:Long=l-1; m>=0; m--) {
+		    for (var k:Long=l; k> -l; k--) {
 		        D(m,k-1) = Math.sqrt(((l*(l+1) - m*(m+1)) as Double) / (l*(l+1) - k*(k-1))) * D(m+1,k)
 		                 + (m+k) / Math.sqrt((l*(l+1) - k*(k-1)) as Double) * sinTheta / (1.0 + cosTheta) * D(m,k);
 		    }

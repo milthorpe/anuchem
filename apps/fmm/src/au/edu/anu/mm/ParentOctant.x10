@@ -88,7 +88,7 @@ public class ParentOctant extends Octant implements Comparable[ParentOctant] {
         val halfSideLength = local.size / Math.pow2(id.level+2);
         val numTerms = multipoleExp.p;
         val scratch = FmmScratch.getWorkerLocal();
-        var i:Int=0;
+        var i:Long=0;
         var nonNullChildren:Boolean = false;
         for (x2 in (2*id.x)..(2*id.x+1)) {
             for (y2 in (2*id.y)..(2*id.y+1)) {

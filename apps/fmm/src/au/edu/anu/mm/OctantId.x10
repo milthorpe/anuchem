@@ -54,9 +54,9 @@ public struct OctantId(x:UByte, y:UByte, z:UByte, level:UByte) implements Compar
      * Copied from x10.lang.Math.log2 - but without 'assert powerOf2(p);' 
      * @return ceil[log2(p)]
      */
-    private static @Inline def log2(var p:Int):Int {
-        var i:Int = 0;
-        while (p > 1) { p = p/2; i++; }
+    private static @Inline def log2(var p:UByte):UByte {
+        var i:UByte = 0UY;
+        while (p > 1UY) { p = p >> 1; i++; }
         return i;
     }
 

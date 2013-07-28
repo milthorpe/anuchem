@@ -105,9 +105,9 @@ public abstract class Octant implements Comparable[Octant] {
            
             if (box2MultipoleExp != null) {
                 //Console.OUT.println("at " + here + " adding multipole for " + octantIndex2 + " to " + id);
-                val dx2 = (octantIndex2.x as Int)-id.x;
-                val dy2 = (octantIndex2.y as Int)-id.y;
-                val dz2 = (octantIndex2.z as Int)-id.z;
+                val dx2 = (octantIndex2.x as Long)-id.x;
+                val dy2 = (octantIndex2.y as Long)-id.y;
+                val dz2 = (octantIndex2.z as Long)-id.z;
                 localExp.transformAndAddToLocal(scratch.exp, scratch.array,
 			        Vector3d(dx2*sideLength, dy2*sideLength, dz2*sideLength), 
 					myComplexK(dx2,dy2,dz2), box2MultipoleExp, myWignerB(dx2,dy2,dz2) );
