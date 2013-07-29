@@ -347,8 +347,24 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                 //Console.OUT.println(pid + " Reducing dk..."); 
                 tdk.reduceLocal(dkp, (a:Rail[Double],b:Rail[Double]) => RailUtils.map(a, b, a, (x:Double,y:Double)=>x+y));
                 
-                Team.WORLD.allreduce[Double](dkp, 0L, dkp, 0L, dkp.size, Team.ADD);
+                //Team.WORLD.allreduce[Double](dkp, 0L, dkp, 0L, dkp.size, Team.ADD);
             }
+
+            val dk0=dk();
+            for (pid in 1..(nPlaces-1)) {            
+                val mat=at(Place(pid)) {dk()};
+                for (j in (0..(roK-1)))
+                    dk0(j)+=mat(j);
+            }
+
+            for (pid in 1..(nPlaces-1)) {
+                at(Place(pid)) {
+                    val dkpid=dk();
+                    for (j in (0..(roK-1)))
+                        dkpid(j)=dk0(j);
+                }
+            }
+
             timer.stop(TIMER_GENCLASS); tINT+=(timer.last(TIMER_GENCLASS) as Double)/1e9;
 
             // J - distributed
