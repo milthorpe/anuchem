@@ -280,10 +280,11 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
         val halfAuxGrid = new Grid(funcAtPlace, cbs_HalfAuxInt);
         val halfAuxMat = DistDenseMatrix.make(halfAuxGrid);
 
-        val jMatrix = new DenseMatrix(N, N);
-        val kMatrix = new DenseMatrix(N, N);
-        val kval = GlobalRef(kMatrix);
-        val jval = GlobalRef(jMatrix);
+        //val jMatrix = new DenseMatrix(N, N);
+        //val kMatrix = new DenseMatrix(N, N);
+        //val kval = GlobalRef(kMatrix);
+        //val jval = GlobalRef(jMatrix);
+        //val gval = GlobalRef(this);
         val ttemp = new WorkerLocalHandle[Rail[Double]](() => new Rail[Double](maxam1*maxam1*roK));
         val ttemp2= new WorkerLocalHandle[Rail[Double]](() => new Rail[Double](maxam1*maxam1*roK));
         val tdk = new WorkerLocalHandle[Rail[Double]](() => new Rail[Double](roK));
@@ -291,12 +292,15 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
         val cbs_nSquareMat = new Rail[Long](1); cbs_nSquareMat(0) = N;
         val nSquareMatGrid = new Grid(funcAtPlace, cbs_nSquareMat);
         val distJ = DistDenseMatrix.make(nSquareMatGrid);
+        val distK = DistDenseMatrix.make(nSquareMatGrid);
+        //distJ.reset(); 
+        //distK.reset(); 
 
         var tINT:Double=0.,tJ:Double=0.,tK:Double=0.;
 
         for (var ron:Long=0; ron<=roN; ron++)  {  
             // @Ifdef("__DEBUG__") { Console.OUT.printf("ron=%d\n",ron); }
-            distJ.reset();          
+                     
             timer.start(TIMER_GENCLASS); 
             val lron=ron; 
              
@@ -367,13 +371,6 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                         } 
                     }
                 }
-
-                at (jval.home) {
-                    val jj=(jval());
-                    for (var tnu:Long=0; tnu<N; tnu++) for (var tmu:Long=offsetAtPlace(pid); tmu<offsetAtPlace(pid+1); tmu++)
-                    jj(tmu, tnu)+=localJ(tmu-offsetAtPlace(pid), tnu);
-                }
-                // TODO convert J to DistDenseMatrix with final gather to DenseBlockMatrix at place 0
             }
             timer.stop(TIMER_JMATRIX); tJ+=(timer.last(TIMER_JMATRIX) as Double)/1e9;
 
@@ -390,24 +387,23 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                  }   
 
                  val mult=Math.ceil(nPlaces*.5+.5) as Long;
-                 //Console.OUT.println("mult=" + mult);  
                  finish ateach(place in Dist.makeUnique())  {
                      val pid = here.id; //Console.OUT.println("pid=" + pid + " starts...");   
                      val a=halfAuxMat.local();                   
-                     val moff=offsetAtPlace(pid);
+                     
                      for (var blk:Long=0; blk<mult; blk++) {
-                         val b=at(Place((pid+blk)%nPlaces)) {halfAuxMat.local()};
-                         val noff=offsetAtPlace((pid+blk)%nPlaces);
+                         val qid=(pid+blk)%nPlaces;
+                         val b=at(Place(qid)) {halfAuxMat.local()};
+                         val noff=offsetAtPlace(qid);
                          val c=new DenseMatrix(a.M,b.M);
                          c.multTrans(a, b, false);
                          //Console.OUT.printf("pid=%d, blk=%d [%d %d] x [%d %d]\n", pid, blk, a.M, a.N, b.M, b.N);
                          //Console.OUT.printf("moff=%d, noff=%d\n", moff, noff);
                          //c.debugPrint("c");
-                         at (kval.home) {
-                             val kk=(kval());
-                             for (var i:Long=0; i<c.M; i++) for (var j:Long=0; j<c.N; j++)
-                                 kk(moff+i,noff+j)+=c(i,j);
-                         }
+
+                         val localK=distK.local();
+                         for (var j:Long=0; j<c.N; j++) for (var i:Long=0; i<c.M; i++)
+                             localK(i,noff+j)+=c(i,j);
                      }
                  }
           
@@ -415,37 +411,51 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
             }
         }
 
-        // G - at place 0 - muti-threading
-        Console.OUT.printf("\nG matrix\n");
-        // Fix J-matrix 
-        // Fix upper half of J (see the definition of shellPairs) ==> sp.mu>sp.nu
-        // Fix the whole matrix ==> if (sp.mu!=sp.nu)
-        /*finish ateach(place in Dist.makeUnique()) {
-            val shp = shellPairs(); val numSp=place2ShellPair(here.id+1)-place2ShellPair(here.id);
-            for (thNo in 0..(maxTh-1)) async for (var spInd:Long=thNo; spInd<numSp; spInd+=maxTh) {
-                val sp=shp(spInd);
-                if (sp.mu!=sp.nu) 
-                at (jval.home) {
-                    val jj=(jval());
-                    for (var tmu:Long=sp.mu; tmu<=sp.mu2; tmu++) for (var tnu:Long=sp.nu; tnu<=sp.nu2; tnu++) 
-                        jj(tnu,tmu) = jj(tmu,tnu);
-                }
-            }
-        }*/
 
-        // Fix K-matrix
-        val mult=Math.ceil(nPlaces*.5+.5);
-        for (var p:Long=0; p<nPlaces; p++) for (var blk:Long=0; blk<mult; blk++) {
-            val q=(p+blk)%nPlaces;
-            for (var i:Long=offsetAtPlace(p); i<offsetAtPlace(p+1); i++) for (var j:Long=offsetAtPlace(q); j<offsetAtPlace(q+1); j++)                
-               kMatrix(j,i) = kMatrix(i,j); 
+        Console.OUT.printf("\nG matrix\n");
+ 
+        finish ateach(place in Dist.makeUnique()) {
+            val pid = here.id;
+            val mult=Math.ceil(nPlaces*.5+.5) as Long;
+
+            val localJ=distJ.local(); val localK=distK.local();
+            val rowCount=localJ.M; val colCount=localJ.N;
+
+            val colStart=offsetAtPlace(pid);
+            val colStop=offsetAtPlace((pid+mult)%nPlaces);
+
+ //           for (var j:Long=0; j<colCount; j++) for (var i:Long=0; i<rowCount; i++)
+ //               localJ(i,j)-=localK(i,j);
+            
+            if (colStart<colStop) {
+                for (var j:Long=colStart; j<colStop; j++) for (var i:Long=0; i<rowCount; i++)
+                    localJ(i,j)-=localK(i,j);
+            }
+            else {
+                for (var j:Long=colStart; j<colCount; j++) for (var i:Long=0; i<rowCount; i++)
+                    localJ(i,j)-=localK(i,j);
+                for (var j:Long=0; j<colStop; j++) for (var i:Long=0; i<rowCount; i++)
+                    localJ(i,j)-=localK(i,j);
+            }
         }
 
+        // Copy G to place 0
+        for (pid in 0..(nPlaces-1)) {
+            val mat=at(Place(pid)) {distJ.local()};
+            val moff=offsetAtPlace(pid);
+            val rowCount=mat.M;
+            val colCount=mat.N;
+            for (var j:Long=0; j<colCount; j++) for (var i:Long=0; i<rowCount; i++)
+                this(i+moff,j)=mat(i,j);
+        }
 
-        // Use the upper half of J and K to form G
-        for (tmu in 0..(N-1)) 
-            for (tnu in tmu..(N-1)) 
-                this(tnu,tmu)=this(tmu,tnu)=jMatrix(tmu,tnu)-kMatrix(tmu,tnu);
+        // Fix G
+        val mult=Math.ceil(nPlaces*.5+.5) as Long;
+        for (var pid:Long=0; pid<nPlaces; pid++) for (var qid:Long=mult+pid; qid<nPlaces+pid; qid++) {
+            val qq=qid%nPlaces;
+            for (var i:Long=offsetAtPlace(pid); i<offsetAtPlace(pid+1); i++) for (var j:Long=offsetAtPlace(qq); j<offsetAtPlace(qq+1); j++)                
+               this(i,j) = this(j,i); 
+        }
 
         Console.OUT.printf("Time INT = %.2f s J = %.2f s K = %.2f s\n", tINT, tJ, tK);
         Console.OUT.flush();
@@ -459,9 +469,9 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
         }
 
         @Ifdef("__DEBUG__") {
-            val eJ = density.clone().mult(density, jMatrix).trace();
+           /* val eJ = density.clone().mult(density, jMatrix).trace();
             val eK = density.clone().mult(density, kMatrix).trace();
-            Console.OUT.printf("  EJ = %.10f EK=%.10f\n", .25*eJ/jd.roZ, .25*eK/jd.roZ);
+            Console.OUT.printf("  EJ = %.10f EK=%.10f\n", .25*eJ/jd.roZ, .25*eK/jd.roZ);*/
         }       
  
         @Ifdef("__PAPI__"){
