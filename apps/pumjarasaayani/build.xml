@@ -21,7 +21,7 @@
     <property name="lapackHome" value="/scratch/lapack"/>
     <property name="bash.exe" value="bash"/>
     <property name="optimize" value="true" />
-    <property name="nochecks" value="false" />
+    <property name="nochecks" value="true" />
     <property name="debug" value="true"/>
     <property name="profile"  value="false" />
     <property name="cpuprofile"  value="false"/>
