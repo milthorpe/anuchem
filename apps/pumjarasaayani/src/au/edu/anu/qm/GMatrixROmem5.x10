@@ -366,10 +366,20 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                 val pid = here.id;
                 val shp=shellPairs(); val dkp = dk();
                 val localMat=auxIntMat4J.local(); val localJ=distJ.local();// faster access than DistDenseMatrix
-                // ~ 50% SAVING MAY BE ACHIEVED BY EXPLOTING SYMMETRY OF J
+
+                val mult=(Math.ceil(nPlaces*.5+.5) - ((nPlaces%2L==0L && pid<nPlaces/2)?1:0)) as Long;
+                val colStart=offsetAtPlace(pid);
+                val colStop=offsetAtPlace((pid+mult)%nPlaces);
+
+                var flag:Boolean=true;
+
                 finish for (sp in shp) async {                   
-                    val maxLron=sp.maxL(lron);
-                    if (sp.maxL(lron)>=0) { 
+                    val nu1=sp.nu; 
+                    val maxLron=sp.maxL(lron);                   
+                    flag = ( (colStart<colStop) && ((colStart<=nu1) && (nu1<colStop)) );
+                    flag = flag || ( (colStart>=colStop) && ( (nu1<colStop) || (nu1>=colStart) ) );
+                    flag = flag && (maxLron>=0);
+                    if (flag) { 
                         val maxLm=(maxLron+1)*(maxLron+1); 
                         for (var tmu:Long=sp.mu; tmu<=sp.mu2; tmu++) for (var tnu:Long=sp.nu; tnu<=sp.nu2; tnu++) {
                             var jContrib:Double=0.;  val tnuroK=tnu*roK; val tmuoff = tmu-offsetAtPlace(pid);
