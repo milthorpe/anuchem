@@ -313,6 +313,8 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
 
                         var ind:Long=0;
                         val musize=sp.mu2-sp.mu+1; val nusize=sp.nu2-sp.nu+1;
+
+
                         for (var tmu:Long=sp.mu; tmu<=sp.mu2; tmu++) for (var tnu:Long=sp.nu; tnu<=sp.nu2; tnu++) {
                             val scdmn=density(tmu,tnu); val nrm=norm(tmu)*norm(tnu); 
                             val ttmu=tmu-sp.mu; val ttnu=tnu-sp.nu; 
@@ -394,11 +396,11 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                      //cannot do B.multTrans(A, mos, false); -  mos is NxN
                  }   
 
-                 val mult=Math.ceil(nPlaces*.5+.5) as Long;
+                 
                  finish ateach(place in Dist.makeUnique())  {
                      val pid = here.id; //Console.OUT.println("pid=" + pid + " starts...");   
+                     val mult=(Math.ceil(nPlaces*.5+.5) - ((nPlaces%2L==0L && pid<nPlaces/2)?1:0)) as Long;
                      val a=halfAuxMat.local();                   
-                     
                      for (var blk:Long=0; blk<mult; blk++) {
                          val qid=(pid+blk)%nPlaces;
                          val b=at(Place(qid)) {halfAuxMat.local()};
@@ -424,7 +426,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
         Console.OUT.printf("\nG matrix\n"); 
         finish ateach(place in Dist.makeUnique()) {
             val pid = here.id;
-            val mult=Math.ceil(nPlaces*.5+.5) as Long;
+            val mult=(Math.ceil(nPlaces*.5+.5) - ((nPlaces%2L==0L && pid<nPlaces/2)?1:0)) as Long;
 
             val localJ=distJ.local(); val localK=distK.local();
             val rowCount=localJ.M; val colCount=localJ.N;
@@ -444,7 +446,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
             }
         }
 
-        // Copy G to place 0
+        // Copy G to place 0 // can improve further by copying only contributing blocks
         for (pid in 0..(nPlaces-1)) {
             val mat=at(Place(pid)) {distJ.local()};
             val moff=offsetAtPlace(pid);
@@ -455,11 +457,14 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
         }
 
         // Fix G
-        val mult=Math.ceil(nPlaces*.5+.5) as Long;
-        for (var pid:Long=0; pid<nPlaces; pid++) for (var qid:Long=mult+pid; qid<nPlaces+pid; qid++) {
-            val qq=qid%nPlaces;
-            for (var i:Long=offsetAtPlace(pid); i<offsetAtPlace(pid+1); i++) for (var j:Long=offsetAtPlace(qq); j<offsetAtPlace(qq+1); j++)                
-               this(i,j) = this(j,i); 
+        
+        for (var pid:Long=0; pid<nPlaces; pid++) {
+            val mult=(Math.ceil(nPlaces*.5+.5) - ((nPlaces%2L==0L && pid<nPlaces/2)?1:0)) as Long;
+            for (var qid:Long=mult+pid; qid<nPlaces+pid; qid++) {
+                val qq=qid%nPlaces;
+                for (var i:Long=offsetAtPlace(pid); i<offsetAtPlace(pid+1); i++) for (var j:Long=offsetAtPlace(qq); j<offsetAtPlace(qq+1); j++)                
+                    this(i,j) = this(j,i); 
+            }
         }
 
         Console.OUT.printf("Time INT = %.2f s J = %.2f s K = %.2f s\n", tINT, tJ, tK);
