@@ -57,7 +57,7 @@ public struct ShellPair {
         this.maxbrab=(b+1)*(b+2)/2;
         this.mu2=mu+maxbraa-1;
         this.nu2=nu+maxbrab-1;
-        this.maxL=maxL;
+        this.maxL=maxL;        
         this.contrib = contrib;
     }
 }
