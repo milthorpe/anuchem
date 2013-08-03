@@ -18,7 +18,10 @@
     <property name="x10papi.props" location="${x10papi}/x10papi.properties"/>
     <property name="papiHome" location="${user.home}/papi"/>
     <property name="usemkl" value="false"/>
-    <property name="lapackHome" value="/scratch/lapack"/>
+    <property name="lapackHome" value="/usr/lib"/>
+    <property name="lapackName" value="lapack"/>
+    <property name="blasHome" value="/usr/lib"/>
+    <property name="blasName" value="blas"/>
     <property name="bash.exe" value="bash"/>
     <property name="optimize" value="true" />
     <property name="nochecks" value="true" />
@@ -78,7 +81,7 @@
         <istrue value="${heapprofile}" />
     </condition>
 
-    <condition property="post.lapack" value="-L${env.MKL}/lib/em64t -lmkl_intel_lp64 -lmkl -fopenmp -liomp5  -lmkl_core -lmkl_lapack -lpthread -lm" else="-L${lapackHome} -L/usr/lib -llapack -lblas">
+    <condition property="post.lapack" value="-L${lapackHome} -L${env.MKL}/lib/em64t -lmkl_intel_lp64 -lmkl -fopenmp -liomp5  -lmkl_core -lmkl_lapack -lpthread -lm" else="-L${lapackHome} -L${blasHome} -l${lapackName} -l${blasName}">
         <istrue value="${usemkl}"/>
     </condition>
 
@@ -158,7 +161,7 @@
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/src">
             <arg value="-c"/> 
-            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.debug} ${x10c.cpuprofile} ${x10c.profile} ${x10c.optimize} ${x10c.nochecks} ${define.papi} ${define.mkl} ${define.verbose} -report postcompile=1 -classpath ${gml.lib} -x10lib ${gml.props} -x10lib ${xla.props} -x10lib ${anuchem.props} -x10lib ${x10papi.props} -sourcepath . -post '# # -D__X10_HEADERS ${post.define.mkl} ${post.heapprofile} ${post.papi} -L/usr/lib -L${lib} -lintpack # -L${lapackHome} ${post.lapack} -lpapi' -d ${target-src} ${basedir}/${testclass}"/>
+            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.debug} ${x10c.cpuprofile} ${x10c.profile} ${x10c.optimize} ${x10c.nochecks} ${define.papi} ${define.mkl} ${define.verbose} -report postcompile=1 -classpath ${gml.lib} -x10lib ${gml.props} -x10lib ${xla.props} -x10lib ${anuchem.props} -x10lib ${x10papi.props} -sourcepath . -post '# # -D__X10_HEADERS ${post.define.mkl} ${post.heapprofile} ${post.papi} # -L${lib} -lintpack ${post.lapack} -lpapi' -d ${target-src} ${basedir}/${testclass}"/>
         </exec>
     </target>
 
