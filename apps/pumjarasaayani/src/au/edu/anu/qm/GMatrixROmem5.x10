@@ -346,43 +346,39 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                         var ind:Long=0;
                         val musize=sp.mu2-sp.mu+1; val nusize=sp.nu2-sp.nu+1;
 
-                        if (localAuxJ(spInd).size==0L)
-
-                        for (var tmu:Long=sp.mu; tmu<=sp.mu2; tmu++) for (var tnu:Long=sp.nu; tnu<=sp.nu2; tnu++) {
-                            val scdmn=density(tmu,tnu); val nrm=norm(tmu)*norm(tnu); 
-                            val ttmu=tmu-sp.mu; val ttnu=tnu-sp.nu; 
-                            val tmuoff=tmu-offsetAtPlace(pid);
-                            for (var rolm:Long=0; rolm<maxLm; rolm++) {
-                                val normAux = nrm*tempJ(ind++);       
-                                tempK((ttnu*roK+rolm)*musize+ttmu) = normAux;  
+                        if (localAuxJ(spInd).size==0L) {
+                            for (var tmu:Long=sp.mu; tmu<=sp.mu2; tmu++) for (var tnu:Long=sp.nu; tnu<=sp.nu2; tnu++) {
+                                val scdmn=density(tmu,tnu); val nrm=norm(tmu)*norm(tnu); 
+                                val ttmu=tmu-sp.mu; val ttnu=tnu-sp.nu; 
+                                val tmuoff=tmu-offsetAtPlace(pid);
+                                for (var rolm:Long=0; rolm<maxLm; rolm++) {
+                                    val normAux = nrm*tempJ(ind++);       
+                                    tempK((ttnu*roK+rolm)*musize+ttmu) = normAux;  
+                                }
                             }
-                        }   
-
-
-                        else if (sp.mu!=sp.nu)   
-                        for (var tmu:Long=sp.mu; tmu<=sp.mu2; tmu++) for (var tnu:Long=sp.nu; tnu<=sp.nu2; tnu++) {
-                            val scdmn=density(tmu,tnu); val nrm=norm(tmu)*norm(tnu); 
-                            val ttmu=tmu-sp.mu; val ttnu=tnu-sp.nu; 
-                            val tmuoff=tmu-offsetAtPlace(pid);
-                            for (var rolm:Long=0; rolm<maxLm; rolm++) {
-                                val normAux = nrm*tempJ(ind++);       
-                                myThreaddk(rolm) += 2.*scdmn*normAux; 
-                                tempK((ttnu*roK+rolm)*musize+ttmu) = normAux;  
+                        } else if (sp.mu!=sp.nu) {
+                            for (var tmu:Long=sp.mu; tmu<=sp.mu2; tmu++) for (var tnu:Long=sp.nu; tnu<=sp.nu2; tnu++) {
+                                val scdmn=density(tmu,tnu); val nrm=norm(tmu)*norm(tnu); 
+                                val ttmu=tmu-sp.mu; val ttnu=tnu-sp.nu; 
+                                val tmuoff=tmu-offsetAtPlace(pid);
+                                for (var rolm:Long=0; rolm<maxLm; rolm++) {
+                                    val normAux = nrm*tempJ(ind++);       
+                                    myThreaddk(rolm) += 2.*scdmn*normAux; 
+                                    tempK((ttnu*roK+rolm)*musize+ttmu) = normAux;  
+                                }
                             }
-                        }    
-
-                        else
-                        for (var tmu:Long=sp.mu; tmu<=sp.mu2; tmu++) for (var tnu:Long=sp.nu; tnu<=sp.nu2; tnu++) {
-                            val scdmn=density(tmu,tnu); val nrm=norm(tmu)*norm(tnu); 
-                            val ttmu=tmu-sp.mu; val ttnu=tnu-sp.nu; 
-                            val tmuoff=tmu-offsetAtPlace(pid);
-                            for (var rolm:Long=0; rolm<maxLm; rolm++) {
-                                val normAux = nrm*tempJ(ind++);       
-                                myThreaddk(rolm) += scdmn*normAux; 
-                                tempK((ttnu*roK+rolm)*musize+ttmu) = normAux;  
+                        } else {
+                            for (var tmu:Long=sp.mu; tmu<=sp.mu2; tmu++) for (var tnu:Long=sp.nu; tnu<=sp.nu2; tnu++) {
+                                val scdmn=density(tmu,tnu); val nrm=norm(tmu)*norm(tnu); 
+                                val ttmu=tmu-sp.mu; val ttnu=tnu-sp.nu; 
+                                val tmuoff=tmu-offsetAtPlace(pid);
+                                for (var rolm:Long=0; rolm<maxLm; rolm++) {
+                                    val normAux = nrm*tempJ(ind++);       
+                                    myThreaddk(rolm) += scdmn*normAux; 
+                                    tempK((ttnu*roK+rolm)*musize+ttmu) = normAux;  
+                                }
                             }
-                        } 
-
+                        }
                 
                         ind=0;
                         val rows = sp.mu2-sp.mu+1;
@@ -415,24 +411,24 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                     if (temp.size>0L && maxLron>=0) { 
                         val maxLm=(maxLron+1)*(maxLron+1); var ind:Long=0L; 
  
-                        if (sp.mu!=sp.nu && offsetAtPlace(pid)<=sp.nu && sp.nu<offsetAtPlace(pid+1))     
-                        for (var tmu:Long=sp.mu; tmu<=sp.mu2; tmu++) for (var tnu:Long=sp.nu; tnu<=sp.nu2; tnu++) {
-                            var jContrib:Double=0.;  
-			    val tmuoff = tmu-offsetAtPlace(pid);
-                            val tnuoff = tnu-offsetAtPlace(pid);
-                            for (var rolm:Long=0; rolm<maxLm; rolm++) 
-                                jContrib += dkp(rolm)*temp(ind++);
-                            localJ(tnuoff,tmu)+= jContrib;
-                            localJ(tmuoff,tnu)+= jContrib;
-                        } 
-                        else
-                        for (var tmu:Long=sp.mu; tmu<=sp.mu2; tmu++) for (var tnu:Long=sp.nu; tnu<=sp.nu2; tnu++) {
-                            var jContrib:Double=0.;  val tmuoff = tmu-offsetAtPlace(pid);
-                            for (var rolm:Long=0; rolm<maxLm; rolm++) 
-                                jContrib += dkp(rolm)*temp(ind++);
-                            localJ(tmuoff,tnu) += jContrib;
+                        if (sp.mu!=sp.nu && offsetAtPlace(pid)<=sp.nu && sp.nu<offsetAtPlace(pid+1)) {
+                            for (var tmu:Long=sp.mu; tmu<=sp.mu2; tmu++) for (var tnu:Long=sp.nu; tnu<=sp.nu2; tnu++) {
+                                var jContrib:Double=0.;  
+			        val tmuoff = tmu-offsetAtPlace(pid);
+                                val tnuoff = tnu-offsetAtPlace(pid);
+                                for (var rolm:Long=0; rolm<maxLm; rolm++) 
+                                    jContrib += dkp(rolm)*temp(ind++);
+                                localJ(tnuoff,tmu)+= jContrib;
+                                localJ(tmuoff,tnu)+= jContrib;
+                            } 
+                        } else {
+                            for (var tmu:Long=sp.mu; tmu<=sp.mu2; tmu++) for (var tnu:Long=sp.nu; tnu<=sp.nu2; tnu++) {
+                                var jContrib:Double=0.;  val tmuoff = tmu-offsetAtPlace(pid);
+                                for (var rolm:Long=0; rolm<maxLm; rolm++) 
+                                    jContrib += dkp(rolm)*temp(ind++);
+                                localJ(tmuoff,tnu) += jContrib;
+                            }
                         }
-
                     }
                 }
                 
@@ -441,7 +437,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
 
             // Console.OUT.println("K - distributed"); 
             if (ron<=roNK) { // This produces K/2
-                 timer.start(TIMER_KMATRIX);  
+                 timer.start(TIMER_KMATRIX);
 
                  finish ateach(place in Dist.makeUnique())  {
                      val pid = here.id; //Console.OUT.println("pid=" + pid + " starts..."); 
@@ -493,8 +489,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
             if (colStart<colStop) {
                 for (var j:Long=colStart; j<colStop; j++) for (var i:Long=0; i<rowCount; i++)
                     localJ(i,j)-=localK(i,j);
-            }
-            else {
+            } else {
                 for (var j:Long=colStart; j<colCount; j++) for (var i:Long=0; i<rowCount; i++)
                     localJ(i,j)-=localK(i,j);
                 for (var j:Long=0; j<colStop; j++) for (var i:Long=0; i<rowCount; i++)
