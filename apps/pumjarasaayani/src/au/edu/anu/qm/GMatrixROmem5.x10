@@ -346,6 +346,32 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                         var ind:Long=0;
                         val musize=sp.mu2-sp.mu+1; val nusize=sp.nu2-sp.nu+1;
 
+                        if (localAuxJ(spInd).size==0L)
+
+                        for (var tmu:Long=sp.mu; tmu<=sp.mu2; tmu++) for (var tnu:Long=sp.nu; tnu<=sp.nu2; tnu++) {
+                            val scdmn=density(tmu,tnu); val nrm=norm(tmu)*norm(tnu); 
+                            val ttmu=tmu-sp.mu; val ttnu=tnu-sp.nu; 
+                            val tmuoff=tmu-offsetAtPlace(pid);
+                            for (var rolm:Long=0; rolm<maxLm; rolm++) {
+                                val normAux = nrm*tempJ(ind++);       
+                                tempK((ttnu*roK+rolm)*musize+ttmu) = normAux;  
+                            }
+                        }   
+
+
+                        else if (sp.mu!=sp.nu)   
+                        for (var tmu:Long=sp.mu; tmu<=sp.mu2; tmu++) for (var tnu:Long=sp.nu; tnu<=sp.nu2; tnu++) {
+                            val scdmn=density(tmu,tnu); val nrm=norm(tmu)*norm(tnu); 
+                            val ttmu=tmu-sp.mu; val ttnu=tnu-sp.nu; 
+                            val tmuoff=tmu-offsetAtPlace(pid);
+                            for (var rolm:Long=0; rolm<maxLm; rolm++) {
+                                val normAux = nrm*tempJ(ind++);       
+                                myThreaddk(rolm) += 2.*scdmn*normAux; 
+                                tempK((ttnu*roK+rolm)*musize+ttmu) = normAux;  
+                            }
+                        }    
+
+                        else
                         for (var tmu:Long=sp.mu; tmu<=sp.mu2; tmu++) for (var tnu:Long=sp.nu; tnu<=sp.nu2; tnu++) {
                             val scdmn=density(tmu,tnu); val nrm=norm(tmu)*norm(tnu); 
                             val ttmu=tmu-sp.mu; val ttnu=tnu-sp.nu; 
@@ -355,7 +381,9 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                                 myThreaddk(rolm) += scdmn*normAux; 
                                 tempK((ttnu*roK+rolm)*musize+ttmu) = normAux;  
                             }
-                        }                    
+                        } 
+
+                
                         ind=0;
                         val rows = sp.mu2-sp.mu+1;
                         for (var tnu:Long=sp.nu; tnu<=sp.nu2; tnu++) {
