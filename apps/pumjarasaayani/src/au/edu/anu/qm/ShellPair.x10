@@ -36,11 +36,12 @@ public struct ShellPair {
     public val nu2 : Long;
     public val maxbraa : Int;
     public val maxbrab : Int;
-    public val maxL : Rail[Long];
+    public val L : Rail[Int];
+    public val maxL: Int; 
     public val contrib : Double;
 
     public def this(a:Int, b:Int, A:Point3d, B:Point3d, zetaA:Rail[Double], zetaB:Rail[Double], conA:Rail[Double], conB:Rail[Double], 
-                    dconA:Int, dconB:Int, mu:Long, nu:Long, maxL:Rail[Long], contrib:Double) {
+                    dconA:Int, dconB:Int, mu:Long, nu:Long, L:Rail[Int], contrib:Double) {
         this.aang=a;
         this.bang=b;
         this.aPoint=A;
@@ -57,7 +58,11 @@ public struct ShellPair {
         this.maxbrab=(b+1)*(b+2)/2;
         this.mu2=mu+maxbraa-1;
         this.nu2=nu+maxbrab-1;
-        this.maxL=maxL;        
+        this.L=L;        
+        var maxl:Int=0;
+        for (i in (0..(L.size-1)))
+           if (L(i)>maxl) maxl=L(i);
+        this.maxL=maxl;
         this.contrib = contrib;
     }
 }
