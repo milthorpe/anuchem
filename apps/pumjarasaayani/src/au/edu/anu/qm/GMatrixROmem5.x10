@@ -111,7 +111,6 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
 
         place2atom(nPlaces)=noOfAtoms-1;
         place2func(nPlaces)=mol.getAtom(noOfAtoms-1).getBasisFunctions().size();
-        Console.OUT.printf("place %3d: atom=%5d function=%3d\n",nPlaces,place2atom(nPlaces),place2func(nPlaces));
 
         for(var a:Long=noOfAtoms-1; a>=0 && placeID>0; a--) { // centre a  
             val aFunc = mol.getAtom(a).getBasisFunctions();
@@ -123,15 +122,16 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                 if (N-func<placeID*npp) {
                      place2atom(placeID)=a;
                      place2func(placeID)=i;
-                     Console.OUT.printf("place %3d: atom=%5d function=%3d\n",placeID,a,i);
                      placeID--;
                 }
             }
         }
 
+        if (placeID>0) {Console.ERR.println("too many palaces!\n"); System.setExitCode(1); throw new UnsupportedOperationException("too many places "+placeID);}
+      
         place2atom(0)=0;
         place2func(0)=0;
-        Console.OUT.printf("place %3d: atom=%5d function=%3d\n",0,place2atom(0),place2func(0));
+        for (ii in (0..nPlaces)) Console.OUT.printf("place %3d: atom=%5d function=%3d\n",ii,place2atom(ii),place2func(ii));
 
         // Generate shellpair
         val threshold = roThresh*jd.roZ*jd.roZ*1e-3; 
@@ -152,7 +152,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
         val place2ShellPair=new Rail[Long](nPlaces+1);
         place2ShellPair(0)=0; placeID=1; 
         offsetAtPlace(0)=0; offsetAtPlace(nPlaces)=N;
-        Console.OUT.printf("place %3d: offset = %5d shellpair #%5d\n",0,0,place2ShellPair(0));
+        //Console.OUT.printf("place %3d: offset = %5d shellpair #%5d\n",0,0,place2ShellPair(0));
         for(var a:Long=0; a<noOfAtoms; a++) { // centre a  
             val aFunc = mol.getAtom(a).getBasisFunctions();
             val naFunc = aFunc.size();          
@@ -168,9 +168,9 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                 if (a==place2atom(placeID) && i==place2func(placeID)) {
                     place2ShellPair(placeID)=ind;                    
                     funcAtPlace(placeID-1) = mu-offsetAtPlace(placeID-1);  
-                    Console.OUT.printf("#basis functions1 = %5d #basis functions2 = %5d\n",funcAtPlace(placeID-1),totFunc); totFunc=0;
+                    //Console.OUT.printf("#basis functions1 = %5d #basis functions2 = %5d\n",funcAtPlace(placeID-1),totFunc); totFunc=0;
                     offsetAtPlace(placeID)= mu;          
-                    Console.OUT.printf("place %3d: offset = %5d shellpair #%5d\n",placeID,offsetAtPlace(placeID),ind);
+                    //Console.OUT.printf("place %3d: offset = %5d shellpair #%5d\n",placeID,offsetAtPlace(placeID),ind);
                     placeID++;
                 }          
                 for(var b:Long=0; b<noOfAtoms; b++) { // centre b
@@ -209,7 +209,12 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
         Console.OUT.printf("place %3d: offset = %5d shellpair #%5d\n", nPlaces,mu+1, place2ShellPair(nPlaces));
       
         Console.OUT.printf("Found %d significant shellpairs.\n", numSigShellPairs);       
-        
+
+
+        for (ii in (0..nPlaces)) {
+            Console.OUT.printf("place %3d: offset = %5d shellpair #%5d\n",ii,offsetAtPlace(ii),place2ShellPair(ii));
+            Console.OUT.printf("#basis functions1 = %5d\n",funcAtPlace(ii),totFunc); 
+        }
         val shellPairs = PlaceLocalHandle.make[Rail[ShellPair]](
             PlaceGroup.WORLD,
             ()=>new Rail[ShellPair](place2ShellPair(here.id+1)-place2ShellPair(here.id),
