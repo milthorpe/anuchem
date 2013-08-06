@@ -297,6 +297,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                     if ( ( (colStart<colStop) && ((colStart<=nu1) && (nu1<colStop)) ) ||
                          ( (colStart>=colStop) && ( (nu1<colStop) || (nu1>=colStart) ) ) )
                          size=sp.maxbraa*sp.maxbrab*roK;
+                    if (offsetAtPlace(pid)<=nu1 && nu1<offsetAtPlace(pid+1) && sp.mu > sp.nu) size=0L;
                     new Rail[Double](size)
                 } ));        
 
@@ -385,14 +386,28 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                     val maxLron=sp.maxL(lron);                   
                     if (temp.size>0L && maxLron>=0) { 
                         val maxLm=(maxLron+1)*(maxLron+1); var ind:Long=0L; 
+ 
+                        if (sp.mu!=sp.nu && offsetAtPlace(pid)<=sp.nu && sp.nu<offsetAtPlace(pid+1))     
                         for (var tmu:Long=sp.mu; tmu<=sp.mu2; tmu++) for (var tnu:Long=sp.nu; tnu<=sp.nu2; tnu++) {
-                            var jContrib:Double=0.;  val tnuroK=tnu*roK; val tmuoff = tmu-offsetAtPlace(pid);
+                            var jContrib:Double=0.;  
+			    val tmuoff = tmu-offsetAtPlace(pid);
+                            val tnuoff = tnu-offsetAtPlace(pid);
+                            for (var rolm:Long=0; rolm<maxLm; rolm++) 
+                                jContrib += dkp(rolm)*temp(ind++);
+                            localJ(tnuoff,tmu)+= jContrib;
+                            localJ(tmuoff,tnu)+= jContrib;
+                        } 
+                        else
+                        for (var tmu:Long=sp.mu; tmu<=sp.mu2; tmu++) for (var tnu:Long=sp.nu; tnu<=sp.nu2; tnu++) {
+                            var jContrib:Double=0.;  val tmuoff = tmu-offsetAtPlace(pid);
                             for (var rolm:Long=0; rolm<maxLm; rolm++) 
                                 jContrib += dkp(rolm)*temp(ind++);
                             localJ(tmuoff,tnu) += jContrib;
-                        } 
+                        }
+
                     }
                 }
+                
             }
             timer.stop(TIMER_JMATRIX); tJ+=(timer.last(TIMER_JMATRIX) as Double)/1e9;
 
