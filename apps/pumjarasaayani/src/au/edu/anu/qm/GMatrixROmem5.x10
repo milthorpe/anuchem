@@ -325,6 +325,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                 val localMatK=auxIntMat4K.local(); // faster access than DistDenseMatrix
                 // Console.OUT.println("pid=" + pid + " starts..."); 
 
+                // Aux & D
                 finish for (spInd in 0..(shp.size-1)) async {
                     val sp=shp(spInd);
                     val maxLron=sp.L(lron);                    
@@ -384,9 +385,16 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                     }
                 }
 
-                //Console.OUT.println(pid + " Reducing dk..."); 
                 tdk.reduceLocal(dkp, (a:Rail[Double],b:Rail[Double]) => RailUtils.map(a, b, a, (x:Double,y:Double)=>x+y));                
-                Team.WORLD.allreduce[Double](dkp, 0L, dkp, 0L, dkp.size, Team.ADD);
+                async Team.WORLD.allreduce[Double](dkp, 0L, dkp, 0L, dkp.size, Team.ADD);
+
+               // finish ateach(place in Dist.makeUnique())  {
+               //     val pid = here.id; //Console.OUT.println("pid=" + pid + " starts..."); 
+                    val A=new DenseMatrix(funcAtPlace(pid)*roK, N, auxIntMat4K.local().d);
+                    val B=new DenseMatrix(funcAtPlace(pid)*roK, nOrbital, halfAuxMat.local().d); 
+                    DenseMatrixBLAS.compMultTrans(A, mos, B, [funcAtPlace(pid)*roK, nOrbital, N], false);
+                    //cannot do B.multTrans(A, mos, false); -  mos is [N,N] rather than [nObital,N]
+               // }   
             }
 
             timer.stop(TIMER_GENCLASS); tINT+=(timer.last(TIMER_GENCLASS) as Double)/1e9;
@@ -433,16 +441,6 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
             // Console.OUT.println("K - distributed"); 
             if (ron<=roNK) { // This produces K/2
                  timer.start(TIMER_KMATRIX);
-
-                 finish ateach(place in Dist.makeUnique())  {
-                     val pid = here.id; //Console.OUT.println("pid=" + pid + " starts..."); 
-
-                     val A=new DenseMatrix(funcAtPlace(pid)*roK, N, auxIntMat4K.local().d);
-                     val B=new DenseMatrix(funcAtPlace(pid)*roK, nOrbital, halfAuxMat.local().d); 
-
-                     DenseMatrixBLAS.compMultTrans(A, mos, B, [funcAtPlace(pid)*roK, nOrbital, N], false);
-                     //cannot do B.multTrans(A, mos, false); -  mos is [N,N] rather than [nObital,N]
-                 }   
                  
                  finish ateach(place in Dist.makeUnique())  {
                      val pid = here.id; //Console.OUT.println("pid=" + pid + " starts...");   
