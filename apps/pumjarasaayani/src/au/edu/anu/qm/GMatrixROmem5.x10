@@ -451,6 +451,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                     }
                     timer.stop(TIMER_KMATRIX);
                 }
+                Team.WORLD.barrier();
             }
 
             Console.OUT.printf("\nG matrix\n"); 
