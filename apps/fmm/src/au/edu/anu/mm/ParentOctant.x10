@@ -38,7 +38,7 @@ public class ParentOctant extends Octant {
     }
 
     public def countOctants():Int {
-        var octants:Int = 0;
+        var octants:Int = 0n;
         for (child in children) {
             if (child != null) {
                 octants += child.countOctants();
@@ -48,7 +48,7 @@ public class ParentOctant extends Octant {
     }
 
     public def ghostOctants():Int {
-        var ghostOctants:Int = 0;
+        var ghostOctants:Int = 0n;
         for (child in children) {
             if (child != null) {
                 ghostOctants += child.ghostOctants();

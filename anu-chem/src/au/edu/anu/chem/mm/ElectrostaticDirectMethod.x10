@@ -28,7 +28,7 @@ import au.edu.anu.chem.PointCharge;
  */
 public class ElectrostaticDirectMethod {
     // TODO enum - XTENLANG-1118
-    public static val TIMER_INDEX_TOTAL : Int = 0;
+    public static val TIMER_INDEX_TOTAL = 0;
     /** A multi-timer for the several segments of a single getEnergy invocation, indexed by the constants above. */
     public val timer = new Timer(1);
 

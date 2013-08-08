@@ -41,18 +41,18 @@ public class GromacsStructureFileReader {
         val title = file.readLine().split(" ");
         val numAtoms = Int.parseInt(file.readLine());
         var molecule : Molecule[MMAtom] = new Molecule[MMAtom](title(0));
-        for(var i:Int=0; i<numAtoms; i++) {
+        for(var i:Int=0n; i<numAtoms; i++) {
             val line = file.readLine();
-            var species:Int=-1;
-            val atomType = line.substring(10,15).trim();
+            var species:Int=-1n;
+            val atomType = line.substring(10n,15n).trim();
             val charge : Double;
             val mass : Double;
             if (atomType.startsWith("OW")) {
-                species = 0;
+                species = 0n;
                 charge = -0.82;
                 mass = 15.99491461956;
             } else if (atomType.startsWith("HW")) {
-                species = 1;
+                species = 1n;
                 charge = 0.41;
                 mass = 1.00794;
             } else {
@@ -62,9 +62,9 @@ public class GromacsStructureFileReader {
             }
             // multiply coords by 10 to convert nm to Angstroms
             molecule.addAtom(new MMAtom(species,
-                                         Point3d(Double.parseDouble(line.substring(20,28)) * 10.0,
-                                                 Double.parseDouble(line.substring(28,36)) * 10.0,
-                                                 Double.parseDouble(line.substring(36,44)) * 10.0
+                                         Point3d(Double.parseDouble(line.substring(20n,28n)) * 10.0,
+                                                 Double.parseDouble(line.substring(28n,36n)) * 10.0,
+                                                 Double.parseDouble(line.substring(36n,44n)) * 10.0
                                          ),
                                         mass,
                                         charge
@@ -73,9 +73,9 @@ public class GromacsStructureFileReader {
 
         // read box edge lengths
         val boxLine = file.readLine();
-        val x = Double.parseDouble(boxLine.substring( 0,10).trim()) * 10.0;
-        val y = Double.parseDouble(boxLine.substring(10,20).trim()) * 10.0;
-        val z = Double.parseDouble(boxLine.substring(20,30).trim()) * 10.0;
+        val x = Double.parseDouble(boxLine.substring( 0n,10n).trim()) * 10.0;
+        val y = Double.parseDouble(boxLine.substring(10n,20n).trim()) * 10.0;
+        val z = Double.parseDouble(boxLine.substring(20n,30n).trim()) * 10.0;
         this.boxEdges = Vector3d(x,y,z);
         
         file.close();

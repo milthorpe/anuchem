@@ -24,7 +24,7 @@ import x10x.polar.Polar3d;
  */
 public class MultipoleExpansion extends Expansion {
 
-    public def this(p : Int) {
+    public def this(p:Long) {
         super(p);
     }
 
@@ -38,7 +38,7 @@ public class MultipoleExpansion extends Expansion {
     /**
      * Calculate the multipole-like term O_{lm} (with m >= 0) for a point v.
      */
-    public static def getOlm(q:Double, v:Vector3d, p:Int) : MultipoleExpansion {
+    public static def getOlm(q:Double, v:Vector3d, p:Long) : MultipoleExpansion {
         val exp = new MultipoleExpansion(p);
         val v_pole = Polar3d.getPolar3d(v);
         val pplm = AssociatedLegendrePolynomial.getPlk(v_pole.theta, p); 
@@ -99,7 +99,7 @@ public class MultipoleExpansion extends Expansion {
     /**
      * Calculate the chargeless multipole-like term O_{lm} (with m >= 0) for a point v.
      */
-    public static def getOlm(v:Vector3d, p:Int) : MultipoleExpansion {
+    public static def getOlm(v:Vector3d, p:Long) : MultipoleExpansion {
         val exp = new MultipoleExpansion(p);
         val v_pole = Polar3d.getPolar3d(v);
         val pplm = AssociatedLegendrePolynomial.getPlk(v_pole.theta, p); 

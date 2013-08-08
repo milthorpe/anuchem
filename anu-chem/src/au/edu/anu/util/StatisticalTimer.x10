@@ -19,7 +19,7 @@ final public class StatisticalTimer {
     public val max:Rail[Long];
     public val sumOfSquares:Rail[Double];
 
-    public def this(n:Int) {
+    public def this(n:Long) {
         current = new Rail[Long](n);
         count = new Rail[Long](n);
         total = new Rail[Long](n);
@@ -28,14 +28,14 @@ final public class StatisticalTimer {
         sumOfSquares = new Rail[Double](n);
     }
 
-    public def start(id:Int) { current(id) = -System.nanoTime(); }
-    public def clear(id:Int) { 
+    public def start(id:Long) { current(id) = -System.nanoTime(); }
+    public def clear(id:Long) { 
         total(id) = 0L; count(id) = 0L;
         min(id) = Long.MAX_VALUE; max(id) = Long.MIN_VALUE;
         sumOfSquares(id) = 0.0;
     }
 
-    public def stop(id:Int) {
+    public def stop(id:Long) {
         current(id) += System.nanoTime();
         val elapsed = current(id);
         count(id)++;
@@ -46,14 +46,14 @@ final public class StatisticalTimer {
         sumOfSquares(id) += e*e;
     }
 
-    public def last(id:Int) = current(id);
-    public def mean(id:Int) {
+    public def last(id:Long) = current(id);
+    public def mean(id:Long) {
         if (count(id) == 0L) return 0L;
         return total(id) / count(id);
     }
-    public def tot(id:Int) = total(id) ;
+    public def tot(id:Long) = total(id) ;
     
-    public def stdDev(id:Int):Double {
+    public def stdDev(id:Long):Double {
         if (count(id) == 0L) return 0L;
         val s0 = count(id) as Double;
         val s1 = total(id) as Double;
@@ -61,7 +61,7 @@ final public class StatisticalTimer {
         return Math.sqrt(s0*s2 - s1*s1) / s0;
     }
 
-    public def printSeconds(id:Int) {
+    public def printSeconds(id:Long) {
         Console.OUT.printf("%7i %8.4g %8.4g %8.4g %8.4g\n", 
                             count(id), 
                             (mean(id) as Double) / 1e9,

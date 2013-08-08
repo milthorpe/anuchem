@@ -20,17 +20,17 @@ import au.edu.anu.util.Timer;
 
 public class FmmLocalData {
     // TODO enum - XTENLANG-1118
-    public static val TIMER_INDEX_TOTAL:Int = 0;
-    public static val TIMER_INDEX_PREFETCH:Int = 1;
-    public static val TIMER_INDEX_UPWARD:Int = 2;
-    public static val TIMER_INDEX_M2L:Int = 3;
-    public static val TIMER_INDEX_DOWNWARD:Int = 4;
-    public static val TIMER_INDEX_TREE:Int = 5;
-    public static val TIMER_INDEX_SORT:Int = 6;
-    public static val TIMER_INDEX_BALANCE:Int = 7;
-    public static val TIMER_INDEX_REDIST:Int = 8;
-    public static val TIMER_INDEX_PARENTS:Int = 9;
-    public static val TIMER_INDEX_LET:Int = 10;
+    public static val TIMER_INDEX_TOTAL = 0;
+    public static val TIMER_INDEX_PREFETCH = 1;
+    public static val TIMER_INDEX_UPWARD = 2;
+    public static val TIMER_INDEX_M2L = 3;
+    public static val TIMER_INDEX_DOWNWARD = 4;
+    public static val TIMER_INDEX_TREE = 5;
+    public static val TIMER_INDEX_SORT = 6;
+    public static val TIMER_INDEX_BALANCE = 7;
+    public static val TIMER_INDEX_REDIST = 8;
+    public static val TIMER_INDEX_PARENTS = 9;
+    public static val TIMER_INDEX_LET = 10;
 
     /** The maximum number of levels in the octree. */
     public var dMax:UByte;
@@ -118,7 +118,7 @@ public class FmmLocalData {
 
         //Console.OUT.println("at " + here + " combined U-list:");
         val combinedUList = new Rail[UInt](combinedUSet.size());
-        var j : Int = 0;
+        var j:Long = 0;
         for (mortonId in combinedUSet) {
             combinedUList(j++) = mortonId;
             //Console.OUT.println(mortonId);

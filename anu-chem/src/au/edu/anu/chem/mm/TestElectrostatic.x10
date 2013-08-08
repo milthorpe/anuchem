@@ -39,7 +39,7 @@ public class TestElectrostatic {
     public def sizeOfCentralCluster():Double = SIZE;
     public def boxSize():Double = SIZE;
 
-    public def logTime(desc : String, timerIndex : Int, timer : Timer, printNewline : Boolean) {
+    public def logTime(desc : String, timerIndex : Long, timer : Timer, printNewline : Boolean) {
         if (printNewline) {
             Console.OUT.printf(desc + ": %g seconds\n", (timer.mean(timerIndex) as Double) / 1e9);
         } else {
@@ -47,7 +47,7 @@ public class TestElectrostatic {
         }
     }
 
-    public def logTime(desc : String, timerIndex : Int, timer : Timer) {
+    public def logTime(desc : String, timerIndex : Long, timer : Timer) {
         logTime(desc, timerIndex, timer, true);
     }
 
@@ -77,7 +77,7 @@ public class TestElectrostatic {
             val endHere = Math.min(numAtoms, (here.id+1) * chunkSize);
             val numAtomsHere = Math.max(0L, endHere-startHere-1);
             val atomsHere = new Rail[MMAtom](numAtomsHere);
-            var i:Int = 0;
+            var i:Long = 0;
             for(gridPoint in startHere..(endHere-1)) {
                 val gridX = gridPoint / (gridSize * gridSize);
                 val gridY = (gridPoint - (gridX * gridSize * gridSize)) / gridSize;

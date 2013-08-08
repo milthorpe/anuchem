@@ -59,9 +59,9 @@ public class LeafOctant extends Octant {
         return sources;
     }
 
-    public def countOctants():Int = 1;
+    public def countOctants():Int = 1n;
 
-    public def ghostOctants():Int = 0;
+    public def ghostOctants():Int = 0n;
 
     /**
      * Get the multipole representation of this octant, which is
@@ -278,10 +278,10 @@ public class LeafOctant extends Octant {
     }
 
     public static def estimateUListSize(id:OctantId, dMax:UByte):Int {
-        val maxExtent = (1U << dMax) - 1U;
-        val xExtent = (id.x > 0U && id.x < maxExtent) ? 3 : 2;
-        val yExtent = (id.y > 0U && id.y < maxExtent) ? 3 : 2;
-        val zExtent = (id.z > 0U && id.z < maxExtent) ? 3 : 2;
+        val maxExtent = (1UN << dMax) - 1UN;
+        val xExtent = (id.x > 0U && id.x < maxExtent) ? 3n : 2n;
+        val yExtent = (id.y > 0U && id.y < maxExtent) ? 3n : 2n;
+        val zExtent = (id.z > 0U && id.z < maxExtent) ? 3n : 2n;
         return xExtent * yExtent * zExtent;
     }
 
@@ -290,7 +290,7 @@ public class LeafOctant extends Octant {
      * @param q the average density per lowest level box
      */
     public static def estimateUListCost(q:Int):Long {
-        val dummyOctant = new LeafOctant(new OctantId(0UY, 0UY, 0UY, 0UY), 1, 1, 0UY);
+        val dummyOctant = new LeafOctant(new OctantId(0UY, 0UY, 0UY, 0UY), 1n, 1n, 0UY);
         dummyOctant.atoms = new ArrayList[MMAtom](q);
         val rand = new Random();
         for (i in 0..(q-1)) {
@@ -335,12 +335,12 @@ public class LeafOctant extends Octant {
 
         public def this(id:OctantId, ws:Int) {
             val levelDim = 1UY << id.level;
-            minX = Math.max(0,id.x-ws) as UByte;
-            maxX = Math.min(levelDim-1,id.x+ws) as UByte;
-            minY = Math.max(0,id.y-ws) as UByte;
-            maxY = Math.min(levelDim-1,id.y+ws) as UByte;
-            minZ = Math.max(0,id.z-ws) as UByte;
-            maxZ = Math.min(levelDim-1,id.z+ws) as UByte;
+            minX = Math.max(0n,id.x-ws) as UByte;
+            maxX = Math.min(levelDim-1n,id.x+ws) as UByte;
+            minY = Math.max(0n,id.y-ws) as UByte;
+            maxY = Math.min(levelDim-1n,id.y+ws) as UByte;
+            minZ = Math.max(0n,id.z-ws) as UByte;
+            maxZ = Math.min(levelDim-1n,id.z+ws) as UByte;
             this.level = id.level;
         }
 

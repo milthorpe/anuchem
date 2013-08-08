@@ -29,9 +29,9 @@ public class TestFastMultipoleMethod extends TestElectrostatic {
 
     public static def main(args:Rail[String]) {
         var numAtoms:Int;
-        var dMax:Int = 3;
-        var numTerms:Int = 12;
-        var wellSpaced:Int = 1;
+        var dMax:Int = 3n;
+        var numTerms:Int = 12n;
+        var wellSpaced:Int = 1n;
         var verbose:Boolean = false;
         var compare:Boolean = false;
         var rms:Boolean = false;
@@ -82,15 +82,15 @@ public class TestFastMultipoleMethod extends TestElectrostatic {
             val q = 1.0; // absolute value of charges
             val d = SIZE / Math.pow(2.0, dMax) / 2.0;
             val e_terms:Double;
-            if (wellSpaced == 1) {
+            if (wellSpaced == 1n) {
                 e_terms = q / ( (3.0 - Math.sqrt(3.0)) * d) * Math.pow((1.0 / Math.sqrt(3.0)), numTerms+1);
-            } else if (wellSpaced == 2) {
+            } else if (wellSpaced == 2n) {
                 e_terms = q / ( (5.0 - Math.sqrt(3.0)) * d) * Math.pow((Math.sqrt(3.0) / 5.0), numTerms+1);
             } else {
                 e_terms = 0.0;
             }
             Console.OUT.println("max error in potential due to truncation: " + e_terms);
-            if (wellSpaced == 1 && numTerms > 10) {
+            if (wellSpaced == 1n && numTerms > 10n) {
                 val e_b_shift = q / ( (4.0 - 2.0*Math.sqrt(3.0)) * d) * Math.pow((Math.sqrt(3.0) / 2.0), numTerms+1);
                 Console.OUT.println("max error in potential due to B-shift: " + e_b_shift);
             }

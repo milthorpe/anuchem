@@ -26,7 +26,7 @@ public class JacobiDiagonalizer {
     var eigenValuesVec:Vector; 
     var eigenVectorsMat:Matrix;
 
-    val maxIterations:Int = 100;
+    val maxIterations:Int = 100n;
 
     public def diagonalize(mat:Matrix) : void {
        val matrix = mat.getMatrix();
@@ -56,7 +56,7 @@ public class JacobiDiagonalizer {
 
        var zeroTolerance:Double = 0.0;
 
-       for(var sweepsIdx:Int = 0; sweepsIdx<maxIterations; sweepsIdx++) {
+       for(var sweepsIdx:Int = 0n; sweepsIdx<maxIterations; sweepsIdx++) {
           val sum = aMat.sumOffDiagonal();
           if (sum == 0.0) break;  // if off diagonal elements are zero, we stop
 

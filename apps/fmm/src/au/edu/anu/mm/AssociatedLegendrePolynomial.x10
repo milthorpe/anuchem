@@ -22,16 +22,16 @@ public class AssociatedLegendrePolynomial {
     protected val terms:Rail[Double];
 
     /** The degree of the polynomial. */
-    public val p : Int;
+    public val p:Long;
 
-    public def this(p : Int) {
+    public def this(p:Long) {
         this.terms = new Rail[Double]((p+1)*(p+1));
         this.p = p;
     }
 
-    public @Inline final operator this(l:Int, m:Int) = terms(l*(l+1)+m);
+    public @Inline final operator this(l:Long, m:Long) = terms(l*(l+1)+m);
 
-    public @Inline final operator this(l:Int, m:Int)=(v:Double):Double {
+    public @Inline final operator this(l:Long, m:Long)=(v:Double):Double {
         terms(l*(l+1)+m) = v;
         return v;
     }
@@ -43,7 +43,7 @@ public class AssociatedLegendrePolynomial {
      *   J. Chem. Phys. 124 (14) 144115. 14 April 2006.
      *   info:doi/10.1063/1.2194548
      */
-    public static def getPlk(theta:Double, p:Int) : AssociatedLegendrePolynomial {
+    public static def getPlk(theta:Double, p:Long) : AssociatedLegendrePolynomial {
         val cosTheta = Math.cos(theta);
         val sinTheta = Math.sin(theta);
 
@@ -94,7 +94,7 @@ public class AssociatedLegendrePolynomial {
      *      "Derivation and efficient implementation of the fast multipole method".
      *      J. Chem. Phys. 101 (8) 15 October 1994.
      */
-    public static def getPlm(x:Double, p:Int) : AssociatedLegendrePolynomial {
+    public static def getPlm(x:Double, p:Long) : AssociatedLegendrePolynomial {
         if (Math.abs(x) > 1.0) {
             throw new IllegalArgumentException("abs(x) > 1: Associated Legendre functions are only defined on [-1, 1].");
         }
@@ -104,13 +104,13 @@ public class AssociatedLegendrePolynomial {
 		Plm(0,0) = 1.0;
 		val somx2 : Double = Math.sqrt((1.0 - x) * (1.0 + x));
 		var fact : Double = 1.0;
-		for (var i : Int = 1; i<=p; i++) {
+		for (var i:Long = 1; i<=p; i++) {
 			Plm(i,i) = -Plm(i-1,i-1) * fact * somx2;
 			Plm(i,i-1) = x * fact * Plm(i-1,i-1);
 			fact += 2.0;
 		}
-		for (var m : Int = 0; m<=p-2; m++) {
-			for (var l : Int = m+2; l<=p; l++) {
+		for (var m:Long = 0; m<=p-2; m++) {
+			for (var l:Long = m+2; l<=p; l++) {
 				Plm(l,m) = (x * (2.0 * l - 1.0) 
 							* Plm(l-1,m) - (l + m - 1.0) 
 							* Plm(l-2,m)) / (l - m);

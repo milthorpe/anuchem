@@ -16,9 +16,9 @@ public class StringSplitter {
     public static def splitOnWhitespace(s:String):Rail[String] {
         val words = new ArrayList[String]();
         val end = s.length();
-        var offset:Int = 0;
-        var startOffset:Int=0;
-        var word:Boolean = !(s.charAt(0).isWhitespace());
+        var offset:Int = 0n;
+        var startOffset:Int=0n;
+        var word:Boolean = !(s.charAt(0n).isWhitespace());
         while(offset < end) {
             val whitespace = s.charAt(offset).isWhitespace();
             if (word && whitespace) {

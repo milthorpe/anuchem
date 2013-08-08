@@ -34,7 +34,7 @@ public class ConnectivityBuilder[T]{T <: Atom} {
            val idx  = atom.getIndex();
             val species = ai.getSpecies(atom.species);    
 
-           for(var i:Int=0; i<idx; i++) {
+           for(var i:Int=0n; i<idx; i++) {
               // check for bond between atom and mol.getAtom(i)
               val atomI = mol.getAtom(i); 
                 val speciesI = ai.getSpecies(atomI.species);             
@@ -71,7 +71,7 @@ public class ConnectivityBuilder[T]{T <: Atom} {
            val idx  = atom.getIndex();
             val species = ai.getSpecies(atom.species);
 
-           for(var i:Int=0; i<idx; i++) {
+           for(var i:Int=0n; i<idx; i++) {
               // check for bond between atom and mol.getAtom(i)
               val atomI = mol.getAtom(i);
                 val speciesI = ai.getSpecies(atomI.species);
@@ -129,9 +129,9 @@ public class ConnectivityBuilder[T]{T <: Atom} {
        return axis;
    }
 
-   private val WHITE = 0; 
-   private val GRAY = 1; 
-   private val BLACK = 2;    
+   private val WHITE = 0n; 
+   private val GRAY = 1n; 
+   private val BLACK = 2n;    
    private val TORSSIAN_ANGLE_TOLERANCE = 0.08726646259971647; // radians
 
    /**
@@ -164,11 +164,11 @@ public class ConnectivityBuilder[T]{T <: Atom} {
 
           val points = new Rail[Point3d](n);
           
-          for(var i:Int=0; i<n; i++) {
+          for(var i:Int=0n; i<n; i++) {
              points(i) = ring.getAtom(i).centre; 
           } // end for
 
-          for(var i:Int=0; i<n-1; i++) {
+          for(var i:Int=0n; i<n-1; i++) {
              val a12 = points(i+1) - points(i);
              val i2 = ((i+2 >= n) ? 0 : (i + 2));
            

@@ -29,9 +29,9 @@ public class Expansion {
     protected val terms : Rail[Complex];
 
     /** The number of terms in the expansion. */
-    public val p : Int;
+    public val p:Long;
 
-    public def this(p : Int) {
+    public def this(p:Long) {
         this.terms = new Rail[Complex]((p+1)*(p+1));
         this.p = p;
     }
@@ -41,9 +41,9 @@ public class Expansion {
         this.p = e.p;
     }
 
-    public @Inline final operator this(l:Int, m:Int) = terms(l*(l+1)+m);
+    public @Inline final operator this(l:Long, m:Long) = terms(l*(l+1)+m);
 
-    public @Inline final operator this(l:Int, m:Int)=(v:Complex):Complex {
+    public @Inline final operator this(l:Long, m:Long)=(v:Complex):Complex {
         terms(l*(l+1)+m) = v;
         return v;
     }
@@ -88,7 +88,7 @@ public class Expansion {
      * @return Rail of Complex first indexed by forward (0), backward (1) then by k
      * @see Dachsel 2006, eqn 4 & 5
      */
-    public static def genComplexK(phi:Double, p:Int):Rail[Rail[Complex]] { 
+    public static def genComplexK(phi:Double, p:Long):Rail[Rail[Complex]] { 
         val complexK = new Rail[Rail[Complex]](2);
     	for (r in 0..1) {
             complexK(r) = new Rail[Complex](p+1);

@@ -43,7 +43,7 @@ public class Atom {
     }
 
     public def this(centre : Point3d) { 
-        this.species = -1;
+        this.species = -1n;
         this.centre = centre;
     }
 

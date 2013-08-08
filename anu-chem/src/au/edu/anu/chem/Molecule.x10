@@ -42,12 +42,12 @@ public class Molecule[T]{T <: Atom} {
     // Require for Fragment.x10:35-38:
     public def this() { 
         name = "unknown"; 
-        this.charge = 0; 
-        this.multiplicity = 1;
+        this.charge = 0n; 
+        this.multiplicity = 1n;
     }
 
     public def this(name:String) {
-        this(name, 0, 1);
+        this(name, 0n, 1n);
     }
 
     public def this(name:String, c:Int, m:Int) {
@@ -77,7 +77,7 @@ public class Molecule[T]{T <: Atom} {
 
     public def getNumberOfElectrons():Int {
        val ai = AtomInfo.getInstance();
-       var ne:Int = 0;
+       var ne:Int = 0n;
        for(atm:T in atomList)
           ne += ai.getAtomicNumber(atm.species);
 
@@ -203,7 +203,7 @@ public class Molecule[T]{T <: Atom} {
     public def toString() : String {
         var str:String = "";
 
-        if (charge != 0) {
+        if (charge != 0n) {
             str += "charge " + charge + "\n"
                 + "multiplicity " + multiplicity + "\n";
         }

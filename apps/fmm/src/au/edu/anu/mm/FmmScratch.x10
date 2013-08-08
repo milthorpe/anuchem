@@ -24,7 +24,7 @@ public class FmmScratch {
      */
     var plm:AssociatedLegendrePolynomial;
 
-    public def this(numTerms:Int) {
+    public def this(numTerms:Long) {
         exp = new MultipoleExpansion(numTerms);
         array = new Rail[Complex](numTerms+1);
         plm = new AssociatedLegendrePolynomial(numTerms+1); // p+1 for gradient calculation

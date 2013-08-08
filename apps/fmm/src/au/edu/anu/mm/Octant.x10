@@ -165,39 +165,39 @@ public abstract class Octant implements Comparable[Octant] {
     /** Estimates the number of octants in an octant's V-list, given the octant id. */
     public static def estimateVListSize(mortonId:UInt):Int {
         val id = OctantId.getFromMortonId(mortonId);
-        return estimateVListSize(id, 1);
+        return estimateVListSize(id, 1n);
     }
 
     /** Estimates the number of octants in an octant's V-list, given the octant id. */
     public static def estimateVListSize(id:OctantId, ws:Int):Int {
-        val near = 2*ws+1;
-        val farHalo = 4*ws+2;
-        val maxExtent = (1 << id.level) - 1;
+        val near = 2n*ws+1n;
+        val farHalo = 4n*ws+2n;
+        val maxExtent = (1n << id.level) - 1n;
         val x = id.x as Int;
         val y = id.y as Int;
         val z = id.z as Int;
-        val xOffset = x%2 == 1 ? -1 : 0;
-        val yOffset = y%2 == 1 ? -1 : 0;
-        val zOffset = z%2 == 1 ? -1 : 0;
-        val nearMinX = Math.max(0, x-ws);
+        val xOffset = x%2n == 1n ? -1n : 0n;
+        val yOffset = y%2n == 1n ? -1n : 0n;
+        val zOffset = z%2n == 1n ? -1n : 0n;
+        val nearMinX = Math.max(0n, x-ws);
         val nearMaxX = Math.min(maxExtent, x+ws);
-        val nearMinY = Math.max(0, y-ws);
+        val nearMinY = Math.max(0n, y-ws);
         val nearMaxY = Math.min(maxExtent, y+ws);
-        val nearMinZ = Math.max(0, z-ws);
+        val nearMinZ = Math.max(0n, z-ws);
         val nearMaxZ = Math.min(maxExtent, z+ws);
         
-        val neighbours = (nearMaxX-nearMinX+1) * (nearMaxY-nearMinY+1) * (nearMaxZ-nearMinZ+1);
+        val neighbours = (nearMaxX-nearMinX+1n) * (nearMaxY-nearMinY+1n) * (nearMaxZ-nearMinZ+1n);
 
-        val farExtent = 2*ws;
+        val farExtent = 2n*ws;
 
-        val farMinX = Math.max(0, x+xOffset-farExtent);
-        val farMaxX = Math.min(maxExtent, x+xOffset+farExtent+1);
-        val farMinY = Math.max(0, y+yOffset-farExtent);
-        val farMaxY = Math.min(maxExtent, y+yOffset+farExtent+1);
-        val farMinZ = Math.max(0, z+zOffset-farExtent);
-        val farMaxZ = Math.min(maxExtent, z+zOffset+farExtent+1);
+        val farMinX = Math.max(0n, x+xOffset-farExtent);
+        val farMaxX = Math.min(maxExtent, x+xOffset+farExtent+1n);
+        val farMinY = Math.max(0n, y+yOffset-farExtent);
+        val farMaxY = Math.min(maxExtent, y+yOffset+farExtent+1n);
+        val farMinZ = Math.max(0n, z+zOffset-farExtent);
+        val farMaxZ = Math.min(maxExtent, z+zOffset+farExtent+1n);
         
-        val colleagues = (farMaxX-farMinX+1) * (farMaxY-farMinY+1) * (farMaxZ-farMinZ+1);
+        val colleagues = (farMaxX-farMinX+1n) * (farMaxY-farMinY+1n) * (farMaxZ-farMinZ+1n);
 
         return colleagues - neighbours;
     }

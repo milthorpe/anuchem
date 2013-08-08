@@ -322,7 +322,7 @@ public class FastMultipoleMethod {
     public def countOctants() {
         val totalOctants = finish (IntSumReducer()) {
             ateach(p1 in Dist.makeUnique()) {
-                var octants:Int = 0;
+                var octants:Int = 0n;
                 for (topLevelOctant in FastMultipoleMethod.localData.topLevelOctants) {
                     octants += topLevelOctant.countOctants();
                 }
@@ -331,7 +331,7 @@ public class FastMultipoleMethod {
         };
         val totalGhostOctants = finish (IntSumReducer()) {
             ateach(p1 in Dist.makeUnique()) {
-                var ghostOctants:Int = 0;
+                var ghostOctants:Int = 0n;
                 for (topLevelOctant in FastMultipoleMethod.localData.topLevelOctants) {
                     ghostOctants += topLevelOctant.ghostOctants();
                 }
@@ -346,14 +346,14 @@ public class FastMultipoleMethod {
      * will change.  Send any atoms held at this place to their new
      * owning place.
      */
-    public def reassignAtoms(step:Int) {
+    public def reassignAtoms(step:Long) {
         FastMultipoleMethod.localData.timer.start(FmmLocalData.TIMER_INDEX_TREE);
 
         val localAtoms = new ArrayList[Pair[UInt,MMAtom]]();
         val leafOctants = FastMultipoleMethod.localData.leafOctants;
         val invSideLength = lowestLevelDim / size;
         val offset = lowestLevelDim / 2.0;
-        var numAtoms:Int = 0;
+        var numAtoms:Long = 0;
         for (leafOctant in leafOctants) {
             for (atom in leafOctant.atoms) {
                 if (atom != null) {
@@ -400,7 +400,7 @@ public class FastMultipoleMethod {
         // histogram sort of atoms
         val octantLoads = local.octantLoads;
         octantLoads.clear();
-        var filled:Int = 0;
+        var filled:Long = 0;
         for (i in 0..(localAtoms.size-1)) {
             val leafMortonId = localAtoms(i).first as Int;
             if (octantLoads(leafMortonId)++ == 0L) filled++;
@@ -491,8 +491,8 @@ public class FastMultipoleMethod {
         val leftOver = total % Place.MAX_PLACES;
 
         val firstLeafOctant = local.firstLeafOctant;
-        firstLeafOctant(0) = 0U;
-        var i:Int=0;
+        firstLeafOctant(0) = 0UN;
+        var i:Int=0n;
         for (p in 1..Place.MAX_PLACES) {
             val share = p <= leftOver ? placeShare+1 : placeShare;
             var load:Long = 0;
@@ -602,7 +602,7 @@ public class FastMultipoleMethod {
         val octantLoads = local.octantLoads;
         val firstLeafOctant = local.firstLeafOctant;
         val id = parentOctant.id;
-        var i:Int = 0;
+        var i:Long = 0;
         for (x2 in (2*id.x)..(2*id.x+1)) {
             for (y2 in (2*id.y)..(2*id.y+1)) {
                 for (z2 in (2*id.z)..(2*id.z+1)) {
@@ -778,7 +778,7 @@ public class FastMultipoleMethod {
     }
 
     static struct IntSumReducer implements Reducible[Int] {
-        public def zero() = 0;
+        public def zero() = 0n;
         public operator this(a:Int, b:Int) = (a + b);
     }
 }

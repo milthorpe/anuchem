@@ -39,9 +39,9 @@ public class GhostOctant extends Octant implements Comparable[Octant] {
 
     public def compareTo(b:Octant):Int = id.compareTo(b.id);
 
-    public def countOctants():Int = 0;
+    public def countOctants():Int = 0n;
 
-    public def ghostOctants():Int = 1;
+    public def ghostOctants():Int = 1n;
 
     public def numAtoms() = numAtoms;
 

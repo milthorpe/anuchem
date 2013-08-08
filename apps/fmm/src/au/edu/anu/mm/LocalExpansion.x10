@@ -25,7 +25,7 @@ import x10x.polar.Polar3d;
  */
 public class LocalExpansion extends Expansion {
 
-    public def this(p : Int) {
+    public def this(p:Long) {
         super(p);
     }
 
@@ -39,7 +39,7 @@ public class LocalExpansion extends Expansion {
     /**
      * Calculate the local Taylor-type expansion M_{lm} (with m >= 0) for a single point v.
      */
-    public static def getMlm(v:Vector3d, p:Int) : LocalExpansion {
+    public static def getMlm(v:Vector3d, p:Long) : LocalExpansion {
         val exp = new LocalExpansion(p);
         val v_pole = Polar3d.getPolar3d(v);
         val pplm = AssociatedLegendrePolynomial.getPlk(v_pole.theta, p);

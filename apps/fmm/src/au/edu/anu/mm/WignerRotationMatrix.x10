@@ -22,14 +22,14 @@ import x10.regionarray.Region;
  * @author milthorpe
  */
 public class WignerRotationMatrix {
-    public static val OPERATOR_A : Int = 0;
-    public static val OPERATOR_B : Int = -1;
-    public static val OPERATOR_C : Int = 2;
+    public static val OPERATOR_A : Int =  0n;
+    public static val OPERATOR_B : Int = -1n;
+    public static val OPERATOR_C : Int =  2n;
 
 	/**
 	 * Calculate Wigner rotation matrix D_{mk}(theta, l) for m: [-l..l], k: [-l..l]
 	 */
-	public static def getDmk(theta: double, l : int) : Array[Double](2){rect} {
+	public static def getDmk(theta:Double, l:Long) : Array[Double](2){rect} {
 		if (Math.abs(theta) > 2.0 * Math.PI) {
 		    throw new IllegalArgumentException("abs(x) > 2*PI: Wigner rotation matrix is only defined on [0..2*PI].");
 		}
@@ -147,7 +147,7 @@ public class WignerRotationMatrix {
      * @param numTerms, maximum size of matrix required
      * @return all wigner matrices needed to rotate an expansion of length numTerms by angle theta
 	 */
-	public static def getCollection(theta : double, numTerms : int) : Rail[Rail[Array[Double](2){rect}]] {
+	public static def getCollection(theta:Double, numTerms:Long) : Rail[Rail[Array[Double](2){rect}]] {
 		val collection = new Rail[Rail[Array[Double](2){rect}]](2);
 		for (r in 0..1) { 
 			val R = new Rail[Array[Double](2){rect}](numTerms+1);
@@ -164,7 +164,7 @@ public class WignerRotationMatrix {
      * directly to transform expansions, saving later calculations.
      * @see Dachsel 2006, eqn 4 & 5
      */
-	public static def getExpandedCollection(theta : double, numTerms : int, op : int) {
+	public static def getExpandedCollection(theta:Double, numTerms:Long, op:Int) {
 		val collection = getCollection(theta, numTerms);
 		var F_mk : Double;
 		for (rev in 0..1) {
@@ -187,7 +187,7 @@ public class WignerRotationMatrix {
      * More convenient function calls to the above function
      * Operator A needs multipole factors both before and after, Operator C needs local factors before and after, Operator B needs multipole before and local after
      */
-	public static def getACollection(theta : double, numTerms : int) { return getExpandedCollection(theta, numTerms, OPERATOR_A); }
-	public static def getBCollection(theta : double, numTerms : int) { return getExpandedCollection(theta, numTerms, OPERATOR_B); }
-	public static def getCCollection(theta : double, numTerms : int) { return getExpandedCollection(theta, numTerms, OPERATOR_C); }
+	public static def getACollection(theta:Double, numTerms:Long) { return getExpandedCollection(theta, numTerms, OPERATOR_A); }
+	public static def getBCollection(theta:Double, numTerms:Long) { return getExpandedCollection(theta, numTerms, OPERATOR_B); }
+	public static def getCCollection(theta:Double, numTerms:Long) { return getExpandedCollection(theta, numTerms, OPERATOR_C); }
 }
