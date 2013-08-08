@@ -63,7 +63,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
     val emptyRailD = new Rail[Double](0), emptyRailI = new Rail[Long](0); 
     val shellPairs:PlaceLocalHandle[Rail[ShellPair]];
     val ylms:PlaceLocalHandle[Rail[Rail[Double]]];
-    val dk:PlaceLocalHandle[Rail[Double]];
+    val dk:PlaceLocalHandle[Rail[Double]], e:PlaceLocalHandle[Rail[Double]];
     val taux:WorkerLocalHandle[Integral_Pack];
 
     val place2ShellPair:Rail[Long];
@@ -244,6 +244,11 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
             () => new Rail[Double](roK)
         ); // eqn 15b in RO#7
 
+        this.e = PlaceLocalHandle.make[Rail[Double]](
+            PlaceGroup.WORLD, 
+            () => new Rail[Double](2)
+        ); 
+
         @Ifdef("__MKL__") {
             Console.OUT.print("mklGetMaxThreads() was " + mklGetMaxThreads() + " and is now set to"); mklSetNumThreads(Runtime.NTHREADS);
             Console.OUT.println(" " + mklGetMaxThreads() + " thread(s).");
@@ -317,10 +322,14 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
 
             val shp=shellPairs(); val ylmp = ylms();
             val localAuxJ=distInts4J(); 
-            val localMatK=auxIntMat4K.local(); // faster access than DistDenseMatrix
-            val localJ=distJ.local();// faster access than DistDenseMatrix
+            val localMatK=auxIntMat4K.local(); 
+            val localJ=distJ.local();
             val localK=distK.local();
             val dkp = dk();
+            val ep=e(); 
+            // For faster access 
+
+            ep.clear(); localJ.reset();
 
             for (var ron:Long=0; ron<=roN; ron++) {
                 // Console.OUT.println("Aux - distributed ron="+ron);
@@ -471,18 +480,27 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                 }
             }
 
-            /* @Ifdef("__DEBUG__") {
-            val eJ = density.clone().mult(density, jMatrix).trace();
-            val eK = density.clone().mult(density, kMatrix).trace();
-            var eJ:Double=0.,eK:Double=0.;
-            //Console.OUT.printf("  EJ = %.10f EK=%.10f\n", .25*eJ/jd.roZ, .25*eK/jd.roZ);
-            } */
-
-            // Combine J and K
             val rowCount=localJ.M; val colCount=localJ.N;
             val mult=(Math.ceil(nPlaces*.5+.5) - ((nPlaces%2L==0L && pid<nPlaces/2)?1:0)) as Long;
             val colStart=offsetAtPlace(pid);
             val colStop=offsetAtPlace((pid+mult)%nPlaces);
+
+            for (var j:Long=offsetAtPlace(pid); j<offsetAtPlace(pid+1); j++) for (var i:Long=0,ii:Long=offsetAtPlace(pid); i<rowCount; i++,ii++)
+                    {ep(0)-=.5*density(ii,j)*localJ(i,j); ep(1)-=.5*density(ii,j)*localK(i,j);}
+
+            if (colStart<colStop) {
+                for (var j:Long=colStart; j<colStop; j++) for (var i:Long=0,ii:Long=offsetAtPlace(pid); i<rowCount; i++,ii++)
+                    {ep(0)+=density(ii,j)*localJ(i,j); ep(1)+=density(ii,j)*localK(i,j);}
+            } else {
+                for (var j:Long=colStart; j<colCount; j++) for (var i:Long=0,ii:Long=offsetAtPlace(pid); i<rowCount; i++,ii++)
+                    {ep(0)+=density(ii,j)*localJ(i,j); ep(1)+=density(ii,j)*localK(i,j);}
+                for (var j:Long=0; j<colStop; j++) for (var i:Long=0,ii:Long=offsetAtPlace(pid); i<rowCount; i++,ii++)
+                    {ep(0)+=density(ii,j)*localJ(i,j); ep(1)+=density(ii,j)*localK(i,j);}
+            }
+            Team.WORLD.allreduce[Double](ep, 0L, ep, 0L, ep.size, Team.ADD);
+            if (here == Place.FIRST_PLACE) Console.OUT.printf("  EJ = %.10f EK=%.10f\n", ep(0)/jd.roZ, -0.5*ep(1)/jd.roZ);
+            // Combine J and K
+
           
             if (colStart<colStop) {
                 for (var j:Long=colStart; j<colStop; j++) for (var i:Long=0; i<rowCount; i++)
