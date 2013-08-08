@@ -60,7 +60,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
     private val mol : Molecule[QMAtom];
     val nOrbital:Long; 
     val norm:Rail[Double]; 
-    val emptyRailD = new Rail[Double](0), emptyRailI = new Rail[Long](0); 
+
     val shellPairs:PlaceLocalHandle[Rail[ShellPair]];
     val ylms:PlaceLocalHandle[Rail[Rail[Double]]];
     val dk:PlaceLocalHandle[Rail[Double]], e:PlaceLocalHandle[Rail[Double]];
