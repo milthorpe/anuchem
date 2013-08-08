@@ -78,11 +78,11 @@ public class OneElectronIntegrals(numBasisFunctions:Long) {
        val ai   = AtomInfo.getInstance();
        val atms = molecule.getAtoms();
 
-       for(var i:Int=0; i<nat; i++) 
+       for(var i:Int=0n; i<nat; i++) 
            atno(i) = atms.get(i).species;
 
-       for (i in 0..(hCore.M-1)) {
-            for (j in 0..(hCore.N-1)) {
+       for (i in 0n..(hCore.M-1n)) {
+            for (j in 0n..(hCore.N-1n)) {
                 val bfi = bfs.get(i);
                 val bfj = bfs.get(j);
 
@@ -92,7 +92,7 @@ public class OneElectronIntegrals(numBasisFunctions:Long) {
                 overlap(i,j) = oVal;
                 hCore(i,j) = hVal;
                          
-                for(var k:Int=0; k<nat; k++) {
+                for(var k:Int=0n; k<nat; k++) {
                     val aVal = atno(k) * bfi.nuclear(bfj, atms.get(k).centre);
                     hCore(i,j) += aVal;
                 }

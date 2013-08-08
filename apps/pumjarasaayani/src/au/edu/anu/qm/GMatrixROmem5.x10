@@ -87,7 +87,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
         } else { // full Coulomb operator
             this.roN=jd.roN;
             this.roL=jd.roL;
-            if (jd.roNK==-1) this.roNK=roN; else this.roNK=jd.roNK; 
+            if (jd.roNK==-1n) this.roNK=roN; else this.roNK=jd.roNK; 
         }
         val roK = (roL+1)*(roL+1);
         this.roK = roK;
@@ -129,7 +129,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
             }
         }
 
-        if (placeID>0) {Console.ERR.println("too many palaces!\n"); System.setExitCode(1); throw new UnsupportedOperationException("too many places "+placeID);}
+        if (placeID>0n) {Console.ERR.println("too many palaces!\n"); System.setExitCode(1n); throw new UnsupportedOperationException("too many places "+placeID);}
       
         place2atom(0)=0;
         place2func(0)=0;
@@ -187,7 +187,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                         val dConB = conB.size as Int;
                         var contrib:Double = 0.; // ss = conservative estimate
                         val R2 = Math.pow(aPoint.i-bPoint.i,2.)+Math.pow(aPoint.j-bPoint.j,2.)+Math.pow(aPoint.k-bPoint.k,2.);
-                        for (var ii:Int=0; ii<dConA; ii++) for (var jj:Int=0; jj<dConB; jj++) 
+                        for (var ii:Int=0n; ii<dConA; ii++) for (var jj:Int=0n; jj<dConB; jj++) 
                             contrib+=conA(ii)*conB(jj)*Math.exp(-zetaA(ii)*zetaB(jj)/(zetaA(ii)+zetaB(jj))*R2)
                                      /Math.pow(jd.roZ,aang+bang);  // See Szabo Ostlund 3.284-3.286 
                         contrib=Math.abs(contrib);

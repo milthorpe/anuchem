@@ -68,14 +68,14 @@ public abstract class SCFMethod {
         val atomicNumbers = new Rail[Int](noOfAtoms);
         val ai = AtomInfo.getInstance();
         
-        for(i=0; i<noOfAtoms; i++) {
+        for(i=0n; i<noOfAtoms; i++) {
             atomicNumbers(i) = molecule.getAtom(i).species;
         } // end for
         
         // and compute nuclear energy
-        for(i=0; i<noOfAtoms; i++) {
+        for(i=0n; i<noOfAtoms; i++) {
             atomI = molecule.getAtom(i);
-            for(j=0; j<i; j++) {
+            for(j=0n; j<i; j++) {
                 atomJ = molecule.getAtom(j);
                 
                 eNuke += atomicNumbers(i) * atomicNumbers(j) 

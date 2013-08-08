@@ -149,16 +149,16 @@ public class BasisSet {
         val noOfAtoms = Int.parseInt(fil.readLine());
         val ai = AtomInfo.getInstance();
 
-        for(var i:Int=0; i<noOfAtoms; i++) {
+        for(var i:Int=0n; i<noOfAtoms; i++) {
             val words = StringSplitter.splitOnWhitespace(fil.readLine());
             val symbol = words(0);
             val species = ai.getSpecies(symbol).atomicNumber;
             val noOfFunctions = Int.parseInt(words(1));
 
             val density = new DenseMatrix(noOfFunctions, noOfFunctions);
-            for(var j:Int=0; j<noOfFunctions; j++) {
+            for(var j:Long=0; j<noOfFunctions; j++) {
                 val words1 = StringSplitter.splitOnWhitespace(fil.readLine());
-                for(var k:Int=0; k<noOfFunctions; k++) {
+                for(var k:Long=0; k<noOfFunctions; k++) {
                     density(j,k) = Double.parseDouble(words1(k));
                 }
             }

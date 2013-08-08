@@ -23,25 +23,25 @@ public class PowerList {
     val powerList = new HashMap[String,Rail[Power]](); 
 
     private def this() {
-       powerList.put("S", generatePowerList(0));
-       powerList.put("P", generatePowerList(1));
-       powerList.put("D", generatePowerList(2));
-       powerList.put("F", generatePowerList(3)); 
-       powerList.put("G", generatePowerList(4)); 
-       powerList.put("H", generatePowerList(5)); 
+       powerList.put("S", generatePowerList(0n));
+       powerList.put("P", generatePowerList(1n));
+       powerList.put("D", generatePowerList(2n));
+       powerList.put("F", generatePowerList(3n)); 
+       powerList.put("G", generatePowerList(4n)); 
+       powerList.put("H", generatePowerList(5n)); 
     }
 
     @NonEscaping 
     public final def generatePowerList(maxAngularMomentum:Int) : Rail[Power] {
-        var n:Int = ((maxAngularMomentum+1)*(maxAngularMomentum+2)/2);
+        var n:Int = ((maxAngularMomentum+1n)*(maxAngularMomentum+2n)/2n);
 
         val pList = new Rail[Power](n);
 
-        var idx:Int = 0;
+        var idx:Long = 0;
         // for(var i:Int=maxAngularMomentum; i>=0; i--) {
         //    for(var j:Int=maxAngularMomentum-i; j>=0; j--) {
-        for(var i:Int=0; i<=maxAngularMomentum; i++) {
-            for(var j:Int=0; j<=maxAngularMomentum-i; j++) {
+        for(var i:Int=0n; i<=maxAngularMomentum; i++) {
+            for(var j:Int=0n; j<=maxAngularMomentum-i; j++) {
                 pList(idx++) = Power(i, j, maxAngularMomentum-i-j);
             }
         }

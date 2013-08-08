@@ -52,8 +52,8 @@ public class PumjaRasaayani {
 
         jd.rad=mol.getRadius(jd.roZ);
         Console.OUT.printf("rad/PI=%f\n",jd.rad/3.1415926535);
-        if (jd.roOn!=0 && jd.rad>3.1415926535) Console.OUT.printf("WARNING: Coulomb RO is not valid for rad>PI\n");
-        if (jd.roOn==0 && jd.roZ!=1.0) Console.OUT.printf("WARNING: Coulomb RO is off: roZ=%f is not necessary.\n",jd.roZ);
+        if (jd.roOn!=0n && jd.rad>3.1415926535) Console.OUT.printf("WARNING: Coulomb RO is not valid for rad>PI\n");
+        if (jd.roOn==0n && jd.roZ!=1.0) Console.OUT.printf("WARNING: Coulomb RO is off: roZ=%f is not necessary.\n",jd.roZ);
 
         printInput();
 
@@ -114,7 +114,7 @@ public class PumjaRasaayani {
         val timer = new Timer(1);
         timer.start(0);
 
-        val fragmentor = new Fragmentor(5.67, 30);  // TODO, parameters to be taken from user
+        val fragmentor = new Fragmentor(5.67, 30n);  // TODO, parameters to be taken from user
         
         // first generate the fragments, along with cardinality expression
         val fragments = fragmentor.fragment(mol);
@@ -175,7 +175,7 @@ public class PumjaRasaayani {
     public static def main(args:Rail[String]) {
         if (args.size != 1L) {
             Console.ERR.println("usage: pumjarasaayani <inputFile>");
-            System.setExitCode(1);
+            System.setExitCode(1n);
         } else {
             val qmApp = new PumjaRasaayani(args(0));
             qmApp.runHF();

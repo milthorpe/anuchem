@@ -18,7 +18,7 @@ package au.edu.anu.qm;
 public struct Power(l:Int, m:Int, n:Int) { 
     val maxam:Int, minam:Int, totam:Int;
 
-    public def this() { property(0,0,0); maxam=minam=totam=0; }
+    public def this() { property(0n,0n,0n); maxam=minam=totam=0n; }
 
     public def this(l:Int, m:Int, n:Int) { 
         property(l, m, n);

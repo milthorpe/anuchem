@@ -61,7 +61,7 @@ public class Fragmentor {
        // centre of mass of the molecule so as to ensure a more 
        // consistant ordering that is indipendent of the input order
        val sortedAtomIndices = new Rail[Int](noOfAtoms);
-       for(var i:Int=0; i<noOfAtoms; i++) { 
+       for(var i:Int=0n; i<noOfAtoms; i++) { 
           mol.getAtom(i).setIndex(i);
           sortedAtomIndices(i) = i;
        } // end for
@@ -109,7 +109,7 @@ public class Fragmentor {
 
        // step7: print out general statistics 
        Console.OUT.println("Number of final fragments: " + fragList.size());
-       var idx:Int = 0;
+       var idx:Long = 0;
        for(frag in fragList) {
            Console.OUT.println("Fragment # " + idx + " : " + frag.getNumberOfTrueAtoms() + ", " 
                                + frag.getNumberOfAtoms() + " [" + frag.cardinalitySign + "]");
@@ -129,7 +129,7 @@ public class Fragmentor {
            aFragment.centredOn = atom1.getIndex();
            aFragment.addAtom(atom1);
 
-           for(var i:Int=0; i<noOfAtoms; i++) {
+           for(var i:Int=0n; i<noOfAtoms; i++) {
                val atom2 = mol.getAtom(i);
 
                if (atom2.getIndex() == atom1.getIndex()) continue;
@@ -151,7 +151,7 @@ public class Fragmentor {
        val noOfAtoms = mol.getNumberOfAtoms(); 
        val visited = new Rail[Boolean](noOfAtoms, false);        
         
-       for(var i:Int=0; i<noOfAtoms; i++) {
+       for(var i:Int=0n; i<noOfAtoms; i++) {
            val idx = sortedAtomIndices(i);
            val atom1 = mol.getAtom(idx);
            val bonds = atom1.getBonds();
@@ -170,7 +170,7 @@ public class Fragmentor {
  
        Console.OUT.println("Number of bonds for atom " + v + " is " + bonds.size());
 
-       for(var i:Int=0; i<bonds.size(); i++) {
+       for(var i:Int=0n; i<bonds.size(); i++) {
           Console.OUT.println("Processing " + i);
           val bondedAtom = sortedAtomIndices((bonds.get(i).second as QMAtom).getIndex());
 
@@ -251,7 +251,7 @@ public class Fragmentor {
                   val bondedAtom = bond.second;
                   val nBonds = bondedAtom.getBonds().size() as Int;
 
-                  if ((nBonds == 1) && (bond.first != BondType.WEAK_BOND)) { 
+                  if ((nBonds == 1n) && (bond.first != BondType.WEAK_BOND)) { 
                       if (!fragment.contains(bondedAtom as QMAtom)) {
                           missedAtoms.add(bondedAtom as QMAtom);
                       } // end if
@@ -281,14 +281,14 @@ public class Fragmentor {
 
            // find connected atoms that are present in the fragment
            val bonds = atom.getBonds(); 
-           var nBonds:Int = 0;
+           var nBonds:Int = 0n;
            for(bond in bonds) { 
               val bondedAtom = bond.second as QMAtom;
 
               if (fragment.contains(bondedAtom)) nBonds++;
            } // end for
 
-           if (nBonds == 0) {
+           if (nBonds == 0n) {
                // this is dangling atom
                atoms.remove(atom);
            } // end if 
@@ -324,7 +324,7 @@ public class Fragmentor {
                                          vec.j*bondDistance + atom.centre.j, 
                                          vec.k*bondDistance + atom.centre.k);
 
-                 fragment.addAtom(new QMAtom(1, newcentre, true));
+                 fragment.addAtom(new QMAtom(1n, newcentre, true));
               } // end if
            } // end for
        } // end for

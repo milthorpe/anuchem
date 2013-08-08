@@ -34,7 +34,7 @@ public class Fragment extends Molecule[QMAtom] {
      
      public def this() {
           centredOn = -1L;
-          cardinalitySign = 1;
+          cardinalitySign = 1n;
      }
 
      public def getNumberOfTrueAtoms() : Long {
@@ -121,10 +121,10 @@ public class Fragment extends Molecule[QMAtom] {
      }
 
      public def getBondOrder(atm:QMAtom) : Int {
-          if (!contains(atm)) return 0;
+          if (!contains(atm)) return 0n;
 
           val bonds = atm.getBonds();
-          var nBonds:Int = 0;
+          var nBonds:Int = 0n;
           for(bond in bonds) {
              if (contains(bond.second as QMAtom)) nBonds++;
           } // end for

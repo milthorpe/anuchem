@@ -22,7 +22,7 @@ public final class MathUtil {
      */
     public static def binomialPrefactor(j:Int, l:Int, m:Int, a:Double, b:Double): Double {
         var sum:Double = 0.0;
-        for(var t:Int = 0; t<(j+1); t++) {
+        for(var t:Int = 0n; t<(j+1n); t++) {
             if(((j-l) <= t) && (t <= m)) {
                 sum += binomial(l, j-t) * binomial(m, t)
                       * Math.pow(a, l-j+t) * Math.pow(b, m-t);

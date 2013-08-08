@@ -54,12 +54,12 @@ public struct ShellPair {
         this.dconB=dconB; 
         this.mu=mu;
         this.nu=nu;
-        this.maxbraa=(a+1)*(a+2)/2;
-        this.maxbrab=(b+1)*(b+2)/2;
-        this.mu2=mu+maxbraa-1;
-        this.nu2=nu+maxbrab-1;
+        this.maxbraa=(a+1n)*(a+2n)/2n;
+        this.maxbrab=(b+1n)*(b+2n)/2n;
+        this.mu2=mu+maxbraa-1n;
+        this.nu2=nu+maxbrab-1n;
         this.L=L;        
-        var maxl:Int=0;
+        var maxl:Int=0n;
         for (i in (0..(L.size-1)))
            if (L(i)>maxl) maxl=L(i);
         this.maxL=maxl;

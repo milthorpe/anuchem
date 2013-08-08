@@ -26,14 +26,14 @@ public struct Orbital {
        this.coefficients = coeffs;
        this.shape = shape;
 
-       if (shape.equals("S")) angularMomentum = 0;
-       else if (shape.equals("P")) angularMomentum = 1;
-       else if (shape.equals("D")) angularMomentum = 2;
-       else if (shape.equals("F")) angularMomentum = 3;
-       else if (shape.equals("G")) angularMomentum = 4;
-       else if (shape.equals("H")) angularMomentum = 5;
-//     else if (shape.equals("I")) angularMomentum = 6;
-       else {Console.OUT.printf("Orbital.x10 support SPDFGH: unknown orbital '%s'.\n",shape); angularMomentum = 0;}
+       if (shape.equals("S")) angularMomentum = 0n;
+       else if (shape.equals("P")) angularMomentum = 1n;
+       else if (shape.equals("D")) angularMomentum = 2n;
+       else if (shape.equals("F")) angularMomentum = 3n;
+       else if (shape.equals("G")) angularMomentum = 4n;
+       else if (shape.equals("H")) angularMomentum = 5n;
+//     else if (shape.equals("I")) angularMomentum = 6n;
+       else {Console.OUT.printf("Orbital.x10 support SPDFGH: unknown orbital '%s'.\n",shape); angularMomentum = 0n;}
     }
 }
 

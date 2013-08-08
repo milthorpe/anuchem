@@ -35,30 +35,30 @@ public class CardinalityExpression {
    /** add cardinality fragments */
    public def addCardinalityFragments(fragList:ArrayList[Fragment]) {
        val noOfFragments = fragList.size() as Int;
-       val combs = new Rail[Int](noOfFragments, -1);
+       val combs = new Rail[Int](noOfFragments, -1n);
        val cfList = new ArrayList[Fragment]();
        var l:Int, pos:Int, m:Int;
 
-       for(var i:Int=0; i<noOfFragments; i++) {
-          for(var j:Int=i+1; j<noOfFragments; j++) {
+       for(var i:Int=0n; i<noOfFragments; i++) {
+          for(var j:Int=i+1n; j<noOfFragments; j++) {
              combs(0) = i; combs(1) = j;
 
-             if (!computeIntersections(fragList, cfList, combs, 1, getSignOfTerm(1))) continue;
+             if (!computeIntersections(fragList, cfList, combs, 1n, getSignOfTerm(1n))) continue;
 
-             if (noOfFragments <= 2 || combs(1) == noOfFragments-1) continue;
+             if (noOfFragments <= 2n || combs(1) == noOfFragments-1n) continue;
 
-             l=1; pos=1; m=pos+1;
+             l=1n; pos=1n; m=pos+1n;
 
              while(true) {
-                 for (k in (combs(pos)+1)..(noOfFragments-1)) {
+                 for (k in (combs(pos)+1n)..(noOfFragments-1n)) {
                      combs(m) = k;
                         
-                     if (m > 0) {
+                     if (m > 0n) {
                          if (combs(m) <= combs(m-1)) break;
                      } // end if
 
                      if (!computeIntersections(fragList, cfList, combs, m, getSignOfTerm(m))) {
-                         if (combs(m) == noOfFragments-1) break;
+                         if (combs(m) == noOfFragments-1n) break;
                          m--;
                      } // end  if
                         
@@ -67,10 +67,10 @@ public class CardinalityExpression {
 
                  pos=noOfFragments-l; m=pos;
                     
-                 if (combs(pos) == noOfFragments-1) l++;
-                 else                               l=1;
+                 if (combs(pos) == noOfFragments-1n) l++;
+                 else                               l=1n;
                     
-                 if (pos==1) break;
+                 if (pos==1n) break;
              } // end while
           } // end for
        } // end for
@@ -78,21 +78,21 @@ public class CardinalityExpression {
        Console.OUT.println("No. of cardinality fragments: " + cfList.size());
 
        for(cf in cfList) {        
-          if (cf.cardinalitySign != 0) fragList.add(cf);
+          if (cf.cardinalitySign != 0n) fragList.add(cf);
        } // end for
    }
 
    private def getSignOfTerm(n:Int) : Int {
-       val n1 = n+1;
+       val n1 = n+1n;
 
-       if (n1%2 == 0) return -1;
-       else           return 1;
+       if (n1%2n == 0n) return -1n;
+       else             return 1n;
    }
 
    private def computeIntersections(fragList:ArrayList[Fragment], cfList:ArrayList[Fragment], combs:Rail[Int], nTerms:Int, sign:Int) : Boolean {
        var fInter:Fragment = fragList.get(combs(0));       
 
-       for(var i:Int=1; i<=nTerms; i++) {
+       for(var i:Int=1n; i<=nTerms; i++) {
            fInter = fInter.intersection(fragList.get(combs(i)));
 
            if (fInter.getNumberOfTrueAtoms() == 0L) return false;

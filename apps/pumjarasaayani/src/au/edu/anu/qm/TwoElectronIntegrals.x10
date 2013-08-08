@@ -61,11 +61,11 @@ public class TwoElectronIntegrals {
         // allocate scratch memory
         this.omega=omega;
         this.maxam = maxam;
-        maxam2 = 2*maxam;
-        val maxam4 = 4*maxam;
-        val maxamN = ((maxam+1)*(maxam+2)/2);
-        maxam2M  = ((maxam2+1)*(maxam2+2)/2);
-        val maxam2N  = ((maxam2+1)*(maxam2M+1));
+        maxam2 = 2n*maxam;
+        val maxam4 = 4n*maxam;
+        val maxamN = ((maxam+1n)*(maxam+2n)/2n);
+        maxam2M  = ((maxam2+1n)*(maxam2+2n)/2n);
+        val maxam2N  = ((maxam2+1n)*(maxam2M+1n));
         this.maxam2N = maxam2N;
 
         this.normFactors = normFactors;
@@ -74,13 +74,13 @@ public class TwoElectronIntegrals {
 
         // Console.OUT.println("alloc: " + maxam + " " + maxam2N);
 
-        gmt    = new Rail[Double](maxam4+1);
-        zeroM  = new Rail[Double](maxam4+1);
+        gmt    = new Rail[Double](maxam4+1n);
+        zeroM  = new Rail[Double](maxam4+1n);
 
-        rM     = new Array[Double](Region.make(0..(maxam4+1), 0..((maxam4+1)*(maxam4+2)/2)));
+        rM     = new Array[Double](Region.make(0..(maxam4+1n), 0..((maxam4+1n)*(maxam4+2n)/2n)));
         pqInts = new Array[Double](Region.make(0..maxam2, 0..maxam2M, 0..maxam2, 0..maxam2M));
         npint  = new Array[Double](Region.make(0..maxam2, 0..maxam2M));
-        pcdint = new Array[Double](Region.make(0..(maxamN+1), 0..(maxamN+1), 0..maxam2, 0..maxam2M));
+        pcdint = new Array[Double](Region.make(0..(maxamN+1n), 0..(maxamN+1n), 0..maxam2, 0..maxam2M));
 
         // Console.OUT.println("alloc2: " + pcdint.region.size());
     }
@@ -109,10 +109,10 @@ public class TwoElectronIntegrals {
         val shellC = shellList.getPowers(cAng);
         val shellD = shellList.getPowers(dAng);
 
-        val dLim = ((dAng+1)*(dAng+2)/2);
-        val cLim = ((cAng+1)*(cAng+2)/2);
-        val bLim = ((bAng+1)*(bAng+2)/2);
-        val aLim = ((aAng+1)*(aAng+2)/2);
+        val dLim = ((dAng+1n)*(dAng+2n)/2n);
+        val cLim = ((cAng+1n)*(cAng+2n)/2n);
+        val bLim = ((bAng+1n)*(bAng+2n)/2n);
+        val aLim = ((aAng+1n)*(aAng+2n)/2n);
 
         val nTot = aLim*bLim*cLim*dLim;
 
@@ -137,11 +137,11 @@ public class TwoElectronIntegrals {
         val dExps = d.exponents;
         val dCoeffs = d.coefficients;
 
-        for(ap in 0..(aExps.size-1)) {
+        for(ap in 0..(aExps.size-1n)) {
             val aAlpha = aExps(ap);
             val aCoeff = aCoeffs(ap);
 
-           for(bp in 0..(bExps.size-1)) {
+           for(bp in 0..(bExps.size-1n)) {
              pcdint.clear();
              val bAlpha = bExps(bp);
              val gamma1 = (aAlpha + bAlpha);
@@ -162,11 +162,11 @@ public class TwoElectronIntegrals {
              // Console.OUT.println("Coeff: " + aCoeff + " " + bCoeff);
              // Console.OUT.println("sigmaP, Gab, Up: " + sigmaP + " " + Gab + " " + Up);
 
-             for(cp in 0..(cExps.size-1)) {
+             for(cp in 0..(cExps.size-1n)) {
                val cAlpha = cExps(cp);
                val cCoeff = cCoeffs(cp);
 
-               for(dp in 0..(dExps.size-1)) {
+               for(dp in 0..(dExps.size-1n)) {
                  val dAlpha = dExps(dp);
                  val dCoeff = dCoeffs(dp);
 
@@ -250,8 +250,8 @@ public class TwoElectronIntegrals {
         val shellC = shellList.getPowers(cAng);
         val shellD = shellList.getPowers(dAng);
 
-        val dLim = ((dAng+1)*(dAng+2)/2);
-        val cLim = ((cAng+1)*(cAng+2)/2);
+        val dLim = ((dAng+1n)*(dAng+2n)/2n);
+        val cLim = ((cAng+1n)*(cAng+2n)/2n);
         val nTot = aLim*bLim*cLim*dLim;
 
         val angMomCD = cAng + dAng;
@@ -268,11 +268,11 @@ public class TwoElectronIntegrals {
         val dExps = d.exponents;
         val dCoeffs = d.coefficients;
 
-        for(ap in 0..(aExps.size-1)) {
+        for(ap in 0..(aExps.size-1n)) {
           val aAlpha = aExps(ap);
           val aCoeff = aCoeffs(ap);
 
-          for(bp in 0..(bExps.size-1)) {
+          for(bp in 0..(bExps.size-1n)) {
              pcdint.clear();
              val bAlpha = bExps(bp);
              val gamma1 = (aAlpha + bAlpha);
@@ -293,11 +293,11 @@ public class TwoElectronIntegrals {
              // Console.OUT.println("Coeff: " + aCoeff + " " + bCoeff);
              // Console.OUT.println("sigmaP, Gab, Up: " + sigmaP + " " + Gab + " " + Up);
 
-             for(cp in 0..(cExps.size-1)) {
+             for(cp in 0..(cExps.size-1n)) {
                val cAlpha = cExps(cp);
                val cCoeff = cCoeffs(cp);
 
-               for(dp in 0..(dExps.size-1)) {
+               for(dp in 0..(dExps.size-1n)) {
                  val dAlpha = dExps(dp);
                  val dCoeff = dCoeffs(dp);
 
@@ -367,30 +367,30 @@ public class TwoElectronIntegrals {
          var res:Double = 0.0;
          val ijk = i|j|k;
 
-         if (ijk != 0) {
-           if (ijk == 1) {
+         if (ijk != 0n) {
+           if (ijk == 1n) {
              var m_l:Int = m;
              var r_l:Double = 1.0;
-             if (i == 1) {
+             if (i == 1n) {
                 m_l++;
                 r_l *= r.i;
              }
-             if (j == 1) {
+             if (j == 1n) {
                 m_l++;
                 r_l *= r.j;
              }
-             if (k == 1) {
+             if (k == 1n) {
                m_l++;
                r_l *= r.k;
              }
              res = r_l*zeroM(m_l);
            } else {
-             if (i >= 2) {
-               res = r.i*mdRecurse(r,i-1,j,k,m+1)-(i-1)*mdRecurse(r,i-2,j,k,m+1);
-             } else if (j >= 2 ) {
-               res = r.j*mdRecurse(r,i,j-1,k,m+1)-(j-1)*mdRecurse(r,i,j-2,k,m+1);
-             } else if (k >= 2 ) {
-               res = r.k*mdRecurse(r,i,j,k-1,m+1)-(k-1)*mdRecurse(r,i,j,k-2,m+1);
+             if (i >= 2n) {
+               res = r.i*mdRecurse(r,i-1n,j,k,m+1n)-(i-1n)*mdRecurse(r,i-2n,j,k,m+1n);
+             } else if (j >= 2n) {
+               res = r.j*mdRecurse(r,i,j-1n,k,m+1n)-(j-1n)*mdRecurse(r,i,j-2n,k,m+1n);
+             } else if (k >= 2n) {
+               res = r.k*mdRecurse(r,i,j,k-1n,m+1n)-(k-1n)*mdRecurse(r,i,j,k-2n,m+1n);
              }
            } // end if
          } else {
@@ -403,35 +403,35 @@ public class TwoElectronIntegrals {
     private def mdHrr(xa:Int, ya:Int, za:Int, xb:Int, yb:Int, zb:Int, xp:Int, yp:Int, zp:Int,
                       pai:Double, paj:Double, pak:Double, pbi:Double, pbj:Double, pbk:Double, sigma:Double) : Double {
         var res:Double;
-        if (xp < 0 || yp < 0 || zp < 0) {
+        if (xp < 0n || yp < 0n || zp < 0n) {
             res = 0.0;
-        } else if (xa > 0) {
-            res = mdHrr(xa-1, ya, za, xb, yb, zb, xp-1, yp, zp, pai, paj, pak, pbi, pbj, pbk, sigma)*xp
-                + mdHrr(xa-1, ya, za, xb, yb, zb, xp  , yp, zp, pai, paj, pak, pbi, pbj, pbk, sigma)*(pai)
-                + mdHrr(xa-1, ya, za, xb, yb, zb, xp+1, yp, zp, pai, paj, pak, pbi, pbj, pbk, sigma)*sigma;
-        } else if (ya > 0) {
-            res = mdHrr(xa, ya-1, za, xb, yb, zb, xp, yp-1, zp, pai, paj, pak, pbi, pbj, pbk, sigma)*yp
-                + mdHrr(xa, ya-1, za, xb, yb, zb, xp, yp  , zp, pai, paj, pak, pbi, pbj, pbk, sigma)*(paj)
-                + mdHrr(xa, ya-1, za, xb, yb, zb, xp, yp+1, zp, pai, paj, pak, pbi, pbj, pbk, sigma)*sigma;
-        } else if (za > 0) {
-            res = mdHrr(xa, ya, za-1, xb, yb, zb, xp, yp, zp-1, pai, paj, pak, pbi, pbj, pbk, sigma)*zp
-                + mdHrr(xa, ya, za-1, xb, yb, zb, xp, yp, zp  , pai, paj, pak, pbi, pbj, pbk, sigma)*(pak)
-                + mdHrr(xa, ya, za-1, xb, yb, zb, xp, yp, zp+1, pai, paj, pak, pbi, pbj, pbk, sigma)*sigma;
-        } else if (xb > 0 ) {
-            res = mdHrr(xa, ya, za, xb-1, yb, zb, xp-1, yp, zp, pai, paj, pak, pbi, pbj, pbk, sigma)*xp
-                + mdHrr(xa, ya, za, xb-1, yb, zb, xp  , yp, zp, pai, paj, pak, pbi, pbj, pbk, sigma)*(pbi)
-                + mdHrr(xa, ya, za, xb-1, yb, zb, xp+1, yp, zp, pai, paj, pak, pbi, pbj, pbk, sigma)*sigma;
-        } else if (yb > 0) {
-            res = mdHrr(xa, ya, za, xb, yb-1, zb, xp, yp-1, zp, pai, paj, pak, pbi, pbj, pbk, sigma)*yp
-                + mdHrr(xa, ya, za, xb, yb-1, zb, xp, yp  , zp, pai, paj, pak, pbi, pbj, pbk, sigma)*(pbj)
-                + mdHrr(xa, ya, za, xb, yb-1, zb, xp, yp+1, zp, pai, paj, pak, pbi, pbj, pbk, sigma)*sigma;
-        } else if (zb > 0) {
-            res = mdHrr(xa, ya, za, xb, yb, zb-1, xp, yp, zp-1, pai, paj, pak, pbi, pbj, pbk, sigma)*zp
-                + mdHrr(xa, ya, za, xb, yb, zb-1, xp, yp, zp  , pai, paj, pak, pbi, pbj, pbk, sigma)*(pbk)
-                + mdHrr(xa, ya, za, xb, yb, zb-1, xp, yp, zp+1, pai, paj, pak, pbi, pbj, pbk, sigma)*sigma;
+        } else if (xa > 0n) {
+            res = mdHrr(xa-1n, ya, za, xb, yb, zb, xp-1n, yp, zp, pai, paj, pak, pbi, pbj, pbk, sigma)*xp
+                + mdHrr(xa-1n, ya, za, xb, yb, zb, xp   , yp, zp, pai, paj, pak, pbi, pbj, pbk, sigma)*(pai)
+                + mdHrr(xa-1n, ya, za, xb, yb, zb, xp+1n, yp, zp, pai, paj, pak, pbi, pbj, pbk, sigma)*sigma;
+        } else if (ya > 0n) {
+            res = mdHrr(xa, ya-1n, za, xb, yb, zb, xp, yp-1n, zp, pai, paj, pak, pbi, pbj, pbk, sigma)*yp
+                + mdHrr(xa, ya-1n, za, xb, yb, zb, xp, yp   , zp, pai, paj, pak, pbi, pbj, pbk, sigma)*(paj)
+                + mdHrr(xa, ya-1n, za, xb, yb, zb, xp, yp+1n, zp, pai, paj, pak, pbi, pbj, pbk, sigma)*sigma;
+        } else if (za > 0n) {
+            res = mdHrr(xa, ya, za-1n, xb, yb, zb, xp, yp, zp-1n, pai, paj, pak, pbi, pbj, pbk, sigma)*zp
+                + mdHrr(xa, ya, za-1n, xb, yb, zb, xp, yp, zp   , pai, paj, pak, pbi, pbj, pbk, sigma)*(pak)
+                + mdHrr(xa, ya, za-1n, xb, yb, zb, xp, yp, zp+1n, pai, paj, pak, pbi, pbj, pbk, sigma)*sigma;
+        } else if (xb > 0n) {
+            res = mdHrr(xa, ya, za, xb-1n, yb, zb, xp-1n, yp, zp, pai, paj, pak, pbi, pbj, pbk, sigma)*xp
+                + mdHrr(xa, ya, za, xb-1n, yb, zb, xp   , yp, zp, pai, paj, pak, pbi, pbj, pbk, sigma)*(pbi)
+                + mdHrr(xa, ya, za, xb-1n, yb, zb, xp+1n, yp, zp, pai, paj, pak, pbi, pbj, pbk, sigma)*sigma;
+        } else if (yb > 0n) {
+            res = mdHrr(xa, ya, za, xb, yb-1n, zb, xp, yp-1n, zp, pai, paj, pak, pbi, pbj, pbk, sigma)*yp
+                + mdHrr(xa, ya, za, xb, yb-1n, zb, xp, yp   , zp, pai, paj, pak, pbi, pbj, pbk, sigma)*(pbj)
+                + mdHrr(xa, ya, za, xb, yb-1n, zb, xp, yp+1n, zp, pai, paj, pak, pbi, pbj, pbk, sigma)*sigma;
+        } else if (zb > 0n) {
+            res = mdHrr(xa, ya, za, xb, yb, zb-1n, xp, yp, zp-1n, pai, paj, pak, pbi, pbj, pbk, sigma)*zp
+                + mdHrr(xa, ya, za, xb, yb, zb-1n, xp, yp, zp   , pai, paj, pak, pbi, pbj, pbk, sigma)*(pbk)
+                + mdHrr(xa, ya, za, xb, yb, zb-1n, xp, yp, zp+1n, pai, paj, pak, pbi, pbj, pbk, sigma)*sigma;
         } else {
             val ptot = xp+yp+zp;
-            val idx  = xp*(2*(ptot)-xp+3)/2+yp;
+            val idx  = xp*(2n*(ptot)-xp+3n)/2n+yp;
             res = npint(ptot, idx);
         }
 
@@ -499,44 +499,44 @@ public class TwoElectronIntegrals {
             // This exp is done by Chebyshev Interpolation too in GJP1991
             val expNegT = Math.exp(-T);
             gmt(angMomABCD) = expNegT * sum;
-            for (var m:Int=angMomABCD-1; m >= 0; m--) { // This is quivalent to GJP1991 eqn 24
-                gmt(m) = (2.0 * T * gmt(m+1) + expNegT) / (2*m + 1);
+            for (var m:Int=angMomABCD-1n; m >= 0n; m--) { // This is quivalent to GJP1991 eqn 24
+                gmt(m) = (2.0 * T * gmt(m+1) + expNegT) / (2n*m + 1n);
             }
         }
     }
 
     private def computeRm(angMomABCD:Int, shellList:ShellList, r:Vector3d) {
-        var iLim:Int = 0;
-        for(i in 0..angMomABCD) {
+        var iLim:Int = 0n;
+        for(i in 0n..angMomABCD) {
             val shell = shellList.getPowers(i);
-            iLim += (i+1); // iLim = (i+1)*(i+2)/2
-            for(var j:Int=0; j<iLim; j++) {
+            iLim += (i+1n); // iLim = (i+1)*(i+2)/2
+            for(var j:Int=0n; j<iLim; j++) {
                 val powers = shell(j);
                 val lp = powers.l;
                 val mp = powers.m;
                 val np = powers.n;
-                rM(i,j) = mdRecurse(r, lp, mp, np, 0);  // can use vrr() instead
+                rM(i,j) = mdRecurse(r, lp, mp, np, 0n);  // can use vrr() instead
                 // Console.OUT.println(rM(i,j));
             }
         }
     }
 
     private def computePq(angMomAB:Int, angMomCD:Int, shellList:ShellList) {
-         var pLim : Int = 0;
-         for(i in 0..angMomAB) {
+         var pLim:Int = 0n;
+         for(i in 0n..angMomAB) {
              val shellAB = shellList.getPowers(i);
-             pLim += (i+1); // pLim = (p+1)*(p+2)/2
-             for (var pp:Int = 0; pp<pLim; pp++) {
+             pLim += (i+1n); // pLim = (p+1)*(p+2)/2
+             for (var pp:Int = 0n; pp<pLim; pp++) {
                  val powersAB = shellAB(pp);
                  val lp = powersAB.l;
                  val mp = powersAB.m;
                  val np = powersAB.n;
 
-                 var qLim : Int = 0;
-                 for(j in 0..angMomCD) {
+                 var qLim:Int = 0n;
+                 for(j in 0n..angMomCD) {
                      val shellCD = shellList.getPowers(j);
-                     qLim += (j+1); // qLim = (q+1)*(q+2)/2
-                     for (var qq:Int = 0; qq<qLim; qq++) {
+                     qLim += (j+1n); // qLim = (q+1)*(q+2)/2
+                     for (var qq:Int = 0n; qq<qLim; qq++) {
                          val powersCD = shellCD(qq);
                          val lq = powersCD.l;
                          val mq = powersCD.m;
@@ -547,13 +547,12 @@ public class TwoElectronIntegrals {
                          val nr = np+nq;
                          val rtyp = lr+mr+nr;
 
-                         val rr = lr*(2*(lr+mr+nr)-lr+3)/2+mr;
+                         val rr = lr*(2n*(lr+mr+nr)-lr+3n)/2n+mr;
 
-                         if ((lq+mq+nq)%2 == 0)
+                         if ((lq+mq+nq)%2n == 0n)
                             pqInts(i, pp, j, qq) =  rM(rtyp, rr);
                          else
                             pqInts(i, pp, j, qq) = -rM(rtyp, rr);
-
                      }
                  }
              }
@@ -571,25 +570,25 @@ public class TwoElectronIntegrals {
 
          val halfSigmaQ = 0.5*sigmaQ;
 
-         var pLim : Int = 0;
-         for(i in 0..angMomAB) {
-             pLim += (i+1); // pLim = (p+1)*(p+2)/2
-             for(pp in 0..(pLim-1)) {
+         var pLim:Int = 0n;
+         for(i in 0n..angMomAB) {
+             pLim += (i+1n); // pLim = (p+1)*(p+2)/2
+             for(pp in 0n..(pLim-1n)) {
                 Array.copy(pqInts, pqInts.region.indexOf(i,pp,0,0), npint, 0L, maxam2N);
 
-                 for(dd in 0..(dLim-1)) {
+                 for(dd in 0n..(dLim-1n)) {
                      val powersD = shellD(dd);
                      val lp = powersD.l;
                      val mp = powersD.m;
                      val np = powersD.n;
 
-                     for(cc in 0..(cLim-1)) {
+                     for(cc in 0n..(cLim-1n)) {
                          val powersC = shellC(cc);
                          val lq = powersC.l;
                          val mq = powersC.m;
                          val nq = powersC.n;
 
-                         pcdint(dd,cc,i,pp) += mdHrr(lp, mp, np, lq, mq, nq, 0, 0, 0,
+                         pcdint(dd,cc,i,pp) += mdHrr(lp, mp, np, lq, mq, nq, 0n, 0n, 0n,
                                                     qdi, qdj, qdk, qci, qcj, qck, halfSigmaQ);   // can use hrr() instead
 
                      }
@@ -615,11 +614,11 @@ public class TwoElectronIntegrals {
 
         val halfSigmaP = 0.5*sigmaP;
 
-        for (dd in 0..(dLim-1)) {
+        for (dd in 0n..(dLim-1n)) {
             val ll = dStrt + dd;
             val normL = normFactors(ll);
 
-            for (cc in 0..(cLim-1)) {
+            for (cc in 0n..(cLim-1n)) {
                 val kk = cStrt + cc;
                 val normK = normFactors(kk);
 
@@ -628,7 +627,7 @@ public class TwoElectronIntegrals {
 
                 Array.copy(pcdint, pcdint.region.indexOf(dd,cc,0,0), npint, 0L, maxam2N);
 
-                for (bb in 0..(bLim-1)) {
+                for (bb in 0n..(bLim-1n)) {
                     val jj = bStrt + bb;
                     val normJ = normFactors(jj);
                     val powersB = shellB(bb);
@@ -636,11 +635,11 @@ public class TwoElectronIntegrals {
                     val mp = powersB.m;
                     val np = powersB.n;
 
-                    for (aa in 0..(aLim-1)) {
+                    for (aa in 0n..(aLim-1n)) {
                         val ii = aStrt + aa;
 
                         if (ii >= jj) {
-                            val iijj_st = ii*(ii+1)/2 + jj;
+                            val iijj_st = ii*(ii+1n)/2n + jj;
 
                             if (iijj_st >= kkll_st) {     
                                 val normI = normFactors(ii);                              
@@ -648,7 +647,7 @@ public class TwoElectronIntegrals {
                                 val lq = powersA.l;
                                 val mq = powersA.m;
                                 val nq = powersA.n;
-                                val intVal = mdHrr(lp, mp, np, lq, mq, nq, 0, 0, 0,
+                                val intVal = mdHrr(lp, mp, np, lq, mq, nq, 0n, 0n, 0n,
                                                             pbi, pbj, pbk, pai, paj, pak, halfSigmaP);  // can use hrr instead
 
                                 val normIntVal = intVal

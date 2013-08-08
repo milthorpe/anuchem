@@ -49,22 +49,22 @@ public class JobDefaults {
     public var centering:Int; // See Q-CHEM Job description
 
     private def this() { 
-        maxIterations = 100;
+        maxIterations = 100n;
         energyTolerance = 1e-5;
         diisStartThreshold = 0.1;
         diisConvergenceThreshold = 1e-5; // Q-CHEM default
-        diisSubspaceSize = 15; // Q-CHEM default
+        diisSubspaceSize = 15n; // Q-CHEM default
         gMatrixParallelScheme = GMatrix.DEFAULT_GMATTYPE;
         useMta = false;
 
         guess=JobDefaults.GUESS_SAD;
         
-        roOn=0;
+        roOn=0n;
         compareRo = false;
 
-        roN=100;
-        roNK=-1; // see GmatrixRoMem.x10
-        roL=100;
+        roN=100n;
+        roNK=-1n; // see GmatrixRoMem.x10
+        roL=100n;
         roZ=1.0;
 
         omega = .1;

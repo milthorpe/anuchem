@@ -60,11 +60,11 @@ public struct ContractedGaussian {
 
         // TODO: x10 - parallel
         var sij:Double = 0.0;
-        for(var i:Int=0; i<exponents.size; i++) {
+        for(var i:Long=0; i<exponents.size; i++) {
             val expI = exponents(i);
             val coeffI = coefficients(i);
             val normI = PrimitiveGaussian.getNormalization(power, expI);
-            for(var j:Int=0; j<cgExponents.size; j++) {
+            for(var j:Long=0; j<cgExponents.size; j++) {
                 val expJ = cgExponents(j);
                 val coeffJ = cgCoefficients(j);
                 val normJ = PrimitiveGaussian.getNormalization(cgPower, expJ);
@@ -101,11 +101,11 @@ public struct ContractedGaussian {
 
         // TODO: x10 - parallel 
         var tij:Double = 0.0;
-        for(var i:Int=0; i<exponents.size; i++) {
+        for(var i:Long=0; i<exponents.size; i++) {
             val expI = exponents(i);
             val coeffI = coefficients(i);
             val normI = PrimitiveGaussian.getNormalization(power, expI);
-            for(var j:Int=0; j<cgExps.size; j++) {
+            for(var j:Long=0; j<cgExps.size; j++) {
                 val expJ = cgExps(j);
                 val coeffJ = cgCoeffs(j);
                 val normJ = PrimitiveGaussian.getNormalization(cgPower, expJ);
@@ -124,9 +124,9 @@ public struct ContractedGaussian {
 
         // TODO: x10 - parallel        
         var vij:Double = 0.0;
-        for(var i:Int=0; i<exponents.size; i++) {
+        for(var i:Long=0; i<exponents.size; i++) {
             val iPG = new PrimitiveGaussian(origin, power, exponents(i), coefficients(i), true);
-            for(var j:Int=0; j<cgExps.size; j++) {
+            for(var j:Long=0; j<cgExps.size; j++) {
                 val jPG = new PrimitiveGaussian(cgOrigin, cgPower, cgExps(j), cgCoeffs(j), true);
                 
                 vij += iPG.coefficient * jPG.coefficient 

@@ -38,10 +38,10 @@ public class HartreeFockSCFMethod extends SCFMethod {
 
     public def scf() : void {
         val timer = new StatisticalTimer(5);
-        val TIMER_TOTAL:Int = 0; val TIMER_2:Int = 1; val TIMER_S:Int = 2; val TIMER_F:Int = 3; val TIMER_M:Int = 4; //Can't use static
+        val TIMER_TOTAL:Int = 0n; val TIMER_2:Int = 1n; val TIMER_S:Int = 2n; val TIMER_F:Int = 3n; val TIMER_M:Int = 4n; //Can't use static
 
         val noOfElectrons = molecule.getNumberOfElectrons();        
-        if (noOfElectrons%2 != 0 || molecule.getMultiplicity()!=1) {
+        if (noOfElectrons%2n != 0n || molecule.getMultiplicity()!=1n) {
            Console.OUT.println("Currently supports only closed shell calculations!");
            return;
         }
@@ -80,12 +80,12 @@ public class HartreeFockSCFMethod extends SCFMethod {
         val gMatrixRo:GMatrixROmem5{self.N==N}; // change version here 1st out of 3 places
         val roThresh=jd.roThresh;
         val thresh=jd.thresh;
-        if (jd.roOn>0 && maxIteration>0) {
+        if (jd.roOn>0n && maxIteration>0n) {
             gMatrixRo = new GMatrixROmem5(N, bfs, molecule, noOfOccupancies,0.,roZ*roThresh); // change version here 2nd out of 3 places
         } else {
             gMatrixRo = null;
         }
-        if ((jd.roOn==0 || jd.compareRo==true) && maxIteration>0) {
+        if ((jd.roOn==0n || jd.compareRo==true) && maxIteration>0n) {
             gMatrix = new GMatrix(N, bfs, molecule,0.,roZ*thresh);
         } else {
             gMatrix = null;
@@ -114,7 +114,7 @@ public class HartreeFockSCFMethod extends SCFMethod {
         val diis = new DIISFockExtrapolator(N);
 
         // start the SCF cycle
-        for(var scfIteration:Int=0; scfIteration<maxIteration; scfIteration++) {
+        for(var scfIteration:Int=0n; scfIteration<maxIteration; scfIteration++) {
             // make or guess density
 	    if (scfIteration>0) {
                 density.compute(mos);
@@ -161,10 +161,10 @@ public class HartreeFockSCFMethod extends SCFMethod {
             } else {
                 // ignore the first cycle's timings 
                 // as far fewer integrals are calculated
-                if (jd.roOn==0 || jd.compareRo==true) {
+                if (jd.roOn==0n || jd.compareRo==true) {
                     gMatrix.timer.clear(0);
                 }
-                if (jd.roOn>0) {
+                if (jd.roOn>0n) {
                     gMatrixRo.timer.clear(0);
                 }
             }
@@ -187,7 +187,7 @@ public class HartreeFockSCFMethod extends SCFMethod {
 
         var ecount:Double=0.; var maxDen:Double=0.; var minDen:Double=1e100;
 
-        for (var i:Int=0; i<N; i++) for (var j:Int=i; j<N; j++) {
+        for (var i:Int=0n; i<N; i++) for (var j:Int=i; j<N; j++) {
              val contrib=density(i,j)*overlap(i,j);
              ecount+=contrib;
              if (i!=j) ecount+=contrib;
@@ -197,12 +197,12 @@ public class HartreeFockSCFMethod extends SCFMethod {
         }
         Console.OUT.printf("ecount=%e maxDen=%e minDen=%e\n",ecount,maxDen,minDen);
 
-        if ((jd.roOn == 0 || jd.compareRo) && maxIteration>0) {
+        if ((jd.roOn == 0n || jd.compareRo) && maxIteration>0) {
             Console.OUT.println("GMatrix construction timings:");
             gMatrix.timer.printSeconds();
         }
 
-        if (jd.roOn>0 && maxIteration>0) {
+        if (jd.roOn>0n && maxIteration>0n) {
             Console.OUT.println("GMatrixROmemX construction timings:");
             gMatrixRo.timer.printSeconds();
         }

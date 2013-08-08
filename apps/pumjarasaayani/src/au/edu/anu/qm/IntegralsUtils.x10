@@ -43,7 +43,7 @@ public class IntegralsUtils {
                 var sum:Double;
                 var delta:Double = sum = 1.0 / a;
 
-                for(var i:Int=0; i<MAX_ITERATION; i++) {
+                for(var i:Int=0n; i<MAX_ITERATION; i++) {
                     ap++;
                     delta *= x / ap;
                     sum += delta;
@@ -62,7 +62,7 @@ public class IntegralsUtils {
             var h:Double = d;
             var an:Double, delta:Double;
 
-            for(var i:Int=1; i<(MAX_ITERATION+1); i++) {
+            for(var i:Int=1n; i<(MAX_ITERATION+1n); i++) {
                 an = -i * (i-a);
                 b += 2.0;
                 d = an * d + b;
@@ -118,6 +118,6 @@ public class IntegralsUtils {
     private static EPS:Double   = 3.0e-7;
     private static FPMIN:Double = 1.0e-30;
 
-    private static MAX_ITERATION:Int = 100;
+    private static MAX_ITERATION:Int = 100n;
 }
 

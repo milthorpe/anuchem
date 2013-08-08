@@ -70,8 +70,8 @@ public class JobInput {
         // defaults
         val jd = JobDefaults.getInstance();
         var conversion:Double = 1.0;
-        var charge:Int = 0;
-        var multiplicity:Int = 1;       
+        var charge:Int = 0n;
+        var multiplicity:Int = 1n;       
 
         if (line.startsWith("charge")) {
             charge = getIntParam(line);

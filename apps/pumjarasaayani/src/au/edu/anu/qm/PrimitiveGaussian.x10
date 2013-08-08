@@ -40,11 +40,11 @@ public final class PrimitiveGaussian {
 
 
     static @Inline def getNormalization(power:Power, exponent:Double):Double {
-        return Math.sqrt(Math.pow(2, 2 * (power.l + power.m + power.n) + 1.5) *
+        return Math.sqrt(Math.pow(2n, 2n * (power.l + power.m + power.n) + 1.5) *
                            Math.pow(exponent, power.l + power.m + power.n + 1.5) /
-                           MathUtil.factorial2(2 * power.l - 1) / 
-                           MathUtil.factorial2(2 * power.m - 1) /
-                           MathUtil.factorial2(2 * power.n - 1) /
+                           MathUtil.factorial2(2n * power.l - 1n) / 
+                           MathUtil.factorial2(2n * power.m - 1n) /
+                           MathUtil.factorial2(2n * power.n - 1n) /
                            Math.pow(Math.PI, 1.5));
     }
 
@@ -84,7 +84,7 @@ public final class PrimitiveGaussian {
                          (exponent * origin.j + pg.exponent * pg.origin.j) / gamma,
                          (exponent * origin.k + pg.exponent * pg.origin.k) / gamma
                         );
-        val pgres = new PrimitiveGaussian(newOrigin, Power(0,0,0), gamma, 0.0, false);
+        val pgres = new PrimitiveGaussian(newOrigin, Power(0n,0n,0n), gamma, 0.0, false);
 
         return pgres;
     }
@@ -99,9 +99,9 @@ public final class PrimitiveGaussian {
         val k:Double = 1.0 + Math.floor(0.5 * (l1 + l2));
 
         // TODO: x10 parallel
-        for(var i:Int = 0; i < k; i++) 
-            sum += (MathUtil.binomialPrefactor(2 * i, l1, l2, pax, pbx)
-                    * MathUtil.factorial2(2*i - 1)) / Math.pow(2 * gamma, i);
+        for(var i:Int = 0n; i < k; i++) 
+            sum += (MathUtil.binomialPrefactor(2n * i, l1, l2, pax, pbx)
+                    * MathUtil.factorial2(2n*i - 1n)) / Math.pow(2n * gamma, i);
 
         return sum;
     }
@@ -120,15 +120,15 @@ public final class PrimitiveGaussian {
         val m2 = powerJ.m;
         val n2 = powerJ.n;
 
-        var term:Double = expJ * (2 * (l2+m2+n2) + 3) * overlap(expI, originI, powerI, expJ, originJ, powerJ);
+        var term:Double = expJ * (2n * (l2+m2+n2) + 3n) * overlap(expI, originI, powerI, expJ, originJ, powerJ);
         term += -2.0 * expJ*expJ
-                     * (overlap(expI, originI, powerI, expJ, originJ, Power(l2+2, m2, n2))
-                      + overlap(expI, originI, powerI, expJ, originJ, Power(l2, m2+2, n2))
-                      + overlap(expI, originI, powerI, expJ, originJ, Power(l2, m2, n2+2)));
+                     * (overlap(expI, originI, powerI, expJ, originJ, Power(l2+2n, m2, n2))
+                      + overlap(expI, originI, powerI, expJ, originJ, Power(l2, m2+2n, n2))
+                      + overlap(expI, originI, powerI, expJ, originJ, Power(l2, m2, n2+2n)));
 
-        term += -0.5 * ((l2 * (l2-1)) * overlap(expI, originI, powerI, expJ, originJ, Power(l2-2, m2, n2))
-                      + (m2 * (m2-1)) * overlap(expI, originI, powerI, expJ, originJ, Power(l2, m2-2, n2))
-                      + (n2 * (n2-1)) * overlap(expI, originI, powerI, expJ, originJ, Power(l2, m2, n2-2)));
+        term += -0.5 * ((l2 * (l2-1n)) * overlap(expI, originI, powerI, expJ, originJ, Power(l2-2n, m2, n2))
+                      + (m2 * (m2-1n)) * overlap(expI, originI, powerI, expJ, originJ, Power(l2, m2-2n, n2))
+                      + (n2 * (n2-1n)) * overlap(expI, originI, powerI, expJ, originJ, Power(l2, m2, n2-2n)));
 
         return normI * normJ * term;
     }
@@ -164,9 +164,9 @@ public final class PrimitiveGaussian {
         var sum:Double = 0.0;
 
         // TODO : x10 - parallel
-        for(var i : Int = 0; i<ax.size; i++) {
-            for(var j : Int = 0; j<ay.size; j++) {
-                for(var k : Int = 0; k<az.size; k++) {
+        for(var i:Int = 0n; i<ax.size; i++) {
+            for(var j:Int = 0n; j<ay.size; j++) {
+                for(var k:Int = 0n; k<az.size; k++) {
                     sum += ax(i) * ay(j) * az(k)
                           * IntegralsUtils.computeFGamma(i + j + k,
                                                         rCPSquared * prod.exponent);
@@ -187,17 +187,17 @@ public final class PrimitiveGaussian {
                             cp:Double, gamma:Double) {
 
         // TODO : x10 - parallel
-        for(var i:Int=0; i<a.size; i++) {
-            for(var r:Int=0; r<(i/2+1); r++) {
-                for(var u:Int=0; u<((i-2*r)/2+1); u++) {
+        for(var i:Int=0n; i<a.size; i++) {
+            for(var r:Int=0n; r<(i/2n+1n); r++) {
+                for(var u:Int=0n; u<((i-2n*r)/2n+1n); u++) {
                     a(i-2 * r-u) += Math.pow(-1.0, i) 
                          * MathUtil.binomialPrefactor(i, l1, l2, pa, pb)
                          * Math.pow(-1.0, u) * MathUtil.factorial(i)
-                         * Math.pow(cp, i-2 * r-2 * u)
+                         * Math.pow(cp, i-2n * r-2n * u)
                          * Math.pow(0.25 / gamma, r + u)
                          / MathUtil.factorial(r)
                          / MathUtil.factorial(u)
-                         / MathUtil.factorial(i-2 * r-2 * u);
+                         / MathUtil.factorial(i-2n * r-2n * u);
                 }
             }
         }

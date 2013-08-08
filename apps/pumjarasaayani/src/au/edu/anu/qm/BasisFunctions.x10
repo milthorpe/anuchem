@@ -44,8 +44,8 @@ public struct BasisFunctions {
     }
 
     private def initDensity(basisSet:BasisSet) {
-        var shift:Int=0; 
-        for(var atmno:Int=0; atmno<molecule.getNumberOfAtoms(); atmno++) {
+        var shift:Int=0n; 
+        for(var atmno:Int=0n; atmno<molecule.getNumberOfAtoms(); atmno++) {
             val atom = molecule.getAtom(atmno);
             val aDensity = basisSet.getDensity(atom);
             if (aDensity == null) {
@@ -62,11 +62,10 @@ public struct BasisFunctions {
     }
 
     private def initBasisFunctions(basisSet:BasisSet):Int {
-        
-        var intIndx:Int = 0;
+        var intIndx:Int = 0n;
         val plInst = PowerList.getInstance();
 
-        for(var atmno:Int=0; atmno<molecule.getNumberOfAtoms(); atmno++) {
+        for(var atmno:Int=0n; atmno<molecule.getNumberOfAtoms(); atmno++) {
             val atom      = molecule.getAtom(atmno);
             val atomBasis = basisSet.getBasis(atom);
             if (atomBasis == null) {
@@ -75,7 +74,7 @@ public struct BasisFunctions {
             val orbitals  = atomBasis.orbitals;
             val atombfs   = new ArrayList[ContractedGaussian]();
 
-            for(var orbno:Int=0; orbno<orbitals.size; orbno++) { 
+            for(var orbno:Int=0n; orbno<orbitals.size; orbno++) { 
                 val orb = orbitals(orbno);
                 val shape = orb.shape;
                 val pList = plInst.getPowers(shape);
@@ -84,10 +83,10 @@ public struct BasisFunctions {
                 val exps = orb.exponents;
                 val centre = atom.centre;
 
-                for(var l:Int=0; l<pList.size; l++) {
+                for(var l:Long=0; l<pList.size; l++) {
                     val power = pList(l);
                     val primitives = new Rail[PrimitiveGaussian](coeffs.size);
-                    for(var i:Int=0; i<coeffs.size; i++) {
+                    for(var i:Long=0; i<coeffs.size; i++) {
                         primitives(i) = new PrimitiveGaussian(centre, power, exps(i), coeffs(i), true);
                     }
                     val cg = new ContractedGaussian(centre, power, exps, coeffs, intIndx, true);
@@ -96,14 +95,14 @@ public struct BasisFunctions {
 
                 val am = orb.angularMomentum;
                 val atomPrimitives = new Rail[PrimitiveGaussian](coeffs.size);
-                for(var i:Int=0; i<coeffs.size; i++) {
-                    atomPrimitives(i) = new PrimitiveGaussian(centre, Power(am, 0, 0), exps(i), coeffs(i), false);
+                for(var i:Long=0; i<coeffs.size; i++) {
+                    atomPrimitives(i) = new PrimitiveGaussian(centre, Power(am, 0n, 0n), exps(i), coeffs(i), false);
                 }
                 val atomCoeffs = new Rail[Double](coeffs); // note: atom coefficents are subsequently normalized
-                val acg = new ContractedGaussian(centre, Power(am, 0, 0), exps, atomCoeffs, intIndx, false);
+                val acg = new ContractedGaussian(centre, Power(am, 0n, 0n), exps, atomCoeffs, intIndx, false);
                 atombfs.add(acg);
 
-                intIndx += ((am+1)*(am+2)/2);
+                intIndx += ((am+1n)*(am+2n)/2n);
             } // end for
 
             atom.setBasisFunctions(atombfs);  
@@ -112,12 +111,12 @@ public struct BasisFunctions {
         // normalization of atom basis functions : mostly from Alistair's code, this essentially same as the above 
         // code, except is performed over a differently arranged set of ContractedGaussian's 
         val fact1 = Math.pow(2.0/Math.PI, 0.75);
-        for(var atmno:Int=0; atmno<molecule.getNumberOfAtoms(); atmno++) {
+        for(var atmno:Int=0n; atmno<molecule.getNumberOfAtoms(); atmno++) {
             val atom = molecule.getAtom(atmno);
             val bfs  = atom.getBasisFunctions();
             val nbf  = bfs.size();
 
-            for(var i:Int=0; i<nbf; i++) {
+            for(var i:Long=0; i<nbf; i++) {
                 val bfi    = bfs.get(i);
                 val lmn   = bfi.getMaximumAngularMomentum();
                 var lm:Int = lmn;
@@ -129,7 +128,7 @@ public struct BasisFunctions {
               
                 val exponents = bfi.exponents;
                 val coefficients = bfi.coefficients;
-                for(var j:Int=0; j<coefficients.size; j++) {
+                for(var j:Long=0; j<coefficients.size; j++) {
                     val fact3 = Math.pow(exponents(j), (2.0*lmn+3.0)/4.0);
                     coefficients(j) = coefficients(j)*fact1*fact2*fact3;
                 } // end for
@@ -139,8 +138,8 @@ public struct BasisFunctions {
                 var factA:Double = 0.0, factB:Double = 0.0;
                 var coefExpoSum:Double = 0.0;
 
-                for(var k:Int=0; k<coefficients.size; k++) {
-                   for(var l:Int=0; l<coefficients.size; l++) {
+                for(var k:Long=0; k<coefficients.size; k++) {
+                   for(var l:Long=0; l<coefficients.size; l++) {
                        factA = coefficients(k) * coefficients(l);
                        factB = Math.pow(exponents(k) + exponents(l), lmn+1.5);
                        coefExpoSum += factA/factB;
@@ -148,7 +147,7 @@ public struct BasisFunctions {
                 } // end for 
 
                 val norm = Math.pow(coefExpoSum*factC, -0.5);
-                for(var j:Int=0; j<coefficients.size; j++) {
+                for(var j:Long=0; j<coefficients.size; j++) {
                     coefficients(j) *= norm;
                 } // end for 
             } // end for
@@ -158,19 +157,19 @@ public struct BasisFunctions {
 
     public def getNormalizationFactors():Rail[Double] {
         val norms = new Rail[Double](basisFunctions.size());
-        for(var i:Int=0; i<basisFunctions.size(); i++) {
+        for(var i:Long=0; i<basisFunctions.size(); i++) {
             val power = basisFunctions(i).power;
-             for(var j:Int=0; j<1; j++) {
+             for(var j:Long=0; j<1; j++) {
                 var lmx:Int = power.getL();
                 var lmy:Int = power.getM();
                 var lmz:Int = power.getN();
                 var lmt:Int = power.getTotalAngularMomentum();
                 var denom:Double=1.0;
 
-                while(lmt>1) { denom *= (2.0*lmt-1.0); lmt--; }
-                while(lmx>1) { denom /= (2.0*lmx-1.0); lmx--; }
-                while(lmy>1) { denom /= (2.0*lmy-1.0); lmy--; }
-                while(lmz>1) { denom /= (2.0*lmz-1.0); lmz--; }
+                while(lmt>1n) { denom *= (2.0*lmt-1.0); lmt--; }
+                while(lmx>1n) { denom /= (2.0*lmx-1.0); lmx--; }
+                while(lmy>1n) { denom /= (2.0*lmy-1.0); lmy--; }
+                while(lmz>1n) { denom /= (2.0*lmz-1.0); lmz--; }
 
                 norms(i) = Math.sqrt(denom);
             }

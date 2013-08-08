@@ -26,8 +26,8 @@ import x10.matrix.lapack.DenseMatrixLAPACK;
  * @author: V.Ganesh
  */
 public class DIISFockExtrapolator(N:Long) {
-    static MIN_NON_DIIS_STEP:Int = 0;
-    static MAX_NON_DIIS_STEP:Int = 2;
+    static MIN_NON_DIIS_STEP:Int = 0n;
+    static MAX_NON_DIIS_STEP:Int = 2n;
 
     private val diisStartThreshold:Double;
     private val diisSubspaceSize:Int;
@@ -39,8 +39,8 @@ public class DIISFockExtrapolator(N:Long) {
     val SPF:DenseMatrix{self.M==self.N,self.N==this.N};
     val scratch:DenseMatrix{self.M==self.N,self.N==this.N};
 
-    var diisStep:Int = 0;
-    var nondiisStep:Int = 0;
+    var diisStep:Int = 0n;
+    var nondiisStep:Int = 0n;
 
     var diisStarted:Boolean = false;
     var converged:Boolean = false;
@@ -61,8 +61,8 @@ public class DIISFockExtrapolator(N:Long) {
         diisMaxError = jd.diisConvergenceThreshold;
         diisSubspaceSize = jd.diisSubspaceSize;
 
-        nondiisStep = 0;
-        diisStep = 0;
+        nondiisStep = 0n;
+        diisStep = 0n;
         converged = false;
     }
 
@@ -116,9 +116,9 @@ public class DIISFockExtrapolator(N:Long) {
 
                 return currentFock;
             } else {
-                for(var i:Int=0; i<N; i++) {
-                   for(var j:Int=0; j<N; j++) {
-                      newFock(i, j) = oldFock(i,j) * 0.5 + currentFock(i,j) * 0.5;
+                for(var i:Long=0; i<N; i++) {
+                   for(var j:Long=0; j<N; j++) {
+                      newFock(i,j) = oldFock(i,j) * 0.5 + currentFock(i,j) * 0.5;
                    }
                 }
 
@@ -133,13 +133,13 @@ public class DIISFockExtrapolator(N:Long) {
         val B = Vector.make(M);
 
         // set up A x = B to be solved
-        for (var i:Int=0; i < noOfIterations; i++) {
-            for (var j:Int=0; j < noOfIterations; j++) {
+        for (var i:Int=0n; i < noOfIterations; i++) {
+            for (var j:Int=0n; j < noOfIterations; j++) {
                 A(i,j) = errorVectorList.get(i).blasTransProduct(errorVectorList.get(j));
             } // end for
         } // end for
 
-        for (var i:Int=0; i < noOfIterations; i++) {
+        for (var i:Int=0n; i < noOfIterations; i++) {
             A(noOfIterations,i) = A(i,noOfIterations) = -1.0;
             B(i) = 0.0;
         } // end for
@@ -150,10 +150,10 @@ public class DIISFockExtrapolator(N:Long) {
         val permutation = new Rail[Int](M);
         val result = DenseMatrixLAPACK.solveLinearEquation(A, B, permutation);
 
-        for (var i:Int=0; i < noOfIterations; i++) {
+        for (var i:Long=0; i < noOfIterations; i++) {
           val prevFock = fockMatrixList.get(i);
-          for (var j:Int=0; j < N; j++) {
-             for (var k:Int=0; k < N; k++) {
+          for (var j:Long=0; j < N; j++) {
+             for (var k:Long=0; k < N; k++) {
                  newFock(j,k) += B(i) * prevFock(j,k);
              } // end for
           } // end for

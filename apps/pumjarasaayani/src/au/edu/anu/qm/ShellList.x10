@@ -29,13 +29,13 @@ public struct ShellList {
     public def this(molecule:Molecule[QMAtom]) {
         // init shell list
         val shellList = new HashMap[Int, Shell]();
-        var maxam : Int = 0; var maxDcon:Int =0;
-        for(var atmno:Int=0; atmno<molecule.getNumberOfAtoms(); atmno++) {
+        var maxam:Int = 0n; var maxDcon:Int = 0n;
+        for(var atmno:Int=0n; atmno<molecule.getNumberOfAtoms(); atmno++) {
             val atom = molecule.getAtom(atmno);
             val bfs  = atom.getBasisFunctions();
             val nbf  = bfs.size();
 
-            for(var i:Int=0; i<nbf; i++) {
+            for(var i:Int=0n; i<nbf; i++) {
                 val cg = bfs.get(i);
                 val am = cg.getMaximumAngularMomentum();
                 val dcon = cg.getMaximumDegreeOfContraction();
@@ -52,10 +52,10 @@ public struct ShellList {
         } // end for
 
         // init power list
-        val maxam4 = (maxam*4)+2;
-        val powerList = new Rail[Rail[Power]](maxam4+1); 
+        val maxam4 = (maxam*4n)+2n;
+        val powerList = new Rail[Rail[Power]](maxam4+1n); 
         val pList = PowerList.getInstance();
-        for(i in 0..maxam4) powerList(i) = pList.generatePowerList(i); 
+        for(i in 0n..maxam4) powerList(i) = pList.generatePowerList(i); 
 
         this.maxam = maxam;
         this.maxDcon = maxDcon;
@@ -64,7 +64,7 @@ public struct ShellList {
     }
 
     public def getNumberOfShellPrimitives() : Int { 
-        var n:Int = 0;
+        var n:Int = 0n;
         for(shell in shellList.keySet()) 
             n += shellList.getOrElse(shell, null).getNumberOfShellPrimitives();
         return n;
@@ -75,7 +75,7 @@ public struct ShellList {
 
         for(shell in shellList.keySet()) { 
             val sp = shellList.getOrElse(shell, null).getShellPrimitives();
-            for(var i:Int=0; i<sp.size(); i++) shellPrimitives.add(sp(i));
+            for(var i:Int=0n; i<sp.size(); i++) shellPrimitives.add(sp(i));
         }
 
         return shellPrimitives.toRail();
