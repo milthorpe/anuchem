@@ -10,8 +10,7 @@
  */
 package au.edu.anu.mm;
 
-import x10x.vector.Point3d;
-import x10x.vector.Tuple3d;
+import x10x.vector.Vector3d;
 
 /**
  * Test multipole expansions
@@ -21,27 +20,27 @@ class TestMultipoleExpansion extends MathTest {
     public def run(): boolean {
         val p = 3; // multipole level
 
-        val x = Point3d(1.0, 2.0, -1.0);
-        val Olm = MultipoleExpansion.getOlm(1.5, x as Tuple3d, p);
+        val x = Vector3d(1.0, 2.0, -1.0);
+        val Olm = MultipoleExpansion.getOlm(1.5, x, p);
         Console.OUT.println("multipole expansion:\n" + Olm.toString());
 
         val target = new MultipoleExpansion(p);
-        val translation = MultipoleExpansion.getOlm(Point3d(2.0, -3.0, 1.0) as Tuple3d, p);
+        val translation = MultipoleExpansion.getOlm(Vector3d(2.0, -3.0, 1.0), p);
         target.translateAndAddMultipole(translation, Olm);
         Console.OUT.println("translated multipole:\n" + target.toString());
 
         val roundtrip = new MultipoleExpansion(p);
-        val reverseTranslation = MultipoleExpansion.getOlm(Point3d(-2.0, 3.0, -1.0) as Tuple3d, p);
+        val reverseTranslation = MultipoleExpansion.getOlm(Vector3d(-2.0, 3.0, -1.0), p);
         roundtrip.translateAndAddMultipole(reverseTranslation, target);
         Console.OUT.println("translated multipole - roundtrip:\n" + roundtrip.toString());
 		for (i in 0..p) {
             for (j in -i..i) {
-                chk(nearlyEqual(roundtrip.terms(i,j), Olm.terms(i,j), 1.0e-6, 1.0e-12)); 
+                chk(nearlyEqual(roundtrip(i,j), Olm(i,j), 1.0e-6, 1.0e-12)); 
 		    }
         }
 
         val localExp = new LocalExpansion(p);
-        val transformation = LocalExpansion.getMlm(Point3d(2.0, -3.0, 1.0) as Tuple3d, p);
+        val transformation = LocalExpansion.getMlm(Vector3d(2.0, -3.0, 1.0), p);
         localExp.transformAndAddToLocal(transformation, Olm);
         Console.OUT.println("transformed multipole:\n" + localExp.toString());
 
@@ -53,7 +52,7 @@ class TestMultipoleExpansion extends MathTest {
         return true;
     }
 
-    public static def main(Array[String](1)) {
+    public static def main(Rail[String]) {
         new TestMultipoleExpansion().execute();
     }
 

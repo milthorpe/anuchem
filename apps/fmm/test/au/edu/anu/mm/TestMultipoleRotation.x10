@@ -10,8 +10,7 @@
  */
 package au.edu.anu.mm;
 
-import x10x.vector.Point3d;
-import x10x.vector.Tuple3d;
+import x10x.vector.Vector3d;
 import x10x.polar.Polar3d;
 import x10.util.Random;
 
@@ -24,12 +23,12 @@ public class TestMultipoleRotation {
     static val R = new Random(RANDOM_SEED);
 
     public static def main(args:Rail[String]) {
-	    val args_doub = new Array[Double](0..7, 0);
-	    if (args.size() == 2) { 
+	    val args_doub = new Rail[Double](8, 0.0);
+	    if (args.size == 2L) { 
 		    // Rotate multipole and back
 		    val theta = Double.parseDouble(args(0)); val phi = Double.parseDouble(args(1));
 		    new TestMultipoleRotation().rotation(theta, phi);
-	    } else if (args.size() == 6) { 
+	    } else if (args.size == 6L) { 
 		    // Test operation A
 		    for (i in 0..5) args_doub(i) = Double.parseDouble(args(i));
 		    new TestMultipoleRotation().rotationTest(args_doub);
@@ -40,7 +39,7 @@ public class TestMultipoleRotation {
 			    for (k in 0..5) Console.OUT.print(args_doub(k) + " ");
 			    new TestMultipoleRotation().rotationTest(args_doub);
 
-			    var j : int = 0; while (args_doub(j) < 0) { args_doub(j) = args_doub(j) * -1; j++; }
+			    var j:Long = 0; while (args_doub(j) < 0) { args_doub(j) = args_doub(j) * -1; j++; }
 			    args_doub(j) = args_doub(j) * -1;
 		    }
 	    }
@@ -51,9 +50,9 @@ public class TestMultipoleRotation {
      * @param two expansions
      */
     public def compare(first : Expansion, second : Expansion) { 
-	    val p = first.terms.region.max(0);
+	    val p = first.p;
 	    for (i in 0..p) {
-	        for (j in -i..i) Console.OUT.print( (first.terms(i, j) - second.terms(i, j)).abs() + " ");
+	        for (j in -i..i) Console.OUT.print( (first(i, j) - second(i, j)).abs() + " ");
 	        Console.OUT.print("\n");
 	    }
     }
@@ -64,10 +63,10 @@ public class TestMultipoleRotation {
      * @return true iff two Expansions are the same, within a fixed tolerance (10e-8)
      */
     public def ok(first : Expansion, second : Expansion) : boolean { 
-	    val p = first.terms.region.max(0);
+	    val p = first.p;
 	    for (i in 0..p) {
             for (j in -i..i) {
-                if ((first.terms(i, j) - second.terms(i, j)).abs() > 10e-8) return false;
+                if ((first(i, j) - second(i, j)).abs() > 10e-8) return false;
             }
         }
 	    return true;
@@ -79,7 +78,7 @@ public class TestMultipoleRotation {
      */
     public def rotation(theta : Double, phi : Double) { 
 	    val p = 30;
-	    val O_lm = MultipoleExpansion.getOlm(1.0, Point3d(-2.0, 3.0, -1.0) as Tuple3d, p);
+	    val O_lm = MultipoleExpansion.getOlm(1.0, Vector3d(-2.0, 3.0, -1.0), p);
 	    //Console.OUT.println(O_lm);
 
 	    val rotated_O_lm = O_lm.rotate(theta, phi);
@@ -96,11 +95,12 @@ public class TestMultipoleRotation {
      * @param 6 doubles representing the vector to construct multipole at and destination vector
      * @return whether the resultant multipoles were equal
      */
-    public def rotationTest(args : Array[Double](1)) { 
+    public def rotationTest(args:Rail[Double]) { 
 	    val p = 5;
-	    val oldCenter = Point3d(args(0), args(1), args(2)); val newCenter = Point3d(args(3), args(4), args(5));
-	    val translationTuple = (newCenter - oldCenter) as Tuple3d;
-	    val O_lm = MultipoleExpansion.getOlm(oldCenter as Tuple3d, p);
+	    val oldCenter = Vector3d(args(0), args(1), args(2));
+        val newCenter = Vector3d(args(3), args(4), args(5));
+	    val translationTuple = (newCenter - oldCenter);
+	    val O_lm = MultipoleExpansion.getOlm(oldCenter, p);
 
 	    // Direct method
 	    var direct_result : MultipoleExpansion = new MultipoleExpansion(p);

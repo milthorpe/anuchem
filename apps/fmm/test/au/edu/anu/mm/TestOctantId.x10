@@ -19,7 +19,7 @@ import x10x.vector.Point3d;
 public class TestOctantId {
     public static def main(args: Rail[String]) {
         val dMax = 5UY;
-        val a = new OctantId(12UY,  2UY, 60UY, dMax-1);
+        val a = new OctantId(12UY,  2UY, 60UY, dMax-1UY);
         val b = new OctantId(11UY, 47UY, 21UY, dMax);
         val c = new OctantId(21UY, 30UY,  2UY, dMax);
         val d = new OctantId(12UY,  2UY, 60UY, dMax);

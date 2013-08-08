@@ -6,12 +6,11 @@
  *  You may obtain a copy of the License at
  *      http://www.opensource.org/licenses/eclipse-1.0.php
  *
- * (C) Copyright Josh Milthorpe 2010.
+ * (C) Copyright Josh Milthorpe 2010-2013.
  */
 package au.edu.anu.mm;
 
-import x10x.vector.Point3d;
-import x10x.vector.Tuple3d;
+import x10x.vector.Vector3d;
 
 /**
  * Test local Taylor-type expansions.
@@ -20,32 +19,30 @@ import x10x.vector.Tuple3d;
 class TestLocalExpansion extends MathTest {
     public def run(): boolean {
         val p = 3; // multipole level
-        val x = Point3d(1.0, 2.0, -1.0);
+        val x = Vector3d(1.0, 2.0, -1.0);
 
-        val Mlm = LocalExpansion.getMlm(x as Tuple3d, p);
+        val Mlm = LocalExpansion.getMlm(x, p);
         Console.OUT.println("local expansion:\n" + Mlm.toString());
 
         val target = new LocalExpansion(p);
-        val y = Point3d(2.0, -3.0, 1.0);
-        val translation = MultipoleExpansion.getOlm(y as Tuple3d, p);
-        target.translateAndAddLocal(translation, Mlm);
+        val y = Vector3d(2.0, -3.0, 1.0);
+        target.translateAndAddLocal(y, Mlm);
         Console.OUT.println("translated local:\n" + target.toString());
 
         val roundtrip = new LocalExpansion(p);
-        val z = Point3d(-2.0, 3.0, -1.0);
-        val reverseTranslation = MultipoleExpansion.getOlm(z as Tuple3d, p);
-        roundtrip.translateAndAddLocal(reverseTranslation, target);
+        val z = Vector3d(-2.0, 3.0, -1.0);
+        roundtrip.translateAndAddLocal(z, target);
         Console.OUT.println("translated local - roundtrip:\n" + roundtrip.toString());
 		for (i in 0..p) {
             for (j in -i..i) {
-                chk(nearlyEqual(roundtrip.terms(i,j), Mlm.terms(i,j), 1.0e-6, 1.0e-12));
+                chk(nearlyEqual(roundtrip(i,j), Mlm(i,j), 1.0e-6, 1.0e-12));
 		    }
         }
 
         return true;
     }
 
-    public static def main(Array[String](1)) {
+    public static def main(Rail[String]) {
         new TestLocalExpansion().execute();
     }
 

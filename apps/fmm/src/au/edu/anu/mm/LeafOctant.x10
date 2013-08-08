@@ -30,7 +30,7 @@ import au.edu.anu.chem.mm.MMAtom;
  * @author milthorpe
  */
 @NativeCPPInclude("bg_math.h")
-public class LeafOctant extends Octant implements Comparable[LeafOctant] {
+public class LeafOctant extends Octant {
     public var atoms:ArrayList[MMAtom];
     private var sources:Rail[Double];
 
@@ -58,8 +58,6 @@ public class LeafOctant extends Octant implements Comparable[LeafOctant] {
     public def getSources():Rail[Double] {
         return sources;
     }
-
-    public def compareTo(b:LeafOctant):Int = id.compareTo(b.id);
 
     public def countOctants():Int = 1;
 
