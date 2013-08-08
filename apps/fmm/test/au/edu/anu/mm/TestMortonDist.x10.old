@@ -6,12 +6,12 @@
  *  You may obtain a copy of the License at
  *      http://www.opensource.org/licenses/eclipse-1.0.php
  *
- * (C) Copyright Josh Milthorpe 2010.
+ * (C) Copyright Josh Milthorpe 2010-2013.
  */
 package au.edu.anu.mm;
 
+import x10.regionarray.Region;
 import harness.x10Test;
-
 
 /**
  * Test Morton distribution including generation and mapping to points of Morton indices.
@@ -19,7 +19,7 @@ import harness.x10Test;
  */
 class TestMortonDist extends x10Test {
     public def run(): boolean {
-        val smallDist = MortonDist.make(0..3 * 0..3 * 0..3);
+        val smallDist = MortonDist.makeMorton(Region.make(0..3, 0..3, 0..3));
         Console.OUT.println("smallDist: " + smallDist);
 
         val p = Point.make(0, 2, 1);
@@ -35,14 +35,14 @@ class TestMortonDist extends x10Test {
         Console.OUT.println(smallDist.getPoint(qm));
         Console.OUT.println(smallDist(q));
 
-        val mediumDist = MortonDist.make(0..7 * 0..7 * 0..7);
+        val mediumDist = MortonDist.makeMorton(Region.make(0..7, 0..7, 0..7));
         val r = Point.make(5, 3, 7);
         val rm = mediumDist.getMortonIndex(r);
         Console.OUT.println(rm.toBinaryString());
         Console.OUT.println(mediumDist.getPoint(rm));
         Console.OUT.println(mediumDist(r));
 
-        val bigDist = MortonDist.make(0..31 * 0..31 * 0..31);
+        val bigDist = MortonDist.makeMorton(Region.make(0..31, 0..31, 0..31));
         val s = Point.make(31, 30, 29);
         val sm = bigDist.getMortonIndex(s);
         Console.OUT.println(sm.toBinaryString());
@@ -55,7 +55,7 @@ class TestMortonDist extends x10Test {
             }
         }
 
-        val hugeDist = MortonDist.make(0..63 * 0..63 * 0..63);
+        val hugeDist = MortonDist.makeMorton(Region.make(0..63, 0..63, 0..63));
         val t = Point.make(61, 48, 63);
         val tm = hugeDist.getMortonIndex(t);
         Console.OUT.println(tm.toBinaryString());
@@ -67,8 +67,7 @@ class TestMortonDist extends x10Test {
         return true;
     }
 
-    public static def main(Array[String](1)) {
+    public static def main(Rail[String]) {
         new TestMortonDist().execute();
     }
-
 }

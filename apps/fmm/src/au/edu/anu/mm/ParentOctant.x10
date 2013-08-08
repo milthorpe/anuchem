@@ -22,7 +22,7 @@ import x10x.vector.Vector3d;
  * Fast Multipole Method.
  * @author milthorpe
  */
-public class ParentOctant extends Octant implements Comparable[ParentOctant] {
+public class ParentOctant extends Octant {
 
     public val children:Rail[Octant] = new Rail[Octant](8);
 
@@ -56,8 +56,6 @@ public class ParentOctant extends Octant implements Comparable[ParentOctant] {
         }
         return ghostOctants;
     }
-
-    public def compareTo(b:ParentOctant):Int = id.compareTo(b.id);
 
     public def numAtoms() = numAtoms;
 

@@ -10,7 +10,6 @@
  */
 package au.edu.anu.mm;
 
-import x10x.vector.Point3d;
 import x10x.vector.Vector3d;
 import x10x.polar.Polar3d;
 import x10.util.Random;
@@ -24,18 +23,18 @@ public class TestLocalRotation {
     static val R = new Random(RANDOM_SEED);
 
     public static def main(args:Rail[String]) {
-	    val args_doub = new Array[Double](0..7, 0);
-        if (args.size == 0) { 
+	    val args_doub = new Rail[Double](8, 0.0);
+        if (args.size == 0L) { 
 		    for (j in 0..5) args_doub(j) = R.nextDouble() * 0.5;
 		    // The purpose of this code is to try all 64 cases of the points in all quadrants
 		    for (i in 0..63) {
 			    for (k in 0..5) Console.OUT.print(args_doub(k) + " ");
 			    Console.OUT.print( (new TestLocalRotation().operatorC(args_doub, false)) + "\n");
 
-			    var j : int = 0; while (args_doub(j) < 0) { args_doub(j) = args_doub(j) * -1; j++; }
+			    var j:Long = 0; while (args_doub(j) < 0) { args_doub(j) = args_doub(j) * -1; j++; }
 			    args_doub(j) = args_doub(j) * -1;
 		    }
-	    } else if (args.size == 6) { 
+	    } else if (args.size == 6L) { 
 		    // Test operation C
 		    for (i in 0..5) args_doub(i) = Double.parseDouble(args(i));
 		    Console.OUT.println(new TestLocalRotation().operatorC(args_doub, true));
@@ -43,7 +42,7 @@ public class TestLocalRotation {
 		    // Reads in an entire expansion, term-by-term, and then performs a rotation on it, and compares the result
 		    val p = Int.parse(args(0)); var k : Int = 0;
 		    val exp = new MultipoleExpansion(p);
-		    for (l in 0..p) for (m in -l..l) exp.terms(l, m) = Complex( Double.parseDouble(args(k++)), Double.parseDouble(args(k++)) );
+		    for (l in 0..p) for (m in -l..l) exp(l, m) = Complex( Double.parseDouble(args(k++)), Double.parseDouble(args(k++)) );
 		    new TestLocalRotation().arbitraryExpansionShift(exp, Vector3d(-3, -3, -3));
 	    }
     }
@@ -53,10 +52,10 @@ public class TestLocalRotation {
      *	@param two expansions
      */
     public def compare(first : Expansion, second : Expansion) { 
-	    val p = first.terms.region.max(0);
+	    val p = first.p;
 	    for (i in 0..p) {
-	        for (j in -i..i) { Console.OUT.print( (first.terms(i, j) - second.terms(i, j)).abs() + " ");
-		    if ( (first.terms(i, j) - second.terms(i, j)).abs() > 0.1 ) Console.OUT.print("*" + i + " " + j + "*"); }
+	        for (j in -i..i) { Console.OUT.print( (first(i, j) - second(i, j)).abs() + " ");
+		    if ( (first(i, j) - second(i, j)).abs() > 0.1 ) Console.OUT.print("*" + i + " " + j + "*"); }
 	        Console.OUT.print("\n");
 	    }	
     }
@@ -66,22 +65,22 @@ public class TestLocalRotation {
      * For really big p this does not work so well because the magnitude of the terms ~e30 makes errors seem large 
      */
     public def ok(first : Expansion, second : Expansion) { 
-	    val p = first.terms.region.max(0);
+	    val p = first.p;
 	    var m : double = 0.0;
-	    for (i in 0..p) for (j in -i..i) m = Math.max(m, (first.terms(i, j) - second.terms(i, j)).abs() );
+	    for (i in 0..p) for (j in -i..i) m = Math.max(m, (first(i, j) - second(i, j)).abs() );
 	    return m; // < 10e-8;
     }
 
-   def operatorC(args : Array[Double](1), print : boolean ) { 
+   def operatorC(args:Rail[Double], print:boolean) { 
 	    val p = 5;
-	    val oldCenter = Point3d(args(0), args(1), args(2)); val newCenter = Point3d(args(3), args(4), args(5));
+	    val oldCenter = Vector3d(args(0), args(1), args(2)); val newCenter = Vector3d(args(3), args(4), args(5));
 	    val translationVector = (newCenter - oldCenter);
 	    val translationPolar = Polar3d.getPolar3d(translationVector);
 	    val M_lm = LocalExpansion.getMlm(oldCenter, p);
 
 	    // Direct method
 	    var direct_result : LocalExpansion = new LocalExpansion(p);
-	    direct_result.translateAndAddLocal(MultipoleExpansion.getOlm(translationVector, p), M_lm);
+	    direct_result.translateAndAddLocal(translationVector, M_lm);
 
 	    // Indirect method
 	    var indirect_result : LocalExpansion = new LocalExpansion(p);
@@ -94,9 +93,9 @@ public class TestLocalRotation {
    /**
     * Takes a two vector (as 6 doubles), constructs a multipole and rotates it to the second vector and back, and checks the result is the same
     */
-   def operatorCandBack(args : Array[Double](1), print : boolean ) { 
+   def operatorCandBack(args:Rail[Double], print:boolean) { 
 	val p = 3;
-	val oldCenter = Point3d(args(0), args(1), args(2)); val newCenter = Point3d(args(3), args(4), args(5));
+	val oldCenter = Vector3d(args(0), args(1), args(2)); val newCenter = Vector3d(args(3), args(4), args(5));
 	val translationVector = newCenter - oldCenter;
 
 	val O_lm = LocalExpansion.getMlm(oldCenter, p);
@@ -121,9 +120,9 @@ public class TestLocalRotation {
     * This is done with and without rotations and the results are compared.
     * This test is failing at the moment unless the old translation operator is used to do the translation inside the rotation.
     */
-   def operatorB(args : Array[Double](1), print : boolean ) { 
+   def operatorB(args:Rail[Double], print:boolean) { 
 	val p = 5;
-	val oldCenter = Point3d(args(0), args(1), args(2)); val newCenter = Point3d(args(3), args(4), args(5));
+	val oldCenter = Vector3d(args(0), args(1), args(2)); val newCenter = Vector3d(args(3), args(4), args(5));
 	val translationVector = newCenter - oldCenter;
 
 	val O_lm = MultipoleExpansion.getOlm(oldCenter, p);
