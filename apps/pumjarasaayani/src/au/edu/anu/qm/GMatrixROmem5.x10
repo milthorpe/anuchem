@@ -332,7 +332,8 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                     tdk.applyLocal((d:Rail[Double]) => { d.clear(); });
 
                     // Aux & D
-                    finish for (spInd in 0..(shp.size-1)) async {
+                    finish DivideAndConquerLoop1D(0, shp.size).execute(
+                    (spInd:Long) => {
                         val sp=shp(spInd);
                         val maxLron=sp.L(lron);                    
                         if (maxLron>=0) {
@@ -384,6 +385,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                             }
                         }
                     }
+                    );
 
                     tdk.reduceLocal(dkp, (a:Rail[Double],b:Rail[Double]) => RailUtils.map(a, b, a, (x:Double,y:Double)=>x+y));
                     timer.stop(TIMER_GENCLASS);
@@ -401,7 +403,8 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
 
                 timer.start(TIMER_JMATRIX); 
                 // Console.OUT.println("J - distributed"); 
-                finish for (spInd in 0..(shp.size-1)) async { 
+                finish DivideAndConquerLoop1D(0, shp.size).execute(
+                (spInd:Long) => {
                     val sp=shp(spInd);                
                     val temp=localAuxJ(spInd);
                     val maxLron=sp.L(lron);                   
@@ -430,6 +433,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                         //}
                     }
                 }
+                );
                 timer.stop(TIMER_JMATRIX);
 
                 Team.WORLD.barrier(); // to ensure halfAuxMat is computed at other places
@@ -454,7 +458,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                 Team.WORLD.barrier();
             }
 
-            Console.OUT.printf("\nG matrix\n"); 
+            //Console.OUT.printf("\nG matrix\n");
             // Fix J
             finish for (spInd in 0..(shp.size-1)) async {
                 val sp=shp(spInd);                
@@ -528,6 +532,24 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
             papi.printFlops();
             papi.printMemoryOps();
         }      
+    }
+
+    private static struct DivideAndConquerLoop1D(start:Long, end:Long) {
+        // TODO allow grain size > 1
+        public def this(start:Long, end:Long) {
+            property(start, end);
+        }
+
+        public def execute(body:(idx:Long) => void) {
+            if ((end-start) > 1L) {
+                val firstHalf = DivideAndConquerLoop1D(start, (start+end)/2L);
+                val secondHalf = DivideAndConquerLoop1D((start+end)/2L, end);
+                async firstHalf.execute(body);
+                secondHalf.execute(body);
+            } else {
+                body(start);
+            }
+        }
     }
 
     private def getDateString() {
