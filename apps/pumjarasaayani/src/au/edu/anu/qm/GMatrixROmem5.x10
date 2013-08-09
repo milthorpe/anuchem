@@ -353,7 +353,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                             val tempK=ttemp4K(); val myThreaddk=tdk();
                             val maxLm=(maxLron+1)*(maxLron+1);
                             val y=ylmp(spInd);
-                            aux.genClass(sp.aang, sp.bang, sp.aPoint, sp.bPoint, sp.zetaA, sp.zetaB, sp.conA, sp.conB, sp.dconA, sp.dconB, tempJ, lron as Int, maxLron as Int, y, sp.maxL); 
+                            /*atomic*/ aux.genClass(sp.aang, sp.bang, sp.aPoint, sp.bPoint, sp.zetaA, sp.zetaB, sp.conA, sp.conB, sp.dconA, sp.dconB, tempJ, lron as Int, maxLron as Int, y, sp.maxL); 
 
                             var ind:Long=0;
                             val musize=sp.mu2-sp.mu+1; val nusize=sp.nu2-sp.nu+1;
@@ -362,7 +362,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                                 for (var tmu:Long=sp.mu,ttmu:Long=0; tmu<=sp.mu2; tmu++,ttmu++) for (var tnu:Long=sp.nu,ttnu:Long=0; tnu<=sp.nu2; tnu++,ttnu++) {
                                     val scdmn=density(tmu,tnu); val nrm=norm(tmu)*norm(tnu);
                                     for (var rolm:Long=0; rolm<maxLm; rolm++) {
-                                        val normAux = nrm*tempJ(ind++);       
+                                        val normAux = (tempJ(ind++)*=nrm);       
                                         tempK((ttnu*roK+rolm)*musize+ttmu) = normAux;  
                                     }
                                 }
@@ -370,7 +370,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                                 for (var tmu:Long=sp.mu,ttmu:Long=0; tmu<=sp.mu2; tmu++,ttmu++) for (var tnu:Long=sp.nu,ttnu:Long=0; tnu<=sp.nu2; tnu++,ttnu++) {
                                     val scdmn=density(tmu,tnu); val nrm=norm(tmu)*norm(tnu); 
                                     for (var rolm:Long=0; rolm<maxLm; rolm++) {
-                                        val normAux = nrm*tempJ(ind++);       
+                                        val normAux = (tempJ(ind++)*=nrm);       
                                         myThreaddk(rolm) += 2.*scdmn*normAux; 
                                         tempK((ttnu*roK+rolm)*musize+ttmu) = normAux;  
                                     }
@@ -379,7 +379,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                                 for (var tmu:Long=sp.mu,ttmu:Long=0; tmu<=sp.mu2; tmu++,ttmu++) for (var tnu:Long=sp.nu,ttnu:Long=0; tnu<=sp.nu2; tnu++,ttnu++) {
                                     val scdmn=density(tmu,tnu); val nrm=norm(tmu)*norm(tnu); 
                                     for (var rolm:Long=0; rolm<maxLm; rolm++) {
-                                        val normAux = nrm*tempJ(ind++);       
+                                        val normAux = (tempJ(ind++)*=nrm);       
                                         myThreaddk(rolm) += scdmn*normAux; 
                                         tempK((ttnu*roK+rolm)*musize+ttmu) = normAux;  
                                     }
