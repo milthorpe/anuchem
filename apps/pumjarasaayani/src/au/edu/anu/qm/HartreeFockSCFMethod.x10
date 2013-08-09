@@ -92,7 +92,7 @@ public class HartreeFockSCFMethod extends SCFMethod {
         }
 
         val mos = new MolecularOrbitals(N);
-        val density = new Density(N, noOfOccupancies); // density.make();
+        val density = new Density(N, noOfOccupancies);
 
         var fock:Fock{self.M==N,self.N==N} = new Fock(N);
 
