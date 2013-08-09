@@ -84,7 +84,7 @@
             <fileset id="java.files" dir="${basedir}/src" includes="**/FFTW*.java"/>
         </copy>
 
-        <echo message="x10c ${x10c.debug} ${x10c.optimize} ${x10c.nochecks} ${x10c.workstealing} -sourcepath '.${path.separator}${xla.src}${path.separator}${anuchem.src}' '${basedir}/${testclass}'"/>
+        <echo message="x10c ${x10c.debug} ${x10c.optimize} ${x10c.nochecks} ${x10c.workstealing} -x10lib ${fftw.props} -sourcepath '.${path.separator}${xla.src}${path.separator}${anuchem.src}' '${basedir}/${testclass}'"/>
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/src">
             <arg value="-c"/>
@@ -143,7 +143,7 @@
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/test">
             <arg value="-c"/>
-            <arg value="'x10c' ${x10c.optimize} -sourcepath '.${path.separator}${basedir}/src${path.separator}${xla.src}${path.separator}${anuchem.src}${path.separator}${x10.testlib}' -classpath '${xla.lib}${path.separator}${anuchem.lib}${path.separator}${target-src}' -commandlineonly -d '${target-test}' ${test.list}"/>
+            <arg value="'x10c' ${x10c.optimize} -x10lib ${fftw.props} -sourcepath '.${path.separator}${basedir}/src${path.separator}${xla.src}${path.separator}${anuchem.src}${path.separator}${x10.testlib}' -classpath '${xla.lib}${path.separator}${anuchem.lib}${path.separator}${target-src}' -commandlineonly -d '${target-test}' ${test.list}"/>
         </exec>
     </target>
 

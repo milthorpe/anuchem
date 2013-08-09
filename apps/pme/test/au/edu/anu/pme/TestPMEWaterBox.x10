@@ -41,7 +41,7 @@ public class TestPMEWaterBox extends TestElectrostatic {
         var ewaldCoefficient : Double = 0.35;
         var cutoff : Double = 10.0;
         var gridSize : Long = 72;
-        var splineOrder : Int = 4;
+        var splineOrder : Int = 4n;
         if (args.size > 0) {
             structureFileName = args(0);
             if (args.size > 1) {
@@ -87,7 +87,7 @@ public class TestPMEWaterBox extends TestElectrostatic {
         Console.OUT.println("read " + molAtoms.size() + " atoms.");
 
         val tempAtoms = DistArray.make[ArrayList[MMAtom]](Dist.makeUnique(), (Point) => new ArrayList[MMAtom]());
-        finish for (var i : Int = 0; i < molAtoms.size(); i++) {
+        finish for (var i:Long = 0; i < molAtoms.size(); i++) {
             val atom = molAtoms(i);
             val centre = atom.centre;
 

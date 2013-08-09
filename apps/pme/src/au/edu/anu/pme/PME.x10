@@ -37,15 +37,15 @@ import au.edu.anu.util.Timer;
  */
 public class PME {
     // TODO enum - XTENLANG-1118
-    public static val TIMER_INDEX_TOTAL : Int = 0;
-    public static val TIMER_INDEX_GRIDCHARGES : Int = 1;
-    public static val TIMER_INDEX_INVFFT : Int = 2;
-    public static val TIMER_INDEX_THETARECCONVQ : Int = 3;
-    public static val TIMER_INDEX_RECIPROCAL : Int = 4;
-    public static val TIMER_INDEX_SELF : Int = 5;
-    public static val TIMER_INDEX_DIRECT : Int = 6;
-    public static val TIMER_INDEX_PREFETCH : Int = 7;
-    public static val TIMER_INDEX_SETUP : Int = 8;
+    public static val TIMER_INDEX_TOTAL : Int           = 0n;
+    public static val TIMER_INDEX_GRIDCHARGES : Int     = 1n;
+    public static val TIMER_INDEX_INVFFT : Int          = 2n;
+    public static val TIMER_INDEX_THETARECCONVQ : Int   = 3n;
+    public static val TIMER_INDEX_RECIPROCAL : Int      = 4n;
+    public static val TIMER_INDEX_SELF : Int            = 5n;
+    public static val TIMER_INDEX_DIRECT : Int          = 6n;
+    public static val TIMER_INDEX_PREFETCH : Int        = 7n;
+    public static val TIMER_INDEX_SETUP : Int           = 8n;
     /** A multi-timer for the several segments of a single getEnergy invocation, indexed by the constants above. */
     public val timer = new Timer(9);
 
@@ -379,23 +379,23 @@ public class PME {
                     val thisCell = cachedAtoms(x,y,z) as Rail[PointCharge];
                     var myDirectEnergy : Double = 0.0;
                     for (var i:Long = x-2; i<=x; i++) {
-                        var n1 : Int = 0;
+                        var n1:Int = 0n;
                         if (i < 0) {
-                            n1 = -1;
+                            n1 = -1n;
                         } // can't have (i > numSubCells+1)
                         for (var j:Long = y-2; j<=y+2; j++) {
-                            var n2 : Int = 0;
+                            var n2:Int = 0n;
                             if (j < 0) {
-                                n2 = -1;
+                                n2 = -1n;
                             } else if (j > numSubCells-1) {
-                                n2 = 1;
+                                n2 = 1n;
                             }
                             for (var k:Long = z-2; k<=z+2; k++) {
-                                var n3 : Int = 0;
+                                var n3:Int = 0n;
                                 if (k < 0) {
-                                    n3 = -1;
+                                    n3 = -1n;
                                 } else if (k > numSubCells-1) {
-                                    n3 = 1;
+                                    n3 = 1n;
                                 }
                                 // interact with "left half" of other boxes i.e. only boxes with i<=x
                                 if (i < x || (i == x && j < y) || (i == x && j == y && k < z)) {
@@ -706,14 +706,14 @@ public class PME {
      * Gets the nth order B-spline M_n(u) as per Eq. 4.1
      */
     public final static def bSpline(n : Int, u : Double) : Double {
-        if (n == 4) {
+        if (n == 4n) {
             return bSpline4(u);
         } else if (u < 0.0 || u > n) {
             return 0.0;
-        } else if (n == 2) {
+        } else if (n == 2n) {
             return 1.0 - Math.abs(u - 1.0);
         } else {
-            return u / (n - 1) * bSpline(n-1, u) + (n - u) / (n - 1) * bSpline(n-1, u-1.0);
+            return u / (n-1n) * bSpline(n-1n, u) + (n - u) / (n - 1n) * bSpline(n-1n, u-1.0);
         }
     }
 

@@ -36,7 +36,7 @@ public class DistributedReal3dFft {
      * to indicate that the target array has its dimensions transposed.
      */
     public static def doFFT3d(source:DistArray[Double](3), target:DistArray[Complex](3){self.dist==source.dist}, temp:DistArray[Complex](3){self.dist==source.dist}) {
-        val dataSize = (source.region.max(0)-source.region.min(0)) as Int + 1;
+        val dataSize = (source.region.max(0)-source.region.min(0)) as Int + 1n;
         if (Place.MAX_PLACES==1L) {
             // all source data at one place.  use local 3D FFT rather than distributed
             val plan : FFTW.FFTWPlan = FFTW.fftwPlan3d(dataSize, dataSize, dataSize, source, target);
@@ -52,9 +52,9 @@ public class DistributedReal3dFft {
                 val planR2C:FFTW.FFTWPlan = FFTW.fftwPlan1d(dataSize, howMany, source, temp);
                 FFTW.fftwExecute(planR2C);
                 // FFTW only computes half-complex DFT.  fill in the other half
-                val diagonal = dataSize/2+1;
+                val diagonal = dataSize/2n+1n;
                 for ([i,j] in gridRegionWithoutZ) {
-                    for (k in diagonal..(dataSize-1)) {
+                    for (k in diagonal..(dataSize-1n)) {
                         temp(i,j,k) = temp(i,j,dataSize-k).conjugate();
                     }
                 }
@@ -75,7 +75,7 @@ public class DistributedReal3dFft {
     }
 
     public static def doFFT3d(source:DistArray[Complex](3), target:DistArray[Double](3){self.dist==source.dist}, temp:DistArray[Complex](3){self.dist==source.dist}, temp2:DistArray[Double](3){self.dist==source.dist}) {
-        val dataSize = (source.region.max(0)-source.region.min(0)) as Int + 1;
+        val dataSize = (source.region.max(0)-source.region.min(0)) as Int + 1n;
         if (Place.MAX_PLACES==1L) {
             // all source data at one place.  use local 3D FFT rather than distributed
             val plan : FFTW.FFTWPlan = FFTW.fftwPlan3d(dataSize, dataSize, dataSize, source, target);
