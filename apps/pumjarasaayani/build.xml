@@ -226,13 +226,13 @@
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/test">
             <arg value="-c"/>
-            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.nochecks} ${x10c.optimize} -x10lib ${gml.props} -x10lib ${xla.props} -x10lib ${anuchem.props} -sourcepath ${x10.testlib}:${basedir}/src:. -classpath ${target-src} -d ${target-test} ${test.list}"/>
+            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.nochecks} ${x10c.optimize} -x10lib ${gml.props} -x10lib ${xla.props} -x10lib ${anuchem.props} -post '# # ${post.define.mkl} # ${post.lapack}' -sourcepath ${x10.testlib}:${basedir}/src:. -classpath ${target-src} -d ${target-test} ${test.list}"/>
         </exec>
     </target>
 
     <target name="test" depends="build-test">
-        <apply executable="runx10" failonerror="true" dir="${target-test}" relative="true" addsourcefile="false">
-            <arg line="-t -v -mx 128M -classpath ${target-src}:${target-test}" />
+        <apply executable="x10" failonerror="true" dir="${target-test}" relative="true" addsourcefile="false">
+            <arg line="-t -v -mx 128M -classpath '${xla.lib}${path.separator}${anuchem.lib}${path.separator}${target-src}${path.separator}${target-test}'" />
             <targetfile/>
 
             <fileset dir="${target-test}" includes="**/Test*.cc" />

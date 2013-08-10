@@ -63,9 +63,9 @@ public class TwoElectronIntegrals {
         this.maxam = maxam;
         maxam2 = 2n*maxam;
         val maxam4 = 4n*maxam;
-        val maxamN = ((maxam+1n)*(maxam+2n)/2n);
-        maxam2M  = ((maxam2+1n)*(maxam2+2n)/2n);
-        val maxam2N  = ((maxam2+1n)*(maxam2M+1n));
+        val maxamN = ((maxam+1)*(maxam+2)/2);
+        maxam2M  = ((maxam2+1)*(maxam2+2)/2);
+        val maxam2N  = ((maxam2+1)*(maxam2M+1));
         this.maxam2N = maxam2N;
 
         this.normFactors = normFactors;
@@ -74,13 +74,13 @@ public class TwoElectronIntegrals {
 
         // Console.OUT.println("alloc: " + maxam + " " + maxam2N);
 
-        gmt    = new Rail[Double](maxam4+1n);
-        zeroM  = new Rail[Double](maxam4+1n);
+        gmt    = new Rail[Double](maxam4+1);
+        zeroM  = new Rail[Double](maxam4+1);
 
-        rM     = new Array[Double](Region.make(0..(maxam4+1n), 0..((maxam4+1n)*(maxam4+2n)/2n)));
+        rM     = new Array[Double](Region.make(0..(maxam4+1), 0..((maxam4+1)*(maxam4+2)/2)));
         pqInts = new Array[Double](Region.make(0..maxam2, 0..maxam2M, 0..maxam2, 0..maxam2M));
         npint  = new Array[Double](Region.make(0..maxam2, 0..maxam2M));
-        pcdint = new Array[Double](Region.make(0..(maxamN+1n), 0..(maxamN+1n), 0..maxam2, 0..maxam2M));
+        pcdint = new Array[Double](Region.make(0..(maxamN+1), 0..(maxamN+1), 0..maxam2, 0..maxam2M));
 
         // Console.OUT.println("alloc2: " + pcdint.region.size());
     }
@@ -137,11 +137,11 @@ public class TwoElectronIntegrals {
         val dExps = d.exponents;
         val dCoeffs = d.coefficients;
 
-        for(ap in 0..(aExps.size-1n)) {
+        for(ap in 0..(aExps.size-1)) {
             val aAlpha = aExps(ap);
             val aCoeff = aCoeffs(ap);
 
-           for(bp in 0..(bExps.size-1n)) {
+           for(bp in 0..(bExps.size-1)) {
              pcdint.clear();
              val bAlpha = bExps(bp);
              val gamma1 = (aAlpha + bAlpha);
@@ -162,11 +162,11 @@ public class TwoElectronIntegrals {
              // Console.OUT.println("Coeff: " + aCoeff + " " + bCoeff);
              // Console.OUT.println("sigmaP, Gab, Up: " + sigmaP + " " + Gab + " " + Up);
 
-             for(cp in 0..(cExps.size-1n)) {
+             for(cp in 0..(cExps.size-1)) {
                val cAlpha = cExps(cp);
                val cCoeff = cCoeffs(cp);
 
-               for(dp in 0..(dExps.size-1n)) {
+               for(dp in 0..(dExps.size-1)) {
                  val dAlpha = dExps(dp);
                  val dCoeff = dCoeffs(dp);
 
@@ -268,11 +268,11 @@ public class TwoElectronIntegrals {
         val dExps = d.exponents;
         val dCoeffs = d.coefficients;
 
-        for(ap in 0..(aExps.size-1n)) {
+        for(ap in 0..(aExps.size-1)) {
           val aAlpha = aExps(ap);
           val aCoeff = aCoeffs(ap);
 
-          for(bp in 0..(bExps.size-1n)) {
+          for(bp in 0..(bExps.size-1)) {
              pcdint.clear();
              val bAlpha = bExps(bp);
              val gamma1 = (aAlpha + bAlpha);
@@ -293,11 +293,11 @@ public class TwoElectronIntegrals {
              // Console.OUT.println("Coeff: " + aCoeff + " " + bCoeff);
              // Console.OUT.println("sigmaP, Gab, Up: " + sigmaP + " " + Gab + " " + Up);
 
-             for(cp in 0..(cExps.size-1n)) {
+             for(cp in 0..(cExps.size-1)) {
                val cAlpha = cExps(cp);
                val cCoeff = cCoeffs(cp);
 
-               for(dp in 0..(dExps.size-1n)) {
+               for(dp in 0..(dExps.size-1)) {
                  val dAlpha = dExps(dp);
                  val dCoeff = dCoeffs(dp);
 
