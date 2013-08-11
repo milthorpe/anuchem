@@ -24,15 +24,9 @@ import x10.matrix.DenseMatrix;
 import x10.matrix.blas.DenseMatrixBLAS;
 import x10.matrix.dist.DistDenseMatrix;
 import x10.matrix.block.Grid;
-import x10.matrix.block.DenseBlock;
-import x10.matrix.dist.summa.SummaDense;
-
-import x10x.vector.Vector;
-import x10x.vector.Point3d;
 
 import au.edu.anu.chem.Molecule;
 import au.edu.anu.qm.ShellPair; 
-import au.edu.anu.util.SharedCounter;
 import au.edu.anu.util.StatisticalTimer;
 import au.edu.anu.qm.ro.Integral_Pack;
 
@@ -95,7 +89,6 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
 
         // Some other handy variables
         val maxam = bfs.getShellList().getMaximumAngularMomentum();
-        val mdc=bfs.getShellList().getMaximumDegreeOfContraction();
         maxam1 = (maxam+1)*(maxam+2)/2;
         this.norm = bfs.getNormalizationFactors(); // Vector
 
@@ -276,7 +269,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
         timer.start(TIMER_TOTAL); 
         val jd = JobDefaults.getInstance();
 
-        val maxTh=Runtime.NTHREADS; val nPlaces=Place.MAX_PLACES;            
+        val nPlaces=Place.MAX_PLACES;
 
         val cbs_auxInt= new Rail[Long](1);  cbs_auxInt(0)=N*roK;
 
@@ -333,9 +326,8 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
 
             ep.clear(); localJ.reset();
 
-            for (var ron:Long=0; ron<=roN; ron++) {
+            for (ron in 0n..roN) {
                 // Console.OUT.println("Aux - distributed ron="+ron);
-                val lron=ron;
 
                 finish {
                     timer.start(TIMER_GENCLASS); 
@@ -346,23 +338,23 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                     finish DivideAndConquerLoop1D(0, shp.size).execute(
                     (spInd:Long) => {
                         val sp=shp(spInd);
-                        val maxLron=sp.L(lron);                    
+                        val maxLron=sp.L(ron);
                         if (maxLron>=0) {
-                            val aux = taux();  val nu1=sp.nu;
+                            val aux = taux();
                             var tempJ:Rail[Double]=localAuxJ(spInd);
                             if (tempJ.size==0L) tempJ=ttemp4J();                     
 
                             val tempK=ttemp4K(); val myThreaddk=tdk();
                             val maxLm=(maxLron+1)*(maxLron+1);
                             val y=ylmp(spInd);
-                            aux.genClass(sp.aang, sp.bang, sp.aPoint, sp.bPoint, sp.zetaA, sp.zetaB, sp.conA, sp.conB, sp.dconA, sp.dconB, tempJ, lron as Int, maxLron as Int, y, sp.maxL); 
+                            aux.genClass(sp.aang, sp.bang, sp.aPoint, sp.bPoint, sp.zetaA, sp.zetaB, sp.conA, sp.conB, sp.dconA, sp.dconB, tempJ, ron, maxLron, y, sp.maxL);
 
                             var ind:Long=0;
                             val musize=sp.mu2-sp.mu+1; val nusize=sp.nu2-sp.nu+1;
 
                             if (localAuxJ(spInd).size==0L) {
                                 for (var tmu:Long=sp.mu,ttmu:Long=0; tmu<=sp.mu2; tmu++,ttmu++) for (var tnu:Long=sp.nu,ttnu:Long=0; tnu<=sp.nu2; tnu++,ttnu++) {
-                                    val scdmn=density(tmu,tnu); val nrm=norm(tmu)*norm(tnu);
+                                    val nrm=norm(tmu)*norm(tnu);
                                     for (var rolm:Long=0; rolm<maxLm; rolm++) {
                                         val normAux = (tempJ(ind++)*=nrm);       
                                         tempK((ttnu*roK+rolm)*musize+ttmu) = normAux;  
@@ -432,8 +424,8 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                 (spInd:Long) => {
                     val sp=shp(spInd);                
                     val temp=localAuxJ(spInd);
-                    val maxLron=sp.L(lron);                   
-                    if (temp.size>0L && maxLron>=0) { 
+                    val maxLron = sp.L(ron);
+                    if (temp.size>0 && maxLron>=0n) {
                         val maxLm=(maxLron+1)*(maxLron+1); var ind:Long=0L; 
  
                         /*if (sp.mu!=sp.nu && offsetAtPlace(pid)<=sp.nu && sp.nu<offsetAtPlace(pid+1)) {
@@ -542,11 +534,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
         // Copy G to place 0 // can improve further by copying only contributing blocks
         for (pid in 0..(nPlaces-1)) {
             val mat=at(Place(pid)) {distJ.local()};
-            val moff=offsetAtPlace(pid);
-            val rowCount=mat.M;
-            val colCount=mat.N;
-            for (var j:Long=0; j<colCount; j++) for (var i:Long=0; i<rowCount; i++)
-                this(i+moff,j)=mat(i,j);
+            DenseMatrix.copySubset(mat, 0, 0, this, offsetAtPlace(pid), 0, mat.M, mat.N);
         }
 
         // Fix G        
