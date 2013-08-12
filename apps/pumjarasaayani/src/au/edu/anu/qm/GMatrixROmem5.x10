@@ -86,6 +86,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
             if (jd.roNK==-1n) roNK=roN; else roNK=jd.roNK; 
         }
         val roK = (roL+1)*(roL+1);
+        Console.OUT.printf("roN=%d roNK=%d roL=%d\n", roN, roNK, roL);
 
         // Some other handy variables
         val maxam = bfs.getShellList().getMaximumAngularMomentum();
@@ -205,9 +206,6 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
         }*/
 
 
-
-
-
         val taux = new WorkerLocalHandle[Integral_Pack](() => new Integral_Pack(jd.roN, jd.roL, omega, roThresh, jd.rad, jd.roZ));
         val shellPairs = PlaceLocalHandle.make[Rail[ShellPair]](
             PlaceGroup.WORLD,
@@ -316,7 +314,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
             val localJ=distJ.local(), localK=distK.local();
             val dkp = dk(), ep=e(); 
             
-            ep.clear(); localJ.reset();
+            ep.clear(); localJ.reset(); localK.reset();
 
             for (ron in 0n..roN) {
                 // Console.OUT.println("Aux - distributed ron="+ron);
