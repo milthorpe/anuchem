@@ -25,7 +25,6 @@ import x10.matrix.blas.DenseMatrixBLAS;
  * @author: V. Ganesh, J. Milthorpe, T. Limpanuparb 
  */
 public class HartreeFockSCFMethod extends SCFMethod { 
-
     val roZ:Double;
 
     public def this(mol:Molecule[QMAtom],  
@@ -37,8 +36,13 @@ public class HartreeFockSCFMethod extends SCFMethod {
     }
 
     public def scf() : void {
-        val timer = new StatisticalTimer(5);
-        val TIMER_TOTAL:Int = 0n; val TIMER_2:Int = 1n; val TIMER_S:Int = 2n; val TIMER_F:Int = 3n; val TIMER_M:Int = 4n; //Can't use static
+        val TIMER_TOTAL:Int = 0n; // Can't use static
+        val TIMER_2:Int = 1n;
+        val TIMER_S:Int = 2n;
+        val TIMER_F:Int = 3n;
+        val TIMER_M:Int = 4n;
+        val TIMER_GUESS:Int = 5n;
+        val timer = new StatisticalTimer(6);
 
         val noOfElectrons = molecule.getNumberOfElectrons();        
         if (noOfElectrons%2n != 0n || molecule.getMultiplicity()!=1n) {
@@ -96,6 +100,7 @@ public class HartreeFockSCFMethod extends SCFMethod {
 
         var fock:Fock{self.M==N,self.N==N} = new Fock(N);
 
+        timer.start(TIMER_GUESS);
         Console.OUT.printf("Making guess orbitals ");
         if (jd.guess.equals(JobDefaults.GUESS_SAD)) {
             Console.OUT.printf(" (density = SAD, MOs = core)...\n");
@@ -108,6 +113,8 @@ public class HartreeFockSCFMethod extends SCFMethod {
         } else {
             Console.OUT.printf("(no guess)...\n");
         }
+        timer.stop(TIMER_GUESS);
+        Console.OUT.println ("    Time to construct guess density & MOs: " + (timer.total(TIMER_GUESS) as Double) / 1e9 + " seconds");
 
         Console.OUT.printf("Starting SCF procedure...\n");      
 
@@ -240,8 +247,6 @@ public class HartreeFockSCFMethod extends SCFMethod {
         //energy = eOne + eTwo + nuclearEnergy;
         //Console.OUT.printf("Cycle ** Total energy = %.6f a.u. (scale factor = %.6f)",  energy/roZ,roZ);
     }
-
-
 
 }
 
