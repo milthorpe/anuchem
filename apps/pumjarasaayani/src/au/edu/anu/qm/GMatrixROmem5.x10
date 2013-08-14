@@ -237,7 +237,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
         this.bfs=bfs; this.mol=mol; this.nOrbitals=nOrbitals; this.omega=omega; this.roThresh=roThresh;
 
         timer.stop(0);
-        Console.OUT.println ("    GMatrixROmem5 Initilization time: " + (timer.total(0) as Double) / 1e9 + " seconds");
+        Console.OUT.println ("    GMatrixROmem5 Initialization time: " + (timer.total(0) as Double) / 1e9 + " seconds");
 
         @Ifdef("__MKL__") {
             Console.OUT.print("mklGetMaxThreads() was " + mklGetMaxThreads() + " and is now set to"); mklSenumThreads(Runtime.NTHREADS);
@@ -282,52 +282,52 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                     val sp=shp(spInd);
                     val maxLron=sp.L(ron);
                     if (maxLron>=0) {
-                        var tempJ:Rail[Double]=localAuxJ(spInd), ind:Long=0;
-                        if (tempJ.size==0L) tempJ=ttemp4J();                     
-                        val tempK=ttemp4K(), myThreaddk=tdk(), maxLm=(maxLron+1)*(maxLron+1), y=ylmp(spInd);
+                        var auxJ:Rail[Double]=localAuxJ(spInd), ind:Long=0;
+                        if (auxJ.size==0L) auxJ=ttemp4J();                     
+                        val auxK=ttemp4K(), myThreaddk=tdk(), maxLm=(maxLron+1)*(maxLron+1), y=ylmp(spInd);
                         val aux=taux(), musize=sp.mu2-sp.mu+1, nusize=sp.nu2-sp.nu+1;
-                        aux.genClass(sp.aang, sp.bang, sp.aPoint, sp.bPoint, sp.zetaA, sp.zetaB, sp.conA, sp.conB, sp.dconA, sp.dconB, tempJ, ron, maxLron, y, sp.maxL);
+                        aux.genClass(sp.aang, sp.bang, sp.aPoint, sp.bPoint, sp.zetaA, sp.zetaB, sp.conA, sp.conB, sp.dconA, sp.dconB, ron, maxLron, y, sp.maxL, auxJ);
 
                         if (localAuxJ(spInd).size==0L) {
                             for (var mu:Long=sp.mu, tmu:Long=0; mu<=sp.mu2; mu++, tmu++) for (var nu:Long=sp.nu, tnu:Long=0; nu<=sp.nu2; nu++, tnu++) {
                                 val nrm=norm(mu)*norm(nu);
                                 for (var rolm:Long=0; rolm<maxLm; rolm++) {
-                                    val normAux=(tempJ(ind++)*=nrm);       
-                                    tempK((tnu*roK+rolm)*musize+tmu)=normAux;  
+                                    val normAux=(auxJ(ind++)*=nrm);       
+                                    auxK((tnu*roK+rolm)*musize+tmu)=normAux;  
                                 }
                             }
                         } else if (sp.mu!=sp.nu) {
                             for (var mu:Long=sp.mu, tmu:Long=0; mu<=sp.mu2; mu++, tmu++) for (var nu:Long=sp.nu, tnu:Long=0; nu<=sp.nu2; nu++, tnu++) {
                                 val scdmn=density(mu, nu); val nrm=norm(mu)*norm(nu); 
                                 for (var rolm:Long=0; rolm<maxLm; rolm++) {
-                                    val normAux=(tempJ(ind++)*=nrm);       
+                                    val normAux=(auxJ(ind++)*=nrm);       
                                     myThreaddk(rolm) +=2.*scdmn*normAux; 
-                                    tempK((tnu*roK+rolm)*musize+tmu)=normAux;  
+                                    auxK((tnu*roK+rolm)*musize+tmu)=normAux;  
                                 }
                             }
                         } else {
                             for (var mu:Long=sp.mu, tmu:Long=0; mu<=sp.mu2; mu++, tmu++) for (var nu:Long=sp.nu, tnu:Long=0; nu<=sp.nu2; nu++, tnu++) {
                                 val scdmn=density(mu, nu); val nrm=norm(mu)*norm(nu); 
                                 for (var rolm:Long=0; rolm<maxLm; rolm++) {
-                                    val normAux=(tempJ(ind++)*=nrm);       
+                                    val normAux=(auxJ(ind++)*=nrm);       
                                     myThreaddk(rolm) +=scdmn*normAux; 
-                                    tempK((tnu*roK+rolm)*musize+tmu)=normAux;  
+                                    auxK((tnu*roK+rolm)*musize+tmu)=normAux;  
                                 }
                             }
                         }
                         ind=0;
                         val rows=sp.mu2-sp.mu+1;
                         for (var nu:Long=sp.nu; nu<=sp.nu2; nu++) {
-                            DenseMatrix.copySubset(tempK, ind, localMatK, sp.mu-offsetAtPlace(pid), nu*roK, rows, maxLm);
+                            DenseMatrix.copySubset(auxK, ind, localMatK, sp.mu-offsetAtPlace(pid), nu*roK, rows, maxLm);
                             ind +=rows*maxLm;
                         }
                         if (offsetAtPlace(pid)<=sp.nu && sp.nu<offsetAtPlace(pid+1) && sp.mu < sp.nu) {
                             ind=0;
                             for (var mu:Long=sp.mu, tmu:Long=0; mu<=sp.mu2; mu++, tmu++) for (var nu:Long=sp.nu, tnu:Long=0; nu<=sp.nu2; nu++, tnu++) for (var rolm:Long=0; rolm<maxLm; rolm++) 
-                                tempK((tmu*roK+rolm)*nusize+tnu)=tempJ(ind++); 
+                                auxK((tmu*roK+rolm)*nusize+tnu)=auxJ(ind++); 
                             val rows2=sp.nu2-sp.nu+1; ind=0;
                             for (var mu:Long=sp.mu; mu<=sp.mu2; mu++) {
-                                DenseMatrix.copySubset(tempK, ind, localMatK, sp.nu-offsetAtPlace(pid), mu*roK, rows2, maxLm);
+                                DenseMatrix.copySubset(auxK, ind, localMatK, sp.nu-offsetAtPlace(pid), mu*roK, rows2, maxLm);
                                 ind +=rows2*maxLm;
                             }
                         }                                    
@@ -342,7 +342,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                     async Team.WORLD.allreduce[Double](dkp, 0L, dkp, 0L, dkp.size, Team.ADD);
                     timer.start(TIMER_KMATRIX);
                     if (ron <=roNK) {
-                        val A=new DenseMatrix(funcAtPlace(pid)*roK, N, auxIntMat4K.local().d);
+                        val A=new DenseMatrix(funcAtPlace(pid)*roK, N, localMatK.d);
                         val B=new DenseMatrix(funcAtPlace(pid)*roK, nOrbitals, halfAuxMat.local().d); 
                         DenseMatrixBLAS.compMultTrans(A, mos, B, [funcAtPlace(pid)*roK, nOrbitals, N], false);
                         //cannot do B.multTrans(A, mos, false); -  mos is [N, N] rather than [nObital, N]
