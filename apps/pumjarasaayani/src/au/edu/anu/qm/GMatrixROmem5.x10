@@ -408,7 +408,8 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
             //Console.OUT.printf("\nG matrix\n");
 
             // Fix J
-            finish for (spInd in 0..(shp.size-1)) async {
+            finish DivideAndConquerLoop1D(0, shp.size).execute(
+            (spInd:Long)=> {
                 val sp=shp(spInd);                
                 if (localAuxJ(spInd).size>0L && offsetAtPlace(pid)<=sp.nu && sp.nu<offsetAtPlace(pid+1) && sp.mu!=sp.nu) {                     
                     for (var mu:Long=sp.mu, muoff:Long=mu-offsetAtPlace(pid); mu<=sp.mu2; mu++, muoff++) {
@@ -418,6 +419,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                     } 
                 }
             }
+            );
 
             // These variables are used in the two sections below:
             val rowCount=localJ.M; val colCount=localJ.N;
@@ -426,16 +428,29 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
             val colStop=offsetAtPlace((pid+mult)%nPlaces);
 
             // Calculate eJ and eK
-            for (var j:Long=offsetAtPlace(pid); j<offsetAtPlace(pid+1); j++) for (var i:Long=0, ii:Long=offsetAtPlace(pid); i<rowCount; i++, ii++)
-                    {ep(0)-=.5*density(ii, j)*localJ(i, j); ep(1)-=.5*density(ii, j)*localK(i, j);}
+            for (var j:Long=offsetAtPlace(pid); j<offsetAtPlace(pid+1); j++) {
+                for (var i:Long=0, ii:Long=offsetAtPlace(pid); i<rowCount; i++, ii++) {
+                    ep(0)-=.5*density(ii, j)*localJ(i, j); ep(1)-=.5*density(ii, j)*localK(i, j);
+                }
+            }
+
             if (colStart<colStop) {
-                for (var j:Long=colStart; j<colStop; j++) for (var i:Long=0, ii:Long=offsetAtPlace(pid); i<rowCount; i++, ii++)
-                    {ep(0)+=density(ii, j)*localJ(i, j); ep(1)+=density(ii, j)*localK(i, j);}
+                for (var j:Long=colStart; j<colStop; j++) {
+                    for (var i:Long=0, ii:Long=offsetAtPlace(pid); i<rowCount; i++, ii++) {
+                        ep(0)+=density(ii, j)*localJ(i, j); ep(1)+=density(ii, j)*localK(i, j);
+                    }
+                }
             } else {
-                for (var j:Long=colStart; j<colCount; j++) for (var i:Long=0, ii:Long=offsetAtPlace(pid); i<rowCount; i++, ii++)
-                    {ep(0)+=density(ii, j)*localJ(i, j); ep(1)+=density(ii, j)*localK(i, j);}
-                for (var j:Long=0; j<colStop; j++) for (var i:Long=0, ii:Long=offsetAtPlace(pid); i<rowCount; i++, ii++)
-                    {ep(0)+=density(ii, j)*localJ(i, j); ep(1)+=density(ii, j)*localK(i, j);}
+                for (var j:Long=colStart; j<colCount; j++) {
+                    for (var i:Long=0, ii:Long=offsetAtPlace(pid); i<rowCount; i++, ii++) {
+                        ep(0)+=density(ii, j)*localJ(i, j); ep(1)+=density(ii, j)*localK(i, j);
+                    }
+                }
+                for (var j:Long=0; j<colStop; j++) {
+                    for (var i:Long=0, ii:Long=offsetAtPlace(pid); i<rowCount; i++, ii++) {
+                        ep(0)+=density(ii, j)*localJ(i, j); ep(1)+=density(ii, j)*localK(i, j);
+                    }
+                }
             }
             Team.WORLD.allreduce[Double](ep, 0L, ep, 0L, ep.size, Team.ADD);
             if (here==Place.FIRST_PLACE) Console.OUT.printf("EJ=%.10f EK=%.10f\n", ep(0)/roZ, -0.5*ep(1)/roZ);
