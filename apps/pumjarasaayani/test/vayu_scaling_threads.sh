@@ -14,7 +14,7 @@ do
   export NCPUS=$((X10_NPLACES*8))
   VMEM=$((NCPUS*2))GB # could be 3GB/CPU, but go easy
   echo $NCPUS $VMEM
-  qsub -wd -lwalltime=00:15:00 -lncpus=$NCPUS -lvmem=$VMEM -V test/run_one.sh
+  qsub -wd -lwalltime=00:15:00 -lncpus=$NCPUS -lvmem=$VMEM -V test/run_ten.sh
   echo ""
   i=$(( i*2 ))
 done
