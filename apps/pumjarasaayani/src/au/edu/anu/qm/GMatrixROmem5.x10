@@ -261,8 +261,10 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
         timer.start(TIMER_TOTAL); 
         finish ateach(place in Dist.makeUnique()) {
             val pid=here.id;
-            // Console.OUT.println("pid=" + pid + " starts...");
-
+            @Ifdef("__DEBUG__") {
+                Console.OUT.println("pid=" + pid + " starts...");
+                checkTopology();
+            }
             // For faster access 
             val shp=shellPairs(), ylmp=ylms();
             val localAuxJ=auxIntMat4J(), localMatK=auxIntMat4K.local(); 
@@ -510,5 +512,27 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
             result=System.currentTimeMillis() + "ms";
         }
         return result;
+    }
+
+    private def checkTopology() {
+        val hostnameReader = Runtime.execForRead("uname -n"); 
+        val hostname = hostnameReader.readLine();
+        Console.OUT.println(here + " executing on " + hostname + " with " + Runtime.NTHREADS + " threads");
+
+        val npReader  = Runtime.execForRead("echo $X10_NPLACES");
+        val np = npReader.readLine();
+        Console.OUT.println("X10_NPLACES="+np);
+
+        val ntReader  = Runtime.execForRead("echo $X10_NTHREADS");
+        val nt = ntReader.readLine();
+        Console.OUT.println("X10_NTHREADS="+nt);
+
+        val gtReader  = Runtime.execForRead("echo $GOTO_NUM_THREADS");
+        val gt = gtReader.readLine();
+        Console.OUT.println("GOTO_NUM_THREADS="+gt);
+
+        val ompReader  = Runtime.execForRead("echo $OMP_NUM_THREADS");
+        val omp = ompReader.readLine();
+        Console.OUT.println("OMP_NUM_THREADS="+omp);
     }
 }
