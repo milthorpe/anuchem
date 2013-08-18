@@ -144,7 +144,11 @@ static void printerror(const char *file, int line, const char *call, int retval)
     }
     else {
         char errstring[PAPI_MAX_STR_LEN];
-        PAPI_perror(retval, errstring, PAPI_MAX_STR_LEN );
+#if(PAPI_VERSION_MAJOR(PAPI_VERSION) > 4)
+        PAPI_perror(errstring);
+#else
+        PAPI_perror(retval, errstring, PAPI_MAX_STR_LEN);
+#endif
         printf("Error in %s: %s\n", call, errstring );
     }
     printf("\n");
