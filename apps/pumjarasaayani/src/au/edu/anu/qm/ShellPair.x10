@@ -28,8 +28,6 @@ public struct ShellPair {
     public val zetaB : Rail[Double]; // Gaussian exponent(s) on b
     public val conA : Rail[Double]; // Contraction coefficient(s) for a
     public val conB : Rail[Double]; // Contraction coefficient(s) for b
-    public val dconA : Int; // Degree of contraction on a
-    public val dconB : Int; // Degree of contraction on b
     public val mu : Long;
     public val nu : Long;
     public val mu2 : Long;
@@ -41,7 +39,7 @@ public struct ShellPair {
     public val contrib : Double;
 
     public def this(a:Int, b:Int, A:Point3d, B:Point3d, zetaA:Rail[Double], zetaB:Rail[Double], conA:Rail[Double], conB:Rail[Double], 
-                    dconA:Int, dconB:Int, mu:Long, nu:Long, L:Rail[Int], contrib:Double) {
+                    mu:Long, nu:Long, L:Rail[Int], contrib:Double) {
         this.aang=a;
         this.bang=b;
         this.aPoint=A;
@@ -50,8 +48,6 @@ public struct ShellPair {
         this.zetaB=zetaB;
         this.conA=conA;
         this.conB=conB;
-        this.dconA=dconA; 
-        this.dconB=dconB; 
         this.mu=mu;
         this.nu=nu;
         this.maxbraa=(a+1n)*(a+2n)/2n;
