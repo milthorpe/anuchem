@@ -197,7 +197,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
 
 
         timer.stop(0);
-        Console.OUT.println ("    GMatrixROmem5 Initialization 'up to ShellPair' time: " + (timer.total(0) as Double) / 1e9 + " seconds");
+        Console.OUT.println ("    GMatrixROmem5 Initialization 'up to ShellPair1' time: " + (timer.total(0) as Double) / 1e9 + " seconds");
         timer.start(0);
 
         val taux=new WorkerLocalHandle[Integral_Pack](()=> new Integral_Pack(jd.roN, jd.roL, omega, roThresh, jd.rad, jd.roZ));
@@ -205,6 +205,11 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
             PlaceGroup.WORLD, 
             ()=>new Rail[ShellPair](place2ShellPair(here.id+1)-place2ShellPair(here.id), 
                 (i:Long)=> rawShellPairs(i+place2ShellPair(here.id))));
+
+
+        timer.stop(0);
+        Console.OUT.println ("    GMatrixROmem5 Initialization 'up to ShellPair2' time: " + (timer.total(0) as Double) / 1e9 + " seconds");
+        timer.start(0);
 
         val roL_val=roL;
         this.ylms=PlaceLocalHandle.make[Rail[Rail[Double]]](
@@ -217,6 +222,10 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                     taux().genClassY(sp.aPoint, sp.bPoint, sp.zetaA, sp.zetaB, roL_val, tempY);
                     tempY
                 } ));
+
+        timer.stop(0);
+        Console.OUT.println ("    GMatrixROmem5 Initialization 'up to ylms' time: " + (timer.total(0) as Double) / 1e9 + " seconds");
+        timer.start(0);
 
         this.auxIntMat4J=PlaceLocalHandle.make[Rail[Rail[Double]]](
             PlaceGroup.WORLD, 
@@ -233,7 +242,11 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                          size=sp.maxbraa*sp.maxbrab*roK;
                     if (offsetAtPlace(pid)<=nu && nu<offsetAtPlace(pid+1) && sp.mu > sp.nu) size=0L;
                     new Rail[Double](size)
-                } ));        
+                } ));      
+
+        timer.stop(0);
+        Console.OUT.println ("    GMatrixROmem5 Initialization 'up to auxIntMat4J' time: " + (timer.total(0) as Double) / 1e9 + " seconds");
+        timer.start(0);  
 
         val cbs_auxInt=new Rail[Long](1); cbs_auxInt(0)=N*roK; val auxIntMat4KGrid=new Grid(funcAtPlace, cbs_auxInt);
         this.auxIntMat4K=DistDenseMatrix.make(auxIntMat4KGrid);
