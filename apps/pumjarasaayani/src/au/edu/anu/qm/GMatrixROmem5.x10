@@ -113,6 +113,10 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
         }      
         @Ifdef("__DEBUG__") for (i in (0..(nPlaces-1))) Console.OUT.printf("Place %3d: Atom=%5d Function=%3d\n", i, place2atom(i), place2func(i));
 
+        timer.stop(0);
+        Console.OUT.println ("    GMatrixROmem5 Initialization 'Initial Assessment' time: " + (timer.total(0) as Double) / 1e9 + " seconds");
+        timer.start(0);
+
         // Generate shellpairs based on the 'shell distibution'
         // Input: place2atom, place2func
         // Output: funcAtPlace, offsetAtPlace, rawShellPairs
@@ -191,6 +195,11 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
 
         Console.OUT.printf("Matrices larger than N-square/64-bit double/Size in MBs\naux4J \t%.3f\nYlm  \t%.3f\naux4K \t%.3f\nhalfAux\t%.3f\n", totJ*8e-6, totY*8e-6, N*N*roK*8e-6, nOrbitals*N*roK*8e-6);
 
+
+        timer.stop(0);
+        Console.OUT.println ("    GMatrixROmem5 Initialization 'up to ShellPair' time: " + (timer.total(0) as Double) / 1e9 + " seconds");
+        timer.start(0);
+
         val taux=new WorkerLocalHandle[Integral_Pack](()=> new Integral_Pack(jd.roN, jd.roL, omega, roThresh, jd.rad, jd.roZ));
         val shellPairs=PlaceLocalHandle.make[Rail[ShellPair]](
             PlaceGroup.WORLD, 
@@ -247,14 +256,12 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
         this.norm=bfs.getNormalizationFactors(); // Vector quantity
 
         this.roK=roK; this.roZ=jd.roZ;
+        this.taux=taux; this.shellPairs=shellPairs;
         this.offsetAtPlace=offsetAtPlace; this.funcAtPlace=funcAtPlace;
-        /*this.ttemp4J=ttemp4J; this.ttemp4K=ttemp4K; this.tdk=tdk; */this.taux=taux; 
-        /*this.distJ=distJ; this.distK=distK; this.ylms=ylms;*/ this.shellPairs=shellPairs;
-        //this.auxIntMat4J=auxIntMat4J; this.auxIntMat4K=auxIntMat4K;  this.halfAuxMat=halfAuxMat;
         this.bfs=bfs; this.mol=mol; this.nOrbitals=nOrbitals; this.omega=omega; this.roThresh=roThresh;
 
         timer.stop(0);
-        Console.OUT.println ("    GMatrixROmem5 Initialization time: " + (timer.total(0) as Double) / 1e9 + " seconds");
+        Console.OUT.println ("    GMatrixROmem5 Initialization 'total' time: " + (timer.total(0) as Double) / 1e9 + " seconds");
 
         @Ifdef("__MKL__") {
             Console.OUT.print("mklGetMaxThreads() was " + mklGetMaxThreads() + " and is now set to"); mklSenumThreads(Runtime.NTHREADS);
