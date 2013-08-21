@@ -184,18 +184,17 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
         }   
         place2ShellPair(pid)=ind; funcAtPlace(pid-1)=mu-offsetAtPlace(pid-1);  
 
-        var max:Double=funcAtPlace(0), min:Double=max, tot:Double=N, ideal:Double=tot/nPlaces, tot2:Double=0;
-        for (i in (1..(nPlaces-1))) {
-            if (funcAtPlace(i)>max) max=funcAtPlace(i);
-            if (funcAtPlace(i)<min) min=funcAtPlace(i);
-        }
-        val maxRow = max as Long;
+        var max:Double=funcAtPlace(0), min:Double=max, tot:Double=N, ideal:Double=tot/nPlaces, tot2:Double=0.;
 
         for (i in (0..(nPlaces-1))) {
-            Console.OUT.printf("place %3d: offset=%5d shellpair #%5d No. of functions=%d fraction=%.2f%%\n", i, offsetAtPlace(i), place2ShellPair(i),funcAtPlace(i),funcAtPlace(i)*100./tot);
-            tot2+=offsetAtPlace(i);
+            val cost=funcAtPlace(i);
+            Console.OUT.printf("place %3d: offset=%5d shellpair #%5d No. of functions=%d fraction=%.2f%%\n", i, offsetAtPlace(i), place2ShellPair(i), cost, cost*100./tot);
+            tot2+=cost;
+            if (cost>max) max=cost;
+            if (cost<min) min=cost;
         }
-        Console.OUT.printf("Fractions add up to %f\n",tot2/tot*100.);
+        val maxRow = max as Long;
+        Console.OUT.printf("Fractions add up to %f %%\n",tot2/tot*100.);
         Console.OUT.printf("Load balance\n Fraction of N at each place: ideal=%.2f max=%.0f min=%.0f\n Imbalance cost=%.2f %%\n", ideal, max, min, (max/ideal-1.)*100.);
 
         tot=N*N*(nPlaces+1.)*.5/nPlaces;  tot2=0.;
@@ -213,13 +212,13 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
             if (cost<min) min=cost;
             tot2+=cost;
         }
-        Console.OUT.printf("Fractions add up to %f\n",tot2/tot*100.);
+        Console.OUT.printf("Fractions add up to %f %% (due to rounding of N/nPlaces)\n",tot2/tot*100.);
         Console.OUT.printf("Load balance\n Block size1 at each place: ideal=%.2f max=%.0f min=%.0f\n Imbalance cost=%.2f %%\n", ideal, max, min, (max/ideal-1.)*100.);
 
 
         tot=N*(1.+N)*.5; tot2=0.;
         ideal=tot/nPlaces;
-        max=min=ideal;
+        max=min=fracJ(0L);
         for (i in (0..(nPlaces-1))) {
             val cost=fracJ(i);
             Console.OUT.printf("place %3d: block size2=%d fraction=%.2f%%\n", i, cost, cost*100./tot);
@@ -227,9 +226,10 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
             if (cost<min) min=cost;
             tot2+=cost;
         }
-        Console.OUT.printf("Fractions add up to %f\n",tot2/tot*100.);
+        Console.OUT.printf("Fractions add up to %f %% (due to rounding of N/nPlaces and shellpair cut-off)\n",tot2/tot*100.);
         Console.OUT.printf("Load balance\n Block size2 at each place: ideal=%.2f max=%.0f min=%.0f\n Imbalance cost=%.2f %%\n", ideal, max, min, (max/ideal-1.)*100.);
-
+        ideal=tot2/nPlaces;
+        Console.OUT.printf(" Imbalance cost=%.2f %% (adjusted)\n", (max/ideal-1.)*100.);
 
         Console.OUT.printf("Matrices larger than N-square/64-bit double/Size in MBs\naux4J \t%.3f\nYlm  \t%.3f\naux4K \t%.3f\nhalfAux\t%.3f\n", totJ*8e-6, totY*8e-6, N*N*roK*8e-6, nOrbitals*N*roK*8e-6);
         // This can be parallelised but it doesn't take significant time compare to the step below
