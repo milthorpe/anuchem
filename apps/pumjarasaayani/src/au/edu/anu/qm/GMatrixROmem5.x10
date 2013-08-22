@@ -84,7 +84,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
             Console.OUT.printf("roN=%d roNK=%d roL=%d\n", roN, roNK, roL);
             Console.OUT.printf("Omega=%5.3f thresh=%e rad=%7.3f\n", omega, roThresh, jd.rad);
             Console.OUT.printf("nAtoms=%d nShells=%d N=%d\n", nAtoms, nShells, N);
-            Console.OUT.printf("maxam=%d maxam1=%d\n", maxam, maxam1);
+            Console.OUT.printf("maxam=%d maxam1=%d\n\n", maxam, maxam1);
         }
 
         // Data distribution based on 'shell'
@@ -132,6 +132,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
 
         timer.stop(0);
         Console.OUT.println ("    GMatrixROmem5 Initialization 'Initial Assessment' time: " + (timer.total(0) as Double) / 1e9 + " seconds");
+        Console.OUT.printf("\n");
         timer.start(0);
 
         // Generate shellpairs based on the 'shell distibution'
@@ -248,7 +249,8 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
         Console.OUT.printf("Load balance\n Block size2 at each place: ideal=%.2f max=%.0f min=%.0f\n Imbalance cost=%.2f %%\n", ideal, max, min, (max/ideal-1.)*100.);
         ideal=tot2/nPlaces;
         Console.OUT.printf(" Imbalance cost=%.2f %% (adjusted)\n\n", (max/ideal-1.)*100.);
-        Console.OUT.printf("Matrices larger than N-square/64-bit double/Size in MBs\naux4J \t%.3f\nYlm  \t%.3f\naux4K \t%.3f\nhalfAux\t%.3f\n", totJ*8e-6, totY*8e-6, N*N*roK*8e-6, nOrbitals*N*roK*8e-6);        
+
+        Console.OUT.printf("Matrices larger than N-square/64-bit double/Size in MBs\naux4J \t%.3f\nYlm  \t%.3f\naux4K \t%.3f\nhalfAux\t%.3f\n\n", totJ*8e-6, totY*8e-6, N*N*roK*8e-6, nOrbitals*N*roK*8e-6);        
 
         timer.stop(0);
         Console.OUT.println ("    GMatrixROmem5 Initialization 'up to ShellPair1' time: " + (timer.total(0) as Double) / 1e9 + " seconds");
@@ -265,8 +267,8 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
         val roL_val=roL,roN_val=roN,roZ_val=jd.roZ;
         val shellPairs=PlaceLocalHandle.make[Rail[ShellPair]](
             PlaceGroup.WORLD, 
-            ()=>
-{
+            ()=> {
+
         val pid=here.id; val numShells=place2ShellPair(pid+1)-place2ShellPair(pid);
         //Console.OUT.println(pid+" "+numShells);
         var mu:Long=offsetAtPlace(pid), nu:Long=0, ind:Long=0;
@@ -319,7 +321,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
             }   
         }    
         localShellPairs
-});
+        });
         // end of temporary solution
 
         timer.stop(0);
@@ -347,7 +349,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
             PlaceGroup.WORLD, 
             ()=>new Rail[Rail[Double]](place2ShellPair(here.id+1)-place2ShellPair(here.id), 
                 (i:Long)=> 
-                {
+                {   
                     val pid=here.id, sp=shellPairs()(i);
                     val mult=(Math.ceil(nPlaces*.5+.5)-((nPlaces%2L==0L && pid<nPlaces/2)?1:0)) as Long;
                     val colStart=offsetAtPlace(pid);
@@ -390,7 +392,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
         this.bfs=bfs; this.mol=mol; this.nOrbitals=nOrbitals; this.omega=omega; this.roThresh=roThresh;
 
         timer.stop(0);
-        Console.OUT.println ("    GMatrixROmem5 Initialization 'total' time: " + (timer.total(0) as Double) / 1e9 + " seconds");
+        Console.OUT.println("    GMatrixROmem5 Initialization 'total' time: " + (timer.total(0) as Double) / 1e9 + " seconds");
 
         @Ifdef("__MKL__") {
             Console.OUT.print("mklGetMaxThreads() was " + mklGetMaxThreads() + " and is now set to"); mklSenumThreads(Runtime.NTHREADS);
@@ -398,6 +400,23 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
             // not working on multiple nodes?  better use -env OMP_NUM_THREADS 4
         }  
         @Ifdef("__PAPI__") { papi.initialize(); papi.countFlops(); papi.countMemoryOps();}
+
+        Console.OUT.printf("\n");
+        @Ifdef("__DEBUG__") finish ateach(place in Dist.makeUnique()) {
+            val hostnameReader=Runtime.execForRead("uname -n"); 
+            val hostname=hostnameReader.readLine();        
+            val npReader=Runtime.execForRead("echo $X10_NPLACES");
+            val np=npReader.readLine();
+            val ntReader=Runtime.execForRead("echo $X10_NTHREADS");
+            val nt=ntReader.readLine();
+            val gtReader=Runtime.execForRead("echo $GOTO_NUM_THREADS");
+            val gt=gtReader.readLine();
+            val ompReader=Runtime.execForRead("echo $OMP_NUM_THREADS");
+            val omp=ompReader.readLine();            
+            Console.OUT.println(here + ", Runtime.NTHREADS=" + Runtime.NTHREADS + ", uname -n=" + hostname + ", X10_NPLACES="+np+", X10_NTHREADS="+nt+", GOTO_NUM_THREADS="+gt+ ", OMP_NUM_THREADS="+omp ); // if print out separately, it goes randomly.
+            Console.OUT.flush();
+        }
+
     }
 
     @Native("c++", "mkl_get_max_threads()") private native static def mklGetMaxThreads():Int;
@@ -406,7 +425,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
     public def compute(density:Density{self.N==this.N}, mos:MolecularOrbitals{self.N==this.N}) {
         Console.OUT.printf("\nGMatrixROmem5.x10 'public def compute' %s...\n", getDateString()); 
 
-        @Ifdef("__DEBUG__") finish ateach(place in Dist.makeUnique()) checkTopology();            
+        //@Ifdef("__DEBUG__") finish ateach(place in Dist.makeUnique())             
         // Console.OUT.flush();
 
         timer.start(TIMER_TOTAL); 
@@ -706,23 +725,4 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
         return result;
     }
 
-    private def checkTopology() {
-        val hostnameReader=Runtime.execForRead("uname -n"); 
-        val hostname=hostnameReader.readLine();
-        
-        val npReader=Runtime.execForRead("echo $X10_NPLACES");
-        val np=npReader.readLine();
-
-        val ntReader=Runtime.execForRead("echo $X10_NTHREADS");
-        val nt=ntReader.readLine();
-
-        val gtReader=Runtime.execForRead("echo $GOTO_NUM_THREADS");
-        val gt=gtReader.readLine();
-
-        val ompReader=Runtime.execForRead("echo $OMP_NUM_THREADS");
-        val omp=ompReader.readLine();
-
-        Console.OUT.println(here + ", Runtime.NTHREADS=" + Runtime.NTHREADS + ", uname -n=" + hostname + ", X10_NPLACES="+np+", X10_NTHREADS="+nt+", GOTO_NUM_THREADS="+gt+ ", OMP_NUM_THREADS="+omp ); // if print out separately, it goes randomly.
-        Console.OUT.flush();
-    }
 }
