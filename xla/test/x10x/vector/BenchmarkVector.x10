@@ -1,3 +1,14 @@
+/*
+ * This file is part of ANUChem.
+ *
+ *  This file is licensed to You under the Eclipse Public License (EPL);
+ *  You may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *      http://www.opensource.org/licenses/eclipse-1.0.php
+ *
+ * (C) Copyright Josh Milthorpe 2010-2013.
+ */
+
 package x10x.vector;
 
 import x10.util.Random;
@@ -8,10 +19,10 @@ import harness.x10Test;
  * @author milthorpe
  */
 public class BenchmarkVector extends x10Test {
-    val N : Int;
+    val N:Long;
     val rand = new Random(47);
 
-    public def this(N : Int) {
+    public def this(N:Long) {
         super();
         this.N = N;
     }
@@ -66,16 +77,16 @@ public class BenchmarkVector extends x10Test {
 
     private def randomVector() {
         val a = new Vector(N);
-        for ([i] in a.region) {
+        for (i in 0..(a.vec.size-1)) {
             a(i) = rand.nextDouble();
         }
         return a;
     }
 
     public static def main(args:Rail[String]) {
-        var N : Int = 10;
+        var N:Long = 10;
         if (args.size > 0) {
-            N = Int.parseInt(args(0));
+            N = Long.parseLong(args(0));
         }
         new BenchmarkVector(N).execute();
     }
