@@ -1,3 +1,13 @@
+/*
+ * This file is part of ANUChem.
+ *
+ *  This file is licensed to You under the Eclipse Public License (EPL);
+ *  You may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *      http://www.opensource.org/licenses/eclipse-1.0.php
+ *
+ * (C) Copyright Josh Milthorpe 2010-2013.
+ */
 package x10x.matrix;
 
 import x10.util.Random;
@@ -8,10 +18,10 @@ import harness.x10Test;
  * @author milthorpe
  */
 public class BenchmarkMatrix extends x10Test {
-    val N : Int;
+    val N:Long;
     val rand = new Random(47);
 
-    public def this(N : Int) {
+    public def this(N:Long) {
         super();
         this.N = N;
     }
@@ -50,16 +60,16 @@ public class BenchmarkMatrix extends x10Test {
 
     private def randomMatrix() {
         val a = new Matrix(N);
-        for ([i,j] in a.region) {
+        for ([i,j] in a.mat.indices()) {
             a(i,j) = rand.nextDouble();
         }
         return a;
     }
 
     public static def main(args:Rail[String]) {
-        var N : Int = 70;
+        var N:Long = 70;
         if (args.size > 0) {
-            N = Int.parseInt(args(0));
+            N = Long.parseLong(args(0));
         }
         new BenchmarkMatrix(N).execute();
     }

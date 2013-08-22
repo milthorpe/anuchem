@@ -15,7 +15,7 @@
 	<property name="target-test" location="${target}/test-classes" />
 	<property name="lib" location="${basedir}/lib" />
 	<property name="jar" value="xla.jar"/>
-    <property name="x10lib-cpp" value="xla" />
+    <property name="x10libname" value="xla" />
     <property name="ar" value="xla.a"/>
     <property name="testclass" value="test/x10x/matrix/BenchmarkMatrix.x10"/>
 
@@ -37,7 +37,7 @@
 
     <target name="build" depends="dist"/>
 
-	<target name="dist" depends="init,buildx10lib-cpp">
+	<target name="dist" depends="init,buildx10lib">
         <mkdir dir="${lib}"/>
         <copy todir="${lib}">
             <fileset dir="${target}" includes="${jar}"/>
@@ -87,7 +87,7 @@
         </uptodate>
     </target>
 
-    <target name="buildx10lib-cpp" depends="check-lib" unless="lib.uptodate.cpp">
+    <target name="buildx10lib" depends="check-lib" unless="lib.uptodate.cpp">
         <echo message="Building source tree"/>
         <mkdir dir="include"/>
         <mkdir dir="lib"/>
@@ -97,14 +97,14 @@
         <pathconvert property="src.list" refid="src.files" dirsep="/" pathsep=" ">
             <map from="${basedir}${file.separator}src${file.separator}" to=""/>
         </pathconvert>
-        <echo message="x10c++ ${x10c.optimize} ${x10c.nochecks} -sourcepath . -buildx10lib ../. ${src.list} -d ../include -o ${x10lib-cpp}"/>
+        <echo message="x10c++ ${x10c.optimize} ${x10c.nochecks} -sourcepath . -buildx10lib ../. ${src.list} -d ../include -o ${x10libname}"/>
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/src">
             <arg value="-c"/>
-            <arg value="'x10c++' ${x10c.optimize} ${x10c.nochecks} -report postcompile=1 -sourcepath . -buildx10lib ../. ${src.list} -d ../include -o ${x10lib-cpp}"/>
+            <arg value="'x10c++' ${x10c.optimize} ${x10c.nochecks} -report postcompile=1 -sourcepath . -buildx10lib ../. ${src.list} -d ../include -o ${x10libname}"/>
         </exec>
 
-        <jar jarfile="${x10lib-cpp}.jar">
+        <jar jarfile="${x10libname}.jar">
             <fileset dir="${basedir}/src" includes="**/*.x10" />
         </jar>
     </target>
@@ -132,7 +132,7 @@
         </uptodate>
     </target>
     
-    <target name="build-test" depends="check-test,build-harness,build-src-java" unless="test.uptodate">
+    <target name="build-test" depends="buildx10lib,check-test,build-harness" unless="test.uptodate">
         <echo message="Building tests"/>
 
         <fileset id="changed.test.files" dir="${basedir}/test" includes="**/*.x10">
@@ -144,11 +144,11 @@
         <pathconvert property="test.list" refid="changed.test.files" dirsep="/" pathsep=" ">
             <map from="${basedir}${file.separator}test${file.separator}" to=""/>
         </pathconvert>
-        <echo message="x10c ${test.list}"/>
+        <echo message="x10c -sourcepath ${basedir}/${x10libname}.jar -d '${target-test}' ${test.list}"/>
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/test">
             <arg value="-c"/>
-            <arg value="'x10c' ${x10c.optimize} -sourcepath '${x10.testlib}${path.separator}${basedir}/src${path.separator}.' -classpath '${target-src}' -commandlineonly -d '${target-test}' ${test.list}"/>
+            <arg value="'x10c' ${x10c.optimize} -sourcepath '${x10.testlib}${path.separator}${basedir}/${x10libname}.jar' -d '${target-test}' ${test.list}"/>
         </exec>
     </target>
 
@@ -191,8 +191,8 @@
     </target>
 
 	<target name="clean">
-        <delete file="${x10lib-cpp}.properties" />
-        <delete file="${x10lib-cpp}.jar" />
+        <delete file="${x10libname}.properties" />
+        <delete file="${x10libname}.jar" />
         <delete dir="include" />
 		<delete dir="target" />
 		<delete dir="lib" />

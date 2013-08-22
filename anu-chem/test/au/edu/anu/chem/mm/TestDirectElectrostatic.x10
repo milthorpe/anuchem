@@ -22,18 +22,18 @@ public class TestDirectElectrostatic extends TestElectrostatic {
     public def sizeOfCentralCluster() : Double = 80.0;
 
     public static def main(args:Rail[String]) {
-        var numAtoms : Int;
+        var numAtoms:Long;
         if (args.size > 0) {
-            numAtoms = Int.parseInt(args(0));
+            numAtoms = Long.parseLong(args(0));
         } else {
-            Console.ERR.println("usage: direct numAtoms");
+            numAtoms = 10000;
             return;
         }
 
         new TestDirectElectrostatic().test(numAtoms);
     }
 
-    public def test(numAtoms : Int) {
+    public def test(numAtoms:Long) {
         Console.OUT.println("Testing direct electrostatic for " + numAtoms + " particles.");
 
         val atoms = generateAtoms(numAtoms);
