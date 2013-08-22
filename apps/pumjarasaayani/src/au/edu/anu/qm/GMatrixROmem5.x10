@@ -90,14 +90,14 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
         // Data distribution based on 'shell'
         // Input: nPlaces, mol
         // Output: place2atom, place2func
-var mu:Long=0, nu:Long=0, ind:Long=0, totY:Long=0, totJ:Long=0, skip:Long=0;
-val funcAtPlace=new Rail[Long](nPlaces), offsetAtPlace=new Rail[Long](nPlaces+1), place2ShellPair=new Rail[Long](nPlaces+1);
+        var mu:Long=0, nu:Long=0, ind:Long=0, totY:Long=0, totJ:Long=0, skip:Long=0;
+        val funcAtPlace=new Rail[Long](nPlaces), offsetAtPlace=new Rail[Long](nPlaces+1), place2ShellPair=new Rail[Long](nPlaces+1);
         val npp=N/nPlaces; var pid:Long=nPlaces-1, func:Long=0;
         val place2atom=new Rail[Long](nPlaces+1), place2func=new Rail[Long](nPlaces+1);  
         place2atom(nPlaces)=nAtoms-1; place2atom(0)=0;
         place2func(nPlaces)=mol.getAtom(nAtoms-1).getBasisFunctions().size(); place2func(0)=0;
 
-        // Backward to get more on place N
+        // Run backward to get more on place N if possible
         for(var a:Long=nAtoms-1; a>=0 && pid>0; a--) { // centre a  
             val aFunc=mol.getAtom(a).getBasisFunctions(), naFunc=aFunc.size();          
             for(var i:Long=naFunc-1; i>=0 && pid>0; i--) { // basis functions on a
@@ -118,8 +118,7 @@ val funcAtPlace=new Rail[Long](nPlaces), offsetAtPlace=new Rail[Long](nPlaces+1)
         for(var a:Long=0; a<nAtoms; a++) { // centre a  
             val aFunc=mol.getAtom(a).getBasisFunctions(), naFunc=aFunc.size();          
             for(var i:Long=0; i<naFunc; i++) { // basis functions on a
-                val iaFunc=aFunc.get(i), aa=iaFunc.getTotalAngularMomentum();
-                
+                val iaFunc=aFunc.get(i), aa=iaFunc.getTotalAngularMomentum();                
                 if (a==place2atom(pid) && i==place2func(pid)) {
                      funcAtPlace(pid-1)=mu-offsetAtPlace(pid-1);
                      offsetAtPlace(pid)=mu;
@@ -128,7 +127,7 @@ val funcAtPlace=new Rail[Long](nPlaces), offsetAtPlace=new Rail[Long](nPlaces+1)
                 mu+=(aa+1)*(aa+2)/2;
             }
         }
-
+        funcAtPlace(pid-1)=mu-offsetAtPlace(pid-1); 
         @Ifdef("__DEBUG__") for (i in (0..(nPlaces-1))) Console.OUT.printf("Place %3d: Atom=%5d Function=%3d\n", i, place2atom(i), place2func(i));
 
         timer.stop(0);
@@ -142,7 +141,7 @@ val funcAtPlace=new Rail[Long](nPlaces), offsetAtPlace=new Rail[Long](nPlaces+1)
         val threshold=roThresh*jd.roZ*jd.roZ*1e-3; 
         // ** Threshold must be relative to roThresh *** otherwise Z scaling will cause a problem
         // This is effectively a density threshold RO Thesis (2.26)
-        val rawShellPairs=new Rail[ShellPair](nShells*nShells); // maximum limit      
+        //val rawShellPairs=new Rail[ShellPair](nShells*nShells); // maximum limit      
         
         place2ShellPair(0)=0; offsetAtPlace(0)=0; offsetAtPlace(nPlaces)=N; pid=1;
         val fracJ=new Rail[Long](nPlaces);
@@ -189,8 +188,7 @@ val funcAtPlace=new Rail[Long](nPlaces), offsetAtPlace=new Rail[Long](nPlaces+1)
                         if (offsetAtPlace(pid-1)<=nu && nu<offsetAtPlace(pid) && mu > nu) skip++;
                         else if (contrib >=threshold) {
                             val maxL=new Rail[Int](roN+1, roL);
-                            //Console.OUT.println(pid + " "+ ind+ " " +a + " " +i + " " +b +" "+j + "mu nu contrib "+ mu + " " + nu+" "+contrib);
-                            rawShellPairs(ind)=new ShellPair(aang, bang, aPoint, bPoint, zetaA, zetaB, conA, conB, mu, nu, maxL, contrib);     
+                            //rawShellPairs(ind)=new ShellPair(aang, bang, aPoint, bPoint, zetaA, zetaB, conA, conB, mu, nu, maxL, contrib);     
                             ind++;
                             totY +=conA.size * conB.size * roK;
                             totJ +=maxbraa * maxbrab * roK;
@@ -201,7 +199,7 @@ val funcAtPlace=new Rail[Long](nPlaces), offsetAtPlace=new Rail[Long](nPlaces+1)
                 }
             }   
         }   
-        place2ShellPair(pid)=ind; funcAtPlace(pid-1)=mu-offsetAtPlace(pid-1);  
+        place2ShellPair(pid)=ind;  
         // This can be parallelised but it doesn't take significant time compare to the step below
 
         var max:Double=funcAtPlace(0), min:Double=max, tot:Double=N, ideal:Double=tot/nPlaces, tot2:Double=0.;
@@ -246,11 +244,10 @@ val funcAtPlace=new Rail[Long](nPlaces), offsetAtPlace=new Rail[Long](nPlaces+1)
             if (cost<min) min=cost;
             tot2+=cost;
         }
-        Console.OUT.printf("Fractions add up to %f %% (due to rounding of N/nPlaces and shellpair cut-off)\n",tot2/tot*100.);
+        Console.OUT.printf("Fractions add up to %f %% (due to rounding of N/nPlaces, granularity of shellpairs and shellpair cut-off)\n",tot2/tot*100.);
         Console.OUT.printf("Load balance\n Block size2 at each place: ideal=%.2f max=%.0f min=%.0f\n Imbalance cost=%.2f %%\n", ideal, max, min, (max/ideal-1.)*100.);
         ideal=tot2/nPlaces;
         Console.OUT.printf(" Imbalance cost=%.2f %% (adjusted)\n\n", (max/ideal-1.)*100.);
-
         Console.OUT.printf("Matrices larger than N-square/64-bit double/Size in MBs\naux4J \t%.3f\nYlm  \t%.3f\naux4K \t%.3f\nhalfAux\t%.3f\n", totJ*8e-6, totY*8e-6, N*N*roK*8e-6, nOrbitals*N*roK*8e-6);        
 
         timer.stop(0);
@@ -311,8 +308,7 @@ val funcAtPlace=new Rail[Long](nPlaces), offsetAtPlace=new Rail[Long](nPlaces+1)
                         }
                         contrib=Math.abs(contrib);
                         if (offsetAtPlace(pid)<=nu && nu<offsetAtPlace(pid+1) && mu > nu) contrib=0.; // pid is different from above code
-                        else if (contrib >=threshold /*&& ind<numShells*/) {
-                            //Console.OUT.println(pid + " "+ ind+ " " +a + " " +i + " " +b +" "+j + "mu nu contrib "+ mu + " " + nu+" "+contrib);
+                        else if (contrib >=threshold) {
                             val maxL=new Rail[Int](roN_val+1, roL_val);
                             localShellPairs(ind)=new ShellPair(aang, bang, aPoint, bPoint, zetaA, zetaB, conA, conB, mu, nu, maxL, contrib);
                             ind++;
@@ -321,7 +317,7 @@ val funcAtPlace=new Rail[Long](nPlaces), offsetAtPlace=new Rail[Long](nPlaces+1)
                     }    
                 }
             }   
-        }    //Console.OUT.println("Final"+ pid + " "+ ind);
+        }    
         localShellPairs
 });
         // end of temporary solution
