@@ -237,7 +237,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
 
         tot=N*(1.+N)*.5; tot2=0.;
         ideal=tot/nPlaces;
-        max=min=fracJ(0L);
+        max=min=fracJ(0);
         for (i in (0..(nPlaces-1))) {
             val cost=fracJ(i);
             Console.OUT.printf("place %3d: block size2=%d fraction=%.2f%%\n", i, cost, cost*100./tot);
@@ -537,22 +537,21 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                         val B=new DenseMatrix(funcAtPlace(pid)*roK, nOrbitals, halfAuxMat.local().d); 
                         DenseMatrixBLAS.compMultTrans(A, mos, B, [funcAtPlace(pid)*roK, nOrbitals, N], false);
                         //cannot do B.multTrans(A, mos, false); -  mos is [N, N] rather than [nObital, N]
+                        val a=halfAuxMat.local();
+                        val noffh=offsetAtPlace(pid);
+                        val ch=new DenseMatrix(a.M, a.M, tBlock.d); // TODO: to be replaced by DSYRK - careful it is only half of ch
+                        ch.multTrans(a, a, false);
+                        for (var j:Long=0; j<ch.N; j++) for (var i:Long=0; i<ch.M; i++) {
+                           localK(i, noffh+j) +=ch(i, j);
+                        }
                     }
                     timer.stop(TIMER_KMATRIX);
                 }
 
                 if (ron <=roNK) { // This produces K/2 & TODO: improved further by better scheduling and buffering = ring broadcast ?
                     timer.start(TIMER_KMATRIX);
-                    // Console.OUT.println("K - distributed");
                     val mult=(Math.ceil(nPlaces*.5+.5) - ((nPlaces%2L==0L && pid<nPlaces/2)?1:0)) as Long;
                     val a=halfAuxMat.local();
-                    //val b=a; 
-                    val noffh=offsetAtPlace(pid);
-                    val ch=new DenseMatrix(a.M, a.M, tBlock.d); // TODO: to be replaced by DSYRK - careful it is only half of ch
-                    ch.multTrans(a, a, false);
-                    for (var j:Long=0; j<ch.N; j++) for (var i:Long=0; i<ch.M; i++) {
-                        localK(i, noffh+j) +=ch(i, j);
-                    }
                     for (var blk:Long=1; blk<mult; blk++) {
                         val qid=(pid+blk)%nPlaces;
                         val b=at(Place(qid)) {halfAuxMat.local()}; // This might be a waste of memory?
