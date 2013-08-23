@@ -1,5 +1,4 @@
-/*
- * This file is part of ANUChem.
+/*  This file is part of ANUChem.
  *
  *  This file is licensed to You under the Eclipse Public License (EPL);
  *  You may not use this file except in compliance with the License.
@@ -14,24 +13,20 @@ import x10.compiler.Ifdef;
 import x10.compiler.Native;
 import x10.compiler.NativeCPPInclude;
 import x10.io.IOException;
-
+import x10.lang.PlaceLocalHandle;
+import x10.matrix.blas.DenseMatrixBLAS;
+import x10.matrix.block.Grid;
+import x10.matrix.DenseMatrix;
+import x10.matrix.dist.DistDenseMatrix;
+import x10.regionarray.Dist;
 import x10.util.RailUtils;
 import x10.util.Team;
-
 import x10.util.WorkerLocalHandle;
-import x10.lang.PlaceLocalHandle;
-
-import x10.matrix.DenseMatrix;
-import x10.matrix.blas.DenseMatrixBLAS;
-import x10.matrix.dist.DistDenseMatrix;
-import x10.matrix.block.Grid;
-
-import x10.regionarray.Dist;
 
 import au.edu.anu.chem.Molecule;
+import au.edu.anu.qm.ro.Integral_Pack;
 import au.edu.anu.qm.ShellPair; 
 import au.edu.anu.util.StatisticalTimer;
-import au.edu.anu.qm.ro.Integral_Pack;
 
 import edu.utk.cs.papi.PAPI;
 
@@ -44,33 +39,30 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
     val TIMER_JMATRIX=1;
     val TIMER_KMATRIX=2;
     val TIMER_GENCLASS=3;
+
     transient var papi:PAPI=new PAPI(); // @Ifdef("__PAPI__") // XTENLANG-3132
 
-    // Standard conventional stuff
     private val bfs:BasisFunctions, mol:Molecule[QMAtom];
-    val nOrbitals:Long, norm:Rail[Double]; 
-    val shellPairs:PlaceLocalHandle[Rail[ShellPair]];
 
-    // RO stuff 
     val auxIntMat4K:DistDenseMatrix, halfAuxMat:DistDenseMatrix, distJ:DistDenseMatrix, distK:DistDenseMatrix, tempBlock:DistDenseMatrix;
-    val auxIntMat4J:PlaceLocalHandle[Rail[Rail[Double]]], ylms:PlaceLocalHandle[Rail[Rail[Double]]];
+    val auxIntMat4J:PlaceLocalHandle[Rail[Rail[Double]]], ylms:PlaceLocalHandle[Rail[Rail[Double]]], shellPairs:PlaceLocalHandle[Rail[ShellPair]];
+    val dk:PlaceLocalHandle[Rail[Double]], e:PlaceLocalHandle[Rail[Double]]; 
     val ttemp4J:WorkerLocalHandle[Rail[Double]], ttemp4K:WorkerLocalHandle[Rail[Double]], taux:WorkerLocalHandle[Integral_Pack], tdk:WorkerLocalHandle[Rail[Double]];
+    val nOrbitals:Long, norm:Rail[Double], roN:Int, roNK:Int, roL:Int, roK:Int; 
     val roZ:Double, omega:Double, roThresh:Double, funcAtPlace:Rail[Long], offsetAtPlace:Rail[Long];
-    val dk:PlaceLocalHandle[Rail[Double]], e:PlaceLocalHandle[Rail[Double]];
-    val roN:Int, roNK:Int, roL:Int, roK:Int; // 'var' because it can be overridden
 
     public def this(N:Long, bfs:BasisFunctions, mol:Molecule[QMAtom], nOrbitals:Long, omega:Double, roThresh:Double):GMatrixROmem5{self.M==N, self.N==N} {     
         super(N, N);
         Console.OUT.printf("\nGMatrixROmem5.x10 'public def this' %s...\n", getDateString());
-        val timer=new StatisticalTimer(1); timer.start(0);
-        val jd=JobDefaults.getInstance(), nPlaces=Place.MAX_PLACES, nAtoms=mol.getNumberOfAtoms();
-        val maxam=bfs.getShellList().getMaximumAngularMomentum(), maxam1=(maxam+1)*(maxam+2)/2;
-        var nShells:Long=0;
-        for (var a:Long=0; a<nAtoms; nShells+=mol.getAtom(a++).getBasisFunctions().size()) ;            
+        val timer=new StatisticalTimer(1), jd=JobDefaults.getInstance(), nPlaces=Place.MAX_PLACES, nAtoms=mol.getNumberOfAtoms(), 
+            maxam=bfs.getShellList().getMaximumAngularMomentum(), maxam1=(maxam+1)*(maxam+2)/2,
+            l_n=new Rail[Int](jd.roN+3), aux=new Integral_Pack(jd.roN, jd.roL, omega, roThresh, jd.rad, jd.roZ),
+            funcAtPlace=new Rail[Long](nPlaces), offsetAtPlace=new Rail[Long](nPlaces+1), place2atom=new Rail[Long](nPlaces+1), place2func=new Rail[Long](nPlaces+1);
+        var nShells:Long=0, mu:Long=0, nu:Long=0, ind:Long=0, totY:Long=0, totJ:Long=0, skip:Long=0, pid:Long=nPlaces-1, func:Long=0;
 
-        // Set up RO roN, roL, roK for later use
-        val l_n=new Rail[Int](jd.roN+3);
-        val aux=new Integral_Pack(jd.roN, jd.roL, omega, roThresh, jd.rad, jd.roZ);
+        timer.start(0);
+        // Set up nShells and RO variables for later use
+        for (var a:Long=0; a<nAtoms; nShells+=mol.getAtom(a++).getBasisFunctions().size()); 
         if (omega>0.) { // long-range Ewald operator
             aux.getNL(l_n);
             roN=roNK=l_n(0);
@@ -81,24 +73,11 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
             if (jd.roNK==-1n) roNK=roN; else roNK=jd.roNK; 
         }
         val roK=(roL+1n)*(roL+1n);
-        @Ifdef("__DEBUG__") {
-            Console.OUT.printf("roN=%d roNK=%d roL=%d\n", roN, roNK, roL);
-            Console.OUT.printf("Omega=%5.3f thresh=%e rad=%7.3f\n", omega, roThresh, jd.rad);
-            Console.OUT.printf("nAtoms=%d nShells=%d N=%d\n", nAtoms, nShells, N);
-            Console.OUT.printf("maxam=%d maxam1=%d\n\n", maxam, maxam1);
-        }
 
-        // Data distribution based on 'shell'
-        // Input: nPlaces, mol
-        // Output: place2atom, place2func
-        var mu:Long=0, nu:Long=0, ind:Long=0, totY:Long=0, totJ:Long=0, skip:Long=0;
-        val funcAtPlace=new Rail[Long](nPlaces), offsetAtPlace=new Rail[Long](nPlaces+1);
-        val npp=N/nPlaces; var pid:Long=nPlaces-1, func:Long=0;
-        val place2atom=new Rail[Long](nPlaces+1), place2func=new Rail[Long](nPlaces+1);  
+        // Prilimirary work division by atom and function shell: Run backward so that (if there is load imbalance) head node has less work 
         place2atom(nPlaces)=nAtoms-1; place2atom(0)=0;
         place2func(nPlaces)=mol.getAtom(nAtoms-1).getBasisFunctions().size(); place2func(0)=0;
-
-        // Run backward to get more on place N if possible
+        val npp=N/nPlaces; 
         for(var a:Long=nAtoms-1; a>=0 && pid>0; a--) { // centre a  
             val aFunc=mol.getAtom(a).getBasisFunctions(), naFunc=aFunc.size();          
             for(var i:Long=naFunc-1; i>=0 && pid>0; i--) { // basis functions on a
@@ -112,10 +91,10 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
             }
         }
         if (pid>0n) {
-            Console.ERR.println("Too many palaces!\n"); System.setExitCode(1n); 
+            Console.ERR.println("Too many places! Last pid: "+pid); System.setExitCode(1n); 
             throw new UnsupportedOperationException("Too many places! Last pid: "+pid);
         }      
-        pid=1;mu=0;
+        pid=1; mu=0; // Run forward
         offsetAtPlace(0)=0; offsetAtPlace(nPlaces)=N; 
         for(var a:Long=0; a<nAtoms; a++) { // centre a  
             val aFunc=mol.getAtom(a).getBasisFunctions(), naFunc=aFunc.size();          
@@ -130,31 +109,31 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
             }
         }
         funcAtPlace(pid-1)=mu-offsetAtPlace(pid-1); 
-        @Ifdef("__DEBUG__") for (i in (0..(nPlaces-1))) Console.OUT.printf("Place %3d: Atom=%5d Function=%3d\n", i, place2atom(i), place2func(i));
 
-        timer.stop(0);
-        Console.OUT.println ("    GMatrixROmem5 Initialization 'Initial Assessment' time: " + (timer.total(0) as Double) / 1e9 + " seconds");
-        Console.OUT.printf("\n");
-        timer.start(0);
-
-        val threshold=roThresh*jd.roZ*jd.roZ*1e-3; 
-        // ** Threshold must be relative to roThresh *** otherwise Z scaling will cause a problem
-        // This is effectively a density threshold RO Thesis (2.26)    
-        val roL_val=roL,roN_val=roN,roZ_val=jd.roZ,nShells_val=nShells;
-        val sizeInfo=PlaceLocalHandle.make[Rail[Double]](PlaceGroup.WORLD, ()=> new Rail[Double](4));
+        @Ifdef("__DEBUG__") {
+            Console.OUT.printf("roN=%d roNK=%d roL=%d Omega=%.3f thresh=%e rad=%.3f\n", roN, roNK, roL, omega, roThresh, jd.rad);
+            Console.OUT.printf("nAtoms=%d nShells=%d N=%d maxam=%d maxam1=%d\n\n", nAtoms, nShells, N, maxam, maxam1);
+            Console.OUT.println ("Prilimirary work division by atom and function shell");
+            for (i in (0..(nPlaces-1))) Console.OUT.printf("Place %3d: Atom=%5d Function=%3d\n", i, place2atom(i), place2func(i));
+            timer.stop(0);
+            Console.OUT.println ("    GMatrixROmem5 Initialization 'Initial Assessment' time: " + (timer.total(0) as Double) / 1e9 + " seconds");
+            Console.OUT.printf("\n");
+            timer.start(0);
+        }
 
         // distributed generation of shellPairs
+        val threshold=roThresh*jd.roZ*jd.roZ*1e-3; 
+        // ** Threshold must be relative to roThresh *** otherwise Z scaling will cause a problem: This is effectively a density threshold RO Thesis (2.26)    
+        val roL_val=roL,roN_val=roN,roZ_val=jd.roZ,nShells_val=nShells, sizeInfo=PlaceLocalHandle.make[Rail[Double]](PlaceGroup.WORLD, ()=> new Rail[Double](4));
         val shellPairs=PlaceLocalHandle.make[Rail[ShellPair]](
             PlaceGroup.WORLD, 
             ()=> {
-
             val pid=here.id, info=sizeInfo(), localShellPairs = new Rail[ShellPair](nShells_val*nShells_val); 
             var mu:Long=offsetAtPlace(pid), nu:Long=0, ind:Long=0;
-
             for (var a:Long=place2atom(pid); a<=place2atom(pid+1); a++) { // centre a  
                 val aFunc=mol.getAtom(a).getBasisFunctions();
                 val naFunc=aFunc.size();          
-                for (var i:Long=(a==place2atom(pid)?place2func(pid):0); i<(a==place2atom(pid+1)?place2func(pid+1):naFunc); i++) { // basis functions on a // careful
+                for (var i:Long=(a==place2atom(pid)?place2func(pid):0); i<(a==place2atom(pid+1)?place2func(pid+1):naFunc); i++) { // basis functions on a: careful/tricky
                     val iaFunc=aFunc.get(i);    
                     val aa=iaFunc.getTotalAngularMomentum();
                     val aang=iaFunc.getTotalAngularMomentum();
@@ -175,7 +154,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                             val zetaB=jbFunc.exponents; 
                             val conB=jbFunc.coefficients; 
                             val dConB=conB.size as Int;
-                            var contrib:Double=0.; // ss=conservative estimate
+                            var contrib:Double=0.; // conservative estimate from ss
                             val R2=Math.pow(aPoint.i-bPoint.i, 2.)+Math.pow(aPoint.j-bPoint.j, 2.)+Math.pow(aPoint.k-bPoint.k, 2.);
                             for (var ii:Int=0n; ii<conA.size; ii++) {
                                 for (var jj:Int=0n; jj<conB.size; jj++)  {
@@ -184,9 +163,9 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                                 }
                             }
                             contrib=Math.abs(contrib); 
-                            if (offsetAtPlace(pid)<=nu && nu<offsetAtPlace(pid+1) && mu > nu) info(2)++; // pid is different from above code
+                            if (offsetAtPlace(pid)<=nu && nu<offsetAtPlace(pid+1) && mu > nu) info(2)++; 
                             else if (contrib >=threshold) {
-                                val maxL=new Rail[Int](roN_val+1, roL_val); // roL_val to change to smaller number
+                                val maxL=new Rail[Int](roN_val+1, roL_val); // change roL_val to smaller number
                                 localShellPairs(ind)=new ShellPair(aang, bang, aPoint, bPoint, zetaA, zetaB, conA, conB, mu, nu, maxL, contrib);
                                 ind++;
                                 info(0)+=maxbraa*maxbrab; 
@@ -198,60 +177,51 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                     }
                 }   
             }    
-            val finalShellPairs = new Rail[ShellPair](ind, (i:Long)=> localShellPairs(i));
+            val finalShellPairs=new Rail[ShellPair](ind, (i:Long)=> localShellPairs(i));
             finalShellPairs
         });
 
+        // Calculating various measure of load (im)balance
         var max:Double=funcAtPlace(0), min:Double=max, tot:Double=N, ideal:Double=tot/nPlaces, tot2:Double=0.;
-
+        Console.OUT.printf("1. Number of mu at each place\nPlace  (Offset)  Functions  Fraction\n");
         for (i in (0..(nPlaces-1))) {
-            val cost=funcAtPlace(i);
-            Console.OUT.printf("place %3d: offset=%5d No. of functions=%d fraction=%.2f%%\n", i, offsetAtPlace(i), cost, cost*100./tot);
-            tot2+=cost;
-            if (cost>max) max=cost;
-            if (cost<min) min=cost;
+            val cost=funcAtPlace(i);                      
+            max=Math.max(cost,max); min=Math.min(cost,min); tot2+=cost; 
+            Console.OUT.printf("%5d  (%6d)  %9d  %7.2f%%\n", i, offsetAtPlace(i), cost, cost*100./tot);
         }
-        val maxRow = max as Long;
-        Console.OUT.printf("Fractions add up to %f %%\n",tot2/tot*100.);
-        Console.OUT.printf("Load balance\n Fraction of N at each place: ideal=%.2f max=%.0f min=%.0f\n Imbalance cost=%.2f %%\n\n", ideal, max, min, (max/ideal-1.)*100.);
+        Console.OUT.printf("Fractions add up to %.2f %%\n", tot2/tot*100.);
+        Console.OUT.printf("Fraction of N at each place: ideal=%.2f max=%.0f min=%.0f\n Imbalance cost=%.2f %%\n\n", ideal, max, min, (max/ideal-1.)*100.);
+        val maxRow = max as Long; // This is used for tempBlock allocation later
 
-        tot=N*N*(nPlaces+1.)*.5/nPlaces;  tot2=0.;
-        ideal=tot/nPlaces;
-        max=min=ideal;
+        tot=N*N*(nPlaces+1.)*.5/nPlaces; tot2=0.; ideal=max=min=tot/nPlaces;
+        Console.OUT.printf("2. Number of mu nu (block of G/J/K) at each place\nPlace  Functions  Fraction\n");      
         for (i in (0..(nPlaces-1))) {
-            pid=i;
-            val mult=(Math.ceil(nPlaces*.5+.5)-((nPlaces%2L==0L && pid<nPlaces/2)?1:0)) as Long;
-            val colStart=offsetAtPlace(pid);
-            val colStop=offsetAtPlace((pid+mult)%nPlaces);
+            val mult=(Math.ceil(nPlaces*.5+.5)-((nPlaces%2L==0L && i<nPlaces/2)?1:0)) as Long;
+            val colStart=offsetAtPlace(i), colStop=offsetAtPlace((i+mult)%nPlaces);
             val col=colStart<colStop?colStop-colStart:colStop+N-colStart;
             val cost=funcAtPlace(i)*col;
-            Console.OUT.printf("place %3d: block size1=%d fraction=%.2f%%\n", i, cost, cost*100./tot);
-            if (cost>max) max=cost;
-            if (cost<min) min=cost;
-            tot2+=cost;
+            max=Math.max(cost,max); min=Math.min(cost,min); tot2+=cost;
+            Console.OUT.printf("%5d  %9d  %7.2f%%\n", i, cost, cost*100./tot);            
         }
-        Console.OUT.printf("Fractions add up to %f %% (due to rounding of N/nPlaces)\n",tot2/tot*100.);
-        Console.OUT.printf("Load balance\n Block size1 at each place: ideal=%.2f max=%.0f min=%.0f\n Imbalance cost=%.2f %%\n\n", ideal, max, min, (max/ideal-1.)*100.);
+        Console.OUT.printf("Fractions add up to %.2f %% (due to rounding of N/nPlaces)\n",tot2/tot*100.);
+        Console.OUT.printf("Block size at each place: ideal=%.2f max=%.0f min=%.0f\n Imbalance cost=%.2f %%\n\n", ideal, max, min, (max/ideal-1.)*100.);
 
-        tot=N*(1.+N)*.5; tot2=0.;
-        ideal=tot/nPlaces;
-        max=min=at(Place(0)) sizeInfo()(0);
+        tot=N*(1.+N)*.5; tot2=0.; ideal=tot/nPlaces; max=min=at(Place(0)) sizeInfo()(0);
+        Console.OUT.printf("3. Number of Aux(mu,nu) calculated at each place\nPlace  Functions  Fraction\n");    
         for (i in (0..(nPlaces-1))) {
             val cost=at(Place(i)) sizeInfo()(0);
             totY+=at(Place(i)) sizeInfo()(1);
             totJ+=at(Place(i)) sizeInfo()(2);
             skip+=at(Place(i)) sizeInfo()(3);
-            Console.OUT.printf("place %3d: block size2=%d fraction=%.2f%%\n", i, cost, cost*100./tot);
-            if (cost>max) max=cost;
-            if (cost<min) min=cost;
-            tot2+=cost;
+            max=Math.max(cost,max); min=Math.min(cost,min); tot2+=cost;
+            Console.OUT.printf("%5d  %9d  %7.2f%%\n", i, cost, cost*100./tot); 
         }
-        Console.OUT.printf("Fractions add up to %f %% (due to rounding of N/nPlaces, granularity of shellpairs and shellpair cut-off)\n",tot2/tot*100.);
-        Console.OUT.printf("Load balance\n Block size2 at each place: ideal=%.2f max=%.0f min=%.0f\n Imbalance cost=%.2f %%\n", ideal, max, min, (max/ideal-1.)*100.);
+        Console.OUT.printf("Fractions add up to %.2f %% (due to rounding of N/nPlaces, granularity of shellpairs and shellpair cut-off)\n",tot2/tot*100.);
+        Console.OUT.printf("Aux/D calculations at each place: ideal=%.2f max=%.0f min=%.0f\n Imbalance cost=%.2f %%\n", ideal, max, min, (max/ideal-1.)*100.);
         ideal=tot2/nPlaces;
-        Console.OUT.printf(" Imbalance cost=%.2f %% (adjusted)\n\n", (max/ideal-1.)*100.);
+        Console.OUT.printf(" Imbalance cost=%.2f %% (adjusted), %d shellpairs skipped\n\n", (max/ideal-1.)*100., skip);
 
-        Console.OUT.printf("Matrices larger than N-square/64-bit double/Size in MBs\naux4J \t%.3f\nYlm  \t%.3f\naux4K \t%.3f\nhalfAux\t%.3f\n\n", totJ*8e-6, totY*8e-6, N*N*roK*8e-6, nOrbitals*N*roK*8e-6);        
+        Console.OUT.printf("Matrices size in MBs/64-bit double/\nJ, K, G, density, mos\t%.3f (each)\naux4J \t%.3f\nYlm  \t%.3f\naux4K \t%.3f\nhalfAux\t%.3f\n\n", N*N*8e-6, totJ*8e-6, totY*8e-6, N*N*roK*8e-6, nOrbitals*N*roK*8e-6);        
 
         timer.stop(0);
         Console.OUT.println ("    GMatrixROmem5 Initialization 'up to ShellPair' time: " + (timer.total(0) as Double) / 1e9 + " seconds");
@@ -290,10 +260,6 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                     new Rail[Double](size)
                 } ));      
 
-        timer.stop(0);
-        Console.OUT.println ("    GMatrixROmem5 Initialization 'up to auxIntMat4J' time: " + (timer.total(0) as Double) / 1e9 + " seconds");
-        timer.start(0);  
-
         val cbs_auxInt=new Rail[Long](1); cbs_auxInt(0)=N*roK; val auxIntMat4KGrid=new Grid(funcAtPlace, cbs_auxInt);
         this.auxIntMat4K=DistDenseMatrix.make(auxIntMat4KGrid);
 
@@ -312,12 +278,10 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
 
         this.dk=PlaceLocalHandle.make[Rail[Double]](PlaceGroup.WORLD, ()=> new Rail[Double](roK)); 
         this.e=PlaceLocalHandle.make[Rail[Double]](PlaceGroup.WORLD, ()=> new Rail[Double](2));
-        this.norm=bfs.getNormalizationFactors(); // Vector quantity
 
-        this.roK=roK; this.roZ=jd.roZ;
-        this.taux=taux; this.shellPairs=shellPairs;
         this.offsetAtPlace=offsetAtPlace; this.funcAtPlace=funcAtPlace;
-        this.bfs=bfs; this.mol=mol; this.nOrbitals=nOrbitals; this.omega=omega; this.roThresh=roThresh;
+        this.roK=roK; this.roZ=jd.roZ; this.taux=taux; this.shellPairs=shellPairs;
+        this.bfs=bfs; this.mol=mol; this.nOrbitals=nOrbitals; this.omega=omega; this.roThresh=roThresh; this.norm=bfs.getNormalizationFactors();
 
         timer.stop(0);
         Console.OUT.println("    GMatrixROmem5 Initialization 'total' time: " + (timer.total(0) as Double) / 1e9 + " seconds");
@@ -331,17 +295,12 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
 
         Console.OUT.printf("\n");
         @Ifdef("__DEBUG__") finish ateach(place in Dist.makeUnique()) {
-            val hostnameReader=Runtime.execForRead("uname -n"); 
-            val hostname=hostnameReader.readLine();        
-            val npReader=Runtime.execForRead("echo $X10_NPLACES");
-            val np=npReader.readLine();
-            val ntReader=Runtime.execForRead("echo $X10_NTHREADS");
-            val nt=ntReader.readLine();
-            val gtReader=Runtime.execForRead("echo $GOTO_NUM_THREADS");
-            val gt=gtReader.readLine();
-            val ompReader=Runtime.execForRead("echo $OMP_NUM_THREADS");
-            val omp=ompReader.readLine();            
-            Console.OUT.println(here + ", Runtime.NTHREADS=" + Runtime.NTHREADS + ", uname -n=" + hostname + ", X10_NPLACES="+np+", X10_NTHREADS="+nt+", GOTO_NUM_THREADS="+gt+ ", OMP_NUM_THREADS="+omp ); // if print out separately, it goes randomly.
+            val hostname=Runtime.execForRead("uname -n").readLine();      
+            val np=Runtime.execForRead("echo $X10_NPLACES").readLine();
+            val nt=Runtime.execForRead("echo $X10_NTHREADS").readLine();
+            val gt=Runtime.execForRead("echo $GOTO_NUM_THREADS").readLine();
+            val omp=Runtime.execForRead("echo $OMP_NUM_THREADS").readLine();
+            Console.OUT.println(here + ", Runtime.NTHREADS=" + Runtime.NTHREADS + ", uname -n=" + hostname + ", X10_NPLACES="+np+", X10_NTHREADS="+nt+", GOTO_NUM_THREADS="+gt+ ", OMP_NUM_THREADS="+omp ); // if print out on separate lines, they can goes randomly.
             Console.OUT.flush();
         }
 
