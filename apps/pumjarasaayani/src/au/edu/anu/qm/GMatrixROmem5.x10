@@ -25,6 +25,7 @@ import x10.matrix.DenseMatrix;
 import x10.matrix.blas.DenseMatrixBLAS;
 import x10.matrix.dist.DistDenseMatrix;
 import x10.matrix.block.Grid;
+
 import x10.regionarray.Dist;
 
 import au.edu.anu.chem.Molecule;
@@ -91,7 +92,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
         // Input: nPlaces, mol
         // Output: place2atom, place2func
         var mu:Long=0, nu:Long=0, ind:Long=0, totY:Long=0, totJ:Long=0, skip:Long=0;
-        val funcAtPlace=new Rail[Long](nPlaces), offsetAtPlace=new Rail[Long](nPlaces+1), place2ShellPair=new Rail[Long](nPlaces+1);
+        val funcAtPlace=new Rail[Long](nPlaces), offsetAtPlace=new Rail[Long](nPlaces+1);
         val npp=N/nPlaces; var pid:Long=nPlaces-1, func:Long=0;
         val place2atom=new Rail[Long](nPlaces+1), place2func=new Rail[Long](nPlaces+1);  
         place2atom(nPlaces)=nAtoms-1; place2atom(0)=0;
@@ -115,6 +116,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
             throw new UnsupportedOperationException("Too many places! Last pid: "+pid);
         }      
         pid=1;mu=0;
+        offsetAtPlace(0)=0; offsetAtPlace(nPlaces)=N; 
         for(var a:Long=0; a<nAtoms; a++) { // centre a  
             val aFunc=mol.getAtom(a).getBasisFunctions(), naFunc=aFunc.size();          
             for(var i:Long=0; i<naFunc; i++) { // basis functions on a
@@ -135,79 +137,76 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
         Console.OUT.printf("\n");
         timer.start(0);
 
-        // Generate shellpairs based on the 'shell distibution'
-        // Input: mol, place2atom, place2func
-        // Output: funcAtPlace, offsetAtPlace, rawShellPairs
-        
         val threshold=roThresh*jd.roZ*jd.roZ*1e-3; 
         // ** Threshold must be relative to roThresh *** otherwise Z scaling will cause a problem
-        // This is effectively a density threshold RO Thesis (2.26)
-        //val rawShellPairs=new Rail[ShellPair](nShells*nShells); // maximum limit      
-        
-        place2ShellPair(0)=0; offsetAtPlace(0)=0; offsetAtPlace(nPlaces)=N; pid=1;
-        val fracJ=new Rail[Long](nPlaces);
-        mu=0;
-        for(var a:Long=0; a<nAtoms; a++) { // centre a  
-            val aFunc=mol.getAtom(a).getBasisFunctions();
-            val naFunc=aFunc.size();          
-            for (var i:Long=0; i<naFunc; i++) { // basis functions on a
-                val iaFunc=aFunc.get(i);    
-                val aa=iaFunc.getTotalAngularMomentum();
-                val aang=iaFunc.getTotalAngularMomentum();
-                val aPoint=iaFunc.origin;
-                val zetaA=iaFunc.exponents;
-                val conA=iaFunc.coefficients; 
-                val dConA=conA.size as Int;
-                val maxbraa=(aa+1)*(aa+2)/2;
-                if (a==place2atom(pid) && i==place2func(pid)) {
-                    place2ShellPair(pid)=ind;                    
-                    //funcAtPlace(pid-1)=mu-offsetAtPlace(pid-1);  
-                    //offsetAtPlace(pid)=mu; 
-                    pid++;                      
-                }          
-                for(var b:Long=0; b<nAtoms; b++) { // centre b
-                    val bFunc=mol.getAtom(b).getBasisFunctions();
-                    val nbFunc=bFunc.size();                    
-                    for(var j:Long=0; j<nbFunc; j++) { // basis functions on b
-                        val jbFunc=bFunc.get(j);
-                        val bb=jbFunc.getTotalAngularMomentum();                       
-                        val maxbrab=(bb+1)*(bb+2)/2;     
-                        val bang=jbFunc.getTotalAngularMomentum();
-                        val bPoint=jbFunc.origin; 
-                        val zetaB=jbFunc.exponents; 
-                        val conB=jbFunc.coefficients; 
-                        val dConB=conB.size as Int;
-                        var contrib:Double=0.; // ss=conservative estimate
-                        val R2=Math.pow(aPoint.i-bPoint.i, 2.)+Math.pow(aPoint.j-bPoint.j, 2.)+Math.pow(aPoint.k-bPoint.k, 2.);
-                        for (var ii:Int=0n; ii<conA.size; ii++) {
-                            for (var jj:Int=0n; jj<conB.size; jj++)  {
+        // This is effectively a density threshold RO Thesis (2.26)    
+        val roL_val=roL,roN_val=roN,roZ_val=jd.roZ,nShells_val=nShells;
+        val sizeInfo=PlaceLocalHandle.make[Rail[Double]](PlaceGroup.WORLD, ()=> new Rail[Double](4));
+
+        // distributed generation of shellPairs
+        val shellPairs=PlaceLocalHandle.make[Rail[ShellPair]](
+            PlaceGroup.WORLD, 
+            ()=> {
+
+            val pid=here.id, info=sizeInfo(), localShellPairs = new Rail[ShellPair](nShells_val*nShells_val); 
+            var mu:Long=offsetAtPlace(pid), nu:Long=0, ind:Long=0;
+
+            for (var a:Long=place2atom(pid); a<=place2atom(pid+1); a++) { // centre a  
+                val aFunc=mol.getAtom(a).getBasisFunctions();
+                val naFunc=aFunc.size();          
+                for (var i:Long=(a==place2atom(pid)?place2func(pid):0); i<(a==place2atom(pid+1)?place2func(pid+1):naFunc); i++) { // basis functions on a // careful
+                    val iaFunc=aFunc.get(i);    
+                    val aa=iaFunc.getTotalAngularMomentum();
+                    val aang=iaFunc.getTotalAngularMomentum();
+                    val aPoint=iaFunc.origin;
+                    val zetaA=iaFunc.exponents;
+                    val conA=iaFunc.coefficients; 
+                    val dConA=conA.size as Int;
+                    val maxbraa=(aa+1)*(aa+2)/2;
+                    for (var b:Long=0; b<nAtoms; b++) { // centre b
+                        val bFunc=mol.getAtom(b).getBasisFunctions();
+                        val nbFunc=bFunc.size();                    
+                        for (var j:Long=0; j<nbFunc; j++) { // basis functions on b
+                            val jbFunc=bFunc.get(j);
+                            val bb=jbFunc.getTotalAngularMomentum();                       
+                            val maxbrab=(bb+1)*(bb+2)/2;     
+                            val bang=jbFunc.getTotalAngularMomentum();
+                            val bPoint=jbFunc.origin; 
+                            val zetaB=jbFunc.exponents; 
+                            val conB=jbFunc.coefficients; 
+                            val dConB=conB.size as Int;
+                            var contrib:Double=0.; // ss=conservative estimate
+                            val R2=Math.pow(aPoint.i-bPoint.i, 2.)+Math.pow(aPoint.j-bPoint.j, 2.)+Math.pow(aPoint.k-bPoint.k, 2.);
+                            for (var ii:Int=0n; ii<conA.size; ii++) {
+                                for (var jj:Int=0n; jj<conB.size; jj++)  {
                                 // See Szabo Ostlund 3.284-3.286
-                                contrib +=conA(ii)*conB(jj)*Math.exp(-zetaA(ii)*zetaB(jj)/(zetaA(ii)+zetaB(jj))*R2)/Math.pow(jd.roZ, aang+bang);
+                                    contrib +=conA(ii)*conB(jj)*Math.exp(-zetaA(ii)*zetaB(jj)/(zetaA(ii)+zetaB(jj))*R2)/Math.pow(roZ_val, aang+bang);
+                                }
                             }
-                        }
-                        contrib=Math.abs(contrib);
-                        if (offsetAtPlace(pid-1)<=nu && nu<offsetAtPlace(pid) && mu > nu) skip++;
-                        else if (contrib >=threshold) {
-                            val maxL=new Rail[Int](roN+1, roL);
-                            //rawShellPairs(ind)=new ShellPair(aang, bang, aPoint, bPoint, zetaA, zetaB, conA, conB, mu, nu, maxL, contrib);     
-                            ind++;
-                            totY +=conA.size * conB.size * roK;
-                            totJ +=maxbraa * maxbrab * roK;
-                            fracJ(pid-1) += maxbraa * maxbrab; 
-                        }  
-                        if (b!=nAtoms-1 || j!=nbFunc-1) nu+=maxbrab; else {mu+=maxbraa; nu=0;}
-                    }    
-                }
-            }   
-        }   
-        place2ShellPair(pid)=ind;  
-        // This can be parallelised but it doesn't take significant time compare to the step below
+                            contrib=Math.abs(contrib); 
+                            if (offsetAtPlace(pid)<=nu && nu<offsetAtPlace(pid+1) && mu > nu) info(2)++; // pid is different from above code
+                            else if (contrib >=threshold) {
+                                val maxL=new Rail[Int](roN_val+1, roL_val); // roL_val to change to smaller number
+                                localShellPairs(ind)=new ShellPair(aang, bang, aPoint, bPoint, zetaA, zetaB, conA, conB, mu, nu, maxL, contrib);
+                                ind++;
+                                info(0)+=maxbraa*maxbrab; 
+                                info(1)+=conA.size*conB.size*roK;
+                                info(2)+=maxbraa*maxbrab*roK;
+                            }  
+                            if (b!=nAtoms-1 || j!=nbFunc-1) nu+=maxbrab; else {mu+=maxbraa; nu=0;}
+                        }    
+                    }
+                }   
+            }    
+            val finalShellPairs = new Rail[ShellPair](ind, (i:Long)=> localShellPairs(i));
+            finalShellPairs
+        });
 
         var max:Double=funcAtPlace(0), min:Double=max, tot:Double=N, ideal:Double=tot/nPlaces, tot2:Double=0.;
 
         for (i in (0..(nPlaces-1))) {
             val cost=funcAtPlace(i);
-            Console.OUT.printf("place %3d: offset=%5d shellpair #%5d No. of functions=%d fraction=%.2f%%\n", i, offsetAtPlace(i), place2ShellPair(i), cost, cost*100./tot);
+            Console.OUT.printf("place %3d: offset=%5d No. of functions=%d fraction=%.2f%%\n", i, offsetAtPlace(i), cost, cost*100./tot);
             tot2+=cost;
             if (cost>max) max=cost;
             if (cost<min) min=cost;
@@ -234,12 +233,14 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
         Console.OUT.printf("Fractions add up to %f %% (due to rounding of N/nPlaces)\n",tot2/tot*100.);
         Console.OUT.printf("Load balance\n Block size1 at each place: ideal=%.2f max=%.0f min=%.0f\n Imbalance cost=%.2f %%\n\n", ideal, max, min, (max/ideal-1.)*100.);
 
-
         tot=N*(1.+N)*.5; tot2=0.;
         ideal=tot/nPlaces;
-        max=min=fracJ(0);
+        max=min=at(Place(0)) sizeInfo()(0);
         for (i in (0..(nPlaces-1))) {
-            val cost=fracJ(i);
+            val cost=at(Place(i)) sizeInfo()(0);
+            totY+=at(Place(i)) sizeInfo()(1);
+            totJ+=at(Place(i)) sizeInfo()(2);
+            skip+=at(Place(i)) sizeInfo()(3);
             Console.OUT.printf("place %3d: block size2=%d fraction=%.2f%%\n", i, cost, cost*100./tot);
             if (cost>max) max=cost;
             if (cost<min) min=cost;
@@ -253,86 +254,13 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
         Console.OUT.printf("Matrices larger than N-square/64-bit double/Size in MBs\naux4J \t%.3f\nYlm  \t%.3f\naux4K \t%.3f\nhalfAux\t%.3f\n\n", totJ*8e-6, totY*8e-6, N*N*roK*8e-6, nOrbitals*N*roK*8e-6);        
 
         timer.stop(0);
-        Console.OUT.println ("    GMatrixROmem5 Initialization 'up to ShellPair1' time: " + (timer.total(0) as Double) / 1e9 + " seconds");
+        Console.OUT.println ("    GMatrixROmem5 Initialization 'up to ShellPair' time: " + (timer.total(0) as Double) / 1e9 + " seconds");
         timer.start(0);
-
-        /*val shellPairs=PlaceLocalHandle.make[Rail[ShellPair]](
-            PlaceGroup.WORLD, 
-            ()=>new Rail[ShellPair](place2ShellPair(here.id+1)-place2ShellPair(here.id), 
-                (i:Long)=> rawShellPairs(i+place2ShellPair(here.id))));*/
-        // This step is very costly!
-
-        // Temporary/experimental fix is used below
-
-        val roL_val=roL,roN_val=roN,roZ_val=jd.roZ;
-        val shellPairs=PlaceLocalHandle.make[Rail[ShellPair]](
-            PlaceGroup.WORLD, 
-            ()=> {
-
-        val pid=here.id; val numShells=place2ShellPair(pid+1)-place2ShellPair(pid);
-        //Console.OUT.println(pid+" "+numShells);
-        var mu:Long=offsetAtPlace(pid), nu:Long=0, ind:Long=0;
-        val localShellPairs = new Rail[ShellPair](numShells);
-        /*for (i in (0..(numShells-1)))
-            localShellPairs(i)=rawShellPairs(i+place2ShellPair(pid));  */    // This is also slow  
-
-        for(var a:Long=place2atom(pid); a<=place2atom(pid+1); a++) { // centre a  
-            val aFunc=mol.getAtom(a).getBasisFunctions();
-            val naFunc=aFunc.size();          
-            for (var i:Long=(a==place2atom(pid)?place2func(pid):0); i<(a==place2atom(pid+1)?place2func(pid+1):naFunc); i++) { // basis functions on a // careful
-                val iaFunc=aFunc.get(i);    
-                val aa=iaFunc.getTotalAngularMomentum();
-                val aang=iaFunc.getTotalAngularMomentum();
-                val aPoint=iaFunc.origin;
-                val zetaA=iaFunc.exponents;
-                val conA=iaFunc.coefficients; 
-                val dConA=conA.size as Int;
-                val maxbraa=(aa+1)*(aa+2)/2;
-                for(var b:Long=0; b<nAtoms; b++) { // centre b
-                    val bFunc=mol.getAtom(b).getBasisFunctions();
-                    val nbFunc=bFunc.size();                    
-                    for(var j:Long=0; j<nbFunc; j++) { // basis functions on b
-                        val jbFunc=bFunc.get(j);
-                        val bb=jbFunc.getTotalAngularMomentum();                       
-                        val maxbrab=(bb+1)*(bb+2)/2;     
-                        val bang=jbFunc.getTotalAngularMomentum();
-                        val bPoint=jbFunc.origin; 
-                        val zetaB=jbFunc.exponents; 
-                        val conB=jbFunc.coefficients; 
-                        val dConB=conB.size as Int;
-                        var contrib:Double=0.; // ss=conservative estimate
-                        val R2=Math.pow(aPoint.i-bPoint.i, 2.)+Math.pow(aPoint.j-bPoint.j, 2.)+Math.pow(aPoint.k-bPoint.k, 2.);
-                        for (var ii:Int=0n; ii<conA.size; ii++) {
-                            for (var jj:Int=0n; jj<conB.size; jj++)  {
-                                // See Szabo Ostlund 3.284-3.286
-                                contrib +=conA(ii)*conB(jj)*Math.exp(-zetaA(ii)*zetaB(jj)/(zetaA(ii)+zetaB(jj))*R2)/Math.pow(roZ_val, aang+bang);
-                            }
-                        }
-                        contrib=Math.abs(contrib);
-                        if (offsetAtPlace(pid)<=nu && nu<offsetAtPlace(pid+1) && mu > nu) contrib=0.; // pid is different from above code
-                        else if (contrib >=threshold) {
-                            val maxL=new Rail[Int](roN_val+1, roL_val);
-                            localShellPairs(ind)=new ShellPair(aang, bang, aPoint, bPoint, zetaA, zetaB, conA, conB, mu, nu, maxL, contrib);
-                            ind++;
-                        }  
-                        if (b!=nAtoms-1 || j!=nbFunc-1) nu+=maxbrab; else {mu+=maxbraa; nu=0;}
-                    }    
-                }
-            }   
-        }    
-        localShellPairs
-        });
-        // end of temporary solution
-
-        timer.stop(0);
-        Console.OUT.println ("    GMatrixROmem5 Initialization 'up to ShellPair2' time: " + (timer.total(0) as Double) / 1e9 + " seconds");
-        timer.start(0);
-
         
         val taux=new WorkerLocalHandle[Integral_Pack](()=> new Integral_Pack(jd.roN, jd.roL, omega, roThresh, jd.rad, jd.roZ));
         this.ylms=PlaceLocalHandle.make[Rail[Rail[Double]]](
             PlaceGroup.WORLD, 
-            ()=>new Rail[Rail[Double]](place2ShellPair(here.id+1)-place2ShellPair(here.id), 
+            ()=>new Rail[Rail[Double]](shellPairs().size, 
                 (i:Long)=> 
                 {
                     val sp=shellPairs()(i);
@@ -347,7 +275,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
 
         this.auxIntMat4J=PlaceLocalHandle.make[Rail[Rail[Double]]](
             PlaceGroup.WORLD, 
-            ()=>new Rail[Rail[Double]](place2ShellPair(here.id+1)-place2ShellPair(here.id), 
+            ()=>new Rail[Rail[Double]](shellPairs().size, 
                 (i:Long)=> 
                 {   
                     val pid=here.id, sp=shellPairs()(i);
