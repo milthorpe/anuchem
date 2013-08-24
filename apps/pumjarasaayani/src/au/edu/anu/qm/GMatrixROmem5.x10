@@ -427,9 +427,13 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                         val a=halfAuxMat.local();
                         val noffh=offsetAtPlace(pid);
                         val ch=new DenseMatrix(a.M, a.M, tBlock.d); // TODO: to be replaced by DSYRK - careful it is only half of ch
-                        ch.multTrans(a, a, false);
-                        for (var j:Long=0; j<ch.N; j++) for (var i:Long=0; i<ch.M; i++) {
-                           localK(i, noffh+j) +=ch(i, j);
+                        DenseMatrixBLAS.symRankKUpdate(a, ch, false, false);
+                        for (var j:Long=0; j<ch.N; j++) {
+                            localK(j, noffh+j) += ch(j, j);
+                            for (var i:Long=j+1; i<ch.N; i++) {
+                                localK(i, noffh+j) += ch(i, j);
+                                localK(j, noffh+i) += ch(i, j);
+                            }
                         }
                     }
                     timer.stop(TIMER_KMATRIX);
