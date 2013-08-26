@@ -427,14 +427,10 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                         val a=halfAuxMat.local();
                         val noffh=offsetAtPlace(pid);
                         val ch=new DenseMatrix(a.M, a.M, tBlock.d); // TODO: to be replaced by DSYRK - careful it is only half of ch
-                        DenseMatrixBLAS.symRankKUpdate(a, ch, false, false);
-                        for (var j:Long=0; j<ch.N; j++) {
-                            localK(j, noffh+j) += ch(j, j);
-                            for (var i:Long=j+1; i<ch.N; i++) {
+                        DenseMatrixBLAS.symRankKUpdate(a, ch, true, false);
+                        for (var j:Long=0; j<ch.N; j++) 
+                            for (var i:Long=0; i<=j; i++) 
                                 localK(i, noffh+j) += ch(i, j);
-                                localK(j, noffh+i) += ch(i, j);
-                            }
-                        }
                     }
                     timer.stop(TIMER_KMATRIX);
                 }
@@ -484,7 +480,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
 
             //Console.OUT.printf("\nG matrix\n");
 
-            // Fix J
+            /*// Fix J
             finish DivideAndConquerLoop1D(0, shp.size).execute(
             (spInd:Long)=> {
                 val sp=shp(spInd);
@@ -497,22 +493,28 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                 }
             }
             );
+            // Fix K
+            for (var mu:Long=offsetAtPlace(pid), mu0:Long=0; mu<offsetAtPlace(pid+1); mu++, mu0++) {
+                for (var nu:Long=offsetAtPlace(pid), nu0:Long=0; nu<mu; nu++, nu0++) {
+                    localK(mu0, nu)=localK(nu0, mu);
+                }
+            } */
 
             // These variables are used in the two sections below:
             val rowCount=localJ.M;
             val colCount=localJ.N;
             val mult=(Math.ceil(nPlaces*.5+.5) - ((nPlaces%2L==0L && pid<nPlaces/2)?1:0)) as Long;
-            val colStart=offsetAtPlace(pid);
+            val colStart=offsetAtPlace((pid+1)%nPlaces);
             val colStop=offsetAtPlace((pid+mult)%nPlaces);
-
             // Calculate eJ and eK
-            for (var j:Long=offsetAtPlace(pid); j<offsetAtPlace(pid+1); j++) {
-                for (var i:Long=0, ii:Long=offsetAtPlace(pid); i<rowCount; i++, ii++) {
-                    ep(0) -=.5*density(ii, j)*localJ(i, j);
-                    ep(1) -=.5*density(ii, j)*localK(i, j);
+            for (var j0:Long=0, j:Long=offsetAtPlace(pid); j<offsetAtPlace(pid+1); j0++, j++) {
+                ep(0) += .5*density(j, j)*localJ(j0, j);
+                ep(1) += .5*density(j, j)*localK(j0, j);                
+                for (var i0:Long=0, i:Long=offsetAtPlace(pid); i<j; i0++, i++) {
+                    ep(0) += density(i, j)*localJ(i0, j);
+                    ep(1) += density(i, j)*localK(i0, j);
                 }
             }
-
             if (colStart < colStop) {
                 for (var j:Long=colStart; j<colStop; j++) {
                     for (var i:Long=0, ii:Long=offsetAtPlace(pid); i<rowCount; i++, ii++) {
@@ -520,7 +522,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                         ep(1) +=density(ii, j)*localK(i, j);
                     }
                 }
-            } else {
+            } else if (mult>1) {
                 for (var j:Long=colStart; j<colCount; j++) {
                     for (var i:Long=0, ii:Long=offsetAtPlace(pid); i<rowCount; i++, ii++) {
                         ep(0) +=density(ii, j)*localJ(i, j);
@@ -538,13 +540,16 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
             if (here==Place.FIRST_PLACE) Console.OUT.printf("EJ= %.10f EK= %.10f\n", ep(0)/roZ, -0.5*ep(1)/roZ);
 
             // Combine J and K to form G (stored in J)
+            for (var j0:Long=0, j:Long=offsetAtPlace(pid); j<offsetAtPlace(pid+1); j0++, j++) 
+                for (var i0:Long=0; i0<=j0; i0++) 
+                    localJ(i0, j) -=localK(i0, j);
             if (colStart < colStop) {
                 for (var j:Long=colStart; j<colStop; j++) {
                     for (var i:Long=0; i<rowCount; i++) {
                         localJ(i, j) -=localK(i, j);
                     }
                 }
-            } else {
+            } else if (mult>1) {
                 for (var j:Long=colStart; j<colCount; j++) {
                     for (var i:Long=0; i<rowCount; i++) {
                         localJ(i, j) -=localK(i, j);
@@ -574,19 +579,25 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
             val mat=at(Place(pid)) { distJ.local() };
             DenseMatrix.copySubset(mat, 0, 0, this, offsetAtPlace(pid), 0, mat.M, mat.N);
         }
-
         // Fix G
         for (pid in 0..(nPlaces-1)) {
+            // Fix diagonal block
+            for (var j:Long=offsetAtPlace(pid); j<offsetAtPlace(pid+1); j++) 
+                for (var i:Long=offsetAtPlace(pid); i<j; i++) 
+                        this(j, i)=this(i, j);
+            // Fix off-diagonal block
             val mult=(Math.ceil(nPlaces*.5+.5) - ((nPlaces%2L==0L && pid<nPlaces/2)?1:0)) as Long;
-            for (var qid:Long=mult+pid; qid<nPlaces+pid; qid++) {
+            for (var qid:Long=pid+1; qid<pid+mult; qid++) {
                 val qq=qid%nPlaces;
                 for (var i:Long=offsetAtPlace(pid); i<offsetAtPlace(pid+1); i++) {
                     for (var j:Long=offsetAtPlace(qq); j<offsetAtPlace(qq+1); j++) {
-                        this(i, j)=this(j, i);
+                        this(j, i)=this(i, j);
                     }
                 }
             }
         }
+
+
         timer.stop(TIMER_TOTAL);
         Console.OUT.printf("    Time to construct GMatrix with RO: %.3g seconds\n", (timer.last(TIMER_TOTAL) as Double) / 1e9); 
         @Ifdef("__PAPI__"){ papi.printFlops(); papi.printMemoryOps();}
