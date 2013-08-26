@@ -423,10 +423,10 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                         val A=new DenseMatrix(funcAtPlace(pid)*roK, N, localMatK.d);
                         val B=new DenseMatrix(funcAtPlace(pid)*roK, nOrbitals, halfAuxMat.local().d); 
                         DenseMatrixBLAS.compMultTrans(A, mos, B, [funcAtPlace(pid)*roK, nOrbitals, N], false);
-                        //cannot do B.multTrans(A, mos, false); -  mos is [N, N] rather than [nObital, N]
+                        // do NOT use B.multTrans(A, mos, false); -  mos is [N, N] rather than [nObital, N]
                         val a=halfAuxMat.local();
                         val noffh=offsetAtPlace(pid);
-                        val ch=new DenseMatrix(a.M, a.M, tBlock.d); // TODO: to be replaced by DSYRK - careful it is only half of ch
+                        val ch=new DenseMatrix(a.M, a.M, tBlock.d); 
                         DenseMatrixBLAS.symRankKUpdate(a, ch, true, false);
                         for (var j:Long=0; j<ch.N; j++) 
                             for (var i:Long=0; i<=j; i++) 
@@ -479,27 +479,6 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
             }
 
             //Console.OUT.printf("\nG matrix\n");
-
-            /*// Fix J
-            finish DivideAndConquerLoop1D(0, shp.size).execute(
-            (spInd:Long)=> {
-                val sp=shp(spInd);
-                if (localAuxJ(spInd).size > 0 && offsetAtPlace(pid) <=sp.nu && sp.nu < offsetAtPlace(pid+1) && sp.mu !=sp.nu) {
-                    for (var mu:Long=sp.mu, muoff:Long=mu-offsetAtPlace(pid); mu<=sp.mu2; mu++, muoff++) {
-                        for (var nu:Long=sp.nu, nuoff:Long=nu-offsetAtPlace(pid); nu<=sp.nu2; nu++, nuoff++) {
-                            localJ(nuoff, mu)=localJ(muoff, nu);
-                        }
-                    } 
-                }
-            }
-            );
-            // Fix K
-            for (var mu:Long=offsetAtPlace(pid), mu0:Long=0; mu<offsetAtPlace(pid+1); mu++, mu0++) {
-                for (var nu:Long=offsetAtPlace(pid), nu0:Long=0; nu<mu; nu++, nu0++) {
-                    localK(mu0, nu)=localK(nu0, mu);
-                }
-            } */
-
             // These variables are used in the two sections below:
             val rowCount=localJ.M;
             val colCount=localJ.N;
@@ -574,18 +553,16 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
         }
 
         val nPlaces=Place.MAX_PLACES;
-        // Copy G to place 0 // can improve further by copying only contributing blocks
+        // Copy G to place 0 // can improve further by copying only contributing blocks?
         for (pid in 0..(nPlaces-1)) {
             val mat=at(Place(pid)) { distJ.local() };
             DenseMatrix.copySubset(mat, 0, 0, this, offsetAtPlace(pid), 0, mat.M, mat.N);
         }
         // Fix G
         for (pid in 0..(nPlaces-1)) {
-            // Fix diagonal block
             for (var j:Long=offsetAtPlace(pid); j<offsetAtPlace(pid+1); j++) 
                 for (var i:Long=offsetAtPlace(pid); i<j; i++) 
                         this(j, i)=this(i, j);
-            // Fix off-diagonal block
             val mult=(Math.ceil(nPlaces*.5+.5) - ((nPlaces%2L==0L && pid<nPlaces/2)?1:0)) as Long;
             for (var qid:Long=pid+1; qid<pid+mult; qid++) {
                 val qq=qid%nPlaces;
