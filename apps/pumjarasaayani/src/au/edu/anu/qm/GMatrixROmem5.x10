@@ -19,6 +19,7 @@ import x10.matrix.block.Grid;
 import x10.matrix.DenseMatrix;
 import x10.matrix.dist.DistDenseMatrix;
 import x10.regionarray.Dist;
+import x10.util.GrowableRail;
 import x10.util.RailUtils;
 import x10.util.Team;
 import x10.util.WorkerLocalHandle;
@@ -74,7 +75,10 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
         }
         val roK=(roL+1n)*(roL+1n);
 
-        // Prilimirary work division by atom and function shell: Run backward so that (if there is load imbalance) head node has less work 
+        // Preliminary work sharing: divide first by atoms, then by basis
+        // functions so that each place has approximately equal total
+        // angular momentum over all functions. Run backward so that 
+        // (if there is load imbalance) the head node has less work.
         place2atom(nPlaces)=nAtoms-1; place2atom(0)=0;
         place2func(nPlaces)=mol.getAtom(nAtoms-1).getBasisFunctions().size(); place2func(0)=0;
         val npp=N/nPlaces; 
@@ -113,7 +117,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
         @Ifdef("__DEBUG__") {
             Console.OUT.printf("roN=%d roNK=%d roL=%d Omega=%.3f thresh=%e rad=%.3f\n", roN, roNK, roL, omega, roThresh, jd.rad);
             Console.OUT.printf("nAtoms=%d nShells=%d N=%d maxam=%d maxam1=%d\n\n", nAtoms, nShells, N, maxam, maxam1);
-            Console.OUT.println ("Prilimirary work division by atom and function shell");
+            Console.OUT.println("Preliminary work division by atom and function shell");
             for (i in (0..(nPlaces-1))) Console.OUT.printf("Place %3d: Atom=%5d Function=%3d\n", i, place2atom(i), place2func(i));
             timer.stop(0);
             Console.OUT.println ("    GMatrixROmem5 Initialization 'Initial Assessment' time: " + (timer.total(0) as Double) / 1e9 + " seconds");
@@ -128,57 +132,66 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
         val shellPairs=PlaceLocalHandle.make[Rail[ShellPair]](
             PlaceGroup.WORLD, 
             ()=> {
-            val pid=here.id, info=sizeInfo(), localShellPairs = new Rail[ShellPair](nShells_val*nShells_val); 
-            var mu:Long=offsetAtPlace(pid), nu:Long=0, ind:Long=0;
-            for (var a:Long=place2atom(pid); a<=place2atom(pid+1); a++) { // centre a  
-                val aFunc=mol.getAtom(a).getBasisFunctions();
-                val naFunc=aFunc.size();          
-                for (var i:Long=(a==place2atom(pid)?place2func(pid):0); i<(a==place2atom(pid+1)?place2func(pid+1):naFunc); i++) { // basis functions on a: careful/tricky
-                    val iaFunc=aFunc.get(i);    
-                    val aa=iaFunc.getTotalAngularMomentum();
-                    val aang=iaFunc.getTotalAngularMomentum();
-                    val aPoint=iaFunc.origin;
-                    val zetaA=iaFunc.exponents;
-                    val conA=iaFunc.coefficients; 
-                    val dConA=conA.size as Int;
-                    val maxbraa=(aa+1)*(aa+2)/2;
-                    for (var b:Long=0; b<nAtoms; b++) { // centre b
-                        val bFunc=mol.getAtom(b).getBasisFunctions();
-                        val nbFunc=bFunc.size();                    
-                        for (var j:Long=0; j<nbFunc; j++) { // basis functions on b
-                            val jbFunc=bFunc.get(j);
-                            val bb=jbFunc.getTotalAngularMomentum();                       
-                            val maxbrab=(bb+1)*(bb+2)/2;     
-                            val bang=jbFunc.getTotalAngularMomentum();
-                            val bPoint=jbFunc.origin; 
-                            val zetaB=jbFunc.exponents; 
-                            val conB=jbFunc.coefficients; 
-                            val dConB=conB.size as Int;
-                            var contrib:Double=0.; // conservative estimate from ss
-                            val R2=Math.pow(aPoint.i-bPoint.i, 2.)+Math.pow(aPoint.j-bPoint.j, 2.)+Math.pow(aPoint.k-bPoint.k, 2.);
-                            for (var ii:Int=0n; ii<conA.size; ii++) {
-                                for (var jj:Int=0n; jj<conB.size; jj++)  {
-                                // See Szabo Ostlund 3.284-3.286
-                                    contrib +=conA(ii)*conB(jj)*Math.exp(-zetaA(ii)*zetaB(jj)/(zetaA(ii)+zetaB(jj))*R2)/Math.pow(roZ_val, aang+bang);
+            val pid=here.id, info=sizeInfo();
+            val localShellPairs = new GrowableRail[ShellPair](nShells_val*nShells_val);
+            var mu:Long = offsetAtPlace(pid), nu:Long=0;
+            finish for (a in place2atom(pid)..place2atom(pid+1)) { // centre a  
+                val aFunc = mol.getAtom(a).getBasisFunctions();
+                val naFunc = aFunc.size();
+                // basis functions on a: careful/tricky
+                val minFunc = (a==place2atom(pid)) ? place2func(pid) : 0;
+                val maxFunc = (a==place2atom(pid+1)) ? place2func(pid+1)-1 : naFunc-1;
+                for (i in minFunc..maxFunc) {
+                    val iaFunc = aFunc.get(i);    
+                    val aa = iaFunc.getTotalAngularMomentum();
+                    val aang = iaFunc.getTotalAngularMomentum();
+                    val aPoint = iaFunc.origin;
+                    val zetaA = iaFunc.exponents;
+                    val conA = iaFunc.coefficients; 
+                    val maxbraa = (aa+1)*(aa+2)/2;
+                    for (b in 0..(nAtoms-1)) { // centre b
+                        val bFunc = mol.getAtom(b).getBasisFunctions();
+                        val nbFunc = bFunc.size();
+                        for (j in 0..(nbFunc-1)) { // basis functions on b
+                            val jbFunc = bFunc(j);
+                            val bb = jbFunc.getTotalAngularMomentum();
+                            val maxbrab = (bb+1)*(bb+2)/2; 
+                            val spMu = mu;
+                            val spNu = nu;
+                            async {
+                                val bang = jbFunc.getTotalAngularMomentum();
+                                val bPoint = jbFunc.origin; 
+                                val zetaB = jbFunc.exponents; 
+                                val conB = jbFunc.coefficients; 
+                                var contrib:Double = 0.; // conservative estimate from ss
+                                val R2 = aPoint.distanceSquared(bPoint);
+                                for (ii in 0..(conA.size-1)) {
+                                    for (jj in 0..(conB.size-1)) {
+                                        // See Szabo Ostlund 3.284-3.286
+                                        contrib += conA(ii)*conB(jj)*Math.exp(-zetaA(ii)*zetaB(jj)/(zetaA(ii)+zetaB(jj))*R2)/Math.pow(roZ_val, aang+bang);
+                                    }
                                 }
-                            }
-                            contrib=Math.abs(contrib); 
-                            if (offsetAtPlace(pid)<=nu && nu<offsetAtPlace(pid+1) && mu > nu) info(2)++; 
-                            else if (contrib >=threshold) {
-                                val maxL=new Rail[Int](roN_val+1, roL_val); // change roL_val to smaller number
-                                localShellPairs(ind)=new ShellPair(aang, bang, aPoint, bPoint, zetaA, zetaB, conA, conB, mu, nu, maxL, contrib);
-                                ind++;
-                                info(0)+=maxbraa*maxbrab; 
-                                info(1)+=conA.size*conB.size*roK;
-                                info(2)+=maxbraa*maxbrab*roK;
+                                contrib=Math.abs(contrib); 
+                                if (offsetAtPlace(pid) <= spNu && spNu < offsetAtPlace(pid+1) && spMu > spNu) {
+                                    atomic info(2)++; 
+                                } else if (contrib >= threshold) {
+                                    val maxL = new Rail[Int](roN_val+1, roL_val); // change roL_val to smaller number
+                                    val sp = new ShellPair(aang, bang, aPoint, bPoint, zetaA, zetaB, conA, conB, spMu, spNu, maxL, contrib);
+                                    atomic {
+                                        localShellPairs.add(sp);
+                                        info(0)+=maxbraa*maxbrab; 
+                                        info(1)+=conA.size*conB.size*roK;
+                                        info(2)+=maxbraa*maxbrab*roK;
+                                    }
+                                }
                             }  
-                            if (b!=nAtoms-1 || j!=nbFunc-1) nu+=maxbrab; else {mu+=maxbraa; nu=0;}
+                            if (b!=nAtoms-1 || j!=nbFunc-1) nu += maxbrab;
+                            else {mu += maxbraa; nu = 0;}
                         }    
                     }
                 }   
             }    
-            val finalShellPairs=new Rail[ShellPair](ind, (i:Long)=> localShellPairs(i));
-            finalShellPairs
+            localShellPairs.toRail()
         });
 
         // Calculating various measure of load (im)balance
@@ -230,14 +243,18 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
         val taux=new WorkerLocalHandle[Integral_Pack](()=> new Integral_Pack(jd.roN, jd.roL, omega, roThresh, jd.rad, jd.roZ));
         this.ylms=PlaceLocalHandle.make[Rail[Rail[Double]]](
             PlaceGroup.WORLD, 
-            ()=>new Rail[Rail[Double]](shellPairs().size, 
-                (i:Long)=> 
-                {
-                    val sp=shellPairs()(i);
-                    val tempY=new Rail[Double](sp.conA.size * sp.conB.size * (sp.maxL+1)*(sp.maxL+1));
+            ()=>{
+                val shp = shellPairs();
+                val ylms = new Rail[Rail[Double]](shp.size); 
+                finish for (i in 0..(shp.size-1)) async {
+                    val sp = shp(i);
+                    val tempY = new Rail[Double](sp.conA.size * sp.conB.size * (sp.maxL+1)*(sp.maxL+1));
                     taux().genClassY(sp.aPoint, sp.bPoint, sp.zetaA, sp.zetaB, roL_val, tempY);
-                    tempY
-                } ));
+                    ylms(i) = tempY;
+                } 
+                ylms
+            }
+        );
 
         timer.stop(0);
         Console.OUT.println ("    GMatrixROmem5 Initialization 'up to ylms' time: " + (timer.total(0) as Double) / 1e9 + " seconds");
@@ -245,20 +262,26 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
 
         this.auxIntMat4J=PlaceLocalHandle.make[Rail[Rail[Double]]](
             PlaceGroup.WORLD, 
-            ()=>new Rail[Rail[Double]](shellPairs().size, 
-                (i:Long)=> 
-                {   
-                    val pid=here.id, sp=shellPairs()(i);
-                    val mult=(Math.ceil(nPlaces*.5+.5)-((nPlaces%2L==0L && pid<nPlaces/2)?1:0)) as Long;
-                    val colStart=offsetAtPlace(pid);
-                    val colStop=offsetAtPlace((pid+mult)%nPlaces);
-                    val nu=sp.nu; var size:Long=0L;
+            ()=>{
+                val shp = shellPairs();
+                val auxIntMat4J = new Rail[Rail[Double]](shp.size);
+                val pid = here.id;
+                val mult = (Math.ceil(nPlaces*.5+.5)-((nPlaces%2L==0L && pid<nPlaces/2)?1:0)) as Long;
+                val colStart = offsetAtPlace(pid);
+                val colStop = offsetAtPlace((pid+mult)%nPlaces);
+                finish for (i in 0..(shp.size-1)) async {
+                    val sp = shp(i);
+                    val nu = sp.nu;
+                    var size:Long = 0;
                     if ( ( (colStart<colStop) && ((colStart<=nu) && (nu<colStop)) ) ||
                          ( (colStart>=colStop) && ( (nu<colStop) || (nu>=colStart) ) ) )
-                         size=sp.maxbraa*sp.maxbrab*roK;
-                    if (offsetAtPlace(pid)<=nu && nu<offsetAtPlace(pid+1) && sp.mu > sp.nu) size=0L;
-                    new Rail[Double](size)
-                } ));      
+                        size = sp.maxbraa*sp.maxbrab*roK;
+                    if (offsetAtPlace(pid) <= nu && nu < offsetAtPlace(pid+1) && sp.mu > nu) size=0L;
+                    auxIntMat4J(i) = new Rail[Double](size);
+                }
+                auxIntMat4J
+            }
+        );      
 
         val cbs_auxInt=new Rail[Long](1); cbs_auxInt(0)=N*roK; val auxIntMat4KGrid=new Grid(funcAtPlace, cbs_auxInt);
         this.auxIntMat4K=DistDenseMatrix.make(auxIntMat4KGrid);
