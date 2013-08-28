@@ -12,6 +12,7 @@ package au.edu.anu.qm;
 import x10.compiler.Ifdef;
 import x10.compiler.Native;
 import x10.compiler.NativeCPPInclude;
+import x10.compiler.NonEscaping;
 import x10.io.IOException;
 import x10.lang.PlaceLocalHandle;
 import x10.matrix.blas.DenseMatrixBLAS;
@@ -311,24 +312,15 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
         timer.stop(0);
         Console.OUT.println("    GMatrixROmem5 Initialization 'total' time: " + (timer.total(0) as Double) / 1e9 + " seconds");
 
-        @Ifdef("__MKL__") {
-            Console.OUT.print("mklGetMaxThreads() was " + mklGetMaxThreads() + " and is now set to"); mklSenumThreads(Runtime.NTHREADS);
-            Console.OUT.println(" " + mklGetMaxThreads() + " thread(s).");
-            // not working on multiple nodes?  better use -env OMP_NUM_THREADS 4
+        @Ifdef("__MKL__") finish ateach(place in Dist.makeUnique()) {
+            val t1=mklGetMaxThreads();
+            mklSenumThreads(Runtime.NTHREADS);
+            val t2=mklGetMaxThreads();
+            Console.OUT.print(here + ", mklGetMaxThreads() was " + t1 + " and is now set to " + t2 + " thread(s).");
+            // not working?  better use -genv OMP_NUM_THREADS 4
         }  
-        @Ifdef("__PAPI__") { papi.initialize(); papi.countFlops(); papi.countMemoryOps();}
-
-        Console.OUT.printf("\n");
-        @Ifdef("__DEBUG__") finish ateach(place in Dist.makeUnique()) {
-            val hostname=Runtime.execForRead("uname -n").readLine();      
-            val np=Runtime.execForRead("echo $X10_NPLACES").readLine();
-            val nt=Runtime.execForRead("echo $X10_NTHREADS").readLine();
-            val gt=Runtime.execForRead("echo $GOTO_NUM_THREADS").readLine();
-            val omp=Runtime.execForRead("echo $OMP_NUM_THREADS").readLine();
-            Console.OUT.println(here + ", Runtime.NTHREADS=" + Runtime.NTHREADS + ", uname -n=" + hostname + ", X10_NPLACES="+np+", X10_NTHREADS="+nt+", GOTO_NUM_THREADS="+gt+ ", OMP_NUM_THREADS="+omp ); // if print out on separate lines, they can goes randomly.
-            Console.OUT.flush();
-        }
-
+        @Ifdef("__PAPI__") { papi.initialize(); papi.countFlops(); papi.countMemoryOps(); }
+        @Ifdef("__DEBUG__") { printShellInfo(); }
     }
 
     @Native("c++", "mkl_get_max_threads()") private native static def mklGetMaxThreads():Int;
@@ -603,8 +595,6 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                 }
             }
         }
-
-
         timer.stop(TIMER_TOTAL);
         Console.OUT.printf("    Time to construct GMatrix with RO: %.3g seconds\n", (timer.last(TIMER_TOTAL) as Double) / 1e9); 
         @Ifdef("__PAPI__"){ papi.printFlops(); papi.printMemoryOps();}
@@ -638,6 +628,17 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
             result=System.currentTimeMillis() + "ms";
         }
         return result;
-    }
+    } 
 
+    private @NonEscaping def printShellInfo() {
+        finish ateach(place in Dist.makeUnique()) {
+            val hostname=Runtime.execForRead("uname -n").readLine();      
+            val np=Runtime.execForRead("echo $X10_NPLACES").readLine();
+            val nt=Runtime.execForRead("echo $X10_NTHREADS").readLine();
+            val gt=Runtime.execForRead("echo $GOTO_NUM_THREADS").readLine();
+            val omp=Runtime.execForRead("echo $OMP_NUM_THREADS").readLine();
+            Console.OUT.println(here + ", Runtime.NTHREADS=" + Runtime.NTHREADS + ", uname -n=" + hostname + ", X10_NPLACES="+np+", X10_NTHREADS="+nt+", GOTO_NUM_THREADS="+gt+ ", OMP_NUM_THREADS="+omp ); // if print out on separate lines, they can goes randomly.
+            Console.OUT.flush();
+        }
+   }
 }
