@@ -312,12 +312,11 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
         timer.stop(0);
         Console.OUT.println("    GMatrixROmem5 Initialization 'total' time: " + (timer.total(0) as Double) / 1e9 + " seconds");
 
-        @Ifdef("__MKL__") finish ateach(place in Dist.makeUnique()) {
+        @Ifdef("__MKL__") finish ateach(place in Dist.makeUnique()) { // not working?  better use -genv OMP_NUM_THREADS 4
             val t1=mklGetMaxThreads();
             mklSenumThreads(Runtime.NTHREADS);
             val t2=mklGetMaxThreads();
-            Console.OUT.print(here + ", mklGetMaxThreads() was " + t1 + " and is now set to " + t2 + " thread(s).");
-            // not working?  better use -genv OMP_NUM_THREADS 4
+            Console.OUT.println(here + ", mklGetMaxThreads() was " + t1 + " and is now set to " + t2 + " thread(s).");     
         }  
         @Ifdef("__PAPI__") { papi.initialize(); papi.countFlops(); papi.countMemoryOps(); }
         @Ifdef("__DEBUG__") { printShellInfo(); }
@@ -638,7 +637,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
             val gt=Runtime.execForRead("echo $GOTO_NUM_THREADS").readLine();
             val omp=Runtime.execForRead("echo $OMP_NUM_THREADS").readLine();
             Console.OUT.println(here + ", Runtime.NTHREADS=" + Runtime.NTHREADS + ", uname -n=" + hostname + ", X10_NPLACES="+np+", X10_NTHREADS="+nt+", GOTO_NUM_THREADS="+gt+ ", OMP_NUM_THREADS="+omp ); // if print out on separate lines, they can goes randomly.
-            Console.OUT.flush();
         }
+        Console.OUT.flush();
    }
 }
