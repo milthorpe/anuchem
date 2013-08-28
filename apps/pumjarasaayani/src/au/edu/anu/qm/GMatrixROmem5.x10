@@ -38,8 +38,10 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
     public val timer=new StatisticalTimer(4);
     val TIMER_TOTAL=0;
     val TIMER_JMATRIX=1;
-    val TIMER_KMATRIX=2;
-    val TIMER_GENCLASS=3;
+    val TIMER_KMATRIX1=2;
+    val TIMER_KMATRIX2=3;
+    val TIMER_KMATRIX3=4;
+    val TIMER_GENCLASS=5;
 
     transient var papi:PAPI=new PAPI(); // @Ifdef("__PAPI__") // XTENLANG-3132
 
@@ -334,10 +336,6 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
 
     public def compute(density:Density{self.N==this.N}, mos:MolecularOrbitals{self.N==this.N}) {
         Console.OUT.printf("\nGMatrixROmem5.x10 'public def compute' %s...\n", getDateString()); 
-
-        //@Ifdef("__DEBUG__") finish ateach(place in Dist.makeUnique())             
-        // Console.OUT.flush();
-
         timer.start(TIMER_TOTAL); 
 
         val timer=this.timer; 
@@ -441,12 +439,16 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
 
                 finish {
                     async Team.WORLD.allreduce[Double](dkp, 0L, dkp, 0L, dkp.size, Team.ADD);
-                    timer.start(TIMER_KMATRIX);
+                    
                     if (ron <=roNK) {
+                        timer.start(TIMER_KMATRIX1);
                         val A=new DenseMatrix(funcAtPlace(pid)*roK, N, localMatK.d);
                         val B=new DenseMatrix(funcAtPlace(pid)*roK, nOrbitals, halfAuxMat.local().d); 
                         DenseMatrixBLAS.compMultTrans(A, mos, B, [funcAtPlace(pid)*roK, nOrbitals, N], false);
                         // do NOT use B.multTrans(A, mos, false); -  mos is [N, N] rather than [nObital, N]
+                        timer.stop(TIMER_KMATRIX1);
+
+                        timer.start(TIMER_KMATRIX2);
                         val a=halfAuxMat.local();
                         val noffh=offsetAtPlace(pid);
                         val ch=new DenseMatrix(a.M, a.M, tBlock.d); 
@@ -454,12 +456,14 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                         for (var j:Long=0; j<ch.N; j++) 
                             for (var i:Long=0; i<=j; i++) 
                                 localK(i, noffh+j) += ch(i, j);
+                        timer.stop(TIMER_KMATRIX2);
+
                     }
-                    timer.stop(TIMER_KMATRIX);
+
                 }
 
                 if (ron <=roNK) { // This produces K/2 & TODO: improved further by better scheduling and buffering = ring broadcast ?
-                    timer.start(TIMER_KMATRIX);
+                    timer.start(TIMER_KMATRIX3);
                     val mult=(Math.ceil(nPlaces*.5+.5) - ((nPlaces%2L==0L && pid<nPlaces/2)?1:0)) as Long;
                     val a=halfAuxMat.local();
                     for (var blk:Long=1; blk<mult; blk++) {
@@ -472,7 +476,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                             localK(i, noff+j) +=c(i, j);
                         }
                     }
-                    timer.stop(TIMER_KMATRIX);
+                    timer.stop(TIMER_KMATRIX3);
                 }
 
                 timer.start(TIMER_JMATRIX); 
@@ -569,8 +573,11 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
             if (here==Place.FIRST_PLACE) {
                 val tINT=(timer.total(TIMER_GENCLASS) as Double)/1e9;
                 val tJ=(timer.total(TIMER_JMATRIX) as Double)/1e9;
-                val tK=(timer.total(TIMER_KMATRIX) as Double)/1e9;
-                Console.OUT.printf("Time INT= %.2f s J= %.2f s K= %.2f s\n", tINT, tJ, tK);
+                val tK1=(timer.total(TIMER_KMATRIX1) as Double)/1e9;
+                val tK2=(timer.total(TIMER_KMATRIX2) as Double)/1e9;
+                val tK3=(timer.total(TIMER_KMATRIX3) as Double)/1e9;
+                val tK=tK1+tK2+tK3;
+                Console.OUT.printf("Time INT= %.2f s J= %.2f s K1= %.2f s K2= %.2f s K3= %.2f s Kt= %.2f s\n", tINT, tJ, tK1, tK2, tK3, tK);
                 Console.OUT.flush();
             }
         }
