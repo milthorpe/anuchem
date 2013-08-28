@@ -7,7 +7,7 @@
 #module load ipm
 #module load hpctoolkit
 i=1
-while [ $i -le 8 ]
+while [ $i -le 10 ]
 do
   export X10_NPLACES=1
   export X10_NTHREADS=$i
@@ -16,6 +16,6 @@ do
   echo $NCPUS $VMEM
   qsub -wd -lwalltime=00:15:00 -lncpus=$NCPUS -lvmem=$VMEM -V test/run_ten.sh
   echo ""
-  i=$(( i*2 ))
+  i=$(( i+1 ))
 done
 

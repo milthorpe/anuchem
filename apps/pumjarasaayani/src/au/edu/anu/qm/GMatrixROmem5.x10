@@ -407,18 +407,14 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                         }
                         if (offsetAtPlace(pid) <=sp.nu && sp.nu < offsetAtPlace(pid+1) && sp.mu < sp.nu) {
                             ind=0;
-                            for (var mu:Long=sp.mu, tmu:Long=0; mu<=sp.mu2; mu++, tmu++) {
-                                for (var nu:Long=sp.nu, tnu:Long=0; nu<=sp.nu2; nu++, tnu++) {
+                            val offsetNu = sp.nu-offsetAtPlace(pid);
+                            val offsetNu2 = sp.nu2-offsetAtPlace(pid);
+                            for (mu in sp.mu..sp.mu2) {
+                                for (nu in offsetNu..offsetNu2) {
                                     for (rolm in 0..(maxLm-1)) {
-                                        auxK((tmu*roK+rolm)*nusize+tnu)=auxJ(ind++);
+                                        localMatK(nu, mu*roK+rolm) = auxJ(ind++);
                                     }
                                 }
-                            }
-                            val rows2=sp.nu2-sp.nu+1;
-                            ind=0;
-                            for (var mu:Long=sp.mu; mu<=sp.mu2; mu++) {
-                                DenseMatrix.copySubset(auxK, ind, localMatK, sp.nu-offsetAtPlace(pid), mu*roK, rows2, maxLm);
-                                ind +=rows2*maxLm;
                             }
                         }
                     }
