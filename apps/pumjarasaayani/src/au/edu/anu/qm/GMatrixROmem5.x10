@@ -466,6 +466,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                         for (var j:Long=0; j<c.N; j++) for (var i:Long=0; i<c.M; i++) {
                             localK(i, noff+j) +=c(i, j);
                         }
+                        // DenseMatrixBLAS.compMultTrans(a, b, localK, [a.M, b.M, a.N], [0, 0, 0, 0, 0, noff], true); // not working >2places
                     }
                     timer.stop(TIMER_KMATRIX3);
                 }
