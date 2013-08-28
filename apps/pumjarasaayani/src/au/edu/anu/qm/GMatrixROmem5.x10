@@ -36,7 +36,7 @@ import edu.utk.cs.papi.PAPI;
 
 public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
     // Timer & PAPI performance counters
-    public val timer=new StatisticalTimer(4);
+    public val timer=new StatisticalTimer(6);
     val TIMER_TOTAL=0;
     val TIMER_JMATRIX=1;
     val TIMER_KMATRIX1=2;
