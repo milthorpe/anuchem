@@ -5,11 +5,12 @@ This program is controlled by the Eclipse Public Licence v1.0 http://www.eclipse
 Introduction:
 ------------
 
-Pumjarasaayani is a very basic quantum chemistry code written in X10 that performs Hartree-Fock (HF) single point energy (SPE) evaluation on a given molecular system using a specified basis set.
+Pumjarasaayani is a basic quantum chemistry code written in X10 that performs Hartree-Fock (HF) single point energy (SPE) evaluation on a given molecular system using a specified basis set.
+Construction of the Fock matrix is via standard two-electron integral calculation as described in McMurchie and Davidson (1978) or by Resolution of the Operator as described by Limpanuparb (2012) and Limpanuparb et al. (2013).
 
 Current restrictions: Only closed shell systems with atoms H, C, N and O are supported. No geometrical symmetry is employed.
 Convergence acceleration of HF - SCF procedure is applied automatically, but cannot be switched off. 
-Integral calculation is inefficient as it is performed through a horizontal recurrence relation with no reuse of intermediate products.
+Two-electron integral calculation is inefficient as it is performed through a horizontal recurrence relation with no reuse of intermediate products.
 
 Integral screening is applied by Schwartz bound as described in Häser & Ahlrichs (1989).
 
@@ -36,7 +37,7 @@ For other implementations see
 
 Compile dependencies:
 ------------------------
-* X10 version 2.2.2 (optionally with x10rt=mpi)
+* X10 version 2.4 (optionally with x10rt=mpi)
 * X10 Global Matrix Library (distributed with the X10 release under x10/x10.gml)
 * LAPACK and BLAS libraries (transitive through X10 GML)
   http://www.netlib.org/lapack/
@@ -47,6 +48,7 @@ Compile dependencies:
 Code organization:
 -----------------
 * QM code in: au.edu.anu.qm  (Pumjarasaayani.x10 is the main entry point)
+* Optimized C++ code for Resolution of the Operator in ro
 * molecular tailoring code in au.edu.anu.qm.mta
 * anu-chem code in: au.edu.anu.chem, au.edu.anu.util
 * XLA code in: x10x.vector
@@ -213,10 +215,10 @@ See doc/pr-perform-bgp.ods
 
 Referencing Pumja Rasaayani:
 -----------------------------
-Please cite the following paper when referencing ANUChem in a publication.
-
-J. Milthorpe, V. Ganesh, A.P. Rendell, and D. Grove (2011). X10 as a parallel language for scientific computation: practice and experience, in proceedings of the 25th IEEE International Parallel & Distributed Processing Symposium (ISBN 978-0-7695-4385-7), 1067-1075
-
 Please cite the following paper when referencing Pumja Rasaayani in a publication.
 
 J. Milthorpe, V. Ganesh, A.P. Rendell, and D. Grove (2011). X10 as a parallel language for scientific computation: practice and experience, in proceedings of the 25th IEEE International Parallel & Distributed Processing Symposium (ISBN 978-0-7695-4385-7), 1067-1075
+
+For the Resolution of the Operator approach, cite the following paper:
+
+T. Limpanuparb, J. Milthorpe, A.P. Rendell, and P.M.W. Gill (2013). "Resolutions of the Coulomb Operator: VII. Evaluation of Long-range Coulomb and Exchange Matrices", Journal of Chemical Theory and Computation. doi:10.1021/ct301110y

@@ -24,9 +24,9 @@ In addition, there are a number of smaller codes contained in ./samples and ./mi
 Working with ANUChem:
 -----------------------------
 
-The codes are under continuous revision and the current source is available at http://squirrel.anu.edu.au/hg/public/x10-apps/
+The codes are under continuous revision and the current source is available at http://sourceforge.net/p/anuchem/code
 
-In addition, there are tagged "release" versions of the source that compile against each released version of X10.  See http://squirrel.anu.edu.au/hg/public/x10-apps/tags
+In addition, there are tagged "release" versions of the source that compile against each released version of X10.
 
 For any questions about building, testing or extending ANUChem, please email josh.milthorpe@anu.edu.au
 
@@ -38,5 +38,5 @@ Referencing ANUChem:
 
 Please cite the following paper when referencing ANUChem in a publication.
 
-J. Milthorpe, V. Ganesh, A.P. Rendell, and D. Grove (2011). X10 as a parallel language for scientific computation: practice and experience, in proceedings of the 25th IEEE International Parallel & Distributed Processing Symposium (ISBN 978-0-7695-4385-7), 1067-1075
+J. Milthorpe, V. Ganesh, A.P. Rendell, and D. Grove (2011). "X10 as a parallel language for scientific computation: practice and experience", in proceedings of the 25th IEEE International Parallel & Distributed Processing Symposium (ISBN 978-0-7695-4385-7), 1080-1088 doi:10.1109/IPDPS.2011.103
 

@@ -11,7 +11,7 @@ The implementation follows Essmann et al. (1995), with some insights regarding t
 
 The potential calculation by itself is not very useful; in the future we hope to incorporate it into a dynamics code.  For now, it provides an illustration of the possible use of X10 language constructs in structured grid codes and spectral methods.
 
-1. Essmann et al. (1995). "A smmoth particle mesh Ewald method". J Chem Phys 103 (19), 8577-93
+1. Essmann et al. (1995). "A smooth particle mesh Ewald method". J Chem Phys 103 (19), 8577-93
 2. Oh and Deng (2007). "An efficient parallel implementation of the smooth particle mesh Ewald method for molecular dynamics simulations". Comp Phys Comms 177 (5), 426
 
 
@@ -36,7 +36,7 @@ For other implementations see
 
 Compile dependencies:
 ------------------------
-* X10 version 2.2.2 (optionally with x10rt=mpi)
+* X10 version 2.4 (optionally with x10rt=mpi)
 * FFTW http://www.fftw.org/ 
   (linked to at the locations ${fftw3.include} and ${fftw3.lib} in the ant build script)
 * XLA library (cd ~/x10-apps/x10x.lib/xla && ant)
