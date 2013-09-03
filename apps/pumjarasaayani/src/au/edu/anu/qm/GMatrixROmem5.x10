@@ -354,14 +354,13 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
 
             for (ron in 0n..roN) {
                 // Console.OUT.println("Aux - distributed ron="+ron);
-                timer.start(TIMER_GENCLASS); 
-                dkp.clear(); tdk.applyLocal((d:Rail[Double])=> { d.clear(); });  tB1.applyLocal((d:DenseMatrix)=> { d.reset(); });
-
                 // Aux & D
+                timer.start(TIMER_GENCLASS);
+                dkp.clear(); tdk.applyLocal((d:Rail[Double])=> { d.clear(); });  
+                tB1.applyLocal((d:DenseMatrix)=> { d.reset(); });
                 B1.reset();
-
                 finish DivideAndConquerLoop1D(0, shp.size).execute(
-                (spInd:Long)=> {
+                (spInd:Long)=> {                    
                     val sp=shp(spInd);
                     val maxLron=sp.L(ron);
                     if (maxLron >=0) {
@@ -415,11 +414,12 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                                         myThreaddk(rolm) +=2.0*scdmn*normAux; 
                                     }
                                 }
-                                                
+                        //timer.start(TIMER_KMATRIX1);                                               
                         val auxMat=new DenseMatrix(roK*muSize, nuSize, auxJ);
                         DenseMatrixBLAS.compMultTrans(mos, auxMat, myThreadB1, [nOrbitals, roK*muSize, nuSize], [0, sp.nu, 0, 0, 0, (sp.mu-offsetAtPlace(pid))*roK], true); 
                         if (offsetAtPlace(pid) <=sp.nu && sp.nu < offsetAtPlace(pid+1) && sp.mu < sp.nu)                          
                             DenseMatrixBLAS.compMultTrans(mos, auxK1, myThreadB1, [nOrbitals, roK*nuSize, muSize], [0, sp.mu, 0, 0, 0, (sp.nu-offsetAtPlace(pid))*roK], true); 
+                        //timer.stop(TIMER_KMATRIX1); 
                         
                     }
                 }
@@ -431,10 +431,6 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                 finish {
                     async Team.WORLD.allreduce[Double](dkp, 0L, dkp, 0L, dkp.size, Team.ADD);                    
                     if (ron <=roNK) {
-                        timer.start(TIMER_KMATRIX1);
-
-                        timer.stop(TIMER_KMATRIX1);
-
                         timer.start(TIMER_KMATRIX2);
                         val a=halfAuxMat.local();
                         val noffh=offsetAtPlace(pid);
