@@ -373,7 +373,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                         aux.genClass(sp.bang, sp.aang, sp.bPoint, sp.aPoint, sp.zetaB, sp.zetaA, sp.conB, sp.conA, ron, maxLron, y, sp.maxL, auxJ);
                         var ind:Long=0;
                         val muSize=sp.mu2-sp.mu+1, nuSize=sp.nu2-sp.nu+1;
-                        val auxK1 = new DenseMatrix(roK*nuSize, muSize), auxK2 = new DenseMatrix(roK*muSize, nuSize);
+                        val auxK1 = new DenseMatrix(roK*nuSize, muSize, ttemp4K());
 
                         if (localAuxJ(spInd).size==0L) {
                             for (var nu:Long=sp.nu, tnu:Long=0; nu<=sp.nu2; nu++, tnu++) 
@@ -383,18 +383,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                                         auxJ(ind++)*=nrm;
                                 }
                             
-                        } else if (sp.mu!=sp.nu) {
-                            for (var nu:Long=sp.nu, tnu:Long=0; nu<=sp.nu2; nu++, tnu++)
-                                for (var mu:Long=sp.mu, tmu:Long=0; mu<=sp.mu2; mu++, tmu++) {
-                                    val scdmn=density(mu, nu);
-                                    val nrm=norm(mu) * norm(nu); 
-                                    for (rolm in 0..(maxLm-1)) {
-                                        val normAux=(auxJ(ind++) *=nrm);
-                                        myThreaddk(rolm) +=2.*scdmn*normAux; 
-                                        auxK1(rolm+tnu*roK, tmu)=normAux; 
-                                    }
-                                }
-                        } else {
+                        } else if (sp.mu==sp.nu) {
                             for (var nu:Long=sp.nu, tnu:Long=0; nu<=sp.nu2; nu++, tnu++)
                                 for (var mu:Long=sp.mu, tmu:Long=0; mu<=sp.mu2; mu++, tmu++) {
                                     val scdmn=density(mu, nu);
@@ -402,11 +391,31 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                                     for (rolm in 0..(maxLm-1)) {
                                         val normAux=(auxJ(ind++) *=nrm);
                                         myThreaddk(rolm) +=scdmn*normAux; 
+                                    }
+                                }
+                        } else if (offsetAtPlace(pid) <=sp.nu && sp.nu < offsetAtPlace(pid+1) && sp.mu < sp.nu) {
+                            for (var nu:Long=sp.nu, tnu:Long=0; nu<=sp.nu2; nu++, tnu++)
+                                for (var mu:Long=sp.mu, tmu:Long=0; mu<=sp.mu2; mu++, tmu++) {
+                                    val scdmn=density(mu, nu);
+                                    val nrm=norm(mu) * norm(nu); 
+                                    for (rolm in 0..(maxLm-1)) {
+                                        val normAux=(auxJ(ind++) *=nrm);
+                                        myThreaddk(rolm) +=2.0*scdmn*normAux; 
                                         auxK1(rolm+tnu*roK, tmu)=normAux; 
                                     }
                                 }
                         }
-                        
+                        else
+                            for (var nu:Long=sp.nu, tnu:Long=0; nu<=sp.nu2; nu++, tnu++)
+                                for (var mu:Long=sp.mu, tmu:Long=0; mu<=sp.mu2; mu++, tmu++) {
+                                    val scdmn=density(mu, nu);
+                                    val nrm=norm(mu) * norm(nu); 
+                                    for (rolm in 0..(maxLm-1)) {
+                                        val normAux=(auxJ(ind++) *=nrm);
+                                        myThreaddk(rolm) +=2.0*scdmn*normAux; 
+                                    }
+                                }
+                                                
                         val auxMat=new DenseMatrix(roK*muSize, nuSize, auxJ);
                         DenseMatrixBLAS.compMultTrans(mos, auxMat, myThreadB1, [nOrbitals, roK*muSize, nuSize], [0, sp.nu, 0, 0, 0, (sp.mu-offsetAtPlace(pid))*roK], true); 
                         if (offsetAtPlace(pid) <=sp.nu && sp.nu < offsetAtPlace(pid+1) && sp.mu < sp.nu)                          
