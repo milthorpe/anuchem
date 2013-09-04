@@ -313,13 +313,6 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
 
         timer.stop(0);
         Console.OUT.println("    GMatrixROmem5 Initialization 'total' time: " + (timer.total(0) as Double) / 1e9 + " seconds");
-
-        @Ifdef("__MKL__") finish ateach(place in Dist.makeUnique()) { // not working?  better use -genv OMP_NUM_THREADS 4
-            val t1=mklGetMaxThreads();
-            mklSenumThreads(Runtime.NTHREADS);
-            val t2=mklGetMaxThreads();
-            Console.OUT.println(here + ", mklGetMaxThreads() was " + t1 + " and is now set to " + t2 + " thread(s).");     
-        }  
         @Ifdef("__PAPI__") { papi.initialize(); papi.countFlops(); papi.countMemoryOps(); }
         @Ifdef("__DEBUG__") { printShellInfo(); }
     }
@@ -359,6 +352,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                 dkp.clear(); tdk.applyLocal((d:Rail[Double])=> { d.clear(); });  
                 tB1.applyLocal((d:DenseMatrix)=> { d.reset(); });
                 B1.reset();
+                setThread(1n);
                 finish DivideAndConquerLoop1D(0, shp.size).execute(
                 (spInd:Long)=> {                    
                     val sp=shp(spInd);
@@ -427,7 +421,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                 tB1.reduceLocal(B1, (a:DenseMatrix, b:DenseMatrix)=> a.cellAdd(b));
                 tdk.reduceLocal(dkp, (a:Rail[Double], b:Rail[Double])=> RailUtils.map(a, b, a, (x:Double, y:Double)=>x+y));
                 timer.stop(TIMER_GENCLASS);
-
+                setThread(Runtime.NTHREADS);
                 finish {
                     async Team.WORLD.allreduce[Double](dkp, 0L, dkp, 0L, dkp.size, Team.ADD);                    
                     if (ron <=roNK) {
@@ -622,6 +616,23 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
         }
         return result;
     } 
+
+    private @NonEscaping def setThread(nT:Int) {
+        @Ifdef("__MKL__") finish ateach(place in Dist.makeUnique()) { // not working?  better use -genv OMP_NUM_THREADS 4
+            val t1=mklGetMaxThreads();
+            mklSenumThreads(nT);
+            val t2=mklGetMaxThreads();
+            Console.OUT.println(here + ", mklGetMaxThreads() was " + t1 + " and is now set to " + t2 + " thread(s).");     
+        }
+        try {
+            val omp=Runtime.execForRead("export OMP_NUM_THREADS="+nT);
+            val go=Runtime.execForRead("export GOTO_NUM_THREADS="+nT);
+        }
+        catch (e:IOException) {
+            // could not export
+            Console.OUT.println("could not export nT="+nT);
+        }
+    }
 
     private @NonEscaping def printShellInfo() {
         finish ateach(place in Dist.makeUnique()) {
