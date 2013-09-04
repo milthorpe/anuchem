@@ -34,6 +34,7 @@ import au.edu.anu.util.StatisticalTimer;
 import edu.utk.cs.papi.PAPI;
 
 @NativeCPPInclude("mkl_math.h")
+@NativeCPPInclude("omp.h")
 
 public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
     // Timer & PAPI performance counters
@@ -316,7 +317,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
     }
 
     @Native("c++", "mkl_get_max_threads()") private native static def mklGetMaxThreads():Int;
-    @Native("c++", "MKL_Set_Num_Threads(#a)") private native static def mklSenumThreads(a:Int):void;
+    @Native("c++", "MKL_Set_Num_Threads(#a)") private native static def mklSetNumThreads(a:Int):void;
 
     public def compute(density:Density{self.N==this.N}, mos:MolecularOrbitals{self.N==this.N}) {
         Console.OUT.printf("\nGMatrixROmem5.x10 'public def compute' %s...\n", getDateString()); 
@@ -617,20 +618,19 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
         return result;
     } 
 
+    @Native("c++", "omp_get_num_threads()") private native static def ompGetNumThreads():Int;
+    @Native("c++", "omp_set_num_thread(#a)") private native static def ompSetNumThreads(a:Int):void;
+
     private @NonEscaping def setThread(nT:Int) {
         @Ifdef("__MKL__") finish ateach(place in Dist.makeUnique()) { // not working?  better use -genv OMP_NUM_THREADS 4
             val t1=mklGetMaxThreads();
-            mklSenumThreads(nT);
+            val o1=ompGetNumThreads();
+            ompSetNumThreads(nT);
+            mklSetNumThreads(nT);
             val t2=mklGetMaxThreads();
-            Console.OUT.println(here + ", mklGetMaxThreads() was " + t1 + " and is now set to " + t2 + " thread(s).");     
-        }
-        try {
-            val omp=Runtime.execForRead("export OMP_NUM_THREADS="+nT);
-            val go=Runtime.execForRead("export GOTO_NUM_THREADS="+nT);
-        }
-        catch (e:IOException) {
-            // could not export
-            Console.OUT.println("could not export nT="+nT);
+            val o2=ompGetNumThreads();
+            Console.OUT.println(here + ", mklGetMaxThreads() was " + t1 + " and is now set to " + t2 + " thread(s)."
+                            + " ompGetNumThreads() was " + o1 + " and is now set to " + o2 + " thread(s).");     
         }
     }
 
