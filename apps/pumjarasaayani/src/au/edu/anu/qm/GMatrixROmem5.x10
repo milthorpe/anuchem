@@ -619,7 +619,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
     } 
 
     @Native("c++", "omp_get_num_threads()") private native static def ompGetNumThreads():Int;
-    @Native("c++", "omp_set_num_thread(#a)") private native static def ompSetNumThreads(a:Int):void;
+    @Native("c++", "omp_set_num_threads(#a)") private native static def ompSetNumThreads(a:Int):void;
 
     private @NonEscaping def setThread(nT:Int) {
         @Ifdef("__MKL__") finish ateach(place in Dist.makeUnique()) { // not working?  better use -genv OMP_NUM_THREADS 4
