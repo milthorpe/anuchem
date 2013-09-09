@@ -53,7 +53,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
     val auxIntMat4K:DistDenseMatrix, halfAuxMat:DistDenseMatrix, distJ:DistDenseMatrix, distK:DistDenseMatrix;
     val auxIntMat4J:PlaceLocalHandle[Rail[Rail[Double]]], tempBlock:PlaceLocalHandle[Rail[Double]], ylms:PlaceLocalHandle[Rail[Rail[Double]]], shellPairs:PlaceLocalHandle[Rail[ShellPair]];
     val dk:PlaceLocalHandle[Rail[Double]], e:PlaceLocalHandle[Rail[Double]]; 
-    val ttemp4J:WorkerLocalHandle[Rail[Double]], ttemp4K:WorkerLocalHandle[Rail[Double]], taux:WorkerLocalHandle[Integral_Pack], tdk:WorkerLocalHandle[Rail[Double]];
+    val ttemp4J:WorkerLocalHandle[Rail[Double]], ttemp4K:WorkerLocalHandle[Rail[Double]], taux:WorkerLocalHandle[Integral_Pack], tdk:WorkerLocalHandle[Rail[Double]], tB1:WorkerLocalHandle[DenseMatrix];
     val nOrbitals:Long, norm:Rail[Double], roN:Int, roNK:Int, roL:Int, roK:Int; 
     val roZ:Double, omega:Double, roThresh:Double, funcAtPlace:Rail[Long], offsetAtPlace:Rail[Long];
 
@@ -299,6 +299,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
         this.ttemp4J=new WorkerLocalHandle[Rail[Double]](()=> new Rail[Double](maxam1*maxam1*roK));
         this.ttemp4K=new WorkerLocalHandle[Rail[Double]](()=> new Rail[Double](maxam1*maxam1*roK));
         this.tdk=new WorkerLocalHandle[Rail[Double]](()=> new Rail[Double](roK));
+        this.tB1=new WorkerLocalHandle[DenseMatrix](()=> new DenseMatrix(nOrbitals, roK*funcAtPlace(here.id)));
 
         val cbs_nSquareMat=new Rail[Long](1); cbs_nSquareMat(0)=N; val nSquareMatGrid=new Grid(funcAtPlace, cbs_nSquareMat);
         this.distJ=DistDenseMatrix.make(nSquareMatGrid); this.distK=DistDenseMatrix.make(nSquareMatGrid);
@@ -328,7 +329,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
         val N=this.N, nOrbitals=this.nOrbitals, roN=this.roN, roNK=this.roNK, roL=this.roL, roK=this.roK, roZ=this.roZ, norm=this.norm, e=this.e;
         val funcAtPlace=this.funcAtPlace, offsetAtPlace=this.offsetAtPlace, taux=this.taux, dk=this.dk;
         val auxIntMat4K=this.auxIntMat4K, halfAuxMat=this.halfAuxMat, tempBlock=this.tempBlock;
-        val auxIntMat4J=this.auxIntMat4J, ttemp4J=this.ttemp4J, ttemp4K=this.ttemp4K, tdk=this.tdk;
+        val auxIntMat4J=this.auxIntMat4J, ttemp4J=this.ttemp4J, ttemp4K=this.ttemp4K, tdk=this.tdk, tB1=this.tB1;
       
         finish ateach(place in Dist.makeUnique()) {
             val pid=here.id;
@@ -341,7 +342,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
             val dkp=dk(), ep=e(); 
 
             val B1=new DenseMatrix(nOrbitals, roK*funcAtPlace(pid), halfAuxMat.local().d); 
-            val tB1=new WorkerLocalHandle[DenseMatrix](()=> new DenseMatrix(nOrbitals, roK*funcAtPlace(pid)));
+            
             ep.clear(); localJ.reset(); localK.reset();
 
             for (ron in 0n..roN) {
@@ -455,6 +456,9 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
 
                 timer.start(TIMER_JMATRIX); 
                 // Console.OUT.println("J - distributed"); 
+
+                val dmat = new DenseMatrix(1, roK, dkp);
+                val j = new DenseMatrix(1, N*funcAtPlace(pid),localJ.d);
                 finish DivideAndConquerLoop1D(0, shp.size).execute(
                 (spInd:Long)=> {
                     val sp=shp(spInd);
@@ -463,14 +467,17 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                     if (auxJ.size > 0 && maxLron >=0n) {
                         val maxLm=(maxLron+1)*(maxLron+1);
                         var ind:Long=0; 
+                        val aj = new DenseMatrix(roK, auxJ.size/roK, auxJ);
+                        val muSize = sp.mu2-sp.mu+1;
                         for (nu in sp.nu..sp.nu2) {
-                            for (var mu:Long=sp.mu, muoff:Long=mu-offsetAtPlace(pid); mu<=sp.mu2; mu++, muoff++) {
+                            DenseMatrixBLAS.comp(dmat, aj, j, [1, muSize as Long, roK as Long], [0, 0, 0, (nu-sp.nu)*muSize, 0, nu*funcAtPlace(pid)+sp.mu-offsetAtPlace(pid)], true); //"as Long" is required
+                            /*for (var mu:Long=sp.mu, muoff:Long=mu-offsetAtPlace(pid); mu<=sp.mu2; mu++, muoff++) {
                                 var jContrib:Double=0.;
                                 for (rolm in 0..(maxLm-1)) {
                                     jContrib +=dkp(rolm) * auxJ(ind++);
                                 }
                                 localJ(muoff, nu) +=jContrib;
-                            }
+                            }*/
                         }
                     }
                 }
