@@ -1,6 +1,6 @@
 X10CPP := x10c++
-X10CPPFLAGS := -O -NO_CHECKS -WORK_STEALING=true
-RUNX10FLAGS := X10_NTHREADS=8
+X10CPPFLAGS := -O -NO_CHECKS #-WORK_STEALING=true
+RUNX10FLAGS := X10_NTHREADS=4
 
 CXX 	 = g++
 TBB_CXXFLAGS = -std=c++0x -O2 -I /home/josh/tbb/include/
@@ -16,5 +16,5 @@ parallel_sum:	parallel_sum.cc
 		$(CXX) $(TBB_CXXFLAGS) -o $@ parallel_sum.cc $(TBB_LDFLAGS)
 
 clean:
-	rm -rf workerLocalReduce *.cc *.h *.dat *.ps harness
+	rm -rf parallel_sum workerLocalReduce BenchmarkWorkerLocalReduce.cc BenchmarkWorkerLocalReduce.h *.dat *.ps harness
 
