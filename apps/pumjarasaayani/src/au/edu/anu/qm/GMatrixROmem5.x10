@@ -418,7 +418,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                 }
                 );
                 timer.start(TIMER_B);
-                tB1.reduceLocal(B1, (a:DenseMatrix, b:DenseMatrix)=> a.cellAdd(b));
+                tB1.reduceLocal(B1, (a:DenseMatrix, b:DenseMatrix) => parallelAdd(a,b));
                 timer.stop(TIMER_B);
                 tdk.reduceLocal(dkp, (a:Rail[Double], b:Rail[Double])=> RailUtils.map(a, b, a, (x:Double, y:Double)=>x+y));
                 setThread(Runtime.NTHREADS);
@@ -604,6 +604,25 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                 body(start);
             }
         }
+    }
+
+    /**
+     * Adds matrix b to matrix a in parallel using all available threads.
+     */
+    private def parallelAdd(a:DenseMatrix, b:DenseMatrix){a.M==b.M,a.N==b.N} {
+        val aRaw = a.d;
+        val bRaw = b.d;
+        val size = aRaw.size;
+        val chunk = size / Runtime.NTHREADS;
+        val remainder = size % Runtime.NTHREADS;
+        finish for (t in 0..(Runtime.NTHREADS-1)) async {
+            val start = (t < remainder) ? t*(chunk+1) : t*chunk + remainder;
+            val end = ((t < remainder) ? (t+1)*(chunk+1) : (t+1)*chunk + remainder) - 1;
+            for (i in start..end) {
+                aRaw(i) += bRaw(i);
+            }
+        }
+        return a;
     }
 
     private def getDateString() {
