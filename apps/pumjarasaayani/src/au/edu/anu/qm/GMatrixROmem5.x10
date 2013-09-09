@@ -344,7 +344,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
             val B1=new DenseMatrix(nOrbitals, roK*funcAtPlace(pid), halfAuxMat.local().d); 
             
             ep.clear(); localJ.reset(); localK.reset();
-
+            setThread(1n);
             for (ron in 0n..roN) {
                 // Console.OUT.println("Aux - distributed ron="+ron);
                 // Aux & D
@@ -352,8 +352,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                 val doK = (ron <=roNK);
                 dkp.clear(); tdk.applyLocal((d:Rail[Double])=> { d.clear(); });  
                 tB1.applyLocal((d:DenseMatrix)=> { d.reset(); });
-                B1.reset();
-                setThread(1n);
+                B1.reset();                
                 finish DivideAndConquerLoop1D(0, shp.size).execute(
                 (spInd:Long)=> {                    
                     val sp=shp(spInd);
@@ -456,7 +455,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
 
                 timer.start(TIMER_JMATRIX); 
                 // Console.OUT.println("J - distributed"); 
-
+                setThread(1n);
                 val dmat = new DenseMatrix(1, roK, dkp);
                 val j = new DenseMatrix(1, N*funcAtPlace(pid),localJ.d);
                 finish DivideAndConquerLoop1D(0, shp.size).execute(
@@ -470,14 +469,14 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                         val aj = new DenseMatrix(roK, auxJ.size/roK, auxJ);
                         val muSize = sp.mu2-sp.mu+1;
                         for (nu in sp.nu..sp.nu2) {
-                            DenseMatrixBLAS.comp(dmat, aj, j, [1, muSize as Long, roK as Long], [0, 0, 0, (nu-sp.nu)*muSize, 0, nu*funcAtPlace(pid)+sp.mu-offsetAtPlace(pid)], true); //"as Long" is required
-                            /*for (var mu:Long=sp.mu, muoff:Long=mu-offsetAtPlace(pid); mu<=sp.mu2; mu++, muoff++) {
+                            if (muSize>15/*false*/) DenseMatrixBLAS.comp(dmat, aj, j, [1, muSize as Long, roK as Long], [0, 0, 0, (nu-sp.nu)*muSize, 0, nu*funcAtPlace(pid)+sp.mu-offsetAtPlace(pid)], true); //"as Long" is required
+                            else for (var mu:Long=sp.mu, muoff:Long=mu-offsetAtPlace(pid); mu<=sp.mu2; mu++, muoff++) {
                                 var jContrib:Double=0.;
                                 for (rolm in 0..(maxLm-1)) {
                                     jContrib +=dkp(rolm) * auxJ(ind++);
                                 }
                                 localJ(muoff, nu) +=jContrib;
-                            }*/
+                            }
                         }
                     }
                 }
