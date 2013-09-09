@@ -15,10 +15,10 @@ import x10.util.WorkerLocalHandle;
  * Benchmarks reducing worker local data
  * @author milthorpe 06/2013
  */
-public class BenchmarkWorkerLocalReduce(N:Int, print:Boolean) {
+public class BenchmarkWorkerLocalReduce(N:Long, print:Boolean) {
     private static ITERS = 1000;
 
-    public def this(N:Int, print:Boolean) {
+    public def this(N:Long, print:Boolean) {
         property(N, print);
     }
 
@@ -100,10 +100,10 @@ public class BenchmarkWorkerLocalReduce(N:Int, print:Boolean) {
 	}
 
 	public static def main(args:Rail[String]): void = {
-        var size:Int = 100000;
+        var size:Long = 100000;
         var print:Boolean = false;
         if (args.size > 0) {
-            size = Int.parse(args(0));
+            size = Long.parse(args(0));
             if (args.size > 1) {
                 print=true;
             }
