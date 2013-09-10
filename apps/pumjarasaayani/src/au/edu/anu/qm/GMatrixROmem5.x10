@@ -421,11 +421,11 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                 tB1.reduceLocal(B1, (a:DenseMatrix, b:DenseMatrix) => parallelAdd(a,b));
                 timer.stop(TIMER_B);
                 tdk.reduceLocal(dkp, (a:Rail[Double], b:Rail[Double])=> RailUtils.map(a, b, a, (x:Double, y:Double)=>x+y));
-                if (nThreads>1n) setThread(nThreads);
+                if (nThreads>1n && doK) setThread(nThreads);
                 timer.stop(TIMER_GENCLASS);
                 finish {
                     async Team.WORLD.allreduce[Double](dkp, 0L, dkp, 0L, dkp.size, Team.ADD);                    
-                    if (ron <=roNK) {
+                    if (doK) {
                         timer.start(TIMER_KMATRIX1);
                         val a=halfAuxMat.local();
                         val noffh=offsetAtPlace(pid);
@@ -435,7 +435,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
 
                 }
 
-                if (ron <=roNK) { // This produces K/2 & TODO: improved further by better scheduling and buffering = ring broadcast ?
+                if (doK) { // This produces K/2 & TODO: improved further by better scheduling and buffering = ring broadcast ?
                     timer.start(TIMER_KMATRIX2);
                     val mult=(Math.ceil(nPlaces*.5+.5) - ((nPlaces%2L==0L && pid<nPlaces/2)?1:0)) as Long;
                     val a=halfAuxMat.local();
@@ -455,7 +455,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
 
                 timer.start(TIMER_JMATRIX); 
                 // Console.OUT.println("J - distributed"); 
-                if (nThreads>1n) setThread(1n);
+                if (nThreads>1n && doK) setThread(1n);
                 //val dmat = new DenseMatrix(1, roK, dkp);
                 //val j = new DenseMatrix(1, N*funcAtPlace(pid),localJ.d);
                 finish DivideAndConquerLoop1D(0, shp.size).execute(
@@ -648,8 +648,8 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
             mklSetNumThreads(nT);
             val t2=mklGetMaxThreads();
             val o2=ompGetNumThreads();
-            Console.OUT.println(here + ", mklGetMaxThreads() was " + t1 + " and is now set to " + t2 + " thread(s)."
-                            + " ompGetNumThreads() was " + o1 + " and is now set to " + o2 + " thread(s).");     
+            @Ifdef("__DEBUG__") { Console.OUT.println(here + ", mklGetMaxThreads() was " + t1 + " and is now set to " + t2 + " thread(s)."
+                            + " ompGetNumThreads() was " + o1 + " and is now set to " + o2 + " thread(s)."); }   
         }
     }
 
