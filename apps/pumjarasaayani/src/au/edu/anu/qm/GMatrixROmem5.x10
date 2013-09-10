@@ -455,8 +455,8 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                 timer.start(TIMER_JMATRIX); 
                 // Console.OUT.println("J - distributed"); 
                 if (nThreads>1n && doK && ron<roN) setThread(1n);
-                val dmat = new DenseMatrix(1, roK, dkp);
-                val j = new DenseMatrix(1, N*funcAtPlace(pid),localJ.d);
+                // val dmat = new DenseMatrix(1, roK, dkp);
+                // val j = new DenseMatrix(1, N*funcAtPlace(pid),localJ.d);
                 finish DivideAndConquerLoop1D(0, shp.size).execute(
                 (spInd:Long)=> {
                     val sp=shp(spInd);
@@ -465,10 +465,10 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                     if (auxJ.size > 0 && maxLron >=0n) {
                         val maxLm=(maxLron+1)*(maxLron+1);
                         var ind:Long=0; 
-                        //val aj = new DenseMatrix(roK, auxJ.size/roK, auxJ);
-                        //val muSize = sp.mu2-sp.mu+1;
+                        // val aj = new DenseMatrix(roK, auxJ.size/roK, auxJ);
+                        // val muSize = sp.mu2-sp.mu+1;
                         for (nu in sp.nu..sp.nu2) {
-                            /*if (muSize>1) DenseMatrixBLAS.comp(dmat, aj, j, [1, muSize as Long, roK as Long], [0, 0, 0, (nu-sp.nu)*muSize, 0, nu*funcAtPlace(pid)+sp.mu-offsetAtPlace(pid)], true); //"as Long" is required
+                            /* if (muSize>1) DenseMatrixBLAS.comp(dmat, aj, j, [1, muSize as Long, roK as Long], [0, 0, 0, (nu-sp.nu)*muSize, 0, nu*funcAtPlace(pid)+sp.mu-offsetAtPlace(pid)], true); //"as Long" is required
                             else*/ for (var mu:Long=sp.mu, muoff:Long=mu-offsetAtPlace(pid); mu<=sp.mu2; mu++, muoff++) {
                                 var jContrib:Double=0.;
                                 for (rolm in 0..(maxLm-1)) {
