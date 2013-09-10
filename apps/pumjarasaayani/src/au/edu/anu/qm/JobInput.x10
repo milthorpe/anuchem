@@ -128,10 +128,10 @@ public class JobInput {
                     jd.gMatrixParallelScheme = getIntParam(line);
                 } else if (line.startsWith("fragment mta")) {
                     jd.useMta = true;
+                } else if (line.startsWith("RO_NK")) { // This must come before RO_N
+                    jd.roNK = getIntParam(line);
                 } else if (line.startsWith("RO_N")) {
                     jd.roN = getIntParam(line);
-                } else if (line.startsWith("RO_NK")) {
-                    jd.roNK = getIntParam(line);
                 } else if (line.startsWith("RO_L")) {
                     jd.roL = getIntParam(line);
                 } else if (line.startsWith("omega")) {

@@ -71,13 +71,13 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
         for (var a:Long=0; a<nAtoms; nShells+=mol.getAtom(a++).getBasisFunctions().size()); 
         if (omega>0.) { // long-range Ewald operator
             aux.getNL(l_n);
-            roN=roNK=l_n(0);
+            roN=l_n(0);
             roL=l_n(roN+2);             
         } else { // full Coulomb operator
             roN=jd.roN;
             roL=jd.roL;
-            if (jd.roNK==-1n) roNK=roN; else roNK=jd.roNK; 
         }
+        if (jd.roNK==-1n || jd.roNK>roN) roNK=roN; else roNK=jd.roNK;  // default/not provided roNK
         val roK=(roL+1n)*(roL+1n);
 
         // Preliminary work sharing: divide first by atoms, then by basis
