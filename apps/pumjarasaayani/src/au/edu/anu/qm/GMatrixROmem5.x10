@@ -351,8 +351,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                 timer.start(TIMER_GENCLASS);
                 val doK = (ron <=roNK);
                 dkp.clear(); tdk.applyLocal((d:Rail[Double])=> { d.clear(); });  
-                tB1.applyLocal((d:DenseMatrix)=> { d.reset(); });
-                B1.reset();                
+                if (doK) { tB1.applyLocal((d:DenseMatrix)=> { d.reset(); });  B1.reset(); }
                 finish DivideAndConquerLoop1D(0, shp.size).execute(
                 (spInd:Long)=> {                    
                     val sp=shp(spInd);
@@ -418,7 +417,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                 }
                 );
                 timer.start(TIMER_B);
-                tB1.reduceLocal(B1, (a:DenseMatrix, b:DenseMatrix) => parallelAdd(a,b));
+                if (doK) tB1.reduceLocal(B1, (a:DenseMatrix, b:DenseMatrix) => parallelAdd(a,b));
                 timer.stop(TIMER_B);
                 tdk.reduceLocal(dkp, (a:Rail[Double], b:Rail[Double])=> RailUtils.map(a, b, a, (x:Double, y:Double)=>x+y));
                 if (nThreads>1n && doK) setThread(nThreads);
@@ -432,7 +431,6 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                         DenseMatrixBLAS.symRankKUpdateTrans(a, localK, [a.N, a.M], [0, 0, 0, noffh], true, true);
                         timer.stop(TIMER_KMATRIX1);
                     }
-
                 }
 
                 if (doK) { // This produces K/2 & TODO: improved further by better scheduling and buffering = ring broadcast ?
@@ -442,12 +440,13 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                     val halfAuxGrid = halfAuxMat.grid;
                     for (var blk:Long=1; blk<mult; blk++) {
                         val qid=(pid+blk)%nPlaces;
-                        val globalDst = new GlobalRail(tBlock);
+                        /*val globalDst = new GlobalRail(tBlock);
                         @Pragma(Pragma.FINISH_ASYNC) finish at(Place(qid)) {
                             val localAux = halfAuxMat.local().d;
                             Rail.asyncCopy(localAux, 0, globalDst, 0, localAux.size);
                         }    
-                        val b = new DenseMatrix(halfAuxGrid.getRowSize(qid), halfAuxGrid.getColSize(qid), tBlock);                    
+                        val b = new DenseMatrix(halfAuxGrid.getRowSize(qid), halfAuxGrid.getColSize(qid), tBlock);  */
+                        val b = at(Place(qid)) {halfAuxMat.local()}; // This might be a waste of memory                
                         DenseMatrixBLAS.compTransMult(a, b, localK, [a.N, b.N, a.M], [0, 0, 0, 0, 0, offsetAtPlace(qid)], true);
                     }
                     timer.stop(TIMER_KMATRIX2);
