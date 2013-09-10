@@ -454,9 +454,9 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
 
                 timer.start(TIMER_JMATRIX); 
                 // Console.OUT.println("J - distributed"); 
-                if (nThreads>1n && doK) setThread(1n);
-                //val dmat = new DenseMatrix(1, roK, dkp);
-                //val j = new DenseMatrix(1, N*funcAtPlace(pid),localJ.d);
+                if (nThreads>1n && doK && ron<roN) setThread(1n);
+                val dmat = new DenseMatrix(1, roK, dkp);
+                val j = new DenseMatrix(1, N*funcAtPlace(pid),localJ.d);
                 finish DivideAndConquerLoop1D(0, shp.size).execute(
                 (spInd:Long)=> {
                     val sp=shp(spInd);
@@ -468,7 +468,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                         //val aj = new DenseMatrix(roK, auxJ.size/roK, auxJ);
                         //val muSize = sp.mu2-sp.mu+1;
                         for (nu in sp.nu..sp.nu2) {
-                            /* if (muSize>15) DenseMatrixBLAS.comp(dmat, aj, j, [1, muSize as Long, roK as Long], [0, 0, 0, (nu-sp.nu)*muSize, 0, nu*funcAtPlace(pid)+sp.mu-offsetAtPlace(pid)], true); //"as Long" is required
+                            /*if (muSize>1) DenseMatrixBLAS.comp(dmat, aj, j, [1, muSize as Long, roK as Long], [0, 0, 0, (nu-sp.nu)*muSize, 0, nu*funcAtPlace(pid)+sp.mu-offsetAtPlace(pid)], true); //"as Long" is required
                             else*/ for (var mu:Long=sp.mu, muoff:Long=mu-offsetAtPlace(pid); mu<=sp.mu2; mu++, muoff++) {
                                 var jContrib:Double=0.;
                                 for (rolm in 0..(maxLm-1)) {
@@ -640,7 +640,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
     @Native("c++", "omp_set_num_threads(#a)") private native static def ompSetNumThreads(a:Int):void;
 
     private @NonEscaping def setThread(nT:Int) {
-        @Ifdef("__MKL__") finish ateach(place in Dist.makeUnique()) { // not working?  better use -genv OMP_NUM_THREADS 4
+        @Ifdef("__MKL__") /*finish ateach(place in Dist.makeUnique())*/ { // not working?  better use -genv OMP_NUM_THREADS 4
             val t1=mklGetMaxThreads();
             val o1=ompGetNumThreads();
             ompSetNumThreads(nT);
