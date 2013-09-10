@@ -178,7 +178,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                                 }
                                 contrib=Math.abs(contrib); 
                                 if (offsetAtPlace(pid) <= spNu && spNu < offsetAtPlace(pid+1) && spMu > spNu) {
-                                    atomic info(2)++; 
+                                    atomic info(3)++; 
                                 } else if (contrib >= threshold) {
                                     val maxL = new Rail[Int](roN_val+1, roL_val); // change roL_val to smaller number
                                     val sp = new ShellPair(aang, bang, aPoint, bPoint, zetaA, zetaB, conA, conB, spMu, spNu, maxL, contrib);
@@ -232,7 +232,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
             totJ+=at(Place(i)) sizeInfo()(2);
             skip+=at(Place(i)) sizeInfo()(3);
             max=Math.max(cost,max); min=Math.min(cost,min); tot2+=cost;
-            Console.OUT.printf("%5d  %9d  %7.2f%%\n", i, cost, cost*100./tot); 
+            Console.OUT.printf("%5d %10.0f  %7.2f%%\n", i, cost, cost*100./tot); 
         }
         Console.OUT.printf("Fractions add up to %.2f %% (due to rounding of N/nPlaces, granularity of shellpairs and shellpair cut-off)\n",tot2/tot*100.);
         Console.OUT.printf("Aux/D calculations at each place: ideal=%.2f max=%.0f min=%.0f\n Imbalance cost=%.2f %%\n", ideal, max, min, (max/ideal-1.)*100.);
@@ -334,7 +334,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
         finish ateach(place in Dist.makeUnique()) {
             val pid=here.id;
             val nPlaces=Place.MAX_PLACES;
-
+            val nThreads=Runtime.NTHREADS;
             // For faster access 
             val shp=shellPairs(), ylmp=ylms();
             val localAuxJ=auxIntMat4J(), localMatK=auxIntMat4K.local(), tBlock=tempBlock(); 
@@ -344,7 +344,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
             val B1=new DenseMatrix(nOrbitals, roK*funcAtPlace(pid), halfAuxMat.local().d); 
             
             ep.clear(); localJ.reset(); localK.reset();
-            setThread(1n);
+            if (nThreads>1n) setThread(1n);
             for (ron in 0n..roN) {
                 // Console.OUT.println("Aux - distributed ron="+ron);
                 // Aux & D
@@ -421,7 +421,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                 tB1.reduceLocal(B1, (a:DenseMatrix, b:DenseMatrix) => parallelAdd(a,b));
                 timer.stop(TIMER_B);
                 tdk.reduceLocal(dkp, (a:Rail[Double], b:Rail[Double])=> RailUtils.map(a, b, a, (x:Double, y:Double)=>x+y));
-                setThread(Runtime.NTHREADS);
+                if (nThreads>1n) setThread(nThreads);
                 timer.stop(TIMER_GENCLASS);
                 finish {
                     async Team.WORLD.allreduce[Double](dkp, 0L, dkp, 0L, dkp.size, Team.ADD);                    
@@ -455,7 +455,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
 
                 timer.start(TIMER_JMATRIX); 
                 // Console.OUT.println("J - distributed"); 
-                setThread(1n);
+                if (nThreads>1n) setThread(1n);
                 //val dmat = new DenseMatrix(1, roK, dkp);
                 //val j = new DenseMatrix(1, N*funcAtPlace(pid),localJ.d);
                 finish DivideAndConquerLoop1D(0, shp.size).execute(
@@ -661,7 +661,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
             val gt=Runtime.execForRead("echo $GOTO_NUM_THREADS").readLine();
             val omp=Runtime.execForRead("echo $OMP_NUM_THREADS").readLine();
             Console.OUT.println(here + ", Runtime.NTHREADS=" + Runtime.NTHREADS + ", uname -n=" + hostname + ", X10_NPLACES="+np+", X10_NTHREADS="+nt+", GOTO_NUM_THREADS="+gt+ ", OMP_NUM_THREADS="+omp ); // if print out on separate lines, they can goes randomly.
+            Console.OUT.flush();
         }
-        Console.OUT.flush();
    }
 }
