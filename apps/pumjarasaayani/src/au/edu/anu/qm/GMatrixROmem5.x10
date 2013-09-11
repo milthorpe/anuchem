@@ -38,13 +38,15 @@ import edu.utk.cs.papi.PAPI;
 
 public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
     // Timer & PAPI performance counters
-    public val timer=new StatisticalTimer(6);
+    public val timer=new StatisticalTimer(7);
     val TIMER_TOTAL=0;
-    val TIMER_JMATRIX=1;
-    val TIMER_B=2;
-    val TIMER_KMATRIX1=3;
-    val TIMER_KMATRIX2=4;
-    val TIMER_GENCLASS=5;
+    val TIMER_AUX=1;
+    val TIMER_JMATRIX=2;
+    val TIMER_RLOCAL=3;
+    val TIMER_COM=4;
+    val TIMER_DSYRK=5;
+    val TIMER_DGEMM=6;
+
 
     transient var papi:PAPI=new PAPI(); // @Ifdef("__PAPI__") // XTENLANG-3132
 
@@ -348,7 +350,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
             for (ron in 0n..roN) {
                 // Console.OUT.println("Aux - distributed ron="+ron);
                 // Aux & D
-                timer.start(TIMER_GENCLASS);
+                timer.start(TIMER_AUX);
                 val doK = (ron <=roNK);
                 dkp.clear(); tdk.applyLocal((d:Rail[Double])=> { d.clear(); });  
                 if (doK) { tB1.applyLocal((d:DenseMatrix)=> { d.reset(); });  B1.reset(); }
@@ -416,30 +418,31 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                     }
                 }
                 );
-                timer.start(TIMER_B);
+                timer.start(TIMER_RLOCAL);
                 if (doK) tB1.reduceLocal(B1, (a:DenseMatrix, b:DenseMatrix) => parallelAdd(a,b));
-                timer.stop(TIMER_B);
                 tdk.reduceLocal(dkp, (a:Rail[Double], b:Rail[Double])=> RailUtils.map(a, b, a, (x:Double, y:Double)=>x+y));
+                timer.stop(TIMER_RLOCAL);
                 if (nThreads>1n && doK) setThread(nThreads);
-                timer.stop(TIMER_GENCLASS);
+                timer.stop(TIMER_AUX);
                 finish {
                     async Team.WORLD.allreduce[Double](dkp, 0L, dkp, 0L, dkp.size, Team.ADD);                    
                     if (doK) {
-                        timer.start(TIMER_KMATRIX1);
+                        timer.start(TIMER_DSYRK);
                         val a=halfAuxMat.local();
                         val noffh=offsetAtPlace(pid);
                         DenseMatrixBLAS.symRankKUpdateTrans(a, localK, [a.N, a.M], [0, 0, 0, noffh], true, true);
-                        timer.stop(TIMER_KMATRIX1);
+                        timer.stop(TIMER_DSYRK);
                     }
                 }
 
                 if (doK) { // This produces K/2 & TODO: improved further by better scheduling and buffering = ring broadcast ?
-                    timer.start(TIMER_KMATRIX2);
+
                     val mult=(Math.ceil(nPlaces*.5+.5) - ((nPlaces%2L==0L && pid<nPlaces/2)?1:0)) as Long;
                     val a=halfAuxMat.local();
                     val halfAuxGrid = halfAuxMat.grid;
                     for (var blk:Long=1; blk<mult; blk++) {
                         val qid=(pid+blk)%nPlaces;
+                        timer.start(TIMER_COM);
                         /*val globalDst = new GlobalRail(tBlock);
                         @Pragma(Pragma.FINISH_ASYNC) finish at(Place(qid)) {
                             val localAux = halfAuxMat.local().d;
@@ -447,9 +450,11 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                         }    
                         val b = new DenseMatrix(halfAuxGrid.getRowSize(qid), halfAuxGrid.getColSize(qid), tBlock);  */
                         val b = at(Place(qid)) {halfAuxMat.local()}; // This might be a waste of memory                
+                        timer.stop(TIMER_COM);
+                        timer.start(TIMER_DGEMM);
                         DenseMatrixBLAS.compTransMult(a, b, localK, [a.N, b.N, a.M], [0, 0, 0, 0, 0, offsetAtPlace(qid)], true);
+                        timer.stop(TIMER_DGEMM);
                     }
-                    timer.stop(TIMER_KMATRIX2);
                 }
 
                 timer.start(TIMER_JMATRIX); 
@@ -550,13 +555,13 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
             // Report time
             Team.WORLD.allreduce[Long](timer.total, 0L, timer.total, 0L, timer.total.size, Team.MAX);
             if (here==Place.FIRST_PLACE) {
-                val tINT=(timer.total(TIMER_GENCLASS) as Double)/1e9;
+                val tAux=(timer.total(TIMER_AUX) as Double)/1e9;
                 val tJ=(timer.total(TIMER_JMATRIX) as Double)/1e9;
-                val tK1=(timer.total(TIMER_KMATRIX1) as Double)/1e9;
-                val tK2=(timer.total(TIMER_KMATRIX2) as Double)/1e9;
-                val tB=(timer.total(TIMER_B) as Double)/1e9;
-                val tK=tK1+tK2;
-                Console.OUT.printf("Time INT= %.2f s J= %.2f s K1= %.2f s K2= %.2f s Kt= %.2f s tB= %.2f s\n", tINT, tJ, tK1, tK2, tK, tB);
+                val tDsyrk=(timer.total(TIMER_DSYRK) as Double)/1e9;
+                val tDgemm=(timer.total(TIMER_DGEMM) as Double)/1e9;
+                val tRl=(timer.total(TIMER_RLOCAL) as Double)/1e9;
+                val tCom=(timer.total(TIMER_COM) as Double)/1e9;
+                Console.OUT.printf("Time Aux= %.2f s J= %.2f s DSYRK= %.2f s DGEMM= %.2f s RLOCAL= %.2f s COM= %.2f s\n", tAux, tJ, tDsyrk, tDgemm, tRl, tCom);
                 Console.OUT.flush();
             }
         }
