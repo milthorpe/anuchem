@@ -52,8 +52,8 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
 
     private val bfs:BasisFunctions, mol:Molecule[QMAtom];
 
-    val auxIntMat4K:DistDenseMatrix, halfAuxMat:DistDenseMatrix, distJ:DistDenseMatrix, distK:DistDenseMatrix;
-    val auxIntMat4J:PlaceLocalHandle[Rail[Rail[Double]]], tempBlock:PlaceLocalHandle[Rail[Double]], ylms:PlaceLocalHandle[Rail[Rail[Double]]], shellPairs:PlaceLocalHandle[Rail[ShellPair]];
+    val halfAuxMat:DistDenseMatrix, distJ:DistDenseMatrix, distK:DistDenseMatrix;
+    val auxIntMat4J:PlaceLocalHandle[Rail[Rail[Double]]], auxIntMat4K:PlaceLocalHandle[Rail[Rail[Double]]], tempBlock:PlaceLocalHandle[Rail[Double]], ylms:PlaceLocalHandle[Rail[Rail[Double]]], shellPairs:PlaceLocalHandle[Rail[ShellPair]];
     val dk:PlaceLocalHandle[Rail[Double]], e:PlaceLocalHandle[Rail[Double]]; 
     val ttemp4J:WorkerLocalHandle[Rail[Double]], ttemp4K:WorkerLocalHandle[Rail[Double]], taux:WorkerLocalHandle[Integral_Pack], tdk:WorkerLocalHandle[Rail[Double]], tB1:WorkerLocalHandle[DenseMatrix];
     val nOrbitals:Long, norm:Rail[Double], roN:Int, roNK:Int, roL:Int, roK:Int; 
@@ -138,7 +138,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
         val roL_val=roL,roN_val=roN,roZ_val=jd.roZ,nShells_val=nShells, sizeInfo=PlaceLocalHandle.make[Rail[Double]](PlaceGroup.WORLD, ()=> new Rail[Double](4));
         val shellPairs=PlaceLocalHandle.make[Rail[ShellPair]](
             PlaceGroup.WORLD, 
-            ()=> {
+            ()=> {            
             val pid=here.id, info=sizeInfo();
             val localShellPairs = new GrowableRail[ShellPair](nShells_val*nShells_val);
             var mu:Long = offsetAtPlace(pid), nu:Long=0;
@@ -290,8 +290,29 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
             }
         );      
 
-        val cbs_auxInt=new Rail[Long](1); cbs_auxInt(0)=N*roK; val auxIntMat4KGrid=new Grid(funcAtPlace, cbs_auxInt);
-        this.auxIntMat4K=DistDenseMatrix.make(auxIntMat4KGrid);
+        this.auxIntMat4K=PlaceLocalHandle.make[Rail[Rail[Double]]](
+            PlaceGroup.WORLD, 
+            ()=>{
+                val shp = shellPairs();
+                val auxIntMat4K = new Rail[Rail[Double]](shp.size);
+                val pid = here.id;
+                val mult = (Math.ceil(nPlaces*.5+.5)-((nPlaces%2L==0L && pid<nPlaces/2)?1:0)) as Long;
+                val colStart = offsetAtPlace(pid);
+                val colStop = offsetAtPlace((pid+mult)%nPlaces);
+                finish for (i in 0..(shp.size-1)) async {
+                    val sp = shp(i);
+                    val nu = sp.nu;
+                    var size:Long = 0;
+                    if ( ( (colStart<colStop) && ((colStart<=nu) && (nu<colStop)) ) ||
+                         ( (colStart>=colStop) && ( (nu<colStop) || (nu>=colStart) ) ) )
+                        size = 0;
+                    else size = sp.maxbraa*sp.maxbrab*roK;
+
+                    auxIntMat4K(i) = new Rail[Double](size);
+                }
+                auxIntMat4K
+            }
+        );    
 
         this.tempBlock=PlaceLocalHandle.make[Rail[Double]](PlaceGroup.WORLD, () => new Rail[Double](maxRow*nOrbitals*roK));
 
@@ -337,93 +358,95 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
             val pid=here.id;
             val nPlaces=Place.MAX_PLACES;
             val nThreads=Runtime.NTHREADS;
+            setThread(nThreads);
             // For faster access 
             val shp=shellPairs(), ylmp=ylms();
-            val localAuxJ=auxIntMat4J(), localMatK=auxIntMat4K.local(), tBlock=tempBlock(); 
+            val localAuxJ=auxIntMat4J(), localAuxK=auxIntMat4K(), tBlock=tempBlock(); 
             val localJ=distJ.local(), localK=distK.local();
             val dkp=dk(), ep=e(); 
 
             val B1=new DenseMatrix(nOrbitals, roK*funcAtPlace(pid), halfAuxMat.local().d); 
             
             ep.clear(); localJ.reset(); localK.reset();
-            if (nThreads>1n) setThread(1n);
+            
             for (ron in 0n..roN) {
                 // Console.OUT.println("Aux - distributed ron="+ron);
                 // Aux & D
                 timer.start(TIMER_AUX);
                 val doK = (ron <=roNK);
                 dkp.clear(); tdk.applyLocal((d:Rail[Double])=> { d.clear(); });  
-                if (doK) { tB1.applyLocal((d:DenseMatrix)=> { d.reset(); });  B1.reset(); }
                 finish DivideAndConquerLoop1D(0, shp.size).execute(
                 (spInd:Long)=> {                    
                     val sp=shp(spInd);
                     val maxLron=sp.L(ron);
                     if (maxLron >=0) {
-                        var auxJ:Rail[Double]=localAuxJ(spInd);
-                        if (auxJ.size==0L) auxJ=ttemp4J();
-                        val aux=taux(), myThreaddk=tdk(), myThreadB1=tB1();
+                        var temp:Rail[Double]=localAuxJ(spInd);
+                        if (temp.size==0L) temp=localAuxK(spInd);
+                        val aux=taux(), myThreaddk=tdk();
                         val maxLm=(maxLron+1)*(maxLron+1), y=ylmp(spInd);
-                        val musize=sp.mu2-sp.mu+1, nusize=sp.nu2-sp.nu+1;
-                        aux.genClass(sp.bang, sp.aang, sp.bPoint, sp.aPoint, sp.zetaB, sp.zetaA, sp.conB, sp.conA, ron, maxLron, y, sp.maxL, auxJ);
+                        aux.genClass(sp.bang, sp.aang, sp.bPoint, sp.aPoint, sp.zetaB, sp.zetaA, sp.conB, sp.conA, ron, maxLron, y, sp.maxL, temp);
                         var ind:Long=0;
                         val muSize=sp.mu2-sp.mu+1, nuSize=sp.nu2-sp.nu+1;
-                        val auxK1 = new DenseMatrix(roK*nuSize, muSize, ttemp4K());
 
-                        if (localAuxJ(spInd).size==0L) {
+                        if (doK && localAuxJ(spInd).size==0L) { // for K only
                             for (var nu:Long=sp.nu, tnu:Long=0; nu<=sp.nu2; nu++, tnu++) 
                                 for (var mu:Long=sp.mu, tmu:Long=0; mu<=sp.mu2; mu++, tmu++) {
                                     val nrm=norm(mu)*norm(nu);
                                     for (rolm in 0..(maxLm-1)) 
-                                        auxJ(ind++)*=nrm;
+                                        temp(ind++)*=nrm;
                                 }
                             
-                        } else if (sp.mu==sp.nu) {
+                        } else if (sp.mu==sp.nu) { // for diagonal block of J
                             for (var nu:Long=sp.nu, tnu:Long=0; nu<=sp.nu2; nu++, tnu++)
                                 for (var mu:Long=sp.mu, tmu:Long=0; mu<=sp.mu2; mu++, tmu++) {
                                     val scdmn=density(mu, nu);
                                     val nrm=norm(mu) * norm(nu); 
                                     for (rolm in 0..(maxLm-1)) {
-                                        val normAux=(auxJ(ind++) *=nrm);
+                                        val normAux=(temp(ind++) *=nrm);
                                         myThreaddk(rolm) +=scdmn*normAux; 
                                     }
                                 }
-                        } else if (doK && offsetAtPlace(pid) <=sp.nu && sp.nu < offsetAtPlace(pid+1) && sp.mu < sp.nu) {
+                        } else // for the rest of J
                             for (var nu:Long=sp.nu, tnu:Long=0; nu<=sp.nu2; nu++, tnu++)
                                 for (var mu:Long=sp.mu, tmu:Long=0; mu<=sp.mu2; mu++, tmu++) {
                                     val scdmn=density(mu, nu);
                                     val nrm=norm(mu) * norm(nu); 
                                     for (rolm in 0..(maxLm-1)) {
-                                        val normAux=(auxJ(ind++) *=nrm);
-                                        myThreaddk(rolm) +=2.0*scdmn*normAux; 
-                                        auxK1(rolm+tnu*roK, tmu)=normAux; 
-                                    }
-                                }
-                        }
-                        else
-                            for (var nu:Long=sp.nu, tnu:Long=0; nu<=sp.nu2; nu++, tnu++)
-                                for (var mu:Long=sp.mu, tmu:Long=0; mu<=sp.mu2; mu++, tmu++) {
-                                    val scdmn=density(mu, nu);
-                                    val nrm=norm(mu) * norm(nu); 
-                                    for (rolm in 0..(maxLm-1)) {
-                                        val normAux=(auxJ(ind++) *=nrm);
+                                        val normAux=(temp(ind++) *=nrm);
                                         myThreaddk(rolm) +=2.0*scdmn*normAux; 
                                     }
                                 }
-                        if (doK) {
-                            val auxMat=new DenseMatrix(roK*muSize, nuSize, auxJ);
-                            DenseMatrixBLAS.compMultTrans(mos, auxMat, myThreadB1, [nOrbitals, roK*muSize, nuSize], [0, sp.nu, 0, 0, 0, (sp.mu-offsetAtPlace(pid))*roK], true); 
-                            if (offsetAtPlace(pid)<=sp.nu && sp.nu < offsetAtPlace(pid+1) && sp.mu < sp.nu)                          
-                                DenseMatrixBLAS.compMultTrans(mos, auxK1, myThreadB1, [nOrbitals, roK*nuSize, muSize], [0, sp.mu, 0, 0, 0, (sp.nu-offsetAtPlace(pid))*roK], true); 
-                        }                        
+                     
                     }
                 }
                 );
-                timer.start(TIMER_RLOCAL);
-                if (doK) tB1.reduceLocal(B1, (a:DenseMatrix, b:DenseMatrix) => parallelAdd(a,b));
                 tdk.reduceLocal(dkp, (a:Rail[Double], b:Rail[Double])=> RailUtils.map(a, b, a, (x:Double, y:Double)=>x+y));
-                timer.stop(TIMER_RLOCAL);
-                if (nThreads>1n && doK) setThread(nThreads);
                 timer.stop(TIMER_AUX);
+
+                timer.start(TIMER_RLOCAL);
+                if (doK) {   
+                    B1.reset(); var ind:Long=0;
+                    for (spInd in 0..(shp.size-1)) {
+                        val sp=shp(spInd);
+                        val maxLron=sp.L(ron);
+                        var temp:Rail[Double]=localAuxJ(spInd);
+                        if (temp.size==0L) temp=localAuxK(spInd);
+                        val muSize=sp.mu2-sp.mu+1, nuSize=sp.nu2-sp.nu+1, maxLm=(maxLron+1)*(maxLron+1);
+                        val auxMat=new DenseMatrix(roK*muSize, nuSize, temp);
+                        DenseMatrixBLAS.compMultTrans(mos, auxMat, B1, [nOrbitals, roK*muSize, nuSize], [0, sp.nu, 0, 0, 0, (sp.mu-offsetAtPlace(pid))*roK], true); 
+                        if (offsetAtPlace(pid) <=sp.nu && sp.nu < offsetAtPlace(pid+1) && sp.mu < sp.nu) {
+                            val auxMat2 = new DenseMatrix(roK*nuSize, muSize, ttemp4J()); ind=0;
+                            for (var nu:Long=sp.nu, tnu:Long=0; nu<=sp.nu2; nu++, tnu++)
+                                for (var mu:Long=sp.mu, tmu:Long=0; mu<=sp.mu2; mu++, tmu++) 
+                                    for (rolm in 0..(maxLm-1)) 
+                                        auxMat2(rolm+tnu*roK, tmu)=temp(ind++); 
+                            DenseMatrixBLAS.compMultTrans(mos, auxMat2, B1, [nOrbitals, roK*nuSize, muSize], [0, sp.mu, 0, 0, 0, (sp.nu-offsetAtPlace(pid))*roK], true);                                         
+                        }
+
+                    }
+                }
+                timer.stop(TIMER_RLOCAL);
+
                 finish {
                     async Team.WORLD.allreduce[Double](dkp, 0L, dkp, 0L, dkp.size, Team.ADD);                    
                     if (doK) {
@@ -459,7 +482,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
 
                 timer.start(TIMER_JMATRIX); 
                 // Console.OUT.println("J - distributed"); 
-                if (nThreads>1n && doK && ron<roN) setThread(1n);
+   
                 // val dmat = new DenseMatrix(1, roK, dkp);
                 // val j = new DenseMatrix(1, N*funcAtPlace(pid),localJ.d);
                 finish DivideAndConquerLoop1D(0, shp.size).execute(
