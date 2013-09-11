@@ -179,7 +179,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                                     }
                                 }
                                 contrib=Math.abs(contrib); 
-                                if (offsetAtPlace(pid) <= spNu && spNu < offsetAtPlace(pid+1) && spMu > spNu) {
+                                if (/*offsetAtPlace(pid) <= spNu && spNu < offsetAtPlace(pid+1) && spMu > spNu*/false) {
                                     atomic info(3)++; 
                                 } else if (contrib >= threshold) {
                                     val maxL = new Rail[Int](roN_val+1, roL_val); // change roL_val to smaller number
@@ -307,6 +307,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                          ( (colStart>=colStop) && ( (nu<colStop) || (nu>=colStart) ) ) )
                         size = 0;
                     else size = sp.maxbraa*sp.maxbrab*roK;
+                    if (offsetAtPlace(pid) <= nu && nu < offsetAtPlace(pid+1) && sp.mu > nu) size=sp.maxbraa*sp.maxbrab*roK;
 
                     auxIntMat4K(i) = new Rail[Double](size);
                 }
@@ -434,14 +435,14 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                         val muSize=sp.mu2-sp.mu+1, nuSize=sp.nu2-sp.nu+1, maxLm=(maxLron+1)*(maxLron+1);
                         val auxMat=new DenseMatrix(roK*muSize, nuSize, temp);
                         DenseMatrixBLAS.compMultTrans(mos, auxMat, B1, [nOrbitals, roK*muSize, nuSize], [0, sp.nu, 0, 0, 0, (sp.mu-offsetAtPlace(pid))*roK], true); 
-                        if (offsetAtPlace(pid) <=sp.nu && sp.nu < offsetAtPlace(pid+1) && sp.mu < sp.nu) {
+                        /*if (offsetAtPlace(pid) <=sp.nu && sp.nu < offsetAtPlace(pid+1) && sp.mu < sp.nu) {
                             val auxMat2 = new DenseMatrix(roK*nuSize, muSize, ttemp4J()); ind=0;
                             for (var nu:Long=sp.nu, tnu:Long=0; nu<=sp.nu2; nu++, tnu++)
                                 for (var mu:Long=sp.mu, tmu:Long=0; mu<=sp.mu2; mu++, tmu++) 
                                     for (rolm in 0..(maxLm-1)) 
                                         auxMat2(rolm+tnu*roK, tmu)=temp(ind++); 
                             DenseMatrixBLAS.compMultTrans(mos, auxMat2, B1, [nOrbitals, roK*nuSize, muSize], [0, sp.mu, 0, 0, 0, (sp.nu-offsetAtPlace(pid))*roK], true);                                         
-                        }
+                        }*/
 
                     }
                 }
