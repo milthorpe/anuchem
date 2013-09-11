@@ -462,7 +462,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                 if (nThreads>1n && doK && ron<roN) setThread(1n);
                 // val dmat = new DenseMatrix(1, roK, dkp);
                 // val j = new DenseMatrix(1, N*funcAtPlace(pid),localJ.d);
-                finish DivideAndConquerLoop1D(0, shp.size).execute(
+                finish DivideAndConquerLoop1D(0, shp.size, 16).execute(
                 (spInd:Long)=> {
                     val sp=shp(spInd);
                     val auxJ=localAuxJ(spInd);
@@ -592,20 +592,25 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
         @Ifdef("__PAPI__"){ papi.printFlops(); papi.printMemoryOps();}
     }
 
-    private static struct DivideAndConquerLoop1D(start:Long, end:Long) {
-        // TODO allow grain size > 1
+    private static struct DivideAndConquerLoop1D(start:Long, end:Long, grainSize:Long) {
         public def this(start:Long, end:Long) {
-            property(start, end);
+            property(start, end, 1);
+        }
+
+        public def this(start:Long, end:Long, grainSize:Long) {
+            property(start, end, grainSize);
         }
 
         public def execute(body:(idx:Long)=> void) {
-            if ((end-start) > 1L) {
-                val firstHalf=DivideAndConquerLoop1D(start, (start+end)/2L);
-                val secondHalf=DivideAndConquerLoop1D((start+end)/2L, end);
+            if ((end-start) > grainSize) {
+                val firstHalf=DivideAndConquerLoop1D(start, (start+end)/2L, grainSize);
+                val secondHalf=DivideAndConquerLoop1D((start+end)/2L, end, grainSize);
                 async firstHalf.execute(body);
                 secondHalf.execute(body);
             } else {
-                body(start);
+                for (i in start..(end-1)) {
+                    body(i);
+                }
             }
         }
     }
