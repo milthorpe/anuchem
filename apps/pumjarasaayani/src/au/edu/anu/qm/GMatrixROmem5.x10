@@ -38,7 +38,7 @@ import edu.utk.cs.papi.PAPI;
 
 public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
     // Timer & PAPI performance counters
-    public val timer=new StatisticalTimer(7);
+    public val timer=new StatisticalTimer(8);
     val TIMER_TOTAL=0;
     val TIMER_AUX=1;
     val TIMER_JMATRIX=2;
@@ -46,6 +46,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
     val TIMER_COM=4;
     val TIMER_DSYRK=5;
     val TIMER_DGEMM=6;
+    val TIMER_COP=8;
 
 
     transient var papi:PAPI=new PAPI(); // @Ifdef("__PAPI__") // XTENLANG-3132
@@ -388,8 +389,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                 if (sInd>0) spInd0=range(sInd-1);
                 val sp0=shp(spInd0);
                 //val muSize=sp0.mu2-sp0.mu+1;
-                val AuxMat = new DenseMatrix(roK*(sp0.mu2-sp0.mu+1), N);
-                //if (ron==0n) Console.OUT.println(here +"sInd " + sInd+" Aux " + spInd0 + " to " + range(sInd));
+                val AuxMat = new DenseMatrix(roK*(sp0.mu2-sp0.mu+1), N, tBlock);
                 finish DivideAndConquerLoop1D(spInd0, range(sInd)).execute(
                 (spInd:Long)=> {                    
                     val sp=shp(spInd);
@@ -431,10 +431,12 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                                         myThreaddk(rolm) +=2.0*scdmn*normAux; 
                                     }
                                 }
-                        // cast temp
+                        // cast temp &  copy subset temp into AuxMat 
+                        timer.start(TIMER_COP);
                         val ttemp = new DenseMatrix(roK*muSize, nuSize, temp);                        
-                        // copy subset temp into AuxMat 
                         DenseMatrix.copySubset(ttemp, 0, 0, AuxMat, 0, sp.nu, ttemp.M, ttemp.N);
+                        timer.stop(TIMER_COP);
+                        //TODO: Genclass with offset will remove this
                      
                     }
                 }
@@ -584,7 +586,9 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                 val tDgemm=(timer.total(TIMER_DGEMM) as Double)/1e9;
                 val tRl=(timer.total(TIMER_RLOCAL) as Double)/1e9;
                 val tCom=(timer.total(TIMER_COM) as Double)/1e9;
+                val tCop=(timer.total(TIMER_COP) as Double)/1e9;
                 Console.OUT.printf("Time Aux= %.2f s J= %.2f s DSYRK= %.2f s DGEMM= %.2f s RLOCAL= %.2f s COM= %.2f s\n", tAux, tJ, tDsyrk, tDgemm, tRl, tCom);
+                Console.OUT.printf("Time COP= %.2f s\n", tCop);
                 Console.OUT.flush();
             }
         }
