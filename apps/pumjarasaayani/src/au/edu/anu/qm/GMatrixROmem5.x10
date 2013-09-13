@@ -390,7 +390,6 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                 //val muSize=sp0.mu2-sp0.mu+1;
                 val AuxMat = new DenseMatrix(roK*(sp0.mu2-sp0.mu+1), N);
                 //if (ron==0n) Console.OUT.println(here +"sInd " + sInd+" Aux " + spInd0 + " to " + range(sInd));
- 
                 finish DivideAndConquerLoop1D(spInd0, range(sInd)).execute(
                 (spInd:Long)=> {                    
                     val sp=shp(spInd);
@@ -441,34 +440,12 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                 }
                 );
                 // DGEMM
+                timer.start(TIMER_RLOCAL);
                 DenseMatrixBLAS.compMultTrans(mos, AuxMat, B1, [nOrbitals, AuxMat.M, N], [0, 0, 0, 0, 0, (sp0.mu-offsetAtPlace(pid))*roK], false);
+                timer.stop(TIMER_RLOCAL);
             }
                 tdk.reduceLocal(dkp, (a:Rail[Double], b:Rail[Double])=> RailUtils.map(a, b, a, (x:Double, y:Double)=>x+y));
                 timer.stop(TIMER_AUX);
-
-                timer.start(TIMER_RLOCAL);
-                /*if (doK) {   
-                    B1.reset(); var ind:Long=0;
-                    for (spInd in 0..(shp.size-1)) {
-                        val sp=shp(spInd);
-                        val maxLron=sp.L(ron);
-                        var temp:Rail[Double]=localAuxJ(spInd);
-                        if (temp.size==0L) temp=localAuxK(spInd);
-                        val muSize=sp.mu2-sp.mu+1, nuSize=sp.nu2-sp.nu+1, maxLm=(maxLron+1)*(maxLron+1);
-                        val auxMat=new DenseMatrix(roK*muSize, nuSize, temp);
-                        DenseMatrixBLAS.compMultTrans(mos, auxMat, B1, [nOrbitals, roK*muSize, nuSize], [0, sp.nu, 0, 0, 0, (sp.mu-offsetAtPlace(pid))*roK], true); 
-                        if (offsetAtPlace(pid) <=sp.nu && sp.nu < offsetAtPlace(pid+1) && sp.mu < sp.nu) {
-                            val auxMat2 = new DenseMatrix(roK*nuSize, muSize, ttemp4J()); ind=0;
-                            for (var nu:Long=sp.nu, tnu:Long=0; nu<=sp.nu2; nu++, tnu++)
-                                for (var mu:Long=sp.mu, tmu:Long=0; mu<=sp.mu2; mu++, tmu++) 
-                                    for (rolm in 0..(maxLm-1)) 
-                                        auxMat2(rolm+tnu*roK, tmu)=temp(ind++); 
-                            DenseMatrixBLAS.compMultTrans(mos, auxMat2, B1, [nOrbitals, roK*nuSize, muSize], [0, sp.mu, 0, 0, 0, (sp.nu-offsetAtPlace(pid))*roK], true);                                         
-                        }
-
-                    }
-                }*/
-                timer.stop(TIMER_RLOCAL);
 
                 finish {
                     async Team.WORLD.allreduce[Double](dkp, 0L, dkp, 0L, dkp.size, Team.ADD);                    
