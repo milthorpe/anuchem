@@ -54,10 +54,10 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
 
     val halfAuxMat:DistDenseMatrix, distJ:DistDenseMatrix, distK:DistDenseMatrix;
     val auxIntMat4J:PlaceLocalHandle[Rail[Rail[Double]]], auxIntMat4K:PlaceLocalHandle[Rail[Rail[Double]]], tempBlock:PlaceLocalHandle[Rail[Double]], ylms:PlaceLocalHandle[Rail[Rail[Double]]], shellPairs:PlaceLocalHandle[Rail[ShellPair]];
-    val dk:PlaceLocalHandle[Rail[Double]], e:PlaceLocalHandle[Rail[Double]]; 
+    val dk:PlaceLocalHandle[Rail[Double]], e:PlaceLocalHandle[Rail[Double]], shellPairRange:PlaceLocalHandle[Rail[Long]]; 
     val ttemp4J:WorkerLocalHandle[Rail[Double]], ttemp4K:WorkerLocalHandle[Rail[Double]], taux:WorkerLocalHandle[Integral_Pack], tdk:WorkerLocalHandle[Rail[Double]], tB1:WorkerLocalHandle[DenseMatrix];
     val nOrbitals:Long, norm:Rail[Double], roN:Int, roNK:Int, roL:Int, roK:Int; 
-    val roZ:Double, omega:Double, roThresh:Double, funcAtPlace:Rail[Long], offsetAtPlace:Rail[Long];
+    val roZ:Double, omega:Double, roThresh:Double, shellAtPlace:Rail[Long], funcAtPlace:Rail[Long], offsetAtPlace:Rail[Long];
 
     public def this(N:Long, bfs:BasisFunctions, mol:Molecule[QMAtom], nOrbitals:Long, omega:Double, roThresh:Double):GMatrixROmem5{self.M==N, self.N==N} {     
         super(N, N);
@@ -65,7 +65,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
         val timer=new StatisticalTimer(1), jd=JobDefaults.getInstance(), nPlaces=Place.MAX_PLACES, nAtoms=mol.getNumberOfAtoms(), 
             maxam=bfs.getShellList().getMaximumAngularMomentum(), maxam1=(maxam+1)*(maxam+2)/2,
             l_n=new Rail[Int](jd.roN+3), aux=new Integral_Pack(jd.roN, jd.roL, omega, roThresh, jd.rad, jd.roZ),
-            funcAtPlace=new Rail[Long](nPlaces), offsetAtPlace=new Rail[Long](nPlaces+1), place2atom=new Rail[Long](nPlaces+1), place2func=new Rail[Long](nPlaces+1);
+            shellAtPlace=new Rail[Long](nPlaces), funcAtPlace=new Rail[Long](nPlaces), offsetAtPlace=new Rail[Long](nPlaces+1), place2atom=new Rail[Long](nPlaces+1), place2func=new Rail[Long](nPlaces+1);
         var nShells:Long=0, mu:Long=0, nu:Long=0, ind:Long=0, totY:Long=0, totJ:Long=0, skip:Long=0, pid:Long=nPlaces-1, func:Long=0;
 
         timer.start(0);
@@ -110,12 +110,13 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
         for(var a:Long=0; a<nAtoms; a++) { // centre a  
             val aFunc=mol.getAtom(a).getBasisFunctions(), naFunc=aFunc.size();          
             for(var i:Long=0; i<naFunc; i++) { // basis functions on a
-                val iaFunc=aFunc.get(i), aa=iaFunc.getTotalAngularMomentum();                
+                val iaFunc=aFunc.get(i), aa=iaFunc.getTotalAngularMomentum();                   
                 if (a==place2atom(pid) && i==place2func(pid)) {
                      funcAtPlace(pid-1)=mu-offsetAtPlace(pid-1);
                      offsetAtPlace(pid)=mu;
                      pid++;
                 }
+                shellAtPlace(pid-1)++;
                 mu+=(aa+1)*(aa+2)/2;
             }
         }
@@ -125,7 +126,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
             Console.OUT.printf("roN=%d roNK=%d roL=%d Omega=%.3f thresh=%e rad=%.3f\n", roN, roNK, roL, omega, roThresh, jd.rad);
             Console.OUT.printf("nAtoms=%d nShells=%d N=%d maxam=%d maxam1=%d\n\n", nAtoms, nShells, N, maxam, maxam1);
             Console.OUT.println("Preliminary work division by atom and function shell");
-            for (i in (0..(nPlaces-1))) Console.OUT.printf("Place %3d: Atom=%5d Function=%3d\n", i, place2atom(i), place2func(i));
+            for (i in (0..(nPlaces-1))) Console.OUT.printf("Place %3d: Atom=%5d Function=%3d #Shell=%d\n", i, place2atom(i), place2func(i), shellAtPlace(i));
             timer.stop(0);
             Console.OUT.println ("    GMatrixROmem5 Initialization 'Initial Assessment' time: " + (timer.total(0) as Double) / 1e9 + " seconds");
             Console.OUT.printf("\n");
@@ -136,13 +137,14 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
         val threshold=roThresh*jd.roZ*jd.roZ*1e-3; 
         // ** Threshold must be relative to roThresh *** otherwise Z scaling will cause a problem: This is effectively a density threshold RO Thesis (2.26)    
         val roL_val=roL,roN_val=roN,roZ_val=jd.roZ,nShells_val=nShells, sizeInfo=PlaceLocalHandle.make[Rail[Double]](PlaceGroup.WORLD, ()=> new Rail[Double](4));
+        val shellPairRange=PlaceLocalHandle.make[Rail[Long]](PlaceGroup.WORLD, ()=>new Rail[Long](shellAtPlace(here.id)));
         val shellPairs=PlaceLocalHandle.make[Rail[ShellPair]](
             PlaceGroup.WORLD, 
             ()=> {            
-            val pid=here.id, info=sizeInfo();
+            val pid=here.id, info=sizeInfo(), range=shellPairRange();
             val localShellPairs = new GrowableRail[ShellPair](nShells_val*nShells_val);
-            var mu:Long = offsetAtPlace(pid), nu:Long=0;
-            finish for (a in place2atom(pid)..place2atom(pid+1)) { // centre a  
+            var mu:Long = offsetAtPlace(pid), nu:Long=0, shell:Long=0;
+            for (a in place2atom(pid)..place2atom(pid+1)) { // centre a  
                 val aFunc = mol.getAtom(a).getBasisFunctions();
                 val naFunc = aFunc.size();
                 // basis functions on a: careful/tricky
@@ -156,7 +158,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                     val zetaA = iaFunc.exponents;
                     val conA = iaFunc.coefficients; 
                     val maxbraa = (aa+1)*(aa+2)/2;
-                    for (b in 0..(nAtoms-1)) { // centre b
+                    finish for (b in 0..(nAtoms-1)) { // centre b
                         val bFunc = mol.getAtom(b).getBasisFunctions();
                         val nbFunc = bFunc.size();
                         for (j in 0..(nbFunc-1)) { // basis functions on b
@@ -196,6 +198,8 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                             else {mu += maxbraa; nu = 0;}
                         }    
                     }
+                    range(shell++)=localShellPairs.size();
+                    Console.OUT.println(here + "Shell: " + (shell-1) + " ShellPair ID: " + range(shell-1));
                 }   
             }    
             localShellPairs.toRail()
@@ -330,8 +334,9 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
 
         this.dk=PlaceLocalHandle.make[Rail[Double]](PlaceGroup.WORLD, ()=> new Rail[Double](roK)); 
         this.e=PlaceLocalHandle.make[Rail[Double]](PlaceGroup.WORLD, ()=> new Rail[Double](2));
+        this.shellPairRange=shellPairRange;
 
-        this.offsetAtPlace=offsetAtPlace; this.funcAtPlace=funcAtPlace;
+        this.shellAtPlace=shellAtPlace; this.offsetAtPlace=offsetAtPlace; this.funcAtPlace=funcAtPlace;
         this.roK=roK; this.roZ=jd.roZ; this.taux=taux; this.shellPairs=shellPairs;
         this.bfs=bfs; this.mol=mol; this.nOrbitals=nOrbitals; this.omega=omega; this.roThresh=roThresh; this.norm=bfs.getNormalizationFactors();
 
@@ -350,8 +355,9 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
 
         val timer=this.timer; 
         val shellPairs=this.shellPairs; val ylms=this.ylms, distJ=this.distJ, distK=this.distK; 
-        val N=this.N, nOrbitals=this.nOrbitals, roN=this.roN, roNK=this.roNK, roL=this.roL, roK=this.roK, roZ=this.roZ, norm=this.norm, e=this.e;
-        val funcAtPlace=this.funcAtPlace, offsetAtPlace=this.offsetAtPlace, taux=this.taux, dk=this.dk;
+        val N=this.N, nOrbitals=this.nOrbitals, roN=this.roN, roNK=this.roNK, roL=this.roL, roK=this.roK, roZ=this.roZ, norm=this.norm;
+        val shellAtPlace=this.shellAtPlace, funcAtPlace=this.funcAtPlace, offsetAtPlace=this.offsetAtPlace, taux=this.taux;
+        val dk=this.dk, e=this.e, shellPairRange=this.shellPairRange;
         val auxIntMat4K=this.auxIntMat4K, halfAuxMat=this.halfAuxMat, tempBlock=this.tempBlock;
         val auxIntMat4J=this.auxIntMat4J, ttemp4J=this.ttemp4J, ttemp4K=this.ttemp4K, tdk=this.tdk, tB1=this.tB1;
       
@@ -364,7 +370,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
             val shp=shellPairs(), ylmp=ylms();
             val localAuxJ=auxIntMat4J(), localAuxK=auxIntMat4K(), tBlock=tempBlock(); 
             val localJ=distJ.local(), localK=distK.local();
-            val dkp=dk(), ep=e(); 
+            val dkp=dk(), ep=e(), range=shellPairRange(); 
 
             val B1=new DenseMatrix(nOrbitals, roK*funcAtPlace(pid), halfAuxMat.local().d); 
             
@@ -376,7 +382,16 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                 timer.start(TIMER_AUX);
                 val doK = (ron <=roNK);
                 dkp.clear(); tdk.applyLocal((d:Rail[Double])=> { d.clear(); });  
-                finish DivideAndConquerLoop1D(0, shp.size).execute(
+
+           var spInd0:Long=0; 
+           for (var sInd:Long=0; sInd<shellAtPlace(pid); sInd++)  {
+                if (sInd>0) spInd0=range(sInd-1);
+                val sp0=shp(spInd0);
+                //val muSize=sp0.mu2-sp0.mu+1;
+                val AuxMat = new DenseMatrix(roK*(sp0.mu2-sp0.mu+1), N);
+                //if (ron==0n) Console.OUT.println(here +"sInd " + sInd+" Aux " + spInd0 + " to " + range(sInd));
+ 
+                finish DivideAndConquerLoop1D(spInd0, range(sInd)).execute(
                 (spInd:Long)=> {                    
                     val sp=shp(spInd);
                     val maxLron=sp.L(ron);
@@ -417,15 +432,22 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                                         myThreaddk(rolm) +=2.0*scdmn*normAux; 
                                     }
                                 }
+                        // cast temp
+                        val ttemp = new DenseMatrix(roK*muSize, nuSize, temp);                        
+                        // copy subset temp into AuxMat 
+                        DenseMatrix.copySubset(ttemp, 0, 0, AuxMat, 0, sp.nu, ttemp.M, ttemp.N);
                      
                     }
                 }
                 );
+                // DGEMM
+                DenseMatrixBLAS.compMultTrans(mos, AuxMat, B1, [nOrbitals, AuxMat.M, N], [0, 0, 0, 0, 0, (sp0.mu-offsetAtPlace(pid))*roK], false);
+            }
                 tdk.reduceLocal(dkp, (a:Rail[Double], b:Rail[Double])=> RailUtils.map(a, b, a, (x:Double, y:Double)=>x+y));
                 timer.stop(TIMER_AUX);
 
                 timer.start(TIMER_RLOCAL);
-                if (doK) {   
+                /*if (doK) {   
                     B1.reset(); var ind:Long=0;
                     for (spInd in 0..(shp.size-1)) {
                         val sp=shp(spInd);
@@ -435,17 +457,17 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                         val muSize=sp.mu2-sp.mu+1, nuSize=sp.nu2-sp.nu+1, maxLm=(maxLron+1)*(maxLron+1);
                         val auxMat=new DenseMatrix(roK*muSize, nuSize, temp);
                         DenseMatrixBLAS.compMultTrans(mos, auxMat, B1, [nOrbitals, roK*muSize, nuSize], [0, sp.nu, 0, 0, 0, (sp.mu-offsetAtPlace(pid))*roK], true); 
-                        /*if (offsetAtPlace(pid) <=sp.nu && sp.nu < offsetAtPlace(pid+1) && sp.mu < sp.nu) {
+                        if (offsetAtPlace(pid) <=sp.nu && sp.nu < offsetAtPlace(pid+1) && sp.mu < sp.nu) {
                             val auxMat2 = new DenseMatrix(roK*nuSize, muSize, ttemp4J()); ind=0;
                             for (var nu:Long=sp.nu, tnu:Long=0; nu<=sp.nu2; nu++, tnu++)
                                 for (var mu:Long=sp.mu, tmu:Long=0; mu<=sp.mu2; mu++, tmu++) 
                                     for (rolm in 0..(maxLm-1)) 
                                         auxMat2(rolm+tnu*roK, tmu)=temp(ind++); 
                             DenseMatrixBLAS.compMultTrans(mos, auxMat2, B1, [nOrbitals, roK*nuSize, muSize], [0, sp.mu, 0, 0, 0, (sp.nu-offsetAtPlace(pid))*roK], true);                                         
-                        }*/
+                        }
 
                     }
-                }
+                }*/
                 timer.stop(TIMER_RLOCAL);
 
                 finish {
