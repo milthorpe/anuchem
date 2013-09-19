@@ -26,5 +26,5 @@ RO_N 300
 RO_L 13
 RO_thresh 6
 thresh 14
-omega 0.3
+omega 0.1
 gmat_parallel_scheme 0
