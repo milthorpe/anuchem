@@ -193,14 +193,14 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                                         info(1)+=conA.size*conB.size*roK;
                                         info(2)+=maxbraa*maxbrab*roK;
                                     }
-                                }
+                                } else atomic info(3)++;
                             }  
                             if (b!=nAtoms-1 || j!=nbFunc-1) nu += maxbrab;
                             else {mu += maxbraa; nu = 0;}
                         }    
                     }
                     range(shell++)=localShellPairs.size();
-                    Console.OUT.println(here + "Shell: " + (shell-1) + " ShellPair ID: " + range(shell-1));
+                    Console.OUT.println(here + " Shell: " + (shell-1) + " ShellPair ID: " + range(shell-1));
                 }   
             }    
             localShellPairs.toRail()
@@ -219,7 +219,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
         val maxRow = max as Long; // This is used for tempBlock allocation later
 
         tot=N*N*(nPlaces+1.)*.5/nPlaces; tot2=0.; ideal=max=min=tot/nPlaces;
-        Console.OUT.printf("2. Number of mu nu (block of G/J/K) at each place\nPlace  Functions  Fraction\n");      
+        Console.OUT.printf("2. Number of mu nu (block of G/J/K) at each place (bad for X10_NPLACES=even number)\nPlace  Functions  Fraction\n");      
         for (i in (0..(nPlaces-1))) {
             val mult=(Math.ceil(nPlaces*.5+.5)-((nPlaces%2L==0L && i<nPlaces/2)?1:0)) as Long;
             val colStart=offsetAtPlace(i), colStop=offsetAtPlace((i+mult)%nPlaces);
@@ -242,7 +242,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
             Console.OUT.printf("%5d %10.0f  %7.2f%%\n", i, cost, cost*100./tot); 
         }
         Console.OUT.printf("Fractions add up to %.2f %% (due to rounding of N/nPlaces, granularity of shellpairs and shellpair cut-off)\n",tot2/tot*100.);
-        Console.OUT.printf("Aux/D calculations at each place: ideal=%.2f max=%.0f min=%.0f\n Imbalance cost=%.2f %%\n", ideal, max, min, (max/ideal-1.)*100.);
+        Console.OUT.printf("Aux/D calculations at each place: ideal=%.2f max=%.0f min=%.0f\n Imbalance cost=%.2f %% (based on ideal)\n", ideal, max, min, (max/ideal-1.)*100.);
         ideal=tot2/nPlaces;
         Console.OUT.printf(" Imbalance cost=%.2f %% (adjusted), %d shellpairs skipped\n\n", (max/ideal-1.)*100., skip);
 
@@ -406,7 +406,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                             val off=(roK*muSize*sp.nu) as Int;
                             var ind:Long=0;
                         
-                            if (localAuxK(spInd)<0) { //J and K
+                            if (localAuxK(spInd)<0) { // J and K
                                 aux.genClass(sp.bang, sp.aang, sp.bPoint, sp.aPoint, sp.zetaB, sp.zetaA, sp.conB, sp.conA, ron, maxLron, y, sp.maxL, off, tBlock);
                                 for (var nu:Long=sp.nu; nu<=sp.nu2; nu++) for (var mu:Long=sp.mu; mu<=sp.mu2; mu++) {
                                     val nrm=norm(mu)*norm(nu);
@@ -482,7 +482,6 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
 
                 timer.start(TIMER_JMATRIX); 
                 // Console.OUT.println("J - distributed"); 
-   
                 // val dmat = new DenseMatrix(1, roK, dkp);
                 // val j = new DenseMatrix(1, N*funcAtPlace(pid),localJ.d);
                 finish DivideAndConquerLoop1D(0, shp.size, 16).execute(
@@ -584,9 +583,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                 val tDg1=(timer.total(TIMER_DG1) as Double)/1e9;
                 val tDg2=(timer.total(TIMER_DG2) as Double)/1e9;
                 val tCom=(timer.total(TIMER_COM) as Double)/1e9;
-                //val tCop=(timer.total(TIMER_COP) as Double)/1e9;
                 Console.OUT.printf("Time (seconds) Aux= %.2f (DGEMM= %.2f) J= %.2f K-DSYRK= %.2f K-DGEMM= %.2f K-COM= %.2f\n", tAux, tDg1, tJ, tDsyrk, tDg2, tCom);
-                //Console.OUT.printf("Time COP= %.2f s\n", tCop);
                 Console.OUT.flush();
             }
         }
