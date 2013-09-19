@@ -54,7 +54,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
     private val bfs:BasisFunctions, mol:Molecule[QMAtom];
 
     val halfAuxMat:DistDenseMatrix, distJ:DistDenseMatrix, distK:DistDenseMatrix;
-    val auxIntMat4J:PlaceLocalHandle[Rail[Rail[Double]]], auxIntMat4K:PlaceLocalHandle[Rail[Rail[Double]]], tempBlock:PlaceLocalHandle[Rail[Double]], ylms:PlaceLocalHandle[Rail[Rail[Double]]], shellPairs:PlaceLocalHandle[Rail[ShellPair]];
+    val auxIntMat4J:PlaceLocalHandle[Rail[Rail[Double]]], auxIntMat4K:PlaceLocalHandle[Rail[Long]], tempBlock:PlaceLocalHandle[Rail[Double]], ylms:PlaceLocalHandle[Rail[Rail[Double]]], shellPairs:PlaceLocalHandle[Rail[ShellPair]];
     val dk:PlaceLocalHandle[Rail[Double]], e:PlaceLocalHandle[Rail[Double]], shellPairRange:PlaceLocalHandle[Rail[Long]]; 
     val ttemp4J:WorkerLocalHandle[Rail[Double]], ttemp4K:WorkerLocalHandle[Rail[Double]], taux:WorkerLocalHandle[Integral_Pack], tdk:WorkerLocalHandle[Rail[Double]], tB1:WorkerLocalHandle[DenseMatrix];
     val nOrbitals:Long, norm:Rail[Double], roN:Int, roNK:Int, roL:Int, roK:Int; 
@@ -182,7 +182,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                                     }
                                 }
                                 contrib=Math.abs(contrib); 
-                                if (/*offsetAtPlace(pid) <= spNu && spNu < offsetAtPlace(pid+1) && spMu > spNu*/false) {
+                                if (/*offsetAtPlace(pid) <= spNu && spNu < offsetAtPlace(pid+1) && spMu > spNu/*/false) {
                                     atomic info(3)++; 
                                 } else if (contrib >= threshold) {
                                     val maxL = new Rail[Int](roN_val+1, roL_val); // change roL_val to smaller number
@@ -295,32 +295,38 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
             }
         );      
 
-        this.auxIntMat4K=PlaceLocalHandle.make[Rail[Rail[Double]]](
+        this.auxIntMat4K=PlaceLocalHandle.make[Rail[Long]](
             PlaceGroup.WORLD, 
             ()=>{
                 val shp = shellPairs();
-                val auxIntMat4K = new Rail[Rail[Double]](shp.size);
+                val auxIntMat4K = new Rail[Long](shp.size);
                 val pid = here.id;
                 val mult = (Math.ceil(nPlaces*.5+.5)-((nPlaces%2L==0L && pid<nPlaces/2)?1:0)) as Long;
                 val colStart = offsetAtPlace(pid);
                 val colStop = offsetAtPlace((pid+mult)%nPlaces);
                 finish for (i in 0..(shp.size-1)) async {
                     val sp = shp(i);
-                    val nu = sp.nu;
+                    val mu = sp.mu, nu = sp.nu;
                     var size:Long = 0;
                     if ( ( (colStart<colStop) && ((colStart<=nu) && (nu<colStop)) ) ||
                          ( (colStart>=colStop) && ( (nu<colStop) || (nu>=colStart) ) ) )
-                        size = 0;
-                    else size = sp.maxbraa*sp.maxbrab*roK;
-                    if (offsetAtPlace(pid) <= nu && nu < offsetAtPlace(pid+1) && sp.mu > nu) size=sp.maxbraa*sp.maxbrab*roK;
+                        size = -1;
+                    else size = -1;//sp.maxbraa*sp.maxbrab*roK;
+                    if (offsetAtPlace(pid) <= nu && nu < offsetAtPlace(pid+1) && mu > nu) size=-2;//sp.maxbraa*sp.maxbrab*roK;
 
-                    auxIntMat4K(i) = new Rail[Double](size);
+                    auxIntMat4K(i) = size;
+                    if (offsetAtPlace(pid) <= nu && nu < offsetAtPlace(pid+1) && mu > nu) {
+                        for (j in 0..(shp.size-1))
+                            if (shp(j).mu ==nu && shp(j).nu==mu) auxIntMat4K(i)=j;
+                    }
+                    if (auxIntMat4K(i)==-2)  Console.OUT.println ("    i " + i + " can't find j");
                 }
                 auxIntMat4K
             }
         );    
 
-        this.tempBlock=PlaceLocalHandle.make[Rail[Double]](PlaceGroup.WORLD, () => new Rail[Double](maxRow*nOrbitals*roK));
+        val tbs = Math.max(maxRow*nOrbitals,maxam1*N)*roK;
+        this.tempBlock=PlaceLocalHandle.make[Rail[Double]](PlaceGroup.WORLD, () => new Rail[Double](tbs));
 
         val cbs_HalfAuxInt=new Rail[Long](1); cbs_HalfAuxInt(0)=nOrbitals*roK; val halfAuxIntGrid=new Grid(cbs_HalfAuxInt, funcAtPlace);
         this.halfAuxMat=DistDenseMatrix.make(halfAuxIntGrid);
@@ -388,62 +394,61 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
            for (var sInd:Long=0; sInd<shellAtPlace(pid); sInd++)  {
                 if (sInd>0) spInd0=range(sInd-1);
                 val sp0=shp(spInd0);
-                //val muSize=sp0.mu2-sp0.mu+1;
-                val AuxMat = new DenseMatrix(roK*(sp0.mu2-sp0.mu+1), N, tBlock);
+                val muSize=sp0.mu2-sp0.mu+1;
+                val AuxMat = new DenseMatrix(roK*muSize, N, tBlock);
                 finish DivideAndConquerLoop1D(spInd0, range(sInd)).execute(
                 (spInd:Long)=> {                    
                     val sp=shp(spInd);
                     val maxLron=sp.L(ron);
                     if (maxLron >=0) {
-                        var temp:Rail[Double]=localAuxJ(spInd);
-                        if (temp.size==0L) temp=localAuxK(spInd);
+                        
                         val aux=taux(), myThreaddk=tdk();
                         val maxLm=(maxLron+1)*(maxLron+1), y=ylmp(spInd);
-                        aux.genClass(sp.bang, sp.aang, sp.bPoint, sp.aPoint, sp.zetaB, sp.zetaA, sp.conB, sp.conA, ron, maxLron, y, sp.maxL, temp);
+                        val off=(roK*muSize*sp.nu) as Int;
                         var ind:Long=0;
-                        val muSize=sp.mu2-sp.mu+1, nuSize=sp.nu2-sp.nu+1;
-
-                        if (doK && localAuxJ(spInd).size==0L) { // for K only
+                        
+                        if (localAuxK(spInd)<0) { //J and K
+                            aux.genClass(sp.bang, sp.aang, sp.bPoint, sp.aPoint, sp.zetaB, sp.zetaA, sp.conB, sp.conA, ron, maxLron, y, sp.maxL, off, tBlock);
                             for (var nu:Long=sp.nu, tnu:Long=0; nu<=sp.nu2; nu++, tnu++) 
                                 for (var mu:Long=sp.mu, tmu:Long=0; mu<=sp.mu2; mu++, tmu++) {
                                     val nrm=norm(mu)*norm(nu);
+                                    for (var rolm:Long=0; rolm<maxLm; rolm++, ind++) 
+                                        tBlock(off+ind)*=nrm;
+                                }
+                        }
+                        else if (doK) { // K matter
+                            val src = localAuxJ(localAuxK(spInd));
+                            for (var mu:Long=sp.mu, tmu:Long=0; mu<=sp.mu2; mu++, tmu++) 
+                                for (var nu:Long=sp.nu, tnu:Long=0; nu<=sp.nu2; nu++, tnu++) 
                                     for (rolm in 0..(maxLm-1)) 
-                                        temp(ind++)*=nrm;
-                                }
-                            
-                        } else if (sp.mu==sp.nu) { // for diagonal block of J
+                                        tBlock(nu*muSize*roK+tmu*roK+rolm)=src(ind++);
+                        }
+
+                        // J mattter
+                        ind=0;
+                        val temp=localAuxJ(spInd);
+
+                        if (sp.mu==sp.nu) { // for diagonal block of J
                             for (var nu:Long=sp.nu, tnu:Long=0; nu<=sp.nu2; nu++, tnu++)
                                 for (var mu:Long=sp.mu, tmu:Long=0; mu<=sp.mu2; mu++, tmu++) {
                                     val scdmn=density(mu, nu);
-                                    val nrm=norm(mu) * norm(nu); 
-                                    for (rolm in 0..(maxLm-1)) {
-                                        val normAux=(temp(ind++) *=nrm);
-                                        myThreaddk(rolm) +=scdmn*normAux; 
-                                    }
+                                    for (rolm in 0..(maxLm-1)) 
+                                        myThreaddk(rolm) +=scdmn*(temp(ind++)=tBlock(off+ind)); 
+                                    
                                 }
-                        } else // for the rest of J
+                        } else if (temp.size!=0 )// for the rest of J
                             for (var nu:Long=sp.nu, tnu:Long=0; nu<=sp.nu2; nu++, tnu++)
                                 for (var mu:Long=sp.mu, tmu:Long=0; mu<=sp.mu2; mu++, tmu++) {
                                     val scdmn=density(mu, nu);
-                                    val nrm=norm(mu) * norm(nu); 
-                                    for (rolm in 0..(maxLm-1)) {
-                                        val normAux=(temp(ind++) *=nrm);
-                                        myThreaddk(rolm) +=2.0*scdmn*normAux; 
-                                    }
-                                }
-                        // cast temp &  copy subset temp into AuxMat 
-                        timer.start(TIMER_COP);
-                        val ttemp = new DenseMatrix(roK*muSize, nuSize, temp);                        
-                        DenseMatrix.copySubset(ttemp, 0, 0, AuxMat, 0, sp.nu, ttemp.M, ttemp.N);
-                        timer.stop(TIMER_COP);
-                        //TODO: Genclass with offset will remove this
-                     
+                                    for (rolm in 0..(maxLm-1)) 
+                                        myThreaddk(rolm) += 2.*scdmn*(temp(ind++)=tBlock(off+ind));
+                                }                    
                     }
                 }
                 );
                 // DGEMM
                 timer.start(TIMER_RLOCAL);
-                DenseMatrixBLAS.compMultTrans(mos, AuxMat, B1, [nOrbitals, AuxMat.M, N], [0, 0, 0, 0, 0, (sp0.mu-offsetAtPlace(pid))*roK], false);
+                if (doK) DenseMatrixBLAS.compMultTrans(mos, AuxMat, B1, [nOrbitals, AuxMat.M, N], [0, 0, 0, 0, 0, (sp0.mu-offsetAtPlace(pid))*roK], false);
                 timer.stop(TIMER_RLOCAL);
             }
                 tdk.reduceLocal(dkp, (a:Rail[Double], b:Rail[Double])=> RailUtils.map(a, b, a, (x:Double, y:Double)=>x+y));
@@ -586,9 +591,9 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                 val tDgemm=(timer.total(TIMER_DGEMM) as Double)/1e9;
                 val tRl=(timer.total(TIMER_RLOCAL) as Double)/1e9;
                 val tCom=(timer.total(TIMER_COM) as Double)/1e9;
-                val tCop=(timer.total(TIMER_COP) as Double)/1e9;
+                //val tCop=(timer.total(TIMER_COP) as Double)/1e9;
                 Console.OUT.printf("Time Aux= %.2f s J= %.2f s DSYRK= %.2f s DGEMM= %.2f s RLOCAL= %.2f s COM= %.2f s\n", tAux, tJ, tDsyrk, tDgemm, tRl, tCom);
-                Console.OUT.printf("Time COP= %.2f s\n", tCop);
+                //Console.OUT.printf("Time COP= %.2f s\n", tCop);
                 Console.OUT.flush();
             }
         }

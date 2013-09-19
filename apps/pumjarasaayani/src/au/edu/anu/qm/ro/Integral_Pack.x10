@@ -23,7 +23,6 @@ import x10x.vector.Point3d;
 @NativeRep("c++", "au::edu::anu::qm::ro::Integral_Pack *", "au::edu::anu::qm::ro::Integral_Pack", null)
 public class Integral_Pack {
 
-    //@Native("c++","(#this)->Integral_Pack->_make((#1),(#2),(#3),(#4),(#5),(#6)->raw)") // doesn't work
     public native def this(N:Int,L:Int,Type:Double,roThresh:Double,rad:Double,roZ:Double);
 
     /**
@@ -37,6 +36,9 @@ public class Integral_Pack {
      */
     @Native("c++", "(#this)->Genclass((#1), (#2), (double*)&((#3).x10__i), (double*)&((#4).x10__i), (#5)->raw, (#6)->raw, (#7)->raw, (#8)->raw, (#7)->x10__size, (#8)->x10__size, (#9), (#10), (#11)->raw, (#12), (#13)->raw)")
     public native def genClass(angA:Int, angB:Int, A:Point3d, B:Point3d, zetaA:Rail[Double], zetaB:Rail[Double], conA:Rail[Double], conB:Rail[Double], n:Int, Ln:Int, Ylm:Rail[Double], maxL:Int, aux:Rail[Double]):Int;
+
+    @Native("c++", "(#this)->Genclass((#1), (#2), (double*)&((#3).x10__i), (double*)&((#4).x10__i), (#5)->raw, (#6)->raw, (#7)->raw, (#8)->raw, (#7)->x10__size, (#8)->x10__size, (#9), (#10), (#11)->raw, (#12), (#13), (#14)->raw)")
+    public native def genClass(angA:Int, angB:Int, A:Point3d, B:Point3d, zetaA:Rail[Double], zetaB:Rail[Double], conA:Rail[Double], conB:Rail[Double], n:Int, Ln:Int, Ylm:Rail[Double], maxL:Int, off:Int, aux:Rail[Double]):Int;
 
     @Native("c++","(#this)->getNL((#1)->raw)")
     public native def getNL(n_l:Rail[Int]):Int;
