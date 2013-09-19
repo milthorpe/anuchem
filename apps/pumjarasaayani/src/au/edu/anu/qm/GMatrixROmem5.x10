@@ -593,7 +593,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                 val tDg1=(timer.total(TIMER_DG1) as Double)/1e9;
                 val tDg2=(timer.total(TIMER_DG2) as Double)/1e9;
                 val tCom=(timer.total(TIMER_COM) as Double)/1e9;
-                Console.OUT.printf("Time (seconds) Aux= %.2f (DGEMM= %.2f) J= %.2f K-DSYRK= %.2f K-DGEMM= %.2f K-COM= %.2f\n", tAux, tDg1, tJ, tDsyrk, tDg2, tCom);
+                Console.OUT.printf("Time (seconds) Aux= %.2f ( DGEMM= %.2f ) J= %.2f K-DSYRK= %.2f K-DGEMM= %.2f K-COM= %.2f\n", tAux, tDg1, tJ, tDsyrk, tDg2, tCom);
                 Console.OUT.flush();
             }
         }
