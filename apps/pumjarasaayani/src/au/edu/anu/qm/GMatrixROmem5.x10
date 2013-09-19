@@ -38,16 +38,14 @@ import edu.utk.cs.papi.PAPI;
 
 public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
     // Timer & PAPI performance counters
-    public val timer=new StatisticalTimer(8);
+    public val timer=new StatisticalTimer(7);
     val TIMER_TOTAL=0;
     val TIMER_AUX=1;
     val TIMER_JMATRIX=2;
-    val TIMER_RLOCAL=3;
+    val TIMER_B=3;
     val TIMER_COM=4;
     val TIMER_DSYRK=5;
     val TIMER_DGEMM=6;
-    val TIMER_COP=8;
-
 
     transient var papi:PAPI=new PAPI(); // @Ifdef("__PAPI__") // XTENLANG-3132
 
@@ -447,9 +445,9 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                 }
                 );
                 // DGEMM
-                timer.start(TIMER_RLOCAL);
+                timer.start(TIMER_B);
                 if (doK) DenseMatrixBLAS.compMultTrans(mos, AuxMat, B1, [nOrbitals, AuxMat.M, N], [0, 0, 0, 0, 0, (sp0.mu-offsetAtPlace(pid))*roK], false);
-                timer.stop(TIMER_RLOCAL);
+                timer.stop(TIMER_B);
             }
                 tdk.reduceLocal(dkp, (a:Rail[Double], b:Rail[Double])=> RailUtils.map(a, b, a, (x:Double, y:Double)=>x+y));
                 timer.stop(TIMER_AUX);
@@ -589,11 +587,9 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                 val tJ=(timer.total(TIMER_JMATRIX) as Double)/1e9;
                 val tDsyrk=(timer.total(TIMER_DSYRK) as Double)/1e9;
                 val tDgemm=(timer.total(TIMER_DGEMM) as Double)/1e9;
-                val tRl=(timer.total(TIMER_RLOCAL) as Double)/1e9;
+                val tRl=(timer.total(TIMER_B) as Double)/1e9;
                 val tCom=(timer.total(TIMER_COM) as Double)/1e9;
-                //val tCop=(timer.total(TIMER_COP) as Double)/1e9;
-                Console.OUT.printf("Time Aux= %.2f s J= %.2f s DSYRK= %.2f s DGEMM= %.2f s RLOCAL= %.2f s COM= %.2f s\n", tAux, tJ, tDsyrk, tDgemm, tRl, tCom);
-                //Console.OUT.printf("Time COP= %.2f s\n", tCop);
+                Console.OUT.printf("Time Aux= %.2f s J= %.2f s DSYRK= %.2f s DGEMM= %.2f s B= %.2f s COM= %.2f s\n", tAux, tJ, tDsyrk, tDgemm, tRl, tCom);
                 Console.OUT.flush();
             }
         }
