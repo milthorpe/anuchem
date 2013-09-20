@@ -396,13 +396,12 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                     //(spInd:Long)=> {                    
                         val sp=shp(spInd);
                         val maxLron=sp.L(ron);
-                        if (maxLron >=0) {                
-                            
-                            val maxLm=(maxLron+1)*(maxLron+1), y=ylmp(spInd), nuSize=sp.nu2-sp.nu+1;
+                        if (maxLron >=0) {                                       
+                            val maxLm=(maxLron+1)*(maxLron+1), nuSize=sp.nu2-sp.nu+1, temp=localAuxJ(spInd), srcSpInd=localAuxK(spInd);
                             val off=(roK*muSize*sp.nu) as Int, asize=muSize*nuSize*roK;
-                            var ind:Long=0; val srcSpInd=localAuxK(spInd);
-                        
-                            if (srcSpInd<0 || srcSpInd>=shp.size) { // Generate Aux Ints and normalize ()
+                            var ind:Long=0; 
+                            if (srcSpInd<0 || srcSpInd>=size) { // Generate Aux Ints and normalize ()
+                                val y=ylmp(spInd);
                                 aux.genClass(sp.bang, sp.aang, sp.bPoint, sp.aPoint, sp.zetaB, sp.zetaA, sp.conB, sp.conA, ron, maxLron, y, sp.maxL, off, tbk);
                                 for (var nu:Long=sp.nu; nu<=sp.nu2; nu++) for (var mu:Long=sp.mu; mu<=sp.mu2; mu++) {
                                     val nrm=norm(mu)*norm(nu);
@@ -410,37 +409,38 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                                         tbk(off+ind)*=nrm;
                                 }
                             }
-                            else if (doK || (srcSpInd>0 && sp.nu>sp.mu)/*J*/) {  // Read Aux Ints (for J or K or both)
+                            else if (doK || (srcSpInd>0 && sp.nu>sp.mu)) {  // Read Aux Ints (for K or J)
                                 var src:Rail[Double] = localAuxJ(srcSpInd); // from remote location
                                 if (src.size==0) { src=localAuxJ(spInd); ind=asize; } // from local location
                                 for (var mu:Long=sp.mu, tmu:Long=0; mu<=sp.mu2; mu++, tmu++) for (var nu:Long=sp.nu; nu<=sp.nu2; nu++) 
                                     for (rolm in 0..(maxLm-1)) 
-                                        tbk(nu*muSize*roK+tmu*roK+rolm)=src(ind++);
+                                        tbk((nu*muSize+tmu)*roK+rolm)=src(ind++);
                             }
 
+                            if (temp.size!=0) temp.copy(tbk, off as Long, temp, 0, asize); // purely for J  
+                            else if (srcSpInd>=size) { //write to remote shp J - to be read and save time
+                                val temp2=localAuxJ(srcSpInd-size); 
+                                temp2.copy(tbk, off as Long, temp2, asize, asize);
+                            } 
+                            if (srcSpInd>=size) localAuxK(srcSpInd-size)-=size;  
+
                             // J mattter
-                            ind=0;
-                            val temp=localAuxJ(spInd);
+                            ind=0;                            
                             if (sp.mu==sp.nu) { // for diagonal block of J
                                 for (var nu:Long=sp.nu; nu<=sp.nu2; nu++) for (var mu:Long=sp.mu; mu<=sp.mu2; mu++) {
                                     val scdmn=density(mu, nu);
-                                    for (rolm in 0..(maxLm-1)) 
-                                        myThreaddk(rolm)+=scdmn*(temp(ind++)=tbk(off+ind)); 
+                                    for (var rolm:Long=0; rolm<maxLm; rolm++, ind++)  
+                                        myThreaddk(rolm)+=scdmn*temp(ind); 
                                 }
-                            } else if (temp.size!=0 )// for the rest of J
+                            } else if (temp.size!=0) // for the rest of J
                                 for (var nu:Long=sp.nu; nu<=sp.nu2; nu++) for (var mu:Long=sp.mu; mu<=sp.mu2; mu++) {
                                     val scdmn=density(mu, nu);
-                                    for (rolm in 0..(maxLm-1)) 
-                                        myThreaddk(rolm)+=2.*scdmn*(temp(ind++)=tbk(off+ind));
-                                }   
-                            if (srcSpInd>=shp.size) {
-                                if (sp.mu>sp.nu) { /*write to remote shp*/
-                                    val temp2=localAuxJ(srcSpInd-size); 
-                                    for (ind=0; ind<asize; ind++)
-                                        temp2(ind+asize)=tbk(off+ind);
-                                }
-                                localAuxK(srcSpInd-size)-=size;
-                            }
+                                    for (var rolm:Long=0; rolm<maxLm; rolm++, ind++) 
+                                        myThreaddk(rolm)+=2.*scdmn*temp(ind);
+                                } 
+
+
+  
                         }
                     }
                     //);
