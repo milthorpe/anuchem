@@ -287,7 +287,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                     if ( ( (colStart<colStop) && ((colStart<=nu) && (nu<colStop)) ) ||
                          ( (colStart>=colStop) && ( (nu<colStop) || (nu>=colStart) ) ) )
                         size = sp.maxbraa*sp.maxbrab*roK;
-                    if (offsetAtPlace(pid) <= nu && nu < offsetAtPlace(pid+1) && sp.mu > nu) size=0L;
+                    if (offsetAtPlace(pid) <= nu && nu < offsetAtPlace(pid+1) && sp.mu > nu) size=0;
                     auxIntMat4J(i) = new Rail[Double](size);
                 }
                 auxIntMat4J
@@ -300,13 +300,13 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                 val shp = shellPairs(), size=shp.size, pid=here.id;
                 val auxIntMat4K = new Rail[Long](shp.size);
                 finish for (i in 0..(size-1)) async {
-                    val sp = shp(i);
-                    val mu = sp.mu, nu = sp.nu;
-                    if (offsetAtPlace(pid) <= nu && nu < offsetAtPlace(pid+1) && mu != nu) {
+                    val sp = shp(i), mu = sp.mu, nu = sp.nu;
+                    if (offsetAtPlace(pid) <= nu && nu < offsetAtPlace(pid+1) && mu < nu) {
                         var j:Long=-1;
-                        if (mu>nu) for (j=0; shp(j).mu!=nu || shp(j).nu!=mu; j++);
+                        if (mu>nu) for (j=i-1; shp(j).mu!=nu || shp(j).nu!=mu; j--);
                         else for (j=i+1; shp(j).mu!=nu || shp(j).nu!=mu; j++);
                         auxIntMat4K(i)=j+size;
+                        if (shp(j).mu!=nu || shp(j).nu!=mu) Console.OUT.println ("i="+i+"j="+j);
                     } else  auxIntMat4K(i) = -1;
                 }
                 auxIntMat4K
@@ -361,7 +361,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
             val nThreads=Runtime.NTHREADS;
             setThread(nThreads);
             // For faster access 
-            val shp=shellPairs(), ylmp=ylms();
+            val shp=shellPairs(), size=shp.size, ylmp=ylms();
             val localAuxJ=auxIntMat4J(), localAuxK=auxIntMat4K(), tBlock=tempBlock(); 
             val localJ=distJ.local(), localK=distK.local();
             val dkp=dk(), ep=e(), range=shellPairRange(); 
@@ -376,6 +376,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                 timer.start(TIMER_AUX);
                 val doK = (ron <=roNK);
                 dkp.clear(); tdk.applyLocal((d:Rail[Double])=> { d.clear(); });  
+                finish for (i in 0..(shp.size-1)) async if (0<=localAuxK(i) && localAuxK(i)<size) localAuxK(i)+=size;
                 setThread(1n);
                 
                 finish DivideAndConquerLoop1D(0, shellAtPlace(pid)).execute(
@@ -431,7 +432,10 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                                     for (rolm in 0..(maxLm-1)) 
                                         myThreaddk(rolm) += 2.*scdmn*(temp(ind++)=tbk(off+ind));
                                 }   
-                            if (srcSpInd>=shp.size && temp.size!=0) localAuxK(srcSpInd-shp.size)=spInd;
+                            if (srcSpInd>=shp.size && temp.size!=0) {
+                                val prev=localAuxK(srcSpInd-size);
+                                if (prev!=-1) localAuxK(srcSpInd-shp.size)-=size;
+                            }
                         }
                     }
                     //);
