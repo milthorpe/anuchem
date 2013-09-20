@@ -306,7 +306,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                         if (mu>nu) for (j=i-1; shp(j).mu!=nu || shp(j).nu!=mu; j--);
                         else for (j=i+1; shp(j).mu!=nu || shp(j).nu!=mu; j++);
                         auxIntMat4K(i)=j+size;
-                        if (shp(j).mu!=nu || shp(j).nu!=mu) Console.OUT.println ("i="+i+"j="+j);
+                        //if (shp(j).mu!=nu || shp(j).nu!=mu) Console.OUT.println ("i="+i+"j="+j);
                     } else  auxIntMat4K(i) = -1;
                 }
                 auxIntMat4K
@@ -398,8 +398,8 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                         val maxLron=sp.L(ron);
                         if (maxLron >=0) {                
                             
-                            val maxLm=(maxLron+1)*(maxLron+1), y=ylmp(spInd), nuSize=sp0.nu2-sp0.nu+1;
-                            val off=(roK*muSize*sp.nu) as Int;
+                            val maxLm=(maxLron+1)*(maxLron+1), y=ylmp(spInd), nuSize=sp.nu2-sp.nu+1;
+                            val off=(roK*muSize*sp.nu) as Int, asize=muSize*nuSize*roK;
                             var ind:Long=0; val srcSpInd=localAuxK(spInd);
                         
                             if (srcSpInd<0 || srcSpInd>=shp.size) { // Generate Aux Ints and normalize ()
@@ -412,7 +412,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                             }
                             else if (doK || (srcSpInd>0 && sp.nu>sp.mu)/*J*/) {  // Read Aux Ints (for J or K or both)
                                 var src:Rail[Double] = localAuxJ(srcSpInd); // from remote location
-                                if (src.size==0) { src=localAuxJ(spInd); ind=muSize*nuSize*roK; } // from local location
+                                if (src.size==0) { src=localAuxJ(spInd); ind=asize; } // from local location
                                 for (var mu:Long=sp.mu, tmu:Long=0; mu<=sp.mu2; mu++, tmu++) for (var nu:Long=sp.nu; nu<=sp.nu2; nu++) 
                                     for (rolm in 0..(maxLm-1)) 
                                         tbk(nu*muSize*roK+tmu*roK+rolm)=src(ind++);
@@ -435,12 +435,11 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                                 }   
                             if (srcSpInd>=shp.size) {
                                 if (sp.mu>sp.nu) { /*write to remote shp*/
-                                    val desSpInd=srcSpInd-size;
-                                    val temp2=localAuxJ(desSpInd); 
-                                    for (ind=muSize*nuSize*roK; ind<muSize*nuSize*roK*2; ind++)
-                                        temp2(ind)+tbk(off+ind-muSize*nuSize*roK);
+                                    val temp2=localAuxJ(srcSpInd-size); 
+                                    for (ind=0; ind<asize; ind++)
+                                        temp2(ind+asize)=tbk(off+ind);
                                 }
-                                else localAuxK(srcSpInd-size)-=size;
+                                localAuxK(srcSpInd-size)-=size;
                             }
                         }
                     }
