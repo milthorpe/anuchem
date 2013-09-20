@@ -281,13 +281,13 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                 val colStart = offsetAtPlace(pid);
                 val colStop = offsetAtPlace((pid+mult)%nPlaces);
                 finish for (i in 0..(shp.size-1)) async {
-                    val sp = shp(i);
-                    val nu = sp.nu;
+                    val sp = shp(i), nu = sp.nu, mu = sp.mu;
                     var size:Long = 0;
                     if ( ( (colStart<colStop) && ((colStart<=nu) && (nu<colStop)) ) ||
                          ( (colStart>=colStop) && ( (nu<colStop) || (nu>=colStart) ) ) )
                         size = sp.maxbraa*sp.maxbrab*roK;
-                    if (offsetAtPlace(pid) <= nu && nu < offsetAtPlace(pid+1) && sp.mu > nu) size=0;
+                    if (offsetAtPlace(pid) <= nu && nu < offsetAtPlace(pid+1) && mu > nu) size=0;
+                    if (offsetAtPlace(pid) <= nu && nu < offsetAtPlace(pid+1) && mu < nu) size*=2;
                     auxIntMat4J(i) = new Rail[Double](size);
                 }
                 auxIntMat4J
@@ -301,7 +301,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                 val auxIntMat4K = new Rail[Long](shp.size);
                 finish for (i in 0..(size-1)) async {
                     val sp = shp(i), mu = sp.mu, nu = sp.nu;
-                    if (offsetAtPlace(pid) <= nu && nu < offsetAtPlace(pid+1) && mu < nu) {
+                    if (offsetAtPlace(pid) <= nu && nu < offsetAtPlace(pid+1) && mu != nu) {
                         var j:Long=-1;
                         if (mu>nu) for (j=i-1; shp(j).mu!=nu || shp(j).nu!=mu; j--);
                         else for (j=i+1; shp(j).mu!=nu || shp(j).nu!=mu; j++);
@@ -398,11 +398,11 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                         val maxLron=sp.L(ron);
                         if (maxLron >=0) {                
                             
-                            val maxLm=(maxLron+1)*(maxLron+1), y=ylmp(spInd);
+                            val maxLm=(maxLron+1)*(maxLron+1), y=ylmp(spInd), nuSize=sp0.nu2-sp0.nu+1;
                             val off=(roK*muSize*sp.nu) as Int;
                             var ind:Long=0; val srcSpInd=localAuxK(spInd);
                         
-                            if (srcSpInd<0 || srcSpInd>=shp.size) { // J and K
+                            if (srcSpInd<0 || srcSpInd>=shp.size) { // Generate Aux Ints and normalize ()
                                 aux.genClass(sp.bang, sp.aang, sp.bPoint, sp.aPoint, sp.zetaB, sp.zetaA, sp.conB, sp.conA, ron, maxLron, y, sp.maxL, off, tbk);
                                 for (var nu:Long=sp.nu; nu<=sp.nu2; nu++) for (var mu:Long=sp.mu; mu<=sp.mu2; mu++) {
                                     val nrm=norm(mu)*norm(nu);
@@ -410,8 +410,9 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                                         tbk(off+ind)*=nrm;
                                 }
                             }
-                            else if (doK) { // K matter 
-                                val src = localAuxJ(srcSpInd);
+                            else if (doK || (srcSpInd>0 && sp.nu>sp.mu)/*J*/) {  // Read Aux Ints (for J or K or both)
+                                var src:Rail[Double] = localAuxJ(srcSpInd); // from remote location
+                                if (src.size==0) { src=localAuxJ(spInd); ind=muSize*nuSize*roK; } // from local location
                                 for (var mu:Long=sp.mu, tmu:Long=0; mu<=sp.mu2; mu++, tmu++) for (var nu:Long=sp.nu; nu<=sp.nu2; nu++) 
                                     for (rolm in 0..(maxLm-1)) 
                                         tbk(nu*muSize*roK+tmu*roK+rolm)=src(ind++);
@@ -424,17 +425,22 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                                 for (var nu:Long=sp.nu; nu<=sp.nu2; nu++) for (var mu:Long=sp.mu; mu<=sp.mu2; mu++) {
                                     val scdmn=density(mu, nu);
                                     for (rolm in 0..(maxLm-1)) 
-                                        myThreaddk(rolm) +=scdmn*(temp(ind++)=tbk(off+ind)); 
+                                        myThreaddk(rolm)+=scdmn*(temp(ind++)=tbk(off+ind)); 
                                 }
                             } else if (temp.size!=0 )// for the rest of J
                                 for (var nu:Long=sp.nu; nu<=sp.nu2; nu++) for (var mu:Long=sp.mu; mu<=sp.mu2; mu++) {
                                     val scdmn=density(mu, nu);
                                     for (rolm in 0..(maxLm-1)) 
-                                        myThreaddk(rolm) += 2.*scdmn*(temp(ind++)=tbk(off+ind));
+                                        myThreaddk(rolm)+=2.*scdmn*(temp(ind++)=tbk(off+ind));
                                 }   
-                            if (srcSpInd>=shp.size && temp.size!=0) {
-                                val prev=localAuxK(srcSpInd-size);
-                                if (prev!=-1) localAuxK(srcSpInd-shp.size)-=size;
+                            if (srcSpInd>=shp.size) {
+                                if (sp.mu>sp.nu) { /*write to remote shp*/
+                                    val desSpInd=srcSpInd-size;
+                                    val temp2=localAuxJ(desSpInd); 
+                                    for (ind=muSize*nuSize*roK; ind<muSize*nuSize*roK*2; ind++)
+                                        temp2(ind)+tbk(off+ind-muSize*nuSize*roK);
+                                }
+                                else localAuxK(srcSpInd-size)-=size;
                             }
                         }
                     }
