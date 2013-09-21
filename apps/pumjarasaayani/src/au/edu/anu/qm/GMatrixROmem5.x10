@@ -38,16 +38,14 @@ import edu.utk.cs.papi.PAPI;
 
 public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
     // Timer & PAPI performance counters
-    public val timer=new StatisticalTimer(8);
+    public val timer=new StatisticalTimer(7);
     val TIMER_TOTAL=0;
     val TIMER_AUX=1;
     val TIMER_JMATRIX=2;
-    val TIMER_DG1=3;
-    val TIMER_COM=4;
-    val TIMER_DSYRK=5;
-    val TIMER_DG2=6;
-    val TIMER_COP=8;
-
+    val TIMER_COM=3;
+    val TIMER_DSYRK=4;
+    val TIMER_DGEMM=5;
+    val TIMER_COP=6;
 
     transient var papi:PAPI=new PAPI(); // @Ifdef("__PAPI__") // XTENLANG-3132
 
@@ -362,7 +360,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
             setThread(nThreads);
             // For faster access 
             val shp=shellPairs(), size=shp.size, ylmp=ylms();
-            val localAuxJ=auxIntMat4J(), localAuxK=auxIntMat4K(), tBlock=tempBlock(); 
+            val localAuxJ=auxIntMat4J(), localAuxK=auxIntMat4K();
             val localJ=distJ.local(), localK=distK.local();
             val dkp=dk(), ep=e(), range=shellPairRange(); 
 
@@ -375,25 +373,22 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                 // Aux & D
                 timer.start(TIMER_AUX);
                 val doK = (ron <=roNK);
-                dkp.clear(); tdk.applyLocal((d:Rail[Double])=> { d.clear(); });  
-                finish for (i in 0..(shp.size-1)) async if (0<=localAuxK(i) && localAuxK(i)<size) localAuxK(i)+=size;
+                dkp.clear();
+                tdk.applyLocal((d:Rail[Double])=> { d.clear(); });  
+                for (i in 0..(shp.size-1)) if (0<=localAuxK(i) && localAuxK(i)<size) localAuxK(i)+=size;
                 setThread(1n);
                 
                 finish DivideAndConquerLoop1D(0, shellAtPlace(pid)).execute(
                 (sInd:Long)=> {
-                //for (var sInd:Long=0; sInd<shellAtPlace(pid); sInd++)  {
                     var spInd0:Long=0; 
                     if (sInd>0) spInd0=range(sInd-1);
                     val sp0=shp(spInd0);
                     val muSize=sp0.mu2-sp0.mu+1;
                     val tbk=ttemp4K(); 
-                    //val tbk=tBlock;
                     tbk.clear();
                     val AuxMat = new DenseMatrix(roK*muSize, N, tbk);
                     val aux=taux(), myThreaddk=tdk();
                     for (var spInd:Long=spInd0; spInd<range(sInd); spInd++) {
-                    //finish DivideAndConquerLoop1D(spInd0, range(sInd)).execute(
-                    //(spInd:Long)=> {                    
                         val sp=shp(spInd);
                         val maxLron=sp.L(ron);
                         if (maxLron >=0) {                                       
@@ -408,23 +403,24 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                                     for (var rolm:Long=0; rolm<maxLm; rolm++, ind++) 
                                         tbk(off+ind)*=nrm;
                                 }
-                            }
-                            else if (doK || (srcSpInd>0 && sp.nu>sp.mu)) {  // Read Aux Ints (for K or J)
+                            } else if (doK || (srcSpInd>0 && sp.nu>sp.mu)) {  // Read Aux Ints (for K or J)
                                 var src:Rail[Double] = localAuxJ(srcSpInd); // from remote location
-                                if (src.size==0) { src=localAuxJ(spInd); ind=asize; } // from local location
+                                if (src.size==0) { 
+                                    src=localAuxJ(spInd); ind=asize;  // from local location
+                                }
                                 for (var mu:Long=sp.mu, tmu:Long=0; mu<=sp.mu2; mu++, tmu++) for (var nu:Long=sp.nu; nu<=sp.nu2; nu++) 
                                     for (rolm in 0..(maxLm-1)) 
                                         tbk((nu*muSize+tmu)*roK+rolm)=src(ind++);
                             }
 
-                            if (temp.size!=0) temp.copy(tbk, off as Long, temp, 0, asize); // purely for J  
+                            if (temp.size!=0) Rail.copy(tbk, off as Long, temp, 0, asize); // purely for J  
                             else if (srcSpInd>=size) { //write to remote shp J - to be read and save time
                                 val temp2=localAuxJ(srcSpInd-size); 
-                                temp2.copy(tbk, off as Long, temp2, asize, asize);
+                                Rail.copy(tbk, off as Long, temp2, asize, asize);
                             } 
                             if (srcSpInd>=size) localAuxK(srcSpInd-size)-=size;  
 
-                            // J mattter
+                            // J matter
                             ind=0;                            
                             if (sp.mu==sp.nu) { // for diagonal block of J
                                 for (var nu:Long=sp.nu; nu<=sp.nu2; nu++) for (var mu:Long=sp.mu; mu<=sp.mu2; mu++) {
@@ -443,11 +439,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
   
                         }
                     }
-                    //);
-                    // DGEMM
-                    //timer.start(TIMER_DG1);
                     if (doK) DenseMatrixBLAS.compMultTrans(mos, AuxMat, B1, [nOrbitals, AuxMat.M, N], [0, 0, 0, 0, 0, (sp0.mu-offsetAtPlace(pid))*roK], false);
-                    //timer.stop(TIMER_DG1);
                 }
                 );
                 setThread(nThreads);
@@ -466,31 +458,22 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                 }
 
                 if (doK) { // This produces K/2 & TODO: improved further by better scheduling and buffering = ring broadcast ?
-
                     val mult=(Math.ceil(nPlaces*.5+.5) - ((nPlaces%2L==0L && pid<nPlaces/2)?1:0)) as Long;
                     val a=halfAuxMat.local();
                     val halfAuxGrid = halfAuxMat.grid;
                     for (var blk:Long=1; blk<mult; blk++) {
                         val qid=(pid+blk)%nPlaces;
                         timer.start(TIMER_COM);
-                        /*val globalDst = new GlobalRail(tBlock);
-                        @Pragma(Pragma.FINISH_ASYNC) finish at(Place(qid)) {
-                            val localAux = halfAuxMat.local().d;
-                            Rail.asyncCopy(localAux, 0, globalDst, 0, localAux.size);
-                        }    
-                        val b = new DenseMatrix(halfAuxGrid.getRowSize(qid), halfAuxGrid.getColSize(qid), tBlock);  */
-                        val b = at(Place(qid)) {halfAuxMat.local()}; // This might be a waste of memory                
+                        val b = at(Place(qid)) {halfAuxMat.local()}; // This might leak memory                
                         timer.stop(TIMER_COM);
-                        timer.start(TIMER_DG2);
+                        timer.start(TIMER_DGEMM);
                         DenseMatrixBLAS.compTransMult(a, b, localK, [a.N, b.N, a.M], [0, 0, 0, 0, 0, offsetAtPlace(qid)], true);
-                        timer.stop(TIMER_DG2);
+                        timer.stop(TIMER_DGEMM);
                     }
                 }
 
                 timer.start(TIMER_JMATRIX); 
                 // Console.OUT.println("J - distributed"); 
-                // val dmat = new DenseMatrix(1, roK, dkp);
-                // val j = new DenseMatrix(1, N*funcAtPlace(pid),localJ.d);
                 finish DivideAndConquerLoop1D(0, shp.size, 16).execute(
                 (spInd:Long)=> {
                     val sp=shp(spInd);
@@ -499,11 +482,8 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                     if (auxJ.size > 0 && maxLron >=0n) {
                         val maxLm=(maxLron+1)*(maxLron+1);
                         var ind:Long=0; 
-                        // val aj = new DenseMatrix(roK, auxJ.size/roK, auxJ);
-                        // val muSize = sp.mu2-sp.mu+1;
                         for (nu in sp.nu..sp.nu2) {
-                            /* if (muSize>1) DenseMatrixBLAS.comp(dmat, aj, j, [1, muSize as Long, roK as Long], [0, 0, 0, (nu-sp.nu)*muSize, 0, nu*funcAtPlace(pid)+sp.mu-offsetAtPlace(pid)], true); //"as Long" is required
-                            else*/ for (var mu:Long=sp.mu, muoff:Long=mu-offsetAtPlace(pid); mu<=sp.mu2; mu++, muoff++) {
+                            for (var mu:Long=sp.mu, muoff:Long=mu-offsetAtPlace(pid); mu<=sp.mu2; mu++, muoff++) {
                                 var jContrib:Double=0.;
                                 for (rolm in 0..(maxLm-1)) {
                                     jContrib +=dkp(rolm) * auxJ(ind++);
@@ -587,10 +567,9 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                 val tAux=(timer.total(TIMER_AUX) as Double)/1e9;
                 val tJ=(timer.total(TIMER_JMATRIX) as Double)/1e9;
                 val tDsyrk=(timer.total(TIMER_DSYRK) as Double)/1e9;
-                val tDg1=(timer.total(TIMER_DG1) as Double)/1e9;
-                val tDg2=(timer.total(TIMER_DG2) as Double)/1e9;
+                val tDgemm=(timer.total(TIMER_DGEMM) as Double)/1e9;
                 val tCom=(timer.total(TIMER_COM) as Double)/1e9;
-                Console.OUT.printf("Time (seconds) Aux= %.2f ( DGEMM= %.2f ) J= %.2f K-DSYRK= %.2f K-DGEMM= %.2f K-COM= %.2f\n", tAux, tDg1, tJ, tDsyrk, tDg2, tCom);
+                Console.OUT.printf("Time (seconds) Aux= %.2f J= %.2f K-DSYRK= %.2f K-DGEMM= %.2f K-COM= %.2f\n", tAux, tJ, tDsyrk, tDgemm, tCom);
                 Console.OUT.flush();
             }
         }
@@ -678,7 +657,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
     @Native("c++", "omp_get_num_threads()") private native static def ompGetNumThreads():Int;
     @Native("c++", "omp_set_num_threads(#a)") private native static def ompSetNumThreads(a:Int):void;
 
-    private @NonEscaping def setThread(nT:Int) {
+    private def setThread(nT:Int) {
         @Ifdef("__MKL__") /*finish ateach(place in Dist.makeUnique())*/ { // not working?  better use -genv OMP_NUM_THREADS 4
             val t1=mklGetMaxThreads();
             val o1=ompGetNumThreads();
