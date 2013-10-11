@@ -42,7 +42,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
     val TIMER_TOTAL=0;
     val TIMER_AUX=1;
     val TIMER_JMATRIX=2;
-    val TIMER_COM=3;
+    val TIMER_K=3;
     val TIMER_DSYRK=4;
     val TIMER_DGEMM=5;
     val TIMER_COP=6;
@@ -446,9 +446,21 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                 tdk.reduceLocal(dkp, (a:Rail[Double], b:Rail[Double])=> RailUtils.map(a, b, a, (x:Double, y:Double)=>x+y));
                 timer.stop(TIMER_AUX);
 
+
+                timer.start(TIMER_K);
+                val blocks = (Math.ceil(nPlaces*.5+.5) - ((nPlaces%2L==0L && pid<nPlaces/2)?1:0)) as Long;
+                var blk:Long = 1;
+                var nextBlock:DenseMatrix = null;
+                var nextBlockPlace:Long = (pid+1) % nPlaces;
+
                 finish {
                     async Team.WORLD.allreduce[Double](dkp, 0L, dkp, 0L, dkp.size, Team.ADD);                    
                     if (doK) {
+                        if (blocks > 1) {
+                            // overlap getting first remote block of K with DSYRK
+                            async nextBlock = at(Place(nextBlockPlace)) {halfAuxMat.local()}; // This might leak memory
+                        }
+
                         timer.start(TIMER_DSYRK);
                         val a=halfAuxMat.local();
                         val noffh=offsetAtPlace(pid);
@@ -457,20 +469,35 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                     }
                 }
 
-                if (doK) { // This produces K/2 & TODO: improved further by better scheduling and buffering = ring broadcast ?
-                    val mult=(Math.ceil(nPlaces*.5+.5) - ((nPlaces%2L==0L && pid<nPlaces/2)?1:0)) as Long;
+                if (doK) {
+                    // This produces K/2 & TODO: improved further by better scheduling and buffering = ring broadcast ?
                     val a=halfAuxMat.local();
-                    val halfAuxGrid = halfAuxMat.grid;
-                    for (var blk:Long=1; blk<mult; blk++) {
-                        val qid=(pid+blk)%nPlaces;
-                        timer.start(TIMER_COM);
-                        val b = at(Place(qid)) {halfAuxMat.local()}; // This might leak memory                
-                        timer.stop(TIMER_COM);
-                        timer.start(TIMER_DGEMM);
-                        DenseMatrixBLAS.compTransMult(a, b, localK, [a.N, b.N, a.M], [0, 0, 0, 0, 0, offsetAtPlace(qid)], true);
-                        timer.stop(TIMER_DGEMM);
+                    var thisBlock:DenseMatrix = nextBlock;
+                    var thisBlockPlace:Long = nextBlockPlace;
+            
+                    while (thisBlock != null) {
+                        blk++;
+                        finish {
+                            if (blk < blocks) {
+                                // overlap getting next remote block of K with DGEMM
+                                nextBlockPlace = (pid+blk)%nPlaces;
+                                async nextBlock = at(Place(nextBlockPlace)) {halfAuxMat.local()}; // This might leak memory                
+
+                            } else {
+                                nextBlock = null;
+                            }
+                            timer.start(TIMER_DGEMM);
+                            DenseMatrixBLAS.compTransMult(a, thisBlock, localK, [a.N, thisBlock.N, a.M], [0, 0, 0, 0, 0, offsetAtPlace(thisBlockPlace)], true);
+                            timer.stop(TIMER_DGEMM);
+                            //val dgemmNs = timer.last(TIMER_DGEMM);
+                            //val dgemmOps = 2 * a.N * thisBlock.N * a.M;
+                            //Console.OUT.println(here + " K block from place " + thisBlockPlace + ": " + a.N + ", " + thisBlock.N + ", " + a.M + " took " + (dgemmNs/1e9) + "s - " + (dgemmOps/(dgemmNs as Double)) + " GFLOP/s");
+                        }
+                        thisBlock = nextBlock;
+                        thisBlockPlace = nextBlockPlace;
                     }
                 }
+                timer.stop(TIMER_K);
 
                 timer.start(TIMER_JMATRIX); 
                 // Console.OUT.println("J - distributed"); 
@@ -568,8 +595,8 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                 val tJ=(timer.total(TIMER_JMATRIX) as Double)/1e9;
                 val tDsyrk=(timer.total(TIMER_DSYRK) as Double)/1e9;
                 val tDgemm=(timer.total(TIMER_DGEMM) as Double)/1e9;
-                val tCom=(timer.total(TIMER_COM) as Double)/1e9;
-                Console.OUT.printf("Time (seconds) Aux= %.2f J= %.2f K-DSYRK= %.2f K-DGEMM= %.2f K-COM= %.2f\n", tAux, tJ, tDsyrk, tDgemm, tCom);
+                val tK=(timer.total(TIMER_K) as Double)/1e9;
+                Console.OUT.printf("Time (seconds) Aux= %.2f J= %.2f K-DSYRK= %.2f K-DGEMM= %.2f K-TOT= %.2f\n", tAux, tJ, tDsyrk, tDgemm, tK);
                 Console.OUT.flush();
             }
         }
