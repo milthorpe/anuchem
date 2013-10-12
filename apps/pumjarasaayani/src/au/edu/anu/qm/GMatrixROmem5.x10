@@ -354,11 +354,14 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
         val auxIntMat4J=this.auxIntMat4J, ttemp4K=this.ttemp4K, tdk=this.tdk, tB1=this.tB1;
       
         finish ateach(place in Dist.makeUnique()) {
-            val pid=here.id;
-            val nPlaces=Place.MAX_PLACES;
+            val pid = here.id;
+            val offsetHere = offsetAtPlace(pid);
+            val nPlaces = Place.MAX_PLACES;
+
             val nThreads=Runtime.NTHREADS;
             setThread(nThreads);
-            // For faster access 
+
+            // For faster access
             val shp=shellPairs(), size=shp.size, ylmp=ylms();
             val localAuxJ=auxIntMat4J(), localAuxK=auxIntMat4K();
             val localJ=distJ.local(), localK=distK.local();
@@ -439,7 +442,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
   
                         }
                     }
-                    if (doK) DenseMatrixBLAS.compMultTrans(mos, AuxMat, B1, [nOrbitals, AuxMat.M, N], [0, 0, 0, 0, 0, (sp0.mu-offsetAtPlace(pid))*roK], false);
+                    if (doK) DenseMatrixBLAS.compMultTrans(mos, AuxMat, B1, [nOrbitals, AuxMat.M, N], [0, 0, 0, 0, 0, (sp0.mu-offsetHere)*roK], false);
                 }
                 );
                 setThread(nThreads);
@@ -454,7 +457,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                 var nextBlockPlace:Long = (pid+1) % nPlaces;
 
                 finish {
-                    async Team.WORLD.allreduce[Double](dkp, 0L, dkp, 0L, dkp.size, Team.ADD);                    
+                    async Team.WORLD.allreduce[Double](dkp, 0L, dkp, 0L, dkp.size, Team.ADD);
                     if (doK) {
                         if (blocks > 1) {
                             // overlap getting first remote block of K with DSYRK
@@ -462,39 +465,35 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                         }
 
                         timer.start(TIMER_DSYRK);
-                        val a=halfAuxMat.local();
-                        val noffh=offsetAtPlace(pid);
-                        DenseMatrixBLAS.symRankKUpdateTrans(a, localK, [a.N, a.M], [0, 0, 0, noffh], true, true);
+                        val a = halfAuxMat.local();
+                        DenseMatrixBLAS.symRankKUpdateTrans(a, localK, [a.N, a.M], [0, 0, 0, offsetHere], true, true);
                         timer.stop(TIMER_DSYRK);
-                    }
-                }
 
-                if (doK) {
-                    // This produces K/2 & TODO: improved further by better scheduling and buffering = ring broadcast ?
-                    val a=halfAuxMat.local();
-                    var thisBlock:DenseMatrix = nextBlock;
-                    var thisBlockPlace:Long = nextBlockPlace;
-            
-                    while (thisBlock != null) {
-                        blk++;
-                        finish {
-                            if (blk < blocks) {
-                                // overlap getting next remote block of K with DGEMM
-                                nextBlockPlace = (pid+blk)%nPlaces;
-                                async nextBlock = at(Place(nextBlockPlace)) {halfAuxMat.local()}; // This might leak memory                
+                        // This produces K/2 & TODO: ring broadcast ?
+                        var thisBlock:DenseMatrix = nextBlock;
+                        var thisBlockPlace:Long = nextBlockPlace;
+                
+                        while (thisBlock != null) {
+                            blk++;
+                            finish {
+                                if (blk < blocks) {
+                                    // overlap getting next remote block of K with DGEMM
+                                    nextBlockPlace = (pid+blk)%nPlaces;
+                                    async nextBlock = at(Place(nextBlockPlace)) {halfAuxMat.local()}; // This might leak memory                
 
-                            } else {
-                                nextBlock = null;
+                                } else {
+                                    nextBlock = null;
+                                }
+                                timer.start(TIMER_DGEMM);
+                                DenseMatrixBLAS.compTransMult(a, thisBlock, localK, [a.N, thisBlock.N, a.M], [0, 0, 0, 0, 0, offsetAtPlace(thisBlockPlace)], true);
+                                timer.stop(TIMER_DGEMM);
+                                //val dgemmNs = timer.last(TIMER_DGEMM);
+                                //val dgemmOps = 2 * a.N * thisBlock.N * a.M;
+                                //Console.OUT.println(here + " K block from place " + thisBlockPlace + ": " + a.N + ", " + thisBlock.N + ", " + a.M + " took " + (dgemmNs/1e9) + "s - " + (dgemmOps/(dgemmNs as Double)) + " GFLOP/s");
                             }
-                            timer.start(TIMER_DGEMM);
-                            DenseMatrixBLAS.compTransMult(a, thisBlock, localK, [a.N, thisBlock.N, a.M], [0, 0, 0, 0, 0, offsetAtPlace(thisBlockPlace)], true);
-                            timer.stop(TIMER_DGEMM);
-                            //val dgemmNs = timer.last(TIMER_DGEMM);
-                            //val dgemmOps = 2 * a.N * thisBlock.N * a.M;
-                            //Console.OUT.println(here + " K block from place " + thisBlockPlace + ": " + a.N + ", " + thisBlock.N + ", " + a.M + " took " + (dgemmNs/1e9) + "s - " + (dgemmOps/(dgemmNs as Double)) + " GFLOP/s");
+                            thisBlock = nextBlock;
+                            thisBlockPlace = nextBlockPlace;
                         }
-                        thisBlock = nextBlock;
-                        thisBlockPlace = nextBlockPlace;
                     }
                 }
                 timer.stop(TIMER_K);
@@ -510,7 +509,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                         val maxLm=(maxLron+1)*(maxLron+1);
                         var ind:Long=0; 
                         for (nu in sp.nu..sp.nu2) {
-                            for (var mu:Long=sp.mu, muoff:Long=mu-offsetAtPlace(pid); mu<=sp.mu2; mu++, muoff++) {
+                            for (var mu:Long=sp.mu, muoff:Long=mu-offsetHere; mu<=sp.mu2; mu++, muoff++) {
                                 var jContrib:Double=0.;
                                 for (rolm in 0..(maxLm-1)) {
                                     jContrib +=dkp(rolm) * auxJ(ind++);
