@@ -449,25 +449,25 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                 tdk.reduceLocal(dkp, (a:Rail[Double], b:Rail[Double])=> RailUtils.map(a, b, a, (x:Double, y:Double)=>x+y));
                 timer.stop(TIMER_AUX);
 
-
                 timer.start(TIMER_K);
-                val blocks = (Math.ceil(nPlaces*.5+.5) - ((nPlaces%2L==0L && pid<nPlaces/2)?1:0)) as Long;
-                var blk:Long = 1;
-                var nextBlock:DenseMatrix = null;
-                var nextBlockPlace:Long = (pid+1) % nPlaces;
-
                 finish {
                     async Team.WORLD.allreduce[Double](dkp, 0L, dkp, 0L, dkp.size, Team.ADD);
                     if (doK) {
-                        if (blocks > 1) {
-                            // overlap getting first remote block of K with DSYRK
-                            async nextBlock = at(Place(nextBlockPlace)) {halfAuxMat.local()}; // This might leak memory
-                        }
-
-                        timer.start(TIMER_DSYRK);
                         val a = halfAuxMat.local();
-                        DenseMatrixBLAS.symRankKUpdateTrans(a, localK, [a.N, a.M], [0, 0, 0, offsetHere], true, true);
-                        timer.stop(TIMER_DSYRK);
+
+                        val blocks = (Math.ceil(nPlaces*.5+.5) - ((nPlaces%2L==0L && pid<nPlaces/2)?1:0)) as Long;
+                        var blk:Long = 1;
+                        var nextBlock:DenseMatrix = null;
+                        var nextBlockPlace:Long = (pid+blk) % nPlaces;
+                        finish {
+                            if (blocks > 1) {
+                                // overlap getting first remote block of K with DSYRK
+                                async nextBlock = at(Place(nextBlockPlace)) {halfAuxMat.local()}; // This might leak memory
+                            }
+                            timer.start(TIMER_DSYRK);
+                            DenseMatrixBLAS.symRankKUpdateTrans(a, localK, [a.N, a.M], [0, 0, 0, offsetHere], true, true);
+                            timer.stop(TIMER_DSYRK);
+                        }
 
                         // This produces K/2 & TODO: ring broadcast ?
                         var thisBlock:DenseMatrix = nextBlock;
@@ -478,7 +478,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                             finish {
                                 if (blk < blocks) {
                                     // overlap getting next remote block of K with DGEMM
-                                    nextBlockPlace = (pid+blk)%nPlaces;
+                                    nextBlockPlace = (pid+blk) % nPlaces;
                                     async nextBlock = at(Place(nextBlockPlace)) {halfAuxMat.local()}; // This might leak memory                
 
                                 } else {
@@ -512,9 +512,9 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                             for (var mu:Long=sp.mu, muoff:Long=mu-offsetHere; mu<=sp.mu2; mu++, muoff++) {
                                 var jContrib:Double=0.;
                                 for (rolm in 0..(maxLm-1)) {
-                                    jContrib +=dkp(rolm) * auxJ(ind++);
+                                    jContrib += dkp(rolm) * auxJ(ind++);
                                 }
-                                localJ(muoff, nu) +=jContrib;
+                                localJ(muoff, nu) += jContrib;
                             }
                         }
                     }
