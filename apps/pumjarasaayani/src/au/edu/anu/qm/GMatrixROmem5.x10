@@ -13,7 +13,6 @@ import x10.compiler.Ifdef;
 import x10.compiler.Native;
 import x10.compiler.NativeCPPInclude;
 import x10.compiler.NonEscaping;
-import x10.compiler.Pragma;
 import x10.io.IOException;
 import x10.lang.PlaceLocalHandle;
 import x10.matrix.blas.DenseMatrixBLAS;
@@ -359,7 +358,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
             val nPlaces = Place.MAX_PLACES;
 
             val nThreads=Runtime.NTHREADS;
-            setThread(nThreads);
+            GMatrixROmem5.setThread(nThreads);
 
             // For faster access
             val shp=shellPairs(), size=shp.size, ylmp=ylms();
@@ -375,11 +374,11 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                 // Console.OUT.println("Aux - distributed ron="+ron);
                 // Aux & D
                 timer.start(TIMER_AUX);
-                val doK = (ron <=roNK);
+                val doK = (ron <= roNK);
                 dkp.clear();
-                tdk.applyLocal((d:Rail[Double])=> { d.clear(); });  
+                tdk.applyLocal((d:Rail[Double])=> { d.clear(); });
                 for (i in 0..(shp.size-1)) if (0<=localAuxK(i) && localAuxK(i)<size) localAuxK(i)+=size;
-                setThread(1n);
+                GMatrixROmem5.setThread(1n);
                 
                 finish DivideAndConquerLoop1D(0, shellAtPlace(pid)).execute(
                 (sInd:Long)=> {
@@ -394,7 +393,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                     for (var spInd:Long=spInd0; spInd<range(sInd); spInd++) {
                         val sp=shp(spInd);
                         val maxLron=sp.L(ron);
-                        if (maxLron >=0) {                                       
+                        if (maxLron >= 0) {
                             val maxLm=(maxLron+1)*(maxLron+1), nuSize=sp.nu2-sp.nu+1, temp=localAuxJ(spInd), srcSpInd=localAuxK(spInd);
                             val off=(roK*muSize*sp.nu) as Int, asize=muSize*nuSize*roK;
                             var ind:Long=0; 
@@ -416,42 +415,41 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                                         tbk((nu*muSize+tmu)*roK+rolm)=src(ind++);
                             }
 
-                            if (temp.size!=0) Rail.copy(tbk, off as Long, temp, 0, asize); // purely for J  
+                            if (temp.size!=0) Rail.copy(tbk, off as Long, temp, 0, asize); // purely for J
                             else if (srcSpInd>=size) { //write to remote shp J - to be read and save time
                                 val temp2=localAuxJ(srcSpInd-size); 
                                 Rail.copy(tbk, off as Long, temp2, asize, asize);
                             } 
-                            if (srcSpInd>=size) localAuxK(srcSpInd-size)-=size;  
+                            if (srcSpInd>=size) localAuxK(srcSpInd-size)-=size;
 
                             // J matter
-                            ind=0;                            
+                            ind=0;
                             if (sp.mu==sp.nu) { // for diagonal block of J
                                 for (var nu:Long=sp.nu; nu<=sp.nu2; nu++) for (var mu:Long=sp.mu; mu<=sp.mu2; mu++) {
                                     val scdmn=density(mu, nu);
-                                    for (var rolm:Long=0; rolm<maxLm; rolm++, ind++)  
+                                    for (var rolm:Long=0; rolm<maxLm; rolm++, ind++)
                                         myThreaddk(rolm)+=scdmn*temp(ind); 
                                 }
-                            } else if (temp.size!=0) // for the rest of J
+                            } else if (temp.size!=0) { // for the rest of J
                                 for (var nu:Long=sp.nu; nu<=sp.nu2; nu++) for (var mu:Long=sp.mu; mu<=sp.mu2; mu++) {
                                     val scdmn=density(mu, nu);
                                     for (var rolm:Long=0; rolm<maxLm; rolm++, ind++) 
                                         myThreaddk(rolm)+=2.*scdmn*temp(ind);
                                 } 
-
-
-  
+                            }
                         }
                     }
                     if (doK) DenseMatrixBLAS.compMultTrans(mos, AuxMat, B1, [nOrbitals, AuxMat.M, N], [0, 0, 0, 0, 0, (sp0.mu-offsetHere)*roK], false);
                 }
                 );
-                setThread(nThreads);
+                GMatrixROmem5.setThread(nThreads);
                 tdk.reduceLocal(dkp, (a:Rail[Double], b:Rail[Double])=> RailUtils.map(a, b, a, (x:Double, y:Double)=>x+y));
                 timer.stop(TIMER_AUX);
 
-                timer.start(TIMER_K);
                 finish {
                     async Team.WORLD.allreduce[Double](dkp, 0L, dkp, 0L, dkp.size, Team.ADD);
+
+                    timer.start(TIMER_K);
                     if (doK) {
                         val a = halfAuxMat.local();
 
@@ -472,15 +470,13 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                         // This produces K/2 & TODO: ring broadcast ?
                         var thisBlock:DenseMatrix = nextBlock;
                         var thisBlockPlace:Long = nextBlockPlace;
-                
                         while (thisBlock != null) {
                             blk++;
                             finish {
                                 if (blk < blocks) {
                                     // overlap getting next remote block of K with DGEMM
                                     nextBlockPlace = (pid+blk) % nPlaces;
-                                    async nextBlock = at(Place(nextBlockPlace)) {halfAuxMat.local()}; // This might leak memory                
-
+                                    async nextBlock = at(Place(nextBlockPlace)) {halfAuxMat.local()}; // This might leak memory
                                 } else {
                                     nextBlock = null;
                                 }
@@ -495,8 +491,8 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                             thisBlockPlace = nextBlockPlace;
                         }
                     }
+                    timer.stop(TIMER_K);
                 }
-                timer.stop(TIMER_K);
 
                 timer.start(TIMER_JMATRIX); 
                 // Console.OUT.println("J - distributed"); 
@@ -534,7 +530,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
             // Calculate eJ and eK
             for (var j0:Long=0, j:Long=offsetAtPlace(pid); j<offsetAtPlace(pid+1); j0++, j++) {
                 ep(0) += .5*density(j, j)*localJ(j0, j);
-                ep(1) += .5*density(j, j)*localK(j0, j);                
+                ep(1) += .5*density(j, j)*localK(j0, j);
                 for (var i0:Long=0, i:Long=offsetAtPlace(pid); i<j; i0++, i++) {
                     ep(0) += density(i, j)*localJ(i0, j);
                     ep(1) += density(i, j)*localK(i0, j);
@@ -683,7 +679,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
     @Native("c++", "omp_get_num_threads()") private native static def ompGetNumThreads():Int;
     @Native("c++", "omp_set_num_threads(#a)") private native static def ompSetNumThreads(a:Int):void;
 
-    private def setThread(nT:Int) {
+    private static def setThread(nT:Int) {
         @Ifdef("__MKL__") /*finish ateach(place in Dist.makeUnique())*/ { // not working?  better use -genv OMP_NUM_THREADS 4
             val t1=mklGetMaxThreads();
             val o1=ompGetNumThreads();
