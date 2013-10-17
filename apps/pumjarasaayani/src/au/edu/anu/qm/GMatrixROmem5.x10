@@ -21,6 +21,7 @@ import x10.matrix.DenseMatrix;
 import x10.matrix.dist.DistDenseMatrix;
 import x10.regionarray.Dist;
 import x10.util.GrowableRail;
+import x10.util.Pair;
 import x10.util.RailUtils;
 import x10.util.Team;
 import x10.util.WorkerLocalHandle;
@@ -51,7 +52,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
     private val bfs:BasisFunctions, mol:Molecule[QMAtom];
 
     val halfAuxMat:DistDenseMatrix, distJ:DistDenseMatrix, distK:DistDenseMatrix;
-    val auxIntMat4J:PlaceLocalHandle[Rail[Rail[Double]]], auxIntMat4K:PlaceLocalHandle[Rail[Long]], tempBlock:PlaceLocalHandle[Rail[Double]], ylms:PlaceLocalHandle[Rail[Rail[Double]]], shellPairs:PlaceLocalHandle[Rail[ShellPair]];
+    val auxIntMat4J:PlaceLocalHandle[Rail[Rail[Double]]], auxIntMat4K:PlaceLocalHandle[Rail[Long]], remoteBlockK:PlaceLocalHandle[RemoteBlock], ylms:PlaceLocalHandle[Rail[Rail[Double]]], shellPairs:PlaceLocalHandle[Rail[ShellPair]];
     val dk:PlaceLocalHandle[Rail[Double]], e:PlaceLocalHandle[Rail[Double]], shellPairRange:PlaceLocalHandle[Rail[Long]]; 
     val ttemp4K:WorkerLocalHandle[Rail[Double]], taux:WorkerLocalHandle[Integral_Pack], tdk:WorkerLocalHandle[Rail[Double]], tB1:WorkerLocalHandle[DenseMatrix];
     val nOrbitals:Long, norm:Rail[Double], roN:Int, roNK:Int, roL:Int, roK:Int; 
@@ -213,7 +214,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
         }
         Console.OUT.printf("Fractions add up to %.2f %%\n", tot2/tot*100.);
         Console.OUT.printf("Fraction of N at each place: ideal=%.2f max=%.0f min=%.0f\n Imbalance cost=%.2f %%\n\n", ideal, max, min, (max/ideal-1.)*100.);
-        val maxRow = max as Long; // This is used for tempBlock allocation later
+        val maxRow = max as Long; // This is used for remoteBlockK allocation later
 
         tot=N*N*(nPlaces+1.)*.5/nPlaces; tot2=0.; ideal=max=min=tot/nPlaces;
         Console.OUT.printf("2. Number of mu nu (block of G/J/K) at each place (bad for X10_NPLACES=even number)\nPlace  Functions  Fraction\n");      
@@ -311,7 +312,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
         );    
 
         val tbs = Math.max(maxRow*nOrbitals,maxam1*N)*roK; // if we use this for K too
-        this.tempBlock=PlaceLocalHandle.make[Rail[Double]](PlaceGroup.WORLD, () => new Rail[Double](tbs/*maxRow*nOrbitals*roK*/));
+        this.remoteBlockK=PlaceLocalHandle.make[RemoteBlock](PlaceGroup.WORLD, () => new RemoteBlock(tbs/*maxRow*nOrbitals*roK*/));
 
         val cbs_HalfAuxInt=new Rail[Long](1); cbs_HalfAuxInt(0)=nOrbitals*roK; val halfAuxIntGrid=new Grid(cbs_HalfAuxInt, funcAtPlace);
         this.halfAuxMat=DistDenseMatrix.make(halfAuxIntGrid);
@@ -349,7 +350,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
         val N=this.N, nOrbitals=this.nOrbitals, roN=this.roN, roNK=this.roNK, roL=this.roL, roK=this.roK, roZ=this.roZ, norm=this.norm;
         val shellAtPlace=this.shellAtPlace, funcAtPlace=this.funcAtPlace, offsetAtPlace=this.offsetAtPlace, taux=this.taux;
         val dk=this.dk, e=this.e, shellPairRange=this.shellPairRange;
-        val auxIntMat4K=this.auxIntMat4K, halfAuxMat=this.halfAuxMat, tempBlock=this.tempBlock;
+        val auxIntMat4K=this.auxIntMat4K, halfAuxMat=this.halfAuxMat, remoteBlockK=this.remoteBlockK;
         val auxIntMat4J=this.auxIntMat4J, ttemp4K=this.ttemp4K, tdk=this.tdk, tB1=this.tB1;
       
         finish ateach(place in Dist.makeUnique()) {
@@ -444,23 +445,23 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                 );
                 GMatrixROmem5.setThread(nThreads);
                 tdk.reduceLocal(dkp, (a:Rail[Double], b:Rail[Double])=> RailUtils.map(a, b, a, (x:Double, y:Double)=>x+y));
+                Team.WORLD.allreduce[Double](dkp, 0L, dkp, 0L, dkp.size, Team.ADD);
                 timer.stop(TIMER_AUX);
 
                 finish {
-                    async Team.WORLD.allreduce[Double](dkp, 0L, dkp, 0L, dkp.size, Team.ADD);
-
                     timer.start(TIMER_K);
                     if (doK) {
+                        val remoteK = remoteBlockK();
                         val a = halfAuxMat.local();
 
                         val blocks = (Math.ceil(nPlaces*.5+.5) - ((nPlaces%2L==0L && pid<nPlaces/2)?1:0)) as Long;
                         var blk:Long = 1;
-                        var nextBlock:DenseMatrix = null;
-                        var nextBlockPlace:Long = (pid+blk) % nPlaces;
+                        var nextBlockPlace:Long = -1;
                         finish {
                             if (blocks > 1) {
                                 // overlap getting first remote block of K with DSYRK
-                                async nextBlock = at(Place(nextBlockPlace)) {halfAuxMat.local()}; // This might leak memory
+                                nextBlockPlace = (pid+blk) % nPlaces;
+                                async remoteK.fetchNext(halfAuxMat, nextBlockPlace);
                             }
                             timer.start(TIMER_DSYRK);
                             DenseMatrixBLAS.symRankKUpdateTrans(a, localK, [a.N, a.M], [0, 0, 0, offsetHere], true, true);
@@ -468,27 +469,23 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                         }
 
                         // This produces K/2 & TODO: ring broadcast ?
-                        var thisBlock:DenseMatrix = nextBlock;
-                        var thisBlockPlace:Long = nextBlockPlace;
-                        while (thisBlock != null) {
+                        while (nextBlockPlace != -1) {
+                            val thisBlockPlace = nextBlockPlace;
+                            val thisBlock = remoteK.getCurrent();
                             blk++;
                             finish {
                                 if (blk < blocks) {
                                     // overlap getting next remote block of K with DGEMM
                                     nextBlockPlace = (pid+blk) % nPlaces;
-                                    async nextBlock = at(Place(nextBlockPlace)) {halfAuxMat.local()}; // This might leak memory
+                                    async remoteK.fetchNext(halfAuxMat, nextBlockPlace);
                                 } else {
-                                    nextBlock = null;
+                                    nextBlockPlace = -1;
                                 }
                                 timer.start(TIMER_DGEMM);
                                 DenseMatrixBLAS.compTransMult(a, thisBlock, localK, [a.N, thisBlock.N, a.M], [0, 0, 0, 0, 0, offsetAtPlace(thisBlockPlace)], true);
                                 timer.stop(TIMER_DGEMM);
-                                //val dgemmNs = timer.last(TIMER_DGEMM);
-                                //val dgemmOps = 2 * a.N * thisBlock.N * a.M;
-                                //Console.OUT.println(here + " K block from place " + thisBlockPlace + ": " + a.N + ", " + thisBlock.N + ", " + a.M + " took " + (dgemmNs/1e9) + "s - " + (dgemmOps/(dgemmNs as Double)) + " GFLOP/s");
                             }
-                            thisBlock = nextBlock;
-                            thisBlockPlace = nextBlockPlace;
+
                         }
                     }
                     timer.stop(TIMER_K);
@@ -662,6 +659,42 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
             }
         }
         return a;
+    }
+
+    /** 
+     * This class supports a ring-like algorithm where a remote block of
+     * a DistDenseMatrix is fetched and then some operation is performed
+     * on it concurrently with the fetch of the next remote block.
+     */
+    private static class RemoteBlock {
+        var currentData:Rail[Double];
+        var nextData:Rail[Double];
+        var currentDim:Pair[Long,Long];
+        var nextDim:Pair[Long,Long];
+
+        public def this(blockSize:Long) {
+            currentData = new Rail[Double](blockSize);
+            nextData = new Rail[Double](blockSize);
+        }
+
+        public def getCurrent():DenseMatrix {
+            // swap next and current
+            currentDim = nextDim;
+            val temp = nextData;
+            nextData = currentData;
+            currentData = temp;
+            return new DenseMatrix(currentDim.first, currentDim.second, currentData);
+        }
+
+        public def fetchNext(ddm:DistDenseMatrix, nextBlockPlace:Long) {
+            // fetch next data from given place
+            val nextDataRef = new GlobalRail(nextData);
+            finish nextDim = at(Place(nextBlockPlace)) {
+                val dataHere = ddm.local().d;
+                Rail.asyncCopy(dataHere, 0, nextDataRef, 0, dataHere.size);
+                Pair(ddm.local().M, ddm.local().N)
+            };
+        }
     }
 
     private def getDateString() {
