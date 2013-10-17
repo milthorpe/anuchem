@@ -14,7 +14,7 @@ import x10.regionarray.Region;
 
 public class ExpansionRegion extends Region{rect} {
 // TODO not really rect! should be 'dense' XTENLANG-3000
-    static type ExpansionRegion(rank:Int) = ExpansionRegion{self.rank==rank,rect==true};
+    static type ExpansionRegion(rank:Long) = ExpansionRegion{self.rank==rank,rect==true};
     val p:Long;
 
     /**
@@ -22,7 +22,7 @@ public class ExpansionRegion extends Region{rect} {
      * or local expansion of the given dimension.
      * @param p the dimension of the expansion
      */
-    public def this(p : Int): ExpansionRegion(2) {
+    public def this(p:Long): ExpansionRegion(2) {
         super(2, true, false);
         this.p = p;
     }
@@ -35,13 +35,13 @@ public class ExpansionRegion extends Region{rect} {
         return false;
     }
 
-    public def min():(Int)=>Long = (i:Int)=> {
-        if (i==0) return 0L;
+    public def min():(Long)=>Long = (i:Long)=> {
+        if (i==0) return 0;
         else if (i==1) return -p;
         else throw new ArrayIndexOutOfBoundsException("min: "+i+" is not a valid rank for "+this);
     };
 
-    public def max():(Int)=>Long = (i:Int)=> {
+    public def max():(Long)=>Long = (i:Long)=> {
         if (i==0) return p;
         else if (i==1) return p;
         else throw new ArrayIndexOutOfBoundsException("max: "+i+" is not a valid rank for "+this);
@@ -90,22 +90,22 @@ public class ExpansionRegion extends Region{rect} {
         throw new UnsupportedOperationException("translate()");
     }
 
-    public def projection(axis: int): Region(1) {
-        switch (axis) {
-            case 0:
+    public def projection(axis:Long): Region(1) {
+        switch(axis as Int) {
+            case 0n:
                 return Region.make(0, p);
-            case 1:
+            case 1n:
                 return Region.make(-p, p);
             default:
                 throw new UnsupportedOperationException("projection(" + axis + ")");
         }
     }
 
-    public def eliminate(axis: int): Region(1) {
-        switch (axis) {
-            case 0:
+    public def eliminate(axis:Long): Region(1) {
+        switch(axis as Int) {
+            case 0n:
                 return Region.make(-p, p);
-            case 1:
+            case 1n:
                 return Region.make(0, p);
             default:
                 throw new UnsupportedOperationException("projection(" + axis + ")");

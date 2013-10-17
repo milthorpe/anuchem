@@ -91,7 +91,7 @@ public class PenningTrap {
                     fmmNumTerms:Int,
                     speciesList:Rail[SpeciesSpec]) {
         this.numAtoms = numAtoms;
-        val wellSeparatedParam = 2;
+        val wellSeparatedParam = 2n;
         val fmmNumBoxes = Math.pow(8.0, fmmDMax);
         val fmmDensity = Math.ceil(numAtoms / fmmNumBoxes);
         Console.OUT.println("fmm dMax = " + fmmDMax + " num terms = " + fmmNumTerms + " density = " + fmmDensity);
@@ -147,7 +147,7 @@ public class PenningTrap {
         finish ateach(place in Dist.makeUnique()) {
             var step:Int = resumeStep;
             val props = new SystemProperties();
-            if (resumeStep == 0) {
+            if (resumeStep == 0n) {
                 printStartPositions(props);
             }
 
@@ -156,7 +156,7 @@ public class PenningTrap {
             val timeStepSecs = timestep * 1.0e-9;
             while(step < numSteps) {
                 step++;
-                val accumProps = (step % logSteps == 0);
+                val accumProps = (step % logSteps == 0n);
                 mdStepLocal(step, timeStepSecs, current, accumProps, props, timer);
                 if (accumProps) {
                     reduceAndPrintProperties(timestep * step, props);
@@ -207,7 +207,7 @@ public class PenningTrap {
 
     }
 
-    public def logTime(desc : String, timerIndex : Int, timer : Timer) {
+    public def logTime(desc:String, timerIndex:Long, timer:Timer) {
         Console.OUT.printf(desc + ": %g seconds\n", (timer.mean(timerIndex) as Double) / 1e9);
     }
 
@@ -428,7 +428,7 @@ public class PenningTrap {
         numAtoms = reader.readInt();
         Console.OUT.println("reading " + numAtoms + " atoms");
         val atoms = new Rail[MMAtom](numAtoms);
-        var i:Int = 0;
+        var i:Long = 0;
         try {
             for (i=0; i < numAtoms; i++) {
                 val index = reader.readInt();

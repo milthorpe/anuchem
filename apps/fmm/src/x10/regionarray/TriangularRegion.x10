@@ -1,9 +1,19 @@
+/*
+ * This file is part of ANUChem.
+ *
+ *  This file is licensed to You under the Eclipse Public License (EPL);
+ *  You may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *      http://www.opensource.org/licenses/eclipse-1.0.php
+ *
+ * (C) Copyright Josh Milthorpe 2013.
+ */
 package x10.regionarray;
 
 public class TriangularRegion extends Region{rect} {
 // TODO not really rect! should be 'dense' XTENLANG-3000
     // XTENLANG-49
-    static type TriangularRegion(rank:Int) = TriangularRegion{self.rank==rank,rect};
+    static type TriangularRegion(rank:Long) = TriangularRegion{self.rank==rank,rect};
 
     val dim:Long;
     val rowMin:Long;
@@ -39,13 +49,13 @@ public class TriangularRegion extends Region{rect} {
         return ((i0)*(i0+1))/2 + i1;
     }
 
-    public def min():(Int)=>Long = (i:Int)=> {
+    public def min():(Long)=>Long = (i:Long)=> {
         if (i==0) return rowMin;
         else if (i==1) return colMin;
         else throw new ArrayIndexOutOfBoundsException("min: "+i+" is not a valid rank for "+this);
     };
 
-    public def max():(Int)=>Long = (i:Int)=> {
+    public def max():(Long)=>Long = (i:Long)=> {
         if (i==0) return rowMin+dim;
         else if (i==1) return colMin+dim;
         else throw new ArrayIndexOutOfBoundsException("max: "+i+" is not a valid rank for "+this);
@@ -98,22 +108,22 @@ public class TriangularRegion extends Region{rect} {
         return new TriangularRegion(rowMin + v(0), colMin + v(1), dim, lower) as Region(rank);
     }
 
-    public def projection(axis: Int): Region(1) {
-        switch (axis) {
-            case 0:
+    public def projection(axis:Long): Region(1) {
+        switch(axis as Int) {
+            case 0n:
                 return Region.make(rowMin..(rowMin+dim));
-            case 1:
+            case 1n:
                 return Region.make(colMin..(colMin+dim));
             default:
                 throw new UnsupportedOperationException("projection(" + axis + ")");
         }
     }
 
-    public def eliminate(axis: Int): Region(1) {
-        switch (axis) {
-            case 0:
+    public def eliminate(axis:Long): Region(1) {
+        switch(axis as Int) {
+            case 0n:
                 return Region.make(colMin..(colMin+dim));
-            case 1:
+            case 1n:
                 return Region.make(rowMin..(rowMin+dim));
             default:
                 throw new UnsupportedOperationException("projection(" + axis + ")");

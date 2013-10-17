@@ -77,11 +77,11 @@ public class TestCyclotron {
         var edgeLength:Double = 0.0508; // trap side length
         var radius:Double = 0.006; // excitation radius
         var dt:Double = 0.0;
-        var steps:Int = 0;
-        var logSteps:Int = 1;
+        var steps:Int = 0n;
+        var logSteps:Int = 1n;
         var fmmDensity:Double = 60.0;
-        var fmmDMax:Int = 4;
-        var fmmTerms:Int = 10;
+        var fmmDMax:Int = 4n;
+        var fmmTerms:Int = 10n;
 
         line = fil.readLine();
         if (line.startsWith("B")) {
@@ -141,7 +141,7 @@ public class TestCyclotron {
             line = fil.readLine();
         }
 
-        var totalIons:Int = 0;
+        var totalIons:Int = 0n;
         val speciesList = new ArrayList[SpeciesSpec]();
         try {
             while (line != null && line.startsWith("species")) {
@@ -173,7 +173,7 @@ public class TestCyclotron {
         if (snapshotFileName == null) {
             atoms = new Rail[MMAtom](totalIons);
         }
-        var i:Int = 0;
+        var i:Int = 0n;
         for (speciesId in 0..(speciesList.size()-1)) {
             val species = speciesList(speciesId);
             val omega_c = species.charge * B / species.mass * (PenningTrap.CHARGE_MASS_FACTOR);
@@ -207,7 +207,7 @@ public class TestCyclotron {
 
         val trap = new PenningTrap(totalIons, V, new Vector3d(0.0, 0.0, B), edgeLength, fmmDMax, fmmTerms, speciesList.toRail());
 
-        var resumeStep:Int = 0;
+        var resumeStep:Int = 0n;
         if (snapshotFileName != null) {
             val state = trap.loadFromSnapshot(snapshotFileName);
             resumeStep = state.first;
