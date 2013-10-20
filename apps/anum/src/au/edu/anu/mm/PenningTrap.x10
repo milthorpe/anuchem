@@ -309,7 +309,10 @@ public class PenningTrap {
             }
         }
 
-        Team.WORLD.barrier();
+        // need to synchronize max FMM times - use this as a defacto barrier
+        val fmmTimer = FastMultipoleMethod.localData.timer;
+        Team.WORLD.allreduce[Long](fmmTimer.total, 0L, fmmTimer.total, 0L, fmmTimer.total.size, Team.MAX);
+        //Team.WORLD.barrier();
 
         var currentLocal:Double = 0.0;
 
