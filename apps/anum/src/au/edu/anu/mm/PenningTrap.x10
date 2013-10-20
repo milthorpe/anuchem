@@ -313,9 +313,9 @@ public class PenningTrap {
 
         var currentLocal:Double = 0.0;
 
-        // TODO async
         //var placeAtoms:Int = 0;
-        for (leafOctant in leafOctants) {
+        finish for (leafOctant in leafOctants) async {
+            val boxProps = new SystemProperties();
             val boxAtoms = leafOctant.atoms;
             //placeAtoms += boxAtoms.size;
             for (i in 0..(boxAtoms.size()-1)) {
@@ -331,10 +331,11 @@ public class PenningTrap {
                 } else {
                     currentLocal += getImageCurrent(atom);
                     if (accumProps) {
-                        props.accumulate(atom, this);
+                        boxProps.accumulate(atom, this);
                     }
                 }
             }
+            atomic props.add(boxProps);
         }
         //Console.OUT.println("at " + here + " placeAtoms: " + placeAtoms);
         current(step) = currentLocal;
@@ -564,6 +565,15 @@ public class PenningTrap {
             raw(4) += atom.mass * atom.velocity.lengthSquared();
             raw(5) += atom.charge * trap.getElectrostaticPotential(atom.centre);
             raw(6) += trap.getImageCurrent(atom);
+        }
+
+        /**
+         * Adds the given properties to this.
+         */
+        public @Inline def add(props:SystemProperties) {
+            for (i in 0..(raw.size-1)) {
+                this.raw(i) += props.raw(i);
+            }
         }
 
         /**
