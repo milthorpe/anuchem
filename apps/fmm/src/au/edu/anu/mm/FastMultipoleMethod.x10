@@ -720,9 +720,7 @@ public class FastMultipoleMethod {
         local.timer.start(FmmLocalData.TIMER_INDEX_PREFETCH);
 
         val myLET = local.locallyEssentialTree;
-        val firstLeafOctant = local.firstLeafOctant;
         val myCombinedUList = myLET.combinedUList;
-        val cachedAtoms = myLET.cachedAtoms;
 
         val uListPlaces = new HashMap[Long,ArrayList[UInt]](26); // a place may have up to 26 immediate neighbours
         
@@ -730,24 +728,30 @@ public class FastMultipoleMethod {
         for (octantId in myCombinedUList) {
             val placeId = local.getPlaceId(octantId);
             if (placeId >= 0 && placeId < Place.MAX_PLACES) {
-                // leaf octant exists at Place(placeId)
-                var uListForPlace : ArrayList[UInt] = uListPlaces.getOrElse(placeId, null);
-                if (uListForPlace == null) {
-                    uListForPlace = new ArrayList[UInt]();
-                    uListPlaces.put(placeId, uListForPlace);
+                if (placeId == here.id) {
+                    // leaf octant is local
+                    val octant = local.getOctant(octantId) as LeafOctant;
+                    if (octant != null) {
+                        myLET.setAtomDataForOctant(octantId, octant.getSources());
+                    }
+                } else {
+                    // leaf octant exists at Place(placeId)
+                    var uListForPlace : ArrayList[UInt] = uListPlaces.getOrElse(placeId, null);
+                    if (uListForPlace == null) {
+                        uListForPlace = new ArrayList[UInt]();
+                        uListPlaces.put(placeId, uListForPlace);
+                    }
+                    uListForPlace.add(octantId);
                 }
-                uListForPlace.add(octantId);
             }
         }
 
-        // retrieve the partial list for each place and store into my LET
+        // retrieve the partial list for each remote place and store into my LET
         finish for (placeEntry in uListPlaces.entries()) async {
             val placeId = placeEntry.getKey();
             val uListForPlace = placeEntry.getValue();
             val uListArray = uListForPlace.toRail();
-            val atomsForPlace = (placeId == here.id) ?
-                FastMultipoleMethod.getAtomsForOctantList(uListArray) :
-                at(Place.place(placeId)) { FastMultipoleMethod.getAtomsForOctantList(uListArray)};
+            val atomsForPlace = at(Place.place(placeId)) { FastMultipoleMethod.getAtomsForOctantList(uListArray)};
             for (i in 0..(uListArray.size-1)) {
                 myLET.setAtomDataForOctant(uListArray(i), atomsForPlace(i));
             }
