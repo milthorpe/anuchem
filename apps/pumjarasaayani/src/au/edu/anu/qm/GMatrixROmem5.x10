@@ -466,6 +466,11 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                             timer.start(TIMER_DSYRK);
                             DenseMatrixBLAS.symRankKUpdateTrans(a, localK, [a.N, a.M], [0, 0, 0, offsetHere], true, true);
                             timer.stop(TIMER_DSYRK);
+@Ifdef("__DEBUG__") {
+                                val dsyrkSecs = timer.last(TIMER_DSYRK) / 1e9;
+                                val dsyrkGFlops = a.N * a.N * a.M / 1e9;
+                                Console.OUT.printf("Place(%d) DSYRK of %.2g GFLOPs took %.2g s (%.2g GFLOP/s)\n", here.id, dsyrkGFlops, dsyrkSecs, (dsyrkGFlops/dsyrkSecs));
+}
                         }
 
                         // This produces K/2 & TODO: ring broadcast ?
@@ -484,6 +489,12 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
                                 timer.start(TIMER_DGEMM);
                                 DenseMatrixBLAS.compTransMult(a, thisBlock, localK, [a.N, thisBlock.N, a.M], [0, 0, 0, 0, 0, offsetAtPlace(thisBlockPlace)], true);
                                 timer.stop(TIMER_DGEMM);
+
+@Ifdef("__DEBUG__") {
+                                val dgemmSecs = timer.last(TIMER_DGEMM) / 1e9;
+                                val dgemmGFlops = 2 * a.N * thisBlock.N * a.M / 1e9;
+                                Console.OUT.printf(here + " DGEMM of %.2g GFLOPs for block %d from place %d took %.2g s (%.2g GFLOP/s, %.2g FLOPs/word)\n", dgemmGFlops, (blk-1), thisBlockPlace, dgemmSecs, (dgemmGFlops/dgemmSecs), (2*a.N));
+}
                             }
 
                         }
@@ -595,10 +606,16 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
 
         val nPlaces=Place.MAX_PLACES;
         // Copy G to place 0 // can improve further by copying only contributing blocks?
-        for (pid in 0..(nPlaces-1)) {
-            val mat=at(Place(pid)) { distJ.local() };
-            DenseMatrix.copySubset(mat, 0, 0, this, offsetAtPlace(pid), 0, mat.M, mat.N);
+        val place0GRef = new GlobalRail[Double](this.d);
+        finish for (pid in 0..(nPlaces-1)) {
+            val placeOffset = offsetAtPlace(pid) * this.M;
+            at(Place(pid)) {
+                val placeData = distJ.local().d;
+                Rail.asyncCopy(placeData, 0, place0GRef, placeOffset, placeData.size);
+            }
+            //DenseMatrix.copySubset(mat, 0, 0, this, offsetAtPlace(pid), 0, mat.M, mat.N);
         }
+
         // Fix G
         for (pid in 0..(nPlaces-1)) {
             for (var j:Long=offsetAtPlace(pid); j<offsetAtPlace(pid+1); j++) 
@@ -615,7 +632,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
             }
         }
         timer.stop(TIMER_TOTAL);
-        Console.OUT.printf("    Time to construct GMatrix with RO: %.3g seconds\n", (timer.last(TIMER_TOTAL) as Double) / 1e9); 
+        Console.OUT.printf("    Time to construct GMatrix with RO: %.2g seconds\n", (timer.last(TIMER_TOTAL) as Double) / 1e9); 
         @Ifdef("__PAPI__"){ papi.printFlops(); papi.printMemoryOps();}
     }
 
@@ -689,11 +706,18 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
         public def fetchNext(ddm:DistDenseMatrix, nextBlockPlace:Long) {
             // fetch next data from given place
             val nextDataRef = new GlobalRail(nextData);
+            val start = System.nanoTime();
             finish nextDim = at(Place(nextBlockPlace)) {
                 val dataHere = ddm.local().d;
                 Rail.asyncCopy(dataHere, 0, nextDataRef, 0, dataHere.size);
                 Pair(ddm.local().M, ddm.local().N)
             };
+@Ifdef("__DEBUG__") {
+            val stop = System.nanoTime();
+            val secs = (stop-start) / 1e9;
+            val gbytes = nextDim.first * nextDim.second / 1e9;
+            Console.OUT.printf("Place(%d) transfer 8 * %.2g GBs from Place(%d) took %.2g s (8 * %.2g GBytes/s)\n", here.id, gbytes, nextBlockPlace, secs, (gbytes/secs));
+}
         }
     }
 
