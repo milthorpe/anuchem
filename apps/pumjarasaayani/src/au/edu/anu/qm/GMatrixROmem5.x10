@@ -469,7 +469,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
 @Ifdef("__DEBUG__") {
                                 val dsyrkSecs = timer.last(TIMER_DSYRK) / 1e9;
                                 val dsyrkGFlops = a.N * a.N * a.M / 1e9;
-                                Console.OUT.printf("Place(%d) DSYRK of %.2g GFLOPs took %.2g s (%.2g GFLOP/s)\n", here.id, dsyrkGFlops, dsyrkSecs, (dsyrkGFlops/dsyrkSecs));
+                                Console.OUT.printf("Place(%d) DSYRK of %.2g GFLOPs took %.2g s ( %.2g GFLOP/s)\n", here.id, dsyrkGFlops, dsyrkSecs, (dsyrkGFlops/dsyrkSecs));
 }
                         }
 
@@ -493,7 +493,7 @@ public class GMatrixROmem5 extends DenseMatrix{self.M==self.N} {
 @Ifdef("__DEBUG__") {
                                 val dgemmSecs = timer.last(TIMER_DGEMM) / 1e9;
                                 val dgemmGFlops = 2 * a.N * thisBlock.N * a.M / 1e9;
-                                Console.OUT.printf(here + " DGEMM of %.2g GFLOPs for block %d from place %d took %.2g s (%.2g GFLOP/s, %.2g FLOPs/word)\n", dgemmGFlops, (blk-1), thisBlockPlace, dgemmSecs, (dgemmGFlops/dgemmSecs), (2*a.N));
+                                Console.OUT.printf("Place(%d) DGEMM of %.2g GFLOPs from place %d took %.2g s ( %.2g GFLOP/s, %d FLOPs/word)\n", here.id, dgemmGFlops, thisBlockPlace, dgemmSecs, (dgemmGFlops/dgemmSecs), (2*a.N));
 }
                             }
 
