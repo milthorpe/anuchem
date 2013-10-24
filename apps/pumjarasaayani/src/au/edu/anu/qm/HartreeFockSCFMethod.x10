@@ -18,7 +18,6 @@ import au.edu.anu.util.Timer;
 import au.edu.anu.util.StatisticalTimer;
 
 import x10.matrix.DenseMatrix;
-import x10.matrix.blas.DenseMatrixBLAS;
 
 /**
  * Implementation of Hartree-Fock SCF method
@@ -81,12 +80,16 @@ public class HartreeFockSCFMethod extends SCFMethod {
         val jd = JobDefaults.getInstance();
 
         val gMatrix:GMatrix{self.N==N};
-        val gMatrixRo:GMatrixROmem5{self.N==N}; // change version here 1st out of 3 places
+        val roFockMethod:ROFockMethod; // change version here 1st out of 3 places
+        val gMatrixRo:DenseMatrix(N,N);
         val roThresh=jd.roThresh;
         val thresh=jd.thresh;
-        if (jd.roOn>0n && maxIteration>0n) {
-            gMatrixRo = new GMatrixROmem5(N, bfs, molecule, noOfOccupancies,0.,roZ*roThresh); // change version here 2nd out of 3 places
+        if (jd.roOn > 0n && maxIteration > 0n) {
+            // change version here 2nd out of 3 places
+            roFockMethod = new ROFockMethod(N, bfs, molecule, noOfOccupancies, 0., roZ*roThresh);
+            gMatrixRo = new DenseMatrix(N,N);
         } else {
+            roFockMethod = null;
             gMatrixRo = null;
         }
         if ((jd.roOn==0n || jd.compareRo==true) && maxIteration>0n) {
@@ -129,7 +132,7 @@ public class HartreeFockSCFMethod extends SCFMethod {
             
             // make the G matrix
             if (jd.roOn>0) {
-                gMatrixRo.compute(density, mos);           
+                roFockMethod.compute(density, mos, gMatrixRo);
                 if (jd.compareRo==true) {
                     gMatrix.compute(density);
                     Console.OUT.println("G Mat");
@@ -172,7 +175,7 @@ public class HartreeFockSCFMethod extends SCFMethod {
                     gMatrix.timer.clear(0);
                 }
                 if (jd.roOn>0n) {
-                    gMatrixRo.timer.clear(0);
+                    roFockMethod.timer.clear(0);
                 }
             }
             Console.OUT.printf("\n----------------------------------------------------------\n");
@@ -210,15 +213,16 @@ public class HartreeFockSCFMethod extends SCFMethod {
         }
 
         if (jd.roOn>0n && maxIteration>0n) {
-            Console.OUT.println("GMatrixROmemX construction timings:");
-            gMatrixRo.timer.printSeconds();
+            Console.OUT.println("ROFockMethod construction timings:");
+            roFockMethod.timer.printSeconds();
         }
     
         // long range energy
         //Console.OUT.println("before RO heapSize = " + System.heapSize());
         Console.OUT.printf("Long-range - RO\n");
-        val gMatrixRoL = new GMatrixROmem5(N, bfs, molecule, noOfOccupancies, jd.roZ*jd.omega, roZ*jd.roThresh); // RO Thesis Eq (2.22) // change version here 3rd out of 3 places
-        gMatrixRoL.compute(density, mos);
+        val roFockMethodL = new ROFockMethod(N, bfs, molecule, noOfOccupancies, jd.roZ*jd.omega, roZ*jd.roThresh); // RO Thesis Eq (2.22) // change version here 3rd out of 3 places
+        val gMatrixRoL = new DenseMatrix(N, N);
+        roFockMethodL.compute(density, mos, gMatrixRoL);
 
         if (jd.compareRo) {
             Console.OUT.printf("Long-range - Conventional\n");
