@@ -38,14 +38,13 @@ import edu.utk.cs.papi.PAPI;
 
 public class ROFockMethod(N:Long) {
     // Timer & PAPI performance counters
-    public val timer=new StatisticalTimer(7);
+    public val timer=new StatisticalTimer(6);
     val TIMER_TOTAL=0;
     val TIMER_AUX=1;
     val TIMER_JMATRIX=2;
     val TIMER_K=3;
     val TIMER_DSYRK=4;
     val TIMER_DGEMM=5;
-    val TIMER_COP=6;
 
     transient var papi:PAPI=new PAPI(); // @Ifdef("__PAPI__") // XTENLANG-3132
 
@@ -53,22 +52,26 @@ public class ROFockMethod(N:Long) {
     val auxJMat_plh:PlaceLocalHandle[Rail[Rail[Double]]], auxKMat_plh:PlaceLocalHandle[Rail[Long]], remoteBlockK_plh:PlaceLocalHandle[RemoteBlock], ylms_plh:PlaceLocalHandle[Rail[Rail[Double]]], shellPairs_plh:PlaceLocalHandle[Rail[ShellPair]];
     val dlm_plh:PlaceLocalHandle[Rail[Double]], e_plh:PlaceLocalHandle[Rail[Double]], shellPairRange_plh:PlaceLocalHandle[Rail[Long]]; 
     val auxK_wlh:WorkerLocalHandle[Rail[Double]], intPack_wlh:WorkerLocalHandle[Integral_Pack], dlm_wlh:WorkerLocalHandle[Rail[Double]];
-    val nOrbitals:Long, norm:Rail[Double], roN:Int, roNK:Int, roL:Int, roK:Int; 
-    val roZ:Double, omega:Double, roThresh:Double, shellAtPlace:Rail[Long], funcAtPlace:Rail[Long], offsetAtPlace:Rail[Long];
+    val nOrbitals:Long, norm:Rail[Double], roN:Int, roNK:Int, roK:Int; 
+    val roZ:Double, shellAtPlace:Rail[Long], funcAtPlace:Rail[Long], offsetAtPlace:Rail[Long];
 
     public def this(N:Long, bfs:BasisFunctions, mol:Molecule[QMAtom], nOrbitals:Long, omega:Double, roThresh:Double) {     
         Console.OUT.printf("\nROFockMethod.x10 'public def this' %s...\n", getDateString());
         property(N);
-        val timer=new StatisticalTimer(1), jd=JobDefaults.getInstance(), nPlaces=Place.MAX_PLACES, nAtoms=mol.getNumberOfAtoms(), 
-            maxam=bfs.getShellList().getMaximumAngularMomentum(), maxam1=(maxam+1)*(maxam+2)/2,
-            l_n=new Rail[Int](jd.roN+3), aux=new Integral_Pack(jd.roN, jd.roL, omega, roThresh, jd.rad, jd.roZ),
-            shellAtPlace=new Rail[Long](nPlaces), funcAtPlace=new Rail[Long](nPlaces), offsetAtPlace=new Rail[Long](nPlaces+1), place2atom=new Rail[Long](nPlaces+1), place2func=new Rail[Long](nPlaces+1);
-        var nShells:Long=0, mu:Long=0, nu:Long=0, ind:Long=0, totY:Long=0, totJ:Long=0, skip:Long=0, pid:Long=nPlaces-1, func:Long=0;
+        val maxam=bfs.getShellList().getMaximumAngularMomentum();
+        val maxam1=(maxam+1)*(maxam+2)/2;
+        val timer=new StatisticalTimer(1), jd=JobDefaults.getInstance(), nPlaces=Place.MAX_PLACES,
+            shellAtPlace=new Rail[Long](nPlaces), funcAtPlace=new Rail[Long](nPlaces), offsetAtPlace=new Rail[Long](nPlaces+1);
 
         timer.start(0);
         // Set up nShells and RO variables for later use
-        for (var a:Long=0; a<nAtoms; nShells+=mol.getAtom(a++).getBasisFunctions().size()); 
+        var nShells:Long = 0;
+        for (atom in mol.getAtoms()) nShells += atom.getBasisFunctions().size(); 
+
+        val roL:Int;
         if (omega>0.) { // long-range Ewald operator
+            val aux = new Integral_Pack(jd.roN, jd.roL, omega, roThresh, jd.rad, jd.roZ);
+            val l_n = new Rail[Int](jd.roN+3);
             aux.getNL(l_n);
             roN=l_n(0);
             roL=l_n(roN+2);             
@@ -83,9 +86,14 @@ public class ROFockMethod(N:Long) {
         // functions so that each place has approximately equal total
         // angular momentum over all functions. Run backward so that 
         // (if there is load imbalance) the head node has less work.
+        val nAtoms=mol.getNumberOfAtoms();
+        val place2atom=new Rail[Long](nPlaces+1);
         place2atom(nPlaces)=nAtoms-1; place2atom(0)=0;
+        val place2func=new Rail[Long](nPlaces+1);
         place2func(nPlaces)=mol.getAtom(nAtoms-1).getBasisFunctions().size(); place2func(0)=0;
-        val npp=N/nPlaces; 
+        val npp=N/nPlaces;
+        var pid:Long=nPlaces-1;
+        var func:Long=0;
         for(var a:Long=nAtoms-1; a>=0 && pid>0; a--) { // centre a  
             val aFunc=mol.getAtom(a).getBasisFunctions(), naFunc=aFunc.size();          
             for(var i:Long=naFunc-1; i>=0 && pid>0; i--) { // basis functions on a
@@ -98,11 +106,13 @@ public class ROFockMethod(N:Long) {
                 }
             }
         }
-        if (pid>0n) {
+        if (pid > 0) {
             Console.ERR.println("Too many places! Last pid: "+pid); System.setExitCode(1n); 
             throw new UnsupportedOperationException("Too many places! Last pid: "+pid);
-        }      
-        pid=1; mu=0; // Run forward
+        }
+
+        var mu:Long=0;
+        pid=1;// Run forward
         offsetAtPlace(0)=0; offsetAtPlace(nPlaces)=N; 
         for(var a:Long=0; a<nAtoms; a++) { // centre a  
             val aFunc=mol.getAtom(a).getBasisFunctions(), naFunc=aFunc.size();          
@@ -133,7 +143,7 @@ public class ROFockMethod(N:Long) {
         // distributed generation of shellPairs_plh
         val threshold=roThresh*jd.roZ*jd.roZ*1e-3; 
         // ** Threshold must be relative to roThresh *** otherwise Z scaling will cause a problem: This is effectively a density threshold RO Thesis (2.26)    
-        val roL_val=roL,roN_val=roN,roZ_val=jd.roZ,nShells_val=nShells, sizeInfo=PlaceLocalHandle.make[Rail[Double]](PlaceGroup.WORLD, ()=> new Rail[Double](4));
+        val roN_val=roN,roZ_val=jd.roZ,nShells_val=nShells, sizeInfo=PlaceLocalHandle.make[Rail[Double]](PlaceGroup.WORLD, ()=> new Rail[Double](4));
         val shellPairRange_plh=PlaceLocalHandle.make[Rail[Long]](PlaceGroup.WORLD, ()=>new Rail[Long](shellAtPlace(here.id)));
         val shellPairs_plh=PlaceLocalHandle.make[Rail[ShellPair]](
             PlaceGroup.WORLD, 
@@ -178,10 +188,8 @@ public class ROFockMethod(N:Long) {
                                     }
                                 }
                                 contrib=Math.abs(contrib); 
-                                if (/*offsetAtPlace(pid) <= spNu && spNu < offsetAtPlace(pid+1) && spMu > spNu/*/false) {
-                                    atomic info(3)++; 
-                                } else if (contrib >= threshold) {
-                                    val maxL = new Rail[Int](roN_val+1, roL_val); // change roL_val to smaller number
+                                if (contrib >= threshold) {
+                                    val maxL = new Rail[Int](roN_val+1, roL); // change roL to smaller number
                                     val sp = new ShellPair(aang, bang, aPoint, bPoint, zetaA, zetaB, conA, conB, spMu, spNu, maxL, contrib);
                                     atomic {
                                         localShellPairs.add(sp);
@@ -228,8 +236,9 @@ public class ROFockMethod(N:Long) {
         Console.OUT.printf("Block size at each place: ideal=%.2f max=%.0f min=%.0f\n Imbalance cost=%.2f %%\n\n", ideal, max, min, (max/ideal-1.)*100.);
 
         tot=N*(1.+N)*.5; tot2=0.; ideal=tot/nPlaces; max=min=at(Place(0)) sizeInfo()(0);
-        Console.OUT.printf("3. Number of Aux(mu,nu) calculated at each place\nPlace  Functions  Fraction\n");    
-        for (i in (0..(nPlaces-1))) {
+        var totY:Long=0, totJ:Long=0, skip:Long=0;
+        Console.OUT.printf("3. Number of Aux(mu,nu) calculated at each place\nPlace  Functions  Fraction\n");
+        for (i in 0..(nPlaces-1)) {
             val cost=at(Place(i)) sizeInfo()(0);
             totY+=at(Place(i)) sizeInfo()(1);
             totJ+=at(Place(i)) sizeInfo()(2);
@@ -248,8 +257,8 @@ public class ROFockMethod(N:Long) {
         Console.OUT.println ("    ROFockMethod Initialization 'up to ShellPair' time: " + (timer.total(0) as Double) / 1e9 + " seconds");
         timer.start(0);
         
-        val intPack_wlh=new WorkerLocalHandle[Integral_Pack](()=> new Integral_Pack(jd.roN, jd.roL, omega, roThresh, jd.rad, jd.roZ));
-        this.ylms_plh=PlaceLocalHandle.make[Rail[Rail[Double]]](
+        val intPack_wlh = new WorkerLocalHandle[Integral_Pack](()=> new Integral_Pack(jd.roN, jd.roL, omega, roThresh, jd.rad, jd.roZ));
+        this.ylms_plh = PlaceLocalHandle.make[Rail[Rail[Double]]](
             PlaceGroup.WORLD, 
             ()=>{
                 val shp = shellPairs_plh();
@@ -257,7 +266,7 @@ public class ROFockMethod(N:Long) {
                 finish for (i in 0..(shp.size-1)) async {
                     val sp = shp(i);
                     val tempY = new Rail[Double](sp.conA.size * sp.conB.size * (sp.maxL+1)*(sp.maxL+1));
-                    intPack_wlh().genClassY(sp.bPoint, sp.aPoint, sp.zetaB, sp.zetaA, roL_val, tempY);
+                    intPack_wlh().genClassY(sp.bPoint, sp.aPoint, sp.zetaB, sp.zetaA, roL, tempY);
                     ylms_plh(i) = tempY;
                 } 
                 ylms_plh
@@ -327,7 +336,7 @@ public class ROFockMethod(N:Long) {
 
         this.shellAtPlace=shellAtPlace; this.offsetAtPlace=offsetAtPlace; this.funcAtPlace=funcAtPlace;
         this.roK=roK; this.roZ=jd.roZ; this.intPack_wlh=intPack_wlh; this.shellPairs_plh=shellPairs_plh;
-        this.nOrbitals=nOrbitals; this.omega=omega; this.roThresh=roThresh; this.norm=bfs.getNormalizationFactors();
+        this.nOrbitals=nOrbitals; this.norm=bfs.getNormalizationFactors();
 
         timer.stop(0);
         Console.OUT.println("    ROFockMethod Initialization 'total' time: " + (timer.total(0) as Double) / 1e9 + " seconds");
