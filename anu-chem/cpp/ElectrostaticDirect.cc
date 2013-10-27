@@ -99,7 +99,8 @@ static double getEnergy() {
         double fi = 0.0;
         double fj = 0.0;
         double fk = 0.0;
-        for (int j = 0; j < i; j++) {
+        for (int j = 0; j < myNumAtoms; j++) {
+            if (i == j) continue;
             Atom atomJ = atoms[j];
             double dx = ix - atomJ.centre.i;
             double dy = iy - atomJ.centre.j;
@@ -112,7 +113,7 @@ static double getEnergy() {
 
             double e = chargeInt * invR;
             double forceScale =  e * invR2;
-            energy += 2.0 * e;
+            energy += e;
 
             double fx = forceScale * dx;
             double fy = forceScale * dy;
@@ -122,9 +123,9 @@ static double getEnergy() {
             fj += fy;
             fk += fz;
 
-            atomJ.force.i -= fx;
-            atomJ.force.j -= fy;
-            atomJ.force.k -= fz;
+            //atomJ.force.i -= fx;
+            //atomJ.force.j -= fy;
+            //atomJ.force.k -= fz;
         }
         atomI.force.i = fi;
         atomI.force.j = fj;
@@ -261,7 +262,7 @@ int main(int argc, char* argv[]) {
     MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
     MPI_Comm_size(MPI_COMM_WORLD, &nTasks);
 
-	numAtoms = 30000;
+	numAtoms = 10000;
 	if (argc > 1) {
 		char* end;
 		numAtoms = strtol(argv[1], &end, 10);

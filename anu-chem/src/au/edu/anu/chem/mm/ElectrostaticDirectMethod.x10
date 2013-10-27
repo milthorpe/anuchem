@@ -98,31 +98,32 @@ public class ElectrostaticDirectMethod {
                         var fix:Double = atomI.force.i;
                         var fiy:Double = atomI.force.j;
                         var fiz:Double = atomI.force.k;
-                        for (j in 0..(i-1)) {
+                        for (j in 0..(myAtoms.size-1)) {
+                            if (i==j) continue;
 				            val atomJ = myAtoms(j);
                             val cj = atomJ.centre;
-                            val xj = cj.i;
-                            val yj = cj.j;
-                            val zj = cj.k;
-                            val qj = atomJ.charge;
 
-                            val dx = xj-xi;
-                            val dy = yj-yi;
-                            val dz = zj-zi;
+                            val dx = cj.i-xi;
+                            val dy = cj.j-yi;
+                            val dz = cj.k-zi;
+
                             val r2 = (dx*dx + dy*dy + dz*dz);
-                            val invR:Double;
-                            val invR2:Double;
-                            invR2 = 1.0 / r2;
-                            invR = Math.sqrt(invR2);
-                            val qq = qi * qj;
+                            val invR2 = 1.0 / r2;
+                            val qq = qi * atomJ.charge;
+                            val invR = Math.sqrt(invR2);
+
                             val e = invR * qq;
+                            val forceScaling = e * invR2;
                             energyThisPlace += e;
 
-                            val forceScaling = e * invR2;
-                            fix += forceScaling * dx;
-                            fiy += forceScaling * dy;
-                            fiz += forceScaling * dz;
-                            atomJ.force += Vector3d(-fix, -fiy, -fiz);
+                            val fx = forceScaling * dx;
+                            val fy = forceScaling * dy;
+                            val fz = forceScaling * dz;
+
+                            fix += fx;
+                            fiy += fy;
+                            fiz += fz;
+                            //atomJ.force += Vector3d(-fx, -fy, -fz);
                         }
                         atomI.force = Vector3d(fix, fiy, fiz);
                     }
