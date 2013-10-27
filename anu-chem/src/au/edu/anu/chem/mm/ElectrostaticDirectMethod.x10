@@ -90,17 +90,41 @@ public class ElectrostaticDirectMethod {
                     // energy for all interactions within this place
                     for (i in 0..(myAtoms.size-1)) {
 			            val atomI = myAtoms(i);
+                        val ci = atomI.centre;
+                        val xi = ci.i;
+                        val yi = ci.j;
+                        val zi = ci.k;
+                        val qi = atomI.charge;
+                        var fix:Double = atomI.force.i;
+                        var fiy:Double = atomI.force.j;
+                        var fiz:Double = atomI.force.k;
                         for (j in 0..(i-1)) {
 				            val atomJ = myAtoms(j);
-                            val rVec = atomJ.centre - atomI.centre;
-                            val invR2 = 1.0 / rVec.lengthSquared();
-                            val invR = Math.sqrt(invR2);
-                            val e = atomI.charge * atomJ.charge * invR;
-                            energyThisPlace += 2.0 * e;
-                            val pairForce = e * invR2 * rVec;
-                            atomI.force += pairForce;
-				            atomJ.force -= pairForce;
+                            val cj = atomJ.centre;
+                            val xj = cj.i;
+                            val yj = cj.j;
+                            val zj = cj.k;
+                            val qj = atomJ.charge;
+
+                            val dx = xj-xi;
+                            val dy = yj-yi;
+                            val dz = zj-zi;
+                            val r2 = (dx*dx + dy*dy + dz*dz);
+                            val invR:Double;
+                            val invR2:Double;
+                            invR2 = 1.0 / r2;
+                            invR = Math.sqrt(invR2);
+                            val qq = qi * qj;
+                            val e = invR * qq;
+                            energyThisPlace += e;
+
+                            val forceScaling = e * invR2;
+                            fix += forceScaling * dx;
+                            fiy += forceScaling * dy;
+                            fiz += forceScaling * dz;
+                            atomJ.force += Vector3d(-fix, -fiy, -fiz);
                         }
+                        atomI.force = Vector3d(fix, fiy, fiz);
                     }
 
                     var target : Place = nextPlace.next();
