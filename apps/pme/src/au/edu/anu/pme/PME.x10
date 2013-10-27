@@ -377,7 +377,7 @@ public class PME {
                 val localRegion = subCellsDist(here) as Region(3){rect};
                 for ([x,y,z] in localRegion) async {
                     val thisCell = cachedAtoms(x,y,z) as Rail[PointCharge];
-                    var myDirectEnergy : Double = 0.0;
+                    var cellDirectEnergy : Double = 0.0;
                     for (var i:Long = x-2; i<=x; i++) {
                         var n1:Int = 0n;
                         if (i < 0) {
@@ -412,7 +412,7 @@ public class PME {
                                                 val r = Math.sqrt(rSquared);
                                                 val chargeProduct = thisAtom.charge * otherAtomCharge;
                                                 val imageDirectComponent = chargeProduct * Math.erfc(beta * r) / r;
-                                                myDirectEnergy += imageDirectComponent;
+                                                cellDirectEnergy += imageDirectComponent;
                                             }
                                         }
                                     }
@@ -431,11 +431,11 @@ public class PME {
                             if (rSquared < cutoffSquared) {
                                 val r = Math.sqrt(rSquared);
                                 val directComponent = thisAtom.charge * otherAtom.charge * Math.erfc(beta * r) / r;
-                                myDirectEnergy += directComponent;
+                                cellDirectEnergy += directComponent;
                             }
                         }
                     }
-                    offer myDirectEnergy;
+                    offer cellDirectEnergy;
                 }
             }
         };

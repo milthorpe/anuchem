@@ -110,7 +110,7 @@ public class TestPMEWaterBox extends TestElectrostatic {
         }
         val atoms = DistArray.make[Rail[MMAtom]](Dist.makeUnique(), ([p] : Point) => tempAtoms(p).toRail());
 
-        val pme = new PME(edges, gridSizes, atoms, splineOrder, ewaldCoefficient, cutoff);
+        val pme = new PME_SPMD(edges, gridSizes, atoms, splineOrder, ewaldCoefficient, cutoff);
         pme.setup();
         val energy = pme.getEnergy();
         for (i in 1..ITERS) {
