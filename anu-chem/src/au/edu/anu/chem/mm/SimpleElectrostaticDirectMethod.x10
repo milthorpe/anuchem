@@ -10,11 +10,7 @@
  */
 package au.edu.anu.chem.mm;
 
-import x10x.vector.Point3d;
-import x10x.vector.Vector3d;
-import x10x.vector.Tuple3d;
 import au.edu.anu.util.Timer;
-import au.edu.anu.chem.PointCharge;
 
 /**
  * This class calculates electrostatic interactions between
@@ -22,18 +18,29 @@ import au.edu.anu.chem.PointCharge;
  * for comparison with other methods e.g. FMM, SPME.
  */
 public class SimpleElectrostaticDirectMethod {
+    public static val SIZE = 80.0;
     // TODO enum - XTENLANG-1118
     public static val TIMER_INDEX_TOTAL = 0;
     /** A multi-timer for the several segments of a single getEnergy invocation, indexed by the constants above. */
     public val timer = new Timer(1);
 
-    private val atoms : Rail[MMAtom];
+    public static class Atom {
+        public var x:Double;
+        public var y:Double;
+        public var z:Double;
+        public var charge:Double;
+        public var fx:Double;
+        public var fy:Double;
+        public var fz:Double;
+    }
+
+    private val atoms : Rail[Atom];
 
     /**
      * Creates a new electrostatic direct method.
      * @param atoms the atoms in the unit cell, divided into separate Rails for each place
      */
-    public def this(atoms : Rail[MMAtom]) {
+    public def this(atoms : Rail[Atom]) {
 		this.atoms = atoms;
     }
 	
@@ -44,10 +51,9 @@ public class SimpleElectrostaticDirectMethod {
 
         for (i in 0..(atoms.size-1)) {
             val atomI = atoms(i);
-            val ci = atomI.centre;
-            val xi = ci.i;
-            val yi = ci.j;
-            val zi = ci.k;
+            val xi = atomI.x;
+            val yi = atomI.y;
+            val zi = atomI.z;
             val qi = atomI.charge;
             var fix:Double = 0.0;
             var fiy:Double = 0.0;
@@ -55,11 +61,10 @@ public class SimpleElectrostaticDirectMethod {
             for (j in 0..(atoms.size-1)) {
                 if (i==j) continue;
 	            val atomJ = atoms(j);
-                val cj = atomJ.centre;
 
-                val dx = cj.i-xi;
-                val dy = cj.j-yi;
-                val dz = cj.k-zi;
+                val dx = atomJ.x-xi;
+                val dy = atomJ.y-yi;
+                val dz = atomJ.z-zi;
 
                 val r2 = (dx*dx + dy*dy + dz*dz);
                 val invR2 = 1.0 / r2;
@@ -79,11 +84,36 @@ public class SimpleElectrostaticDirectMethod {
                 fiz += fz;
                 //atomJ.force += Vector3d(-fx, -fy, -fz);
             }
-            atomI.force = Vector3d(fix, fiy, fiz);
+            atomI.fx += fix;
+            atomI.fy += fiy;
+            atomI.fz += fiz;
         }
        
         timer.stop(TIMER_INDEX_TOTAL);
         return 0.5 * energy;
+    }
+
+    public static def generateAtoms(numAtoms:Long):Rail[Atom] {
+	    val atoms = new Rail[Atom](numAtoms, (Long) => new Atom());
+        val gridSize = (Math.ceil(Math.cbrt(numAtoms))) as Int;
+        var gridPoint:Long = 0; // running total of assigned grid points
+	    for (i in 0..(numAtoms-1)) {
+		    val gridX = gridPoint / (gridSize * gridSize);
+            val gridY = (gridPoint - (gridX * gridSize * gridSize)) / gridSize;
+            val gridZ = gridPoint - (gridX * gridSize * gridSize) - (gridY * gridSize);
+            val x = (gridX + 0.5) * (SIZE / gridSize);
+            val y = (gridY + 0.5) * (SIZE / gridSize);
+            val z = (gridZ + 0.5) * (SIZE / gridSize);
+            atoms(i).x = x;
+		    atoms(i).y = y;
+		    atoms(i).z = z;
+		    atoms(i).charge = gridPoint%2==0?1.0:-1.0;
+            atoms(i).fx = 0.0;
+            atoms(i).fy = 0.0;
+            atoms(i).fz = 0.0;
+            gridPoint++;
+	    }
+        return atoms;
     }
 
 }

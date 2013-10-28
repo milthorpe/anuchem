@@ -41,9 +41,9 @@ public class TestDirectElectrostatic extends TestElectrostatic {
     public def test(numAtoms:Long) {
         Console.OUT.println("Testing direct electrostatic for " + numAtoms + " particles.");
 
-        val atoms = generateAtoms(numAtoms);
+        val atoms = SimpleElectrostaticDirectMethod.generateAtoms(numAtoms);
 
-        val direct = new SimpleElectrostaticDirectMethod(atoms(0));
+        val direct = new SimpleElectrostaticDirectMethod(atoms);
 
         @Ifdef("__PAPI__") {
         papi.initialize();
@@ -59,7 +59,7 @@ public class TestDirectElectrostatic extends TestElectrostatic {
         papi.shutDown();
         }
 
-        logTime("Time", ElectrostaticDirectMethod.TIMER_INDEX_TOTAL, direct.timer);
+        logTime("Time", SimpleElectrostaticDirectMethod.TIMER_INDEX_TOTAL, direct.timer);
         Console.OUT.println("energy = " + directEnergy);
     }
 }
