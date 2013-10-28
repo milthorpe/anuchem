@@ -12,7 +12,7 @@ package au.edu.anu.chem.mm;
 
 import x10.compiler.Ifdef;
 
-import au.edu.anu.chem.mm.ElectrostaticDirectMethod;
+import au.edu.anu.chem.mm.SimpleElectrostaticDirectMethod;
 import au.edu.anu.chem.mm.TestElectrostatic;
 import au.edu.anu.util.Timer;
 
@@ -43,7 +43,7 @@ public class TestDirectElectrostatic extends TestElectrostatic {
 
         val atoms = generateAtoms(numAtoms);
 
-        val direct = new ElectrostaticDirectMethod(atoms);
+        val direct = new SimpleElectrostaticDirectMethod(atoms(0));
 
         @Ifdef("__PAPI__") {
         papi.initialize();

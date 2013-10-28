@@ -1,6 +1,6 @@
 CPP := mpicxx
-CFLAGS := -O3 -funroll-loops -g
-#LDFLAGS := -lpapi
+CFLAGS := -O2 -g
+LDFLAGS := -lpapi
 
 run:	directcpp
 	./directcpp

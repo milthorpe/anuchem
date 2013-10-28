@@ -15,7 +15,7 @@
     <property name="optimize" value="true" />
     <property name="nochecks" value="true" />
     <property name="workstealing" value="false" />
-    <property name="debug" value="false"/>
+    <property name="debug" value="true"/>
     <property name="profile"  value="false"/>
     <property name="cpuprofile"  value="false"/>
     <property name="perftoolsHome" location="/scratch/perftools"/>
@@ -141,7 +141,7 @@
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/src">
             <arg value="-c"/>
-            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} ${x10c.workstealing} ${x10c.debug} ${x10c.cpuprofile} ${x10c.profile} ${define.papi} -report postcompile=1 -post '# -g ${x10c.optimize} -funroll-loops # ${post.papi} #' -x10lib ${xla.props} -x10lib ${x10papi.props} -sourcepath . -d '${target-src}' '${basedir}/${testclass}'"/>
+            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} ${x10c.workstealing} ${x10c.debug} ${x10c.cpuprofile} ${x10c.profile} ${define.papi} -report postcompile=1 -post '# -g -O2 ${x10c.optimize} # ${post.papi} #' -x10lib ${xla.props} -x10lib ${x10papi.props} -sourcepath . -d '${target-src}' '${basedir}/${testclass}'"/>
         </exec>
     </target>
 
