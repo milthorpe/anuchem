@@ -95,9 +95,9 @@ public class ElectrostaticDirectMethod {
                         val yi = ci.j;
                         val zi = ci.k;
                         val qi = atomI.charge;
-                        var fix:Double = atomI.force.i;
-                        var fiy:Double = atomI.force.j;
-                        var fiz:Double = atomI.force.k;
+                        var fix:Double = 0.0;
+                        var fiy:Double = 0.0;
+                        var fiz:Double = 0.0;
                         for (j in 0..(myAtoms.size-1)) {
                             if (i==j) continue;
 				            val atomJ = myAtoms(j);
