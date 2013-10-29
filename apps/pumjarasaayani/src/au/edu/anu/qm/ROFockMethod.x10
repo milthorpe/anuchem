@@ -455,7 +455,7 @@ public class ROFockMethod(N:Long) {
                         val remoteK = remoteBlockK_plh();
                         val a = halfAuxMat.local();
 
-                        val blocks = (Math.ceil(nPlaces*.5+.5) - ((nPlaces%2L==0L && pid<nPlaces/2)?1:0)) as Long;
+                        val blocks = (Math.ceil(nPlaces*.5+.5) - ((nPlaces%2L==0L && pid<nPlaces/2)?1:0)) as Long;//
                         var blk:Long = 1;
                         var nextBlockPlace:Long = -1;
                         finish {
@@ -488,7 +488,12 @@ public class ROFockMethod(N:Long) {
                                     nextBlockPlace = -1;
                                 }
                                 timer.start(TIMER_DGEMM);
-                                DenseMatrixBLAS.compTransMult(a, thisBlock, localK, [a.N, thisBlock.N, a.M], [0, 0, 0, 0, 0, offsetAtPlace(thisBlockPlace)], true);
+                                //if (nPlaces%2==1 || blk<blocks)
+                                    DenseMatrixBLAS.compTransMult(a, thisBlock, localK, [a.N, thisBlock.N, a.M], [0, 0, 0, 0, 0, offsetAtPlace(thisBlockPlace)], true);
+                                /*else if (pid<nPlaces/2)
+                                    DenseMatrixBLAS.compTransMult(a, thisBlock, localK, [a.N/2, thisBlock.N, a.M], [a.N-a.N/2, 0, 0, 0, a.N-a.N/2, offsetAtPlace(thisBlockPlace)], true);
+                                else
+                                    DenseMatrixBLAS.compTransMult(a, thisBlock, localK, [a.N, thisBlock.N-thisBlock.N/2, a.M], [0, 0, 0, 0, 0, offsetAtPlace(thisBlockPlace)], true);*/
                                 timer.stop(TIMER_DGEMM);
 
 @Ifdef("__DEBUG__") {
@@ -614,10 +619,11 @@ public class ROFockMethod(N:Long) {
         // gather G at place 0
         val place0GRef = new GlobalRail[Double](gMatrix.d);
         finish for (pid in 0..(nPlaces-1)) {
-            val placeOffset = offsetAtPlace(pid) * gMatrix.M;
-            at(Place(pid)) {
-                val placeData = distJ.local().d;
-                Rail.asyncCopy(placeData, 0, place0GRef, placeOffset, placeData.size);
+            val placeOffset = offsetAtPlace(pid) * gMatrix.N;
+            at(Place(pid)) {  
+                val placeData = distJ.local().d;              
+                for (var i:Long=0; i<gMatrix.N; i++)
+                Rail.asyncCopy(placeData, i*funcAtPlace(pid), place0GRef, i*gMatrix.N+offsetAtPlace(pid), funcAtPlace(pid));
             }
         }
 
