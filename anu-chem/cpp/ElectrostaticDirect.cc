@@ -21,12 +21,12 @@ static void printerror(const char *file, int line, const char *call, int retval)
 
 static Atom* setup() {
 	atoms = new Atom[atomsPerPlace+1];
-    int gridSize = (int)(ceil(cbrt(numAtoms)));
-    int gridPoint = myStart; // running total of assigned grid points
-	for (int i=0; i<myNumAtoms; i++) {
-		int gridX = gridPoint / (gridSize * gridSize);
-        int gridY = (gridPoint - (gridX * gridSize * gridSize)) / gridSize;
-        int gridZ = gridPoint - (gridX * gridSize * gridSize) - (gridY * gridSize);
+    size_t gridSize = (size_t)(ceil(cbrt(numAtoms)));
+    size_t gridPoint = myStart; // running total of assigned grid points
+	for (size_t i=0; i<myNumAtoms; i++) {
+		size_t gridX = gridPoint / (gridSize * gridSize);
+        size_t gridY = (gridPoint - (gridX * gridSize * gridSize)) / gridSize;
+        size_t gridZ = gridPoint - (gridX * gridSize * gridSize) - (gridY * gridSize);
         double x = (gridX + 0.5 + randomNoise()) * (SIZE / gridSize);
         double y = (gridY + 0.5 + randomNoise()) * (SIZE / gridSize);
         double z = (gridZ + 0.5 + randomNoise()) * (SIZE / gridSize);
@@ -89,26 +89,24 @@ static double getEnergy() {
     }
 
     // energy for all interactions within this place
-    for (int i = 0; i < myNumAtoms; i++) {
-        Atom atomI = atoms[i];
-        double ix = atomI.centre.i;
-        double iy = atomI.centre.j;
-        double iz = atomI.centre.k;
-        double qi = atomI.charge;
+    for (size_t i = 0; i < myNumAtoms; i++) {
+        double ix = atoms[i].centre.i;
+        double iy = atoms[i].centre.j;
+        double iz = atoms[i].centre.k;
+        double qi = atoms[i].charge;
 
         double fi = 0.0;
         double fj = 0.0;
         double fk = 0.0;
-        for (int j = 0; j < myNumAtoms; j++) {
+        for (size_t j = 0; j < myNumAtoms; j++) {
             if (i == j) continue;
-            Atom atomJ = atoms[j];
-            double dx = ix - atomJ.centre.i;
-            double dy = iy - atomJ.centre.j;
-            double dz = iz - atomJ.centre.k;
+            double dx = atoms[j].centre.i - ix;
+            double dy = atoms[j].centre.j - iy;
+            double dz = atoms[j].centre.k - iz;
 
             double r2 = dx * dx + dy * dy + dz * dz;
             double invR2 = 1.0 / r2;
-            double chargeInt = (qi * atomJ.charge);
+            double chargeInt = (qi * atoms[j].charge);
             double invR = sqrt(invR2);
 
             double e = chargeInt * invR;
@@ -123,13 +121,13 @@ static double getEnergy() {
             fj += fy;
             fk += fz;
 
-            //atomJ.force.i -= fx;
-            //atomJ.force.j -= fy;
-            //atomJ.force.k -= fz;
+            //atoms[j].force.i -= fx;
+            //atoms[j].force.j -= fy;
+            //atoms[j].force.k -= fz;
         }
-        atomI.force.i = fi;
-        atomI.force.j = fj;
-        atomI.force.k = fk;
+        atoms[i].force.i = fi;
+        atoms[i].force.j = fj;
+        atoms[i].force.k = fk;
     }
 
     MPI_Status ignore;
@@ -149,9 +147,9 @@ static double getEnergy() {
         }
 
         // energy for all interactions with other atoms at other place
-        int otherNumAtoms = p < leftOver ? atomsPerPlace+1 : atomsPerPlace;
-        for (int i = 0; i < otherNumAtoms; i++) {
-            for (int j = 0; j < myNumAtoms; j++) {
+        size_t otherNumAtoms = p < leftOver ? atomsPerPlace+1 : atomsPerPlace;
+        for (size_t i = 0; i < otherNumAtoms; i++) {
+            for (size_t j = 0; j < myNumAtoms; j++) {
                 double xDist = otherAtoms[i].centre.i - atoms[j].centre.i;
                 double yDist = otherAtoms[i].centre.j - atoms[j].centre.j;
                 double zDist = otherAtoms[i].centre.k - atoms[j].centre.k;

@@ -49,6 +49,7 @@ public class SimpleElectrostaticDirectMethod {
 
         var energy:Double = 0.0;
 
+        val atoms = this.atoms;
         for (i in 0..(atoms.size-1)) {
             val atomI = atoms(i);
             val xi = atomI.x;
@@ -84,9 +85,9 @@ public class SimpleElectrostaticDirectMethod {
                 fiz += fz;
                 //atomJ.force += Vector3d(-fx, -fy, -fz);
             }
-            atomI.fx += fix;
-            atomI.fy += fiy;
-            atomI.fz += fiz;
+            atomI.fx = fix;
+            atomI.fy = fiy;
+            atomI.fz = fiz;
         }
        
         timer.stop(TIMER_INDEX_TOTAL);
