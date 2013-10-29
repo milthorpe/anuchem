@@ -218,8 +218,8 @@ public class ROFockMethod(N:Long) {
             max=Math.max(cost,max); min=Math.min(cost,min); tot2+=cost; 
             Console.OUT.printf("%5d  (%6d)  %9d  %7.2f%%\n", i, offsetAtPlace(i), cost, cost*100./tot);
         }
-        Console.OUT.printf("Fractions add up to %.2f %%\n", tot2/tot*100.);
-        Console.OUT.printf("Fraction of N at each place: ideal=%.2f max=%.0f min=%.0f\n Imbalance cost=%.2f %%\n\n", ideal, max, min, (max/ideal-1.)*100.);
+        Console.OUT.printf("Fractions add up to %.3f %%\n", tot2/tot*100.);
+        Console.OUT.printf("Fraction of N at each place: ideal=%.3f max=%.0f min=%.0f\n Imbalance cost=%.3f %%\n\n", ideal, max, min, (max/ideal-1.)*100.);
         val maxRow = max as Long; // This is used for remoteBlockK_plh allocation later
 
         tot=N*N*(nPlaces+1.)*.5/nPlaces; tot2=0.; ideal=max=min=tot/nPlaces;
@@ -232,8 +232,8 @@ public class ROFockMethod(N:Long) {
             max=Math.max(cost,max); min=Math.min(cost,min); tot2+=cost;
             Console.OUT.printf("%5d  %9d  %7.2f%%\n", i, cost, cost*100./tot);            
         }
-        Console.OUT.printf("Fractions add up to %.2f %% (due to rounding of N/nPlaces)\n",tot2/tot*100.);
-        Console.OUT.printf("Block size at each place: ideal=%.2f max=%.0f min=%.0f\n Imbalance cost=%.2f %%\n\n", ideal, max, min, (max/ideal-1.)*100.);
+        Console.OUT.printf("Fractions add up to %.3f %% (due to rounding of N/nPlaces)\n",tot2/tot*100.);
+        Console.OUT.printf("Block size at each place: ideal=%.3f max=%.0f min=%.0f\n Imbalance cost=%.3f %%\n\n", ideal, max, min, (max/ideal-1.)*100.);
 
         tot=N*(1.+N)*.5; tot2=0.; ideal=tot/nPlaces; max=min=at(Place(0)) sizeInfo()(0);
         var totY:Long=0, totJ:Long=0, skip:Long=0;
@@ -246,10 +246,10 @@ public class ROFockMethod(N:Long) {
             max=Math.max(cost,max); min=Math.min(cost,min); tot2+=cost;
             Console.OUT.printf("%5d %10.0f  %7.2f%%\n", i, cost, cost*100./tot); 
         }
-        Console.OUT.printf("Fractions add up to %.2f %% (due to rounding of N/nPlaces, granularity of shellpairs and shellpair cut-off)\n",tot2/tot*100.);
-        Console.OUT.printf("Aux/D calculations at each place: ideal=%.2f max=%.0f min=%.0f\n Imbalance cost=%.2f %% (based on ideal)\n", ideal, max, min, (max/ideal-1.)*100.);
+        Console.OUT.printf("Fractions add up to %.3f %% (due to rounding of N/nPlaces, granularity of shellpairs and shellpair cut-off)\n",tot2/tot*100.);
+        Console.OUT.printf("Aux/D calculations at each place: ideal=%.3f max=%.0f min=%.0f\n Imbalance cost=%.3f %% (based on ideal)\n", ideal, max, min, (max/ideal-1.)*100.);
         ideal=tot2/nPlaces;
-        Console.OUT.printf(" Imbalance cost=%.2f %% (adjusted), %d shellpairs skipped\n\n", (max/ideal-1.)*100., skip);
+        Console.OUT.printf(" Imbalance cost=%.3f %% (adjusted), %d shellpairs skipped\n\n", (max/ideal-1.)*100., skip);
 
         Console.OUT.printf("Matrices size in MBs/64-bit double/\nJ, K, G, density, mos\t%.3f (each)\naux4J \t%.3f\nYlm  \t%.3f\naux4K \t%.3f\nhalfAux\t%.3f\n\n", N*N*8e-6, totJ*8e-6, totY*8e-6, N*N*roK*8e-6, nOrbitals*N*roK*8e-6);        
 
@@ -470,7 +470,7 @@ public class ROFockMethod(N:Long) {
 @Ifdef("__DEBUG__") {
                             val dsyrkSecs = timer.last(TIMER_DSYRK) / 1e9;
                             val dsyrkGFlops = a.N * a.N * a.M / 1e9;
-                            Console.OUT.printf("Place(%d) DSYRK of %.2g GFLOPs took %.2g s ( %.2g GFLOP/s)\n", here.id, dsyrkGFlops, dsyrkSecs, (dsyrkGFlops/dsyrkSecs));
+                            Console.OUT.printf("Place(%d) DSYRK of %.3f GFLOPs took %.3f s ( %.3f GFLOP/s)\n", here.id, dsyrkGFlops, dsyrkSecs, (dsyrkGFlops/dsyrkSecs));
 }
                         }
 
@@ -494,7 +494,7 @@ public class ROFockMethod(N:Long) {
 @Ifdef("__DEBUG__") {
                                 val dgemmSecs = timer.last(TIMER_DGEMM) / 1e9;
                                 val dgemmGFlops = 2 * a.N * thisBlock.N * a.M / 1e9;
-                                Console.OUT.printf("Place(%d) DGEMM of %.2g GFLOPs from place %d took %.2g s ( %.2g GFLOP/s, %d FLOPs/word)\n", here.id, dgemmGFlops, thisBlockPlace, dgemmSecs, (dgemmGFlops/dgemmSecs), (2*a.N));
+                                Console.OUT.printf("Place(%d) DGEMM of %.3f GFLOPs from place %d took %.3f s ( %.3f GFLOP/s, %d FLOPs/word)\n", here.id, dgemmGFlops, thisBlockPlace, dgemmSecs, (dgemmGFlops/dgemmSecs), (2*a.N));
 }
                             }
                         }
@@ -605,7 +605,7 @@ public class ROFockMethod(N:Long) {
                 val tDsyrk=(timer.total(TIMER_DSYRK) as Double)/1e9;
                 val tDgemm=(timer.total(TIMER_DGEMM) as Double)/1e9;
                 val tK=(timer.total(TIMER_K) as Double)/1e9;
-                Console.OUT.printf("Time (seconds) Aux= %.2f J= %.2f K-DSYRK= %.2f K-DGEMM= %.2f K-TOT= %.2f\n", tAux, tJ, tDsyrk, tDgemm, tK);
+                Console.OUT.printf("Time (seconds) Aux= %.3f J= %.3f K-DSYRK= %.3f K-DGEMM= %.3f K-TOT= %.3f\n", tAux, tJ, tDsyrk, tDgemm, tK);
                 Console.OUT.flush();
             }
         }
@@ -637,7 +637,7 @@ public class ROFockMethod(N:Long) {
             }
         }
         timer.stop(TIMER_TOTAL);
-        Console.OUT.printf("    Time to construct GMatrix with RO: %.2g seconds\n", (timer.last(TIMER_TOTAL) as Double) / 1e9); 
+        Console.OUT.printf("    Time to construct GMatrix with RO: %.3f seconds\n", (timer.last(TIMER_TOTAL) as Double) / 1e9); 
         @Ifdef("__PAPI__"){ papi.printFlops(); papi.printMemoryOps();}
     }
 
@@ -702,7 +702,7 @@ public class ROFockMethod(N:Long) {
             val stop = System.nanoTime();
             val secs = (stop-start) / 1e9;
             val gbytes = nextDim.first * nextDim.second / 1e9;
-            Console.OUT.printf("Place(%d) transfer 8 * %.2g GBs from Place(%d) took %.2g s (8 * %.2g GBytes/s)\n", here.id, gbytes, nextBlockPlace, secs, (gbytes/secs));
+            Console.OUT.printf("Place(%d) transfer 8 * %.3f GBs from Place(%d) took %.3f s (8 * %.3f GBytes/s)\n", here.id, gbytes, nextBlockPlace, secs, (gbytes/secs));
 }
         }
     }
