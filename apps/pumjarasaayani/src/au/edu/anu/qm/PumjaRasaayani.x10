@@ -68,17 +68,17 @@ public class PumjaRasaayani {
         val bsf = new BasisFunctions(mol, basisName, getBasisDirName(inputFileName));
         timer.stop(1);
         Console.OUT.println("Number of basis functions: " + bsf.getBasisFunctions().size());
-        //Console.OUT.printf("    Time for setting up basis functions: %.3g milliseconds\nCalculating 1e ints...\n", (timer.total(1) as Double) / 1e6);
+        Console.OUT.printf("    Time for setting up basis functions: %.3f seconds\nCalculating 1e ints...\n", (timer.total(1) as Double) / 1e9);
         
         timer.start(2);
         Console.OUT.printf("Computing 1e integrals...\n");
         val oneE = new OneElectronIntegrals(bsf, mol, inputFileName);
         timer.stop(2);
-        Console.OUT.printf("\tTime for computing 1E integrals: %.3g seconds\n", (timer.total(2) as Double) / 1e9);
+        Console.OUT.printf("\tTime for computing 1E integrals: %.3f seconds\n", (timer.total(2) as Double) / 1e9);
         val hfscf = new HartreeFockSCFMethod(mol, oneE, bsf);
         hfscf.scf();
         timer.stop(0);
-        Console.OUT.printf("\n\nTotal time since start: %.3g seconds\n\n", (timer.total(0) as Double) / 1e9);
+        Console.OUT.printf("\n\nTotal time since start: %.3f seconds\n\n", (timer.total(0) as Double) / 1e9);
     }
 
     private def runHF(fragment:Fragment) {
@@ -93,19 +93,19 @@ public class PumjaRasaayani {
         val bsf = new BasisFunctions(fragment, basisName, getBasisDirName(inputFileName));
         Console.OUT.println("\nUsing " + bsf.getBasisFunctions().size() + " basis functions.");
         timer.stop(1);
-        Console.OUT.printf("\tTime for setting up basis functions: %.3g milliseconds\n\n", (timer.total(1) as Double) / 1e9);
+        Console.OUT.printf("\tTime for setting up basis functions: %.3f seconds\n\n", (timer.total(1) as Double) / 1e9);
 
         timer.start(2);
         val oneE = new OneElectronIntegrals(bsf, fragment, inputFileName);
         Console.OUT.println("\nComputed one-electron integrals.");
         timer.stop(2);
-        Console.OUT.printf("\tTime for computing 1E integrals: %.3g seconds\n\n", (timer.total(2) as Double) / 1e9);
+        Console.OUT.printf("\tTime for computing 1E integrals: %.3f seconds\n\n", (timer.total(2) as Double) / 1e9);
 
         val hfscf = new HartreeFockSCFMethod(fragment, oneE, bsf);
         hfscf.scf();
         timer.stop(0);
 
-        Console.OUT.printf("\nTotal time since start: %.3g seconds\n", (timer.total(0) as Double) / 1e9);
+        Console.OUT.printf("\nTotal time since start: %.3f seconds\n", (timer.total(0) as Double) / 1e9);
 
         fragment.energy = hfscf.getEnergy();
     }
@@ -133,7 +133,7 @@ public class PumjaRasaayani {
         timer.stop(0);
 
         Console.OUT.printf("Final MTA energy: %.6f a.u.\n", ene);
-        Console.OUT.printf("\n-End of MTA run-\n\nTotal time since start: %.3g seconds\n", (timer.total(0) as Double) / 1e9);
+        Console.OUT.printf("\n-End of MTA run-\n\nTotal time since start: %.3f seconds\n", (timer.total(0) as Double) / 1e9);
     }
 
     private def printInput() {
