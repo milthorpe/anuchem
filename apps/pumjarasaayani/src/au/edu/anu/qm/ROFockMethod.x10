@@ -664,13 +664,14 @@ public class ROFockMethod(N:Long) {
                 }
             }
         }
+        timer.stop(TIMER_TOTAL);
+
         val eTwo = .5*density.clone().mult(density, gMatrix).trace()/roZ;
         val eJ = e_plh()(0)/roZ;
         val eK = (eTwo-eJ)*.5;
         Console.OUT.printf("eTwo= %.10f EJ= %.10f EK= %.10f\n", eTwo, eJ, eK);
-
-        timer.stop(TIMER_TOTAL);
         Console.OUT.printf("    Time to construct GMatrix with RO: %.3f seconds\n", (timer.last(TIMER_TOTAL) as Double) / 1e9); 
+
         @Ifdef("__PAPI__"){ papi.printFlops(); papi.printMemoryOps();}
     }
 
