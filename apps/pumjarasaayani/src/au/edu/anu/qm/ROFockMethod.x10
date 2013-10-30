@@ -455,7 +455,7 @@ public class ROFockMethod(N:Long) {
                         val remoteK = remoteBlockK_plh();
                         val a = halfAuxMat.local();
 
-                        val blocks = (Math.ceil(nPlaces*.5+.5) - ((nPlaces%2L==0L && pid<nPlaces/2)?1:0)) as Long;//
+                        val blocks = (Math.ceil(nPlaces*.5+.5) /*- ((nPlaces%2L==0L && pid<nPlaces/2)?1:0)*/) as Long;//
                         var blk:Long = 1;
                         var nextBlockPlace:Long = -1;
                         finish {
@@ -488,12 +488,12 @@ public class ROFockMethod(N:Long) {
                                     nextBlockPlace = -1;
                                 }
                                 timer.start(TIMER_DGEMM);
-                                //if (nPlaces%2==1 || blk<blocks)
+                                if (nPlaces%2==1 || blk<blocks)
                                     DenseMatrixBLAS.compTransMult(a, thisBlock, localK, [a.N, thisBlock.N, a.M], [0, 0, 0, 0, 0, offsetAtPlace(thisBlockPlace)], true);
-                                /*else if (pid<nPlaces/2)
-                                    DenseMatrixBLAS.compTransMult(a, thisBlock, localK, [a.N/2, thisBlock.N, a.M], [a.N-a.N/2, 0, 0, 0, a.N-a.N/2, offsetAtPlace(thisBlockPlace)], true);
+                                else if (pid<nPlaces/2)
+                                    DenseMatrixBLAS.compTransMult(a, thisBlock, localK, [a.N/2, thisBlock.N, a.M], [0, a.N-a.N/2, 0, 0, a.N-a.N/2, offsetAtPlace(thisBlockPlace)], true);
                                 else
-                                    DenseMatrixBLAS.compTransMult(a, thisBlock, localK, [a.N, thisBlock.N-thisBlock.N/2, a.M], [0, 0, 0, 0, 0, offsetAtPlace(thisBlockPlace)], true);*/
+                                    DenseMatrixBLAS.compTransMult(a, thisBlock, localK, [a.N, thisBlock.N-thisBlock.N/2, a.M], [0, 0, 0, 0, 0, offsetAtPlace(thisBlockPlace)], true);
                                 timer.stop(TIMER_DGEMM);
 
 @Ifdef("__DEBUG__") {
@@ -549,38 +549,38 @@ public class ROFockMethod(N:Long) {
             e.clear();
             for (var j0:Long=0, j:Long=offsetAtPlace(pid); j<offsetAtPlace(pid+1); j0++, j++) {
                 e(0) += .5*density(j, j)*localJ(j0, j);
-                e(1) += .5*density(j, j)*localK(j0, j);
+                //e(1) += .5*density(j, j)*localK(j0, j);
                 for (var i0:Long=0, i:Long=offsetAtPlace(pid); i<j; i0++, i++) {
                     e(0) += density(i, j)*localJ(i0, j);
-                    e(1) += density(i, j)*localK(i0, j);
+                    //e(1) += density(i, j)*localK(i0, j);
                 }
             }
             if (colStart < colStop) {
                 for (var j:Long=colStart; j<colStop; j++) {
                     for (var i:Long=0, ii:Long=offsetAtPlace(pid); i<rowCount; i++, ii++) {
                         e(0) +=density(ii, j)*localJ(i, j);
-                        e(1) +=density(ii, j)*localK(i, j);
+                        //e(1) +=density(ii, j)*localK(i, j);
                     }
                 }
             } else if (mult>1) {
                 for (var j:Long=colStart; j<colCount; j++) {
                     for (var i:Long=0, ii:Long=offsetAtPlace(pid); i<rowCount; i++, ii++) {
                         e(0) +=density(ii, j)*localJ(i, j);
-                        e(1) +=density(ii, j)*localK(i, j);
+                        //e(1) +=density(ii, j)*localK(i, j);
                     }
                 }
                 for (var j:Long=0; j<colStop; j++) {
                     for (var i:Long=0, ii:Long=offsetAtPlace(pid); i<rowCount; i++, ii++) {
                         e(0) +=density(ii, j)*localJ(i, j);
-                        e(1) +=density(ii, j)*localK(i, j);
+                        //e(1) +=density(ii, j)*localK(i, j);
                     }
                 }
             }
             Team.WORLD.allreduce[Double](e, 0L, e, 0L, e.size, Team.ADD);
-            if (here==Place.FIRST_PLACE) Console.OUT.printf("EJ= %.10f EK= %.10f\n", e(0)/roZ, -0.5*e(1)/roZ);
+            //if (here==Place.FIRST_PLACE) Console.OUT.printf("EJ= %.10f EK= can be found from total energy and EJ\n", e(0)/roZ/*, -0.5*e(1)/roZ*/);
 
             // Combine J and K to form G (stored in J)
-            for (var j0:Long=0, j:Long=offsetAtPlace(pid); j<offsetAtPlace(pid+1); j0++, j++) 
+            /*for (var j0:Long=0, j:Long=offsetAtPlace(pid); j<offsetAtPlace(pid+1); j0++, j++) 
                 for (var i0:Long=0; i0<=j0; i0++) 
                     localJ(i0, j) -=localK(i0, j);
             if (colStart < colStop) {
@@ -600,7 +600,7 @@ public class ROFockMethod(N:Long) {
                         localJ(i, j) -=localK(i, j);
                     }
                 }
-            }
+            }*/
 
             // Report time
             Team.WORLD.allreduce[Long](timer.total, 0L, timer.total, 0L, timer.total.size, Team.MAX);
@@ -616,16 +616,38 @@ public class ROFockMethod(N:Long) {
         }
 
         val nPlaces=Place.MAX_PLACES;
-        // gather G at place 0
-        val place0GRef = new GlobalRail[Double](gMatrix.d);
+        // gather K into tempK at place 0
+        val tempKMat=new DenseMatrix(N, N);
+        val place0GRefK = new GlobalRail[Double](tempKMat.d);
+        finish for (pid in 0..(nPlaces-1)) {
+            val placeOffset = offsetAtPlace(pid) * tempKMat.N;
+            at(Place(pid)) {  
+                val placeData = distK.local().d;              
+                for (var i:Long=0; i< tempKMat.N; i++)
+                Rail.asyncCopy(placeData, i*funcAtPlace(pid), place0GRefK, i*tempKMat.N+offsetAtPlace(pid), funcAtPlace(pid));
+            }
+        }
+        // Fix K to shape like J
+        if (nPlaces%2==0) for (pid in (nPlaces/2)..(nPlaces-1)) {
+            val qid=pid-nPlaces/2;
+            val offset=funcAtPlace(qid)-funcAtPlace(qid)/2; // Integer rounding stuff - don't simplify
+            for (var i:Long=offsetAtPlace(pid); i<offsetAtPlace(pid+1); i++) 
+                for (var j:Long=offsetAtPlace(qid)+offset; j<offsetAtPlace(qid+1); j++) 
+                    tempKMat(i, j)=tempKMat(j, i);
+        }
+        // gather J into gMatrix at place 0
+        val place0GRefJ = new GlobalRail[Double](gMatrix.d);
         finish for (pid in 0..(nPlaces-1)) {
             val placeOffset = offsetAtPlace(pid) * gMatrix.N;
             at(Place(pid)) {  
                 val placeData = distJ.local().d;              
                 for (var i:Long=0; i<gMatrix.N; i++)
-                Rail.asyncCopy(placeData, i*funcAtPlace(pid), place0GRef, i*gMatrix.N+offsetAtPlace(pid), funcAtPlace(pid));
+                Rail.asyncCopy(placeData, i*funcAtPlace(pid), place0GRefJ, i*gMatrix.N+offsetAtPlace(pid), funcAtPlace(pid));
             }
         }
+        // substract K/ actually we don't need to do all
+        for (var j:Long=0; j<N; j++) for (var i:Long=0; i<N; i++)    
+            gMatrix(i, j)-=tempKMat(i, j); 
 
         // Fix G
         for (pid in 0..(nPlaces-1)) {
@@ -642,6 +664,11 @@ public class ROFockMethod(N:Long) {
                 }
             }
         }
+        val eTwo = .5*density.clone().mult(density, gMatrix).trace()/roZ;
+        val eJ = e_plh()(0)/roZ;
+        val eK = (eTwo-eJ)*.5;
+        Console.OUT.printf("eTwo= %.10f EJ= %.10f EK= %.10f\n", eTwo, eJ, eK);
+
         timer.stop(TIMER_TOTAL);
         Console.OUT.printf("    Time to construct GMatrix with RO: %.3f seconds\n", (timer.last(TIMER_TOTAL) as Double) / 1e9); 
         @Ifdef("__PAPI__"){ papi.printFlops(); papi.printMemoryOps();}
