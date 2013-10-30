@@ -462,7 +462,8 @@ public class ROFockMethod(N:Long) {
                             if (blocks > 1) {
                                 // overlap getting first remote block of K with DSYRK
                                 nextBlockPlace = (pid+blk) % nPlaces;
-                                async remoteK.fetchNext(halfAuxMat, nextBlockPlace);
+                                val blockSize = roK * nOrbitals * funcAtPlace(nextBlockPlace);
+                                async remoteK.fetchNext(halfAuxMat, nextBlockPlace, blockSize);
                             }
                             timer.start(TIMER_DSYRK);
                             DenseMatrixBLAS.symRankKUpdateTrans(a, localK, [a.N, a.M], [0, 0, 0, offsetHere], true, true);
@@ -483,10 +484,10 @@ public class ROFockMethod(N:Long) {
                                 if (blk < blocks) {
                                     // overlap getting next remote block of K with DGEMM
                                     nextBlockPlace = (pid+blk) % nPlaces;
-                                    if (nPlaces%2==1 || blk<blocks-1 || pid<nPlaces/2)
-                                    async remoteK.fetchNext(halfAuxMat, nextBlockPlace);
-                                    else
-                                    async remoteK.fetchNext(halfAuxMat, nextBlockPlace,roK*nOrbitals*(funcAtPlace(nextBlockPlace)-funcAtPlace(nextBlockPlace)/2));
+                                    val fullBlockSize = roK * nOrbitals * funcAtPlace(nextBlockPlace);
+                                    val full = (nPlaces%2==1 || blk<blocks-1 || pid<nPlaces/2);
+                                    val blockSize = full ? fullBlockSize : (fullBlockSize+1) / 2;
+                                    async remoteK.fetchNext(halfAuxMat, nextBlockPlace, blockSize);
                                 } else {
                                     nextBlockPlace = -1;
                                 }
@@ -724,23 +725,6 @@ public class ROFockMethod(N:Long) {
             nextData = currentData;
             currentData = temp;
             return new DenseMatrix(currentDim.first, currentDim.second, currentData);
-        }
-
-        public def fetchNext(ddm:DistDenseMatrix, nextBlockPlace:Long) {
-            // fetch next data from given place
-            val nextDataRef = new GlobalRail(nextData);
-            val start = System.nanoTime();
-            finish nextDim = at(Place(nextBlockPlace)) {
-                val dataHere = ddm.local().d;
-                Rail.asyncCopy(dataHere, 0, nextDataRef, 0, dataHere.size);
-                Pair(ddm.local().M, ddm.local().N)
-            };
-@Ifdef("__DEBUG__") {
-            val stop = System.nanoTime();
-            val secs = (stop-start) / 1e9;
-            val gbytes = nextDim.first * nextDim.second / 1e9;
-            Console.OUT.printf("Place(%d) transfer 8 * %.3f GBs from Place(%d) took %.3f s (8 * %.3f GBytes/s)\n", here.id, gbytes, nextBlockPlace, secs, (gbytes/secs));
-}
         }
 
         public def fetchNext(ddm:DistDenseMatrix, nextBlockPlace:Long, size:Long) {
