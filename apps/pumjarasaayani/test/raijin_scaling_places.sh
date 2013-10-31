@@ -2,7 +2,7 @@
 # Raijin job script: test PR scaling to 8 places (1 place per 8 core Sandy Bridge)
 . ~/x10-trunk/x10.profile
 i=1
-while [ $i -le 8 ]
+while [ $i -le 16 ]
 do
   export X10_NPLACES=$i
   export X10_NTHREADS=8
