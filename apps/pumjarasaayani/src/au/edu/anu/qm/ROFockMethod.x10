@@ -38,13 +38,14 @@ import edu.utk.cs.papi.PAPI;
 
 public class ROFockMethod(N:Long) {
     // Timer & PAPI performance counters
-    public val timer=new StatisticalTimer(6);
+    public val timer=new StatisticalTimer(7);
     val TIMER_TOTAL=0;
     val TIMER_AUX=1;
     val TIMER_JMATRIX=2;
     val TIMER_K=3;
     val TIMER_DSYRK=4;
     val TIMER_DGEMM=5;
+    val TIMER_GMATRIX=6;
 
     transient var papi:PAPI=new PAPI(); // @Ifdef("__PAPI__") // XTENLANG-3132
 
@@ -540,6 +541,7 @@ public class ROFockMethod(N:Long) {
                 Team.WORLD.barrier();
             } // roN
 
+
             //Console.OUT.printf("\nG matrix\n");
             // These variables are used in the two sections below:
             val rowCount=localJ.M;
@@ -619,6 +621,7 @@ public class ROFockMethod(N:Long) {
             }
         }
 
+        timer.start(TIMER_GMATRIX);
         val nPlaces=Place.MAX_PLACES;
         // gather K into tempK at place 0
         val tempKMat=new DenseMatrix(N, N);
@@ -668,11 +671,14 @@ public class ROFockMethod(N:Long) {
                 }
             }
         }
-        timer.stop(TIMER_TOTAL);
-
+        timer.stop(TIMER_GMATRIX);
+        
         val eTwo = .5*density.clone().mult(density, gMatrix).trace()/roZ;
         val eJ = e_plh()(0)/roZ;
         val eK = (eTwo-eJ)*.5;
+        timer.stop(TIMER_TOTAL);
+        
+        Console.OUT.printf("Time to gather GMat: %.3f s\n", (timer.last(TIMER_GMATRIX) as Double) / 1e9);
         Console.OUT.printf("eTwo= %.10f EJ= %.10f EK= %.10f\n", eTwo, eJ, eK);
         Console.OUT.printf("    Time to construct GMatrix with RO: %.3f seconds\n", (timer.last(TIMER_TOTAL) as Double) / 1e9); 
 
