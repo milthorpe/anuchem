@@ -630,7 +630,7 @@ public class ROFockMethod(N:Long) {
                 val tDgemm=(timer.total(TIMER_DGEMM) as Double)/1e9;
                 val tK=(timer.total(TIMER_K) as Double)/1e9;
                 val tGather=(timer.total(TIMER_GATHER) as Double)/1e9;
-                Console.OUT.printf("Time (seconds) Aux= %.3f J= %.3f K-DSYRK= %.3f K-DGEMM= %.3f K-TOT= %.3f Gather=%.3f\n", tAux, tJ, tDsyrk, tDgemm, tK, tGather);
+                Console.OUT.printf("Time (seconds) Aux= %.3f J= %.3f K-DSYRK= %.3f K-DGEMM= %.3f K-TOT= %.3f Gather= %.3f\n", tAux, tJ, tDsyrk, tDgemm, tK, tGather);
                 Console.OUT.flush();
             }
         }
