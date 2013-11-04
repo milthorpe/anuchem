@@ -614,24 +614,10 @@ public class ROFockMethod(N:Long) {
 
             timer.start(TIMER_GATHER);
 
-            // gather K to tempK, J to gMatrix at place 0
-            val placeK = distK.local().d;
+            // gather J to gMatrix, K to tempK at place 0
             finish { // only needed for timing purposes
-                for (var i:Long=0; i< tempKMat.N; i++) {
-/*
-                    Console.OUT.printf("copying block of size %d from place %d: column %d of source %d, of dest %d row %d\n", 
-                                        funcAtPlace(pid),
-                                        pid,
-                                        i,
-                                        distK.local().N,
-                                        N,
-                                        offsetAtPlace(pid));
-*/
-                    Rail.asyncCopy(placeK, i*funcAtPlace(pid), place0GRefK, i*tempKMat.N+offsetAtPlace(pid), funcAtPlace(pid));
-                }
-                val placeJ = distJ.local().d;
-                for (var i:Long=0; i<gMatrix.N; i++)
-                    Rail.asyncCopy(placeJ, i*funcAtPlace(pid), place0GRefJ, i*gMatrix.N+offsetAtPlace(pid), funcAtPlace(pid));
+                gatherRowBlock(localJ, funcAtPlace(pid), gMatrix.N, place0GRefJ, offsetAtPlace(pid), gMatrix.M);
+                gatherRowBlock(localK, funcAtPlace(pid), tempKMat.N, place0GRefK, offsetAtPlace(pid), tempKMat.M);
             }
             timer.stop(TIMER_GATHER);
 
@@ -688,6 +674,25 @@ public class ROFockMethod(N:Long) {
         Console.OUT.printf("    Time to construct GMatrix with RO: %.3f seconds\n", (timer.last(TIMER_TOTAL) as Double) / 1e9); 
 
         @Ifdef("__PAPI__"){ papi.printFlops(); papi.printMemoryOps();}
+    }
+
+    /**
+     * Copies source matrix of dim rows x columns to a specified position
+     * in a larger dest matrix of destRows x columns at row offset destRow
+     */
+    def gatherRowBlock(source:DenseMatrix, rows:Long, columns:Long, dest:GlobalRail[Double], destRow:Long, destRows:Long) {
+        for (var i:Long=0; i<columns; i++) {
+/*
+            Console.OUT.printf("copying block of size %d from place %d: column %d of source %d, of dest %d row %d\n", 
+                                funcAtPlace(pid),
+                                pid,
+                                i,
+                                distK.local().N,
+                                N,
+                                offsetAtPlace(pid));
+*/
+            Rail.asyncCopy(source.d, i*rows, dest, i*destRows+destRow, rows);
+        }
     }
 
     private static struct DivideAndConquerLoop1D(start:Long, end:Long, grainSize:Long) {
