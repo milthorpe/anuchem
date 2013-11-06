@@ -613,11 +613,10 @@ public class ROFockMethod(N:Long) {
             }*/
 
             timer.start(TIMER_GATHER);
-
             // gather J to gMatrix, K to tempK at place 0
             finish { // only needed for timing purposes
-                gatherRowBlock(localJ, funcAtPlace(pid), gMatrix.N, place0GRefJ, offsetAtPlace(pid), gMatrix.M);
-                gatherRowBlock(localK, funcAtPlace(pid), tempKMat.N, place0GRefK, offsetAtPlace(pid), tempKMat.M);
+                gatherRowBlock(localJ, funcAtPlace(pid), N, place0GRefJ, offsetAtPlace(pid), N);
+                gatherRowBlock(localK, funcAtPlace(pid), N, place0GRefK, offsetAtPlace(pid), N);
             }
             timer.stop(TIMER_GATHER);
 
