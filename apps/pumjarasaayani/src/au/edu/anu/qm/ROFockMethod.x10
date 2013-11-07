@@ -546,79 +546,56 @@ public class ROFockMethod(N:Long) {
                 Team.WORLD.barrier();
             } // roN
 
-
-            //Console.OUT.printf("\nG matrix\n");
-            // These variables are used in the two sections below:
-            val rowCount=localJ.M;
-            val colCount=localJ.N;
-            val mult=(Math.ceil(nPlaces*.5+.5) - ((nPlaces%2L==0L && pid<nPlaces/2)?1:0)) as Long;
-            val colStart=offsetAtPlace((pid+1)%nPlaces);
-            val colStop=offsetAtPlace((pid+mult)%nPlaces);
-
-            // Calculate eJ and eK
-            val e = e_plh();
-            e.clear();
-            for (var j0:Long=0, j:Long=offsetAtPlace(pid); j<offsetAtPlace(pid+1); j0++, j++) {
-                e(0) += .5*density(j, j)*localJ(j0, j);
-                //e(1) += .5*density(j, j)*localK(j0, j);
-                for (var i0:Long=0, i:Long=offsetAtPlace(pid); i<j; i0++, i++) {
-                    e(0) += density(i, j)*localJ(i0, j);
-                    //e(1) += density(i, j)*localK(i0, j);
-                }
-            }
-            if (colStart < colStop) {
-                for (var j:Long=colStart; j<colStop; j++) {
-                    for (var i:Long=0, ii:Long=offsetAtPlace(pid); i<rowCount; i++, ii++) {
-                        e(0) +=density(ii, j)*localJ(i, j);
-                        //e(1) +=density(ii, j)*localK(i, j);
-                    }
-                }
-            } else if (mult>1) {
-                for (var j:Long=colStart; j<colCount; j++) {
-                    for (var i:Long=0, ii:Long=offsetAtPlace(pid); i<rowCount; i++, ii++) {
-                        e(0) +=density(ii, j)*localJ(i, j);
-                        //e(1) +=density(ii, j)*localK(i, j);
-                    }
-                }
-                for (var j:Long=0; j<colStop; j++) {
-                    for (var i:Long=0, ii:Long=offsetAtPlace(pid); i<rowCount; i++, ii++) {
-                        e(0) +=density(ii, j)*localJ(i, j);
-                        //e(1) +=density(ii, j)*localK(i, j);
-                    }
-                }
-            }
-            Team.WORLD.allreduce[Double](e, 0L, e, 0L, e.size, Team.ADD);
-            //if (here==Place.FIRST_PLACE) Console.OUT.printf("EJ= %.10f EK= can be found from total energy and EJ\n", e(0)/roZ/*, -0.5*e(1)/roZ*/);
-
-            // Combine J and K to form G (stored in J)
-            /*for (var j0:Long=0, j:Long=offsetAtPlace(pid); j<offsetAtPlace(pid+1); j0++, j++) 
-                for (var i0:Long=0; i0<=j0; i0++) 
-                    localJ(i0, j) -=localK(i0, j);
-            if (colStart < colStop) {
-                for (var j:Long=colStart; j<colStop; j++) {
-                    for (var i:Long=0; i<rowCount; i++) {
-                        localJ(i, j) -=localK(i, j);
-                    }
-                }
-            } else if (mult>1) {
-                for (var j:Long=colStart; j<colCount; j++) {
-                    for (var i:Long=0; i<rowCount; i++) {
-                        localJ(i, j) -=localK(i, j);
-                    }
-                }
-                for (var j:Long=0; j<colStop; j++) {
-                    for (var i:Long=0; i<rowCount; i++) {
-                        localJ(i, j) -=localK(i, j);
-                    }
-                }
-            }*/
-
             timer.start(TIMER_GATHER);
+            val e = e_plh();
             // gather J to tempJ, K to tempK at place 0
             finish { // only needed for timing purposes
                 Rail.asyncCopy(localJ.d, 0, place0GRefJ, offsetAtPlace(pid)*N, funcAtPlace(pid)*N);
                 Rail.asyncCopy(localK.d, 0, place0GRefK, offsetAtPlace(pid)*N, funcAtPlace(pid)*N);
+
+                // while waiting for the gather to finish, calculate local contribution to energy
+                // These variables are used in the two sections below:
+                val rowCount = localJ.M;
+                val colCount = localJ.N;
+                val mult = (Math.ceil(nPlaces*.5+.5) - ((nPlaces%2L==0L && pid<nPlaces/2)?1:0)) as Long;
+                val colStart = offsetAtPlace((pid+1)%nPlaces);
+                val colStop = offsetAtPlace((pid+mult)%nPlaces);
+
+                // Calculate eJ and eK
+                e.clear();
+                for (var j0:Long=0, j:Long=offsetAtPlace(pid); j<offsetAtPlace(pid+1); j0++, j++) {
+                    e(0) += 0.5 * density(j, j) * localJ(j0, j);
+                    //e(1) += .5*density(j, j)*localK(j0, j);
+                    for (var i0:Long=0, i:Long=offsetAtPlace(pid); i<j; i0++, i++) {
+                        e(0) += density(i, j)*localJ(i0, j);
+                        //e(1) += density(i, j)*localK(i0, j);
+                    }
+                }
+                if (colStart < colStop) {
+                    for (var j:Long=colStart; j<colStop; j++) {
+                        for (var i:Long=0, ii:Long=offsetAtPlace(pid); i<rowCount; i++, ii++) {
+                            e(0) += density(ii, j) * localJ(i, j);
+                            //e(1) +=density(ii, j)*localK(i, j);
+                        }
+                    }
+                } else if (mult > 1) {
+                    for (var j:Long=colStart; j<colCount; j++) {
+                        for (var i:Long=0, ii:Long=offsetAtPlace(pid); i<rowCount; i++, ii++) {
+                            e(0) += density(ii, j) * localJ(i, j);
+                            //e(1) +=density(ii, j)*localK(i, j);
+                        }
+                    }
+                    for (var j:Long=0; j<colStop; j++) {
+                        for (var i:Long=0, ii:Long=offsetAtPlace(pid); i<rowCount; i++, ii++) {
+                            e(0) += density(ii, j) * localJ(i, j);
+                            //e(1) +=density(ii, j)*localK(i, j);
+                        }
+                    }
+                }
             }
+
+            Team.WORLD.allreduce[Double](e, 0L, e, 0L, e.size, Team.ADD);
+
             timer.stop(TIMER_GATHER);
 
             // Report time
