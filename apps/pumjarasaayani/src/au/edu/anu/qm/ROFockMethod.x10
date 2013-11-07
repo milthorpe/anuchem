@@ -683,7 +683,14 @@ public class ROFockMethod(N:Long) {
             }
         }
         
-        val eTwo = .5*density.clone().mult(density, gMatrix).trace()/roZ;
+        var eTwo:Double = 0.0;
+        for (i in 0..(N-1)) {
+            for (j in 0..(N-1)) {
+                eTwo += density(i, j) * gMatrix(j, i);
+            }
+        }
+        eTwo = 0.5 * eTwo / roZ;
+
         val eJ = e_plh()(0)/roZ;
         val eK = (eTwo-eJ)*.5;
         timer.stop(TIMER_TOTAL);
