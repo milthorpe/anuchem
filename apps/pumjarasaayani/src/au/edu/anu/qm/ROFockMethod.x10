@@ -353,9 +353,10 @@ public class ROFockMethod(N:Long) {
         Console.OUT.printf("\nROFockMethod.x10 'public def compute' %s...\n", getDateString()); 
         timer.start(TIMER_TOTAL); 
 
-        val tempKMat = new DenseMatrix(N, N);
-        val place0GRefK = new GlobalRail[Double](tempKMat.d);
-        val place0GRefJ = new GlobalRail[Double](gMatrix.d);
+        val tempJ = new Rail[Double](N*N);
+        val tempK = new Rail[Double](N*N);
+        val place0GRefJ = new GlobalRail[Double](tempJ);
+        val place0GRefK = new GlobalRail[Double](tempK);
 
         finish ateach(place in Dist.makeUnique()) {
             val pid = here.id;
@@ -613,10 +614,10 @@ public class ROFockMethod(N:Long) {
             }*/
 
             timer.start(TIMER_GATHER);
-            // gather J to gMatrix, K to tempK at place 0
+            // gather J to tempJ, K to tempK at place 0
             finish { // only needed for timing purposes
-                gatherRowBlock(localJ, funcAtPlace(pid), N, place0GRefJ, offsetAtPlace(pid), N);
-                gatherRowBlock(localK, funcAtPlace(pid), N, place0GRefK, offsetAtPlace(pid), N);
+                Rail.asyncCopy(localJ.d, 0, place0GRefJ, offsetAtPlace(pid)*N, funcAtPlace(pid)*N);
+                Rail.asyncCopy(localK.d, 0, place0GRefK, offsetAtPlace(pid)*N, funcAtPlace(pid)*N);
             }
             timer.stop(TIMER_GATHER);
 
@@ -635,18 +636,36 @@ public class ROFockMethod(N:Long) {
         }
 
         val nPlaces=Place.MAX_PLACES;
-        // Fix K to shape like J
-        if (nPlaces%2==0) for (pid in (nPlaces/2)..(nPlaces-1)) {
-            val qid=pid-nPlaces/2;
-            val offset=funcAtPlace(qid)-funcAtPlace(qid)/2; // Integer rounding stuff - don't simplify
-            for (var i:Long=offsetAtPlace(pid); i<offsetAtPlace(pid+1); i++) 
-                for (var j:Long=offsetAtPlace(qid)+offset; j<offsetAtPlace(qid+1); j++) 
-                    tempKMat(i, j)=tempKMat(j, i);
+        // unpack tempK into gMatrix
+        finish for (pid in 0..(nPlaces-1)) async {
+            val placeRows = funcAtPlace(pid);
+            val placeGOffset = offsetAtPlace(pid);
+            val placeTempOffset = offsetAtPlace(pid) * N;
+            for (var i:Long=0; i<placeRows; i++)
+                for (var j:Long=0; j<N; j++)
+                    gMatrix(i+placeGOffset, j) = -tempK(placeTempOffset + j * placeRows + i);
         }
 
-        // substract K/ actually we don't need to do all
-        for (var j:Long=0; j<N; j++) for (var i:Long=0; i<N; i++)    
-            gMatrix(i, j) -= tempKMat(i, j); 
+        // Fix K to shape like J
+        if (nPlaces%2==0) {
+            finish for (pid in (nPlaces/2)..(nPlaces-1)) async {
+                val qid=pid-nPlaces/2;
+                val offset=funcAtPlace(qid)-funcAtPlace(qid)/2; // Integer rounding stuff - don't simplify
+                for (var i:Long=offsetAtPlace(pid); i<offsetAtPlace(pid+1); i++)
+                    for (var j:Long=offsetAtPlace(qid)+offset; j<offsetAtPlace(qid+1); j++)
+                        gMatrix(i, j) = gMatrix(j, i);
+            }
+        }
+
+        // add J
+        finish for (pid in 0..(nPlaces-1)) async {
+            val placeRows = funcAtPlace(pid);
+            val placeGOffset = offsetAtPlace(pid);
+            val placeTempOffset = offsetAtPlace(pid) * N;
+            for (var i:Long=0; i<placeRows; i++)
+                for (var j:Long=0; j<N; j++)    
+                    gMatrix(i+placeGOffset, j) += tempJ(placeTempOffset + j * placeRows + i);
+        }
 
         // Fix G
         for (pid in 0..(nPlaces-1)) {
@@ -673,25 +692,6 @@ public class ROFockMethod(N:Long) {
         Console.OUT.printf("    Time to construct GMatrix with RO: %.3f seconds\n", (timer.last(TIMER_TOTAL) as Double) / 1e9); 
 
         @Ifdef("__PAPI__"){ papi.printFlops(); papi.printMemoryOps();}
-    }
-
-    /**
-     * Copies source matrix of dim rows x columns to a specified position
-     * in a larger dest matrix of destRows x columns at row offset destRow
-     */
-    def gatherRowBlock(source:DenseMatrix, rows:Long, columns:Long, dest:GlobalRail[Double], destRow:Long, destRows:Long) {
-        for (var i:Long=0; i<columns; i++) {
-/*
-            Console.OUT.printf("copying block of size %d from place %d: column %d of source %d, of dest %d row %d\n", 
-                                funcAtPlace(pid),
-                                pid,
-                                i,
-                                distK.local().N,
-                                N,
-                                offsetAtPlace(pid));
-*/
-            Rail.asyncCopy(source.d, i*rows, dest, i*destRows+destRow, rows);
-        }
     }
 
     private static struct DivideAndConquerLoop1D(start:Long, end:Long, grainSize:Long) {
