@@ -50,7 +50,7 @@ public class ROFockMethod(N:Long) {
     transient var papi:PAPI=new PAPI(); // @Ifdef("__PAPI__") // XTENLANG-3132
 
     val halfAuxMat:DistDenseMatrix, distJ:DistDenseMatrix, distK:DistDenseMatrix;
-    val auxJMat_plh:PlaceLocalHandle[Rail[Rail[Double]]], auxKMat_plh:PlaceLocalHandle[Rail[Long]], remoteBlockK_plh:PlaceLocalHandle[RemoteBlock], ylms_plh:PlaceLocalHandle[Rail[Rail[Double]]], shellPairs_plh:PlaceLocalHandle[Rail[ShellPair]];
+    val auxJ_plh:PlaceLocalHandle[Rail[Rail[Double]]], auxKIdx_plh:PlaceLocalHandle[Rail[Long]], remoteBlockK_plh:PlaceLocalHandle[RemoteBlock], ylms_plh:PlaceLocalHandle[Rail[Rail[Double]]], shellPairs_plh:PlaceLocalHandle[Rail[ShellPair]];
     val dlm_plh:PlaceLocalHandle[Rail[Double]], e_plh:PlaceLocalHandle[Rail[Double]], shellPairRange_plh:PlaceLocalHandle[Rail[Long]]; 
     val auxK_wlh:WorkerLocalHandle[Rail[Double]], intPack_wlh:WorkerLocalHandle[Integral_Pack], dlm_wlh:WorkerLocalHandle[Rail[Double]];
     val nOrbitals:Long, norm:Rail[Double], roN:Int, roNK:Int, roK:Int; 
@@ -278,11 +278,11 @@ public class ROFockMethod(N:Long) {
         Console.OUT.println ("    ROFockMethod Initialization 'up to ylms' time: " + (timer.total(0) as Double) / 1e9 + " seconds");
         timer.start(0);
 
-        this.auxJMat_plh=PlaceLocalHandle.make[Rail[Rail[Double]]](
+        this.auxJ_plh=PlaceLocalHandle.make[Rail[Rail[Double]]](
             PlaceGroup.WORLD, 
             ()=>{
                 val shp = shellPairs_plh(), pid = here.id;
-                val auxJMat_plh = new Rail[Rail[Double]](shp.size);
+                val auxJ_plh = new Rail[Rail[Double]](shp.size);
                 val mult = (Math.ceil(nPlaces*.5+.5)-((nPlaces%2L==0L && pid<nPlaces/2)?1:0)) as Long;
                 val colStart = offsetAtPlace(pid);
                 val colStop = offsetAtPlace((pid+mult)%nPlaces);
@@ -294,28 +294,28 @@ public class ROFockMethod(N:Long) {
                         size = sp.maxbraa*sp.maxbrab*roK;
                     if (offsetAtPlace(pid) <= nu && nu < offsetAtPlace(pid+1) && mu > nu) size=0;
                     if (offsetAtPlace(pid) <= nu && nu < offsetAtPlace(pid+1) && mu < nu) size*=2;
-                    auxJMat_plh(i) = new Rail[Double](size);
+                    auxJ_plh(i) = new Rail[Double](size);
                 }
-                auxJMat_plh
+                auxJ_plh
             }
         );      
 
-        this.auxKMat_plh=PlaceLocalHandle.make[Rail[Long]](
+        this.auxKIdx_plh=PlaceLocalHandle.make[Rail[Long]](
             PlaceGroup.WORLD, 
             ()=>{
                 val shp = shellPairs_plh(), size=shp.size, pid=here.id;
-                val auxKMat_plh = new Rail[Long](shp.size);
+                val auxKIdx_plh = new Rail[Long](shp.size);
                 finish for (i in 0..(size-1)) async {
                     val sp = shp(i), mu = sp.mu, nu = sp.nu;
                     if (offsetAtPlace(pid) <= nu && nu < offsetAtPlace(pid+1) && mu != nu) {
                         var j:Long=-1;
                         if (mu>nu) for (j=i-1; shp(j).mu!=nu || shp(j).nu!=mu; j--);
                         else for (j=i+1; shp(j).mu!=nu || shp(j).nu!=mu; j++);
-                        auxKMat_plh(i)=j+size;
+                        auxKIdx_plh(i)=j+size;
                         //if (shp(j).mu!=nu || shp(j).nu!=mu) Console.OUT.println ("i="+i+"j="+j);
-                    } else  auxKMat_plh(i) = -1;
+                    } else  auxKIdx_plh(i) = -1;
                 }
-                auxKMat_plh
+                auxKIdx_plh
             }
         );    
 
@@ -359,190 +359,25 @@ public class ROFockMethod(N:Long) {
         val place0GRefK = new GlobalRail[Double](tempK);
 
         finish ateach(place in Dist.makeUnique()) {
-            val pid = here.id;
-            val offsetHere = offsetAtPlace(pid);
             val nPlaces = Place.MAX_PLACES;
+            val pid = here.id;
 
             ROFockMethod.setThread(1n);
 
             // For faster access
-            val shp=shellPairs_plh(), size=shp.size, ylm=ylms_plh();
-            val auxJMat=auxJMat_plh(), auxKMat=auxKMat_plh();
-            val localJ=distJ.local(), localK=distK.local();
-            val dlm=dlm_plh(), range=shellPairRange_plh(); 
+            val auxJ = auxJ_plh();
+            val localJ = distJ.local(), localK = distK.local();
+            val dlm = dlm_plh(); 
 
-            val bMat = new DenseMatrix(nOrbitals, roK*funcAtPlace(pid), halfAuxMat.local().d); 
-            
-            localJ.reset(); localK.reset();
+            val bMat = new DenseMatrix(nOrbitals, roK*funcAtPlace(pid), halfAuxMat.local().d);
+
+            localJ.reset();
+            localK.reset();
             
             for (ron in 0n..roN) {
-                // Console.OUT.println("Aux - distributed ron="+ron);
-                // Aux & D
-                timer.start(TIMER_AUX);
-                val doK = (ron <= roNK);
-                dlm.clear();
-                dlm_wlh.applyLocal((d:Rail[Double])=> { d.clear(); });
-                for (i in 0..(shp.size-1)) if (0<=auxKMat(i) && auxKMat(i)<size) auxKMat(i)+=size;
-                
-                finish DivideAndConquerLoop1D(0, shellAtPlace(pid)).execute(
-                (shellIdx:Long)=> {
-                    var shellPairIdx0:Long = 0; 
-                    if (shellIdx>0) shellPairIdx0 = range(shellIdx-1);
-                    val shellPair0 = shp(shellPairIdx0);
-                    val muSize = shellPair0.mu2-shellPair0.mu+1;
-                    val auxK = auxK_wlh(); 
-                    auxK.clear();
-
-                    val intPack = intPack_wlh(), dlm_partial = dlm_wlh();
-                    for (var shellPairIdx:Long=shellPairIdx0; shellPairIdx<range(shellIdx); shellPairIdx++) {
-                        val sp = shp(shellPairIdx);
-                        val maxLron = sp.L(ron);
-                        if (maxLron >= 0) {
-                            val maxLm=(maxLron+1)*(maxLron+1), nuSize=sp.nu2-sp.nu+1, temp=auxJMat(shellPairIdx), srcshellPairIdx=auxKMat(shellPairIdx);
-                            val off=(roK*muSize*sp.nu) as Int, asize=muSize*nuSize*roK;
-                            var ind:Long=0; 
-                            if (srcshellPairIdx<0 || srcshellPairIdx>=size) { // Generate Aux Ints and normalize ()
-                                val y=ylm(shellPairIdx);
-                                intPack.genClass(sp.bang, sp.aang, sp.bPoint, sp.aPoint, sp.zetaB, sp.zetaA, sp.conB, sp.conA, ron, maxLron, y, sp.maxL, off, auxK);
-                                for (var nu:Long=sp.nu; nu<=sp.nu2; nu++) for (var mu:Long=sp.mu; mu<=sp.mu2; mu++) {
-                                    val nrm=norm(mu)*norm(nu);
-                                    for (var rolm:Long=0; rolm<maxLm; rolm++, ind++) 
-                                        auxK(off+ind)*=nrm;
-                                }
-                            } else if (doK || (srcshellPairIdx>0 && sp.nu>sp.mu)) {  // Read Aux Ints (for K or J)
-                                var src:Rail[Double] = auxJMat(srcshellPairIdx); // from remote location
-                                if (src.size==0) { 
-                                    src=auxJMat(shellPairIdx); ind=asize;  // from local location
-                                }
-                                for (var mu:Long=sp.mu, tmu:Long=0; mu<=sp.mu2; mu++, tmu++) for (var nu:Long=sp.nu; nu<=sp.nu2; nu++) 
-                                    for (rolm in 0..(maxLm-1)) 
-                                        auxK((nu*muSize+tmu)*roK+rolm)=src(ind++);
-                            }
-
-                            if (temp.size!=0) Rail.copy(auxK, off as Long, temp, 0, asize); // purely for J
-                            else if (srcshellPairIdx>=size) { //write to remote shp J - to be read and save time
-                                val temp2=auxJMat(srcshellPairIdx-size); 
-                                Rail.copy(auxK, off as Long, temp2, asize, asize);
-                            } 
-                            if (srcshellPairIdx>=size) auxKMat(srcshellPairIdx-size)-=size;
-
-                            // J matter
-                            ind=0;
-                            if (sp.mu==sp.nu) { // for diagonal block of J
-                                for (var nu:Long=sp.nu; nu<=sp.nu2; nu++) for (var mu:Long=sp.mu; mu<=sp.mu2; mu++) {
-                                    val scdmn=density(mu, nu);
-                                    for (var rolm:Long=0; rolm<maxLm; rolm++, ind++)
-                                        dlm_partial(rolm)+=scdmn*temp(ind); 
-                                }
-                            } else if (temp.size!=0) { // for the rest of J
-                                for (var nu:Long=sp.nu; nu<=sp.nu2; nu++) for (var mu:Long=sp.mu; mu<=sp.mu2; mu++) {
-                                    val scdmn=density(mu, nu);
-                                    for (var rolm:Long=0; rolm<maxLm; rolm++, ind++) 
-                                        dlm_partial(rolm)+=2.*scdmn*temp(ind);
-                                } 
-                            }
-                        }
-                    }
-                    if (doK) {
-                        val auxKMat = new DenseMatrix(roK*muSize, N, auxK);
-                        DenseMatrixBLAS.compMultTrans(mos, auxKMat, bMat, [nOrbitals, auxKMat.M, N], [0, 0, 0, 0, 0, (shellPair0.mu-offsetHere)*roK], false);
-                    }
-                }
-                );
-
-                dlm_wlh.reduceLocal(dlm, (a:Rail[Double], b:Rail[Double])=> RailUtils.map(a, b, a, (x:Double, y:Double)=>x+y));
-                Team.WORLD.allreduce[Double](dlm, 0L, dlm, 0L, dlm.size, Team.ADD);
-                timer.stop(TIMER_AUX);
-
-                finish {
-                    timer.start(TIMER_K);
-                    if (doK) {
-                        ROFockMethod.setThread(Runtime.NTHREADS);
-                        val remoteK = remoteBlockK_plh();
-                        val a = halfAuxMat.local();
-
-                        val blocks = (Math.ceil(nPlaces*.5+.5) /*- ((nPlaces%2L==0L && pid<nPlaces/2)?1:0)*/) as Long;//
-                        var blk:Long = 1;
-                        var nextBlockPlace:Long = -1;
-                        finish {
-                            if (blocks > 1) {
-                                // overlap getting first remote block of K with DSYRK
-                                nextBlockPlace = (pid+blk) % nPlaces;
-                                val blockSize = roK * nOrbitals * funcAtPlace(nextBlockPlace);
-                                async remoteK.fetchNext(halfAuxMat, nextBlockPlace, blockSize);
-                            }
-                            timer.start(TIMER_DSYRK);
-                            DenseMatrixBLAS.symRankKUpdateTrans(a, localK, [a.N, a.M], [0, 0, 0, offsetHere], true, true);
-                            timer.stop(TIMER_DSYRK);
-@Ifdef("__DEBUG__") {
-                            val dsyrkSecs = timer.last(TIMER_DSYRK) / 1e9;
-                            val dsyrkGFlops = a.N * a.N * a.M / 1e9;
-                            Console.OUT.printf("Place(%d) DSYRK of %.3f GFLOPs took %.3f s ( %.3f GFLOP/s)\n", here.id, dsyrkGFlops, dsyrkSecs, (dsyrkGFlops/dsyrkSecs));
-}
-                        }
-
-                        // This produces K/2 & TODO: ring broadcast ?
-                        while (nextBlockPlace != -1) {
-                            val thisBlockPlace = nextBlockPlace;
-                            val thisBlock = remoteK.getCurrent();
-                            blk++;
-                            finish {
-                                if (blk < blocks) {
-                                    // overlap getting next remote block of K with DGEMM
-                                    nextBlockPlace = (pid+blk) % nPlaces;
-                                    val fullBlockSize = roK * nOrbitals * funcAtPlace(nextBlockPlace);
-                                    val full = (nPlaces%2==1 || blk<blocks-1 || pid<nPlaces/2);
-                                    val blockSize = full ? fullBlockSize : (fullBlockSize+1) / 2;
-                                    async remoteK.fetchNext(halfAuxMat, nextBlockPlace, blockSize);
-                                } else {
-                                    nextBlockPlace = -1;
-                                }
-                                timer.start(TIMER_DGEMM);
-                                if (nPlaces%2==1 || blk<blocks)
-                                    DenseMatrixBLAS.compTransMult(a, thisBlock, localK, [a.N, thisBlock.N, a.M], [0, 0, 0, 0, 0, offsetAtPlace(thisBlockPlace)], true);
-                                else if (pid<nPlaces/2)
-                                    DenseMatrixBLAS.compTransMult(a, thisBlock, localK, [a.N/2, thisBlock.N, a.M], [0, a.N-a.N/2, 0, 0, a.N-a.N/2, offsetAtPlace(thisBlockPlace)], true);
-                                else
-                                    DenseMatrixBLAS.compTransMult(a, thisBlock, localK, [a.N, thisBlock.N-thisBlock.N/2, a.M], [0, 0, 0, 0, 0, offsetAtPlace(thisBlockPlace)], true);
-                                timer.stop(TIMER_DGEMM);
-
-@Ifdef("__DEBUG__") {
-                                val dgemmSecs = timer.last(TIMER_DGEMM) / 1e9;
-                                val dgemmGFlops = 2 * a.N * thisBlock.N * a.M / 1e9;
-                                Console.OUT.printf("Place(%d) DGEMM of %.3f GFLOPs from place %d took %.3f s ( %.3f GFLOP/s, %d FLOPs/word)\n", here.id, dgemmGFlops, thisBlockPlace, dgemmSecs, (dgemmGFlops/dgemmSecs), (2*a.N));
-}
-                            }
-                        }
-
-                        ROFockMethod.setThread(1n);
-                    }
-                    timer.stop(TIMER_K);
-                }
-
-                timer.start(TIMER_JMATRIX); 
-                // Console.OUT.println("J - distributed"); 
-                finish DivideAndConquerLoop1D(0, shp.size, 16).execute(
-                (shellPairIdx:Long)=> {
-                    val sp=shp(shellPairIdx);
-                    val auxJ=auxJMat(shellPairIdx);
-                    val maxLron=sp.L(ron);
-                    if (auxJ.size > 0 && maxLron >=0n) {
-                        val maxLm=(maxLron+1)*(maxLron+1);
-                        var ind:Long=0; 
-                        for (nu in sp.nu..sp.nu2) {
-                            for (var mu:Long=sp.mu, muoff:Long=mu-offsetHere; mu<=sp.mu2; mu++, muoff++) {
-                                var jContrib:Double=0.;
-                                for (rolm in 0..(maxLm-1)) {
-                                    jContrib += dlm(rolm) * auxJ(ind++);
-                                }
-                                localJ(muoff, nu) += jContrib;
-                            }
-                        }
-                    }
-                }
-                );
-                timer.stop(TIMER_JMATRIX);
-
+                computeAuxBDlm(density, mos, ron, auxJ, bMat, dlm);
+                computeK(ron, bMat, localK);
+                computeJ(ron, auxJ, dlm, localJ);
                 Team.WORLD.barrier();
             } // roN
 
@@ -567,7 +402,7 @@ public class ROFockMethod(N:Long) {
                     e(0) += 0.5 * density(j, j) * localJ(j0, j);
                     //e(1) += .5*density(j, j)*localK(j0, j);
                     for (var i0:Long=0, i:Long=offsetAtPlace(pid); i<j; i0++, i++) {
-                        e(0) += density(i, j)*localJ(i0, j);
+                        e(0) += density(i, j) * localJ(i0, j);
                         //e(1) += density(i, j)*localK(i0, j);
                     }
                 }
@@ -676,6 +511,193 @@ public class ROFockMethod(N:Long) {
         Console.OUT.printf("    Time to construct GMatrix with RO: %.3f seconds\n", (timer.last(TIMER_TOTAL) as Double) / 1e9); 
 
         @Ifdef("__PAPI__"){ papi.printFlops(); papi.printMemoryOps();}
+    }
+
+    private def computeAuxBDlm(density:Density{self.N==this.N}, mos:MolecularOrbitals{self.N==this.N}, ron:Int, auxJ:Rail[Rail[Double]], bMat:DenseMatrix, dlm:Rail[Double]) {
+        // Console.OUT.println("Aux - distributed ron="+ron);
+        timer.start(TIMER_AUX);
+        val doK = (ron <= roNK);
+        dlm.clear();
+        dlm_wlh.applyLocal((d:Rail[Double])=> { d.clear(); });
+
+        val ylm=ylms_plh();
+        val auxKIdx = auxKIdx_plh();
+
+        val shp = shellPairs_plh();
+        val size = shp.size;
+        for (i in 0..(size-1)) if (0<=auxKIdx(i) && auxKIdx(i)<size) auxKIdx(i)+=size;
+        val range = shellPairRange_plh();
+        
+        finish DivideAndConquerLoop1D(0, shellAtPlace(here.id)).execute(
+        (shellIdx:Long)=> {
+            var shellPairIdx0:Long = 0; 
+            if (shellIdx>0) shellPairIdx0 = range(shellIdx-1);
+            val shellPair0 = shp(shellPairIdx0);
+            val muSize = shellPair0.mu2-shellPair0.mu+1;
+            val auxK = auxK_wlh(); 
+            auxK.clear();
+
+            val intPack = intPack_wlh(), dlm_partial = dlm_wlh();
+            for (var shellPairIdx:Long=shellPairIdx0; shellPairIdx<range(shellIdx); shellPairIdx++) {
+                val sp = shp(shellPairIdx);
+                val maxLron = sp.L(ron);
+                if (maxLron >= 0) {
+                    val temp = auxJ(shellPairIdx);
+                    val maxLm = (maxLron+1)*(maxLron+1), nuSize = sp.nu2-sp.nu+1, srcshellPairIdx = auxKIdx(shellPairIdx);
+                    val off = (roK*muSize*sp.nu) as Int, asize=muSize*nuSize*roK;
+                    var ind:Long=0; 
+                    if (srcshellPairIdx<0 || srcshellPairIdx>=size) { // Generate Aux Ints and normalize ()
+                        val y=ylm(shellPairIdx);
+                        intPack.genClass(sp.bang, sp.aang, sp.bPoint, sp.aPoint, sp.zetaB, sp.zetaA, sp.conB, sp.conA, ron, maxLron, y, sp.maxL, off, auxK);
+                        for (var nu:Long=sp.nu; nu<=sp.nu2; nu++) for (var mu:Long=sp.mu; mu<=sp.mu2; mu++) {
+                            val nrm=norm(mu)*norm(nu);
+                            for (var rolm:Long=0; rolm<maxLm; rolm++, ind++) 
+                                auxK(off+ind)*=nrm;
+                        }
+                    } else if (doK || (srcshellPairIdx>0 && sp.nu>sp.mu)) {  // Read Aux Ints (for K or J)
+                        var src:Rail[Double] = auxJ(srcshellPairIdx); // from remote location
+                        if (src.size==0) { 
+                            src = auxJ(shellPairIdx); ind = asize;  // from local location
+                        }
+                        for (var mu:Long=sp.mu, tmu:Long=0; mu<=sp.mu2; mu++, tmu++) for (var nu:Long=sp.nu; nu<=sp.nu2; nu++) 
+                            for (rolm in 0..(maxLm-1)) 
+                                auxK((nu*muSize+tmu)*roK+rolm) = src(ind++);
+                    }
+
+                    if (temp.size!=0) Rail.copy(auxK, off as Long, temp, 0, asize); // purely for J
+                    else if (srcshellPairIdx>=size) { //write to remote shp J - to be read and save time
+                        val temp2 = auxJ(srcshellPairIdx-size); 
+                        Rail.copy(auxK, off as Long, temp2, asize, asize);
+                    } 
+                    if (srcshellPairIdx>=size) auxKIdx(srcshellPairIdx-size)-=size;
+
+                    // J matter
+                    ind=0;
+                    if (sp.mu==sp.nu) { // for diagonal block of J
+                        for (var nu:Long=sp.nu; nu<=sp.nu2; nu++) for (var mu:Long=sp.mu; mu<=sp.mu2; mu++) {
+                            val scdmn=density(mu, nu);
+                            for (var rolm:Long=0; rolm<maxLm; rolm++, ind++)
+                                dlm_partial(rolm)+=scdmn*temp(ind); 
+                        }
+                    } else if (temp.size!=0) { // for the rest of J
+                        for (var nu:Long=sp.nu; nu<=sp.nu2; nu++) for (var mu:Long=sp.mu; mu<=sp.mu2; mu++) {
+                            val scdmn=density(mu, nu);
+                            for (var rolm:Long=0; rolm<maxLm; rolm++, ind++) 
+                                dlm_partial(rolm)+=2.*scdmn*temp(ind);
+                        } 
+                    }
+                }
+            }
+            if (doK) {
+                val auxKMat = new DenseMatrix(roK*muSize, N, auxK);
+                DenseMatrixBLAS.compMultTrans(mos, auxKMat, bMat, [nOrbitals, auxKMat.M, N], [0, 0, 0, 0, 0, (shellPair0.mu-offsetAtPlace(here.id))*roK], false);
+            }
+        }
+        );
+
+        dlm_wlh.reduceLocal(dlm, (a:Rail[Double], b:Rail[Double])=> RailUtils.map(a, b, a, (x:Double, y:Double)=>x+y));
+        Team.WORLD.allreduce[Double](dlm, 0L, dlm, 0L, dlm.size, Team.ADD);
+        timer.stop(TIMER_AUX);
+    }
+
+    private def computeK(ron:Int, bMat:DenseMatrix, localK:DenseMatrix) {
+        timer.start(TIMER_K);
+        val doK = (ron <= roNK);
+        if (doK) {
+            finish {
+                val nPlaces = Place.MAX_PLACES;
+                val pid = here.id;
+                val offsetHere = offsetAtPlace(pid);
+                ROFockMethod.setThread(Runtime.NTHREADS);
+                val remoteK = remoteBlockK_plh();
+                val a = halfAuxMat.local();
+
+                val blocks = (Math.ceil(nPlaces*.5+.5) /*- ((nPlaces%2L==0L && pid<nPlaces/2)?1:0)*/) as Long;//
+                var blk:Long = 1;
+                var nextBlockPlace:Long = -1;
+                finish {
+                    if (blocks > 1) {
+                        // overlap getting first remote block of K with DSYRK
+                        nextBlockPlace = (pid+blk) % nPlaces;
+                        val blockSize = roK * nOrbitals * funcAtPlace(nextBlockPlace);
+                        async remoteK.fetchNext(halfAuxMat, nextBlockPlace, blockSize);
+                    }
+                    timer.start(TIMER_DSYRK);
+                    DenseMatrixBLAS.symRankKUpdateTrans(a, localK, [a.N, a.M], [0, 0, 0, offsetHere], true, true);
+                    timer.stop(TIMER_DSYRK);
+@Ifdef("__DEBUG__") {
+                    val dsyrkSecs = timer.last(TIMER_DSYRK) / 1e9;
+                    val dsyrkGFlops = a.N * a.N * a.M / 1e9;
+                    Console.OUT.printf("Place(%d) DSYRK of %.3f GFLOPs took %.3f s ( %.3f GFLOP/s)\n", here.id, dsyrkGFlops, dsyrkSecs, (dsyrkGFlops/dsyrkSecs));
+}
+                }
+
+                // This produces K/2 & TODO: ring broadcast ?
+                while (nextBlockPlace != -1) {
+                    val thisBlockPlace = nextBlockPlace;
+                    val thisBlock = remoteK.getCurrent();
+                    blk++;
+                    finish {
+                        if (blk < blocks) {
+                            // overlap getting next remote block of K with DGEMM
+                            nextBlockPlace = (pid+blk) % nPlaces;
+                            val fullBlockSize = roK * nOrbitals * funcAtPlace(nextBlockPlace);
+                            val full = (nPlaces%2==1 || blk<blocks-1 || pid<nPlaces/2);
+                            val blockSize = full ? fullBlockSize : (fullBlockSize+1) / 2;
+                            async remoteK.fetchNext(halfAuxMat, nextBlockPlace, blockSize);
+                        } else {
+                            nextBlockPlace = -1;
+                        }
+                        timer.start(TIMER_DGEMM);
+                        if (nPlaces%2==1 || blk<blocks)
+                            DenseMatrixBLAS.compTransMult(a, thisBlock, localK, [a.N, thisBlock.N, a.M], [0, 0, 0, 0, 0, offsetAtPlace(thisBlockPlace)], true);
+                        else if (pid<nPlaces/2)
+                            DenseMatrixBLAS.compTransMult(a, thisBlock, localK, [a.N/2, thisBlock.N, a.M], [0, a.N-a.N/2, 0, 0, a.N-a.N/2, offsetAtPlace(thisBlockPlace)], true);
+                        else
+                            DenseMatrixBLAS.compTransMult(a, thisBlock, localK, [a.N, thisBlock.N-thisBlock.N/2, a.M], [0, 0, 0, 0, 0, offsetAtPlace(thisBlockPlace)], true);
+                        timer.stop(TIMER_DGEMM);
+
+@Ifdef("__DEBUG__") {
+                        val dgemmSecs = timer.last(TIMER_DGEMM) / 1e9;
+                        val dgemmGFlops = 2 * a.N * thisBlock.N * a.M / 1e9;
+                        Console.OUT.printf("Place(%d) DGEMM of %.3f GFLOPs from place %d took %.3f s ( %.3f GFLOP/s, %d FLOPs/word)\n", here.id, dgemmGFlops, thisBlockPlace, dgemmSecs, (dgemmGFlops/dgemmSecs), (2*a.N));
+}
+                    }
+                }
+
+                ROFockMethod.setThread(1n);
+            }
+        }
+        timer.stop(TIMER_K);
+    }
+
+    private def computeJ(ron:Int, auxJ:Rail[Rail[Double]],dlm:Rail[Double], localJ:DenseMatrix) {
+        timer.start(TIMER_JMATRIX); 
+        // Console.OUT.println("J - distributed");
+        val shp = shellPairs_plh();
+        val size = shp.size;
+        val offsetHere = offsetAtPlace(here.id);
+        finish DivideAndConquerLoop1D(0, shp.size, 16).execute(
+        (shellPairIdx:Long)=> {
+            val sp = shp(shellPairIdx);
+            val auxJSP = auxJ(shellPairIdx);
+            val maxLron = sp.L(ron);
+            if (auxJSP.size > 0 && maxLron >=0n) {
+                val maxLm = (maxLron+1)*(maxLron+1);
+                var ind:Long=0; 
+                for (nu in sp.nu..sp.nu2) {
+                    for (var mu:Long=sp.mu, muoff:Long=mu-offsetHere; mu<=sp.mu2; mu++, muoff++) {
+                        var jContrib:Double=0.;
+                        for (rolm in 0..(maxLm-1)) {
+                            jContrib += dlm(rolm) * auxJSP(ind++);
+                        }
+                        localJ(muoff, nu) += jContrib;
+                    }
+                }
+            }
+        }
+        );
+        timer.stop(TIMER_JMATRIX);
     }
 
     private static struct DivideAndConquerLoop1D(start:Long, end:Long, grainSize:Long) {
