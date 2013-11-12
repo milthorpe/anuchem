@@ -399,12 +399,12 @@ public class ROFockMethod(N:Long) {
                 // Calculate eJ and eK
                 e.clear();
                 for (var j0:Long=0, j:Long=offsetAtPlace(pid); j<offsetAtPlace(pid+1); j0++, j++) {
-                    e(0) += 0.5 * density(j, j) * localJ(j0, j);
                     //e(1) += .5*density(j, j)*localK(j0, j);
                     for (var i0:Long=0, i:Long=offsetAtPlace(pid); i<j; i0++, i++) {
                         e(0) += density(i, j) * localJ(i0, j);
                         //e(1) += density(i, j)*localK(i0, j);
                     }
+                    e(0) += 0.5 * density(j, j) * localJ(j0, j);
                 }
                 if (colStart < colStop) {
                     for (var j:Long=colStart; j<colStop; j++) {
@@ -495,13 +495,7 @@ public class ROFockMethod(N:Long) {
             }
         }
         
-        var eTwo:Double = 0.0;
-        for (i in 0..(N-1)) {
-            for (j in 0..(N-1)) {
-                eTwo += density(i, j) * gMatrix(j, i);
-            }
-        }
-        eTwo = 0.5 * eTwo / roZ;
+        val eTwo = 0.5 * traceOfSymmetricProduct(density, gMatrix) / roZ;
 
         val eJ = e_plh()(0)/roZ;
         val eK = (eTwo-eJ)*.5;
@@ -511,6 +505,20 @@ public class ROFockMethod(N:Long) {
         Console.OUT.printf("    Time to construct GMatrix with RO: %.3f seconds\n", (timer.last(TIMER_TOTAL) as Double) / 1e9); 
 
         @Ifdef("__PAPI__"){ papi.printFlops(); papi.printMemoryOps();}
+    }
+
+    private static def traceOfSymmetricProduct(a:DenseMatrix{self.M==self.N}, b:DenseMatrix{self.M==self.N,self.M==a.M}) {
+        val N = a.N;
+        var trace:Double = 0.0;
+        for (i in 0..(N-1)) {
+            for (j in 0..(i-1)) {
+                trace += 2 * a(i, j) * b(i, j);
+            }
+        }
+        for (i in 0..(N-1)) {
+            trace += a(i, i) * b(i, i);
+        }
+        return trace;
     }
 
     private def computeAuxBDlm(density:Density{self.N==this.N}, mos:MolecularOrbitals{self.N==this.N}, ron:Int, auxJ:Rail[Rail[Double]], bMat:DenseMatrix, dlm:Rail[Double]) {
