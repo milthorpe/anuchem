@@ -1,4 +1,4 @@
-peptide
+1D-octapeptide
 basis 6311g
 units 0.5291772109217
 RO_Z 1.00
@@ -86,11 +86,10 @@ H 11.3608344 -19.1564098 -2.9431359
 H 12.8190559 -19.6098046 -2.0097195 
 H 11.3608344 -20.6458324 -1.9507335
 end
-compare_RO
 scf_max 0
 guess core
 use_RO 1
-RO_N 4
+RO_N 110
 RO_L 50
-omega 0.1
+omega 0.3
 gmat_parallel_scheme 0

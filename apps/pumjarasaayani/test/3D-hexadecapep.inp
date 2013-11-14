@@ -172,5 +172,5 @@ guess core
 use_RO 1
 RO_N 110
 RO_L 50
-omega 0.1
+omega 0.3
 gmat_parallel_scheme 0
