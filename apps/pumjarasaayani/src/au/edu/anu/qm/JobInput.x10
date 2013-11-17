@@ -151,7 +151,7 @@ public class JobInput {
                     if (!(jd.guess.equals(JobDefaults.GUESS_SAD) || jd.guess.equals(JobDefaults.GUESS_CORE))) {
                         throw new Exception("Invalid input: " + line);
                     }
-                }
+                } else throw new Exception("Invalid input: " + line);
 
                 line = fil.readLine();
             }

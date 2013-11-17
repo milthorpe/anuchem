@@ -52,7 +52,7 @@ public class PumjaRasaayani {
 
         jd.rad=mol.getRadius(jd.roZ);
         Console.OUT.printf("rad/PI=%f\n",jd.rad/3.1415926535);
-        if (jd.roOn!=0n && jd.rad>3.1415926535) Console.OUT.printf("WARNING: Coulomb RO is not valid for rad>PI\n");
+        if (jd.roOn!=0n && jd.rad>3.1415926535 && jd.maxIterations > 0n) Console.OUT.printf("WARNING: Full-Coulomb RO is not valid for rad>PI\n"); // See line 87 HartreeFockSCFMethod.x10
         if (jd.roOn==0n && jd.roZ!=1.0) Console.OUT.printf("WARNING: Coulomb RO is off: roZ=%f is not necessary.\n",jd.roZ);
 
         printInput();
