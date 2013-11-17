@@ -1,7 +1,7 @@
 peptide
 basis 6311g
 units 0.5291772109217
-RO_Z 1.00
+RO_Z 1.0
 molecule
 H -3.1839032 16.1613978 11.6242816 
 C -2.7118951 16.3576187 10.6577422 
@@ -170,7 +170,5 @@ compare_RO
 scf_max 0
 guess core
 use_RO 1
-RO_N 110
-RO_L 50
 omega 0.3
 gmat_parallel_scheme 0

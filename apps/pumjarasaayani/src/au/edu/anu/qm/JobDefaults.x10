@@ -62,15 +62,14 @@ public class JobDefaults {
         roOn=0n;
         compareRo = false;
 
-        roN=100n;
-        roNK=-1n; // see GmatrixRoMem.x10
-        roL=100n;
+        roN=300n;
+        roL=200n;
+        roNK=-1n; // see ROFockMatrix
         roZ=1.0;
 
         omega = .1;
         thresh = 1e-14;
         roThresh = 1e-6;
-
     }
 
     private static _theInstance = new JobDefaults();

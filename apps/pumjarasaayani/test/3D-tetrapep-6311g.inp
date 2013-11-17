@@ -1,7 +1,7 @@
 1D-tetrapeptide
 basis 6311g
 units 0.5291772109217
-RO_Z 1.00
+RO_Z 3.65
 molecule
 C -5.4138796 2.7633846 5.1715016 
 H -6.4576373 2.8462477 4.8896403 
@@ -49,9 +49,6 @@ end
 scf_max 0
 guess core
 use_RO 1
-RO_N 110
-RO_L 50
 RO_thresh 1e-6
 thresh 1e-14
 omega 0.3
-gmat_parallel_scheme 0

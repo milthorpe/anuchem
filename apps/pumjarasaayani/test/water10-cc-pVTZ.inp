@@ -1,7 +1,7 @@
 10water
 basis cc-pVTZ
 units 0.5291772109217
-RO_Z 3.0
+RO_Z 3.02
 molecule
  O    -0.970508     2.454333     1.174186
  O    -2.589474     0.126309     1.242786
@@ -37,9 +37,6 @@ end
 scf_max 0
 guess core
 use_RO 1
-RO_N 300
-RO_L 16
 RO_thresh 6
 thresh 14
 omega 0.3
-gmat_parallel_scheme 0
