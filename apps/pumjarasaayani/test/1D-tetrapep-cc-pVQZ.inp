@@ -1,7 +1,7 @@
 1D-tetrapeptide
 basis cc-pVQZ
 units 0.5291772109217
-RO_Z 5.50
+RO_Z 1.0
 molecule
 C -5.5904100 2.8305455 -0.0645853 
 H -6.1987794 3.4103879 0.6190565 

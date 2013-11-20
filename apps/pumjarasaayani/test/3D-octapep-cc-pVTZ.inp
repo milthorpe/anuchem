@@ -1,7 +1,7 @@
 3D-octapeptide
 basis cc-pVTZ
 units 0.5291772109217
-RO_Z 4.865
+RO_Z 1.0
 molecule
 H -0.4835171 0.8273669 1.4822209 
 C -0.1574594 0.1734563 2.3025858 
