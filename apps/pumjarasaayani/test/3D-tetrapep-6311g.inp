@@ -1,4 +1,4 @@
-1D-tetrapeptide
+3D-tetrapeptide
 basis 6311g
 units 0.5291772109217
 RO_Z 1.0
@@ -49,6 +49,6 @@ end
 scf_max 0
 guess core
 use_RO 1
-RO_thresh 1e-6
-thresh 1e-14
+RO_thresh 6
+thresh 14
 omega 0.3
