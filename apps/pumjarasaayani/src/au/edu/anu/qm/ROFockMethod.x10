@@ -536,7 +536,7 @@ public class ROFockMethod(N:Long) {
         for (i in 0..(size-1)) if (0<=auxKIdx(i) && auxKIdx(i)<size) auxKIdx(i)+=size;
         val range = shellPairRange_plh();
         
-        finish DivideAndConquerLoop1D(0, shellAtPlace(here.id)).execute(
+        finish RecursiveBisection1D(0, shellAtPlace(here.id)).execute(
         (shellIdx:Long)=> {
             var shellPairIdx0:Long = 0; 
             if (shellIdx>0) shellPairIdx0 = range(shellIdx-1);
@@ -685,7 +685,7 @@ public class ROFockMethod(N:Long) {
         val shp = shellPairs_plh();
         val size = shp.size;
         val offsetHere = offsetAtPlace(here.id);
-        finish DivideAndConquerLoop1D(0, shp.size, 16).execute(
+        finish RecursiveBisection1D(0, shp.size, 16).execute(
         (shellPairIdx:Long)=> {
             val sp = shp(shellPairIdx);
             val auxJSP = auxJ(shellPairIdx);
@@ -708,7 +708,7 @@ public class ROFockMethod(N:Long) {
         timer.stop(TIMER_JMATRIX);
     }
 
-    private static struct DivideAndConquerLoop1D(start:Long, end:Long, grainSize:Long) {
+    private static struct RecursiveBisection1D(start:Long, end:Long, grainSize:Long) {
         public def this(start:Long, end:Long) {
             property(start, end, 1);
         }
@@ -719,10 +719,10 @@ public class ROFockMethod(N:Long) {
 
         public def execute(body:(idx:Long)=> void) {
             if ((end-start) > grainSize) {
-                val firstHalf=DivideAndConquerLoop1D(start, (start+end)/2L, grainSize);
-                val secondHalf=DivideAndConquerLoop1D((start+end)/2L, end, grainSize);
-                async firstHalf.execute(body);
-                secondHalf.execute(body);
+                val secondHalf=RecursiveBisection1D((start+end)/2L, end, grainSize);
+                async secondHalf.execute(body);
+                val firstHalf=RecursiveBisection1D(start, (start+end)/2L, grainSize);
+                firstHalf.execute(body);
             } else {
                 for (i in start..(end-1)) {
                     body(i);
