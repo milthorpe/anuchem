@@ -15,24 +15,33 @@ import x10.compiler.Inline;
  * of activity generation approaches
  * @author milthorpe 08/2011
  */
-public class BenchmarkParallelLoop(size : Int, print:Boolean) {
+public class BenchmarkParallelLoop(size:Long, print:Boolean) {
     private static ITERS = 1000;
 
-    public def this(size : Int, print:Boolean) {
+    public def this(size:Long, print:Boolean) {
         property(size, print);
     }
 
 	public def testAll() {
-        val a = new Array[Int](size);
+        val a = new Rail[Long](size);
 
         var start:Long = System.nanoTime();
         for (i in 1..ITERS) {
-            finish for ([p] in a) async {
+            finish for (p in 0..(a.size-1)) async {
                 a(p) = p;
             }
         }
         var stop:Long = System.nanoTime();
         Console.OUT.printf("standard loop: %g ms\n", ((stop-start) as Double) / 1e6 / ITERS);
+
+/*
+        start = System.nanoTime();
+        for (i in 1..ITERS) {
+            val assign = (p:Long) => { a(p) = p;};
+            finish BenchmarkParallelLoop.doForEach(a.region, assign);
+        }
+        stop = System.nanoTime();
+        Console.OUT.printf("bisected loop: %g ms\n", ((stop-start) as Double) / 1e6 / ITERS);
 
         start = System.nanoTime();
         for (i in 1..ITERS) {
@@ -51,19 +60,23 @@ public class BenchmarkParallelLoop(size : Int, print:Boolean) {
 
         start = System.nanoTime();
         for (i in 1..ITERS) {
-            val assign = (p:Int) => { a(p) = p;};
-            finish BenchmarkParallelLoop.doForEach(a.region, assign);
-        }
-        stop = System.nanoTime();
-        Console.OUT.printf("bisected loop: %g ms\n", ((stop-start) as Double) / 1e6 / ITERS);
-
-        start = System.nanoTime();
-        for (i in 1..ITERS) {
-            val assign = (p:Int) => { a(p) = p;};
+            val assign = (p:Long) => { a(p) = p;};
             finish BenchmarkParallelLoop.doForEach2(a.region, assign);
         }
         stop = System.nanoTime();
         Console.OUT.printf("partially bisected loop: %g ms\n", ((stop-start) as Double) / 1e6 / ITERS);
+*/
+        start = System.nanoTime();
+        for (i in 1..ITERS) {
+            val assign = (p:Long) => { a(p) = p;};
+            finish DivideAndConquerLoop1D(0, size).execute(
+            (i:Long)=> {
+                assign(i);
+            }
+            );
+        }
+        stop = System.nanoTime();
+        Console.OUT.printf("bisected loop 2: %g ms\n", ((stop-start) as Double) / 1e6 / ITERS);
 
         start = System.nanoTime();
         for (i in 1..ITERS) {
@@ -83,7 +96,7 @@ public class BenchmarkParallelLoop(size : Int, print:Boolean) {
 
         start = System.nanoTime();
         for (i in 1..ITERS) {
-            for ([p] in a) {
+            for (p in 0..(a.size-1)) {
                 a(p) = p;
             }
         }
@@ -92,14 +105,30 @@ public class BenchmarkParallelLoop(size : Int, print:Boolean) {
 
 	}
 
-    @Inline static def remainder(iter:Iterator[Point(1)], closure:(Point(1)) => void) {
-        if (iter.hasNext()) {
-            val p = iter.next();
-            async remainder(iter, closure);
-            closure(p);
+    private static struct DivideAndConquerLoop1D(start:Long, end:Long, grainSize:Long) {
+        public def this(start:Long, end:Long) {
+            property(start, end, 1);
+        }
+
+        public def this(start:Long, end:Long, grainSize:Long) {
+            property(start, end, grainSize);
+        }
+
+        public def execute(body:(idx:Long)=> void) {
+            if ((end-start) > grainSize) {
+                val secondHalf=DivideAndConquerLoop1D((start+end)/2L, end, grainSize);
+                async secondHalf.execute(body);
+                val firstHalf=DivideAndConquerLoop1D(start, (start+end)/2L, grainSize);
+                firstHalf.execute(body);
+            } else {
+                for (i in start..(end-1)) {
+                    body(i);
+                }
+            }
         }
     }
 
+/*
     static struct RegionBisection(r:Region) {
         public val firstHalf:Region(r.rank);
         public val secondHalf:Region(r.rank);
@@ -114,11 +143,11 @@ public class BenchmarkParallelLoop(size : Int, print:Boolean) {
                 if (max > min) {
                     // bisect on this dimension
                     val halfway = (max-min+1) / 2;
-                    val firstMax = new Array[Int](r.rank, (i:Int)=> i==dim ? (halfway-1) : r.max(i));
-                    val firstCut = Region.makeRectangular(new Array[Int](r.rank, (i:Int)=>r.min(i)), firstMax);
+                    val firstMax = new Rail[Long](r.rank, (i:Long)=> i==dim ? (halfway-1) : r.max(i));
+                    val firstCut = Region.makeRectangular(new Rail[Int](r.rank, (i:Int)=>r.min(i)), firstMax);
                     firstHalf = r && firstCut;
-                    val secondMin = new Array[Int](r.rank, (i:Int)=> i==dim ? halfway : r.min(i));
-                    val secondCut = Region.makeRectangular(secondMin, new Array[Int](r.rank, (i:Int)=>r.max(i)));
+                    val secondMin = new Rail[Long](r.rank, (i:Int)=> i==dim ? halfway : r.min(i));
+                    val secondCut = Region.makeRectangular(secondMin, new Rail[Long](r.rank, (i:Int)=>r.max(i)));
                     secondHalf = r && secondCut;
                 }
             }
@@ -140,11 +169,11 @@ public class BenchmarkParallelLoop(size : Int, print:Boolean) {
         val size = b.size();
         if (size == 1) {
             val r = b.r;
-            closure(Point.make(new Array[Int](r.rank, (i:Int)=>r.max(i))));
+            closure(Point.make(new Rail[Long](r.rank, (i:Int)=>r.max(i))));
         } else if (size == 2) {
             val r = b.r;
-            async closure(Point.make(new Array[Int](r.rank, (i:Int)=>r.max(i))));
-            closure(Point.make(new Array[Int](r.rank, (i:Int)=>r.min(i))));
+            async closure(Point.make(new Rail[Long](r.rank, (i:Int)=>r.max(i))));
+            closure(Point.make(new Rail[Long](r.rank, (i:Int)=>r.min(i))));
         } else {
             val firstHalf = new RegionBisection(b.firstHalf);
             val secondHalf = new RegionBisection(b.secondHalf);
@@ -167,15 +196,15 @@ public class BenchmarkParallelLoop(size : Int, print:Boolean) {
             bisection1D(start, halfway-1, closure);
         }
     }
-
+*/
     /** @return the depth of the binary tree spanning the threads */
-    private static def getTreeDepth(numThreads:Int):Int {
-        var p:Int = numThreads;
-        var i:Int = 0;
+    private static def getTreeDepth(numThreads:Long):Long {
+        var p:Long = numThreads;
+        var i:Long = 0;
         while (p > 0) { p = p>>1; i++; }
         return i;
     }
-
+/*
     @Inline final static def doForEach2(r:Region(1){rect}, closure:(Int) => void) {
         val treeDepth = getTreeDepth(Runtime.NTHREADS);
         bisection1D_limited(r.min(0), r.max(0), treeDepth, 0, closure);
@@ -196,12 +225,12 @@ public class BenchmarkParallelLoop(size : Int, print:Boolean) {
             bisection1D_limited(start, halfway-1, treeDepth, currentLevel+1, closure);
         }
     }
-
-	public static def main(var args: Array[String](1)): void = {
-        var size:Int = 8000;
+*/
+	public static def main(args:Rail[String]): void = {
+        var size:Long = 8000;
         var print:Boolean = false;
         if (args.size > 0) {
-            size = Int.parse(args(0));
+            size = Long.parse(args(0));
             if (args.size > 1) {
                 print=true;
             }
