@@ -365,10 +365,10 @@ public class PME_SPMD {
         timer.start(TIMER_INDEX_DIRECT);
         val cutoffSquared = cutoff*cutoff;
 		val subCellsDist = this.subCells.dist;
+        val cachedAtoms = atomsCache(here.id);
+        val translations = imageTranslations();
+        val localRegion = subCellsDist(here) as Region(3){rect};
         val directEnergy = finish (Reducible.SumReducer[Double]()) {
-            val cachedAtoms = atomsCache(here.id);
-            val translations = imageTranslations();
-            val localRegion = subCellsDist(here) as Region(3){rect};
             for ([x,y,z] in localRegion) async {
                 val thisCell = cachedAtoms(x,y,z) as Rail[PointCharge];
                 var cellDirectEnergy : Double = 0.0;
