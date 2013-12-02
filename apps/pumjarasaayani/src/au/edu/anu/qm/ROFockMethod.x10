@@ -220,25 +220,12 @@ public class ROFockMethod(N:Long) {
             Console.OUT.printf("%5d  (%6d)  %9d  %7.2f%%\n", i, offsetAtPlace(i), cost, cost*100./tot);
         }
         Console.OUT.printf("Fractions add up to %.3f %%\n", tot2/tot*100.);
-        Console.OUT.printf("Fraction of N at each place: ideal=%.3f max=%.0f min=%.0f\n Imbalance cost=%.3f %%\n\n", ideal, max, min, (max/ideal-1.)*100.);
+        Console.OUT.printf("Fraction of N at each place: ideal=%.1f max=%.0f min=%.0f\n Imbalance cost=%.1f %%\n\n", ideal, max, min, (max/ideal-1.)*100.);
         val maxRow = max as Long; // This is used for remoteBlockK_plh allocation later
 
-        tot=N*N*(nPlaces+1.)*.5/nPlaces; tot2=0.; ideal=max=min=tot/nPlaces;
-        Console.OUT.printf("2. Number of mu nu (block of G/J/K) at each place (bad for X10_NPLACES=even number)\nPlace  Functions  Fraction\n");      
-        for (i in (0..(nPlaces-1))) {
-            val mult=(Math.ceil(nPlaces*.5+.5)-((nPlaces%2L==0L && i<nPlaces/2)?1:0)) as Long;
-            val colStart=offsetAtPlace(i), colStop=offsetAtPlace((i+mult)%nPlaces);
-            val col=colStart<colStop?colStop-colStart:colStop+N-colStart;
-            val cost=funcAtPlace(i)*col;
-            max=Math.max(cost,max); min=Math.min(cost,min); tot2+=cost;
-            Console.OUT.printf("%5d  %9d  %7.2f%%\n", i, cost, cost*100./tot);            
-        }
-        Console.OUT.printf("Fractions add up to %.3f %% (due to rounding of N/nPlaces)\n",tot2/tot*100.);
-        Console.OUT.printf("Block size at each place: ideal=%.3f max=%.0f min=%.0f\n Imbalance cost=%.3f %%\n\n", ideal, max, min, (max/ideal-1.)*100.);
-
-        tot=N*(1.+N)*.5; tot2=0.; ideal=tot/nPlaces; max=min=at(Place(0)) sizeInfo()(0);
+        tot=N*(1.+N)*.5; tot2=0.; max=min=at(Place(0)) sizeInfo()(0);
         var totY:Long=0, totJ:Long=0, skip:Long=0;
-        Console.OUT.printf("3. Number of Aux(mu,nu) calculated at each place\nPlace  Functions  Fraction\n");
+        Console.OUT.printf("2. Number of Aux(mu,nu) calculated at each place\nPlace  Functions  Fraction\n");
         for (i in 0..(nPlaces-1)) {
             val cost=at(Place(i)) sizeInfo()(0);
             totY+=at(Place(i)) sizeInfo()(1);
@@ -247,15 +234,14 @@ public class ROFockMethod(N:Long) {
             max=Math.max(cost,max); min=Math.min(cost,min); tot2+=cost;
             Console.OUT.printf("%5d %10.0f  %7.2f%%\n", i, cost, cost*100./tot); 
         }
-        Console.OUT.printf("Fractions add up to %.3f %% (due to rounding of N/nPlaces, granularity of shellpairs and shellpair cut-off)\n",tot2/tot*100.);
-        Console.OUT.printf("Aux/D calculations at each place: ideal=%.3f max=%.0f min=%.0f\n Imbalance cost=%.3f %% (based on ideal)\n", ideal, max, min, (max/ideal-1.)*100.);
+        Console.OUT.printf("Fractions add up to %.3f %% (due to rounding of N/nPlaces, granularity of shellpairs and shellpair cut-off), %d shellpairs skipped\n",tot2/tot*100.0, skip);
         ideal=tot2/nPlaces;
-        Console.OUT.printf(" Imbalance cost=%.3f %% (adjusted), %d shellpairs skipped\n\n", (max/ideal-1.)*100., skip);
+        Console.OUT.printf("Aux/D calculations at each place: ideal=%.1f max=%.0f min=%.0f\n Imbalance cost=%.1f %%\n\n", ideal, max, min, (max/ideal-1.)*100.);
 
-        Console.OUT.printf("Matrices size in MBs/64-bit double/\nJ, K, G, density, mos\t%.3f (each)\naux4J \t%.3f\nYlm  \t%.3f\naux4K \t%.3f\nhalfAux\t%.3f\n\n", N*N*8e-6, totJ*8e-6, totY*8e-6, N*N*roK*8e-6, nOrbitals*N*roK*8e-6);        
+        Console.OUT.printf("Matrices size in MBs/64-bit double\nJ, K, G, density, mos\t%.3f (each)\naux4J \t%.3f\nYlm  \t%.3f\naux4K \t%.3f\nhalfAux\t%.3f\n\n", N*N*8e-6, totJ*8e-6, totY*8e-6, N*N*roK*8e-6, nOrbitals*N*roK*8e-6);        
 
         timer.stop(0);
-        Console.OUT.println ("    ROFockMethod Initialization 'up to ShellPair' time: " + (timer.total(0) as Double) / 1e9 + " seconds");
+        Console.OUT.printf("    ROFockMethod Initialization 'up to ShellPair' time: %.3f seconds\n", (timer.total(0) as Double) / 1e9);
         timer.start(0);
         
         val intPack_wlh = new WorkerLocalHandle[Integral_Pack](()=> new Integral_Pack(jd.roN, jd.roL, omega, roThresh, jd.rad, jd.roZ));
@@ -275,7 +261,7 @@ public class ROFockMethod(N:Long) {
         );
 
         timer.stop(0);
-        Console.OUT.println ("    ROFockMethod Initialization 'up to ylms' time: " + (timer.total(0) as Double) / 1e9 + " seconds");
+        Console.OUT.printf("    ROFockMethod Initialization 'up to ylms' time: %.3f seconds\n", (timer.total(0) as Double) / 1e9);
         timer.start(0);
 
         this.auxJ_plh=PlaceLocalHandle.make[Rail[Rail[Double]]](
@@ -340,7 +326,7 @@ public class ROFockMethod(N:Long) {
         this.nOrbitals=nOrbitals; this.norm=bfs.getNormalizationFactors();
 
         timer.stop(0);
-        Console.OUT.println("    ROFockMethod Initialization 'total' time: " + (timer.total(0) as Double) / 1e9 + " seconds");
+        Console.OUT.printf("    ROFockMethod Initialization 'total' time: %.3f seconds\n", (timer.total(0) as Double) / 1e9);
         @Ifdef("__PAPI__") { papi.initialize(); papi.countFlops(); papi.countMemoryOps(); }
         @Ifdef("__DEBUG__") { printShellInfo(); }
     }

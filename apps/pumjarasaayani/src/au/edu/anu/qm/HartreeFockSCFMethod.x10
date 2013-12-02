@@ -118,85 +118,96 @@ public class HartreeFockSCFMethod extends SCFMethod {
         }
         timer.stop(TIMER_GUESS);
         Console.OUT.println ("    Time to construct guess density & MOs: " + (timer.total(TIMER_GUESS) as Double) / 1e9 + " seconds");
+        
+        if (maxIteration > 0n) {
+            Console.OUT.printf("Starting SCF procedure...\n");      
 
-        Console.OUT.printf("Starting SCF procedure...\n");      
+            val diis = new DIISFockExtrapolator(N);
 
-        val diis = new DIISFockExtrapolator(N);
+            // start the SCF cycle
+            for(var scfIteration:Int=0n; scfIteration<maxIteration; scfIteration++) {
+                // make or guess density
+	            if (scfIteration>0) {
+                    density.compute(mos);
+                }
+                
+                // make the G matrix
+                if (jd.roOn>0) {
+                    roFockMethod.compute(density, mos, gMatrixRo);
+                    if (jd.compareRo==true) {
+                        gMatrix.compute(density);
+                        Console.OUT.println("G Mat");
+                        Console.OUT.println(gMatrix);
 
-        // start the SCF cycle
-        for(var scfIteration:Int=0n; scfIteration<maxIteration; scfIteration++) {
-            // make or guess density
-	    if (scfIteration>0) {
-                density.compute(mos);
-            }
-            
-            // make the G matrix
-            if (jd.roOn>0) {
-                roFockMethod.compute(density, mos, gMatrixRo);
-                if (jd.compareRo==true) {
+                        Console.OUT.println("G Mat RO");
+                        Console.OUT.println(gMatrixRo);
+                    }
+                } else {
                     gMatrix.compute(density);
-                    Console.OUT.println("G Mat");
-                    Console.OUT.println(gMatrix);
+                }            
 
-                    Console.OUT.println("G Mat RO");
-                    Console.OUT.println(gMatrixRo);
-                }
-            } else {
-                gMatrix.compute(density);
-            }            
+                timer.start(TIMER_F);
+                // make fock matrix
+                if (jd.roOn>0) fock.compute(hCore, gMatrixRo);
+                else fock.compute(hCore, gMatrix);
+                // SCF_ALGORITHM = DIIS  
+                fock = diis.next(fock, overlap, density);
+                timer.stop(TIMER_F);
+                Console.OUT.println ("    Time to construct Fock: " + (timer.total(TIMER_F) as Double) / 1e9 + " seconds");
 
-            timer.start(TIMER_F);
-            // make fock matrix
-            if (jd.roOn>0) fock.compute(hCore, gMatrixRo);
-            else fock.compute(hCore, gMatrix);
-            // SCF_ALGORITHM = DIIS  
-            fock = diis.next(fock, overlap, density);
-            timer.stop(TIMER_F);
-            Console.OUT.println ("    Time to construct Fock: " + (timer.total(TIMER_F) as Double) / 1e9 + " seconds");
+                timer.start(TIMER_M);
+                // compute the new MOs
+                mos.compute(fock, overlap);
+                timer.stop(TIMER_M);
+                Console.OUT.println ("    Time to form MOS: " + (timer.total(TIMER_M) as Double) / 1e9 + " seconds");
+             
+                // compute the total energy 
+                val eOne = .5*density.clone().mult(density, hCore).trace();
+                val eTwo = .5*density.clone().mult(density, fock).trace();           
+                energy = eOne + eTwo + nuclearEnergy;
+                @Ifdef("__DEBUG__") { Console.OUT.printf("eOne = %.10f eTwo= %.10f\n",eOne/roZ,eTwo/roZ);}
+                Console.OUT.printf("Cycle #%i Total energy = %.10f\n", scfIteration, energy/roZ);
+                if (scfIteration>0) {
+                    Console.OUT.printf(" (%.6f)", (energy-oldEnergy)/roZ);
+                } else {
+                    // ignore the first cycle's timings 
+                    // as far fewer integrals are calculated
+                    if (jd.roOn==0n || jd.compareRo==true) {
+                        gMatrix.timer.clear(0);
+                    }
+                    if (jd.roOn>0n) {
+                        roFockMethod.timer.clear(0);
+                    }
+                }
+                Console.OUT.printf("\n----------------------------------------------------------\n");
+                // check for convergence
+                if (scfIteration > 0 && diis.isConverged()) {
+                    converged = true;
+                    break;
+                } // end if
+                
+                oldEnergy = energy;
+            } // end of SCF iteration
 
-            timer.start(TIMER_M);
-            // compute the new MOs
-            mos.compute(fock, overlap);
-            timer.stop(TIMER_M);
-            Console.OUT.println ("    Time to form MOS: " + (timer.total(TIMER_M) as Double) / 1e9 + " seconds");
-         
-            // compute the total energy 
-            val eOne = .5*density.clone().mult(density, hCore).trace();
-            val eTwo = .5*density.clone().mult(density, fock).trace();           
-            energy = eOne + eTwo + nuclearEnergy;
-            @Ifdef("__DEBUG__") { Console.OUT.printf("eOne = %.10f eTwo= %.10f\n",eOne/roZ,eTwo/roZ);}
-            Console.OUT.printf("Cycle #%i Total energy = %.10f\n", scfIteration, energy/roZ);
-            if (scfIteration>0) {
-                Console.OUT.printf(" (%.6f)", (energy-oldEnergy)/roZ);
-            } else {
-                // ignore the first cycle's timings 
-                // as far fewer integrals are calculated
-                if (jd.roOn==0n || jd.compareRo==true) {
-                    gMatrix.timer.clear(0);
-                }
-                if (jd.roOn>0n) {
-                    roFockMethod.timer.clear(0);
-                }
+            if (!converged) 
+               Console.OUT.println("SCF did not converge in " + maxIteration + " cycles!");
+            else 
+               Console.OUT.printf("SCF converged. Final SCF energy = %.6f a.u.\n", energy/roZ,roZ);
+
+            if ((jd.roOn == 0n || jd.compareRo)) {
+                Console.OUT.println("GMatrix construction timings:");
+                gMatrix.timer.printSeconds();
             }
-            Console.OUT.printf("\n----------------------------------------------------------\n");
-            // check for convergence
-            if (scfIteration > 0 && diis.isConverged()) {
-                converged = true;
-                break;
-            } // end if
-            
-            oldEnergy = energy;
-        } // end of SCF iteration
 
-        if (!converged) 
-           Console.OUT.println("SCF did not converge in " + maxIteration + " cycles!");
-        else 
-           Console.OUT.printf("SCF converged. Final SCF energy = %.6f a.u.\n", energy/roZ,roZ);
+            if (jd.roOn>0n) {
+                Console.OUT.println("ROFockMethod construction timings:");
+                roFockMethod.timer.printSeconds();
+            }
+        }
 
         Console.OUT.printf("==========================================================\n");
 
         var ecount:Double=0.; var maxDen:Double=0.; var minDen:Double=1e100;
-
         for (var i:Int=0n; i<N; i++) for (var j:Int=i; j<N; j++) {
              val contrib=density(i,j)*overlap(i,j);
              ecount+=contrib;
@@ -206,16 +217,6 @@ public class HartreeFockSCFMethod extends SCFMethod {
              else if (density(i,j)<minDen) minDen=density(i,j);
         }
         Console.OUT.printf("ecount=%e maxDen=%e minDen=%e\n",ecount,maxDen,minDen);
-
-        if ((jd.roOn == 0n || jd.compareRo) && maxIteration>0) {
-            Console.OUT.println("GMatrix construction timings:");
-            gMatrix.timer.printSeconds();
-        }
-
-        if (jd.roOn>0n && maxIteration>0n) {
-            Console.OUT.println("ROFockMethod construction timings:");
-            roFockMethod.timer.printSeconds();
-        }
     
         // long range energy
         //Console.OUT.println("before RO heapSize = " + System.heapSize());
