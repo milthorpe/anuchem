@@ -272,7 +272,7 @@ public class ROFockMethod(N:Long) {
                 val mult = (Math.ceil(nPlaces*.5+.5)-((nPlaces%2L==0L && pid<nPlaces/2)?1:0)) as Long;
                 val colStart = offsetAtPlace(pid);
                 val colStop = offsetAtPlace((pid+mult)%nPlaces);
-                finish for (i in 0..(shp.size-1)) async {
+                for (i in 0..(shp.size-1)) {
                     val sp = shp(i), nu = sp.nu, mu = sp.mu;
                     var size:Long = 0;
                     if ( ( (colStart<colStop) && ((colStart<=nu) && (nu<colStop)) ) ||
