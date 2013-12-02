@@ -219,7 +219,7 @@ public class ROFockMethod(N:Long) {
             max=Math.max(cost,max); min=Math.min(cost,min); tot2+=cost; 
             Console.OUT.printf("%5d  (%6d)  %9d  %7.2f%%\n", i, offsetAtPlace(i), cost, cost*100./tot);
         }
-        Console.OUT.printf("Fractions add up to %.3f %%\n", tot2/tot*100.);
+        Console.OUT.printf("Fractions add up to %.2f %%\n", tot2/tot*100.);
         Console.OUT.printf("Fraction of N at each place: ideal=%.1f max=%.0f min=%.0f\n Imbalance cost=%.1f %%\n\n", ideal, max, min, (max/ideal-1.)*100.);
         val maxRow = max as Long; // This is used for remoteBlockK_plh allocation later
 
@@ -234,7 +234,7 @@ public class ROFockMethod(N:Long) {
             max=Math.max(cost,max); min=Math.min(cost,min); tot2+=cost;
             Console.OUT.printf("%5d %10.0f  %7.2f%%\n", i, cost, cost*100./tot); 
         }
-        Console.OUT.printf("Fractions add up to %.3f %% (due to rounding of N/nPlaces, granularity of shellpairs and shellpair cut-off), %d shellpairs skipped\n",tot2/tot*100.0, skip);
+        Console.OUT.printf("Fractions add up to %.2f %% (due to rounding of N/nPlaces, granularity of shellpairs and shellpair cut-off), %d shellpairs skipped\n",tot2/tot*100.0, skip);
         ideal=tot2/nPlaces;
         Console.OUT.printf("Aux/D calculations at each place: ideal=%.1f max=%.0f min=%.0f\n Imbalance cost=%.1f %%\n\n", ideal, max, min, (max/ideal-1.)*100.);
 
@@ -613,7 +613,9 @@ public class ROFockMethod(N:Long) {
                     if (blocks > 1) {
                         // overlap getting first remote block of K with DSYRK
                         nextBlockPlace = (pid+blk) % nPlaces;
-                        val blockSize = roK * nOrbitals * funcAtPlace(nextBlockPlace);
+                        val fullBlockSize = roK * nOrbitals * funcAtPlace(nextBlockPlace);
+                        val full = (nPlaces%2==1 || blk<blocks-1 || pid<nPlaces/2);
+                        val blockSize = full ? fullBlockSize : (fullBlockSize+1) / 2;
                         async remoteK.fetchNext(halfAuxMat, nextBlockPlace, blockSize);
                     }
                     timer.start(TIMER_DSYRK);
