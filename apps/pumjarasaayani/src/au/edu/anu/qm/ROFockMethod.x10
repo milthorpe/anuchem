@@ -644,18 +644,22 @@ public class ROFockMethod(N:Long) {
                         } else {
                             nextBlockPlace = -1;
                         }
+                        var dgemmGFlops:Double;
                         timer.start(TIMER_DGEMM);
-                        if (nPlaces%2==1 || blk<blocks)
+                        if (nPlaces%2==1 || blk<blocks) {
                             DenseMatrixBLAS.compTransMult(a, thisBlock, localK, [a.N, thisBlock.N, a.M], [0, 0, 0, 0, 0, offsetAtPlace(thisBlockPlace)], true);
-                        else if (pid<nPlaces/2)
+                            dgemmGFlops = 2 * a.N * thisBlock.N * a.M / 1e9;
+                        } else if (pid<nPlaces/2) {
+                            dgemmGFlops = 2 * (a.N/2) * thisBlock.N * a.M / 1e9;
                             DenseMatrixBLAS.compTransMult(a, thisBlock, localK, [a.N/2, thisBlock.N, a.M], [0, a.N-a.N/2, 0, 0, a.N-a.N/2, offsetAtPlace(thisBlockPlace)], true);
-                        else
+                        } else {
+                            dgemmGFlops = 2 * (thisBlock.N-thisBlock.N/2) * thisBlock.N * a.M / 1e9;
                             DenseMatrixBLAS.compTransMult(a, thisBlock, localK, [a.N, thisBlock.N-thisBlock.N/2, a.M], [0, 0, 0, 0, 0, offsetAtPlace(thisBlockPlace)], true);
+                        }
                         timer.stop(TIMER_DGEMM);
 
 @Ifdef("__DEBUG__") {
                         val dgemmSecs = timer.last(TIMER_DGEMM) / 1e9;
-                        val dgemmGFlops = 2 * a.N * thisBlock.N * a.M / 1e9;
                         Console.OUT.printf("Place(%d) DGEMM of %.3f GFLOPs from place %d took %.3f s ( %.3f GFLOP/s, %d FLOPs/word)\n", here.id, dgemmGFlops, thisBlockPlace, dgemmSecs, (dgemmGFlops/dgemmSecs), (2*a.N));
 }
                     }
