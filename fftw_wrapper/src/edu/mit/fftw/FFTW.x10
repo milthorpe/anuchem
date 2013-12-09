@@ -17,7 +17,7 @@ import x10.compiler.NativeCPPInclude;
 import x10.regionarray.DistArray;
 
 @NativeCPPCompilationUnit("FFTW.cc")
-@NativeRep("c++", "::edu::mit::fftw::FFTWWrapper", "::edu::mit::fftw::FFTWWrapper", null)
+@NativeRep("c++", "edu::mit::fftw::FFTWWrapper", "edu::mit::fftw::FFTWWrapper", null)
 public class FFTW {
     @Native("c++", "::edu::mit::fftw::FFTWWrapper::fftwPlanDft1d(#1, reinterpret_cast<fftw_complex*>(#2->raw), reinterpret_cast<fftw_complex*>(#3->raw), #4)")
     @Native("java", "null")
@@ -78,7 +78,7 @@ public class FFTW {
     public native static def fftwCleanupThreads():void;
     */
 
-    @NativeRep("c++", "::edu::mit::fftw::FFTW_FFTWPlan", "::edu::mit::fftw::FFTW_FFTWPlan", null)
+    @NativeRep("c++", "edu::mit::fftw::FFTW_FFTWPlan", "edu::mit::fftw::FFTW_FFTWPlan", null)
     @NativeRep("java", "edu.mit.fftw.FFTWPlan", "edu.mit.fftw.FFTWPlan", null)
     public static struct FFTWPlan { };
 }

@@ -21,7 +21,7 @@ import x10.compiler.NativeCPPInclude;
  * @author milthorpe
  */
 @NativeCPPCompilationUnit("PAPI.cc")
-@NativeRep("c++", " ::edu::utk::cs::papi::PAPI *", " ::edu::utk::cs::papi::PAPI", null)
+@NativeRep("c++", " edu::utk::cs::papi::PAPI *", " edu::utk::cs::papi::PAPI", null)
 public class PAPI {
     static COUNTER_TOTAL_INS = 0;
 

@@ -25,7 +25,7 @@ import x10x.vector.Vector;
  * @author V. Ganesh
  */
 @NativeCPPCompilationUnit("ESSL.cc")
-@NativeRep("c++", "::bgp::ESSLWrapper", "::bgp::ESSLWrapper", null)
+@NativeRep("c++", "bgp::ESSLWrapper", "bgp::ESSLWrapper", null)
 public class ESSL {
      @Native("c++", "::bgp::ESSLWrapper::eigenSymmv((#1)._val->getMatrix()._val->raw()->FMGL(chunk)->data, (#2)._val->getMatrix()._val->raw()->FMGL(chunk)->data, (#3)._val->getVector()._val->raw()->FMGL(chunk)->data, (#3)._val->getSize())")
      public native static def eigenSymmv(A:Matrix, evec:Matrix, eval:Vector) : Int; 

@@ -25,7 +25,7 @@ import x10x.vector.Vector;
  * @author V. Ganesh
  */
 @NativeCPPCompilationUnit("GSL.cc")
-@NativeRep("c++", "::org::gnu::gsl::GSLWrapper", "::org::gnu::gsl::GSLWrapper", null)
+@NativeRep("c++", "org::gnu::gsl::GSLWrapper", "org::gnu::gsl::GSLWrapper", null)
 public class GSL {
     /**
      * Computes the eigenvalues and eigenvectors of a real symmetric matrix.
