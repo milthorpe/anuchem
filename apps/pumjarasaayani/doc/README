@@ -41,8 +41,8 @@ Compile dependencies:
 * X10 Global Matrix Library (distributed with the X10 release under x10/x10.gml)
 * LAPACK and BLAS libraries (transitive through X10 GML)
   http://www.netlib.org/lapack/
-* XLA library (cd ~/x10-apps/x10x.lib/xla && ant)
-* anu-chem library (cd ~/x10-apps/anuchem && ant)
+* XLA library (cd ~/anuchem-code/x10x.lib/xla && ant)
+* anu-chem library (cd ~/anuchem-code/anuchem && ant)
 
 
 Code organization:
@@ -69,7 +69,7 @@ https://bse.pnl.gov/bse/portal
 
 Single place:
 
-$ runx10 bin/pumjarasaayani test/H2O-321g.inp
+$ bin/pumjarasaayani test/H2O-321g.inp
 
 Multiple place:
 

@@ -38,9 +38,10 @@ Compile dependencies:
 ------------------------
 * X10 version 2.4 (optionally with x10rt=mpi)
 * FFTW http://www.fftw.org/ 
-  (linked to at the locations ${fftw3.include} and ${fftw3.lib} in the ant build script)
-* XLA library (cd ~/x10-apps/x10x.lib/xla && ant)
-* anu-chem library (cd ~/x10-apps/anuchem && ant)
+  (header files at the location ${fftw3.include} in the ant build script)
+* FFTW X10 wrapper (cd ~/anuchem-code/fftw_wrapper && ant)
+* XLA library (cd ~/anuchem-code/x10x.lib/xla && ant)
+* anu-chem library (cd ~/anuchem-code/anuchem && ant)
 
 
 To run:
@@ -48,7 +49,7 @@ To run:
 
 Single place:
 
-runx10 bin/pme numAtoms [ewaldCoefficient] [cutoff] [gridSize] [splineOrder]
+bin/pme numAtoms [ewaldCoefficient] [cutoff] [gridSize] [splineOrder]
 
 Multiple place:
 
