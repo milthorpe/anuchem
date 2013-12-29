@@ -360,12 +360,13 @@ public class ROFockMethod(N:Long) {
             localJ.reset();
             localK.reset();
             
+            // compute contributions separately for each radial component (ron)
             for (ron in 0n..roN) {
                 computeAuxBDlm(density, mos, ron, auxJ, bMat, dlm);
                 computeK(ron, bMat, localK);
                 computeJ(ron, auxJ, dlm, localJ);
                 Team.WORLD.barrier();
-            } // roN
+            }
 
             timer.start(TIMER_GATHER);
             val e = e_plh();
@@ -433,7 +434,7 @@ public class ROFockMethod(N:Long) {
             }
         }
 
-        val nPlaces=Place.MAX_PLACES;
+        val nPlaces = Place.MAX_PLACES;
         // unpack tempK into gMatrix
         finish for (pid in 0..(nPlaces-1)) async {
             val placeRows = funcAtPlace(pid);
@@ -493,6 +494,7 @@ public class ROFockMethod(N:Long) {
         @Ifdef("__PAPI__"){ papi.printFlops(); papi.printMemoryOps();}
     }
 
+    /** Compute trace of product of symmetric matrices a,b: trace(a &#42; b) */
     private static def traceOfSymmetricProduct(a:DenseMatrix{self.M==self.N}, b:DenseMatrix{self.M==self.N,self.M==a.M}) {
         val N = a.N;
         var trace:Double = 0.0;
@@ -507,6 +509,16 @@ public class ROFockMethod(N:Long) {
         return trace;
     }
 
+    /** 
+     * Compute auxiliary integrals, matrix B (contraction of integrals with
+     * molecular orbital coefficients) and density-contracted integrals D<sub>l m</sub>.
+     * @param density the density matrix Rho
+     * @param mos the molecular orbital coefficient matrix C
+     * @param ron the value of RO parameter n (radial component of resolution)
+     * @param auxJ the auxiliary integrals in sparse-row format (output)
+     * @param bMat the B matrix in dense format (output)
+     * @param dlm density-contracted integrals D<sub>l m</sub> (output)
+     */
     private def computeAuxBDlm(density:Density{self.N==this.N}, mos:MolecularOrbitals{self.N==this.N}, ron:Int, auxJ:Rail[Rail[Double]], bMat:DenseMatrix, dlm:Rail[Double]) {
         // Console.OUT.println("Aux - distributed ron="+ron);
         timer.start(TIMER_AUX);
@@ -514,7 +526,7 @@ public class ROFockMethod(N:Long) {
         dlm.clear();
         dlm_wlh.applyLocal((d:Rail[Double])=> { d.clear(); });
 
-        val ylm=ylms_plh();
+        val ylm = ylms_plh();
         val auxKIdx = auxKIdx_plh();
 
         val shp = shellPairs_plh();
@@ -594,6 +606,13 @@ public class ROFockMethod(N:Long) {
         timer.stop(TIMER_AUX);
     }
 
+    /** 
+     * Accumulate contributions to K matrix portion local to this place:
+     * K += B &#42; B<sup>T</sup>
+     * @param ron the value of RO parameter n (radial component of resolution)
+     * @param bMat the B matrix in dense format
+     * @param localK the local portion of the K matrix
+     */
     private def computeK(ron:Int, bMat:DenseMatrix, localK:DenseMatrix) {
         timer.start(TIMER_K);
         val doK = (ron <= roNK);
@@ -671,7 +690,15 @@ public class ROFockMethod(N:Long) {
         timer.stop(TIMER_K);
     }
 
-    private def computeJ(ron:Int, auxJ:Rail[Rail[Double]],dlm:Rail[Double], localJ:DenseMatrix) {
+    /** 
+     * Accumulate contributions to J matrix portion local to this place:
+     * J += D<sup>lm</sup> &#42; A<sub>mu nu, l m</sub>
+     * @param ron the value of RO parameter n (radial component of resolution)
+     * @param auxJ the auxiliary integrals in sparse-row format 
+     * @param dlm density-contracted integrals D<sub>l m</sub> 
+     * @param localJ the local portion of the J matrix
+     */
+    private def computeJ(ron:Int, auxJ:Rail[Rail[Double]], dlm:Rail[Double], localJ:DenseMatrix) {
         timer.start(TIMER_JMATRIX); 
         // Console.OUT.println("J - distributed");
         val shp = shellPairs_plh();
@@ -739,8 +766,8 @@ public class ROFockMethod(N:Long) {
             nextData = new Rail[Double](blockSize);
         }
 
+        /** swap next and current */
         public def getCurrent():DenseMatrix {
-            // swap next and current
             currentDim = nextDim;
             val temp = nextData;
             nextData = currentData;
@@ -748,8 +775,8 @@ public class ROFockMethod(N:Long) {
             return new DenseMatrix(currentDim.first, currentDim.second, currentData);
         }
 
+        /** fetch next data from given place */
         public def fetchNext(ddm:DistDenseMatrix, nextBlockPlace:Long, size:Long) {
-            // fetch next data from given place
             val nextDataRef = new GlobalRail(nextData);
             val start = System.nanoTime();
             finish nextDim = at(Place(nextBlockPlace)) {
@@ -802,7 +829,7 @@ public class ROFockMethod(N:Long) {
             val nt=Runtime.execForRead("echo $X10_NTHREADS").readLine();
             val gt=Runtime.execForRead("echo $GOTO_NUM_THREADS").readLine();
             val omp=Runtime.execForRead("echo $OMP_NUM_THREADS").readLine();
-            Console.OUT.println(here + ", Runtime.NTHREADS=" + Runtime.NTHREADS + ", uname -n=" + hostname + ", X10_NPLACES="+np+", X10_NTHREADS="+nt+", GOTO_NUM_THREADS="+gt+ ", OMP_NUM_THREADS="+omp ); // if print out on separate lines, they can goes randomly.
+            Console.OUT.println(here + ", Runtime.NTHREADS=" + Runtime.NTHREADS + ", uname -n=" + hostname + ", X10_NPLACES="+np+", X10_NTHREADS="+nt+", GOTO_NUM_THREADS="+gt+ ", OMP_NUM_THREADS="+omp ); // use a single print statement per place
             Console.OUT.flush();
         }
    }
