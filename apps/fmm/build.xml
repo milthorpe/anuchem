@@ -3,6 +3,7 @@
 <project name="Fast Multipole Method" default="build" basedir=".">
     &buildfile;
     <property environment="env"/>
+    <fail unless="env.X10_HOME" message="Environment variable X10_HOME is not set."/>
     <property name="x10rt" value="sockets" />
     <property name="bgq" value="false" />
     <property name="bgp" value="false" />

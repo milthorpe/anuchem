@@ -2,6 +2,7 @@
 <!DOCTYPE project [<!ENTITY buildfile SYSTEM "file:./build-user.xml">]>
 <project name="X10 application project" default="build" basedir=".">
     <property environment="env"/>
+    <fail unless="env.X10_HOME" message="Environment variable X10_HOME is not set."/>
     <property name="x10rt" value="sockets" />
     <property name="bgq" value="false" />
     <property name="bgp" value="false" />

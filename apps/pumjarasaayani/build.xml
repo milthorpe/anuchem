@@ -2,6 +2,7 @@
 <!DOCTYPE project [<!ENTITY buildfile SYSTEM "file:./build-user.xml">]>
 <project name="Pumja Rasaayani" default="build" basedir=".">
     <property environment="env"/>
+    <fail unless="env.X10_HOME" message="Environment variable X10_HOME is not set."/>
     <property name="x10rt" value="sockets" />
     <property name="xla" location="../../xla"/>
     <property name="xla.props" location="${xla}/xla.properties"/>
