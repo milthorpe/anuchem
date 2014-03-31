@@ -6,32 +6,36 @@
  *  You may obtain a copy of the License at
  *      http://www.opensource.org/licenses/eclipse-1.0.php
  *
- *  (C) Copyright Josh Milthorpe 2011-2012.
+ *  (C) Copyright Josh Milthorpe 2011-2014.
  */
 import x10.compiler.Inline;
 import x10.io.File;
+import x10.regionarray.Array;
+import x10.regionarray.Dist;
+import x10.regionarray.DistArray;
+import x10.regionarray.Region;
 
 /**
  * Benchmarks loop iteration using a variety 
  * of activity generation approaches
  * @author milthorpe 08/2011
  */
-public class LocalityDistParallelLoop(size : Int, print:Boolean) {
+public class LocalityDistParallelLoop(size:Long, print:Boolean) {
     private static ITERS = 10;
 
-    private static val work = new Array[Int](Runtime.MAX_THREADS);
+    private static val work = new Rail[Long](Runtime.MAX_THREADS);
 
-    public def this(size : Int, print:Boolean) {
+    public def this(size:Long, print:Boolean) {
         property(size, print);
     }
 
 	public def testAll() {
-        val a = DistArray.make[Int](Dist.makeBlock(0..(size-1)));
+        val a = DistArray.make[Long](Dist.makeBlock(Region.make(0..(size-1))));
 
         var start:Long = System.nanoTime();
         for (i in 1..ITERS) {
             finish for (place in a.dist.places()) at(place) async {
-                val aLocal = a.getLocalPortion() as Array[Int](1){rect};
+                val aLocal = a.getLocalPortion() as Array[Long](1){rect};
                 for ([p] in aLocal) async {
                     aLocal(p) = Runtime.workerId();
                     //work(Runtime.workerId())++;
@@ -46,7 +50,7 @@ public class LocalityDistParallelLoop(size : Int, print:Boolean) {
         start = System.nanoTime();
         for (i in 1..ITERS) {
             finish for (place in a.dist.places()) at(place) async {
-                val aLocal = a.getLocalPortion() as Array[Int](1){rect};
+                val aLocal = a.getLocalPortion() as Array[Long](1){rect};
                 val regionIter = aLocal.region.iterator();
                 while(regionIter.hasNext()) {
                     val p = regionIter.next();
@@ -65,8 +69,8 @@ public class LocalityDistParallelLoop(size : Int, print:Boolean) {
         start = System.nanoTime();
         for (i in 1..ITERS) {
             finish for (place in a.dist.places()) at(place) async {
-                val aLocal = a.getLocalPortion() as Array[Int](1){rect};
-                val assign = (p:Int) => { aLocal(p) = Runtime.workerId(); /*work(Runtime.workerId())++;*/};
+                val aLocal = a.getLocalPortion() as Array[Long](1){rect};
+                val assign = (p:Long) => { aLocal(p) = Runtime.workerId(); /*work(Runtime.workerId())++;*/};
                 LocalityDistParallelLoop.doForEach(aLocal.region, assign);
             }
         }
@@ -78,8 +82,8 @@ public class LocalityDistParallelLoop(size : Int, print:Boolean) {
         start = System.nanoTime();
         for (i in 1..ITERS) {
             finish for (place in a.dist.places()) at(place) async {
-                val aLocal = a.getLocalPortion() as Array[Int](1){rect};
-                val assign = (p:Int) => { aLocal(p) = Runtime.workerId(); /*work(Runtime.workerId())++;*/};
+                val aLocal = a.getLocalPortion() as Array[Long](1){rect};
+                val assign = (p:Long) => { aLocal(p) = Runtime.workerId(); /*work(Runtime.workerId())++;*/};
                 finish LocalityDistParallelLoop.doForEach2(aLocal.region, assign);
             }
         }
@@ -91,7 +95,7 @@ public class LocalityDistParallelLoop(size : Int, print:Boolean) {
         start = System.nanoTime();
         for (i in 1..ITERS) {
             finish for (place in a.dist.places()) at(place) async {
-                val aLocal = a.getLocalPortion() as Array[Int](1){rect};
+                val aLocal = a.getLocalPortion() as Array[Long](1){rect};
                 val nthreads = Runtime.NTHREADS;
                 val chunkSize = size / nthreads;
                 val remainder = size % nthreads;
@@ -113,7 +117,7 @@ public class LocalityDistParallelLoop(size : Int, print:Boolean) {
         start = System.nanoTime();
         for (i in 1..ITERS) {
             finish for (place in a.dist.places()) at(place) async {
-                val aLocal = a.getLocalPortion() as Array[Int](1){rect};
+                val aLocal = a.getLocalPortion() as Array[Long](1){rect};
                 for ([p] in aLocal) {
                     aLocal(p) = Runtime.workerId();
                     //work(Runtime.workerId())++;
@@ -126,7 +130,7 @@ public class LocalityDistParallelLoop(size : Int, print:Boolean) {
         printAndResetWork();
 	}
 
-    private def writeLocalSchedulingFile(a:DistArray[Int](1), fileName:String) {
+    private def writeLocalSchedulingFile(a:DistArray[Long](1), fileName:String) {
         val outputFile = new File(fileName);
         val out = outputFile.printer();
         val aLoc = a.getLocalPortion();
@@ -167,11 +171,11 @@ public class LocalityDistParallelLoop(size : Int, print:Boolean) {
                 if (max > min) {
                     // bisect on this dimension
                     val halfway = (max-min+1) / 2;
-                    val firstMax = new Array[Int](r.rank, (i:Int)=> i==dim ? (halfway-1) : r.max(i));
-                    val firstCut = Region.makeRectangular(new Array[Int](r.rank, (i:Int)=>r.min(i)), firstMax);
+                    val firstMax = new Rail[Long](r.rank, (i:Long)=> i==dim ? (halfway-1) : r.max(i));
+                    val firstCut = Region.makeRectangular(new Rail[Long](r.rank, (i:Long)=>r.min(i)), firstMax);
                     firstHalf = r && firstCut;
-                    val secondMin = new Array[Int](r.rank, (i:Int)=> i==dim ? halfway : r.min(i));
-                    val secondCut = Region.makeRectangular(secondMin, new Array[Int](r.rank, (i:Int)=>r.max(i)));
+                    val secondMin = new Rail[Long](r.rank, (i:Long)=> i==dim ? halfway : r.min(i));
+                    val secondCut = Region.makeRectangular(secondMin, new Rail[Long](r.rank, (i:Long)=>r.max(i)));
                     secondHalf = r && secondCut;
                 }
             }
@@ -193,11 +197,11 @@ public class LocalityDistParallelLoop(size : Int, print:Boolean) {
         val size = b.size();
         if (size == 1) {
             val r = b.r;
-            closure(Point.make(new Array[Int](r.rank, (i:Int)=>r.max(i))));
+            closure(Point.make(new Rail[Long](r.rank, (i:Long)=>r.max(i))));
         } else if (size == 2) {
             val r = b.r;
-            async closure(Point.make(new Array[Int](r.rank, (i:Int)=>r.min(i))));
-            closure(Point.make(new Array[Int](r.rank, (i:Int)=>r.max(i))));
+            async closure(Point.make(new Rail[Long](r.rank, (i:Long)=>r.min(i))));
+            closure(Point.make(new Rail[Long](r.rank, (i:Long)=>r.max(i))));
 
         } else {
             val firstHalf = new RegionBisection(b.firstHalf);
@@ -208,11 +212,11 @@ public class LocalityDistParallelLoop(size : Int, print:Boolean) {
         }
     }
 
-    @Inline static final def doForEach(r:Region(1){rect}, closure:(Int) => void) {
+    @Inline static final def doForEach(r:Region(1){rect}, closure:(Long) => void) {
         bisection1D(r.min(0), r.max(0), closure);
     }
 
-    private static final def bisection1D(start:Int, end:Int, closure:(Int) => void) { 
+    private static final def bisection1D(start:Long, end:Long, closure:(Long) => void) { 
         if (start == end) {
             closure(start);
         } else {
@@ -226,17 +230,17 @@ public class LocalityDistParallelLoop(size : Int, print:Boolean) {
     /** @return the depth of the binary tree spanning the threads */
     private static def getTreeDepth(numThreads:Int):Int {
         var p:Int = numThreads;
-        var i:Int = 0;
-        while (p > 0) { p = p>>1; i++; }
+        var i:Int = 0n;
+        while (p > 0n) { p = p>>1; i++; }
         return i;
     }
 
-    @Inline final static def doForEach2(r:Region(1){rect}, closure:(Int) => void) {
+    @Inline final static def doForEach2(r:Region(1){rect}, closure:(Long) => void) {
         val treeDepth = getTreeDepth(Runtime.NTHREADS);
-        bisection1D_limited(r.min(0), r.max(0), treeDepth, 0, closure);
+        bisection1D_limited(r.min(0), r.max(0), treeDepth, 0n, closure);
     }
 
-    private static final def bisection1D_limited(start:Int, end:Int, treeDepth:Int, currentLevel:Int, closure:(Int) => void) {
+    private static final def bisection1D_limited(start:Long, end:Long, treeDepth:Int, currentLevel:Int, closure:(Long) => void) {
         if (currentLevel == treeDepth) {
             // don't divide any further
             for (p in start..end) async {
@@ -247,16 +251,16 @@ public class LocalityDistParallelLoop(size : Int, print:Boolean) {
         } else {
             val numElems = end-start+1;
             val halfway = start+numElems/2;
-            async bisection1D_limited(halfway, end, treeDepth, currentLevel+1, closure);
-            bisection1D_limited(start, halfway-1, treeDepth, currentLevel+1, closure);
+            async bisection1D_limited(halfway, end, treeDepth, currentLevel+1n, closure);
+            bisection1D_limited(start, halfway-1, treeDepth, currentLevel+1n, closure);
         }
     }
 
-	public static def main(var args: Array[String](1)): void = {
-        var size:Int = 8000;
+	public static def main(args:Rail[String]):void = {
+        var size:Long = 8000;
         var print:Boolean = false;
         if (args.size > 0) {
-            size = Int.parse(args(0));
+            size = Long.parse(args(0));
             if (args.size > 1) {
                 print=true;
             }
