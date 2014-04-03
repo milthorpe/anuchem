@@ -31,13 +31,13 @@ public class TestMultipoleRotation {
 	    } else if (args.size == 6L) { 
 		    // Test operation A
 		    for (i in 0..5) args_doub(i) = Double.parseDouble(args(i));
-		    new TestMultipoleRotation().rotationTest(args_doub);
+		    new TestMultipoleRotation().translation(args_doub);
 	    } else { 
 		    for (j in 0..5) args_doub(j) = R.nextDouble() * 0.5;
 		    // The purpose of this code is to try all 64 cases of the points in all quadrants
 		    for (i in 0..63) {
 			    for (k in 0..5) Console.OUT.print(args_doub(k) + " ");
-			    new TestMultipoleRotation().rotationTest(args_doub);
+			    new TestMultipoleRotation().translation(args_doub);
 
 			    var j:Long = 0; while (args_doub(j) < 0) { args_doub(j) = args_doub(j) * -1; j++; }
 			    args_doub(j) = args_doub(j) * -1;
@@ -91,26 +91,27 @@ public class TestMultipoleRotation {
     }
 
     /** 
-     * Compares the results of shifting a multipole expansion using the direct method and the method involving rotations
+     * Translates a multipole expansion using rotations, then translates it back
+     * checking to see if the original multipole is returned
      * @param 6 doubles representing the vector to construct multipole at and destination vector
      * @return whether the resultant multipoles were equal
      */
-    public def rotationTest(args:Rail[Double]) { 
+    public def translation(args:Rail[Double]) { 
 	    val p = 5;
 	    val oldCenter = Vector3d(args(0), args(1), args(2));
         val newCenter = Vector3d(args(3), args(4), args(5));
-	    val translationTuple = (newCenter - oldCenter);
+	    val translation = newCenter - oldCenter;
 	    val O_lm = MultipoleExpansion.getOlm(oldCenter, p);
 
 	    // Direct method
-	    var direct_result : MultipoleExpansion = new MultipoleExpansion(p);
-	    direct_result.translateAndAddMultipole( MultipoleExpansion.getOlm(translationTuple, p) , O_lm);
+	    val there = new MultipoleExpansion(p);
+	    there.translateAndAddMultipole(translation, O_lm);
 
 	    // Indirect method
-	    var indirect_result : MultipoleExpansion = new MultipoleExpansion(p);
-	    indirect_result.translateAndAddMultipole( translationTuple , O_lm );
+	    val backAgain = new MultipoleExpansion(p);
+	    backAgain.translateAndAddMultipole(-translation, there);
 
 	    //compare(direct_result, indirect_result);
-	    Console.OUT.println(ok(direct_result, indirect_result));
+	    Console.OUT.println(ok(O_lm, backAgain));
     }
 }

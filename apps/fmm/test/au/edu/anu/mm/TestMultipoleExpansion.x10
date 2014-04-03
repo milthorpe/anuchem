@@ -25,13 +25,11 @@ class TestMultipoleExpansion extends MathTest {
         Console.OUT.println("multipole expansion:\n" + Olm.toString());
 
         val target = new MultipoleExpansion(p);
-        val translation = MultipoleExpansion.getOlm(Vector3d(2.0, -3.0, 1.0), p);
-        target.translateAndAddMultipole(translation, Olm);
+        target.translateAndAddMultipole(Vector3d(2.0, -3.0, 1.0), Olm);
         Console.OUT.println("translated multipole:\n" + target.toString());
 
         val roundtrip = new MultipoleExpansion(p);
-        val reverseTranslation = MultipoleExpansion.getOlm(Vector3d(-2.0, 3.0, -1.0), p);
-        roundtrip.translateAndAddMultipole(reverseTranslation, target);
+        roundtrip.translateAndAddMultipole(Vector3d(-2.0, 3.0, -1.0), target);
         Console.OUT.println("translated multipole - roundtrip:\n" + roundtrip.toString());
 		for (i in 0..p) {
             for (j in -i..i) {
