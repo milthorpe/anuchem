@@ -10,13 +10,11 @@
  */
 package au.edu.anu.mm;
 
-import harness.x10Test;
-
 /**
  * Superclass for tests that require comparison of Complex and Double
  * @author milthorpe
  */
-abstract class MathTest extends x10Test {
+abstract class MathTest {
 
     public def nearlyEqual(a : Complex, b : Complex, maxRelativeError : Double, maxAbsoluteError : Double) : Boolean {
         if (a == b)

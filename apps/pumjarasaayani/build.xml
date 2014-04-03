@@ -7,7 +7,7 @@
     <property name="xla" location="../../xla"/>
     <property name="xla.props" location="${xla}/xla.properties"/>
     <property name="x10.stdlib" location="${env.X10_HOME}/stdlib/include"/>
-    <property name="x10.testlib" location="${env.X10_HOME}/../x10.tests/examples/x10lib"/>
+    <property name="x10.testlib" location="${env.X10_HOME}/../x10.tests/tests/x10lib"/>
     <property name="anuchem" location="../../anu-chem"/>
     <property name="anuchem.src" location="${anuchem}/src"/>
     <property name="anuchem.props" location="${anuchem}/anuchem.properties"/>

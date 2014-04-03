@@ -19,7 +19,7 @@
     <property name="x10papi" location="../../papi_wrapper"/>
     <property name="x10papi.props" location="${x10papi}/x10papi.properties"/>
     <property name="papiHome" location="${user.home}/papi"/>
-    <property name="x10.testlib" location="${env.X10_HOME}/../x10.tests/examples/x10lib"/>
+    <property name="x10.testlib" location="${env.X10_HOME}/../x10.tests/tests/x10lib"/>
     <property name="bash.exe" value="bash"/>    
     <property name="optimize" value="true"/>
     <property name="workstealing" value="false" />
@@ -230,9 +230,8 @@
         <apply executable="x10" failonerror="true" dir="${target-test}" relative="true" addsourcefile="false">
             <arg line="-t -v -mx 128M -classpath '${xla.lib}${path.separator}${anuchem.lib}${path.separator}${target-src}${path.separator}${target-test}'"/>
             <targetfile/>
-
             <fileset dir="${target-test}" includes="**/Test*.java"/>
-            <mapper type="glob" from="*.java" to="*"/>
+            <mapper type="package" from="*.java" to="*"/>
         </apply>
     </target>
 

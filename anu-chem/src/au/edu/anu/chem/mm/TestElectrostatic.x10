@@ -6,7 +6,7 @@
  *  You may obtain a copy of the License at
  *      http://www.opensource.org/licenses/eclipse-1.0.php
  *
- * (C) Copyright Josh Milthorpe 2010.
+ * (C) Copyright Josh Milthorpe 2010-2014.
  */
 package au.edu.anu.chem.mm;
 
@@ -98,8 +98,8 @@ public class TestElectrostatic {
      * Gets the place ID to which to assign the given atom coordinates.
      * Currently just splits them up into slices by X coordinate.
      */
-    protected def getPlaceId(x : Double, y : Double, z : Double) : Int {
-        return (((x + boxSize()/2.0) / boxSize()) * Place.MAX_PLACES) as Int;
+    protected def getPlaceId(x:Double, y:Double, z:Double):Long {
+        return (((x + boxSize()/2.0) / boxSize()) * Place.MAX_PLACES) as Long;
     }
 
     /** 

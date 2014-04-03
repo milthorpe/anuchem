@@ -59,7 +59,7 @@ public class TestSinglePlacePairwise extends TestElectrostatic {
     }
 
     /** Assign all atoms to place 0. */
-    protected def getPlaceId(x : Double, y : Double, z : Double) : Int {
+    protected def getPlaceId(x : Double, y : Double, z : Double) {
         return 0;
     }
 }

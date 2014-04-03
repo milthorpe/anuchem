@@ -20,7 +20,7 @@
     <property name="fftw.props" location="${fftw}/fftw.properties" />
     <property name="fftw3.include" location="${user.home}/fftw/include" />
     <property name="fftw3.lib" location="${user.home}/fftw/lib" />
-    <property name="x10.testlib" location="${env.X10_HOME}/../x10.tests/examples/x10lib"/>
+    <property name="x10.testlib" location="${env.X10_HOME}/../x10.tests/tests/x10lib"/>
     <property environment="env"/>
     <property name="bash.exe" value="bash"/>    
     <property name="optimize" value="true"/>

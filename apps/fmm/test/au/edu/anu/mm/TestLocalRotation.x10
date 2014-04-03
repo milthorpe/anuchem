@@ -40,7 +40,7 @@ public class TestLocalRotation {
 		    Console.OUT.println(new TestLocalRotation().operatorC(args_doub, true));
 	    } else { 
 		    // Reads in an entire expansion, term-by-term, and then performs a rotation on it, and compares the result
-		    val p = Int.parse(args(0)); var k : Int = 0;
+		    val p = Long.parse(args(0)); var k:Long = 0;
 		    val exp = new MultipoleExpansion(p);
 		    for (l in 0..p) for (m in -l..l) exp(l, m) = Complex( Double.parseDouble(args(k++)), Double.parseDouble(args(k++)) );
 		    new TestLocalRotation().arbitraryExpansionShift(exp, Vector3d(-3, -3, -3));

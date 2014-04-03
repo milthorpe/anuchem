@@ -6,7 +6,7 @@
  *  You may obtain a copy of the License at
  *      http://www.opensource.org/licenses/eclipse-1.0.php
  *
- * (C) Copyright Josh Milthorpe 2010-2013.
+ * (C) Copyright Josh Milthorpe 2010-2014.
  */
 package au.edu.anu.mm;
 
@@ -17,7 +17,7 @@ import x10x.vector.Vector3d;
  * @author milthorpe
  */
 class TestLocalExpansion extends MathTest {
-    public def run(): boolean {
+    public def testAll(): boolean {
         val p = 3; // multipole level
         val x = Vector3d(1.0, 2.0, -1.0);
 
@@ -35,7 +35,7 @@ class TestLocalExpansion extends MathTest {
         Console.OUT.println("translated local - roundtrip:\n" + roundtrip.toString());
 		for (i in 0..p) {
             for (j in -i..i) {
-                chk(nearlyEqual(roundtrip(i,j), Mlm(i,j), 1.0e-6, 1.0e-12));
+                assert(nearlyEqual(roundtrip(i,j), Mlm(i,j), 1.0e-6, 1.0e-12));
 		    }
         }
 
@@ -43,7 +43,7 @@ class TestLocalExpansion extends MathTest {
     }
 
     public static def main(Rail[String]) {
-        new TestLocalExpansion().execute();
+        new TestLocalExpansion().testAll();
     }
 
 }
