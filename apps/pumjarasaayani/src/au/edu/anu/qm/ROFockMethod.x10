@@ -328,11 +328,8 @@ public class ROFockMethod(N:Long) {
         timer.stop(0);
         Console.OUT.printf("    ROFockMethod Initialization 'total' time: %.3f seconds\n", (timer.total(0) as Double) / 1e9);
         @Ifdef("__PAPI__") { papi.initialize(); papi.countFlops(); papi.countMemoryOps(); }
-        @Ifdef("__DEBUG__") { printShellInfo(); }
+        @Ifdef("__DEBUG__") { printEnvironment(); }
     }
-
-    @Native("c++", "mkl_get_max_threads()") private native static def mklGetMaxThreads():Int;
-    @Native("c++", "MKL_Set_Num_Threads(#a)") private native static def mklSetNumThreads(a:Int):void;
 
     /** Computes the G matrix from the given density and molecular orbital matrices. */
     public def compute(density:Density{self.N==this.N}, mos:MolecularOrbitals{self.N==this.N}, gMatrix:DenseMatrix(N,N)) {
@@ -348,7 +345,7 @@ public class ROFockMethod(N:Long) {
             val nPlaces = Place.MAX_PLACES;
             val pid = here.id;
 
-            ROFockMethod.setThread(1n);
+            ROFockMethod.setBlasThreads(1n);
 
             // For faster access
             val auxJ = auxJ_plh();
@@ -621,7 +618,7 @@ public class ROFockMethod(N:Long) {
                 val nPlaces = Place.MAX_PLACES;
                 val pid = here.id;
                 val offsetHere = offsetAtPlace(pid);
-                ROFockMethod.setThread(Runtime.NTHREADS);
+                ROFockMethod.setBlasThreads(Runtime.NTHREADS);
                 val remoteK = remoteBlockK_plh();
                 val a = halfAuxMat.local();
 
@@ -684,7 +681,7 @@ public class ROFockMethod(N:Long) {
                     }
                 }
 
-                ROFockMethod.setThread(1n);
+                ROFockMethod.setBlasThreads(1n);
             }
         }
         timer.stop(TIMER_K);
@@ -808,13 +805,16 @@ public class ROFockMethod(N:Long) {
 
     @Native("c++", "omp_get_num_threads()") private native static def ompGetNumThreads():Int;
     @Native("c++", "omp_set_num_threads(#a)") private native static def ompSetNumThreads(a:Int):void;
+    @Native("c++", "mkl_get_max_threads()") private native static def mklGetMaxThreads():Int;
+    @Native("c++", "MKL_Set_Num_Threads(#a)") private native static def mklSetNumThreads(a:Int):void;
 
-    private static def setThread(nT:Int) {
+    /** Change the number of threads used for BLAS and LAPACK calls at this place. */
+    private static def setBlasThreads(numThreads:Int) {
         @Ifdef("__MKL__") { // not working?  better use -genv OMP_NUM_THREADS 4
             val t1=mklGetMaxThreads();
             val o1=ompGetNumThreads();
-            ompSetNumThreads(nT);
-            mklSetNumThreads(nT);
+            ompSetNumThreads(numThreads);
+            mklSetNumThreads(numThreads);
             val t2=mklGetMaxThreads();
             val o2=ompGetNumThreads();
             @Ifdef("__DEBUG__") { Console.OUT.println(here + ", mklGetMaxThreads() was " + t1 + " and is now set to " + t2 + " thread(s)."
@@ -822,14 +822,16 @@ public class ROFockMethod(N:Long) {
         }
     }
 
-    private @NonEscaping def printShellInfo() {
+    /** Print details of the runtime environment at each place. */
+    private @NonEscaping def printEnvironment() {
         finish ateach(place in Dist.makeUnique()) {
-            val hostname=Runtime.execForRead("uname -n").readLine();      
-            val np=Runtime.execForRead("echo $X10_NPLACES").readLine();
-            val nt=Runtime.execForRead("echo $X10_NTHREADS").readLine();
-            val gt=Runtime.execForRead("echo $GOTO_NUM_THREADS").readLine();
-            val omp=Runtime.execForRead("echo $OMP_NUM_THREADS").readLine();
-            Console.OUT.println(here + ", Runtime.NTHREADS=" + Runtime.NTHREADS + ", uname -n=" + hostname + ", X10_NPLACES="+np+", X10_NTHREADS="+nt+", GOTO_NUM_THREADS="+gt+ ", OMP_NUM_THREADS="+omp ); // use a single print statement per place
+            val hostname=Runtime.execForRead("uname -n").readLine();
+            // should be System.getenv("X10_NPLACES") - XTENLANG-256
+            val np = System.getenv().getOrElse("X10_NPLACES", "");
+            val nt = System.getenv().getOrElse("X10_NTHREADS", "");
+            val gt = System.getenv().getOrElse("GOTO_NUM_THREADS", "");
+            val omp = System.getenv().getOrElse("OMP_NUM_THREADS", "");
+            Console.OUT.println(here + ", Runtime.NTHREADS=" + Runtime.NTHREADS + ", uname -n=" + hostname + ", X10_NPLACES="+np+", X10_NTHREADS="+nt+", GOTO_NUM_THREADS="+gt+ ", OMP_NUM_THREADS="+omp );
             Console.OUT.flush();
         }
    }
