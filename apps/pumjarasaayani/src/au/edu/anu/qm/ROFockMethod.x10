@@ -38,14 +38,13 @@ import edu.utk.cs.papi.PAPI;
 
 public class ROFockMethod(N:Long) {
     // Timer & PAPI performance counters
-    public val timer=new StatisticalTimer(7);
+    public val timer=new StatisticalTimer(6);
     val TIMER_TOTAL=0;
     val TIMER_AUX=1;
     val TIMER_JMATRIX=2;
     val TIMER_K=3;
     val TIMER_DSYRK=4;
     val TIMER_DGEMM=5;
-    val TIMER_GATHER=6;
 
     transient var papi:PAPI=new PAPI(); // @Ifdef("__PAPI__") // XTENLANG-3132
 
@@ -238,7 +237,7 @@ public class ROFockMethod(N:Long) {
         ideal=tot2/nPlaces;
         Console.OUT.printf("Aux/D calculations at each place: ideal=%.1f max=%.0f min=%.0f\n Imbalance cost=%.1f %%\n\n", ideal, max, min, (max/ideal-1.)*100.);
 
-        Console.OUT.printf("Matrices size in MBs/64-bit double\nJ, K, G, density, mos\t%.3f (each)\naux4J \t%.3f\nYlm  \t%.3f\naux4K \t%.3f\nhalfAux\t%.3f\n\n", N*N*8e-6, totJ*8e-6, totY*8e-6, N*N*roK*8e-6, nOrbitals*N*roK*8e-6);        
+        Console.OUT.printf("Matrices size in MBs/64-bit double\nJ, K, G, density, mos\t%.3f (each)\naux4J \t%.3f\nYlm  \t%.3f\nhalfAux\t%.3f\n\n", N*N*8e-6, totJ*8e-6, totY*8e-6, nOrbitals*N*roK*8e-6);        
 
         timer.stop(0);
         Console.OUT.printf("    ROFockMethod Initialization 'up to ShellPair' time: %.3f seconds\n", (timer.total(0) as Double) / 1e9);
@@ -365,7 +364,6 @@ public class ROFockMethod(N:Long) {
                 Team.WORLD.barrier();
             }
 
-            timer.start(TIMER_GATHER);
             val e = e_plh();
             // gather J to tempJ, K to tempK at place 0
             finish { // only needed for timing purposes
@@ -415,8 +413,6 @@ public class ROFockMethod(N:Long) {
 
             Team.WORLD.allreduce[Double](e, 0L, e, 0L, e.size, Team.ADD);
 
-            timer.stop(TIMER_GATHER);
-
             // Report time
             Team.WORLD.allreduce[Long](timer.total, 0L, timer.total, 0L, timer.total.size, Team.MAX);
             if (here==Place.FIRST_PLACE) {
@@ -425,8 +421,7 @@ public class ROFockMethod(N:Long) {
                 val tDsyrk=(timer.total(TIMER_DSYRK) as Double)/1e9;
                 val tDgemm=(timer.total(TIMER_DGEMM) as Double)/1e9;
                 val tK=(timer.total(TIMER_K) as Double)/1e9;
-                val tGather=(timer.total(TIMER_GATHER) as Double)/1e9;
-                Console.OUT.printf("Time (seconds) Aux= %.3f J= %.3f K-DSYRK= %.3f K-DGEMM= %.3f K-TOT= %.3f Gather= %.3f\n", tAux, tJ, tDsyrk, tDgemm, tK, tGather);
+                Console.OUT.printf("Time (seconds) Aux= %.3f J= %.3f K-DSYRK= %.3f K-DGEMM= %.3f K-TOT= %.3f\n", tAux, tJ, tDsyrk, tDgemm, tK);
                 Console.OUT.flush();
             }
         }
