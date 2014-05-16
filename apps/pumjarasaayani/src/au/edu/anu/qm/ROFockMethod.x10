@@ -10,10 +10,6 @@
 package au.edu.anu.qm;
 
 import x10.compiler.Ifdef;
-import x10.compiler.Native;
-import x10.compiler.NativeCPPInclude;
-import x10.compiler.NonEscaping;
-import x10.io.IOException;
 import x10.lang.PlaceLocalHandle;
 import x10.matrix.blas.DenseMatrixBLAS;
 import x10.matrix.block.Grid;
@@ -28,13 +24,11 @@ import x10.util.WorkerLocalHandle;
 
 import au.edu.anu.chem.Molecule;
 import au.edu.anu.qm.ro.Integral_Pack;
-import au.edu.anu.qm.ShellPair; 
+import au.edu.anu.qm.ShellPair;
+import au.edu.anu.util.ExecutionEnvironment;
 import au.edu.anu.util.StatisticalTimer;
 
 import edu.utk.cs.papi.PAPI;
-
-@NativeCPPInclude("mkl_math.h")
-@NativeCPPInclude("omp.h")
 
 public class ROFockMethod(N:Long) {
     // Timer & PAPI performance counters
@@ -56,7 +50,7 @@ public class ROFockMethod(N:Long) {
     val roZ:Double, shellAtPlace:Rail[Long], funcAtPlace:Rail[Long], offsetAtPlace:Rail[Long];
 
     public def this(N:Long, bfs:BasisFunctions, mol:Molecule[QMAtom], nOrbitals:Long, omega:Double, roThresh:Double) {     
-        Console.OUT.printf("\nROFockMethod.x10 'public def this' %s...\n", getDateString());
+        Console.OUT.printf("\nROFockMethod.x10 'public def this' %s...\n", ExecutionEnvironment.getDateString());
         property(N);
         val maxam=bfs.getShellList().getMaximumAngularMomentum();
         val maxam1=(maxam+1)*(maxam+2)/2;
@@ -327,12 +321,12 @@ public class ROFockMethod(N:Long) {
         timer.stop(0);
         Console.OUT.printf("    ROFockMethod Initialization 'total' time: %.3f seconds\n", (timer.total(0) as Double) / 1e9);
         @Ifdef("__PAPI__") { papi.initialize(); papi.countFlops(); papi.countMemoryOps(); }
-        @Ifdef("__DEBUG__") { printEnvironment(); }
+        @Ifdef("__DEBUG__") { ExecutionEnvironment.printThreadingVariables(); }
     }
 
     /** Computes the G matrix from the given density and molecular orbital matrices. */
     public def compute(density:Density{self.N==this.N}, mos:MolecularOrbitals{self.N==this.N}, gMatrix:DenseMatrix(N,N)) {
-        Console.OUT.printf("\nROFockMethod.x10 'public def compute' %s...\n", getDateString()); 
+        Console.OUT.printf("\nROFockMethod.x10 'public def compute' %s...\n", ExecutionEnvironment.getDateString()); 
         timer.start(TIMER_TOTAL); 
 
         val tempJ = new Rail[Double](N*N);
@@ -344,7 +338,7 @@ public class ROFockMethod(N:Long) {
             val nPlaces = Place.MAX_PLACES;
             val pid = here.id;
 
-            ROFockMethod.setBlasThreads(1n);
+            ExecutionEnvironment.setBlasThreads(1n);
 
             // For faster access
             val auxJ = auxJ_plh();
@@ -613,7 +607,7 @@ public class ROFockMethod(N:Long) {
                 val nPlaces = Place.MAX_PLACES;
                 val pid = here.id;
                 val offsetHere = offsetAtPlace(pid);
-                ROFockMethod.setBlasThreads(Runtime.NTHREADS);
+                ExecutionEnvironment.setBlasThreads(Runtime.NTHREADS);
                 val remoteK = remoteBlockK_plh();
                 val a = halfAuxMat.local();
 
@@ -676,7 +670,7 @@ public class ROFockMethod(N:Long) {
                     }
                 }
 
-                ROFockMethod.setBlasThreads(1n);
+                ExecutionEnvironment.setBlasThreads(1n);
             }
         }
         timer.stop(TIMER_K);
@@ -785,49 +779,4 @@ public class ROFockMethod(N:Long) {
         }
 
     }
-
-    private def getDateString() {
-        val result:String;
-        try {
-            val dateReader=Runtime.execForRead("date"); 
-            result=dateReader.readLine();
-        } catch (e:IOException) {
-            // could not read date! use current time in milliseconds
-            result=System.currentTimeMillis() + "ms";
-        }
-        return result;
-    } 
-
-    @Native("c++", "omp_get_num_threads()") private native static def ompGetNumThreads():Int;
-    @Native("c++", "omp_set_num_threads(#a)") private native static def ompSetNumThreads(a:Int):void;
-    @Native("c++", "mkl_get_max_threads()") private native static def mklGetMaxThreads():Int;
-    @Native("c++", "MKL_Set_Num_Threads(#a)") private native static def mklSetNumThreads(a:Int):void;
-
-    /** Change the number of threads used for BLAS and LAPACK calls at this place. */
-    private static def setBlasThreads(numThreads:Int) {
-        @Ifdef("__MKL__") { // not working?  better use -genv OMP_NUM_THREADS 4
-            val t1=mklGetMaxThreads();
-            val o1=ompGetNumThreads();
-            ompSetNumThreads(numThreads);
-            mklSetNumThreads(numThreads);
-            val t2=mklGetMaxThreads();
-            val o2=ompGetNumThreads();
-            @Ifdef("__DEBUG__") { Console.OUT.println(here + ", mklGetMaxThreads() was " + t1 + " and is now set to " + t2 + " thread(s)."
-                            + " ompGetNumThreads() was " + o1 + " and is now set to " + o2 + " thread(s)."); }   
-        }
-    }
-
-    /** Print details of the runtime environment at each place. */
-    private @NonEscaping def printEnvironment() {
-        finish ateach(place in Dist.makeUnique()) {
-            val hostname=Runtime.execForRead("uname -n").readLine();
-            // should be System.getenv("X10_NPLACES") - XTENLANG-256
-            val np = System.getenv().getOrElse("X10_NPLACES", "");
-            val nt = System.getenv().getOrElse("X10_NTHREADS", "");
-            val gt = System.getenv().getOrElse("GOTO_NUM_THREADS", "");
-            val omp = System.getenv().getOrElse("OMP_NUM_THREADS", "");
-            Console.OUT.println(here + ", Runtime.NTHREADS=" + Runtime.NTHREADS + ", uname -n=" + hostname + ", X10_NPLACES="+np+", X10_NTHREADS="+nt+", GOTO_NUM_THREADS="+gt+ ", OMP_NUM_THREADS="+omp );
-            Console.OUT.flush();
-        }
-   }
 }
