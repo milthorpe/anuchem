@@ -88,7 +88,8 @@ H 1.8841167 -8.7959210 5.7965745
 end
 scf_max 0
 guess core
-use_RO 1
+compare_RO 1
 RO_thresh 1e-6
 thresh 1e-14
 omega 0.3
+gmat_parallel_scheme 0

@@ -57,8 +57,8 @@ public class GMatrix extends DenseMatrix{self.M==self.N} {
         this.thresh=thresh;
         val jd = JobDefaults.getInstance();
         this.gMatType = jd.gMatrixParallelScheme;
-kMatrix = new DenseMatrix(N, N);
-jMatrix = new DenseMatrix(N, N);
+        kMatrix = new DenseMatrix(N, N);
+        jMatrix = new DenseMatrix(N, N);
         val nPlaces = Place.MAX_PLACES;
         switch(gMatType) {
         case 0n:
@@ -98,10 +98,7 @@ jMatrix = new DenseMatrix(N, N);
         val shellList = bfs.getShellList();
         val maxam = shellList.getMaximumAngularMomentum();
         val twoE = new TwoElectronIntegrals(maxam, bfs.getNormalizationFactors(), omega, thresh);
-
-
         val fakeDensity = new Density(N, 2, 1.0);
-
         val noOfAtoms = mol.getNumberOfAtoms();
         // centre a
         for(var a:Int=0n; a<noOfAtoms; a++) {
@@ -180,7 +177,6 @@ jMatrix = new DenseMatrix(N, N);
         val shellList = bfs.getShellList();
         val shellPrimitives = shellList.getShellPrimitives();
         val numPrimitives = shellList.getNumberOfShellPrimitives();
-
         var totInt:Long=0;
 
         for(var a:Int=0n; a<numPrimitives; a++) {
@@ -191,18 +187,18 @@ jMatrix = new DenseMatrix(N, N);
             }
         }
         Console.OUT.println("    totInt = "+totInt);
-        // form the G matrix
+        // get J and K
         val jt= computeThread.getJMat();
         jt.copyTo(jMatrix);
         val kt= computeThread.getKMat();
         kt.copyTo(kMatrix);
-
+        // form the G matrix
         for (x in 0..(M-1)) {
             for (y in 0..(N-1)) {
                 this(x,y) = (0.5*jMatrix(x,y)) - (0.125*kMatrix(x,y));
             }
         }
-
+        // Print eJ and eK
         val eJ = density.clone().mult(density, jMatrix).trace();
         Console.OUT.printf("  EJ = %.10f a.u.\n", .25*eJ/jd.roZ);
 
@@ -740,7 +736,7 @@ jMatrix = new DenseMatrix(N, N);
                                    for(var l:Long=0; l<ndFunc; l++) {
                                        val ldFunc = dFunc.get(l);
 
-                                       // TODO: 
+                                       // TODO: Debug
                                        // Console.OUT.println(a + ", " + b + ", " + c + ", " + d + " | " + i + ", " + j + ", " + k + ", " + l);
                                        totInt += computeThreads(0).computeSingle(iaFunc, jbFunc, kcFunc, ldFunc, density);
                                    } // end l

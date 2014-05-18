@@ -36,7 +36,8 @@ molecule
 end
 scf_max 0
 guess core
-use_RO 1
+compare_RO 1
 RO_thresh 6
 thresh 14
 omega 0.3
+gmat_parallel_scheme 0
