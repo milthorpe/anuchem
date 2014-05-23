@@ -1,4 +1,4 @@
-peptide
+1D-hexdadecapeptide
 basis 6311g
 units 0.5291772109217
 RO_Z 1.0
@@ -166,7 +166,6 @@ H 1.0218805 -9.1977519 -13.8031474
 H 1.2605420 -10.9640615 -13.6402314 
 H 2.2365365 -10.0364825 -14.8123686 
 end
-compare_RO
 scf_max 0
 guess core
 use_RO 1
