@@ -18,6 +18,7 @@ import x10.io.IOException;
 import x10.regionarray.Dist;
 import x10.regionarray.DistArray;
 import x10.util.ArrayList;
+import x10.util.Date;
 import x10.util.RailUtils;
 import x10.util.Team;
 import x10.util.concurrent.AtomicInteger;
@@ -66,7 +67,7 @@ public class GMatrixROmem4 extends DenseMatrix{self.M==self.N} {
 
     public def this(N:Long, bfs:BasisFunctions, molecule:Molecule[QMAtom], nOrbital:Int, omega:Double,roThresh:Double):GMatrixROmem4{self.M==N,self.N==N} {     
         super(N, N);
-        Console.OUT.printf("\nGMatrixROmem4.x10 'public def this' %s...\n", getDateString());
+        Console.OUT.printf("\nGMatrixROmem4.x10 'public def this' %s...\n", new Date());
         this.bfs = bfs; this.mol = molecule; this.nOrbital = nOrbital; this.omega=omega; this.roThresh=roThresh;  
         // Set up RO N and L
         val jd = JobDefaults.getInstance();
@@ -196,7 +197,7 @@ public class GMatrixROmem4 extends DenseMatrix{self.M==self.N} {
     @Native("c++", "MKL_Set_Num_Threads(#a)") private native static def mklSetNumThreads(a:Int):void;
 
     public def compute(density:Density{self.N==this.N}, mos:MolecularOrbitals{self.N==this.N}) {
-        Console.OUT.printf("\nGMatrixROmem4.x10 'public def compute' %s...\n", getDateString()); 
+        Console.OUT.printf("\nGMatrixROmem4.x10 'public def compute' %s...\n", new Date()); 
         val timer=this.timer; val shellPairs=this.shellPairs; val maxam1=this.maxam1; val numSigShellPairs=this.numSigShellPairs; val ylms=this.ylms;
         val N=this.N;val nOrbital=this.nOrbital; val roN=this.roN; val roNK=this.roNK; val roL=this.roL; val roK=this.roK; val roZ=this.roZ; val omega=this.omega; val roThresh=this.roThresh; val norm=this.norm;
         val place2ShellPair=this.place2ShellPair;
@@ -377,17 +378,5 @@ public class GMatrixROmem4 extends DenseMatrix{self.M==self.N} {
             val eK = density.clone().mult(density, kDmat).trace();
             Console.OUT.printf("  EJ = %.10f EK=%.10f\n", .25*eJ/jd.roZ, .25*eK/jd.roZ);
         }
-    }
-
-    private def getDateString() {
-        val result:String;
-        try {
-            val dateReader = Runtime.execForRead("date"); 
-            result = dateReader.readLine();
-        } catch (e:IOException) {
-            // could not read date! use current time in milliseconds
-            result = System.currentTimeMillis() + "ms";
-        }
-        return result;
     }
 }

@@ -21,19 +21,6 @@ import x10.regionarray.Dist;
 @NativeCPPInclude("mkl_math.h")
 @NativeCPPInclude("omp.h")
 public class ExecutionEnvironment {
-    /** Return a string representation of the current date and time. */
-    public static def getDateString() {
-        val result:String;
-        try {
-            val dateReader=Runtime.execForRead("date"); 
-            result=dateReader.readLine();
-        } catch (e:IOException) {
-            // could not read date! use current time in milliseconds
-            result=System.currentTimeMillis() + "ms";
-        }
-        return result;
-    } 
-
     @Native("c++", "omp_get_num_threads()") private native static def ompGetNumThreads():Int;
     @Native("c++", "omp_set_num_threads(#a)") private native static def ompSetNumThreads(a:Int):void;
     @Native("c++", "mkl_get_max_threads()") private native static def mklGetMaxThreads():Int;

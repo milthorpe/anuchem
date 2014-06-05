@@ -16,6 +16,7 @@ import x10.matrix.block.Grid;
 import x10.matrix.DenseMatrix;
 import x10.matrix.dist.DistDenseMatrix;
 import x10.regionarray.Dist;
+import x10.util.Date;
 import x10.util.GrowableRail;
 import x10.util.Pair;
 import x10.util.RailUtils;
@@ -50,7 +51,7 @@ public class ROFockMethod(N:Long) {
     val roZ:Double, shellAtPlace:Rail[Long], funcAtPlace:Rail[Long], offsetAtPlace:Rail[Long];
 
     public def this(N:Long, bfs:BasisFunctions, mol:Molecule[QMAtom], nOrbitals:Long, omega:Double, roThresh:Double) {     
-        Console.OUT.printf("\nROFockMethod.x10 'public def this' %s...\n", ExecutionEnvironment.getDateString());
+        Console.OUT.printf("\nROFockMethod.x10 'public def this' %s...\n", new Date());
         property(N);
         val maxam=bfs.getShellList().getMaximumAngularMomentum();
         val maxam1=(maxam+1)*(maxam+2)/2;
@@ -277,7 +278,11 @@ public class ROFockMethod(N:Long) {
                 }
                 auxJ_plh
             }
-        );      
+        ); 
+
+        timer.stop(0);
+        Console.OUT.printf("    ROFockMethod Initialization 'up to auxJ' time: %.3f seconds\n", (timer.total(0) as Double) / 1e9);
+        timer.start(0);     
 
         this.auxKIdx_plh=PlaceLocalHandle.make[Rail[Long]](
             PlaceGroup.WORLD, 
@@ -296,7 +301,11 @@ public class ROFockMethod(N:Long) {
                 }
                 auxKIdx_plh
             }
-        );    
+        );  
+
+        timer.stop(0);
+        Console.OUT.printf("    ROFockMethod Initialization 'up to auxK' time: %.3f seconds\n", (timer.total(0) as Double) / 1e9);
+        timer.start(0);  
 
         val tbs = Math.max(maxRow*nOrbitals,maxam1*N)*roK; // if we use this for K too
         this.remoteBlockK_plh=PlaceLocalHandle.make[RemoteBlock](PlaceGroup.WORLD, () => new RemoteBlock(tbs/*maxRow*nOrbitals*roK*/));
@@ -326,7 +335,7 @@ public class ROFockMethod(N:Long) {
 
     /** Computes the G matrix from the given density and molecular orbital matrices. */
     public def compute(density:Density{self.N==this.N}, mos:MolecularOrbitals{self.N==this.N}, gMatrix:DenseMatrix(N,N)) {
-        Console.OUT.printf("\nROFockMethod.x10 'public def compute' %s...\n", ExecutionEnvironment.getDateString()); 
+        Console.OUT.printf("\nROFockMethod.x10 'public def compute' %s...\n", new Date()); 
         timer.start(TIMER_TOTAL); 
 
         val tempJ = new Rail[Double](N*N);
@@ -582,7 +591,7 @@ public class ROFockMethod(N:Long) {
             }
             if (doK) {
                 val auxKMat = new DenseMatrix(roK*muSize, N, auxK);
-                DenseMatrixBLAS.compMultTrans(mos, auxKMat, bMat, [nOrbitals, auxKMat.M, N], [0, 0, 0, 0, 0, (shellPair0.mu-offsetAtPlace(here.id))*roK], false);
+                DenseMatrixBLAS.compMultTrans(1.0, mos, auxKMat, 0.0, bMat, [nOrbitals, auxKMat.M, N], [0, 0, 0, 0, 0, (shellPair0.mu-offsetAtPlace(here.id))*roK]);
             }
         }
         );
@@ -624,7 +633,7 @@ public class ROFockMethod(N:Long) {
                         async remoteK.fetchNext(halfAuxMat, nextBlockPlace, blockSize);
                     }
                     timer.start(TIMER_DSYRK);
-                    DenseMatrixBLAS.symRankKUpdateTrans(a, localK, [a.N, a.M], [0, 0, 0, offsetHere], true, true);
+                    DenseMatrixBLAS.symRankKUpdateTrans(1.0, a, 1.0, localK, [a.N, a.M], [0, 0, 0, offsetHere], true);
                     timer.stop(TIMER_DSYRK);
 @Ifdef("__DEBUG__") {
                     val dsyrkSecs = timer.last(TIMER_DSYRK) / 1e9;
@@ -652,14 +661,14 @@ public class ROFockMethod(N:Long) {
                         var dgemmGFlops:Double;
                         timer.start(TIMER_DGEMM);
                         if (nPlaces%2==1 || blk<blocks) {
-                            DenseMatrixBLAS.compTransMult(a, thisBlock, localK, [a.N, thisBlock.N, a.M], [0, 0, 0, 0, 0, offsetAtPlace(thisBlockPlace)], true);
+                            DenseMatrixBLAS.compTransMult(1.0, a, thisBlock, 1.0, localK, [a.N, thisBlock.N, a.M], [0, 0, 0, 0, 0, offsetAtPlace(thisBlockPlace)]);
                             dgemmGFlops = 2 * a.N * thisBlock.N * a.M / 1e9;
                         } else if (pid<nPlaces/2) {
                             dgemmGFlops = 2 * (a.N/2) * thisBlock.N * a.M / 1e9;
-                            DenseMatrixBLAS.compTransMult(a, thisBlock, localK, [a.N/2, thisBlock.N, a.M], [0, a.N-a.N/2, 0, 0, a.N-a.N/2, offsetAtPlace(thisBlockPlace)], true);
+                            DenseMatrixBLAS.compTransMult(1.0, a, thisBlock, 1.0, localK, [a.N/2, thisBlock.N, a.M], [0, a.N-a.N/2, 0, 0, a.N-a.N/2, offsetAtPlace(thisBlockPlace)]);
                         } else {
                             dgemmGFlops = 2 * (thisBlock.N-thisBlock.N/2) * thisBlock.N * a.M / 1e9;
-                            DenseMatrixBLAS.compTransMult(a, thisBlock, localK, [a.N, thisBlock.N-thisBlock.N/2, a.M], [0, 0, 0, 0, 0, offsetAtPlace(thisBlockPlace)], true);
+                            DenseMatrixBLAS.compTransMult(1.0, a, thisBlock, 1.0, localK, [a.N, thisBlock.N-thisBlock.N/2, a.M], [0, 0, 0, 0, 0, offsetAtPlace(thisBlockPlace)]);
                         }
                         timer.stop(TIMER_DGEMM);
 

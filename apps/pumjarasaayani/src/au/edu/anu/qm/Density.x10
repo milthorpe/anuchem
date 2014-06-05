@@ -11,6 +11,7 @@
 package au.edu.anu.qm;
 
 import x10.matrix.DenseMatrix;
+import x10.matrix.blas.DenseMatrixBLAS;
 
 /**
  * The density matrix in the HF calculation
@@ -38,10 +39,8 @@ public class Density extends DenseMatrix{self.M==self.N} {
 
     public def compute(mos:MolecularOrbitals{self.N==this.N}) : void {
         // construct it from the MOs .. C*C'
-        val dVector = new DenseMatrix(noOfOccupancies, this.N);
-        DenseMatrix.copyRows(mos, 0, dVector, 0, noOfOccupancies);
-        super.transMult(dVector, dVector, false);
-        this.scale(2.0);
+        val offsets = new Rail[Long](6);
+        DenseMatrixBLAS.compTransMult(2.0, mos, mos, 0.0, this, [mos.N, mos.N, noOfOccupancies], offsets);
     }
 
     public def applyGuess(SAD:DenseMatrix)  {
