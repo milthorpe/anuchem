@@ -86,7 +86,7 @@ public class ROFockMethod(N:Long) {
         place2atom(nPlaces)=nAtoms-1; place2atom(0)=0;
         val place2func=new Rail[Long](nPlaces+1);
         place2func(nPlaces)=mol.getAtom(nAtoms-1).getBasisFunctions().size(); place2func(0)=0;
-        val npp=Math.ceil(N/nPlaces as Double) as Long;
+        val npp=N/(nPlaces as Double);
         var pid:Long=nPlaces-1;
         var func:Long=0;
         for(var a:Long=nAtoms-1; a>=0 && pid>0; a--) { // centre a  
@@ -94,7 +94,7 @@ public class ROFockMethod(N:Long) {
             for(var i:Long=naFunc-1; i>=0 && pid>0; i--) { // basis functions on a
                 val iaFunc=aFunc.get(i), aa=iaFunc.getTotalAngularMomentum();
                 func+=(aa+1)*(aa+2)/2;
-                if (N-func<=pid*npp) {
+                if (N-func<=Math.ceil(pid*npp) as Long) {
                      place2atom(pid)=a;
                      place2func(pid)=i;
                      pid--;
@@ -237,7 +237,7 @@ public class ROFockMethod(N:Long) {
         timer.stop(0);
         Console.OUT.printf("    ROFockMethod Initialization 'up to ShellPair' time: %.3f seconds\n", (timer.total(0) as Double) / 1e9);
         timer.start(0);
-        
+
         val intPack_wlh = new WorkerLocalHandle[Integral_Pack](()=> new Integral_Pack(jd.roN, jd.roL, omega, roThresh, jd.rad, jd.roZ));
         this.ylms_plh = PlaceLocalHandle.make[Rail[Rail[Double]]](
             PlaceGroup.WORLD, 

@@ -68,7 +68,7 @@ public class PumjaRasaayani {
         val bsf = new BasisFunctions(mol, basisName, getBasisDirName(inputFileName));
         timer.stop(1);
         Console.OUT.println("Number of basis functions: " + bsf.getBasisFunctions().size());
-        Console.OUT.printf("    Time for setting up basis functions: %.3f seconds\n", (timer.total(1) as Double) / 1e9);
+        Console.OUT.printf("\tTime for setting up basis functions: %.3f seconds\n", (timer.total(1) as Double) / 1e9);
         
         timer.start(2);
         Console.OUT.printf("Computing 1e integrals...\n");
