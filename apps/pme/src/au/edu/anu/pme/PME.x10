@@ -339,7 +339,7 @@ public class PME {
                             myAtomsCache(haloListArray(i)) = subCells(haloListArray(i));
                         }
                     } else {
-                        val atomsForPlace = at(Place.place(placeId)) { getAtomsForSubcellList(subCells, haloListArray)};
+                        val atomsForPlace = at(Place(placeId)) { getAtomsForSubcellList(subCells, haloListArray)};
                         for (i in 0..(haloListArray.size-1)) {
                             myAtomsCache(haloListArray(i)) = atomsForPlace(i);
                         }

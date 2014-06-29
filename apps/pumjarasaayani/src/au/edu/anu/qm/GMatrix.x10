@@ -369,7 +369,7 @@ public class GMatrix extends DenseMatrix{self.M==self.N} {
 
         val computeInst = this.computeInst; // TODO this should not be required XTENLANG-1913
         finish for ([placeId] in computeInst) async {
-            val placeContribution = at(Place.place(placeId)) {
+            val placeContribution = at(Place(placeId)) {
                 //val placeTimer = new Timer(1);
                 //placeTimer.start(0);
 
@@ -404,7 +404,7 @@ public class GMatrix extends DenseMatrix{self.M==self.N} {
         computeInst(0).density = density; // prepare for broadcast
         val computeInst = this.computeInst; // TODO this should not be required XTENLANG-1913
         finish for ([placeId] in computeInst) async {
-            val placeContribution = at(Place.place(placeId)) {
+            val placeContribution = at(Place(placeId)) {
                 val placeTimer = new Timer(1);
                 placeTimer.start(0);
 
@@ -453,7 +453,7 @@ public class GMatrix extends DenseMatrix{self.M==self.N} {
         computeInst(0).density = density; // prepare for broadcast
         val computeInst = this.computeInst; // TODO this should not be required XTENLANG-1913
         finish for ([placeId] in computeInst) async {
-            val placeContribution = at(Place.place(placeId)) {
+            val placeContribution = at(Place(placeId)) {
                 //val placeTimer = new Timer(1);
                 //placeTimer.start(0);
                 val comp_loc = computeInst(placeId);
@@ -505,7 +505,7 @@ public class GMatrix extends DenseMatrix{self.M==self.N} {
         computeInst(0).density = density; // prepare for broadcast
         val computeInst = this.computeInst; // TODO this should not be required XTENLANG-1913
         finish for ([placeId] in computeInst) async {
-            val placeContribution = at(Place.place(placeId)) {
+            val placeContribution = at(Place(placeId)) {
                 val placeTimer = new Timer(1);
                 placeTimer.start(0);
 

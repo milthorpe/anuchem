@@ -99,7 +99,7 @@ public class TestPMEWaterBox extends TestElectrostatic {
             val charge = atom.charge;
             val p = getPlaceId(x, y, z);
             if (p >= 0 && p < Place.MAX_PLACES) {
-                at(Place.place(p)) async {
+                at(Place(p)) async {
                     atom.centre = Point3d(x,y,z);
                     //Console.OUT.println(atom);
                     atomic { tempAtoms(p).add(atom); }

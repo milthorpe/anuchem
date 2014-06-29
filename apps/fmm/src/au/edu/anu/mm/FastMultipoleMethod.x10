@@ -751,7 +751,7 @@ public class FastMultipoleMethod {
             val placeId = placeEntry.getKey();
             val uListForPlace = placeEntry.getValue();
             val uListArray = uListForPlace.toRail();
-            val atomsForPlace = at(Place.place(placeId)) { FastMultipoleMethod.getAtomsForOctantList(uListArray)};
+            val atomsForPlace = at(Place(placeId)) { FastMultipoleMethod.getAtomsForOctantList(uListArray)};
             for (i in 0..(uListArray.size-1)) {
                 myLET.setAtomDataForOctant(uListArray(i), atomsForPlace(i));
             }

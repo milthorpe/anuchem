@@ -23,7 +23,7 @@ public class TestDGEMM{
 
 
     public static def main(args:Array[String](1)){
-finish for (pid in (0..(Place.MAX_PLACES-1))) at(Place.place(pid)) async { 
+finish for (pid in (0..(Place.MAX_PLACES-1))) at(Place(pid)) async { 
         Console.OUT.println("Hello World!");
 
         //Console.OUT.print("mklGetMaxThreads() was " + mklGetMaxThreads() + " and is now set to"); mklSetNumThreads(Runtime.NTHREADS);
