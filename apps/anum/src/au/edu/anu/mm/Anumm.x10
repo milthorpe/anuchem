@@ -160,7 +160,7 @@ public class Anumm {
      * Currently just splits them up into slices by X coordinate.
      */
     private static def getPlaceId(x : Double, y : Double, z : Double, size : Double) : Int {
-        return ((x / (size * 2) + 0.5) * Place.MAX_PLACES) as Int;
+        return ((x / (size * 2) + 0.5) * Place.numPlaces()) as Int;
     }
 }
 

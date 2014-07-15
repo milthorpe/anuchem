@@ -22,8 +22,8 @@ public class BenchmarkUpdateGhosts(arrayDim : Int) {
     }
 
     public def run(): Boolean = {
-        val facI = Math.sqrt(Place.MAX_PLACES) as Int;
-        val facJ = Place.MAX_PLACES / facI;
+        val facI = Math.sqrt(Place.numPlaces()) as Int;
+        val facJ = Place.numPlaces() / facI;
         val r = 0..(arrayDim*facI-1) * 0..(arrayDim*facJ-1) * 0..(arrayDim-1);
         Console.OUT.println("r =  " + r);
         val d = Dist.makeBlockBlock(r, 0, 1);

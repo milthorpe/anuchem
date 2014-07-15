@@ -24,10 +24,10 @@ public class MandelbrotDist {
         val gridSpacing = (max.re - min.re) / realPoints;
         val imaginaryPoints = ((max.im - min.im) / (max.re - min.re) * realPoints) as Int;
 
-        val perPlace = realPoints / Place.MAX_PLACES;
-        val leftOver = realPoints % Place.MAX_PLACES;
+        val perPlace = realPoints / Place.numPlaces();
+        val leftOver = realPoints % Place.numPlaces();
         val firstChunk = leftOver*(perPlace+1);
-        val offsets = new Array[Int](Place.MAX_PLACES+1, (i : Int) => (i < leftOver ? i*(perPlace+1) : firstChunk+(i-leftOver)*perPlace));
+        val offsets = new Array[Int](Place.numPlaces()+1, (i : Int) => (i < leftOver ? i*(perPlace+1) : firstChunk+(i-leftOver)*perPlace));
         val times = DistArray.make[Double](Dist.makeUnique());
         val result = DistArray.make[Array[Double](2)](Dist.makeUnique());
 
@@ -59,7 +59,7 @@ public class MandelbrotDist {
                 result(here.id) = myResult;
             }
 
-            val increment = Math.max(1.0, realPoints / (Place.MAX_PLACES*15)) as Int;
+            val increment = Math.max(1.0, realPoints / (Place.numPlaces()*15)) as Int;
             var prevOffset : Int = 0;
             for (place in Place.places()) {
                 val thisPlaceTime = at(place) times(here.id);

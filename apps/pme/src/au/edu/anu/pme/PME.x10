@@ -169,7 +169,7 @@ public class PME {
         this.beta = beta;
         this.cutoff = cutoff;
         this.imageTranslations = PlaceLocalHandle.make[Array[Vector3d](3){rect}](
-            PlaceGroup.WORLD, 
+            Place.places(), 
             () => new Array[Vector3d](Region.make(-1..1, -1..1, -1..1), 
                 ([i,j,k] : Point(3)) => (edges(0).mul(i)).add(edges(1).mul(j)).add(edges(2).mul(k))) 
         );

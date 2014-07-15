@@ -37,7 +37,7 @@ public class DistributedReal3dFft {
      */
     public static def doFFT3d(source:DistArray[Double](3), target:DistArray[Complex](3){self.dist==source.dist}, temp:DistArray[Complex](3){self.dist==source.dist}) {
         val dataSize = (source.region.max(0)-source.region.min(0)) as Int + 1n;
-        if (Place.MAX_PLACES==1L) {
+        if (Place.numPlaces()==1L) {
             // all source data at one place.  use local 3D FFT rather than distributed
             val plan : FFTW.FFTWPlan = FFTW.fftwPlan3d(dataSize, dataSize, dataSize, source, target);
             FFTW.fftwExecute(plan);
@@ -76,7 +76,7 @@ public class DistributedReal3dFft {
 
     public static def doFFT3d(source:DistArray[Complex](3), target:DistArray[Double](3){self.dist==source.dist}, temp:DistArray[Complex](3){self.dist==source.dist}, temp2:DistArray[Double](3){self.dist==source.dist}) {
         val dataSize = (source.region.max(0)-source.region.min(0)) as Int + 1n;
-        if (Place.MAX_PLACES==1L) {
+        if (Place.numPlaces()==1L) {
             // all source data at one place.  use local 3D FFT rather than distributed
             val plan : FFTW.FFTWPlan = FFTW.fftwPlan3d(dataSize, dataSize, dataSize, source, target);
             FFTW.fftwExecute(plan);
@@ -122,7 +122,8 @@ public class DistributedReal3dFft {
         finish {
             // transpose elements to every place, starting with next place
             // and ending with 'here'
-            var p2:Place = here.next();
+            val allPlaces = Place.places();
+            var p2:Place = allPlaces.next(here);
             do {
                 val targetDist = source.dist | p2;
                 val startX = Math.max(sourceStartX, targetDist.region.min(1));
@@ -157,8 +158,8 @@ public class DistributedReal3dFft {
                         }
                     }
                 }
-                p2 = p2.next();
-            } while (p2 != here.next());
+                p2 = allPlaces.next(p2);
+            } while (p2 != allPlaces.next(here));
         }
     }
 }

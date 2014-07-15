@@ -15,7 +15,7 @@
  */
 public class Topology {
     public static def main(args:Rail[String]){
-        for (place in PlaceGroup.WORLD) at(place) {
+        for (place in Place.places()) at(place) {
             val hostnameReader = Runtime.execForRead("uname -n"); 
             val hostname = hostnameReader.readLine();
             Console.OUT.println(here + " executing on " + hostname + " with " + Runtime.NTHREADS + " threads");

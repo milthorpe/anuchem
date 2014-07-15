@@ -518,7 +518,7 @@ public class ROFockMethod(N:Long) {
     private def computeAuxBDlm(density:Density{self.N==this.N}, mos:MolecularOrbitals{self.N==this.N}, ron:Int, auxJ:Rail[Rail[Double]], bMat:DenseMatrix, dlm:Rail[Double]) {
         // Console.OUT.println("Aux - distributed ron="+ron);
         timer.start(TIMER_AUX);
-        val auxStart = System.nanoTime();
+        //val auxStart = System.nanoTime();
         val doK = (ron <= roNK);
         dlm.clear();
         dlm_wlh.applyLocal((d:Rail[Double])=> { d.clear(); });
@@ -599,12 +599,12 @@ public class ROFockMethod(N:Long) {
         );
 
         dlm_wlh.reduceLocal(dlm, (a:Rail[Double], b:Rail[Double])=> RailUtils.map(a, b, a, (x:Double, y:Double)=>x+y));
-        val auxStop = System.nanoTime();
-        Console.OUT.printf("place %d aux %d time %.3f\n", here.id, ron, (auxStop-auxStart) as Double / 1e6);
+        //val auxStop = System.nanoTime();
+        //Console.OUT.printf("place %d aux %d time %.3f\n", here.id, ron, (auxStop-auxStart) as Double / 1e6);
         Team.WORLD.allreduce[Double](dlm, 0L, dlm, 0L, dlm.size, Team.ADD);
         timer.stop(TIMER_AUX);
-        val allreduceStop = System.nanoTime();
-        Console.OUT.printf("place %d allreduce %d time %.3f\n", here.id, ron, (allreduceStop-auxStart) as Double / 1e6);
+        //val allreduceStop = System.nanoTime();
+        //Console.OUT.printf("place %d allreduce %d time %.3f\n", here.id, ron, (allreduceStop-auxStart) as Double / 1e6);
     }
 
     /** 

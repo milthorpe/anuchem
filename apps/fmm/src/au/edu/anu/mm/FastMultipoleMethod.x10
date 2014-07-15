@@ -275,7 +275,6 @@ public class FastMultipoleMethod {
     }
 
     public def initialAssignment(numAtoms:Int, atoms:DistArray[Rail[MMAtom]](1)) {
-        Console.OUT.println("atoms at " + atoms.dist.places());
         finish ateach(p1 in atoms.dist) {
             FastMultipoleMethod.localData.timer.start(FmmLocalData.TIMER_INDEX_TREE);
             this.localData.init(numTerms, dMax as UByte, ws, size);
