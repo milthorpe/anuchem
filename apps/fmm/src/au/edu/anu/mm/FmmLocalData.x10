@@ -59,7 +59,7 @@ public class FmmLocalData {
      * A Rail holding the Octant ID of the first leaf octant at each place.
      * The final elements is the ID of the last leaf octant plus one.
      */
-    val firstLeafOctant:Rail[UInt] = new Rail[UInt](Place.MAX_PLACES+1);
+    val firstLeafOctant:Rail[UInt] = new Rail[UInt](Place.numPlaces()+1);
 
     /** 
      * The locally essential tree at this place. 

@@ -45,7 +45,7 @@ public class ElectrostaticDirectMethod {
     public def this(atoms : DistArray[Rail[MMAtom]](1)) {
 		this.atoms = atoms;
         this.otherAtoms = DistArray.make[Rail[Rail[PointCharge]]](Dist.makeUnique(), 
-            ([p] : Point) => new Rail[Rail[PointCharge]](Place.MAX_PLACES));
+            ([p] : Point) => new Rail[Rail[PointCharge]](Place.numPlaces()));
     }
 
     public def expectationValue(twoParticleFunction:(a:MMAtom,b:MMAtom) => Double):Double {
@@ -78,7 +78,7 @@ public class ElectrostaticDirectMethod {
                     var energyThisPlace : Double = 0.0;
 
                     // before starting computation, send my atoms to next place
-                    val nextPlace = here.next();
+                    val nextPlace = Place.places().next(here);
                     if (nextPlace != here) {
                         @Uncounted at(nextPlace) async {
                             atomic {
@@ -128,8 +128,8 @@ public class ElectrostaticDirectMethod {
                         atomI.force = Vector3d(fix, fiy, fiz);
                     }
 
-                    var target : Place = nextPlace.next();
-                    var source : Place = here.prev();
+                    var target : Place = Place.places().next(nextPlace);
+                    var source : Place = Place.places().prev(here);
                     while (source != here) {
                         if (target != here) {
                             // send a set of atoms to next target place
@@ -159,8 +159,8 @@ public class ElectrostaticDirectMethod {
                                 atomI.force += pairForce;
                             }
                         }
-                        target = target.next();
-                        source = source.prev();
+                        target = Place.places().next(target);
+                        source = Place.places().prev(source);
                     }
                     
                     offer energyThisPlace;

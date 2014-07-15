@@ -72,7 +72,7 @@ public class TestElectrostatic {
         // generate particles at each place in slabs, divide space by X coordinate
         val atoms = DistArray.make[Rail[MMAtom]](Dist.makeUnique());
         finish ateach(place in Dist.makeUnique()) {
-            val chunkSize = (numAtoms / Place.MAX_PLACES) + ((numAtoms % Place.MAX_PLACES > 0) ? 1 : 0);
+            val chunkSize = (numAtoms / Place.numPlaces()) + ((numAtoms % Place.numPlaces() > 0) ? 1 : 0);
             val startHere = here.id * chunkSize;
             val endHere = Math.min(numAtoms, (here.id+1) * chunkSize);
             val numAtomsHere = Math.max(0L, endHere-startHere-1);
@@ -99,7 +99,7 @@ public class TestElectrostatic {
      * Currently just splits them up into slices by X coordinate.
      */
     protected def getPlaceId(x:Double, y:Double, z:Double):Long {
-        return (((x + boxSize()/2.0) / boxSize()) * Place.MAX_PLACES) as Long;
+        return (((x + boxSize()/2.0) / boxSize()) * Place.numPlaces()) as Long;
     }
 
     /** 
