@@ -359,6 +359,8 @@ public class ROFockMethod(N:Long) {
             localJ.reset();
             localK.reset();
             
+            //Team.WORLD.barrier();
+
             // compute contributions separately for each radial component (ron)
             for (ron in 0n..roN) {
                 computeAuxBDlm(density, mos, ron, auxJ, bMat, dlm);
