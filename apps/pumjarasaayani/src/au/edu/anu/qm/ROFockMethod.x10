@@ -138,10 +138,10 @@ public class ROFockMethod(N:Long) {
         // distributed generation of shellPairs_plh
         val threshold=roThresh*jd.roZ*jd.roZ*1e-3; 
         // ** Threshold must be relative to roThresh *** otherwise Z scaling will cause a problem: This is effectively a density threshold RO Thesis (2.26)    
-        val roN_val=roN,roZ_val=jd.roZ,nShells_val=nShells, sizeInfo=PlaceLocalHandle.make[Rail[Double]](PlaceGroup.WORLD, ()=> new Rail[Double](4));
-        val shellPairRange_plh=PlaceLocalHandle.make[Rail[Long]](PlaceGroup.WORLD, ()=>new Rail[Long](shellAtPlace(here.id)));
+        val roN_val=roN,roZ_val=jd.roZ,nShells_val=nShells, sizeInfo=PlaceLocalHandle.make[Rail[Double]](Place.places(), ()=> new Rail[Double](4));
+        val shellPairRange_plh=PlaceLocalHandle.make[Rail[Long]](Place.places(), ()=>new Rail[Long](shellAtPlace(here.id)));
         val shellPairs_plh=PlaceLocalHandle.make[Rail[ShellPair]](
-            PlaceGroup.WORLD, 
+            Place.places(), 
             ()=> {            
             val pid=here.id, info=sizeInfo(), range=shellPairRange_plh();
             val localShellPairs = new GrowableRail[ShellPair](nShells_val*nShells_val);
@@ -240,7 +240,7 @@ public class ROFockMethod(N:Long) {
 
         val intPack_wlh = new WorkerLocalHandle[Integral_Pack](()=> new Integral_Pack(jd.roN, jd.roL, omega, roThresh, jd.rad, jd.roZ));
         this.ylms_plh = PlaceLocalHandle.make[Rail[Rail[Double]]](
-            PlaceGroup.WORLD, 
+            Place.places(), 
             ()=>{
                 val shp = shellPairs_plh();
                 val ylms_plh = new Rail[Rail[Double]](shp.size); 
@@ -259,7 +259,7 @@ public class ROFockMethod(N:Long) {
         timer.start(0);
 
         this.auxJ_plh=PlaceLocalHandle.make[Rail[Rail[Double]]](
-            PlaceGroup.WORLD, 
+            Place.places(), 
             ()=>{
                 val shp = shellPairs_plh(), pid = here.id;
                 val auxJ_plh = new Rail[Rail[Double]](shp.size);
@@ -285,7 +285,7 @@ public class ROFockMethod(N:Long) {
         timer.start(0);     
 
         this.auxKIdx_plh=PlaceLocalHandle.make[Rail[Long]](
-            PlaceGroup.WORLD, 
+            Place.places(), 
             ()=>{
                 val shp = shellPairs_plh(), size=shp.size, pid=here.id;
                 val auxKIdx_plh = new Rail[Long](shp.size);
@@ -308,7 +308,7 @@ public class ROFockMethod(N:Long) {
         timer.start(0);  
 
         val tbs = Math.max(maxRow*nOrbitals,maxam1*N)*roK; // if we use this for K too
-        this.remoteBlockK_plh=PlaceLocalHandle.make[RemoteBlock](PlaceGroup.WORLD, () => new RemoteBlock(tbs/*maxRow*nOrbitals*roK*/));
+        this.remoteBlockK_plh=PlaceLocalHandle.make[RemoteBlock](Place.places(), () => new RemoteBlock(tbs/*maxRow*nOrbitals*roK*/));
 
         val cbs_HalfAuxInt=new Rail[Long](1); cbs_HalfAuxInt(0)=nOrbitals*roK; val halfAuxIntGrid=new Grid(cbs_HalfAuxInt, funcAtPlace);
         this.halfAuxMat=DistDenseMatrix.make(halfAuxIntGrid);
@@ -319,8 +319,8 @@ public class ROFockMethod(N:Long) {
         val cbs_nSquareMat=new Rail[Long](1); cbs_nSquareMat(0)=N; val nSquareMatGrid=new Grid(funcAtPlace, cbs_nSquareMat);
         this.distJ=DistDenseMatrix.make(nSquareMatGrid); this.distK=DistDenseMatrix.make(nSquareMatGrid);
 
-        this.dlm_plh = PlaceLocalHandle.make[Rail[Double]](PlaceGroup.WORLD, ()=> new Rail[Double](roK)); 
-        this.e_plh = PlaceLocalHandle.make[Rail[Double]](PlaceGroup.WORLD, ()=> new Rail[Double](2));
+        this.dlm_plh = PlaceLocalHandle.make[Rail[Double]](Place.places(), ()=> new Rail[Double](roK)); 
+        this.e_plh = PlaceLocalHandle.make[Rail[Double]](Place.places(), ()=> new Rail[Double](2));
         this.shellPairRange_plh = shellPairRange_plh;
 
         this.shellAtPlace=shellAtPlace; this.offsetAtPlace=offsetAtPlace; this.funcAtPlace=funcAtPlace;
