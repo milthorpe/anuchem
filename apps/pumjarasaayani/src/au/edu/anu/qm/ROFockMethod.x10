@@ -33,13 +33,15 @@ import edu.utk.cs.papi.PAPI;
 
 public class ROFockMethod(N:Long) {
     // Timer & PAPI performance counters
-    public val timer=new StatisticalTimer(6);
+    public val timer=new StatisticalTimer(8);
     val TIMER_TOTAL=0;
-    val TIMER_AUX=1;
-    val TIMER_JMATRIX=2;
-    val TIMER_K=3;
-    val TIMER_DSYRK=4;
-    val TIMER_DGEMM=5;
+    val TIMER_PERPLACE=1;
+    val TIMER_AUX=2;
+    val TIMER_JMATRIX=3;
+    val TIMER_K=4;
+    val TIMER_DSYRK=5;
+    val TIMER_DGEMM=6;
+    val TIMER_GATHER=7;
 
     transient var papi:PAPI=new PAPI(); // @Ifdef("__PAPI__") // XTENLANG-3132
 
@@ -344,6 +346,7 @@ public class ROFockMethod(N:Long) {
         val place0GRefK = new GlobalRail[Double](tempK);
 
         finish ateach(place in Dist.makeUnique()) {
+            timer.start(TIMER_PERPLACE);
             val nPlaces = Place.numPlaces();
             val pid = here.id;
 
@@ -359,7 +362,7 @@ public class ROFockMethod(N:Long) {
             localJ.reset();
             localK.reset();
             
-            //Team.WORLD.barrier();
+            Team.WORLD.barrier();
 
             // compute contributions separately for each radial component (ron)
             for (ron in 0n..roN) {
@@ -368,6 +371,8 @@ public class ROFockMethod(N:Long) {
                 computeJ(ron, auxJ, dlm, localJ);
                 Team.WORLD.barrier();
             }
+
+            timer.start(TIMER_GATHER);
 
             val e = e_plh();
             // gather J to tempJ, K to tempK at place 0
@@ -383,40 +388,43 @@ public class ROFockMethod(N:Long) {
                 val colStart = offsetAtPlace((pid+1)%nPlaces);
                 val colStop = offsetAtPlace((pid+mult)%nPlaces);
 
-                // Calculate eJ and eK
-                e.clear();
+                var eJ:Double = 0.0;
                 for (var j0:Long=0, j:Long=offsetAtPlace(pid); j<offsetAtPlace(pid+1); j0++, j++) {
                     //e(1) += .5*density(j, j)*localK(j0, j);
                     for (var i0:Long=0, i:Long=offsetAtPlace(pid); i<j; i0++, i++) {
-                        e(0) += density(i, j) * localJ(i0, j);
+                        eJ += density(i, j) * localJ(i0, j);
                         //e(1) += density(i, j)*localK(i0, j);
                     }
-                    e(0) += 0.5 * density(j, j) * localJ(j0, j);
+                    eJ += 0.5 * density(j, j) * localJ(j0, j);
                 }
                 if (colStart < colStop) {
                     for (var j:Long=colStart; j<colStop; j++) {
                         for (var i:Long=0, ii:Long=offsetAtPlace(pid); i<rowCount; i++, ii++) {
-                            e(0) += density(ii, j) * localJ(i, j);
+                            eJ += density(ii, j) * localJ(i, j);
                             //e(1) +=density(ii, j)*localK(i, j);
                         }
                     }
                 } else if (mult > 1) {
                     for (var j:Long=colStart; j<colCount; j++) {
                         for (var i:Long=0, ii:Long=offsetAtPlace(pid); i<rowCount; i++, ii++) {
-                            e(0) += density(ii, j) * localJ(i, j);
+                            eJ += density(ii, j) * localJ(i, j);
                             //e(1) +=density(ii, j)*localK(i, j);
                         }
                     }
                     for (var j:Long=0; j<colStop; j++) {
                         for (var i:Long=0, ii:Long=offsetAtPlace(pid); i<rowCount; i++, ii++) {
-                            e(0) += density(ii, j) * localJ(i, j);
+                            eJ += density(ii, j) * localJ(i, j);
                             //e(1) +=density(ii, j)*localK(i, j);
                         }
                     }
                 }
+                e(0) = eJ;
             }
 
             Team.WORLD.allreduce[Double](e, 0L, e, 0L, e.size, Team.ADD);
+
+            timer.stop(TIMER_GATHER);
+            timer.stop(TIMER_PERPLACE);
 
             // Report time
             Team.WORLD.allreduce[Long](timer.total, 0L, timer.total, 0L, timer.total.size, Team.MAX);
@@ -426,7 +434,10 @@ public class ROFockMethod(N:Long) {
                 val tDsyrk=(timer.total(TIMER_DSYRK) as Double)/1e9;
                 val tDgemm=(timer.total(TIMER_DGEMM) as Double)/1e9;
                 val tK=(timer.total(TIMER_K) as Double)/1e9;
-                Console.OUT.printf("Time (seconds) Aux= %.3f J= %.3f K-DSYRK= %.3f K-DGEMM= %.3f K-TOT= %.3f\n", tAux, tJ, tDsyrk, tDgemm, tK);
+                val tGather=(timer.total(TIMER_GATHER) as Double)/1e9;
+                val tPerPlace=(timer.total(TIMER_PERPLACE) as Double)/1e9;
+                Console.OUT.printf("Time (seconds) Aux= %.3f J= %.3f K-DSYRK= %.3f K-DGEMM= %.3f K-TOT= %.3f gather %.3f\n", tAux, tJ, tDsyrk, tDgemm, tK, tGather);
+                Console.OUT.printf("max time per place %.3f\n", tPerPlace);
                 Console.OUT.flush();
             }
         }
@@ -437,8 +448,8 @@ public class ROFockMethod(N:Long) {
             val placeRows = funcAtPlace(pid);
             val placeGOffset = offsetAtPlace(pid);
             val placeTempOffset = offsetAtPlace(pid) * N;
-            for (var i:Long=0; i<placeRows; i++)
-                for (var j:Long=0; j<N; j++)
+            for (var j:Long=0; j<N; j++)
+                for (var i:Long=0; i<placeRows; i++)
                     gMatrix(i+placeGOffset, j) = -tempK(placeTempOffset + j * placeRows + i);
         }
 
@@ -458,8 +469,8 @@ public class ROFockMethod(N:Long) {
             val placeRows = funcAtPlace(pid);
             val placeGOffset = offsetAtPlace(pid);
             val placeTempOffset = offsetAtPlace(pid) * N;
-            for (var i:Long=0; i<placeRows; i++)
-                for (var j:Long=0; j<N; j++)    
+            for (var j:Long=0; j<N; j++) 
+                for (var i:Long=0; i<placeRows; i++)
                     gMatrix(i+placeGOffset, j) += tempJ(placeTempOffset + j * placeRows + i);
         }
 
@@ -495,13 +506,11 @@ public class ROFockMethod(N:Long) {
     private static def traceOfSymmetricProduct(a:DenseMatrix{self.M==self.N}, b:DenseMatrix{self.M==self.N,self.M==a.M}) {
         val N = a.N;
         var trace:Double = 0.0;
-        for (i in 0..(N-1)) {
-            for (j in 0..(i-1)) {
+        for (j in 0..(N-1)) {
+            trace += a(j, j) * b(j, j);
+            for (i in (j+1)..(N-1)) {
                 trace += 2 * a(i, j) * b(i, j);
             }
-        }
-        for (i in 0..(N-1)) {
-            trace += a(i, i) * b(i, i);
         }
         return trace;
     }
