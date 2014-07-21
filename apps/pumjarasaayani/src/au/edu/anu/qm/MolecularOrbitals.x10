@@ -29,7 +29,6 @@ public class MolecularOrbitals extends DenseMatrix{self.M==self.N} {
     public def compute(theMat:DenseMatrix(this.N,this.N), overlap:Overlap{self.N==this.N}) : void {
         val x = overlap.getSHalf();
         val a = new DenseMatrix(x.M, theMat.N);
-        Console.OUT.println("a.M = " + a.M + " a.N = " + a.N);
         a.multTrans((x % theMat), x); // a = x.theMat.x^T
 
         val diag = new GMLDiagonalizer();

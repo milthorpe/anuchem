@@ -49,6 +49,7 @@ public class ROFockMethod(N:Long) {
     val auxJ_plh:PlaceLocalHandle[Rail[Rail[Double]]], auxKIdx_plh:PlaceLocalHandle[Rail[Long]], remoteBlockK_plh:PlaceLocalHandle[RemoteBlock], ylms_plh:PlaceLocalHandle[Rail[Rail[Double]]], shellPairs_plh:PlaceLocalHandle[Rail[ShellPair]];
     val dlm_plh:PlaceLocalHandle[Rail[Double]], e_plh:PlaceLocalHandle[Rail[Double]], shellPairRange_plh:PlaceLocalHandle[Rail[Long]]; 
     val auxK_wlh:WorkerLocalHandle[Rail[Double]], intPack_wlh:WorkerLocalHandle[Integral_Pack], dlm_wlh:WorkerLocalHandle[Rail[Double]];
+    val densityMos_plh:PlaceLocalHandle[Rail[DenseMatrix]];
     val nOrbitals:Long, norm:Rail[Double], roN:Int, roNK:Int, roK:Int; 
     val roZ:Double, shellAtPlace:Rail[Long], funcAtPlace:Rail[Long], offsetAtPlace:Rail[Long];
 
@@ -329,6 +330,8 @@ public class ROFockMethod(N:Long) {
         this.roK=roK; this.roZ=jd.roZ; this.intPack_wlh=intPack_wlh; this.shellPairs_plh=shellPairs_plh;
         this.nOrbitals=nOrbitals; this.norm=bfs.getNormalizationFactors();
 
+        this.densityMos_plh = PlaceLocalHandle.make[Rail[DenseMatrix]](Place.places(), ()=> new Rail[DenseMatrix](2));
+
         timer.stop(0);
         Console.OUT.printf("    ROFockMethod Initialization 'total' time: %.3f seconds\n", (timer.total(0) as Double) / 1e9);
         @Ifdef("__PAPI__") { papi.initialize(); papi.countFlops(); papi.countMemoryOps(); }
@@ -344,6 +347,10 @@ public class ROFockMethod(N:Long) {
         val tempK = new Rail[Double](N*N);
         val place0GRefJ = new GlobalRail[Double](tempJ);
         val place0GRefK = new GlobalRail[Double](tempK);
+
+        // prepare for broadcast
+        densityMos_plh()(0) = density;
+        densityMos_plh()(1) = mos;
 
         finish ateach(place in Dist.makeUnique()) {
             timer.start(TIMER_PERPLACE);
@@ -362,11 +369,18 @@ public class ROFockMethod(N:Long) {
             localJ.reset();
             localK.reset();
             
-            Team.WORLD.barrier();
-
+            if (here != Place.FIRST_PLACE) {
+                densityMos_plh()(0) = new DenseMatrix(N,N);
+                densityMos_plh()(1) = new DenseMatrix(N,N);
+            }
+            val localDensity = densityMos_plh()(0);
+            val localMos = densityMos_plh()(1);
+            Team.WORLD.bcast(Place.FIRST_PLACE, localDensity.d, 0, localDensity.d, 0, localDensity.d.size);
+            Team.WORLD.bcast(Place.FIRST_PLACE, localMos.d, 0, localMos.d, 0, localMos.d.size);
+            
             // compute contributions separately for each radial component (ron)
             for (ron in 0n..roN) {
-                computeAuxBDlm(density, mos, ron, auxJ, bMat, dlm);
+                computeAuxBDlm(localDensity, localMos, ron, auxJ, bMat, dlm);
                 computeK(ron, bMat, localK);
                 computeJ(ron, auxJ, dlm, localJ);
                 Team.WORLD.barrier();
@@ -390,31 +404,31 @@ public class ROFockMethod(N:Long) {
 
                 var eJ:Double = 0.0;
                 for (var j0:Long=0, j:Long=offsetAtPlace(pid); j<offsetAtPlace(pid+1); j0++, j++) {
-                    //e(1) += .5*density(j, j)*localK(j0, j);
+                    //e(1) += .5*localDensity(j, j)*localK(j0, j);
                     for (var i0:Long=0, i:Long=offsetAtPlace(pid); i<j; i0++, i++) {
-                        eJ += density(i, j) * localJ(i0, j);
-                        //e(1) += density(i, j)*localK(i0, j);
+                        eJ += localDensity(i, j) * localJ(i0, j);
+                        //e(1) += localDensity(i, j)*localK(i0, j);
                     }
-                    eJ += 0.5 * density(j, j) * localJ(j0, j);
+                    eJ += 0.5 * localDensity(j, j) * localJ(j0, j);
                 }
                 if (colStart < colStop) {
                     for (var j:Long=colStart; j<colStop; j++) {
                         for (var i:Long=0, ii:Long=offsetAtPlace(pid); i<rowCount; i++, ii++) {
-                            eJ += density(ii, j) * localJ(i, j);
-                            //e(1) +=density(ii, j)*localK(i, j);
+                            eJ += localDensity(ii, j) * localJ(i, j);
+                            //e(1) +=localDensity(ii, j)*localK(i, j);
                         }
                     }
                 } else if (mult > 1) {
                     for (var j:Long=colStart; j<colCount; j++) {
                         for (var i:Long=0, ii:Long=offsetAtPlace(pid); i<rowCount; i++, ii++) {
-                            eJ += density(ii, j) * localJ(i, j);
-                            //e(1) +=density(ii, j)*localK(i, j);
+                            eJ += localDensity(ii, j) * localJ(i, j);
+                            //e(1) +=localDensity(ii, j)*localK(i, j);
                         }
                     }
                     for (var j:Long=0; j<colStop; j++) {
                         for (var i:Long=0, ii:Long=offsetAtPlace(pid); i<rowCount; i++, ii++) {
-                            eJ += density(ii, j) * localJ(i, j);
-                            //e(1) +=density(ii, j)*localK(i, j);
+                            eJ += localDensity(ii, j) * localJ(i, j);
+                            //e(1) +=localDensity(ii, j)*localK(i, j);
                         }
                     }
                 }
@@ -525,7 +539,7 @@ public class ROFockMethod(N:Long) {
      * @param bMat the B matrix in dense format (output)
      * @param dlm density-contracted integrals D<sub>l m</sub> (output)
      */
-    private def computeAuxBDlm(density:Density{self.N==this.N}, mos:MolecularOrbitals{self.N==this.N}, ron:Int, auxJ:Rail[Rail[Double]], bMat:DenseMatrix, dlm:Rail[Double]) {
+    private def computeAuxBDlm(density:DenseMatrix{self.N==this.N}, mos:DenseMatrix{self.N==this.N}, ron:Int, auxJ:Rail[Rail[Double]], bMat:DenseMatrix, dlm:Rail[Double]) {
         // Console.OUT.println("Aux - distributed ron="+ron);
         timer.start(TIMER_AUX);
         //val auxStart = System.nanoTime();
