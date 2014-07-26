@@ -14,10 +14,10 @@ import x10.compiler.Inline;
  * Benchmarks simple DAXPY operation
  * @author milthorpe 07/2013
  */
-public class Daxpy(N:Int) {
+public class Daxpy(N:Long) {
     private static ITERS = 1000;
 
-    public def this(N:Int) {
+    public def this(N:Long) {
         property(N);
     }
 
@@ -43,10 +43,10 @@ public class Daxpy(N:Int) {
 	}
 
 	public static def main(args:Rail[String]): void = {
-        var size:Int = 100000;
+        var size:Long = 100000;
         var print:Boolean = false;
         if (args.size > 0) {
-            size = Int.parse(args(0));
+            size = Long.parse(args(0));
         }
 		new Daxpy(size).testAll();
 	}

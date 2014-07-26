@@ -13,7 +13,6 @@
 #include <stdlib.h>
 #include <math.h>
 #include <sys/time.h>
-#include <tbb/tbb.h>
 #include <algorithm>
 
 const size_t ITERS = 1000;
