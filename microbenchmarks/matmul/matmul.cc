@@ -6,7 +6,7 @@
  *  You may obtain a copy of the License at
  *      http://www.opensource.org/licenses/eclipse-1.0.php
  *
- *  (C) Copyright Australian National University 2013.
+ *  (C) Copyright IBM Corporation 2014.
  */
 
 #include <stdio.h>
@@ -15,7 +15,7 @@
 #include <sys/time.h>
 #include <algorithm>
 
-const size_t ITERS = 1000;
+const size_t ITERS = 100;
 
 int64_t TimeInMicros() {
     struct timeval tv;
@@ -24,8 +24,8 @@ int64_t TimeInMicros() {
 }
 
 /** 
- * Simple code to perform a DAXPY of vectors of length N.
- * Intended as a comparison to Daxpy.x10
+ * Simple code to perform multiplication of square matrices of dimension N.
+ * Intended as a comparison to MatMul.x10
  */
 int main(int argc, char *argv[]) {
     if (argc < 2) {
@@ -33,24 +33,33 @@ int main(int argc, char *argv[]) {
         exit(1);
     }
     int N = atoi(argv[1]);
-    double alpha = 2.5;
-    double *x = new double[N]();
-    double *y = new double[N]();
+    double *a = new double[N*N]();
+    double *b = new double[N*N]();
+    double *c = new double[N*N]();
     for (size_t i = 0; i < N; i++) {
-        x[i] = y[i] = N;
+        for (size_t j = 0; j < N; j++) {
+            a[i+j*N] = b[i+j*N] = i+j*N;
+        }
     }
 
     int64_t t1 = TimeInMicros();
     for (size_t iter = 0; iter < ITERS; iter++) {
-        #pragma omp parallel for private(i) schedule(static)
+        #pragma omp parallel for collapse(2)
         for (size_t i = 0; i < N; i++) {
-            x[i] = alpha * x[i] + y[i];
+            for (size_t j = 0; j < N; j++) {
+                double x = 0.0;
+                for (size_t k = 0; k < N; k++) {
+                    x += a[i+k*N] * b[k+j*N];
+                }
+                c[i+j*N] = x;
+            }
         }
     }
     int64_t t2 = TimeInMicros();
 
-    printf("C++ DAXPY for vectors length %d time %f ms\n", N, (t2-t1)/1e3/ITERS);
+    printf("C++ matrix multiplication for size %d time %f ms\n", N, (t2-t1)/1e3/ITERS);
 
-    delete x;
-    delete y;
+    delete a;
+    delete b;
+    delete c;
 }

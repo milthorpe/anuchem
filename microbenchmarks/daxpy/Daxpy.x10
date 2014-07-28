@@ -22,9 +22,38 @@ public class Daxpy(N:Long) {
     }
 
     private def daxpy(alpha:Double, x:Rail[Double], y:Rail[Double]) {
-        for (i in 0..(x.size-1)) {
+        val start = 0;
+        val end = x.size-1;
+/*
+        for (i in start..end) {
             x(i) = alpha * x(i) + y(i);
         }
+*/
+        val body = (i:Long) => {
+            x(i) = alpha * x(i) + y(i);
+        };
+/*
+        finish for (i in start..end) async {
+            body(i);
+        }
+*/
+
+        val numElem = end - start + 1;
+        val blockSize = numElem / Runtime.NTHREADS;
+        val leftOver = numElem % Runtime.NTHREADS;
+        finish for (var t:Long=Runtime.NTHREADS-1; t>=0; t--) {
+            val tStart = start + t <= leftOver ? t*(blockSize+1) : t*blockSize + leftOver;
+            val tEnd = tStart + ((t < leftOver) ? (blockSize+1) : blockSize);
+            async {
+                for (i in tStart..tEnd) {
+                    body(i);
+                }
+            }
+        }
+
+/*
+        finish RecursiveBisection1D(start, end+1, 16).execute(body);
+*/
     }
 
 	public def testAll() {
@@ -50,4 +79,28 @@ public class Daxpy(N:Long) {
         }
 		new Daxpy(size).testAll();
 	}
+
+    private static struct RecursiveBisection1D(start:Long, end:Long, grainSize:Long) {
+        public def this(start:Long, end:Long) {
+            val grainSize = (end-start) / (Runtime.NTHREADS*8);
+            property(start, end, grainSize);
+        }
+
+        public def this(start:Long, end:Long, grainSize:Long) {
+            property(start, end, grainSize);
+        }
+
+        public def execute(body:(idx:Long)=> void) {
+            if ((end-start) > grainSize) {
+                val secondHalf=RecursiveBisection1D((start+end)/2L, end, grainSize);
+                async secondHalf.execute(body);
+                val firstHalf=RecursiveBisection1D(start, (start+end)/2L, grainSize);
+                firstHalf.execute(body);
+            } else {
+                for (i in start..(end-1)) {
+                    body(i);
+                }
+            }
+        }
+    }
 }
