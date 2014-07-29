@@ -42,7 +42,31 @@ public class MatMul(N:Long) {
             c(i+j*N) = x;
         };
 
+        val numElem1 = N;
+        val blockSize1 = numElem1 / Runtime.NTHREADS;
+        val leftOver1 = numElem1 % Runtime.NTHREADS;
+        val numElem2 = N;
+        val blockSize2 = numElem2 / Runtime.NTHREADS;
+        val leftOver2 = numElem2 % Runtime.NTHREADS;
+        finish {
+            for (t1 in 0..(Runtime.NTHREADS-1)) {
+                for (t2 in 0..(Runtime.NTHREADS-1))  async {
+                    val tStart1 = 0 + t1 <= leftOver1 ? t1*(blockSize1+1) : t1*blockSize1 + leftOver1;
+                    val tEnd1 = tStart1 + ((t1 < leftOver1) ? (blockSize1+1) : blockSize1);
+                    val tStart2 = 0 + t2 <= leftOver2 ? t2*(blockSize2+1) : t2*blockSize2 + leftOver2;
+                    val tEnd2 = tStart2 + ((t2 < leftOver2) ? (blockSize2+1) : blockSize2);
+                    for (j in tStart2..tEnd2) {
+                        for (i in tStart1..tEnd1) {
+                            body(i, j);
+                        }
+                    }
+                }
+            }
+        }
+
+/*        
         finish RecursiveBisection2D(0, N, 0, N).execute(body);
+*/
 /*
         val indices = new DenseIterationSpace_2(0, 0, (N-1), (N-1));
         for ([i,j] in indices) {
@@ -99,8 +123,8 @@ public class MatMul(N:Long) {
                     val firstHalf=RecursiveBisection2D(s1, e1, s2, (s2+e2)/2L, g1, g2);
                     firstHalf.execute(body);
                 } else {
-                    for (i1 in s1..(e1-1)) {
-                        for (i2 in s2..(e2-1)) {
+                    for (i2 in s2..(e2-1)) {
+                        for (i1 in s1..(e1-1)) {
                             body(i1,i2);
                         }
                     }

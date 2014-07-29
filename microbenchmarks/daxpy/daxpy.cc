@@ -29,7 +29,7 @@ int64_t TimeInMicros() {
  */
 int main(int argc, char *argv[]) {
     if (argc < 2) {
-        fprintf(stderr, "usage: dotProd N\n");
+        fprintf(stderr, "usage: daxpy_c N\n");
         exit(1);
     }
     int N = atoi(argv[1]);

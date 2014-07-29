@@ -29,7 +29,7 @@ int64_t TimeInMicros() {
  */
 int main(int argc, char *argv[]) {
     if (argc < 2) {
-        fprintf(stderr, "usage: dotProd N\n");
+        fprintf(stderr, "usage: matmul_c N\n");
         exit(1);
     }
     int N = atoi(argv[1]);
@@ -45,8 +45,8 @@ int main(int argc, char *argv[]) {
     int64_t t1 = TimeInMicros();
     for (size_t iter = 0; iter < ITERS; iter++) {
         #pragma omp parallel for collapse(2)
-        for (size_t i = 0; i < N; i++) {
-            for (size_t j = 0; j < N; j++) {
+        for (size_t j = 0; j < N; j++) {
+            for (size_t i = 0; i < N; i++) {
                 double x = 0.0;
                 for (size_t k = 0; k < N; k++) {
                     x += a[i+k*N] * b[k+j*N];
