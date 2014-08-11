@@ -49,7 +49,7 @@ int main(int argc, char *argv[]) {
     }
     int64_t t2 = TimeInMicros();
 
-    printf("C++ DAXPY for vectors length %d time %f ms\n", N, (t2-t1)/1e3/ITERS);
+    printf("C++ DAXPY for vectors length %d: %g ms\n", N, (t2-t1)/1e3/ITERS);
 
     delete x;
     delete y;
