@@ -555,7 +555,7 @@ public class ROFockMethod(N:Long) {
         for (i in 0..(size-1)) if (0<=auxKIdx(i) && auxKIdx(i)<size) auxKIdx(i)+=size;
         val range = shellPairRange_plh();
         
-        finish RecursiveBisection1D(0, shellAtPlace(here.id)).execute(
+        finish RecursiveBisection1D(0, shellAtPlace(here.id), 8).execute(
         (shellIdx:Long)=> {
             var shellPairIdx0:Long = 0; 
             if (shellIdx>0) shellPairIdx0 = range(shellIdx-1);
