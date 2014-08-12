@@ -29,31 +29,28 @@ public class Daxpy(N:Long) {
             x(i) = alpha * x(i) + y(i);
         }
 */
-        val body = (i:Long) => {
-            x(i) = alpha * x(i) + y(i);
+        val body = (min_i:Long, max_i:Long) => {
+            for (i in min_i..max_i) {
+                x(i) = alpha * x(i) + y(i);
+            }
         };
 /*
-        finish for (i in start..end) async {
-            body(i);
-        }
+        body(start, end);
 */
-
+/*
         val numElem = end - start + 1;
         val blockSize = numElem / Runtime.NTHREADS;
         val leftOver = numElem % Runtime.NTHREADS;
         finish for (var t:Long=Runtime.NTHREADS-1; t>=0; t--) {
-            val tStart = start + t <= leftOver ? t*(blockSize+1) : t*blockSize + leftOver;
-            val tEnd = tStart + ((t < leftOver) ? (blockSize+1) : blockSize);
+            val tMin_i = start + t <= leftOver ? t*(blockSize+1) : t*blockSize + leftOver;
+            val tMax_i = tMin_i + ((t < leftOver) ? (blockSize+1) : blockSize) - 1;
             async {
-                for (i in tStart..tEnd) {
-                    body(i);
-                }
+                body(tMin_i, tMax_i);
             }
         }
-
-/*
-        finish RecursiveBisection1D(start, end+1, 16).execute(body);
 */
+        finish RecursiveBisection1D(start, end+1).execute(body);
+
     }
 
 	public def testAll() {
@@ -90,16 +87,14 @@ public class Daxpy(N:Long) {
             property(start, end, grainSize);
         }
 
-        public def execute(body:(idx:Long)=> void) {
+        public def execute(body:(min_i:Long, max_i:Long)=> void) {
             if ((end-start) > grainSize) {
                 val secondHalf=RecursiveBisection1D((start+end)/2L, end, grainSize);
                 async secondHalf.execute(body);
                 val firstHalf=RecursiveBisection1D(start, (start+end)/2L, grainSize);
                 firstHalf.execute(body);
             } else {
-                for (i in start..(end-1)) {
-                    body(i);
-                }
+                body(start, end-1);
             }
         }
     }

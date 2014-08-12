@@ -1,7 +1,13 @@
 X10CPP := x10c++
 X10CPPFLAGS := -O -NO_CHECKS
 
-NPROC := $(shell nproc)
+# enable CPU profiling with google-perftools
+PROFILE ?=
+ifdef PROFILE
+  X10FLAG += -gpt
+endif
+
+NPROC ?= $(shell nproc)
 
 CXX 	 = g++
 CXXFLAGS = -O2 -fopenmp -ftree-vectorize #-ftree-vectorizer-verbose=6 

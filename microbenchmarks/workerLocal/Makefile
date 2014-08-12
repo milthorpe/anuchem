@@ -1,6 +1,11 @@
-X10CPP := x10c++
-X10CPPFLAGS := -O -NO_CHECKS #-WORK_STEALING=true
+X10FLAG := -O -NO_CHECKS #-WORK_STEALING=true
 RUNX10FLAGS := X10_NTHREADS=4
+
+# enable CPU profiling with google-perftools
+PROFILE ?=
+ifdef PROFILE
+  X10FLAG += -gpt
+endif
 
 CXX 	 = g++
 TBB_CXXFLAGS = -std=c++0x -O2 -I /home/josh/tbb/include/
@@ -10,7 +15,7 @@ run:    workerLocalReduce
 	${RUNX10FLAGS} ./workerLocalReduce 10000
 
 workerLocalReduce:	BenchmarkWorkerLocalReduce.x10
-	$(X10CPP) $(X10CPPFLAGS) BenchmarkWorkerLocalReduce.x10 -o workerLocalReduce
+	x10c++ $(X10FLAG) BenchmarkWorkerLocalReduce.x10 -o workerLocalReduce
 
 parallel_sum:	parallel_sum.cc
 		$(CXX) $(TBB_CXXFLAGS) -o $@ parallel_sum.cc $(TBB_LDFLAGS)
