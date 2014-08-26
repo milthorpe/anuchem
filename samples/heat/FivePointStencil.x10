@@ -15,7 +15,7 @@ import x10.array.DenseIterationSpace_2;
 /**
  * Implements a five-point Laplacian 2D array stencil,
  * similar to the HeatTransfer example from the X10 2.1 tutorial
- * @see http://x10-lang.org/documentation/tutorials/sc2010-tutorial.html
+ * @see http://x10.sourceforge.net/tutorials/x10-2.1/SC_2010/SC10_tut143_X10_Tutorial_final_v3.html
  * @author milthorpe 05/2011
  */
 public class FivePointStencil(N:Long) {
