@@ -48,6 +48,13 @@ public class MatMul(N:Long) {
         body(0, N-1, 0, N-1);
 */
 /*
+        finish for (i in 0..(N-1)) {
+            for (j in 0..(N-1)) {
+                async body(i, i, j, j);
+            }
+        }
+*/
+/*
         val numElem1 = N;
         val blockSize1 = numElem1 / Runtime.NTHREADS;
         val leftOver1 = numElem1 % Runtime.NTHREADS;
@@ -66,6 +73,7 @@ public class MatMul(N:Long) {
             }
         }
 */
+
         finish RecursiveBisection2D(0, N, 0, N).execute(body);
 
     }

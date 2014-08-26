@@ -38,6 +38,12 @@ public class Daxpy(N:Long) {
         body(start, end);
 */
 /*
+        // infeasible
+        finish for (i in start..end) {
+            async body(i, i);
+        }
+*/
+/*
         val numElem = end - start + 1;
         val blockSize = numElem / Runtime.NTHREADS;
         val leftOver = numElem % Runtime.NTHREADS;
@@ -49,6 +55,7 @@ public class Daxpy(N:Long) {
             }
         }
 */
+
         finish RecursiveBisection1D(start, end+1).execute(body);
 
     }
