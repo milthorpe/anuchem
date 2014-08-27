@@ -10,7 +10,8 @@
  */
 package au.edu.anu.mm;
 
-import x10.io.*;
+import x10.io.File;
+import x10.io.FileReader;
 import au.edu.anu.chem.Molecule;
 import au.edu.anu.chem.mm.MMAtom;
 import x10x.vector.Point3d;
@@ -36,20 +37,22 @@ public class XYZStructureFileReader {
         val title = file.readLine().split(" ");
         var molecule : Molecule[MMAtom] = new Molecule[MMAtom](title(0));
         // lines 3..*: atom positions
-        for(var i:Int=0; i<numAtoms; i++) {
+        for(var i:Long=0; i<numAtoms; i++) {
             val words = file.readLine().split(" ");
             val symbol = words(0);
-            var species:Int = -1;
+            var species:Int = -1n;
             var speciesSpec:SpeciesSpec = null;
             for (j in 0..(speciesSpecs.size-1)) {
-                if (symbol.equals(speciesSpecs(j).name)) {
+                speciesSpec = speciesSpecs(j);
+                if (speciesSpec != null && symbol.equals(speciesSpec.name)) {
                     species = j as Int;
                     break;
                 }
             }
-            if (species == -1) {
+            if (species == -1n) {
                 throw new IllegalArgumentException("no species found for symbol " + symbol);
             }
+            Console.OUT.println("found species " + speciesSpec.number + " " + speciesSpec.name + " " + speciesSpec.mass);
             molecule.addAtom(new MMAtom(species,
                                          Point3d(Double.parseDouble(words(1)),
                                                  Double.parseDouble(words(2)),

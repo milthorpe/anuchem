@@ -12,11 +12,9 @@ package au.edu.anu.mm;
 
 import x10.regionarray.Dist;
 import x10.regionarray.DistArray;
-import x10.util.Pair;
 
 import x10x.vector.Point3d;
 import au.edu.anu.chem.mm.MMAtom;
-import au.edu.anu.util.Timer;
 
 /**
  * Tests ANU Molecular Mechanics with a simple Morse oscillator: HF.
@@ -39,7 +37,7 @@ public class TestMorseOscillator {
 
         val diatomicPotentials = new Rail[DiatomicPotential](1L, 
            (Long) => new DiatomicMorsePotential(hydrogen, fluorine, 0.09169, 569.87));
-        val anumm = new Anumm(distAtoms, new DiatomicForceField(diatomicPotentials));
+        val anumm = new Anumm(distAtoms, new DiatomicForceField(diatomicPotentials), true);
         anumm.mdRun(0.2, 200);
     }
 }

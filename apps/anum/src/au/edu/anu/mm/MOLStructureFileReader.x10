@@ -25,9 +25,9 @@ import x10x.vector.Point3d;
  *  <comments>
  *  numAtoms [3] ...
  *  x[10] y[10] z[10] species // repeated for number of atoms
- *  <bondType>  <atomIndex1> <atomIndex2> // repeated for number of bonds
+ *  <atomIndex1> <atomIndex2> <bondType> // repeated for number of bonds
  * M  END
- * @see http://www.symyx.com/downloads/public/ctfile/ctfile.jsp
+ * @see http://infochim.u-strasbg.fr/recherche/Download/Fragmentor/MDL_SDF.pdf
  */
 public class MOLStructureFileReader { 
     var fileName : String;
@@ -42,24 +42,25 @@ public class MOLStructureFileReader {
         file.readLine(); // line 2 contains file meta-info
         file.readLine(); // line 3 contains comment
         val numAtomsLine = file.readLine();
-        val numAtoms = Int.parseInt(numAtomsLine.substring(0,3));
+        val numAtoms = Int.parseInt(numAtomsLine.substring(0n,3n));
         var molecule : Molecule[MMAtom] = new Molecule[MMAtom](title);
         // following lines up to numAtoms contain atom data
-        for(var i:Int=0; i<numAtoms; i++) {
+        for(var i:Long=0; i<numAtoms; i++) {
             val line = file.readLine();
-            val x = Double.parseDouble(line.substring(0,10));
-            val y = Double.parseDouble(line.substring(10,20));
-            val z = Double.parseDouble(line.substring(20,30));
-            val symbol = line.substring(31,34).trim();
-            var species:Int = -1;
+            val x = Double.parseDouble(line.substring(0n,10n));
+            val y = Double.parseDouble(line.substring(10n,20n));
+            val z = Double.parseDouble(line.substring(20n,30n));
+            val symbol = line.substring(31n,34n).trim();
+            var species:Int = -1n;
             var speciesSpec:SpeciesSpec = null;
             for (j in 0..(speciesSpecs.size-1)) {
-                if (symbol.equals(speciesSpecs(j).name)) {
+                speciesSpec = speciesSpecs(j);
+                if (speciesSpec != null && symbol.equals(speciesSpec.name)) {
                     species = j as Int;
                     break;
                 }
             }
-            if (species == -1) {
+            if (species == -1n) {
                 throw new IllegalArgumentException("no species found for symbol " + symbol);
             }
             molecule.addAtom(new MMAtom(species, Point3d(x, y, z), speciesSpec.mass, speciesSpec.charge));
@@ -67,21 +68,21 @@ public class MOLStructureFileReader {
         // following lines until "M  END" contain bonds
         var line : String = file.readLine();
         while (line.indexOf("END") < 0) {
-            val firstAtomIndex = Int.parseInt(line.substring(0,3))-1;
-            val secondAtomIndex = Int.parseInt(line.substring(3,6))-1;
-            val bondVal = Int.parseInt(line.substring(6,9));
+            val firstAtomIndex = Int.parseInt(line.substring(0n,3n))-1;
+            val secondAtomIndex = Int.parseInt(line.substring(3n,6n))-1;
+            val bondVal = Int.parseInt(line.substring(6n,9n));
             var bondType : BondType;
             switch (bondVal) {
-                case (1):
+                case (1n):
                     bondType = BondType.SINGLE_BOND;
                     break;
-                case (2):
+                case (2n):
                     bondType = BondType.DOUBLE_BOND;
                     break;
-                case (3):
+                case (3n):
                     bondType = BondType.TRIPLE_BOND;
                     break;
-                case (4):
+                case (4n):
                     bondType = BondType.AROMATIC_BOND;
                     break;
                 default:

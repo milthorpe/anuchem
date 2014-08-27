@@ -6,9 +6,9 @@ edgeLength 0.01
 radius 0.003
 dt 25.0
 steps 1048576
-logSteps 1048576
-fmmDensity 60
-fmmTerms 10
+logSteps 4096
+fmmDMax 2
+fmmTerms 8
 species glutamine 147.07698 1 1
 species lysine 147.11336 1 1
 species glumatic_acid 148.060985 1 1

@@ -5,7 +5,6 @@
     <fail unless="env.X10_HOME" message="Environment variable X10_HOME is not set."/>
     <property name="x10rt" value="sockets" />
     <property name="bgq" value="false" />
-    <property name="bgp" value="false" />
     <property name="x10x.xla" location="../../xla"/>
 	<property name="xla.props" location="${x10x.xla}/xla.properties"/>
 	<property name="xla.src" location="${x10x.xla}/xla/src"/>
@@ -25,7 +24,7 @@
     <property name="bash.exe" value="bash"/>    
     <property name="optimize" value="true"/>
     <property name="nochecks" value="true"/>
-    <property name="debug" value="false"/>
+    <property name="debug" value="true"/>
     <property name="profile"  value="false"/>
     <property name="cpuprofile"  value="false"/>
     <property name="perftoolsHome" location="${user.home}/perftools"/>
@@ -38,7 +37,7 @@
 	<property name="target-test" location="${target}/test-classes"/>
     <property name="bin" location="${basedir}/bin"/>
 	<property name="exe" value="anumm"/>
-    <property name="testclass" value="test/au/edu/anu/mm/TestCyclotron.x10"/>
+    <property name="testclass" value="src/au/edu/anu/mm/Anumm.x10"/>
 
     <condition property="x10c.optimize" value="-O" else="">
         <istrue value="${optimize}"/>
@@ -62,10 +61,6 @@
 
     <condition property="link.mpiPprofile" value="-L${binutilsHome}/lib -L${mpiPHome}/lib -lmpiP -lbfd -liberty -lm" else="">
         <istrue value="${mpiPprofile}"/>
-    </condition>
-
-    <condition property="ld.bgp" value="-L/opt/ibmcmp/xlmass/bg/4.4/bglib -lmass" else="">
-        <istrue value="${bgp}"/>
     </condition>
 
     <condition property="ld.bgq" value="-L/opt/ibmcmp/xlmass/bg/7.3/bglib64 -lmass" else="">
@@ -124,7 +119,7 @@
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/src">
             <arg value="-c"/>
-            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} ${x10c.debug} ${x10c.cpuprofile} -report postcompile=1 -post '# -I${fftw3.include} ${post.profile} # ${link.mpiPprofile} # -L${fftw3.lib} -lfftw3 ${ld.bgp} ${ld.bgq}' -x10lib ${xla.props} -x10lib ${anuchem.props} -x10lib ${fmm.props} -x10lib ${fftw.props} -sourcepath . -d ${target-src} ${basedir}/${testclass}"/>
+            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} ${x10c.debug} ${x10c.cpuprofile} -report postcompile=1 -post '# -I${fftw3.include} ${post.profile} # ${link.mpiPprofile} # -L${fftw3.lib} -lfftw3 ${ld.bgq}' -x10lib ${xla.props} -x10lib ${anuchem.props} -x10lib ${fmm.props} -x10lib ${fftw.props} -sourcepath . -d ${target-src} ${basedir}/${testclass}"/>
         </exec>
     </target>
 
