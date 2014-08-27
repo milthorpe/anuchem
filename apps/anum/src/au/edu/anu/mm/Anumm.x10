@@ -15,6 +15,8 @@ import x10.regionarray.DistArray;
 import x10.util.ArrayList;
 import x10.io.IOException;
 
+import x10x.vector.Vector3d;
+
 import au.edu.anu.chem.Molecule;
 import au.edu.anu.chem.mm.MMAtom;
 import au.edu.anu.util.Timer;
@@ -92,6 +94,7 @@ public class Anumm {
                 val invMass = 1.0 / forceField.getAtomMass(atom.species);
                 atom.velocity = atom.velocity + 0.5 * t * invMass * atom.force;
                 atom.centre = atom.centre + atom.velocity * t;
+                atom.force = Vector3d.NULL; // zero before next force calculation
                 //Console.OUT.print(atom.centre.i + " " + atom.centre.j + " " + atom.centre.k + " ");
             }
         }

@@ -22,6 +22,8 @@ import au.edu.anu.chem.mm.MMAtom;
 
 public class UniversalForceField implements ForceField {
     public static SPECIES_H = 1;
+    public static SPECIES_C = 6;
+    public static SPECIES_N = 7;
     public static SPECIES_O = 8;
 
     val BOND_ORDER_PROPORTIONALITY_CONSTANT = -0.1332;
@@ -37,8 +39,10 @@ public class UniversalForceField implements ForceField {
     public def this() {
         atomParameters = new Rail[UffParameters](9);
         // TODO read in parameters from file
-        atomParameters(SPECIES_H) = UffParameters("H", 1.00794, 0.354, 180.0, LennardJonesParameters("H_", 12.0, 2.886, 0.044), 0.712, 4.53);
-        atomParameters(SPECIES_O) = UffParameters("O", 15.9994, 0.658, 104.51, LennardJonesParameters("O3", 14.085, 3.500, 0.060), 2.300, 8.741);
+        atomParameters(SPECIES_H) = UffParameters("H", 1.00794, 0.354, 180.0,  LennardJonesParameters("H_",  12.0,   2.886, 0.044), 0.712, 4.53);
+        atomParameters(SPECIES_C) = UffParameters("C", 12.0000, 0.757, 109.47, LennardJonesParameters("C_3", 12.73,  3.851, 0.105), 1.912, 5.34);
+        atomParameters(SPECIES_N) = UffParameters("N", 14.0031, 0.700, 106.7,  LennardJonesParameters("N_3", 13.407, 3.660, 0.069), 2.544, 6.899);
+        atomParameters(SPECIES_O) = UffParameters("O", 15.9994, 0.658, 104.51, LennardJonesParameters("O_3", 14.085, 3.500, 0.060), 2.300, 8.741);
     }
 
     public def getSpecies() {
@@ -63,7 +67,6 @@ public class UniversalForceField implements ForceField {
                 val myAtoms = atoms(p);
                 for (i in 0..(myAtoms.size-1)) {
                     val atomI = myAtoms(i);
-                    atomI.force = Vector3d.NULL;
                     // bond stretching
                     if (atomI.getBonds() != null) {
                         for (bond in atomI.getBonds()) {
@@ -76,6 +79,7 @@ public class UniversalForceField implements ForceField {
                             }
                         }
                     }
+                    // TODO angle, torsion, inversion, non-bonded terms
                 }
                 offer myEnergy;
             }
