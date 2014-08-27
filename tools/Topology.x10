@@ -20,6 +20,9 @@ public class Topology {
             val hostname = hostnameReader.readLine();
             Console.OUT.println(here + " executing on " + hostname + " with " + Runtime.NTHREADS + " threads");
 
+/*
+            // useful for debugging X10 environment
+
             val npReader  = Runtime.execForRead("echo $X10_NPLACES");
             val np = npReader.readLine();
             Console.OUT.println("X10_NPLACES="+np);
@@ -28,6 +31,8 @@ public class Topology {
             val nt = ntReader.readLine();
             Console.OUT.println("X10_NTHREADS="+nt);
 
+            // useful for BLAS libraries (Intel-MKL, GotoBLAS2)
+
             val gtReader  = Runtime.execForRead("echo $GOTO_NUM_THREADS");
             val gt = gtReader.readLine();
             Console.OUT.println("GOTO_NUM_THREADS="+gt);
@@ -35,6 +40,7 @@ public class Topology {
             val ompReader  = Runtime.execForRead("echo $OMP_NUM_THREADS");
             val omp = ompReader.readLine();
             Console.OUT.println("OMP_NUM_THREADS="+omp);
+*/
             
         }
     }
