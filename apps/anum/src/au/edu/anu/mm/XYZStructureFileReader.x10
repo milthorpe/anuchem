@@ -32,7 +32,7 @@ public class XYZStructureFileReader {
     public def readMolecule(speciesSpecs:Rail[SpeciesSpec]) : Molecule[MMAtom] {
         val file = new FileReader(new File(fileName));
         // line 1: number of atoms
-        val numAtoms = Int.parseInt(file.readLine());
+        val numAtoms = Int.parseInt(file.readLine().trim());
         // line 2: structure title
         val title = file.readLine().split(" ");
         var molecule : Molecule[MMAtom] = new Molecule[MMAtom](title(0));
@@ -54,9 +54,9 @@ public class XYZStructureFileReader {
             }
             Console.OUT.println("found species " + speciesSpec.number + " " + speciesSpec.name + " " + speciesSpec.mass);
             molecule.addAtom(new MMAtom(species,
-                                         Point3d(Double.parseDouble(words(1)),
-                                                 Double.parseDouble(words(2)),
-                                                 Double.parseDouble(words(3))
+                                         Point3d(Double.parseDouble(words(1).trim()),
+                                                 Double.parseDouble(words(2).trim()),
+                                                 Double.parseDouble(words(3).trim())
                                          ),
                                         speciesSpec.mass,
                                         speciesSpec.charge

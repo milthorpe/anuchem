@@ -42,14 +42,14 @@ public class MOLStructureFileReader {
         file.readLine(); // line 2 contains file meta-info
         file.readLine(); // line 3 contains comment
         val numAtomsLine = file.readLine();
-        val numAtoms = Int.parseInt(numAtomsLine.substring(0n,3n));
+        val numAtoms = Int.parseInt(numAtomsLine.substring(0n,3n).trim());
         var molecule : Molecule[MMAtom] = new Molecule[MMAtom](title);
         // following lines up to numAtoms contain atom data
         for(var i:Long=0; i<numAtoms; i++) {
             val line = file.readLine();
-            val x = Double.parseDouble(line.substring(0n,10n));
-            val y = Double.parseDouble(line.substring(10n,20n));
-            val z = Double.parseDouble(line.substring(20n,30n));
+            val x = Double.parseDouble(line.substring(0n,10n).trim());
+            val y = Double.parseDouble(line.substring(10n,20n).trim());
+            val z = Double.parseDouble(line.substring(20n,30n).trim());
             val symbol = line.substring(31n,34n).trim();
             var species:Int = -1n;
             var speciesSpec:SpeciesSpec = null;
@@ -68,9 +68,9 @@ public class MOLStructureFileReader {
         // following lines until "M  END" contain bonds
         var line : String = file.readLine();
         while (line.indexOf("END") < 0) {
-            val firstAtomIndex = Int.parseInt(line.substring(0n,3n))-1;
-            val secondAtomIndex = Int.parseInt(line.substring(3n,6n))-1;
-            val bondVal = Int.parseInt(line.substring(6n,9n));
+            val firstAtomIndex = Int.parseInt(line.substring(0n,3n).trim())-1;
+            val secondAtomIndex = Int.parseInt(line.substring(3n,6n).trim())-1;
+            val bondVal = Int.parseInt(line.substring(6n,9n).trim());
             var bondType : BondType;
             switch (bondVal) {
                 case (1n):

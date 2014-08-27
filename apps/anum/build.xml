@@ -5,10 +5,10 @@
     <fail unless="env.X10_HOME" message="Environment variable X10_HOME is not set."/>
     <property name="x10rt" value="sockets" />
     <property name="bgq" value="false" />
-    <property name="x10x.xla" location="../../xla"/>
-	<property name="xla.props" location="${x10x.xla}/xla.properties"/>
-	<property name="xla.src" location="${x10x.xla}/xla/src"/>
-	<property name="xla.lib" location="${x10x.xla}/xla/lib/xla.jar"/>
+    <property name="xla" location="../../xla"/>
+	<property name="xla.props" location="${xla}/xla.properties"/>
+	<property name="xla.src" location="${xla}/xla/src"/>
+	<property name="xla.lib" location="${xla}/xla/lib/xla.jar"/>
     <property name="anuchem" location="../../anu-chem"/>
     <property name="anuchem.props" location="${anuchem}/anuchem.properties"/>
 	<property name="anuchem.src" location="${anuchem}/src"/>
@@ -95,11 +95,11 @@
         <pathconvert property="src.list" refid="changed.src.files" dirsep="/" pathsep=" ">
             <map from="${basedir}${file.separator}src${file.separator}" to=""/>
         </pathconvert>
-        <echo message="x10c ${src.list}"/>
+        <echo message="x10c -x10lib ${xla.props} -x10lib ${anuchem.props} -x10lib ${fmm.props} -x10lib ${fftw.props} ${basedir}/${testclass}"/>
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/src">
             <arg value="-c"/>
-            <arg value="'x10c' ${x10c.optimize} -sourcepath .:${xre.src}:${xla.src}:${anuchem.src} -classpath ${xre.lib}:${xla.lib}:${anuchem.lib} -d ${target-src} ${src.list}"/>
+            <arg value="'x10c' ${x10c.optimize} -x10lib ${xla.props} -x10lib ${anuchem.props} -x10lib ${fmm.props} -x10lib ${fftw.props} -sourcepath . -d ${target-src} ${basedir}/${testclass}"/>
         </exec>
     </target>
 
@@ -142,6 +142,13 @@
             <globmapper from="*.x10" to="${target-src}/*.cc" handledirsep="true"/>
         </uptodate>
     </target>
+
+    <target name="test-java" depends="build-src-java">
+        <exec executable="${bash.exe}" failonerror="true" dir="${basedir}">
+            <arg value="-c"/>
+            <arg value="x10 -classpath ${target}/classes -classpath ${anuchem}/src/anuchem.jar -classpath ${xla}/src/xla.jar au.edu.anu.mm.Anumm test/water10.mol"/>
+        </exec>
+    </target>
     
     <target name="build-test" depends="check-test,build-harness" unless="test.uptodate">
         <echo message="Building tests"/>
@@ -159,13 +166,13 @@
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/test">
             <arg value="-c"/>
-            <arg value="'x10c' ${x10c.optimize} -sourcepath .:${basedir}/src:${xre.src}:${xla.src}:${anuchem.src}:${x10.testlib} -classpath ${xre.lib}:${xla.lib}:${anuchem.lib}:${target-src} -commandlineonly -d ${target-test} ${test.list}"/>
+            <arg value="'x10c' ${x10c.optimize} -sourcepath .:${basedir}/src:${xla.src}:${anuchem.src}:${x10.testlib} -classpath ${xla.lib}:${anuchem.lib}:${target-src} -commandlineonly -d ${target-test} ${test.list}"/>
         </exec>
     </target>
 
     <target name="test" depends="build-test">
         <apply executable="x10" failonerror="true" dir="${target-test}" relative="true" addsourcefile="false">
-            <arg line="-t -v -mx 128M -classpath ${xre.lib}:${xla.lib}:${anuchem.lib}:${target-src}:${target-test}"/>
+            <arg line="-t -v -mx 128M -classpath ${xla.lib}:${anuchem.lib}:${target-src}:${target-test}"/>
             <targetfile/>
 
             <fileset dir="${target-test}" includes="**/Test*.java"/>
