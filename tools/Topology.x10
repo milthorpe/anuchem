@@ -18,7 +18,7 @@ public class Topology {
         for (place in Place.places()) at(place) {
             val hostnameReader = Runtime.execForRead("uname -n"); 
             val hostname = hostnameReader.readLine();
-            Console.OUT.println(here + " executing on " + hostname + " with " + Runtime.NTHREADS + " threads");
+            Console.OUT.println(here + " executing on " + Runtime.getName() + " with " + Runtime.NTHREADS + " threads");
 
 /*
             // useful for debugging X10 environment
