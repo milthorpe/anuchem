@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE project [<!ENTITY buildfile SYSTEM "file:./build-user.xml">]>
 <project name="X10 application project" default="test" basedir=".">
+    <property environment="env"/>
+    <fail unless="env.X10_HOME" message="Environment variable X10_HOME is not set."/>
+
     <property name="bash.exe" value="bash"/>  
 
     <target name="test" depends="test-fmm,test-pme,test-pumjarasaayani" />
@@ -65,6 +68,22 @@
             <arg value="-c"/>
             <arg value="X10_NTHREADS=1 bin/pumjarasaayani test/H2O-321g.inp"/>
         </exec>
+    </target>
+
+
+    <target name="srctar">
+        <fail unless="env.X10_VERSION" message="Environment variable X10_VERSION is not set."/>
+        <tar destfile="anuchem-${env.X10_VERSION}-src.tar.bz2" compression="bzip2" longfile="gnu">
+            <tarfileset prefix="" dir="${basedir}" includes="epl-v10.html,README,build.xml"/>
+            <tarfileset prefix="anu-chem" dir="${basedir}" excludes="**/.hg,**/bin,**/target,**/include,**/lib,**/*.jar"/>
+            <tarfileset prefix="apps" dir="${basedir}" excludes="**/.hg,**/bin,**/target,**/include,**/lib,**/*.jar"/>
+            <tarfileset prefix="fftw_wrapper" dir="${basedir}" excludes="**/.hg,**/bin,**/target,**/include,**/lib,**/*.jar"/>
+            <tarfileset prefix="microbenchmarks" dir="${basedir}" excludes="**/.hg,**/*.jar"/>
+            <tarfileset prefix="papi_wrapper" dir="${basedir}" excludes="**/.hg,**/bin,**/target,**/include,**/lib,**/*.jar"/>
+            <tarfileset prefix="samples" dir="${basedir}" excludes="**/.hg,**/*.jar"/>
+            <tarfileset prefix="tools" dir="${basedir}" excludes="**/.hg,**/*.jar"/>
+            <tarfileset prefix="xla" dir="${basedir}" excludes="**/.hg,**/bin,**/target,**/lib,**/*.jar"/>
+        </tar>
     </target>
 
 </project>

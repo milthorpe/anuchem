@@ -6,7 +6,6 @@
     <fail unless="env.X10_HOME" message="Environment variable X10_HOME is not set."/>
     <property name="x10rt" value="sockets" />
     <property name="bgq" value="false" />
-    <property name="bgp" value="false" />
     <property name="x10x.xla" location="../../xla"/>
 	<property name="xla.props" location="${x10x.xla}/xla.properties"/>
 	<property name="xla.src" location="${x10x.xla}/src"/>
@@ -19,7 +18,8 @@
     <property name="x10papi" location="../../papi_wrapper"/>
     <property name="x10papi.props" location="${x10papi}/x10papi.properties"/>
     <property name="papiHome" location="${user.home}/papi"/>
-    <property name="x10.testlib" location="${env.X10_HOME}/../x10.tests/tests/x10lib"/>
+    <property name="x10.sharedlib" location="${env.X10_HOME}/x10.dist/stdlib/lib/libx10.so"/>
+    <property name="x10.testlib" location="${env.X10_HOME}/x10.tests/tests/x10lib"/>
     <property name="bash.exe" value="bash"/>    
     <property name="optimize" value="true"/>
     <property name="workstealing" value="false" />
@@ -55,7 +55,6 @@
 
     <condition property="bg" value="true" else="">
       <or>
-        <istrue value="${bgp}" />
         <istrue value="${bgq}" />
       </or>
     </condition>
@@ -68,16 +67,8 @@
         <istrue value="${bg}"/>
     </condition>
 
-    <condition property="cxx.bgp" value="-I/opt/ibmcmp/xlmass/bg/4.4/include" else="">
-        <istrue value="${bgp}"/>
-    </condition>
-
     <condition property="cxx.bgq" value="-I/opt/ibmcmp/xlmass/bg/7.3/include" else="">
         <istrue value="${bgq}"/>
-    </condition>
-
-    <condition property="ld.bgp" value="-L/opt/ibmcmp/xlmass/bg/4.4/bglib -lmass" else="">
-        <istrue value="${bgp}"/>
     </condition>
 
     <condition property="ld.bgq" value="-L/opt/ibmcmp/xlmass/bg/7.3/bglib64 -lmass" else="">
@@ -150,7 +141,7 @@
         </exec>
     </target>
 
-    <target name="buildx10lib-cpp" depends="check-src-x10lib" unless="src.uptodate.x10lib">
+    <target name="buildx10lib-cpp" depends="check-src-x10lib" unless="src.uptodate.cpp,x10lib.uptodate.cpp">
         <echo message="Building source tree"/>
         <mkdir dir="include"/>
         <mkdir dir="lib"/>
@@ -164,7 +155,7 @@
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/src">
             <arg value="-c"/>
-            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} ${x10c.bg} ${x10c.debug} ${x10c.profile} -report postcompile=1 -post '# # ${post.define.bg} ${cxx.bgp} ${cxx.bgq} # ${ld.bgp} ${ld.bgq}' -x10lib ${xla.props} -x10lib ${anuchem.props} ${x10lib.papi} -sourcepath . -buildx10lib ../. ${src.list} -d ../include -o ${x10lib-cpp}"/>
+            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} ${x10c.bg} ${x10c.debug} ${x10c.profile} -report postcompile=1 -post '# # ${post.define.bg} ${cxx.bgq} # ${ld.bgq}' -x10lib ${xla.props} -x10lib ${anuchem.props} ${x10lib.papi} -sourcepath . -buildx10lib ../. ${src.list} -d ../include -o ${x10lib-cpp}"/>
         </exec>
 
         <jar jarfile="${x10lib-cpp}.jar">
@@ -172,14 +163,14 @@
         </jar>
     </target>
 
-    <target name="build-src-cpp" depends="check-src-cpp" unless="src.uptodate.cpp">
+    <target name="build-src-cpp" depends="check-src-cpp" unless="src.uptodate.cpp,x10lib.uptodate.cpp">
         <echo message="Building source tree"/>
 
         <echo message="x10c++ -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} ${x10c.workstealing} ${x10c.bg} ${x10c.debug} ${x10c.cpuprofile} ${x10c.profile} ${define.papi} ${define.exclude_near} -x10lib ${xla.props} -x10lib ${anuchem.props} ${x10lib.papi} -sourcepath . '${basedir}/${testclass}'"/>
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/src">
             <arg value="-c"/>
-            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} ${x10c.workstealing} ${x10c.bg} ${x10c.debug} ${x10c.cpuprofile} ${x10c.profile} ${define.papi} ${define.exclude_near} -report postcompile=1 -post '# # ${post.define.bg} ${post.unroll} ${cxx.bgp} ${cxx.bgq} # ${ld.bgp} ${ld.bgq} ${link.mpiPprofile}' -x10lib ${xla.props} -x10lib ${anuchem.props} ${x10lib.papi} -sourcepath . -d '${target-src}' '${basedir}/${testclass}'"/>
+            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} ${x10c.workstealing} ${x10c.bg} ${x10c.debug} ${x10c.cpuprofile} ${x10c.profile} ${define.papi} ${define.exclude_near} -report postcompile=1 -post '# # ${post.define.bg} ${post.unroll} ${cxx.bgq} # ${ld.bgq} ${link.mpiPprofile}' -x10lib ${xla.props} -x10lib ${anuchem.props} ${x10lib.papi} -sourcepath . -d '${target-src}' '${basedir}/${testclass}'"/>
         </exec>
     </target>
 
@@ -200,6 +191,7 @@
         <uptodate property="src.uptodate.cpp" targetfile="${basedir}/bin/${exe}">
             <srcfiles refid="src.files"/>
         </uptodate>
+        <uptodate property="x10lib.uptodate.cpp" srcfile="${x10.sharedlib}" targetfile="${basedir}/bin/${exe}" />
     </target>
 
     <target name="check-src-x10lib" depends="init-src">
