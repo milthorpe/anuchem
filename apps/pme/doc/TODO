@@ -8,4 +8,3 @@ TODOs for Particle Mesh Ewald code
 For Summer Scholar ?
 - document performance results, including "crossover point" vs. direct and FMM, weak and strong scaling
 - document error behaviour with regard to tree size and number of terms in expansions
-- use real data DFTs (from FFTW) instead of complex data, to speed up FFT

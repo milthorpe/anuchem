@@ -9,7 +9,7 @@ This code performs an electrostatic potential calculation using the Smooth Parti
 
 The implementation follows Essmann et al. (1995), with some insights regarding the 3D FFT from Oh & Deng (2007).
 
-The potential calculation by itself is not very useful; in the future we hope to incorporate it into a dynamics code.  For now, it provides an illustration of the possible use of X10 language constructs in structured grid codes and spectral methods.
+The potential calculation by itself is not very useful; in the future we hope to incorporate it into a dynamics code (e.g. apps/anumm).  For now, it provides an illustration of the possible use of X10 language constructs in structured grid codes and spectral methods.
 
 1. Essmann et al. (1995). "A smooth particle mesh Ewald method". J Chem Phys 103 (19), 8577-93
 2. Oh and Deng (2007). "An efficient parallel implementation of the smooth particle mesh Ewald method for molecular dynamics simulations". Comp Phys Comms 177 (5), 426
@@ -28,7 +28,6 @@ will remove the executable and all intermediate C++ files.
 
 The default build script builds against the "sockets" implementation of X10RT.
 To build against the MPI implementation set property ${x10rt} to "mpi".
-To build for Blue Gene set ${x10rt} to "pgas_bgp".
 
 For other implementations see 
   http://x10-lang.org/documentation/getting-started/x10rt-implementations.html
@@ -36,7 +35,7 @@ For other implementations see
 
 Compile dependencies:
 ------------------------
-* X10 version 2.4 (optionally with x10rt=mpi)
+* X10 version 2.5 (optionally with x10rt=mpi)
 * FFTW http://www.fftw.org/ 
   (header files at the location ${fftw3.include} in the ant build script)
 * FFTW X10 wrapper (cd ~/anuchem-code/fftw_wrapper && ant)
@@ -49,11 +48,11 @@ To run:
 
 Single place:
 
-bin/pme numAtoms [ewaldCoefficient] [cutoff] [gridSize] [splineOrder]
+$ bin/pme numAtoms [ewaldCoefficient] [cutoff] [gridSize] [splineOrder]
 
 Multiple place:
 
-mpiexec -n <n> bin/pme numAtoms [ewaldCoefficient] [cutoff] [gridSize] [splineOrder]
+$ mpiexec -n <n> bin/pme numAtoms [ewaldCoefficient] [cutoff] [gridSize] [splineOrder]
 
 where <n> is number of places
 
@@ -63,4 +62,10 @@ where <n> is number of places
 - gridSize is the number of grid points in each dimension of the (cubic) simulation cell.
 - splineOrder is the number of grid points in each dimension over which charges are spread using b-spline interpolation.
 For detailed explanation of all parameters, see Essman et al. (1995).
+
+Referencing PME:
+-----------------------------
+Please cite the following paper when referencing PME in a publication.
+
+J. Milthorpe and A.P. Rendell (2012). "Efficient update of ghost regions using active messages", in proceedings of the 19th IEEE International Conference on High Performance Computing (HiPC). doi:10.1109/HiPC.2012.6507484
 

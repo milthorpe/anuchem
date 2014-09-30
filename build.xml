@@ -74,15 +74,7 @@
     <target name="srctar">
         <fail unless="env.X10_VERSION" message="Environment variable X10_VERSION is not set."/>
         <tar destfile="anuchem-${env.X10_VERSION}-src.tar.bz2" compression="bzip2" longfile="gnu">
-            <tarfileset prefix="" dir="${basedir}" includes="epl-v10.html,README,build.xml"/>
-            <tarfileset prefix="anu-chem" dir="${basedir}" excludes="**/.hg,**/bin,**/target,**/include,**/lib,**/*.jar"/>
-            <tarfileset prefix="apps" dir="${basedir}" excludes="**/.hg,**/bin,**/target,**/include,**/lib,**/*.jar"/>
-            <tarfileset prefix="fftw_wrapper" dir="${basedir}" excludes="**/.hg,**/bin,**/target,**/include,**/lib,**/*.jar"/>
-            <tarfileset prefix="microbenchmarks" dir="${basedir}" excludes="**/.hg,**/*.jar"/>
-            <tarfileset prefix="papi_wrapper" dir="${basedir}" excludes="**/.hg,**/bin,**/target,**/include,**/lib,**/*.jar"/>
-            <tarfileset prefix="samples" dir="${basedir}" excludes="**/.hg,**/*.jar"/>
-            <tarfileset prefix="tools" dir="${basedir}" excludes="**/.hg,**/*.jar"/>
-            <tarfileset prefix="xla" dir="${basedir}" excludes="**/.hg,**/bin,**/target,**/lib,**/*.jar"/>
+            <tarfileset dir="${basedir}" excludes="**/*.bz2,.hg/**,**/.hg*,**/bin,**/target,**/include,**/lib,**/*.jar"/>
         </tar>
     </target>
 

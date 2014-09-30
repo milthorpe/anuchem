@@ -26,7 +26,7 @@ Working with ANUChem:
 
 The codes are under continuous revision and the current source is available at http://sourceforge.net/p/anuchem/code
 
-In addition, there are tagged "release" versions of the source that compile against each released version of X10.
+In addition, there are source distributions containing tagged "release" versions of the source code that compile against each released version of X10.
 
 For any questions about building, testing or extending ANUChem, please email josh.milthorpe@anu.edu.au
 
