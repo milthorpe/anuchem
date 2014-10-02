@@ -34,6 +34,9 @@ Compile dependencies:
 * XLA library (cd ~/anuchem-code/x10x.lib/xla && ant)
 * anu-chem library (cd ~/anuchem-code/anuchem && ant)
 * PGAS-FMM library (cd ~/anuchem-code/apps/fmm && ant buildx10lib-cpp)
+* FFTW http://www.fftw.org/ 
+  (header files at the location ${fftw3.include} in the ant build script)
+* FFTW X10 wrapper (cd ~/anuchem-code/fftw_wrapper && ant)
 
 
 To run:
