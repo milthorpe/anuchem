@@ -14,7 +14,7 @@ Compiling:
 
 $ ant
 
-will build the required executable and put it in bin/anumm
+will build the executable bin/anumm
 
 $ ant clean
 

@@ -21,7 +21,7 @@ Compiling:
 
 $ ant
 
-will build the required executable and put it in bin/periodicFmm3d
+will build the executable bin/fmm
 
 $ ant clean
 
