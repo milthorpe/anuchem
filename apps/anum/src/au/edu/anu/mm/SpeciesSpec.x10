@@ -13,9 +13,9 @@ package au.edu.anu.mm;
 public class SpeciesSpec {
     public val name:String;
     public val mass:Double;
-    public val charge:Int;
+    public val charge:Double;
     public val number:Int;
-    public def this(name:String, mass:Double, charge:Int, number:Int) {
+    public def this(name:String, mass:Double, charge:Double, number:Int) {
         this.name = name;
         this.mass = mass;
         this.charge = charge;

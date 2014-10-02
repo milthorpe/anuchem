@@ -21,7 +21,6 @@ molecule
 end
 scf_max 0
 guess core
-compare_RO 1
 RO_thresh 6
 thresh 14
 omega 0.3

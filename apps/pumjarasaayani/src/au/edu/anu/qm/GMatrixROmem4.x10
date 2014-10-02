@@ -147,7 +147,7 @@ public class GMatrixROmem4 extends DenseMatrix{self.M==self.N} {
                 }
             }   
         }   
-        val nPlaces=Place.MAX_PLACES;
+        val nPlaces=Place.numPlaces();
         val fpp=Math.ceil(totFunc/nPlaces) as Int; // functions per place
         place2ShellPair=new Rail[Int](nPlaces+1);
         var placeID:Long=nPlaces-1, func:Long=0;
@@ -207,7 +207,7 @@ public class GMatrixROmem4 extends DenseMatrix{self.M==self.N} {
         val jd = JobDefaults.getInstance();
         //this.reset(); val gVal = GlobalRef(this); 
 
-        val maxTh=Runtime.NTHREADS; val maxPl=Place.MAX_PLACES;            
+        val maxTh=Runtime.NTHREADS; val maxPl=Place.numPlaces();            
 
         val auxIntMat = DistDenseMatrix.make(N*roK,N);
         val halfAuxMat = DistDenseMatrix.make(nOrbital,N*roK);

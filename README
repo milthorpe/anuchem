@@ -13,12 +13,21 @@ It is intended to test the expressiveness, performance and scalability of X10 fo
 ANUChem currently contains three significant application codes:
 
 pumjarasaayani (Quantum Chemistry): solves the molecular electronic structure problem using the Hartree-Fock/self-consistent field method.
-fmm (Fast Multipole Method): calculates the electrostatic potential of a system of charged particles using the Fast Multipole Method.
+fmm (PGAS-FMM): calculates the electrostatic potential of a system of charged particles using the Fast Multipole Method.
 pme (Particle Mesh Ewald): calculates electrostatic potential using the Smooth Particle Mesh Ewald method.
 
 The individual codes are described in ${appname}/doc/README including the build process and test inputs.
 
 In addition, there are a number of smaller codes contained in ./samples and ./microbenchmarks.  These are codes from outside the chemistry domain which exercise specific features of the X10 language.
+
+Compiling:
+----------
+
+$ ant
+
+will build and test the major application codes in ANUChem (fmm, pme and pumjarasaayani).
+
+Each application or sample subdirectory also has either an Ant build script or a Makefile.
 
 
 Working with ANUChem:
@@ -26,7 +35,7 @@ Working with ANUChem:
 
 The codes are under continuous revision and the current source is available at http://sourceforge.net/p/anuchem/code
 
-In addition, there are tagged "release" versions of the source that compile against each released version of X10.
+In addition, there are source distributions containing tagged "release" versions of the source code that compile against each released version of X10.
 
 For any questions about building, testing or extending ANUChem, please email josh.milthorpe@anu.edu.au
 

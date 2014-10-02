@@ -13,7 +13,6 @@
 #include <stdlib.h>
 #include <math.h>
 #include <sys/time.h>
-#include <tbb/tbb.h>
 #include <algorithm>
 
 const size_t ITERS = 1000;
@@ -25,12 +24,12 @@ int64_t TimeInMicros() {
 }
 
 /** 
- * Simple code to perform a dot product of vectors of length N.
- * Intended as a comparison to DotProduct.x10
+ * Simple code to perform a DAXPY of vectors of length N.
+ * Intended as a comparison to Daxpy.x10
  */
 int main(int argc, char *argv[]) {
     if (argc < 2) {
-        fprintf(stderr, "usage: dotProd N\n");
+        fprintf(stderr, "usage: daxpy_c N\n");
         exit(1);
     }
     int N = atoi(argv[1]);
@@ -43,13 +42,14 @@ int main(int argc, char *argv[]) {
 
     int64_t t1 = TimeInMicros();
     for (size_t iter = 0; iter < ITERS; iter++) {
+        #pragma omp parallel for private(i) schedule(static)
         for (size_t i = 0; i < N; i++) {
             x[i] = alpha * x[i] + y[i];
         }
     }
     int64_t t2 = TimeInMicros();
 
-    printf("C++ DAXPY for vectors length %d time %f ms\n", N, (t2-t1)/1e3/ITERS);
+    printf("C++ DAXPY for vectors length %d: %g ms\n", N, (t2-t1)/1e3/ITERS);
 
     delete x;
     delete y;

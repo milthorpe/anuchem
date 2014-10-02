@@ -59,7 +59,7 @@ public class GMatrix extends DenseMatrix{self.M==self.N} {
         this.gMatType = jd.gMatrixParallelScheme;
         kMatrix = new DenseMatrix(N, N);
         jMatrix = new DenseMatrix(N, N);
-        val nPlaces = Place.MAX_PLACES;
+        val nPlaces = Place.numPlaces();
         switch(gMatType) {
         case 0n:
             Console.OUT.println("GMatrix.computeSerial: " + gMatType);
@@ -362,7 +362,7 @@ public class GMatrix extends DenseMatrix{self.M==self.N} {
     private def computeDistStaticByAtoms(density:Density) {
         reset();
         val noOfAtoms = mol.getNumberOfAtoms();
-        val nPlaces = Place.MAX_PLACES;
+        val nPlaces = Place.numPlaces();
         val workPerPlace = noOfAtoms / nPlaces;
         val remainder = noOfAtoms % nPlaces;
         val firstChunk = remainder * (workPerPlace + 1);
@@ -397,7 +397,7 @@ public class GMatrix extends DenseMatrix{self.M==self.N} {
     /** Code snippet 3, Bernholdt paper  */
     private def computeDistDynamicByShells(density:Density) {
         val G = new SharedCounter();
-        G.set(Place.MAX_PLACES); // each place is first assigned the counter value of its own place number
+        G.set(Place.numPlaces()); // each place is first assigned the counter value of its own place number
 
         reset();
 
@@ -498,7 +498,7 @@ public class GMatrix extends DenseMatrix{self.M==self.N} {
     /** As per computeDistDynamicByShells with multithreaded places  */
     private def computeDistThreadedDynamicByShells(density:Density) {
         val G = new SharedCounter();
-        G.set(Place.MAX_PLACES); // each place is first assigned the counter value of its own place number
+        G.set(Place.numPlaces()); // each place is first assigned the counter value of its own place number
 
         reset();
 
@@ -758,7 +758,7 @@ public class GMatrix extends DenseMatrix{self.M==self.N} {
             val numPrimitives = shellList.getNumberOfShellPrimitives();
             val numPairs = shellList.getNumberOfShellPairs();
 
-            for(var i:Long=here.id; i<numPairs; i+=Place.MAX_PLACES) {
+            for(var i:Long=here.id; i<numPairs; i+=Place.numPlaces()) {
                 totInt += computeThread.computeOneShellPair(i, numPrimitives, shellPrimitives);
             }
             return totInt;

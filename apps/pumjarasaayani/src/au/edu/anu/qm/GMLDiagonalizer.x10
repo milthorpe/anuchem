@@ -23,15 +23,14 @@ public class GMLDiagonalizer {
     var eigenValuesVec:Vector;
     var eigenVectorsMat:DenseMatrix{self.M==self.N};
 
-    public def diagonalize(A:DenseMatrix{self.M==self.N}):void {
-        val a = A.clone();
-        eigenValuesVec = Vector.make(a.N);
-        val scratch = new Rail[Double](3*a.N-1);
+    public def diagonalize(A:DenseMatrix{self.M==self.N}):Int {
+        eigenVectorsMat = A.clone();
+        eigenValuesVec = Vector.make(eigenVectorsMat.N);
+        val scratch = new Rail[Double](3*eigenVectorsMat.N-1);
 
-        val result = DenseMatrixLAPACK.compEigenVector(a, eigenValuesVec, scratch);
+        val result = DenseMatrixLAPACK.compEigenVector(eigenVectorsMat, eigenValuesVec, scratch);
 
-        eigenVectorsMat = new DenseMatrix(a.N,a.N);
-        a.T(eigenVectorsMat);
+        return result;
     }
 
     public static def symmetricOrthogonalization(A:DenseMatrix{self.M==self.N}):DenseMatrix(A.N,A.N) {
@@ -48,7 +47,7 @@ public class GMLDiagonalizer {
         }
 
         val x = new DenseMatrix(A.M, A.N);
-        x.transMult(eigenVectors, sHalf % eigenVectors);
+        x.multTrans(eigenVectors % sHalf, eigenVectors);
         return x;
     }
 

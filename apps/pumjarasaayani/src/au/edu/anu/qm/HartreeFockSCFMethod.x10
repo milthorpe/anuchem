@@ -100,7 +100,7 @@ public class HartreeFockSCFMethod extends SCFMethod {
         val mos = new MolecularOrbitals(N);
         val density = new Density(N, noOfOccupancies);
 
-        var fock:Fock{self.M==N,self.N==N} = new Fock(N);
+        var fock:Fock{self.M==N,self.N==N};
 
         timer.start(TIMER_GUESS);
         Console.OUT.printf("Making guess orbitals ");
@@ -119,7 +119,8 @@ public class HartreeFockSCFMethod extends SCFMethod {
         Console.OUT.println ("    Time to construct guess density & MOs: " + (timer.total(TIMER_GUESS) as Double) / 1e9 + " seconds");
         
         if (maxIteration > 0n) {
-            Console.OUT.printf("Starting SCF procedure...\n");      
+            Console.OUT.printf("Starting SCF procedure...\n");
+            fock = new Fock(N);
 
             val diis = new DIISFockExtrapolator(N);
 

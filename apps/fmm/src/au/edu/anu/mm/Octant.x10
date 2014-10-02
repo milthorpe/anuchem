@@ -145,7 +145,7 @@ public abstract class Octant implements Comparable[Octant] {
             val vListPlaces = new HashSet[Long]();
             for (octantId in vList) {
                 val placeId = local.getPlaceId(octantId.getAnchor(local.dMax));
-                if (placeId >= 0 && placeId < Place.MAX_PLACES) {
+                if (placeId >= 0 && placeId < Place.numPlaces()) {
                     //Console.OUT.println("at " + here + " sending multipole for " + id + " to " + octantId + " held at " + placeId);
                     vListPlaces.add(placeId);
                 }

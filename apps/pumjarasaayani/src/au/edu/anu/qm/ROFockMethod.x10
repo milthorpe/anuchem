@@ -33,13 +33,15 @@ import edu.utk.cs.papi.PAPI;
 
 public class ROFockMethod(N:Long) {
     // Timer & PAPI performance counters
-    public val timer=new StatisticalTimer(6);
+    public val timer=new StatisticalTimer(8);
     val TIMER_TOTAL=0;
-    val TIMER_AUX=1;
-    val TIMER_JMATRIX=2;
-    val TIMER_K=3;
-    val TIMER_DSYRK=4;
-    val TIMER_DGEMM=5;
+    val TIMER_PERPLACE=1;
+    val TIMER_AUX=2;
+    val TIMER_JMATRIX=3;
+    val TIMER_K=4;
+    val TIMER_DSYRK=5;
+    val TIMER_DGEMM=6;
+    val TIMER_GATHER=7;
 
     transient var papi:PAPI=new PAPI(); // @Ifdef("__PAPI__") // XTENLANG-3132
 
@@ -47,6 +49,7 @@ public class ROFockMethod(N:Long) {
     val auxJ_plh:PlaceLocalHandle[Rail[Rail[Double]]], auxKIdx_plh:PlaceLocalHandle[Rail[Long]], remoteBlockK_plh:PlaceLocalHandle[RemoteBlock], ylms_plh:PlaceLocalHandle[Rail[Rail[Double]]], shellPairs_plh:PlaceLocalHandle[Rail[ShellPair]];
     val dlm_plh:PlaceLocalHandle[Rail[Double]], e_plh:PlaceLocalHandle[Rail[Double]], shellPairRange_plh:PlaceLocalHandle[Rail[Long]]; 
     val auxK_wlh:WorkerLocalHandle[Rail[Double]], intPack_wlh:WorkerLocalHandle[Integral_Pack], dlm_wlh:WorkerLocalHandle[Rail[Double]];
+    val densityMos_plh:PlaceLocalHandle[Rail[DenseMatrix]];
     val nOrbitals:Long, norm:Rail[Double], roN:Int, roNK:Int, roK:Int; 
     val roZ:Double, shellAtPlace:Rail[Long], funcAtPlace:Rail[Long], offsetAtPlace:Rail[Long];
 
@@ -55,7 +58,7 @@ public class ROFockMethod(N:Long) {
         property(N);
         val maxam=bfs.getShellList().getMaximumAngularMomentum();
         val maxam1=(maxam+1)*(maxam+2)/2;
-        val timer=new StatisticalTimer(1), jd=JobDefaults.getInstance(), nPlaces=Place.MAX_PLACES,
+        val timer=new StatisticalTimer(1), jd=JobDefaults.getInstance(), nPlaces=Place.numPlaces(),
             shellAtPlace=new Rail[Long](nPlaces), funcAtPlace=new Rail[Long](nPlaces), offsetAtPlace=new Rail[Long](nPlaces+1);
 
         timer.start(0);
@@ -138,10 +141,10 @@ public class ROFockMethod(N:Long) {
         // distributed generation of shellPairs_plh
         val threshold=roThresh*jd.roZ*jd.roZ*1e-3; 
         // ** Threshold must be relative to roThresh *** otherwise Z scaling will cause a problem: This is effectively a density threshold RO Thesis (2.26)    
-        val roN_val=roN,roZ_val=jd.roZ,nShells_val=nShells, sizeInfo=PlaceLocalHandle.make[Rail[Double]](PlaceGroup.WORLD, ()=> new Rail[Double](4));
-        val shellPairRange_plh=PlaceLocalHandle.make[Rail[Long]](PlaceGroup.WORLD, ()=>new Rail[Long](shellAtPlace(here.id)));
+        val roN_val=roN,roZ_val=jd.roZ,nShells_val=nShells, sizeInfo=PlaceLocalHandle.make[Rail[Double]](Place.places(), ()=> new Rail[Double](4));
+        val shellPairRange_plh=PlaceLocalHandle.make[Rail[Long]](Place.places(), ()=>new Rail[Long](shellAtPlace(here.id)));
         val shellPairs_plh=PlaceLocalHandle.make[Rail[ShellPair]](
-            PlaceGroup.WORLD, 
+            Place.places(), 
             ()=> {            
             val pid=here.id, info=sizeInfo(), range=shellPairRange_plh();
             val localShellPairs = new GrowableRail[ShellPair](nShells_val*nShells_val);
@@ -240,7 +243,7 @@ public class ROFockMethod(N:Long) {
 
         val intPack_wlh = new WorkerLocalHandle[Integral_Pack](()=> new Integral_Pack(jd.roN, jd.roL, omega, roThresh, jd.rad, jd.roZ));
         this.ylms_plh = PlaceLocalHandle.make[Rail[Rail[Double]]](
-            PlaceGroup.WORLD, 
+            Place.places(), 
             ()=>{
                 val shp = shellPairs_plh();
                 val ylms_plh = new Rail[Rail[Double]](shp.size); 
@@ -259,7 +262,7 @@ public class ROFockMethod(N:Long) {
         timer.start(0);
 
         this.auxJ_plh=PlaceLocalHandle.make[Rail[Rail[Double]]](
-            PlaceGroup.WORLD, 
+            Place.places(), 
             ()=>{
                 val shp = shellPairs_plh(), pid = here.id;
                 val auxJ_plh = new Rail[Rail[Double]](shp.size);
@@ -285,7 +288,7 @@ public class ROFockMethod(N:Long) {
         timer.start(0);     
 
         this.auxKIdx_plh=PlaceLocalHandle.make[Rail[Long]](
-            PlaceGroup.WORLD, 
+            Place.places(), 
             ()=>{
                 val shp = shellPairs_plh(), size=shp.size, pid=here.id;
                 val auxKIdx_plh = new Rail[Long](shp.size);
@@ -308,7 +311,7 @@ public class ROFockMethod(N:Long) {
         timer.start(0);  
 
         val tbs = Math.max(maxRow*nOrbitals,maxam1*N)*roK; // if we use this for K too
-        this.remoteBlockK_plh=PlaceLocalHandle.make[RemoteBlock](PlaceGroup.WORLD, () => new RemoteBlock(tbs/*maxRow*nOrbitals*roK*/));
+        this.remoteBlockK_plh=PlaceLocalHandle.make[RemoteBlock](Place.places(), () => new RemoteBlock(tbs/*maxRow*nOrbitals*roK*/));
 
         val cbs_HalfAuxInt=new Rail[Long](1); cbs_HalfAuxInt(0)=nOrbitals*roK; val halfAuxIntGrid=new Grid(cbs_HalfAuxInt, funcAtPlace);
         this.halfAuxMat=DistDenseMatrix.make(halfAuxIntGrid);
@@ -319,13 +322,15 @@ public class ROFockMethod(N:Long) {
         val cbs_nSquareMat=new Rail[Long](1); cbs_nSquareMat(0)=N; val nSquareMatGrid=new Grid(funcAtPlace, cbs_nSquareMat);
         this.distJ=DistDenseMatrix.make(nSquareMatGrid); this.distK=DistDenseMatrix.make(nSquareMatGrid);
 
-        this.dlm_plh = PlaceLocalHandle.make[Rail[Double]](PlaceGroup.WORLD, ()=> new Rail[Double](roK)); 
-        this.e_plh = PlaceLocalHandle.make[Rail[Double]](PlaceGroup.WORLD, ()=> new Rail[Double](2));
+        this.dlm_plh = PlaceLocalHandle.make[Rail[Double]](Place.places(), ()=> new Rail[Double](roK)); 
+        this.e_plh = PlaceLocalHandle.make[Rail[Double]](Place.places(), ()=> new Rail[Double](2));
         this.shellPairRange_plh = shellPairRange_plh;
 
         this.shellAtPlace=shellAtPlace; this.offsetAtPlace=offsetAtPlace; this.funcAtPlace=funcAtPlace;
         this.roK=roK; this.roZ=jd.roZ; this.intPack_wlh=intPack_wlh; this.shellPairs_plh=shellPairs_plh;
         this.nOrbitals=nOrbitals; this.norm=bfs.getNormalizationFactors();
+
+        this.densityMos_plh = PlaceLocalHandle.make[Rail[DenseMatrix]](Place.places(), ()=> new Rail[DenseMatrix](2));
 
         timer.stop(0);
         Console.OUT.printf("    ROFockMethod Initialization 'total' time: %.3f seconds\n", (timer.total(0) as Double) / 1e9);
@@ -343,8 +348,13 @@ public class ROFockMethod(N:Long) {
         val place0GRefJ = new GlobalRail[Double](tempJ);
         val place0GRefK = new GlobalRail[Double](tempK);
 
+        // prepare for broadcast
+        densityMos_plh()(0) = density;
+        densityMos_plh()(1) = mos;
+
         finish ateach(place in Dist.makeUnique()) {
-            val nPlaces = Place.MAX_PLACES;
+            timer.start(TIMER_PERPLACE);
+            val nPlaces = Place.numPlaces();
             val pid = here.id;
 
             ExecutionEnvironment.setBlasThreads(1n);
@@ -359,13 +369,24 @@ public class ROFockMethod(N:Long) {
             localJ.reset();
             localK.reset();
             
+            if (here != Place.FIRST_PLACE) {
+                densityMos_plh()(0) = new DenseMatrix(N,N);
+                densityMos_plh()(1) = new DenseMatrix(N,N);
+            }
+            val localDensity = densityMos_plh()(0);
+            val localMos = densityMos_plh()(1);
+            Team.WORLD.bcast(Place.FIRST_PLACE, localDensity.d, 0, localDensity.d, 0, localDensity.d.size);
+            Team.WORLD.bcast(Place.FIRST_PLACE, localMos.d, 0, localMos.d, 0, localMos.d.size);
+            
             // compute contributions separately for each radial component (ron)
             for (ron in 0n..roN) {
-                computeAuxBDlm(density, mos, ron, auxJ, bMat, dlm);
+                computeAuxBDlm(localDensity, localMos, ron, auxJ, bMat, dlm);
                 computeK(ron, bMat, localK);
                 computeJ(ron, auxJ, dlm, localJ);
                 Team.WORLD.barrier();
             }
+
+            timer.start(TIMER_GATHER);
 
             val e = e_plh();
             // gather J to tempJ, K to tempK at place 0
@@ -381,40 +402,43 @@ public class ROFockMethod(N:Long) {
                 val colStart = offsetAtPlace((pid+1)%nPlaces);
                 val colStop = offsetAtPlace((pid+mult)%nPlaces);
 
-                // Calculate eJ and eK
-                e.clear();
+                var eJ:Double = 0.0;
                 for (var j0:Long=0, j:Long=offsetAtPlace(pid); j<offsetAtPlace(pid+1); j0++, j++) {
-                    //e(1) += .5*density(j, j)*localK(j0, j);
+                    //e(1) += .5*localDensity(j, j)*localK(j0, j);
                     for (var i0:Long=0, i:Long=offsetAtPlace(pid); i<j; i0++, i++) {
-                        e(0) += density(i, j) * localJ(i0, j);
-                        //e(1) += density(i, j)*localK(i0, j);
+                        eJ += localDensity(i, j) * localJ(i0, j);
+                        //e(1) += localDensity(i, j)*localK(i0, j);
                     }
-                    e(0) += 0.5 * density(j, j) * localJ(j0, j);
+                    eJ += 0.5 * localDensity(j, j) * localJ(j0, j);
                 }
                 if (colStart < colStop) {
                     for (var j:Long=colStart; j<colStop; j++) {
                         for (var i:Long=0, ii:Long=offsetAtPlace(pid); i<rowCount; i++, ii++) {
-                            e(0) += density(ii, j) * localJ(i, j);
-                            //e(1) +=density(ii, j)*localK(i, j);
+                            eJ += localDensity(ii, j) * localJ(i, j);
+                            //e(1) +=localDensity(ii, j)*localK(i, j);
                         }
                     }
                 } else if (mult > 1) {
                     for (var j:Long=colStart; j<colCount; j++) {
                         for (var i:Long=0, ii:Long=offsetAtPlace(pid); i<rowCount; i++, ii++) {
-                            e(0) += density(ii, j) * localJ(i, j);
-                            //e(1) +=density(ii, j)*localK(i, j);
+                            eJ += localDensity(ii, j) * localJ(i, j);
+                            //e(1) +=localDensity(ii, j)*localK(i, j);
                         }
                     }
                     for (var j:Long=0; j<colStop; j++) {
                         for (var i:Long=0, ii:Long=offsetAtPlace(pid); i<rowCount; i++, ii++) {
-                            e(0) += density(ii, j) * localJ(i, j);
-                            //e(1) +=density(ii, j)*localK(i, j);
+                            eJ += localDensity(ii, j) * localJ(i, j);
+                            //e(1) +=localDensity(ii, j)*localK(i, j);
                         }
                     }
                 }
+                e(0) = eJ;
             }
 
             Team.WORLD.allreduce[Double](e, 0L, e, 0L, e.size, Team.ADD);
+
+            timer.stop(TIMER_GATHER);
+            timer.stop(TIMER_PERPLACE);
 
             // Report time
             Team.WORLD.allreduce[Long](timer.total, 0L, timer.total, 0L, timer.total.size, Team.MAX);
@@ -424,19 +448,22 @@ public class ROFockMethod(N:Long) {
                 val tDsyrk=(timer.total(TIMER_DSYRK) as Double)/1e9;
                 val tDgemm=(timer.total(TIMER_DGEMM) as Double)/1e9;
                 val tK=(timer.total(TIMER_K) as Double)/1e9;
-                Console.OUT.printf("Time (seconds) Aux= %.3f J= %.3f K-DSYRK= %.3f K-DGEMM= %.3f K-TOT= %.3f\n", tAux, tJ, tDsyrk, tDgemm, tK);
+                val tGather=(timer.total(TIMER_GATHER) as Double)/1e9;
+                val tPerPlace=(timer.total(TIMER_PERPLACE) as Double)/1e9;
+                Console.OUT.printf("Time (seconds) Aux= %.3f J= %.3f K-DSYRK= %.3f K-DGEMM= %.3f K-TOT= %.3f gather %.3f\n", tAux, tJ, tDsyrk, tDgemm, tK, tGather);
+                Console.OUT.printf("max time per place %.3f\n", tPerPlace);
                 Console.OUT.flush();
             }
         }
 
-        val nPlaces = Place.MAX_PLACES;
+        val nPlaces = Place.numPlaces();
         // unpack tempK into gMatrix
         finish for (pid in 0..(nPlaces-1)) async {
             val placeRows = funcAtPlace(pid);
             val placeGOffset = offsetAtPlace(pid);
             val placeTempOffset = offsetAtPlace(pid) * N;
-            for (var i:Long=0; i<placeRows; i++)
-                for (var j:Long=0; j<N; j++)
+            for (var j:Long=0; j<N; j++)
+                for (var i:Long=0; i<placeRows; i++)
                     gMatrix(i+placeGOffset, j) = -tempK(placeTempOffset + j * placeRows + i);
         }
 
@@ -456,8 +483,8 @@ public class ROFockMethod(N:Long) {
             val placeRows = funcAtPlace(pid);
             val placeGOffset = offsetAtPlace(pid);
             val placeTempOffset = offsetAtPlace(pid) * N;
-            for (var i:Long=0; i<placeRows; i++)
-                for (var j:Long=0; j<N; j++)    
+            for (var j:Long=0; j<N; j++) 
+                for (var i:Long=0; i<placeRows; i++)
                     gMatrix(i+placeGOffset, j) += tempJ(placeTempOffset + j * placeRows + i);
         }
 
@@ -493,13 +520,11 @@ public class ROFockMethod(N:Long) {
     private static def traceOfSymmetricProduct(a:DenseMatrix{self.M==self.N}, b:DenseMatrix{self.M==self.N,self.M==a.M}) {
         val N = a.N;
         var trace:Double = 0.0;
-        for (i in 0..(N-1)) {
-            for (j in 0..(i-1)) {
+        for (j in 0..(N-1)) {
+            trace += a(j, j) * b(j, j);
+            for (i in (j+1)..(N-1)) {
                 trace += 2 * a(i, j) * b(i, j);
             }
-        }
-        for (i in 0..(N-1)) {
-            trace += a(i, i) * b(i, i);
         }
         return trace;
     }
@@ -514,9 +539,10 @@ public class ROFockMethod(N:Long) {
      * @param bMat the B matrix in dense format (output)
      * @param dlm density-contracted integrals D<sub>l m</sub> (output)
      */
-    private def computeAuxBDlm(density:Density{self.N==this.N}, mos:MolecularOrbitals{self.N==this.N}, ron:Int, auxJ:Rail[Rail[Double]], bMat:DenseMatrix, dlm:Rail[Double]) {
+    private def computeAuxBDlm(density:DenseMatrix{self.N==this.N}, mos:DenseMatrix{self.N==this.N}, ron:Int, auxJ:Rail[Rail[Double]], bMat:DenseMatrix, dlm:Rail[Double]) {
         // Console.OUT.println("Aux - distributed ron="+ron);
         timer.start(TIMER_AUX);
+        //val auxStart = System.nanoTime();
         val doK = (ron <= roNK);
         dlm.clear();
         dlm_wlh.applyLocal((d:Rail[Double])=> { d.clear(); });
@@ -529,7 +555,7 @@ public class ROFockMethod(N:Long) {
         for (i in 0..(size-1)) if (0<=auxKIdx(i) && auxKIdx(i)<size) auxKIdx(i)+=size;
         val range = shellPairRange_plh();
         
-        finish RecursiveBisection1D(0, shellAtPlace(here.id)).execute(
+        finish RecursiveBisection1D(0, shellAtPlace(here.id), 8).execute(
         (shellIdx:Long)=> {
             var shellPairIdx0:Long = 0; 
             if (shellIdx>0) shellPairIdx0 = range(shellIdx-1);
@@ -597,8 +623,12 @@ public class ROFockMethod(N:Long) {
         );
 
         dlm_wlh.reduceLocal(dlm, (a:Rail[Double], b:Rail[Double])=> RailUtils.map(a, b, a, (x:Double, y:Double)=>x+y));
+        //val auxStop = System.nanoTime();
+        //Console.OUT.printf("place %d aux %d time %.3f\n", here.id, ron, (auxStop-auxStart) as Double / 1e6);
         Team.WORLD.allreduce[Double](dlm, 0L, dlm, 0L, dlm.size, Team.ADD);
         timer.stop(TIMER_AUX);
+        //val allreduceStop = System.nanoTime();
+        //Console.OUT.printf("place %d allreduce %d time %.3f\n", here.id, ron, (allreduceStop-auxStart) as Double / 1e6);
     }
 
     /** 
@@ -613,7 +643,7 @@ public class ROFockMethod(N:Long) {
         val doK = (ron <= roNK);
         if (doK) {
             finish {
-                val nPlaces = Place.MAX_PLACES;
+                val nPlaces = Place.numPlaces();
                 val pid = here.id;
                 val offsetHere = offsetAtPlace(pid);
                 ExecutionEnvironment.setBlasThreads(Runtime.NTHREADS);

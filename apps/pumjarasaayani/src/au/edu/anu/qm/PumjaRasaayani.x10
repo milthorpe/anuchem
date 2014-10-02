@@ -46,7 +46,7 @@ public class PumjaRasaayani {
     public def runHF() {
         val jd = JobDefaults.getInstance();
         Console.OUT.println("PumjaRasaayani shunya.tri, Quantum Chemistry program in x10, v0.4");
-        Console.OUT.println("" + Place.MAX_PLACES + " places, " + Runtime.NTHREADS + " threads per place");
+        Console.OUT.println("" + Place.numPlaces() + " places, " + Runtime.NTHREADS + " threads per place");
 
         mol.transformToSNO(jd.roZ); // Other transformations exist 
 

@@ -15,6 +15,8 @@ import x10.regionarray.DistArray;
 import x10.util.ArrayList;
 import x10.io.IOException;
 
+import x10x.vector.Vector3d;
+
 import au.edu.anu.chem.Molecule;
 import au.edu.anu.chem.mm.MMAtom;
 import au.edu.anu.util.Timer;
@@ -31,10 +33,14 @@ public class Anumm {
     /** The force field applied to the atoms in this simulation. */
     private val forceField:ForceField;
 
+    private val verbose:Boolean;
+
     public def this(atoms:DistArray[Rail[MMAtom]](1),
-                    forceField:ForceField) {
+                    forceField:ForceField,
+                    verbose:Boolean) {
         this.atoms = atoms;
         this.forceField = forceField;
+        this.verbose = verbose;
     }
 
     public def getAtoms() = atoms;
@@ -48,12 +54,29 @@ public class Anumm {
     public def mdRun(timestep:Double, numSteps:Long) {
         Console.OUT.println("# Timestep = " + timestep + "fs, number of steps = " + numSteps);
 
+        var step : Long = 0;
+        if (verbose) {
+            Console.OUT.printf("\n%.3f ", 0.0); // starting timestep
+        }
         forceField.getPotentialAndForces(atoms); // get initial forces
 
-        var step : Long = 0;
         while(step < numSteps) {
             step++;
+            if (verbose) {
+                Console.OUT.printf("\n%.3f ", step*timestep);
+            }
             mdStep(timestep);
+        }
+        if (verbose) {
+            Console.OUT.println("\n# final positions:");
+            finish for(place in Place.places()) at(place) {
+                val myAtoms = atoms(here.id);
+                // print final positions
+                for (i in 0..(myAtoms.size-1)) {
+                    val atom = myAtoms(i);
+                    Console.OUT.println(atom.species+ " " + atom.centre.i + " " + atom.centre.j + " " + atom.centre.k + " ");
+                }
+            }
         }
     }
 
@@ -71,6 +94,7 @@ public class Anumm {
                 val invMass = 1.0 / forceField.getAtomMass(atom.species);
                 atom.velocity = atom.velocity + 0.5 * t * invMass * atom.force;
                 atom.centre = atom.centre + atom.velocity * t;
+                atom.force = Vector3d.NULL; // zero before next force calculation
                 //Console.OUT.print(atom.centre.i + " " + atom.centre.j + " " + atom.centre.k + " ");
             }
         }
@@ -89,7 +113,7 @@ public class Anumm {
     public static def main(args:Rail[String]) {
         var structureFileName : String = null;
         var timestep : Double = 0.2;
-        var numSteps : Int = 200;
+        var numSteps : Int = 200n;
         if (args.size > 0) {
             structureFileName = args(0);
             if (args.size > 1) {
@@ -103,10 +127,12 @@ public class Anumm {
             return;
         }
 
-        val dummySpeciesList = new Rail[SpeciesSpec](); // TODO
+        val uff = new UniversalForceField();
+
+        val dummySpeciesList = uff.getSpecies();
         var moleculeTemp : Molecule[MMAtom] = null;
         if (structureFileName.length() > 4) {
-            val fileExtension = structureFileName.substring(structureFileName.length()-4, structureFileName.length());
+            val fileExtension = structureFileName.substring(structureFileName.length()-4n, structureFileName.length());
             if (fileExtension.equals(".xyz")) {
                 try {
                     moleculeTemp = new XYZStructureFileReader(structureFileName).readMolecule(dummySpeciesList);
@@ -127,8 +153,9 @@ public class Anumm {
         }
         val molecule = moleculeTemp;
         Console.OUT.println("# MD for " + molecule.getName() + ": " + molecule.getAtoms().size() + " atoms");
-        val anumm = new Anumm(assignAtoms(molecule), new UniversalForceField());
+        val anumm = new Anumm(assignAtoms(molecule), uff, true);
         anumm.mdRun(timestep, numSteps);
+        Console.OUT.println("\n# Run completed after " + numSteps + " steps");
 
         return;
     }
@@ -142,7 +169,7 @@ public class Anumm {
         val tempAtoms = DistArray.make[ArrayList[MMAtom]](Dist.makeUnique(), (Point) => new ArrayList[MMAtom]());
         val atomList = molecule.getAtoms();
         val maxExtent = molecule.getMaxExtent();
-        finish for (var i : Int = 0; i < atomList.size(); i++) {
+        finish for (var i:Long = 0; i < atomList.size(); i++) {
             val atom = atomList(i);
             val p = getPlaceId(atom.centre.i, atom.centre.j, atom.centre.k, maxExtent);
             //Console.OUT.println(atom + " to " + p);
@@ -160,7 +187,7 @@ public class Anumm {
      * Currently just splits them up into slices by X coordinate.
      */
     private static def getPlaceId(x : Double, y : Double, z : Double, size : Double) : Int {
-        return ((x / (size * 2) + 0.5) * Place.MAX_PLACES) as Int;
+        return ((x / (size * 2) + 0.5) * Place.numPlaces()) as Int;
     }
 }
 

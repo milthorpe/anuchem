@@ -54,11 +54,11 @@
     <target name="build-fftw-wrapper">
         <echo message="Building FFTW wrapper"/>
 
-        <copy todir="../include">
+        <copy todir="include">
             <fileset id="cpp.files" dir="${basedir}/src" includes="**/*.h,**/*.cc"/>
         </copy>
 
-        <exec executable="${bash.exe}" failonerror="true" dir="../include/edu/mit/fftw">
+        <exec executable="${bash.exe}" failonerror="true" dir="include/edu/mit/fftw">
             <arg value="-c"/>
             <arg value="'gcc' -c FFTW.cc -I${fftw3.include}"/>
         </exec>

@@ -183,7 +183,7 @@ public class GMatrixROmem3 extends DenseMatrix{self.M==self.N} {
 
         finish ateach(place in Dist.makeUnique()) async {
             val pid = here.id; Console.OUT.println("pid=" + pid);
-            val maxTh=Runtime.NTHREADS; val maxPl=Place.MAX_PLACES;
+            val maxTh=Runtime.NTHREADS; val maxPl=Place.numPlaces();
 
             val auxIntMat = new DenseMatrix(N*roK,N);
             val halfAuxMat = new DenseMatrix(nOrbital,N*roK);

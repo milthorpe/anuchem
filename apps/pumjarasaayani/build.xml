@@ -6,13 +6,13 @@
     <property name="x10rt" value="sockets" />
     <property name="xla" location="../../xla"/>
     <property name="xla.props" location="${xla}/xla.properties"/>
-    <property name="x10.stdlib" location="${env.X10_HOME}/stdlib/include"/>
-    <property name="x10.testlib" location="${env.X10_HOME}/../x10.tests/tests/x10lib"/>
+    <property name="x10.stdlib" location="${env.X10_HOME}/x10.dist/stdlib/include"/>
+    <property name="x10.testlib" location="${env.X10_HOME}/x10.tests/tests/x10lib"/>
     <property name="anuchem" location="../../anu-chem"/>
     <property name="anuchem.src" location="${anuchem}/src"/>
     <property name="anuchem.props" location="${anuchem}/anuchem.properties"/>
-    <property name="gml.lib" location="${env.X10_HOME}/../x10.gml/lib/native_gml.jar"/>
-    <property name="gml.props" location="${env.X10_HOME}/../x10.gml/native_gml.properties"/>
+    <property name="gml.lib" location="${env.X10_HOME}/x10.gml/lib/native_gml.jar"/>
+    <property name="gml.props" location="${env.X10_HOME}/x10.gml/native_gml.properties"/>
     <property name="papi" value="false" />
     <property name="verbose" value="false" />
     <property name="x10papi" location="../../papi_wrapper"/>
@@ -33,9 +33,6 @@
     <property name="heapprofile" value="false" />
 
     <property name="testclass" value="src/au/edu/anu/qm/PumjaRasaayani.x10" />
-
-    <property name="gsl.include" location="${user.home}/gsl/include" />
-    <property name="gsl.lib" location="${user.home}/gsl/lib" />
 
     <property name="target" location="${basedir}/target" />
     <property name="target-src" location="${target}/classes" />
@@ -162,7 +159,7 @@
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/src">
             <arg value="-c"/> 
-            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.debug} ${x10c.cpuprofile} ${x10c.profile} ${x10c.optimize} ${x10c.nochecks} ${define.papi} ${define.mkl} ${define.verbose} -report postcompile=1 -classpath ${gml.lib} -x10lib ${gml.props} -x10lib ${xla.props} -x10lib ${anuchem.props} -x10lib ${x10papi.props} -sourcepath . -post '# # -D__X10_HEADERS ${post.define.mkl} ${post.heapprofile} ${post.papi} # -L${lib} -lintpack ${post.lapack} -lpapi' -d ${target-src} ${basedir}/${testclass}"/>
+            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.debug} ${x10c.cpuprofile} ${x10c.profile} ${x10c.optimize} ${x10c.nochecks} ${define.papi} ${define.mkl} ${define.verbose} -report postcompile=1 -classpath ${gml.lib} -x10lib ${gml.props} -x10lib ${xla.props} -x10lib ${anuchem.props} -x10lib ${x10papi.props} -sourcepath . -post '# # -D__X10_HEADERS ${post.define.mkl} ${post.heapprofile} ${post.papi} # -O3 -L${lib} -lintpack ${post.lapack} -lpapi' -d ${target-src} ${basedir}/${testclass}"/>
         </exec>
     </target>
 
@@ -178,15 +175,15 @@
         </uptodate>
     </target>
 
-    <target name="check-src-gsl" depends="init-src">
-        <fileset id="gsl.files" dir="${basedir}/src" includes="**/*.h,**/*.cc"/>
-        <uptodate property="src.uptodate.gsl">
-            <srcfiles refid="gsl.files"/>
+    <target name="check-src-cpp" depends="init-src">
+        <fileset id="cpp.files" dir="${basedir}/src" includes="**/*.h,**/*.cc"/>
+        <uptodate property="src.uptodate.cpp">
+            <srcfiles refid="cpp.files"/>
             <globmapper from="*" to="${target-src}/*" handledirsep="true"/>
         </uptodate>
     </target>
 
-    <target name="build-integral-pack" depends="check-src-gsl" unless="src.uptodate.gsl">
+    <target name="build-integral-pack" depends="check-src-cpp" unless="src.uptodate.cpp">
         <echo message="Building integral pack"/>
 
         <mkdir dir="${lib}"/>
@@ -197,18 +194,18 @@
 
         <exec executable="${bash.exe}" failonerror="true" dir="${lib}">
             <arg value="-c"/> 
-            <arg value="g++ -Wall -c -g -O2 -funroll-loops -D__X10_HEADERS -I${x10.stdlib} Integral_Pack.cc bessel4.cc"/>
+            <arg value="g++ -Wall -c -g -O3 -D__X10_HEADERS -I${x10.stdlib} Integral_Pack.cc SphericalHarmonics.cc bessel4.cc"/>
         </exec>
 
         <exec executable="${bash.exe}" failonerror="true" dir="${lib}">
             <arg value="-c"/> 
-            <arg value="ar crf libintpack.a Integral_Pack.o bessel4.o"/>
+            <arg value="ar crf libintpack.a Integral_Pack.o SphericalHarmonics.o bessel4.o"/>
         </exec>
 
         <mkdir dir="${target-src}/au/edu/anu/qm/ro"/>
 
         <copy todir="${target-src}/au/edu/anu/qm/ro">
-            <fileset id="header.file" dir="ro" includes="Integral_Pack.h"/>
+            <fileset id="header.file" dir="ro" includes="*.h"/>
         </copy>
     </target>
     

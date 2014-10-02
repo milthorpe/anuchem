@@ -36,7 +36,7 @@ public class MolecularOrbitals extends DenseMatrix{self.M==self.N} {
         diag.diagonalize(a);
         orbitalEnergies = diag.getEigenValues().d;
 
-        super.mult(diag.getEigenVectors(), x);
+        super.transMult(diag.getEigenVectors(), x);
     }
 }
 

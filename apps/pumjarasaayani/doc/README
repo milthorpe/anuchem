@@ -37,7 +37,7 @@ For other implementations see
 
 Compile dependencies:
 ------------------------
-* X10 version 2.4 (optionally with x10rt=mpi)
+* X10 version 2.5 (optionally with x10rt=mpi)
 * X10 Global Matrix Library (distributed with the X10 release under x10/x10.gml)
 * LAPACK and BLAS libraries (transitive through X10 GML)
   http://www.netlib.org/lapack/
@@ -52,9 +52,6 @@ Code organization:
 * molecular tailoring code in au.edu.anu.qm.mta
 * anu-chem code in: au.edu.anu.chem, au.edu.anu.util
 * XLA code in: x10x.vector
-* GSL wrapper code in: org.gnu.gsl (unused)
-* ESSL wrapper in: bgp (this is incomplete and not tested) 
-
 
 To run:
 ------
@@ -207,18 +204,12 @@ The current implementation seem to have a bottleneck with the task scheduler app
 With Option 5  (shell-based loops) the scaling on larger number of processors is reasonable for large problems. However, the time for job setup and G matrix summation scale linearly with the number of places, so the overall scaling is reduced.
 
 
-Benchmark results
---------------
-
-See doc/pr-perform-bgp.ods
-
-
 Referencing Pumja Rasaayani:
 -----------------------------
 Please cite the following paper when referencing Pumja Rasaayani in a publication.
 
-J. Milthorpe, V. Ganesh, A.P. Rendell, and D. Grove (2011). X10 as a parallel language for scientific computation: practice and experience, in proceedings of the 25th IEEE International Parallel & Distributed Processing Symposium (ISBN 978-0-7695-4385-7), 1067-1075
+T. Limpanuparb, J. Milthorpe and A.P. Rendell (2014). "Resolutions of the Coulomb Operator: VIII. Parallel implementation using the modern programming language X10", Journal of Computational Chemistry. 2014 35 (28) 2056-2069. doi:10.1002/jcc.23720
 
-For the Resolution of the Operator approach, cite the following paper:
+The following paper contains further details on the Resolution of the Operator approach:
 
-T. Limpanuparb, J. Milthorpe, A.P. Rendell, and P.M.W. Gill (2013). "Resolutions of the Coulomb Operator: VII. Evaluation of Long-range Coulomb and Exchange Matrices", Journal of Chemical Theory and Computation. doi:10.1021/ct301110y
+T. Limpanuparb, J. Milthorpe, A.P. Rendell, and P.M.W. Gill (2013). "Resolutions of the Coulomb Operator: VII. Evaluation of Long-range Coulomb and Exchange Matrices", Journal of Chemical Theory and Computation. 2013 9 (2) 863-867. doi:10.1021/ct301110y

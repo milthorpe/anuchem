@@ -57,7 +57,7 @@ public class Distributed3dFft_SPMD {
      * N.B. this method must be called once at every place, SPMD style
      */
     public def doFFT3dLocal(forward : Boolean) {
-        if (Place.MAX_PLACES==1) {
+        if (Place.numPlaces()==1) {
             // all source data at one place.  use local 3D FFT rather than distributed
             val plan : FFTW.FFTWPlan = FFTW.fftwPlan3d(dataSize, dataSize, dataSize, source, target, forward);
             FFTW.fftwExecute(plan);

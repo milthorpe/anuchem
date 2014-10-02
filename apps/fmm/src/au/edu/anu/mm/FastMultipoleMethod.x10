@@ -275,7 +275,7 @@ public class FastMultipoleMethod {
     }
 
     public def initialAssignment(numAtoms:Int, atoms:DistArray[Rail[MMAtom]](1)) {
-        finish ateach(p1 in atoms) {
+        finish ateach(p1 in atoms.dist) {
             FastMultipoleMethod.localData.timer.start(FmmLocalData.TIMER_INDEX_TREE);
             this.localData.init(numTerms, dMax as UByte, ws, size);
             FmmScratch.init( ()=>new FmmScratch(numTerms) );
@@ -487,13 +487,14 @@ public class FastMultipoleMethod {
         }
 
         val total = reduce((a:Long,b:Long)=>a+b, 0L, octantLoads);
-        val placeShare = total / Place.MAX_PLACES;
-        val leftOver = total % Place.MAX_PLACES;
+        val numPlaces = Place.numPlaces();
+        val placeShare = total / numPlaces;
+        val leftOver = total % numPlaces;
 
         val firstLeafOctant = local.firstLeafOctant;
         firstLeafOctant(0) = 0UN;
         var i:Int=0n;
-        for (p in 1..Place.MAX_PLACES) {
+        for (p in 1..numPlaces) {
             val share = p <= leftOver ? placeShare+1 : placeShare;
             var load:Long = 0;
             while(load < share && i < octantLoads.size) {
@@ -518,8 +519,8 @@ public class FastMultipoleMethod {
         local.timer.start(FmmLocalData.TIMER_INDEX_REDIST);
         val firstLeafOctant = local.firstLeafOctant;
         val levelBytes = (dMax as UInt << 24);
-        finish for (var destPlace:Place=here.next(); destPlace!=here && octantAtoms.size() > 0; destPlace=destPlace.next()) {
-            val p = destPlace.id;
+        finish for (var p:Long = here.id+1; p!=here.id && octantAtoms.size() > 0; p=(p+1)%Place.numPlaces()) {
+            val destPlace = Place(p);
             val placeStart = firstLeafOctant(p);
             val placeEnd = firstLeafOctant(p+1);
             //Console.OUT.println("at " + here + " sending octants between " + placeStart + " and " + placeEnd + " to " + destPlace);
@@ -727,7 +728,7 @@ public class FastMultipoleMethod {
         // separate the uList into partial lists stored at each nearby place
         for (octantId in myCombinedUList) {
             val placeId = local.getPlaceId(octantId);
-            if (placeId >= 0 && placeId < Place.MAX_PLACES) {
+            if (placeId >= 0 && placeId < Place.numPlaces()) {
                 if (placeId == here.id) {
                     // leaf octant is local
                     val octant = local.getOctant(octantId) as LeafOctant;

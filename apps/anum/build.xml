@@ -5,11 +5,10 @@
     <fail unless="env.X10_HOME" message="Environment variable X10_HOME is not set."/>
     <property name="x10rt" value="sockets" />
     <property name="bgq" value="false" />
-    <property name="bgp" value="false" />
-    <property name="x10x.xla" location="../../xla"/>
-	<property name="xla.props" location="${x10x.xla}/xla.properties"/>
-	<property name="xla.src" location="${x10x.xla}/xla/src"/>
-	<property name="xla.lib" location="${x10x.xla}/xla/lib/xla.jar"/>
+    <property name="xla" location="../../xla"/>
+	<property name="xla.props" location="${xla}/xla.properties"/>
+	<property name="xla.src" location="${xla}/xla/src"/>
+	<property name="xla.lib" location="${xla}/xla/lib/xla.jar"/>
     <property name="anuchem" location="../../anu-chem"/>
     <property name="anuchem.props" location="${anuchem}/anuchem.properties"/>
 	<property name="anuchem.src" location="${anuchem}/src"/>
@@ -20,12 +19,12 @@
     <property name="fftw.props" location="${fftw}/fftw.properties" />
     <property name="fftw3.include" location="${user.home}/fftw/include" />
     <property name="fftw3.lib" location="${user.home}/fftw/lib" />
-    <property name="x10.testlib" location="${env.X10_HOME}/../x10.tests/tests/x10lib"/>
+    <property name="x10.testlib" location="${env.X10_HOME}/x10.tests/tests/x10lib"/>
     <property environment="env"/>
     <property name="bash.exe" value="bash"/>    
     <property name="optimize" value="true"/>
     <property name="nochecks" value="true"/>
-    <property name="debug" value="false"/>
+    <property name="debug" value="true"/>
     <property name="profile"  value="false"/>
     <property name="cpuprofile"  value="false"/>
     <property name="perftoolsHome" location="${user.home}/perftools"/>
@@ -38,7 +37,7 @@
 	<property name="target-test" location="${target}/test-classes"/>
     <property name="bin" location="${basedir}/bin"/>
 	<property name="exe" value="anumm"/>
-    <property name="testclass" value="test/au/edu/anu/mm/TestCyclotron.x10"/>
+    <property name="testclass" value="src/au/edu/anu/mm/Anumm.x10"/>
 
     <condition property="x10c.optimize" value="-O" else="">
         <istrue value="${optimize}"/>
@@ -62,10 +61,6 @@
 
     <condition property="link.mpiPprofile" value="-L${binutilsHome}/lib -L${mpiPHome}/lib -lmpiP -lbfd -liberty -lm" else="">
         <istrue value="${mpiPprofile}"/>
-    </condition>
-
-    <condition property="ld.bgp" value="-L/opt/ibmcmp/xlmass/bg/4.4/bglib -lmass" else="">
-        <istrue value="${bgp}"/>
     </condition>
 
     <condition property="ld.bgq" value="-L/opt/ibmcmp/xlmass/bg/7.3/bglib64 -lmass" else="">
@@ -100,11 +95,11 @@
         <pathconvert property="src.list" refid="changed.src.files" dirsep="/" pathsep=" ">
             <map from="${basedir}${file.separator}src${file.separator}" to=""/>
         </pathconvert>
-        <echo message="x10c ${src.list}"/>
+        <echo message="x10c -x10lib ${xla.props} -x10lib ${anuchem.props} -x10lib ${fmm.props} -x10lib ${fftw.props} ${basedir}/${testclass}"/>
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/src">
             <arg value="-c"/>
-            <arg value="'x10c' ${x10c.optimize} -sourcepath .:${xre.src}:${xla.src}:${anuchem.src} -classpath ${xre.lib}:${xla.lib}:${anuchem.lib} -d ${target-src} ${src.list}"/>
+            <arg value="'x10c' ${x10c.optimize} -x10lib ${xla.props} -x10lib ${anuchem.props} -x10lib ${fmm.props} -x10lib ${fftw.props} -sourcepath . -d ${target-src} ${basedir}/${testclass}"/>
         </exec>
     </target>
 
@@ -124,7 +119,7 @@
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/src">
             <arg value="-c"/>
-            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} ${x10c.debug} ${x10c.cpuprofile} -report postcompile=1 -post '# -I${fftw3.include} ${post.profile} # ${link.mpiPprofile} # -L${fftw3.lib} -lfftw3 ${ld.bgp} ${ld.bgq}' -x10lib ${xla.props} -x10lib ${anuchem.props} -x10lib ${fmm.props} -x10lib ${fftw.props} -sourcepath . -d ${target-src} ${basedir}/${testclass}"/>
+            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} ${x10c.debug} ${x10c.cpuprofile} -report postcompile=1 -post '# -I${fftw3.include} ${post.profile} # ${link.mpiPprofile} # -L${fftw3.lib} -lfftw3 ${ld.bgq}' -x10lib ${xla.props} -x10lib ${anuchem.props} -x10lib ${fmm.props} -x10lib ${fftw.props} -sourcepath . -d ${target-src} ${basedir}/${testclass}"/>
         </exec>
     </target>
 
@@ -147,6 +142,13 @@
             <globmapper from="*.x10" to="${target-src}/*.cc" handledirsep="true"/>
         </uptodate>
     </target>
+
+    <target name="test-java" depends="build-src-java">
+        <exec executable="${bash.exe}" failonerror="true" dir="${basedir}">
+            <arg value="-c"/>
+            <arg value="x10 -classpath ${target}/classes -classpath ${anuchem}/src/anuchem.jar -classpath ${xla}/src/xla.jar au.edu.anu.mm.Anumm test/water10.mol"/>
+        </exec>
+    </target>
     
     <target name="build-test" depends="check-test,build-harness" unless="test.uptodate">
         <echo message="Building tests"/>
@@ -164,13 +166,13 @@
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/test">
             <arg value="-c"/>
-            <arg value="'x10c' ${x10c.optimize} -sourcepath .:${basedir}/src:${xre.src}:${xla.src}:${anuchem.src}:${x10.testlib} -classpath ${xre.lib}:${xla.lib}:${anuchem.lib}:${target-src} -commandlineonly -d ${target-test} ${test.list}"/>
+            <arg value="'x10c' ${x10c.optimize} -sourcepath .:${basedir}/src:${xla.src}:${anuchem.src}:${x10.testlib} -classpath ${xla.lib}:${anuchem.lib}:${target-src} -commandlineonly -d ${target-test} ${test.list}"/>
         </exec>
     </target>
 
     <target name="test" depends="build-test">
         <apply executable="x10" failonerror="true" dir="${target-test}" relative="true" addsourcefile="false">
-            <arg line="-t -v -mx 128M -classpath ${xre.lib}:${xla.lib}:${anuchem.lib}:${target-src}:${target-test}"/>
+            <arg line="-t -v -mx 128M -classpath ${xla.lib}:${anuchem.lib}:${target-src}:${target-test}"/>
             <targetfile/>
 
             <fileset dir="${target-test}" includes="**/Test*.java"/>

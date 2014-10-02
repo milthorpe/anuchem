@@ -26,8 +26,8 @@ public class Pong {
         Console.OUT.println("Ping-pong using Remote Array Copy...");
         val dsrc = DistArray.make[Rail[Double]](Dist.makeUnique());
         val ddst = DistArray.make[Rail[Double]](Dist.makeUnique());
-        val dremoteSrc = DistArray.make[Rail[GlobalRail[Double]]](Dist.makeUnique(), (Point)=> new Rail[GlobalRail[Double]](Place.MAX_PLACES));
-        val dremoteDst = DistArray.make[Rail[GlobalRail[Double]]](Dist.makeUnique(), (Point)=> new Rail[GlobalRail[Double]](Place.MAX_PLACES));
+        val dremoteSrc = DistArray.make[Rail[GlobalRail[Double]]](Dist.makeUnique(), (Point)=> new Rail[GlobalRail[Double]](Place.numPlaces()));
+        val dremoteDst = DistArray.make[Rail[GlobalRail[Double]]](Dist.makeUnique(), (Point)=> new Rail[GlobalRail[Double]](Place.numPlaces()));
         for (var s:Long=8; s<=8388608; s *= 2) {
             val size = s;
             // set up arrays at each place
@@ -37,7 +37,7 @@ public class Pong {
             }
             // set up remote handles from each place to arrays at all other places
             finish ateach(place in Dist.makeUnique()) {
-                for (place2 in PlaceGroup.WORLD) {
+                for (place2 in Place.places()) {
                     dremoteSrc(here.id)(place2.id) = at(place2) new GlobalRail[Double](dsrc(here.id));
                     dremoteDst(here.id)(place2.id) = at(place2) new GlobalRail[Double](ddst(here.id));
                 }

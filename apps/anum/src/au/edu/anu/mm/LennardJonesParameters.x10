@@ -14,8 +14,8 @@ package au.edu.anu.mm;
  * Represents the parameters for a Lennard-Jones potential, e.g. to 
  * model the van der Waals interaction between non-bonded particles.
  * @property scale the scale parameter i.e. the exponent of the repulsion term
- * @property vdwBondRadius the van der Waals bond radius or equilibrium separation distance
- * @property vdwWellDepth the van der Waals well depth or minimum energy in hartrees in Angstroms
+ * @property vdwBondRadius the van der Waals bond radius or equilibrium separation distance in Angstroms
+ * @property vdwWellDepth the van der Waals well depth or minimum energy in hartrees
  */
 public struct LennardJonesParameters(description : String, 
                                    scale : Double,

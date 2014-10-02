@@ -16,8 +16,8 @@ import x10x.vector.Vector3d;
 import au.edu.anu.chem.mm.MMAtom;
 
 public class DiatomicForceField implements ForceField {
-    public static SPECIES_H = 0;
-    public static SPECIES_F = 1;
+    public static SPECIES_H = 0n;
+    public static SPECIES_F = 1n;
 
     val diatomicPotentials : Rail[DiatomicPotential];
 

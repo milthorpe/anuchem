@@ -7,7 +7,7 @@
     <property name="x10x.xla" location="../xla"/>
 	<property name="xla.props" location="${x10x.xla}/xla.properties"/>
     <property name="x10home" location="${env.X10_HOME}" />
-    <property name="x10.testlib" location="${env.X10_HOME}/../x10.tests/tests/x10lib"/>
+    <property name="x10.testlib" location="${env.X10_HOME}/x10.tests/tests/x10lib"/>
     <property name="bash.exe" value="bash"/>
     <property name="papi" value="false" />
     <property name="x10papi" location="../papi_wrapper"/>

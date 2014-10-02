@@ -14,17 +14,50 @@ import x10.compiler.Inline;
  * Benchmarks simple DAXPY operation
  * @author milthorpe 07/2013
  */
-public class Daxpy(N:Int) {
+public class Daxpy(N:Long) {
     private static ITERS = 1000;
 
-    public def this(N:Int) {
+    public def this(N:Long) {
         property(N);
     }
 
     private def daxpy(alpha:Double, x:Rail[Double], y:Rail[Double]) {
-        for (i in 0..(x.size-1)) {
+        val start = 0;
+        val end = x.size-1;
+/*
+        for (i in start..end) {
             x(i) = alpha * x(i) + y(i);
         }
+*/
+        val body = (min_i:Long, max_i:Long) => {
+            for (i in min_i..max_i) {
+                x(i) = alpha * x(i) + y(i);
+            }
+        };
+/*
+        body(start, end);
+*/
+/*
+        // infeasible
+        finish for (i in start..end) {
+            async body(i, i);
+        }
+*/
+/*
+        val numElem = end - start + 1;
+        val blockSize = numElem / Runtime.NTHREADS;
+        val leftOver = numElem % Runtime.NTHREADS;
+        finish for (var t:Long=Runtime.NTHREADS-1; t>=0; t--) {
+            val tMin_i = start + t <= leftOver ? t*(blockSize+1) : t*blockSize + leftOver;
+            val tMax_i = tMin_i + ((t < leftOver) ? (blockSize+1) : blockSize) - 1;
+            async {
+                body(tMin_i, tMax_i);
+            }
+        }
+*/
+
+        finish RecursiveBisection1D(start, end+1).execute(body);
+
     }
 
 	public def testAll() {
@@ -43,11 +76,33 @@ public class Daxpy(N:Int) {
 	}
 
 	public static def main(args:Rail[String]): void = {
-        var size:Int = 100000;
+        var size:Long = 100000;
         var print:Boolean = false;
         if (args.size > 0) {
-            size = Int.parse(args(0));
+            size = Long.parse(args(0));
         }
 		new Daxpy(size).testAll();
 	}
+
+    private static struct RecursiveBisection1D(start:Long, end:Long, grainSize:Long) {
+        public def this(start:Long, end:Long) {
+            val grainSize = (end-start) / (Runtime.NTHREADS*8);
+            property(start, end, grainSize);
+        }
+
+        public def this(start:Long, end:Long, grainSize:Long) {
+            property(start, end, grainSize);
+        }
+
+        public def execute(body:(min_i:Long, max_i:Long)=> void) {
+            if ((end-start) > grainSize) {
+                val secondHalf=RecursiveBisection1D((start+end)/2L, end, grainSize);
+                async secondHalf.execute(body);
+                val firstHalf=RecursiveBisection1D(start, (start+end)/2L, grainSize);
+                firstHalf.execute(body);
+            } else {
+                body(start, end-1);
+            }
+        }
+    }
 }

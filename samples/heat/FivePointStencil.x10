@@ -9,24 +9,27 @@
  * (C) Copyright Josh Milthorpe 2011.
  */
 
+import x10.array.Array_2;
+import x10.array.DenseIterationSpace_2;
+
 /**
  * Implements a five-point Laplacian 2D array stencil,
  * similar to the HeatTransfer example from the X10 2.1 tutorial
- * @see http://x10-lang.org/documentation/tutorials/sc2010-tutorial.html
+ * @see http://x10.sourceforge.net/tutorials/x10-2.1/SC_2010/SC10_tut143_X10_Tutorial_final_v3.html
  * @author milthorpe 05/2011
  */
-public class FivePointStencil(N : Int) {
+public class FivePointStencil(N:Long) {
     static val EPSILON = 1.0e-5;
     static val TIME_STEPS = 1000;
-    val innerRegion : Region(2){rect};
-    var current : Array[Double](2){rect,zeroBased};
-    var previous : Array[Double](2){rect,zeroBased};
+    val innerRegion:DenseIterationSpace_2;
+    var current:Array_2[Double];
+    var previous:Array_2[Double];
 
-    public def this(N : Int) {
+    public def this(N:Long) {
         property(N);
-        innerRegion  = 1..(N-2) * 1..(N-2);
-        current = new Array[Double](0..(N-1) * 0..(N-1));
-        previous = new Array[Double](0..(N-1) * 0..(N-1));
+        innerRegion  = new DenseIterationSpace_2(1, N-2, 1, N-2);
+        current = new Array_2[Double](N-1, N-1);
+        previous = new Array_2[Double](N-1, N-1);
     }
 
     /**
@@ -35,11 +38,11 @@ public class FivePointStencil(N : Int) {
      * and returns the maximum change in value between previous and current
      * for any point.
      */
-    def stencil() : Double {
+    def stencil():Double {
         val temp = previous;
         previous = current;
         current = temp;
-        var maxDelta : Double = 0;
+        var maxDelta:Double = 0;
         for ([x,y] in innerRegion) {
             current(x,y) = (previous(x, y+1)
                         + previous(x, y-1)
@@ -53,14 +56,14 @@ public class FivePointStencil(N : Int) {
     /**
      * A single-place parallel version of <code>stencil()</code>.
      */
-    def parallelStencil() : Double {
+    def parallelStencil():Double {
         val temp = previous;
         previous = current;
         current = temp;
-        var maxDelta : Double = 0;
-        finish for ([x] in 1..(N-2)) async {
-            var localMax : Double = 0.0;
-            for ([y] in 1..(N-2)) {
+        var maxDelta:Double = 0;
+        finish for (x in 1..(N-2)) async {
+            var localMax:Double = 0.0;
+            for (y in 1..(N-2)) {
                 current(x,y) = (previous(x, y+1)
                             + previous(x, y-1)
                             + previous(x+1, y)
@@ -76,19 +79,21 @@ public class FivePointStencil(N : Int) {
      * A single-place parallel version of <code>stencil()</code>,
      * using collecting finish for the max change in temp.
      */
-    def parallelCollectingStencil() : Double {
+    def parallelCollectingStencil():Double {
         val temp = previous;
         previous = current;
         current = temp;
         val maxDelta = finish (MaxReducer()) {
-            for ([x] in 1..(N-2)) async {
-                for ([y] in 1..(N-2)) {
+            for (x in 1..(N-2)) async {
+                var localMax:Double = 0.0;
+                for (y in 1..(N-2)) {
                     current(x,y) = (previous(x, y+1)
                                 + previous(x, y-1)
                                 + previous(x+1, y)
                                 + previous(x-1, y)) / 4.0;
-                    offer (current(x,y) - previous(x,y));
+                    localMax = Math.max(localMax, Math.abs(current(x,y) - previous(x,y)));
                 }
+                offer localMax;
             }
         };
         return maxDelta;
@@ -100,7 +105,7 @@ public class FivePointStencil(N : Int) {
     }
 
     def initialise() {
-        val topEdge = 0..0 * 0..(N-1);
+        val topEdge = new DenseIterationSpace_2(0, 0, 0, N-1);
         for(p in topEdge) {
             current(p) = 1.0;
             previous(p) = 1.0;
@@ -123,7 +128,7 @@ public class FivePointStencil(N : Int) {
 	public def run(): Boolean = {
         initialise();
         val start = System.nanoTime();
-        for ([t] in 1..TIME_STEPS) {
+        for (t in 1..TIME_STEPS) {
             val maxDelta = stencil();
             if (maxDelta < EPSILON) {
                 Console.OUT.println("converged after " + t + " time steps");
@@ -136,7 +141,7 @@ public class FivePointStencil(N : Int) {
 
         initialise();
         val start2 = System.nanoTime();
-        for ([t] in 1..TIME_STEPS) {
+        for (t in 1..TIME_STEPS) {
             val maxDelta = parallelStencil();
             if (maxDelta < EPSILON) {
                 Console.OUT.println("converged after " + t + " time steps");
@@ -148,7 +153,7 @@ public class FivePointStencil(N : Int) {
 
         initialise();
         val start3 = System.nanoTime();
-        for ([t] in 1..TIME_STEPS) {
+        for (t in 1..TIME_STEPS) {
             val maxDelta = parallelCollectingStencil();
             if (maxDelta < EPSILON) {
                 Console.OUT.println("converged after " + t + " time steps");
@@ -161,10 +166,10 @@ public class FivePointStencil(N : Int) {
         return true;
 	}
 
-	public static def main(var args: Array[String](1)): void = {
-        var elementsPerPlace : Int = 512;
+	public static def main(args:Rail[String]):void = {
+        var elementsPerPlace:Long = 512;
         if (args.size > 0) {
-            elementsPerPlace = Int.parse(args(0));
+            elementsPerPlace = Long.parse(args(0));
         }
 		new FivePointStencil(elementsPerPlace).run();
 	}

@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE project [<!ENTITY buildfile SYSTEM "file:./build-user.xml">]>
 <project name="X10 application project" default="test" basedir=".">
+    <property environment="env"/>
+    <fail unless="env.X10_HOME" message="Environment variable X10_HOME is not set."/>
+
     <property name="bash.exe" value="bash"/>  
 
     <target name="test" depends="test-fmm,test-pme,test-pumjarasaayani" />
@@ -65,6 +68,14 @@
             <arg value="-c"/>
             <arg value="X10_NTHREADS=1 bin/pumjarasaayani test/H2O-321g.inp"/>
         </exec>
+    </target>
+
+
+    <target name="srctar">
+        <fail unless="env.X10_VERSION" message="Environment variable X10_VERSION is not set."/>
+        <tar destfile="anuchem-${env.X10_VERSION}-src.tar.bz2" compression="bzip2" longfile="gnu">
+            <tarfileset dir="${basedir}" excludes="**/*.bz2,.hg/**,**/.hg*,**/bin,**/target,**/include,**/lib,**/*.jar"/>
+        </tar>
     </target>
 
 </project>
