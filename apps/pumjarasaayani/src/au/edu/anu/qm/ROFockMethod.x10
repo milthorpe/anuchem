@@ -29,7 +29,7 @@ import au.edu.anu.qm.ShellPair;
 import au.edu.anu.util.ExecutionEnvironment;
 import au.edu.anu.util.StatisticalTimer;
 
-import edu.utk.cs.papi.PAPI;
+//import edu.utk.cs.papi.PAPI;
 
 public class ROFockMethod(N:Long) {
     // Timer & PAPI performance counters
@@ -43,7 +43,7 @@ public class ROFockMethod(N:Long) {
     val TIMER_DGEMM=6;
     val TIMER_GATHER=7;
 
-    transient var papi:PAPI=new PAPI(); // @Ifdef("__PAPI__") // XTENLANG-3132
+//    transient var papi:PAPI=new PAPI(); // @Ifdef("__PAPI__") // XTENLANG-3132
 
     val halfAuxMat:DistDenseMatrix, distJ:DistDenseMatrix, distK:DistDenseMatrix;
     val auxJ_plh:PlaceLocalHandle[Rail[Rail[Double]]], auxKIdx_plh:PlaceLocalHandle[Rail[Long]], remoteBlockK_plh:PlaceLocalHandle[RemoteBlock], ylms_plh:PlaceLocalHandle[Rail[Rail[Double]]], shellPairs_plh:PlaceLocalHandle[Rail[ShellPair]];
@@ -334,7 +334,7 @@ public class ROFockMethod(N:Long) {
 
         timer.stop(0);
         Console.OUT.printf("    ROFockMethod Initialization 'total' time: %.3f seconds\n", (timer.total(0) as Double) / 1e9);
-        @Ifdef("__PAPI__") { papi.initialize(); papi.countFlops(); papi.countMemoryOps(); }
+//        @Ifdef("__PAPI__") { papi.initialize(); papi.countFlops(); papi.countMemoryOps(); }
         @Ifdef("__DEBUG__") { ExecutionEnvironment.printThreadingVariables(); }
     }
 
@@ -513,7 +513,7 @@ public class ROFockMethod(N:Long) {
         Console.OUT.printf("eTwo= %.10f EJ= %.10f EK= %.10f\n", eTwo, eJ, eK);
         Console.OUT.printf("    Time to construct GMatrix with RO: %.3f seconds\n", (timer.last(TIMER_TOTAL) as Double) / 1e9); 
 
-        @Ifdef("__PAPI__"){ papi.printFlops(); papi.printMemoryOps();}
+//        @Ifdef("__PAPI__"){ papi.printFlops(); papi.printMemoryOps();}
     }
 
     /** Compute trace of product of symmetric matrices a,b: trace(a &#42; b) */
