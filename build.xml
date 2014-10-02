@@ -8,7 +8,7 @@
 
     <target name="test" depends="test-fmm,test-pme,test-pumjarasaayani" />
 
-    <target name="build" depends="xla,anu-chem,anum,fmm,pme,pumjarasaayani" />
+    <target name="build" depends="xla,anu-chem,anumm,fmm,pme,pumjarasaayani" />
 
     <target name="anu-chem" description="Build the ANUChem shared library" depends="xla">
         <ant dir="anu-chem" antfile="build.xml" />
@@ -34,8 +34,8 @@
         <ant antfile="build.xml" dir="apps/fmm" target="buildx10lib-cpp"/>
     </target>
 
-    <target name="anum" description="Build the ANU Molecular Mechanics app code" depends="anu-chem,xla,fftw_wrapper,fmm-x10lib-cpp">
-        <ant antfile="build.xml" dir="apps/anum" target="build"/>
+    <target name="anumm" description="Build the ANU Molecular Mechanics app code" depends="anu-chem,xla,fftw_wrapper,fmm-x10lib-cpp">
+        <ant antfile="build.xml" dir="apps/anumm" target="build"/>
     </target>
 
 	<target name="test-fmm" depends="fmm"
