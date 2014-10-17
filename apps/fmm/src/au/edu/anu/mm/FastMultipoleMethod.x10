@@ -407,13 +407,7 @@ public class FastMultipoleMethod {
             //Console.OUT.println("sorting atom in octant " + mortonId);
         }
         //Console.OUT.println("filled " + filled + " octants");
-        val scan = (op:(Long,Long)=>Long, init:Long, v:Rail[Long]) =>
-        {
-            for (i in 1..(v.size-1)) {
-                v(i) = op(v(i-1),v(i));
-            }
-        };
-        scan((a:Long,b:Long)=>a+b, 0L, octantLoads);
+        RailUtils.scan(octantLoads, octantLoads, (a:Long,b:Long)=>a+b, 0L);
         
         val sortedAtoms = new Rail[Pair[UInt,MMAtom]](octantLoads(octantLoads.size-1) as Int);
         for (var i:Long=localAtoms.size-1; i>=0; i--) {
@@ -517,54 +511,52 @@ public class FastMultipoleMethod {
     private def redistributeOctantsLocal(octantAtoms:ArrayList[Pair[UInt,ArrayList[MMAtom]]]) {
         val local = FastMultipoleMethod.localData;
         local.timer.start(FmmLocalData.TIMER_INDEX_REDIST);
-        if (Place.numPlaces() > 1) {  
-            val firstLeafOctant = local.firstLeafOctant;
-            val levelBytes = (dMax as UInt << 24);
-            finish for (var p:Long = here.id+1; p!=here.id && octantAtoms.size() > 0; p=(p+1)%Place.numPlaces()) {
-                val destPlace = Place(p);
-                val placeStart = firstLeafOctant(p);
-                val placeEnd = firstLeafOctant(p+1);
-                //Console.OUT.println("at " + here + " sending octants between " + placeStart + " and " + placeEnd + " to " + destPlace);
+        val firstLeafOctant = local.firstLeafOctant;
+        val levelBytes = (dMax as UInt << 24);
+        finish for (var p:Long = here.id+1; p!=here.id && octantAtoms.size() > 0; p=(p+1)%Place.numPlaces()) {
+            val destPlace = Place(p);
+            val placeStart = firstLeafOctant(p);
+            val placeEnd = firstLeafOctant(p+1);
+            //Console.OUT.println("at " + here + " sending octants between " + placeStart + " and " + placeEnd + " to " + destPlace);
 
-                // redistribute octant atoms
-                var end:Long = octantAtoms.size()-1;
-                while (end >= 0 && octantAtoms(end).first >= placeEnd) end--;
-                var start:Long = end;
-                while (start >= 0 && octantAtoms(start).first >= placeStart) start--;
-                ++start;
+            // redistribute octant atoms
+            var end:Long = octantAtoms.size()-1;
+            while (end >= 0 && octantAtoms(end).first >= placeEnd) end--;
+            var start:Long = end;
+            while (start >= 0 && octantAtoms(start).first >= placeStart) start--;
+            ++start;
 
-                //Console.OUT.println("at " + here + " sending idx " + start+" ... "+end +" to " + destPlace);
+            //Console.OUT.println("at " + here + " sending idx " + start+" ... "+end +" to " + destPlace);
 
-                val atomsToSend = octantAtoms.moveSectionToRail(start, end);
-                if (atomsToSend.size > 0) {
-                   //Console.OUT.println("at " + here + " sending " + atomsToSend(0).first+" ... "+atomsToSend(atomsToSend.size-1).first+" to " + destPlace);
-                   at(destPlace) async {
-                        addAtomsToLocalOctants(atomsToSend);
-                    }
+            val atomsToSend = octantAtoms.moveSectionToRail(start, end);
+            if (atomsToSend.size > 0) {
+               //Console.OUT.println("at " + here + " sending " + atomsToSend(0).first+" ... "+atomsToSend(atomsToSend.size-1).first+" to " + destPlace);
+               at(destPlace) async {
+                    addAtomsToLocalOctants(atomsToSend);
                 }
             }
-            Team.WORLD.barrier();
+        }
+        Team.WORLD.barrier();
 
-            // add remaining octants not moved from this place
-            val octants = local.octants;
-            for (octantPair in octantAtoms) {
-                val leafMortonId = octantPair.first;
-                val mortonId = leafMortonId | (dMax as UInt << 24);
-                val atoms = octantPair.second;
-                var leafOctant:LeafOctant = octants.getOrElse(mortonId, null) as LeafOctant;
-                if (leafOctant == null) {
-                    //Console.OUT.println("octant " + OctantId.getFromMortonId(mortonId) + " stays at " + here + " adding " + atoms.size() + " atoms");
-                    leafOctant = new LeafOctant(OctantId.getFromMortonId(mortonId), numTerms, ws, dMax);
-                    leafOctant.atoms = atoms;
-                    octants.put(mortonId, leafOctant);
-                } else {
-                    //Console.OUT.println("octant " + OctantId.getFromMortonId(mortonId) + " previously created at " + here + " adding " + atoms.size() + " atoms");
-                    for (atom in atoms) {
-                        leafOctant.atoms.add(atom);
-                    }
+        // add remaining octants not moved from this place
+        val octants = local.octants;
+        for (octantPair in octantAtoms) {
+            val leafMortonId = octantPair.first;
+            val mortonId = leafMortonId | (dMax as UInt << 24);
+            val atoms = octantPair.second;
+            var leafOctant:LeafOctant = octants.getOrElse(mortonId, null) as LeafOctant;
+            if (leafOctant == null) {
+                //Console.OUT.println("octant " + OctantId.getFromMortonId(mortonId) + " stays at " + here + " adding " + atoms.size() + " atoms");
+                leafOctant = new LeafOctant(OctantId.getFromMortonId(mortonId), numTerms, ws, dMax);
+                leafOctant.atoms = atoms;
+                octants.put(mortonId, leafOctant);
+            } else {
+                //Console.OUT.println("octant " + OctantId.getFromMortonId(mortonId) + " previously created at " + here + " adding " + atoms.size() + " atoms");
+                for (atom in atoms) {
+                    leafOctant.atoms.add(atom);
                 }
-                //Console.OUT.println("now at " + here + " octant " + mortonId);
             }
+            //Console.OUT.println("now at " + here + " octant " + mortonId);
         }
         local.timer.stop(FmmLocalData.TIMER_INDEX_REDIST);
     }
