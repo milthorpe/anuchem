@@ -407,7 +407,13 @@ public class FastMultipoleMethod {
             //Console.OUT.println("sorting atom in octant " + mortonId);
         }
         //Console.OUT.println("filled " + filled + " octants");
-        RailUtils.scan(octantLoads, octantLoads, (a:Long,b:Long)=>a+b, 0L);
+        val scan = (op:(Long,Long)=>Long, init:Long, v:Rail[Long]) =>
+        {
+           for (i in 1..(v.size-1)) {
+              v(i) = op(v(i-1),v(i));
+           }
+        };
+        scan((a:Long,b:Long)=>a+b, 0L, octantLoads);
         
         val sortedAtoms = new Rail[Pair[UInt,MMAtom]](octantLoads(octantLoads.size-1) as Int);
         for (var i:Long=localAtoms.size-1; i>=0; i--) {
