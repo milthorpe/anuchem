@@ -82,7 +82,7 @@ public class FmmLocalData {
         this.dMax = dMax;
         this.size = size;
         fmmOperators = new FmmOperators(numTerms, ws);
-        val maxLeafOctants = Math.pow(8.0, dMax) as Int;
+        val maxLeafOctants = Math.pow(8.0, dMax as Int) as Int;
         octantLoads = new Rail[Long](maxLeafOctants);
         // TODO construct LET
     }
