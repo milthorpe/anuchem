@@ -10,15 +10,16 @@
  */
 package au.edu.anu.mm.uff;
 
-import x10.regionarray.DistArray;
+import x10.regionarray.Dist;
 import x10.util.HashMap;
 import x10.util.Pair;
 import x10x.vector.Vector3d;
+import au.edu.anu.mm.BondStretchParameters;
 import au.edu.anu.mm.ForceField;
 import au.edu.anu.mm.LennardJonesParameters;
+import au.edu.anu.mm.ParticleData;
 import au.edu.anu.mm.SpeciesSpec;
 import au.edu.anu.chem.BondType;
-import au.edu.anu.chem.mm.MMAtom;
 
 public class UniversalForceField implements ForceField {
     public static SPECIES_H = 1;
@@ -28,13 +29,22 @@ public class UniversalForceField implements ForceField {
 
     val BOND_ORDER_PROPORTIONALITY_CONSTANT = -0.1332;
 
-    val defaultParams = UffParameters("default", 1.0, 0.0, 0.0, LennardJonesParameters("default", 0.0, 0.0, 0.0), 0.0, 0.0);
     val atomParameters:Rail[UffParameters];
 
-    /* The potential of the system as calculated by this force field.
-       TODO should be shared var within getPotentialAndForces
-     */
-    var energy : Double = 0.0;
+    val bondTypes:Rail[BondType] = [BondType.NO_BOND, 
+                                    BondType.WEAK_BOND,
+                                    BondType.SINGLE_BOND,
+                                    BondType.DOUBLE_BOND,
+                                    BondType.TRIPLE_BOND,
+                                    BondType.QUADRUPLE_BOND,
+                                    BondType.AROMATIC_BOND,
+                                    BondType.AMIDE_BOND,
+                                    BondType.IONIC_BOND];
+
+    public static BOND_TYPE_INDEX_SINGLE   = 2n;
+    public static BOND_TYPE_INDEX_DOUBLE   = 3n;
+    public static BOND_TYPE_INDEX_TRIPLE   = 4n;
+    public static BOND_TYPE_INDEX_AROMATIC = 6n;
 
     public def this() {
         atomParameters = new Rail[UffParameters](9);
@@ -45,7 +55,7 @@ public class UniversalForceField implements ForceField {
         atomParameters(SPECIES_O) = UffParameters("O", 15.9994, 0.658, 104.51, LennardJonesParameters("O_3", 14.085, 3.500, 0.060), 2.300, 8.741);
     }
 
-    public def getSpecies() {
+    public def getSpeciesSpecs() {
         val specs = new Rail[SpeciesSpec](atomParameters.size);
         for (i in 0..(atomParameters.size-1)) {
             val atom = atomParameters(i);
@@ -59,88 +69,94 @@ public class UniversalForceField implements ForceField {
     public def getAtomMass(species:Int) : Double {
         return atomParameters(species).mass;
     }
+
+    public def getBondTypeIndex(species1:Int, species2:Int, structureFileType:Int):Int {
+        var bondTypeIndex:Int;
+        switch (structureFileType) {
+            case (1n):
+                bondTypeIndex = UniversalForceField.BOND_TYPE_INDEX_SINGLE;
+                break;
+            case (2n):
+                bondTypeIndex = UniversalForceField.BOND_TYPE_INDEX_DOUBLE;
+                break;
+            case (3n):
+                bondTypeIndex = UniversalForceField.BOND_TYPE_INDEX_TRIPLE;
+                break;
+            case (4n):
+                bondTypeIndex = UniversalForceField.BOND_TYPE_INDEX_AROMATIC;
+                break;
+            default:
+                Console.ERR.println("Bond type " + structureFileType + " not found. Defaulting to single bond.");
+                bondTypeIndex = UniversalForceField.BOND_TYPE_INDEX_SINGLE;
+        }
+        return bondTypeIndex;
+    }
     
-    public def getPotentialAndForces(atoms: DistArray[Rail[MMAtom]](1)) : Double {
+    public def getPotentialAndForces(particleDataPlh:PlaceLocalHandle[ParticleData]):Double {
         val energy = finish(SumReducer()) {
-            ateach(p in atoms) { 
+            ateach(p in Dist.makeUnique()) {
+                val particleData = particleDataPlh();
+
                 var myEnergy : Double = 0.0;
-                val myAtoms = atoms(p);
-                for (i in 0..(myAtoms.size-1)) {
-                    val atomI = myAtoms(i);
-                    // bond stretching
-                    if (atomI.getBonds() != null) {
-                        for (bond in atomI.getBonds()) {
-                            if (bond.first.isStrongBond()) {
-                                val atomJ = bond.second as MMAtom;
-                                val paramsI = atomParameters(atomI.species);
-                                val paramsJ = atomParameters(atomJ.species);
-                                val bondStretch = getBondStretchTerm(bond.first, atomI, paramsI, atomJ, paramsJ);
-                                myEnergy += bondStretch;
-                            }
-                        }
-                    }
-                    // TODO angle, torsion, inversion, non-bonded terms
-                }
+
+                myEnergy += bondStretching(particleData);
+
+                // TODO angle, torsion, inversion, non-bonded terms
                 offer myEnergy;
             }
         };
         return energy;
     }
 
-    /**
-     * @param bond the bond type e.g. single, double, aromatic
-     * @param atomI first atom
-     * @param atomJ second atom
-     * @param paramsI the UFF parameters for the first atom
-     * @param paramsI the UFF parameters for the second atom
-     * @return the bond stretch contribution (in Hartrees)
-     */
-    private def getBondStretchTerm(bond : BondType,
-                                               atomI : MMAtom, paramsI : UffParameters,
-                                               atomJ : MMAtom, paramsJ : UffParameters) {
-        val direction = atomJ.centre - atomI.centre;
-        val distance = direction.lengthSquared();
-        val naturalDistance = getNaturalBondRadius(bond, atomI, paramsI, atomJ, paramsJ);
-        //Console.OUT.println("naturalDistance = " + naturalDistance);
 
-        // eq. 6 of UFF
-        val forceConstant = paramsI.effectiveCharge * paramsJ.effectiveCharge /
-                (naturalDistance * naturalDistance * naturalDistance);
-        //Console.OUT.println("direction: " + direction + " forceConstant = " + forceConstant);
-        val stretch = distance - naturalDistance;
+    private def bondStretching(particleData:ParticleData):Double {
+        var energy:Double = 0.0;
+        val bonds = particleData.bonds;
+        for (bond in bonds) {
+            val atom1Center = particleData.x(bond.atom1Index);
+            val atom2Center = particleData.x(bond.atom2Index);
 
-        val force = direction.normalize() * (2.0 * forceConstant * stretch);
-        //Console.OUT.println("bond stretching force: " + force);
-        atomI.force = atomI.force + force;
-        atomJ.force = atomJ.force + force.negate();
+            val bondParams = getBondStretchParameters(particleData.species(bond.atom1Index), particleData.species(bond.atom2Index), bond.typeIndex);
 
-        // eq. 1a of UFF
-        return forceConstant * stretch * stretch;
+            //Console.OUT.println("atom1 species " + bondParams.species1 + " " + atom1Center);
+            //Console.OUT.println("atom2 species " + bondParams.species2 + " " + atom2Center);
+            //Console.OUT.printf("ideal radius %10.6f forceConstant %10.6f\n", bondParams.idealRadius, bondParams.forceConstant);
+
+            val direction = atom2Center - atom1Center;
+            val distance = direction.lengthSquared();
+
+            val stretch = distance - bondParams.idealRadius;
+            //Console.OUT.printf("stretch  %10.6f direction %10.6f %10.6f %10.6f\n", stretch, direction.i, direction.j, direction.k);
+            val force = direction.normalize() * (bondParams.forceConstant * stretch);
+            //Console.OUT.printf("bond stretching force %10.6f %10.6f %10.6f\n", force.i, force.j, force.k);
+
+            particleData.fx(bond.atom1Index) += force;
+            particleData.fx(bond.atom2Index) -= force;
+
+            energy += 0.5 * bondParams.forceConstant * stretch * stretch;
+        }
+        return energy;
     }
 
-    /**
-     * Get the natural bond radius for bonded atoms, which is the sum of the
-     * bond radii of the two atoms, plus a bond order correction, minus an
-     * electronegativity correction.  See eq. 2 of UFF.
-     * NOTE: there is a typo in the UFF paper, it suggests the electronegativity
-     * correction should be added.
-     * see http://towhee.sourceforge.net/forcefields/uff.html
-     * @param bond the bond type e.g. single, double, aromatic
-     * @param atomI first atom
-     * @param atomJ second atom
-     * @param paramsI the UFF parameters for the first atom
-     * @param paramsI the UFF parameters for the second atom
-     * @return the natural bond radius between the atoms
-     */
-    private def getNaturalBondRadius(bond : BondType, 
-                                                atomI : MMAtom, paramsI : UffParameters,
-                                               atomJ : MMAtom, paramsJ : UffParameters) {
+    private def getBondStretchParameters(species1:Int, species2:Int, bondTypeIndex:Int) {
+        val bondType = bondTypes(bondTypeIndex);
+        val paramsI = atomParameters(species1);
+        val paramsJ = atomParameters(species2);
+
+        /*
+         * Get the natural bond radius for bonded atoms, which is the sum of the
+         * bond radii of the two atoms, plus a bond order correction, minus an
+         * electronegativity correction.  See eq. 2 of UFF.
+         * NOTE: there is a typo in the UFF paper, it suggests the electronegativity
+         * correction should be added.
+         * see http://towhee.sourceforge.net/forcefields/uff.html
+         */
         val radiusI = paramsI.bondRadius;
         val radiusJ = paramsJ.bondRadius;
         val naturalRadius = radiusI + radiusJ;
         //Console.OUT.println("naturalRadius = " + naturalRadius);
         // eq. 3 of UFF
-        val bondOrderCorrection = BOND_ORDER_PROPORTIONALITY_CONSTANT * naturalRadius * Math.log(bond.bondOrder);
+        val bondOrderCorrection = BOND_ORDER_PROPORTIONALITY_CONSTANT * naturalRadius * Math.log(bondType.bondOrder);
         //Console.OUT.println("bondOrderCorrection = " + bondOrderCorrection);
         val chiI = paramsI.electronegativity;
         val chiJ = paramsJ.electronegativity;
@@ -148,7 +164,13 @@ public class UniversalForceField implements ForceField {
         // eq. 4 of UFF
         val electronegativityCorrection = radiusI * radiusJ * (dSqrtChi * dSqrtChi) / (chiI * radiusI + chiJ * radiusJ);
 
-        return (naturalRadius + bondOrderCorrection - electronegativityCorrection);
+        val idealRadius = (naturalRadius + bondOrderCorrection - electronegativityCorrection);
+
+        // eq. 6 of UFF
+        val forceConstant = paramsI.effectiveCharge * paramsJ.effectiveCharge /
+                (idealRadius * idealRadius * idealRadius);
+
+        return BondStretchParameters(species1, species2, idealRadius, forceConstant);
     }
 
     static struct SumReducer implements Reducible[Double] {

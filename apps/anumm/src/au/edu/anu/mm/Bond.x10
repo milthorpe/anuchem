@@ -6,9 +6,12 @@
  *  You may obtain a copy of the License at
  *      http://www.opensource.org/licenses/eclipse-1.0.php
  *
- * (C) Copyright Australian National University 2013.
  *  (C) Copyright IBM Corporation 2014.
  */
 package au.edu.anu.mm;
 
-public struct SpeciesSpec(name:String, mass:Double, charge:Double, atomicNumber:Int) { }
+/**
+ * A bond between two atoms.
+ * @property typeIndex the index of the bond type in a list of all bond types
+ */
+public struct Bond(atom1Index:Long, atom2Index:Long, typeIndex:Int) { }

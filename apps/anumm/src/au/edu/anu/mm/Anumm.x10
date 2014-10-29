@@ -17,8 +17,6 @@ import x10.io.IOException;
 
 import x10x.vector.Vector3d;
 
-import au.edu.anu.chem.Molecule;
-import au.edu.anu.chem.mm.MMAtom;
 import au.edu.anu.util.Timer;
 import au.edu.anu.mm.uff.UniversalForceField;
 
@@ -27,23 +25,21 @@ import au.edu.anu.mm.uff.UniversalForceField;
  * Performs molecular mechanics using the velocity-Verlet algorithm.
  */
 public class Anumm {
-    /** The atoms in the simulation, divided up into a distributed array of Arrays, one for each place. */
-    private val atoms:DistArray[Rail[MMAtom]](1);
+    /** The particle data for the simulation, of which each place holds a portion. */
+    private val particleDataPlh:PlaceLocalHandle[ParticleData];
 
     /** The force field applied to the atoms in this simulation. */
     private val forceField:ForceField;
 
     private val verbose:Boolean;
 
-    public def this(atoms:DistArray[Rail[MMAtom]](1),
+    public def this(particleDataPlh:PlaceLocalHandle[ParticleData],
                     forceField:ForceField,
                     verbose:Boolean) {
-        this.atoms = atoms;
+        this.particleDataPlh = particleDataPlh;
         this.forceField = forceField;
         this.verbose = verbose;
     }
-
-    public def getAtoms() = atoms;
 
     /**
      * Perform a molecular mechanics run on the system of atoms
@@ -58,7 +54,7 @@ public class Anumm {
         if (verbose) {
             Console.OUT.printf("\n%.3f ", 0.0); // starting timestep
         }
-        forceField.getPotentialAndForces(atoms); // get initial forces
+        forceField.getPotentialAndForces(particleDataPlh); // get initial forces
 
         while(step < numSteps) {
             step++;
@@ -70,11 +66,10 @@ public class Anumm {
         if (verbose) {
             Console.OUT.println("\n# final positions:");
             finish for(place in Place.places()) at(place) {
-                val myAtoms = atoms(here.id);
+                val particleData = particleDataPlh();
                 // print final positions
-                for (i in 0..(myAtoms.size-1)) {
-                    val atom = myAtoms(i);
-                    Console.OUT.println(atom.species+ " " + atom.centre.i + " " + atom.centre.j + " " + atom.centre.k + " ");
+                for (i in 0..(particleData.numAtoms-1)) {
+                    Console.OUT.println(particleData.species(i)+ " " + particleData.x(i));
                 }
             }
         }
@@ -87,25 +82,23 @@ public class Anumm {
      */
     public def mdStep(timestep : Double) {
         val t = timestep * 0.001;
-        finish ateach([p] in atoms) {
-            val myAtoms = atoms(p);
-            for (i in 0..(myAtoms.size-1)) {
-                val atom = myAtoms(i);
-                val invMass = 1.0 / forceField.getAtomMass(atom.species);
-                atom.velocity = atom.velocity + 0.5 * t * invMass * atom.force;
-                atom.centre = atom.centre + atom.velocity * t;
-                atom.force = Vector3d.NULL; // zero before next force calculation
-                //Console.OUT.print(atom.centre.i + " " + atom.centre.j + " " + atom.centre.k + " ");
+        finish ateach(place in Dist.makeUnique()) {
+            val particleData = particleDataPlh();
+            for (i in 0..(particleData.numAtoms-1)) {
+                val invMass = 1.0 / forceField.getAtomMass(particleData.species(i));
+                particleData.dx(i) = particleData.dx(i) + 0.5 * t * invMass * particleData.fx(i);
+                particleData.x(i) = particleData.x(i) + particleData.dx(i) * t;
+                particleData.fx(i) = Vector3d.NULL; // zero before next force calculation
+                Console.OUT.print(particleData.x(i) + " ");
             }
         }
-        forceField.getPotentialAndForces(atoms);
-        finish ateach([p] in atoms) {
-            val myAtoms = atoms(p);
-            for (i in 0..(myAtoms.size-1)) {
-                val atom = myAtoms(i);
-                val invMass = 1.0 / forceField.getAtomMass(atom.species);
-                atom.velocity = atom.velocity + 0.5 * t * invMass * atom.force;
-                //Console.OUT.print(atom + " ");
+        forceField.getPotentialAndForces(particleDataPlh);
+        finish ateach(place in Dist.makeUnique()) {
+            val particleData = particleDataPlh();
+            for (i in 0..(particleData.numAtoms-1)) {
+                val invMass = 1.0 / forceField.getAtomMass(particleData.species(i));
+                particleData.dx(i) = particleData.dx(i) + 0.5 * t * invMass * particleData.fx(i);
+                //Console.OUT.print(particleData.dx(i) + " ");
             }
         }
     }
@@ -127,33 +120,43 @@ public class Anumm {
             return;
         }
 
-        val uff = new UniversalForceField();
+        var ff:ForceField = null;
+        val particleDataPlh = PlaceLocalHandle.make[ParticleData](Place.places(), ()=> new ParticleData());
 
-        val dummySpeciesList = uff.getSpecies();
-        var moleculeTemp : Molecule[MMAtom] = null;
+        val particleData = particleDataPlh();
         if (structureFileName.length() > 4) {
             val fileExtension = structureFileName.substring(structureFileName.length()-4n, structureFileName.length());
             if (fileExtension.equals(".xyz")) {
+                ff = new UniversalForceField();
                 try {
-                    moleculeTemp = new XYZStructureFileReader(structureFileName).readMolecule(dummySpeciesList);
+                    new XYZStructureFileReader(structureFileName).readParticleData(particleData, ff);
                 } catch (e:IOException) {
                     Console.ERR.println(e);
                 }
             } else if (fileExtension.equals(".mol") || fileExtension.equals(".sdf")) {
+                ff = new UniversalForceField();
                 try {
-                    moleculeTemp = new MOLStructureFileReader(structureFileName).readMolecule(dummySpeciesList);
+                    new MOLStructureFileReader(structureFileName).readParticleData(particleData, ff);
+                } catch (e:IOException) {
+                    Console.ERR.println(e);
+                }
+            } else if (fileExtension.equals(".gro")) {
+                ff = new GenericForceField(); // TODO read forcefield from top/itp files
+                try {
+                    new GromacsCoordinateFileReader(structureFileName).readParticleData(particleData, ff);
+                    // TODO bonding from topology file
+                    particleData.bonds = new Rail[Bond](0);
                 } catch (e:IOException) {
                     Console.ERR.println(e);
                 }
             }
         }
-        if (moleculeTemp == null) {
+        if (particleData == null) {
             Console.ERR.println("error: could not read structure file: " + structureFileName);
             return;
         }
-        val molecule = moleculeTemp;
-        Console.OUT.println("# MD for " + molecule.getName() + ": " + molecule.getAtoms().size() + " atoms");
-        val anumm = new Anumm(assignAtoms(molecule), uff, true);
+        Console.OUT.println("# MD for " + particleData.description + ": " + particleData.numAtoms + " atoms");
+        val anumm = new Anumm(particleDataPlh, ff, true);
         anumm.mdRun(timestep, numSteps);
         Console.OUT.println("\n# Run completed after " + numSteps + " steps");
 
@@ -165,6 +168,7 @@ public class Anumm {
      * array of Array[MMAtom], one Array for each place.  
      * MD requires that the atoms have already been distributed. 
      */
+/*
     public static def assignAtoms(molecule : Molecule[MMAtom]) : DistArray[Rail[MMAtom]](1) {
         val tempAtoms = DistArray.make[ArrayList[MMAtom]](Dist.makeUnique(), (Point) => new ArrayList[MMAtom]());
         val atomList = molecule.getAtoms();
@@ -181,6 +185,7 @@ public class Anumm {
         val atoms = DistArray.make[Rail[MMAtom]](Dist.makeUnique(), ([p] : Point) => tempAtoms(p).toRail());
         return atoms;
     }
+*/
 
     /** 
      * Gets the place ID to which to assign the given atom coordinates.

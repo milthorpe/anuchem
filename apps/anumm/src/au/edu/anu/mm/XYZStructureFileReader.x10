@@ -6,14 +6,13 @@
  *  You may obtain a copy of the License at
  *      http://www.opensource.org/licenses/eclipse-1.0.php
  *
- * (C) Copyright Josh Milthorpe 2010.
+ *  (C) Copyright Josh Milthorpe 2010.
+ *  (C) Copyright IBM Corporation 2014.
  */
 package au.edu.anu.mm;
 
 import x10.io.File;
 import x10.io.FileReader;
-import au.edu.anu.chem.Molecule;
-import au.edu.anu.chem.mm.MMAtom;
 import x10x.vector.Point3d;
 
 /**
@@ -23,50 +22,51 @@ import x10x.vector.Point3d;
  *  species x y z // repeated, positions in nm
  */
 public class XYZStructureFileReader { 
-    var fileName : String;
+    var fileName:String;
 
-    public def this(fileName : String) { 
+    public def this(fileName:String) { 
         this.fileName = fileName;
     }
 
-    public def readMolecule(speciesSpecs:Rail[SpeciesSpec]) : Molecule[MMAtom] {
+    public def readParticleData(particleData:ParticleData, forceField:ForceField) {
+        val speciesSpecs = forceField.getSpeciesSpecs();
         val file = new FileReader(new File(fileName));
         // line 1: number of atoms
         val numAtoms = Int.parseInt(file.readLine().trim());
+
+        particleData.allocateAtoms(numAtoms);
+
         // line 2: structure title
-        val title = file.readLine().split(" ");
-        var molecule : Molecule[MMAtom] = new Molecule[MMAtom](title(0));
+        val title = file.readLine();
+        particleData.description = title;
+
         // lines 3..*: atom positions
-        for(var i:Long=0; i<numAtoms; i++) {
+        for (i in 0..(numAtoms-1)) {
             val words = file.readLine().split(" ");
             val symbol = words(0);
             var species:Int = -1n;
-            var speciesSpec:SpeciesSpec = null;
             for (j in 0..(speciesSpecs.size-1)) {
-                speciesSpec = speciesSpecs(j);
-                if (speciesSpec != null && symbol.equals(speciesSpec.name)) {
+                val speciesSpec = speciesSpecs(j);
+                if (symbol.equals(speciesSpec.name)) {
                     species = j as Int;
+                    Console.OUT.println("found species " + species + " " + speciesSpec.name + " " + speciesSpec.mass);
                     break;
                 }
             }
             if (species == -1n) {
                 throw new IllegalArgumentException("no species found for symbol " + symbol);
             }
-            Console.OUT.println("found species " + speciesSpec.number + " " + speciesSpec.name + " " + speciesSpec.mass);
-            molecule.addAtom(new MMAtom(species,
-                                         Point3d(Double.parseDouble(words(1).trim()),
-                                                 Double.parseDouble(words(2).trim()),
-                                                 Double.parseDouble(words(3).trim())
-                                         ),
-                                        speciesSpec.mass,
-                                        speciesSpec.charge
-                        ));
+            particleData.species(i) = species;
+            particleData.globalIndex(i) = i+1;
+            particleData.x(i) = Point3d(Double.parseDouble(words(1).trim()),
+                                        Double.parseDouble(words(2).trim()),
+                                        Double.parseDouble(words(3).trim()));
         }
-       file.close();
-       return molecule;
+        file.close();
+
     }
 
-    public def setFileName(fileName : String) {
+    public def setFileName(fileName:String) {
         this.fileName = fileName;
     }
 }
