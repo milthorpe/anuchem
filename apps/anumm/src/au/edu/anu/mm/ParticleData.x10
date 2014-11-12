@@ -16,10 +16,22 @@ import x10x.vector.Vector3d;
 public class ParticleData {
     public var description:String;
 
+    public var boxEdges:Vector3d;
+
+    // Molecule / residue data
+
+    /** Name of each residue type */
+    public var residueType:Rail[String];
+    /** Mapping from residue number to residue type */
+    public var residueTypeIndex:Rail[Int];
+
     // Atom data
+
     public var numAtoms:Long;
     /** Species of each atom */
     public var species:Rail[Int];
+    /** Residue number (e.g. index of molecule) of each atom */
+    public var residueNumber:Rail[Int];
     /** Global index of each atom */
     public var globalIndex:Rail[Long];
     /** Atom centers in nm */
@@ -37,6 +49,7 @@ public class ParticleData {
     public def allocateAtoms(N:Long) {
         this.numAtoms = N;
         species = new Rail[Int](N);
+        residueNumber = new Rail[Int](N);
         globalIndex = new Rail[Long](N);
         x = new Rail[Point3d](N);
         dx = new Rail[Vector3d](N);

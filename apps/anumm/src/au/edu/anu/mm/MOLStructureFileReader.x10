@@ -83,11 +83,14 @@ public class MOLStructureFileReader {
             val bondType = Int.parseInt(line.substring(6n,9n).trim());
 
             bonds(i) = new Bond(atom1Index, atom2Index, forceField.getBondTypeIndex(particleData.species(atom1Index), particleData.species(atom2Index), bondType));
-            Console.OUT.println("bond " + atom1Index + " to " + atom2Index + " type " + bondType + " bondTypeIndex " + bonds(i).typeIndex);
+            //Console.OUT.println("bond " + atom1Index + " to " + atom2Index + " type " + bondType + " bondTypeIndex " + bonds(i).typeIndex);
 
             line = file.readLine();
         }
         particleData.bonds = bonds;
+        // dummy residues
+        particleData.residueType = [ "unknown" as String ];
+        particleData.residueTypeIndex = [ 0n as Int ];
 
         file.close();
     }

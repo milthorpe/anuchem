@@ -22,14 +22,13 @@ import x10x.vector.Vector3d;
  *  <number of atoms>
  *  <residue number> <residue name> <atom name> <atom number> x y z [vx vy vz]// repeated
  *  <box x> <box y> <box z>
- * TODO bonding, velocity
+ * N.B. GROMACS coordinates are in nm; these are converted to Angstroms for use in ANU-Chem
  * @see http://manual.gromacs.org/current/online/gro.html
  */
 public class GromacsCoordinateFileReader { 
-    var fileName : String;
-    public var boxEdges:Vector3d;
+    var fileName:String;
 
-    public def this(fileName : String) { 
+    public def this(fileName:String) { 
         this.fileName = fileName;
     }
 
@@ -44,6 +43,17 @@ public class GromacsCoordinateFileReader {
 
         for(var i:Int=0n; i<numAtoms; i++) {
             val line = file.readLine();
+            val residueNumber = Int.parseInt(line.substring(0n,5n).trim());
+            particleData.residueNumber(i) = residueNumber;
+
+            val residueName = line.substring(5n,10n).trim();
+            for (j in 0..(particleData.residueType.size-1)) {
+                if (residueName.equals(particleData.residueType(j))) {
+                    particleData.residueTypeIndex(residueNumber) = j as Int;
+
+                    break;
+                }
+            }
 
             val atomType = line.substring(10n,15n).trim();
             // TODO look up atom type from atom name in residues
@@ -67,7 +77,7 @@ public class GromacsCoordinateFileReader {
                                         Double.parseDouble(line.substring(28n,36n)) * 10.0,
                                         Double.parseDouble(line.substring(36n,44n)) * 10.0);
 
-            if (line.length() > 67) {
+            if (line.length() >= 67) {
                 // velocities are included
                 particleData.dx(i) = Vector3d(Double.parseDouble(line.substring(44n,52n)) * 10.0,
                                               Double.parseDouble(line.substring(52n,60n)) * 10.0,
@@ -80,7 +90,7 @@ public class GromacsCoordinateFileReader {
         val x = Double.parseDouble(boxLine.substring( 0n,10n).trim()) * 10.0;
         val y = Double.parseDouble(boxLine.substring(10n,20n).trim()) * 10.0;
         val z = Double.parseDouble(boxLine.substring(20n,30n).trim()) * 10.0;
-        this.boxEdges = Vector3d(x,y,z);
+        particleData.boxEdges = Vector3d(x,y,z);
         
         file.close();
     }

@@ -10,8 +10,13 @@
  */
 package au.edu.anu.mm;
 
+import au.edu.anu.util.StringSplitter;
+
+import x10.compiler.Inline;
 import x10.io.File;
-import x10.io.FileReader;
+import x10.io.Reader;
+import x10.io.EOFException;
+import x10.util.ArrayList;
 
 /**
  * This class reads GROMACS topology files (*.top) of the following format:
@@ -19,20 +24,96 @@ import x10.io.FileReader;
  *  <number of atoms>
  *  <residue number> <residue name> <atom name> <atom number> x y z [vx vy vz]// repeated
  *  <box x> <box y> <box z>
- * N.B. GROMACS coordinates are in nm; these are converted to Angstroms for use in ANU-Chem
- * TODO bonding, velocity
- * TODO charges are hardcoded to -0.82 for OW, +0.41 for HW
+ * TODO read force field data from processed topology
  * @see http://manual.gromacs.org/current/online/gro.html
  */
 public class GromacsTopologyFileReader { 
-    var fileName : String;
-    public var boxEdges:Vector3d;
+    var fileName:String;
 
-    public def this(fileName : String) { 
+    public def this(fileName:String) { 
         this.fileName = fileName;
     }
 
-    public def readTopology():ForceField {
+    public def readResidue(file:Reader, particleData:ParticleData, forceField:ForceField, residueType:ArrayList[String]) {
+        var line:String = file.readLine();
+        while (line != null && line.trim().length() > 0n) {
+            if (!isComment(line)) {
+                val words = StringSplitter.splitOnWhitespace(line);
+                val residueName = words(0);
+                residueType.add(residueName);
+
+                break; // TODO read bond stretch, angle parameters
+            }
+            line = file.readLine();
+        }
+    }
+
+    public def readMolecules(file:Reader, particleData:ParticleData, forceField:ForceField, residueTypeIndex:ArrayList[Int]) {
+        var line:String = file.readLine();
+        if (isComment(line) || line.trim().length() == 0n) line = file.readLine(); // may be a comment
+        while (line != null && line.trim().length() > 0n) {
+            if (!isComment(line)) {
+                val words = StringSplitter.splitOnWhitespace(line);
+                val residueName = words(0);
+                val number = Long.parseLong(words(1));
+                residueTypeIndex.resize((residueTypeIndex.size() + number), -1n);
+            }
+            line = file.readLine();
+        }
+    }
+
+    public def readBonds(file:Reader, particleData:ParticleData, forceField:ForceField) {
+        val bonds = new ArrayList[Bond]();
+/*   
+        var line:String = file.readLine();
+        var i:Long = 0;
+        while (line != null && line.trim().length() > 0n) {
+            if (!isComment(line)) {
+
+                val words = StringSplitter.splitOnWhitespace(line);
+                val atom1Index = Int.parseInt(words(0));//Int.parseInt(line.substring(0n,3n).trim())-1;
+                val atom2Index = Int.parseInt(words(1));//Int.parseInt(line.substring(3n,6n).trim())-1;
+                val bondType = Int.parseInt(words(2));//Int.parseInt(line.substring(6n,9n).trim());
+                Console.OUT.println("bond " + atom1Index + " to " + atom2Index + " type " + bondType);
+                bonds.add(new Bond(atom1Index, atom2Index, forceField.getBondTypeIndex(particleData.species(atom1Index), particleData.species(atom2Index), bondType)));
+
+            }
+
+            line = file.readLine();
+        }
+*/
+        particleData.bonds = bonds.toRail();
+    }
+
+    public def readTopology(particleData:ParticleData, forceField:ForceField) {
+        // perform pre-processing
+        val gmxLib = System.getenv("GMXLIB");
+        if (gmxLib == null) {
+            throw new UnsupportedOperationException("GromacsTopologyFileReader: GMXLIB is not set");
+        }
+        val processedFile = Runtime.execForRead("cpp -I"+gmxLib+" "+fileName);
+
+        val residueType = new ArrayList[String](); 
+        val residueTypeIndex = new ArrayList[Int](); 
+
+        var line:String = processedFile.readLine();
+        try {
+            while (line != null) {
+                if (!isComment(line)) {
+                    if (line.indexOf("[ bonds ]") >= 0) {
+                        readBonds(processedFile, particleData, forceField);
+                    } else if (line.indexOf("[ molecules ]") >= 0) {
+                        readMolecules(processedFile, particleData, forceField, residueTypeIndex);
+                    } else if (line.indexOf("[ moleculetype ]") >= 0) {
+                        readResidue(processedFile, particleData, forceField, residueType);
+                    }
+                }
+                line = processedFile.readLine();
+            }
+        } catch (e:EOFException) {
+            // no more lines
+        }
+/*
         val file = new FileReader(new File(fileName));
         val title = file.readLine().split(" ");
         val numAtoms = Int.parseInt(file.readLine());
@@ -66,19 +147,17 @@ public class GromacsTopologyFileReader {
                                         charge
                         ));
         }
-
-        // read box edge lengths
-        val boxLine = file.readLine();
-        val x = Double.parseDouble(boxLine.substring( 0n,10n).trim()) * 10.0;
-        val y = Double.parseDouble(boxLine.substring(10n,20n).trim()) * 10.0;
-        val z = Double.parseDouble(boxLine.substring(20n,30n).trim()) * 10.0;
-        this.boxEdges = Vector3d(x,y,z);
-        
-        file.close();
-        return molecule;
+*/
+        particleData.residueType = residueType.toRail();
+        particleData.residueTypeIndex = residueTypeIndex.toRail();
+        processedFile.close();
     }
 
-    public def setFileName(fileName : String) {
+    private @Inline def isComment(line:String) {
+        return line.startsWith(";");
+    }
+
+    public def setFileName(fileName:String) {
         this.fileName = fileName;
     }
 }

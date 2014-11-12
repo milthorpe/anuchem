@@ -11,9 +11,10 @@
 package au.edu.anu.mm;
 
 import x10.regionarray.Dist;
-import x10.regionarray.DistArray;
-import x10.util.ArrayList;
 import x10.io.IOException;
+import x10.util.ArrayList;
+import x10.util.OptionsParser;
+import x10.util.Option;
 
 import x10x.vector.Vector3d;
 
@@ -31,13 +32,17 @@ public class Anumm {
     /** The force field applied to the atoms in this simulation. */
     private val forceField:ForceField;
 
+    private transient val outputFile:GromacsCoordinateFileWriter;
+
     private val verbose:Boolean;
 
     public def this(particleDataPlh:PlaceLocalHandle[ParticleData],
                     forceField:ForceField,
+                    outputFile:GromacsCoordinateFileWriter,
                     verbose:Boolean) {
         this.particleDataPlh = particleDataPlh;
         this.forceField = forceField;
+        this.outputFile = outputFile;
         this.verbose = verbose;
     }
 
@@ -52,27 +57,24 @@ public class Anumm {
 
         var step : Long = 0;
         if (verbose) {
-            Console.OUT.printf("\n%.3f ", 0.0); // starting timestep
+            startTimestep(0.0);
         }
         forceField.getPotentialAndForces(particleDataPlh); // get initial forces
 
         while(step < numSteps) {
             step++;
             if (verbose) {
-                Console.OUT.printf("\n%.3f ", step*timestep);
+                startTimestep(step*timestep);
             }
             mdStep(timestep);
-        }
-        if (verbose) {
-            Console.OUT.println("\n# final positions:");
-            finish for(place in Place.places()) at(place) {
-                val particleData = particleDataPlh();
-                // print final positions
-                for (i in 0..(particleData.numAtoms-1)) {
-                    Console.OUT.println(particleData.species(i)+ " " + particleData.x(i));
-                }
+            if (verbose) {
+                outputFile.writePositions(particleDataPlh, forceField);
             }
         }
+    }
+
+    private def startTimestep(time:Double) {
+        Console.OUT.printf("\n%.3f ", time);
     }
 
     /**
@@ -89,7 +91,6 @@ public class Anumm {
                 particleData.dx(i) = particleData.dx(i) + 0.5 * t * invMass * particleData.fx(i);
                 particleData.x(i) = particleData.x(i) + particleData.dx(i) * t;
                 particleData.fx(i) = Vector3d.NULL; // zero before next force calculation
-                Console.OUT.print(particleData.x(i) + " ");
             }
         }
         forceField.getPotentialAndForces(particleDataPlh);
@@ -97,28 +98,46 @@ public class Anumm {
             val particleData = particleDataPlh();
             for (i in 0..(particleData.numAtoms-1)) {
                 val invMass = 1.0 / forceField.getAtomMass(particleData.species(i));
-                particleData.dx(i) = particleData.dx(i) + 0.5 * t * invMass * particleData.fx(i);
-                //Console.OUT.print(particleData.dx(i) + " ");
+                particleData.dx(i) = particleData.dx(i) + 0.5 * t * invMass * particleData.fx(i);;
             }
         }
     }
 
     public static def main(args:Rail[String]) {
-        var structureFileName : String = null;
-        var timestep : Double = 0.2;
-        var numSteps : Int = 200n;
-        if (args.size > 0) {
-            structureFileName = args(0);
-            if (args.size > 1) {
-                timestep = Double.parseDouble(args(1));
-                if (args.size > 2) {
-                    numSteps = Int.parseInt(args(2));
-                }
-            }
-        } else {
-            Console.ERR.println("usage: anumm structureFile [timestep(fs)] [numSteps]");
+        val opts = new OptionsParser(args, [
+            Option("h","help","this information"),
+            Option("v","verbose","print out each iteration")
+        ], [
+            Option("c","coordinateFile","filename for structure/coordinates"),
+            Option("t","timestep","timestep in femtoseconds"),
+            Option("n","numSteps","number of timesteps to simulate"),
+            Option("p","topologyFile","GROMACS topology file"),
+            Option("o","outputFile","output GROMACS coordinate file")
+        ]);
+        if (opts.filteredArgs().size!=0) {
+            Console.ERR.println("Unexpected arguments: "+opts.filteredArgs());
+            Console.ERR.println("Use -h or --help.");
+            System.setExitCode(1n);
             return;
         }
+        if (opts("h")) {
+            Console.OUT.println(opts.usage("Usage:\n"));
+            return;
+        }
+
+        val structureFileName = opts("c", null);
+        if (structureFileName == null) {
+            Console.OUT.println("anumm: missing coordinate file name");
+            Console.OUT.println(opts.usage("Usage:\n"));
+            System.setExitCode(1n);
+            return;
+        }
+        val timestep = opts("t", 0.2);
+        val numSteps = opts("n", 200n);
+        val topologyFileName = opts("p", null);
+        val defaultOutputFileName = structureFileName.substring(0n, structureFileName.indexOf("."))
+            + "out" + numSteps + ".gro";
+        val outputFileName = opts("o", defaultOutputFileName);
 
         var ff:ForceField = null;
         val particleDataPlh = PlaceLocalHandle.make[ParticleData](Place.places(), ()=> new ParticleData());
@@ -132,6 +151,8 @@ public class Anumm {
                     new XYZStructureFileReader(structureFileName).readParticleData(particleData, ff);
                 } catch (e:IOException) {
                     Console.ERR.println(e);
+                    System.setExitCode(1n);
+                    return;
                 }
             } else if (fileExtension.equals(".mol") || fileExtension.equals(".sdf")) {
                 ff = new UniversalForceField();
@@ -139,24 +160,31 @@ public class Anumm {
                     new MOLStructureFileReader(structureFileName).readParticleData(particleData, ff);
                 } catch (e:IOException) {
                     Console.ERR.println(e);
+                    System.setExitCode(1n);
+                    return;
                 }
             } else if (fileExtension.equals(".gro")) {
-                ff = new GenericForceField(); // TODO read forcefield from top/itp files
+                if (topologyFileName == null) {
+                    Console.OUT.println("anumm: missing topology file\nTry anumm --help for more information.");
+                    System.setExitCode(1n);
+                    return;
+                }
+                ff = new GenericForceField(); // TODO read forcefield from topology
                 try {
+                    new GromacsTopologyFileReader(topologyFileName).readTopology(particleData, ff);
                     new GromacsCoordinateFileReader(structureFileName).readParticleData(particleData, ff);
-                    // TODO bonding from topology file
-                    particleData.bonds = new Rail[Bond](0);
                 } catch (e:IOException) {
                     Console.ERR.println(e);
+                    System.setExitCode(1n);
+                    return;
                 }
             }
         }
-        if (particleData == null) {
-            Console.ERR.println("error: could not read structure file: " + structureFileName);
-            return;
-        }
+
+        val outputFile = new GromacsCoordinateFileWriter(outputFileName);
+
         Console.OUT.println("# MD for " + particleData.description + ": " + particleData.numAtoms + " atoms");
-        val anumm = new Anumm(particleDataPlh, ff, true);
+        val anumm = new Anumm(particleDataPlh, ff, outputFile, true);
         anumm.mdRun(timestep, numSteps);
         Console.OUT.println("\n# Run completed after " + numSteps + " steps");
 
