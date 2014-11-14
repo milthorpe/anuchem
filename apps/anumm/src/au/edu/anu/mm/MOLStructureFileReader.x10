@@ -38,7 +38,7 @@ public class MOLStructureFileReader {
     }
 
     public def readParticleData(particleData:ParticleData, forceField:ForceField) {
-        val speciesSpecs = forceField.getSpeciesSpecs();
+        val atomTypes = forceField.getAtomTypes();
         val file = new FileReader(new File(fileName));
         val title = file.readLine();
         file.readLine(); // line 2 contains file meta-info
@@ -55,22 +55,22 @@ public class MOLStructureFileReader {
             val line = file.readLine();
             particleData.x(i)  = Point3d(Double.parseDouble(line.substring( 0n,10n).trim()),
                                          Double.parseDouble(line.substring(10n,20n).trim()),
-                                         Double.parseDouble(line.substring(20n,30n).trim()));
+                                         Double.parseDouble(line.substring(20n,30n).trim())) * 0.1; // convert to nm
             val symbol = line.substring(31n,34n).trim();
             var species:Int = -1n;
-            for (j in 0..(speciesSpecs.size-1)) {
-                val speciesSpec = speciesSpecs(j);
-                if (symbol.equals(speciesSpec.name)) {
+            for (j in 0..(atomTypes.size-1)) {
+                val atomType = atomTypes(j);
+                if (symbol.equals(atomType.name)) {
                     species = j as Int;
-                    Console.OUT.println("found species " + species + " " + speciesSpec.name + " " + speciesSpec.mass);
+                    //Console.OUT.println("found species " + species + " " + speciesSpec.name + " " + speciesSpec.mass);
                     break;
                 }
             }
             if (species == -1n) {
                 throw new IllegalArgumentException("no species found for symbol " + symbol);
             }
-            Console.OUT.println("position " + particleData.x(i));
-            particleData.species(i) = species;
+            //Console.OUT.println("position " + particleData.x(i));
+            particleData.atomTypeIndex(i) = species;
             particleData.globalIndex(i) = i+1;
         }
 
@@ -82,16 +82,19 @@ public class MOLStructureFileReader {
             val atom2Index = Int.parseInt(line.substring(3n,6n).trim())-1;
             val bondType = Int.parseInt(line.substring(6n,9n).trim());
 
-            bonds(i) = new Bond(atom1Index, atom2Index, forceField.getBondTypeIndex(particleData.species(atom1Index), particleData.species(atom2Index), bondType));
+            bonds(i) = new Bond(atom1Index, atom2Index, forceField.getBondTypeIndex(particleData.atomTypeIndex(atom1Index), particleData.atomTypeIndex(atom2Index), bondType));
             //Console.OUT.println("bond " + atom1Index + " to " + atom2Index + " type " + bondType + " bondTypeIndex " + bonds(i).typeIndex);
 
             line = file.readLine();
         }
         particleData.bonds = bonds;
-        // dummy residues
-        particleData.residueType = [ "unknown" as String ];
-        particleData.residueTypeIndex = [ 0n as Int ];
+        val dummy = new MoleculeType();
+        dummy.name = "unknown";
+        particleData.moleculeTypes = [ dummy as MoleculeType ];
+        particleData.moleculeTypeIndex = [ 0n as Int ];
 
+        particleData.atomTypes = forceField.getAtomTypes();
+    
         file.close();
     }
 

@@ -19,70 +19,135 @@ import x10.io.EOFException;
 import x10.util.ArrayList;
 
 /**
- * This class reads GROMACS topology files (*.top) of the following format:
- *  <title>
- *  <number of atoms>
- *  <residue number> <residue name> <atom name> <atom number> x y z [vx vy vz]// repeated
- *  <box x> <box y> <box z>
- * TODO read force field data from processed topology
+ * This class reads GROMACS topology files (*.top) to populate particle
+ * data and force field parameters.
  * @see http://manual.gromacs.org/current/online/gro.html
  */
 public class GromacsTopologyFileReader { 
     var fileName:String;
+    var currentLine:String;
 
     public def this(fileName:String) { 
         this.fileName = fileName;
     }
 
-    public def readResidue(file:Reader, particleData:ParticleData, forceField:ForceField, residueType:ArrayList[String]) {
-        var line:String = file.readLine();
-        while (line != null && line.trim().length() > 0n) {
-            if (!isComment(line)) {
-                val words = StringSplitter.splitOnWhitespace(line);
-                val residueName = words(0);
-                residueType.add(residueName);
+    public def readMoleculeType(file:Reader, particleData:ParticleData, forceField:ForceField, allAtomTypes:Rail[AtomType], simulationAtomTypes:ArrayList[AtomType], moleculeTypes:ArrayList[MoleculeType]) {
+        currentLine = file.readLine();
+        while (!finishedSection()) {
+            if (!isComment()) {
+                val words = StringSplitter.splitOnWhitespace(currentLine);
+                val moleculeType = new MoleculeType();
+                moleculeType.name = words(0);
 
-                break; // TODO read bond stretch, angle parameters
+                while (currentLine != null) {
+                    if (!isComment()) {
+                        if (currentLine.indexOf("[ atoms ]") >= 0) {
+                            readAtoms(file, particleData, moleculeType, allAtomTypes, simulationAtomTypes, forceField);
+                        } else if (currentLine.indexOf("[ bonds ]") >= 0) {
+                            moleculeType.bonds = readBonds(file, particleData, moleculeType, forceField);
+                        } else if (currentLine.indexOf("[ pairs ]") >= 0) {
+                            skipSection(file);
+                        } else if (currentLine.indexOf("[ angles ]") >= 0) {
+                            skipSection(file);
+                        } else if (currentLine.indexOf("[ dihedrals ]") >= 0) {
+                            skipSection(file);
+                        } else if (currentLine.indexOf("[") >= 0) {
+                            // finished this molecule type
+                            break;
+                        }
+                    }
+                    currentLine = file.readLine();
+                }
+                moleculeTypes.add(moleculeType);
+            } else {
+                currentLine = file.readLine();
             }
-            line = file.readLine();
         }
     }
 
-    public def readMolecules(file:Reader, particleData:ParticleData, forceField:ForceField, residueTypeIndex:ArrayList[Int]) {
-        var line:String = file.readLine();
-        if (isComment(line) || line.trim().length() == 0n) line = file.readLine(); // may be a comment
-        while (line != null && line.trim().length() > 0n) {
-            if (!isComment(line)) {
-                val words = StringSplitter.splitOnWhitespace(line);
-                val residueName = words(0);
-                val number = Long.parseLong(words(1));
-                residueTypeIndex.resize((residueTypeIndex.size() + number), -1n);
+    public def readAtoms(file:Reader, particleData:ParticleData, molecule:MoleculeType, allAtomTypes:Rail[AtomType], simulationAtomTypes:ArrayList[AtomType], forceField:ForceField) {
+        currentLine = file.readLine();
+        molecule.atomNames = new ArrayList[String]();
+        molecule.atomTypes = new ArrayList[Int]();
+        while (!finishedSection()) {
+            if (!isComment() && currentLine.trim().length() > 0n) {
+                val words = StringSplitter.splitOnWhitespace(currentLine);
+                val atomNumber = Int.parseInt(words(0));
+                val atomTypeName = words(1);
+                val atomName = words(4);
+                val charge = Double.parseDouble(words(6));
+                var mass:Double = 0.0;
+                var atomicNumber:Int = -1n;
+                for (j in 0..(allAtomTypes.size-1)) {
+                    val atomType = allAtomTypes(j);
+                    if (atomTypeName.equals(atomType.name)) {
+                        mass = atomType.mass;
+                        atomicNumber = atomType.atomicNumber;
+                        //Console.OUT.println("found atomType " + atomTypeName + " " + mass);
+                        simulationAtomTypes.add(AtomType(atomTypeName, atomicNumber, mass, charge));
+
+                        // TODO link atomName and index in MoleculeType
+                        molecule.atomNames.add(atomName);
+                        molecule.atomTypes.add((simulationAtomTypes.size()-1) as Int);
+                        break;
+                    }
+                }
+                if (atomicNumber == -1n) {
+                    Console.ERR.println("did not find atom type " + atomTypeName);
+                }
             }
-            line = file.readLine();
+
+            currentLine = file.readLine();
         }
     }
 
-    public def readBonds(file:Reader, particleData:ParticleData, forceField:ForceField) {
+    public def readBonds(file:Reader, particleData:ParticleData, molecule:MoleculeType, forceField:ForceField):ArrayList[Bond] {
         val bonds = new ArrayList[Bond]();
-/*   
-        var line:String = file.readLine();
-        var i:Long = 0;
-        while (line != null && line.trim().length() > 0n) {
-            if (!isComment(line)) {
-
-                val words = StringSplitter.splitOnWhitespace(line);
-                val atom1Index = Int.parseInt(words(0));//Int.parseInt(line.substring(0n,3n).trim())-1;
-                val atom2Index = Int.parseInt(words(1));//Int.parseInt(line.substring(3n,6n).trim())-1;
-                val bondType = Int.parseInt(words(2));//Int.parseInt(line.substring(6n,9n).trim());
-                Console.OUT.println("bond " + atom1Index + " to " + atom2Index + " type " + bondType);
-                bonds.add(new Bond(atom1Index, atom2Index, forceField.getBondTypeIndex(particleData.species(atom1Index), particleData.species(atom2Index), bondType)));
-
+        currentLine = file.readLine();
+        while (!finishedSection()) {
+            if (!isComment() && currentLine.trim().length() > 0n) {
+                val words = StringSplitter.splitOnWhitespace(currentLine);
+                val bondType = Int.parseInt(words(0));
+                val atom1Index = Int.parseInt(words(1));
+                val atom2Index = Int.parseInt(words(2));
+                //Console.OUT.println("bond " + atom1Index + " to " + atom2Index + " type " + bondType);
+                bonds.add(new Bond(atom1Index, atom2Index, bondType));
             }
 
-            line = file.readLine();
+            currentLine = file.readLine();
         }
-*/
-        particleData.bonds = bonds.toRail();
+        return bonds;
+    }
+
+    public def readAtomTypes(file:Reader, particleData:ParticleData, forceField:ForceField):Rail[AtomType] {
+        val atomTypes = new ArrayList[AtomType]();
+        currentLine = file.readLine();
+        while (!finishedSection()) {
+            if (!isComment() && currentLine.trim().length() > 0n) {
+                val words = StringSplitter.splitOnWhitespace(currentLine);
+                val name = words(0);
+                val atomicNumber = Int.parseInt(words(1));
+                val mass = Double.parseDouble(words(2));
+                val charge = Double.parseDouble(words(3));
+                atomTypes.add(new AtomType(name, atomicNumber, mass, charge));
+            }
+
+            currentLine = file.readLine();
+        }
+        return atomTypes.toRail();
+    }
+
+    public def readMolecules(file:Reader, particleData:ParticleData, forceField:ForceField, moleculeTypeIndex:ArrayList[Int]) {
+        currentLine = file.readLine();
+        while (!finishedSection()) {
+            if (!isComment()) {
+                val words = StringSplitter.splitOnWhitespace(currentLine);
+                val moleculeTypeName = words(0);
+                val number = Long.parseLong(words(1));
+                moleculeTypeIndex.resize((moleculeTypeIndex.size() + number), -1n);
+            }
+            currentLine = file.readLine();
+        }
     }
 
     public def readTopology(particleData:ParticleData, forceField:ForceField) {
@@ -91,70 +156,72 @@ public class GromacsTopologyFileReader {
         if (gmxLib == null) {
             throw new UnsupportedOperationException("GromacsTopologyFileReader: GMXLIB is not set");
         }
-        val processedFile = Runtime.execForRead("cpp -I"+gmxLib+" "+fileName);
+        // construct GROMACS topology file using C preprocessor,
+        // inhibiting generation of linemarkers
+        val processedFile = Runtime.execForRead("cpp -P -I"+gmxLib+" "+fileName);
 
-        val residueType = new ArrayList[String](); 
-        val residueTypeIndex = new ArrayList[Int](); 
+        val moleculeTypes = new ArrayList[MoleculeType]();
+        var allAtomTypes:Rail[AtomType] = null;
+        val simulationAtomTypes = new ArrayList[AtomType]();
+        // add a dummy type as element 0, because GROMACS uses 1-based indexing
+        val dummy = new MoleculeType();
+        dummy.name = "unknown";
+        moleculeTypes.add(dummy);
+        val moleculeTypeIndex = new ArrayList[Int]();
+        moleculeTypeIndex.add(-1n);
 
-        var line:String = processedFile.readLine();
+        currentLine = processedFile.readLine();
         try {
-            while (line != null) {
-                if (!isComment(line)) {
-                    if (line.indexOf("[ bonds ]") >= 0) {
-                        readBonds(processedFile, particleData, forceField);
-                    } else if (line.indexOf("[ molecules ]") >= 0) {
-                        readMolecules(processedFile, particleData, forceField, residueTypeIndex);
-                    } else if (line.indexOf("[ moleculetype ]") >= 0) {
-                        readResidue(processedFile, particleData, forceField, residueType);
+            while (currentLine != null) {
+                if (!isComment()) {
+                    if (currentLine.indexOf("[ atomtypes ]") >= 0) {
+                        allAtomTypes = readAtomTypes(processedFile, particleData, forceField);
+                    } else if (currentLine.indexOf("[ moleculetype ]") >= 0) {
+                        readMoleculeType(processedFile, particleData, forceField, allAtomTypes, simulationAtomTypes, moleculeTypes);
+                    } else if (currentLine.indexOf("[ molecules ]") >= 0) {
+                        readMolecules(processedFile, particleData, forceField, moleculeTypeIndex);
+                    } else {
+                        currentLine = processedFile.readLine();
                     }
+                } else {
+                    currentLine = processedFile.readLine();
                 }
-                line = processedFile.readLine();
             }
         } catch (e:EOFException) {
             // no more lines
         }
+
 /*
-        val file = new FileReader(new File(fileName));
-        val title = file.readLine().split(" ");
-        val numAtoms = Int.parseInt(file.readLine());
-        var molecule : Molecule[MMAtom] = new Molecule[MMAtom](title(0));
-        for(var i:Int=0n; i<numAtoms; i++) {
-            val line = file.readLine();
-            var species:Int=-1n;
-            val atomType = line.substring(10n,15n).trim();
-            val charge : Double;
-            val mass : Double;
-            if (atomType.startsWith("OW")) {
-                species = 0n;
-                charge = -0.82;
-                mass = 15.99491461956;
-            } else if (atomType.startsWith("HW")) {
-                species = 1n;
-                charge = 0.41;
-                mass = 1.00794;
-            } else {
-                Console.ERR.println("Unknown atom type line " + (i+2) + ": " + atomType);
-                mass = 0.0;
-                charge = 0.0;
-            }
-            // multiply coords by 10 to convert nm to Angstroms
-            molecule.addAtom(new MMAtom(species,
-                                         Point3d(Double.parseDouble(line.substring(20n,28n)) * 10.0,
-                                                 Double.parseDouble(line.substring(28n,36n)) * 10.0,
-                                                 Double.parseDouble(line.substring(36n,44n)) * 10.0
-                                         ),
-                                        mass,
-                                        charge
-                        ));
+        Console.OUT.println("found simulation atom types:");
+        for (i in 0..(simulationAtomTypes.size()-1)) {
+            Console.OUT.println(simulationAtomTypes(i));
         }
 */
-        particleData.residueType = residueType.toRail();
-        particleData.residueTypeIndex = residueTypeIndex.toRail();
+        particleData.atomTypes = simulationAtomTypes.toRail();
+        particleData.moleculeTypes = moleculeTypes.toRail();
+        particleData.moleculeTypeIndex = moleculeTypeIndex.toRail();
         processedFile.close();
     }
 
-    private @Inline def isComment(line:String) {
-        return line.startsWith(";");
+    private def isComment() {
+        return currentLine.startsWith(";");
+    }
+
+    private def finishedSection() {
+        if (currentLine == null) return true;
+        else {
+            val trimmed = currentLine.trim();
+            if (trimmed.startsWith("["))
+                return true;
+        }
+        return false;
+    }
+
+    private def skipSection(file:Reader) {
+        currentLine = file.readLine();
+        while (!finishedSection()) {
+            currentLine = file.readLine();
+        }
     }
 
     public def setFileName(fileName:String) {

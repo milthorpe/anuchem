@@ -75,7 +75,7 @@ public class PenningTrap {
     private var maxErrorX:Double = 0.0;
 
     /** All species of ion represented in the trap. */
-    private val speciesList:Rail[SpeciesSpec];
+    private val speciesList:Rail[AtomType];
 
     /** 
      * Creates a new Penning trap containing the given atoms.
@@ -89,7 +89,7 @@ public class PenningTrap {
                     edgeLength:Double,
                     fmmDMax:Int,
                     fmmNumTerms:Int,
-                    speciesList:Rail[SpeciesSpec]) {
+                    speciesList:Rail[AtomType]) {
         this.numAtoms = numAtoms;
         val wellSeparatedParam = 2n;
         val fmmNumBoxes = Math.pow(8.0, fmmDMax);

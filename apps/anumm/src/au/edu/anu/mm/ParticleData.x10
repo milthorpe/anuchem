@@ -20,17 +20,19 @@ public class ParticleData {
 
     // Molecule / residue data
 
-    /** Name of each residue type */
-    public var residueType:Rail[String];
-    /** Mapping from residue number to residue type */
-    public var residueTypeIndex:Rail[Int];
+    /** The different molecule types found in the simulation system */
+    public var moleculeTypes:Rail[MoleculeType];
+    /** Mapping from residue number to molecule type */
+    public var moleculeTypeIndex:Rail[Int];
 
     // Atom data
 
+    public var atomTypes:Rail[AtomType];
+
     public var numAtoms:Long;
-    /** Species of each atom */
-    public var species:Rail[Int];
-    /** Residue number (e.g. index of molecule) of each atom */
+    /** Atom type index for each atom */
+    public var atomTypeIndex:Rail[Int];
+    /** Residue number (e.g. index of molecule) for each atom */
     public var residueNumber:Rail[Int];
     /** Global index of each atom */
     public var globalIndex:Rail[Long];
@@ -48,7 +50,7 @@ public class ParticleData {
 
     public def allocateAtoms(N:Long) {
         this.numAtoms = N;
-        species = new Rail[Int](N);
+        atomTypeIndex = new Rail[Int](N);
         residueNumber = new Rail[Int](N);
         globalIndex = new Rail[Long](N);
         x = new Rail[Point3d](N);

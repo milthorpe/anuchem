@@ -59,18 +59,43 @@ public class Anumm {
         if (verbose) {
             startTimestep(0.0);
         }
-        forceField.getPotentialAndForces(particleDataPlh); // get initial forces
+        val potential = forceField.getPotentialAndForces(particleDataPlh); // get initial forces
+        val kinetic = getKineticEnergy();
+        Console.OUT.printf("potential %10.5e kinetic %10.5e total %10.5e\n", potential, kinetic, (potential+kinetic));
+        val startingEnergy = potential+kinetic;
 
+        var energy:Double = 0.0;
         while(step < numSteps) {
             step++;
             if (verbose) {
                 startTimestep(step*timestep);
             }
-            mdStep(timestep);
-            if (verbose) {
-                outputFile.writePositions(particleDataPlh, forceField);
-            }
+            energy = mdStep(timestep);
         }
+        if (verbose) {
+            outputFile.writePositions(particleDataPlh, forceField);
+        }
+        Console.OUT.printf("relative energy drift %10.5f\n", (energy-startingEnergy)/energy);
+    }
+
+    private def getKineticEnergy() {
+        val energy = finish(SumReducer()) {
+            ateach(p in Dist.makeUnique()) {
+                var kinetic:Double = 0.0;
+                val particleData = particleDataPlh();
+                for (i in 0..(particleData.numAtoms-1)) {
+                    val mass = forceField.getAtomMass(particleData.atomTypeIndex(i));
+                    kinetic += mass * particleData.dx(i).lengthSquared();
+                }
+                offer kinetic;
+            }
+        };
+        return energy;
+    }
+
+    static struct SumReducer implements Reducible[Double] {
+        public def zero() = 0.0;
+        public operator this(a:Double, b:Double) = (a + b);
     }
 
     private def startTimestep(time:Double) {
@@ -81,26 +106,35 @@ public class Anumm {
      * Performs a single molecular dynamics timestep
      * using the velocity-Verlet algorithm. 
      * @param timestep time in fs (=ps/1000)
+     * @param returns the total system energy
      */
-    public def mdStep(timestep : Double) {
+    public def mdStep(timestep : Double):Double {
         val t = timestep * 0.001;
         finish ateach(place in Dist.makeUnique()) {
             val particleData = particleDataPlh();
             for (i in 0..(particleData.numAtoms-1)) {
-                val invMass = 1.0 / forceField.getAtomMass(particleData.species(i));
+                val invMass = 1.0 / particleData.atomTypes(particleData.atomTypeIndex(i)).mass;
                 particleData.dx(i) = particleData.dx(i) + 0.5 * t * invMass * particleData.fx(i);
                 particleData.x(i) = particleData.x(i) + particleData.dx(i) * t;
                 particleData.fx(i) = Vector3d.NULL; // zero before next force calculation
             }
         }
-        forceField.getPotentialAndForces(particleDataPlh);
-        finish ateach(place in Dist.makeUnique()) {
-            val particleData = particleDataPlh();
-            for (i in 0..(particleData.numAtoms-1)) {
-                val invMass = 1.0 / forceField.getAtomMass(particleData.species(i));
-                particleData.dx(i) = particleData.dx(i) + 0.5 * t * invMass * particleData.fx(i);;
+        val potential = forceField.getPotentialAndForces(particleDataPlh);
+        val kinetic = finish(SumReducer()) {
+            ateach(p in Dist.makeUnique()) {
+                val particleData = particleDataPlh();
+                var kineticHere:Double = 0.0;
+                for (i in 0..(particleData.numAtoms-1)) {
+                    val mass = particleData.atomTypes(particleData.atomTypeIndex(i)).mass;
+                    val invMass = 1.0 / mass;
+                    particleData.dx(i) = particleData.dx(i) + 0.5 * t * invMass * particleData.fx(i);
+                    kineticHere += mass * particleData.dx(i).lengthSquared();
+                }
+                offer kineticHere;
             }
-        }
+        };
+Console.OUT.printf("potential %10.5e kinetic %10.5e total %10.5e\n", potential, kinetic, (potential+kinetic));
+        return potential+kinetic;
     }
 
     public static def main(args:Rail[String]) {

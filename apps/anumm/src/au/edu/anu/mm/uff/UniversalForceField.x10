@@ -18,7 +18,7 @@ import au.edu.anu.mm.BondStretchParameters;
 import au.edu.anu.mm.ForceField;
 import au.edu.anu.mm.LennardJonesParameters;
 import au.edu.anu.mm.ParticleData;
-import au.edu.anu.mm.SpeciesSpec;
+import au.edu.anu.mm.AtomType;
 import au.edu.anu.chem.BondType;
 
 public class UniversalForceField implements ForceField {
@@ -27,7 +27,7 @@ public class UniversalForceField implements ForceField {
     public static SPECIES_N = 7;
     public static SPECIES_O = 8;
 
-    val BOND_ORDER_PROPORTIONALITY_CONSTANT = -0.1332;
+    val BOND_ORDER_PROPORTIONALITY_CONSTANT = -0.5573; // kJ/mol
 
     val atomParameters:Rail[UffParameters];
 
@@ -49,18 +49,18 @@ public class UniversalForceField implements ForceField {
     public def this() {
         atomParameters = new Rail[UffParameters](9);
         // TODO read in parameters from file
-        atomParameters(SPECIES_H) = UffParameters("H", 1.00794, 0.354, 180.0,  LennardJonesParameters("H_",  12.0,   2.886, 0.044), 0.712, 4.53);
-        atomParameters(SPECIES_C) = UffParameters("C", 12.0000, 0.757, 109.47, LennardJonesParameters("C_3", 12.73,  3.851, 0.105), 1.912, 5.34);
-        atomParameters(SPECIES_N) = UffParameters("N", 14.0031, 0.700, 106.7,  LennardJonesParameters("N_3", 13.407, 3.660, 0.069), 2.544, 6.899);
-        atomParameters(SPECIES_O) = UffParameters("O", 15.9994, 0.658, 104.51, LennardJonesParameters("O_3", 14.085, 3.500, 0.060), 2.300, 8.741);
+        atomParameters(SPECIES_H) = UffParameters("H", 1.00794, 3.54, 180.0,  LennardJonesParameters("H_",  12.0,   28.86, 0.044), 0.712, 4.53);
+        atomParameters(SPECIES_C) = UffParameters("C", 12.0000, 7.57, 109.47, LennardJonesParameters("C_3", 12.73,  38.51, 0.105), 1.912, 5.34);
+        atomParameters(SPECIES_N) = UffParameters("N", 14.0031, 7.00, 106.7,  LennardJonesParameters("N_3", 13.407, 36.60, 0.069), 2.544, 6.899);
+        atomParameters(SPECIES_O) = UffParameters("O", 15.9994, 6.58, 104.51, LennardJonesParameters("O_3", 14.085, 35.00, 0.060), 2.300, 8.741);
     }
 
-    public def getSpeciesSpecs() {
-        val specs = new Rail[SpeciesSpec](atomParameters.size);
+    public def getAtomTypes() {
+        val specs = new Rail[AtomType](atomParameters.size);
         for (i in 0..(atomParameters.size-1)) {
             val atom = atomParameters(i);
             if (atom.description != null) {
-                specs(i) = new SpeciesSpec(atom.description, atom.mass, atom.effectiveCharge, i as Int);
+                specs(i) = new AtomType(atom.description, i as Int, atom.mass, atom.effectiveCharge);
             }
         }
         return specs;
@@ -116,7 +116,7 @@ public class UniversalForceField implements ForceField {
             val atom1Center = particleData.x(bond.atom1Index);
             val atom2Center = particleData.x(bond.atom2Index);
 
-            val bondParams = getBondStretchParameters(particleData.species(bond.atom1Index), particleData.species(bond.atom2Index), bond.typeIndex);
+            val bondParams = getBondStretchParameters(particleData.atomTypeIndex(bond.atom1Index), particleData.atomTypeIndex(bond.atom2Index), bond.typeIndex);
 
             //Console.OUT.println("atom1 species " + bondParams.species1 + " " + atom1Center);
             //Console.OUT.println("atom2 species " + bondParams.species2 + " " + atom2Center);

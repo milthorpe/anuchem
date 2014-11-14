@@ -142,7 +142,7 @@ public class TestCyclotron {
         }
 
         var totalIons:Int = 0n;
-        val speciesList = new ArrayList[SpeciesSpec]();
+        val speciesList = new ArrayList[AtomType]();
         try {
             while (line != null && line.startsWith("species")) {
                 val wrd = StringSplitter.splitOnWhitespace(line);
@@ -152,7 +152,7 @@ public class TestCyclotron {
                 val numIons = Int.parseInt(wrd(4));
                 totalIons += numIons;
 
-                speciesList.add(new SpeciesSpec(name, mass, charge, numIons));
+                speciesList.add(new AtomType(name, numIons, mass, charge));
 
                 line = fil.readLine();
             }

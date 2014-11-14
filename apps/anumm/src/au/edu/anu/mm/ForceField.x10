@@ -34,7 +34,7 @@ public interface ForceField {
     /**
      * @return the list of all species supported by this force field
      */
-    public def getSpeciesSpecs():Rail[SpeciesSpec];
+    public def getAtomTypes():Rail[AtomType];
 
     /**
      * @return the bond type index within this force field for the given species

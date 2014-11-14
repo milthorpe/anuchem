@@ -12,26 +12,24 @@ package au.edu.anu.mm;
 
 import x10.regionarray.Dist;
 
-import au.edu.anu.mm.ForceField;
-import au.edu.anu.mm.SpeciesSpec;
 import au.edu.anu.chem.mm.MMAtom;
 
 public class GenericForceField implements ForceField {
-    val specs:Rail[SpeciesSpec];
+    val specs:Rail[AtomType];
     val bondStretchParameters:Rail[BondStretchParameters];
 
     public def this() {
         // TODO read in parameters from file
-        specs = new Rail[SpeciesSpec](3);
-        specs(0) = SpeciesSpec("OW", 15.9949146, -0.82, 8n);
-        specs(1) = SpeciesSpec("HW1", 1.00794,    0.41, 1n);
-        specs(2) = SpeciesSpec("HW2", 1.00794,    0.41, 1n);
+        specs = new Rail[AtomType](3);
+        specs(0) = AtomType("OW", 8n, 15.9949146, -0.82);
+        specs(1) = AtomType("HW1", 1n, 1.00794,    0.41);
+        specs(2) = AtomType("HW2", 1n, 1.00794,    0.41);
 
         bondStretchParameters = new Rail[BondStretchParameters](1);
         bondStretchParameters(0) = BondStretchParameters(0n, 1n, 0.1, 418400.0);
     }
 
-    public def getSpeciesSpecs() {
+    public def getAtomTypes() {
         return specs;
     }
 

@@ -11,4 +11,4 @@
  */
 package au.edu.anu.mm;
 
-public struct SpeciesSpec(name:String, mass:Double, charge:Double, atomicNumber:Int) { }
+public struct AtomType(name:String, atomicNumber:Int, mass:Double, charge:Double) { }

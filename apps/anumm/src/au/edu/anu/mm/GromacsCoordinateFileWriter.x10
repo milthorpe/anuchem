@@ -34,7 +34,6 @@ public class GromacsCoordinateFileWriter {
     }
 
     public def writePositions(particleDataPlh:PlaceLocalHandle[ParticleData], forceField:ForceField) {
-        val speciesSpecs = forceField.getSpeciesSpecs();
         out.println(particleDataPlh().description);
         out.println(particleDataPlh().numAtoms);
         finish for(place in Place.places()) {
@@ -42,19 +41,19 @@ public class GromacsCoordinateFileWriter {
                 val particleData = particleDataPlh();
                 val posString = new StringBuilder();
                 for (i in 0..(particleData.numAtoms-1)) {
-                    val residueTypeIndex = particleData.residueTypeIndex(particleData.residueNumber(i));
-                    val residueName = particleData.residueType(residueTypeIndex);
-                    val species = speciesSpecs(particleData.species(i)).name;
-                    posString.add(String.format("%5d%3s  %5s%5d", [particleData.residueNumber(i), residueName, species, particleData.globalIndex(i)]));
-                    val pos = particleData.x(i) * 0.1; // convert to nm
-                    val vel = particleData.dx(i) * 0.1;
+                    val moleculeTypeIndex = particleData.moleculeTypeIndex(particleData.residueNumber(i));
+                    val residueName = particleData.moleculeTypes(moleculeTypeIndex);
+                    val name = particleData.atomTypes(particleData.atomTypeIndex(i)).name;
+                    posString.add(String.format("%5d%3s  %5s%5d", [particleData.residueNumber(i), residueName, name, particleData.globalIndex(i)]));
+                    val pos = particleData.x(i);
+                    val vel = particleData.dx(i);
                     posString.add(String.format("%8.3f%8.3f%8.3f%8.3f%8.3f%8.3f\n", [pos.i as Any, pos.j, pos.k, vel.i, vel.j, vel.k]));
                 }
                 posString.toString()
             };
             out.print(placeString);
         }
-        val edges = particleDataPlh().boxEdges * 0.1; // convert to nm
+        val edges = particleDataPlh().boxEdges;
         out.printf("%10.5f%10.5f%10.5f\n", edges.i, edges.j, edges.k);
     }
 }

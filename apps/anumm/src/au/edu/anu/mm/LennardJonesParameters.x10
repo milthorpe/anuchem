@@ -19,8 +19,8 @@ package au.edu.anu.mm;
  */
 public struct LennardJonesParameters(description : String, 
                                    scale : Double,
-                                   equlibrium : Double,
-                                   wellDepth : Double) {
+                                   vdwBondRadius : Double,
+                                   vdwWellDepth : Double) {
     public def this(description : String, scale : Double, bondRadius : Double, wellDepth : Double) {
         property(description, scale, bondRadius, wellDepth);
     }

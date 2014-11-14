@@ -29,7 +29,7 @@ public class XYZStructureFileReader {
     }
 
     public def readParticleData(particleData:ParticleData, forceField:ForceField) {
-        val speciesSpecs = forceField.getSpeciesSpecs();
+        val atomTypes = forceField.getAtomTypes();
         val file = new FileReader(new File(fileName));
         // line 1: number of atoms
         val numAtoms = Int.parseInt(file.readLine().trim());
@@ -45,22 +45,22 @@ public class XYZStructureFileReader {
             val words = file.readLine().split(" ");
             val symbol = words(0);
             var species:Int = -1n;
-            for (j in 0..(speciesSpecs.size-1)) {
-                val speciesSpec = speciesSpecs(j);
-                if (symbol.equals(speciesSpec.name)) {
+            for (j in 0..(atomTypes.size-1)) {
+                val atomType = atomTypes(j);
+                if (symbol.equals(atomType.name)) {
                     species = j as Int;
-                    Console.OUT.println("found species " + species + " " + speciesSpec.name + " " + speciesSpec.mass);
+                    Console.OUT.println("found species " + species + " " + atomType.name + " " + atomType.mass);
                     break;
                 }
             }
             if (species == -1n) {
                 throw new IllegalArgumentException("no species found for symbol " + symbol);
             }
-            particleData.species(i) = species;
+            particleData.atomTypeIndex(i) = species;
             particleData.globalIndex(i) = i+1;
             particleData.x(i) = Point3d(Double.parseDouble(words(1).trim()),
                                         Double.parseDouble(words(2).trim()),
-                                        Double.parseDouble(words(3).trim()));
+                                        Double.parseDouble(words(3).trim())) * 0.1;
         }
         file.close();
 
