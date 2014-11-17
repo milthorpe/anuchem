@@ -49,17 +49,18 @@ public class Anumm {
     /**
      * Perform a molecular mechanics run on the system of atoms
      * for the given number and length of timesteps.
-     * @param timestep length in fs (=ps/1000)
+     * @param timestep length in ps
      * @param numSteps number of timesteps to simulate
      */
     public def mdRun(timestep:Double, numSteps:Long) {
-        Console.OUT.println("# Timestep = " + timestep + "fs, number of steps = " + numSteps);
+        Console.OUT.println("# Timestep = " + timestep + "ps, number of steps = " + numSteps);
 
         var step : Long = 0;
         if (verbose) {
             startTimestep(0.0);
         }
         val potential = forceField.getPotentialAndForces(particleDataPlh); // get initial forces
+
         val kinetic = getKineticEnergy();
         Console.OUT.printf("potential %10.5e kinetic %10.5e total %10.5e\n", potential, kinetic, (potential+kinetic));
         val startingEnergy = potential+kinetic;
@@ -75,7 +76,7 @@ public class Anumm {
         if (verbose) {
             outputFile.writePositions(particleDataPlh, forceField);
         }
-        Console.OUT.printf("relative energy drift %10.5f\n", (energy-startingEnergy)/energy);
+        Console.OUT.printf("\nrelative energy drift %10.5e", (energy-startingEnergy)/energy);
     }
 
     private def getKineticEnergy() {
@@ -90,7 +91,7 @@ public class Anumm {
                 offer kinetic;
             }
         };
-        return energy;
+        return 0.5 * energy;
     }
 
     static struct SumReducer implements Reducible[Double] {
@@ -99,27 +100,29 @@ public class Anumm {
     }
 
     private def startTimestep(time:Double) {
-        Console.OUT.printf("\n%.3f ", time);
+        Console.OUT.printf("\n%10.4f ", time);
     }
 
     /**
      * Performs a single molecular dynamics timestep
      * using the velocity-Verlet algorithm. 
-     * @param timestep time in fs (=ps/1000)
+     * @param dt time in ps
      * @param returns the total system energy
      */
-    public def mdStep(timestep : Double):Double {
-        val t = timestep * 0.001;
-        finish ateach(place in Dist.makeUnique()) {
+    public def mdStep(dt:Double):Double {
+    finish ateach(place in Dist.makeUnique()) {
             val particleData = particleDataPlh();
+
             for (i in 0..(particleData.numAtoms-1)) {
                 val invMass = 1.0 / particleData.atomTypes(particleData.atomTypeIndex(i)).mass;
-                particleData.dx(i) = particleData.dx(i) + 0.5 * t * invMass * particleData.fx(i);
-                particleData.x(i) = particleData.x(i) + particleData.dx(i) * t;
+                particleData.dx(i) = particleData.dx(i) + 0.5 * dt * invMass * particleData.fx(i);
+                particleData.x(i) = particleData.x(i) + particleData.dx(i) * dt;
                 particleData.fx(i) = Vector3d.NULL; // zero before next force calculation
             }
         }
+
         val potential = forceField.getPotentialAndForces(particleDataPlh);
+
         val kinetic = finish(SumReducer()) {
             ateach(p in Dist.makeUnique()) {
                 val particleData = particleDataPlh();
@@ -127,13 +130,15 @@ public class Anumm {
                 for (i in 0..(particleData.numAtoms-1)) {
                     val mass = particleData.atomTypes(particleData.atomTypeIndex(i)).mass;
                     val invMass = 1.0 / mass;
-                    particleData.dx(i) = particleData.dx(i) + 0.5 * t * invMass * particleData.fx(i);
-                    kineticHere += mass * particleData.dx(i).lengthSquared();
+                    particleData.dx(i) = particleData.dx(i) + 0.5 * dt * invMass * particleData.fx(i);
+                    val ke = 0.5 * mass * particleData.dx(i).lengthSquared();
+                    //Console.OUT.println("kinetic for " + i + " = " + ke + " mass " + mass);
+                    kineticHere += ke;
                 }
                 offer kineticHere;
             }
         };
-Console.OUT.printf("potential %10.5e kinetic %10.5e total %10.5e\n", potential, kinetic, (potential+kinetic));
+        Console.OUT.printf("potential %10.5e kinetic %10.5e total %10.5e", potential, kinetic, (potential+kinetic));
         return potential+kinetic;
     }
 
@@ -143,7 +148,7 @@ Console.OUT.printf("potential %10.5e kinetic %10.5e total %10.5e\n", potential, 
             Option("v","verbose","print out each iteration")
         ], [
             Option("c","coordinateFile","filename for structure/coordinates"),
-            Option("t","timestep","timestep in femtoseconds"),
+            Option("t","timestep","timestep in picoseconds (default = 0.001)"),
             Option("n","numSteps","number of timesteps to simulate"),
             Option("p","topologyFile","GROMACS topology file"),
             Option("o","outputFile","output GROMACS coordinate file")
@@ -166,7 +171,7 @@ Console.OUT.printf("potential %10.5e kinetic %10.5e total %10.5e\n", potential, 
             System.setExitCode(1n);
             return;
         }
-        val timestep = opts("t", 0.2);
+        val timestep = opts("t", 0.001);
         val numSteps = opts("n", 200n);
         val topologyFileName = opts("p", null);
         val defaultOutputFileName = structureFileName.substring(0n, structureFileName.indexOf("."))

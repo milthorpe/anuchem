@@ -123,7 +123,7 @@ public class UniversalForceField implements ForceField {
             //Console.OUT.printf("ideal radius %10.6f forceConstant %10.6f\n", bondParams.idealRadius, bondParams.forceConstant);
 
             val direction = atom2Center - atom1Center;
-            val distance = direction.lengthSquared();
+            val distance = direction.length();
 
             val stretch = distance - bondParams.idealRadius;
             //Console.OUT.printf("stretch  %10.6f direction %10.6f %10.6f %10.6f\n", stretch, direction.i, direction.j, direction.k);
@@ -133,7 +133,7 @@ public class UniversalForceField implements ForceField {
             particleData.fx(bond.atom1Index) += force;
             particleData.fx(bond.atom2Index) -= force;
 
-            energy += 0.5 * bondParams.forceConstant * stretch * stretch;
+            energy += bondParams.forceConstant * stretch * stretch;
         }
         return energy;
     }

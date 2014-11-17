@@ -60,7 +60,7 @@ public class XYZStructureFileReader {
             particleData.globalIndex(i) = i+1;
             particleData.x(i) = Point3d(Double.parseDouble(words(1).trim()),
                                         Double.parseDouble(words(2).trim()),
-                                        Double.parseDouble(words(3).trim())) * 0.1;
+                                        Double.parseDouble(words(3).trim())) * 10.0;
         }
         file.close();
 

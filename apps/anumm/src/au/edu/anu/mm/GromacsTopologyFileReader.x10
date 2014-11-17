@@ -40,23 +40,22 @@ public class GromacsTopologyFileReader {
                 moleculeType.name = words(0);
 
                 while (currentLine != null) {
-                    if (!isComment()) {
-                        if (currentLine.indexOf("[ atoms ]") >= 0) {
-                            readAtoms(file, particleData, moleculeType, allAtomTypes, simulationAtomTypes, forceField);
-                        } else if (currentLine.indexOf("[ bonds ]") >= 0) {
-                            moleculeType.bonds = readBonds(file, particleData, moleculeType, forceField);
-                        } else if (currentLine.indexOf("[ pairs ]") >= 0) {
-                            skipSection(file);
-                        } else if (currentLine.indexOf("[ angles ]") >= 0) {
-                            skipSection(file);
-                        } else if (currentLine.indexOf("[ dihedrals ]") >= 0) {
-                            skipSection(file);
-                        } else if (currentLine.indexOf("[") >= 0) {
-                            // finished this molecule type
-                            break;
-                        }
+                    if (currentLine.indexOf("[ atoms ]") >= 0) {
+                        readAtoms(file, particleData, moleculeType, allAtomTypes, simulationAtomTypes, forceField);
+                    } else if (currentLine.indexOf("[ bonds ]") >= 0) {
+                        moleculeType.bonds = readBonds(file, particleData, moleculeType, forceField);
+                    } else if (currentLine.indexOf("[ pairs ]") >= 0) {
+                        skipSection(file);
+                    } else if (currentLine.indexOf("[ angles ]") >= 0) {
+                        skipSection(file);
+                    } else if (currentLine.indexOf("[ dihedrals ]") >= 0) {
+                        skipSection(file);
+                    } else if (currentLine.indexOf("[") >= 0) {
+                        // finished this molecule type
+                        break;
+                    } else {
+                        currentLine = file.readLine();
                     }
-                    currentLine = file.readLine();
                 }
                 moleculeTypes.add(moleculeType);
             } else {
@@ -96,7 +95,6 @@ public class GromacsTopologyFileReader {
                     Console.ERR.println("did not find atom type " + atomTypeName);
                 }
             }
-
             currentLine = file.readLine();
         }
     }
@@ -110,7 +108,7 @@ public class GromacsTopologyFileReader {
                 val bondType = Int.parseInt(words(0));
                 val atom1Index = Int.parseInt(words(1));
                 val atom2Index = Int.parseInt(words(2));
-                //Console.OUT.println("bond " + atom1Index + " to " + atom2Index + " type " + bondType);
+                //Console.OUT.println("molecule " + molecule.name + " has bond " + atom1Index + " to " + atom2Index + " type " + bondType);
                 bonds.add(new Bond(atom1Index, atom2Index, bondType));
             }
 

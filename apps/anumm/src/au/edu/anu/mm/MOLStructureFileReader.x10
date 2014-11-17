@@ -55,7 +55,7 @@ public class MOLStructureFileReader {
             val line = file.readLine();
             particleData.x(i)  = Point3d(Double.parseDouble(line.substring( 0n,10n).trim()),
                                          Double.parseDouble(line.substring(10n,20n).trim()),
-                                         Double.parseDouble(line.substring(20n,30n).trim())) * 0.1; // convert to nm
+                                         Double.parseDouble(line.substring(20n,30n).trim())) * 10.0; // convert to nm
             val symbol = line.substring(31n,34n).trim();
             var species:Int = -1n;
             for (j in 0..(atomTypes.size-1)) {

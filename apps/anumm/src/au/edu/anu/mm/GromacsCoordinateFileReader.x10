@@ -14,6 +14,7 @@ package au.edu.anu.mm;
 import x10.io.File;
 import x10.io.FileReader;
 import x10.util.ArrayList;
+import x10.util.HashMap;
 
 import x10x.vector.Point3d;
 import x10x.vector.Vector3d;
@@ -42,7 +43,8 @@ public class GromacsCoordinateFileReader {
         particleData.allocateAtoms(numAtoms);
         particleData.description = title;
 
-        val bonds = new ArrayList[Bond]();
+        // maps residue name, number, atom name to globalIndex
+        val particleMap = new HashMap[String,Int](numAtoms);
 
         for(var i:Int=0n; i<numAtoms; i++) {
             val line = file.readLine();
@@ -87,11 +89,9 @@ public class GromacsCoordinateFileReader {
                                               Double.parseDouble(line.substring(52n,60n)),
                                               Double.parseDouble(line.substring(60n,68n)));
             }
-
-            createBondsForParticle(particleData, i, bonds);
+            val particleKey = residueName+residueNumber+atomName;
+            particleMap.put(particleKey, i);
         }
-
-        particleData.bonds = bonds.toRail();
 
         // read box edge lengths
         val boxLine = file.readLine();
@@ -101,12 +101,34 @@ public class GromacsCoordinateFileReader {
         particleData.boxEdges = Vector3d(x,y,z);
         
         file.close();
+
+        createBonds(particleData, particleMap);
     }
 
-    private def createBondsForParticle(particleData:ParticleData, atomNumber:Long, bonds:ArrayList[Bond]) {
-        //val moleculeType = particleData.moleculeTypes(particleData.moleculeTypeIndex(atomNumber));
-        //val atomTypeIndex = particleData.atomTypeIndex(atomNumber);
-        // TODO store bond template for molecule type when reading topology; use here
+    /** 
+     * Create bonds for each residue from the bond structure held in
+     * particleData.moleculeTypes
+     */
+    private def createBonds(particleData:ParticleData, atomMap:HashMap[String,Int]) {
+        val bonds = new ArrayList[Bond]();
+        for (i in 0..(particleData.numAtoms-1)) {
+            val atomTypeIndex = particleData.atomTypeIndex(i);
+            val residueNumber = particleData.residueNumber(i);
+            val moleculeType = particleData.moleculeTypes(particleData.moleculeTypeIndex(residueNumber));
+            if (moleculeType.bonds != null) {
+                for (bond in moleculeType.bonds) {
+                    if (atomTypeIndex == moleculeType.atomTypes(bond.atom1Index-1)) {
+                        val atom1Key = moleculeType.name+residueNumber+moleculeType.atomNames(bond.atom1Index-1);
+                        val atom1Index = atomMap.get(atom1Key);
+                        val atom2Key = moleculeType.name+residueNumber+moleculeType.atomNames(bond.atom2Index-1);
+                        val atom2Index = atomMap.get(atom2Key);
+                        //Console.OUT.println("creating bond from " + atom1Key + " index " + atom1Index + " to " + atom2Key + " index " + atom2Index + " type " + bond.typeIndex);
+                        bonds.add(Bond(atom1Index, atom2Index, bond.typeIndex));
+                    }
+                }
+            }
+        }
+        particleData.bonds = bonds.toRail();
     }
 
     public def setFileName(fileName:String) {

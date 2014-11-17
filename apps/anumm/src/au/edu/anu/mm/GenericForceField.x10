@@ -25,8 +25,8 @@ public class GenericForceField implements ForceField {
         specs(1) = AtomType("HW1", 1n, 1.00794,    0.41);
         specs(2) = AtomType("HW2", 1n, 1.00794,    0.41);
 
-        bondStretchParameters = new Rail[BondStretchParameters](1);
-        bondStretchParameters(0) = BondStretchParameters(0n, 1n, 0.1, 418400.0);
+        bondStretchParameters = new Rail[BondStretchParameters](2);
+        bondStretchParameters(1) = BondStretchParameters(0n, 1n, 0.1, 418400.0);
     }
 
     public def getAtomTypes() {
@@ -59,7 +59,7 @@ public class GenericForceField implements ForceField {
     }
 
     private def bondStretching(particleData:ParticleData):Double {
-        var energy:Double = 0.0;
+        var potential:Double = 0.0;
         val bonds = particleData.bonds;
         for (bond in bonds) {
             val bondParams = bondStretchParameters(bond.typeIndex);
@@ -70,21 +70,27 @@ public class GenericForceField implements ForceField {
             //Console.OUT.println("atom2 species " + bondParams.species2 + " " + atom2Center);
             //Console.OUT.printf("ideal radius %10.6f forceConstant %10.6f\n", bondParams.idealRadius, bondParams.forceConstant);
 
-            val direction = atom2Center - atom1Center;
-            val distance = direction.lengthSquared();
+            val r12 = atom2Center - atom1Center;
+            val bondLength = r12.length();
 
-            val stretch = distance - bondParams.idealRadius;
-            //Console.OUT.printf("stretch  %10.6f direction %10.6f %10.6f %10.6f\n", stretch, direction.i, direction.j, direction.k);
-            val force = direction.normalize() * (bondParams.forceConstant * stretch);
+            val stretch = bondLength - bondParams.idealRadius;
+            //Console.OUT.printf("stretch %10.6f r12 %10.6f %10.6f %10.6f\n", stretch, r12.i, r12.j, r12.k);
+            val normalizedVec = r12 * (1.0 / bondLength);
+            val force = normalizedVec * (bondParams.forceConstant * stretch);
             //Console.OUT.printf("bond stretching force %10.6f %10.6f %10.6f\n", force.i, force.j, force.k);
 
             particleData.fx(bond.atom1Index) += force;
             particleData.fx(bond.atom2Index) -= force;
+            //Console.OUT.println("atom1 force " + particleData.fx(bond.atom1Index));
+            //Console.OUT.println("atom2 force " + particleData.fx(bond.atom2Index));
 
-            energy += 0.5 * bondParams.forceConstant * stretch * stretch;
+            // potential is for both particles
+            val v = bondParams.forceConstant * stretch * stretch;
+            //Console.OUT.println("potential = " + v);
+            potential += v;
         }
 
-        return energy;
+        return potential;
     }
 
     static struct SumReducer implements Reducible[Double] {

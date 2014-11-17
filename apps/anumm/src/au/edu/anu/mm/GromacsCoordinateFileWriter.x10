@@ -42,7 +42,7 @@ public class GromacsCoordinateFileWriter {
                 val posString = new StringBuilder();
                 for (i in 0..(particleData.numAtoms-1)) {
                     val moleculeTypeIndex = particleData.moleculeTypeIndex(particleData.residueNumber(i));
-                    val residueName = particleData.moleculeTypes(moleculeTypeIndex);
+                    val residueName = particleData.moleculeTypes(moleculeTypeIndex).name;
                     val name = particleData.atomTypes(particleData.atomTypeIndex(i)).name;
                     posString.add(String.format("%5d%3s  %5s%5d", [particleData.residueNumber(i), residueName, name, particleData.globalIndex(i)]));
                     val pos = particleData.x(i);
