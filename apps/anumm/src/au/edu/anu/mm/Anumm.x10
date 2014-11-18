@@ -85,7 +85,7 @@ public class Anumm {
                 var kinetic:Double = 0.0;
                 val particleData = particleDataPlh();
                 for (i in 0..(particleData.numAtoms-1)) {
-                    val mass = forceField.getAtomMass(particleData.atomTypeIndex(i));
+                    val mass = particleData.atomTypes(particleData.atomTypeIndex(i)).mass;
                     kinetic += mass * particleData.dx(i).lengthSquared();
                 }
                 offer kinetic;

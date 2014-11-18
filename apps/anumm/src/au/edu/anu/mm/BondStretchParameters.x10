@@ -10,8 +10,6 @@
  */
 package au.edu.anu.mm;
 
-import au.edu.anu.chem.BondType;
-
 /**
  * This struct represents the bond stretch parameters for a pair of atom types.
  * @species the species of the first atom

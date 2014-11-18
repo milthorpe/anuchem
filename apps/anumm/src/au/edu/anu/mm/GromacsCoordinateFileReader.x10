@@ -111,12 +111,14 @@ public class GromacsCoordinateFileReader {
      */
     private def createBonds(particleData:ParticleData, atomMap:HashMap[String,Int]) {
         val bonds = new ArrayList[Bond]();
+        val angles = new ArrayList[BondAngle]();
         for (i in 0..(particleData.numAtoms-1)) {
             val atomTypeIndex = particleData.atomTypeIndex(i);
             val residueNumber = particleData.residueNumber(i);
             val moleculeType = particleData.moleculeTypes(particleData.moleculeTypeIndex(residueNumber));
             if (moleculeType.bonds != null) {
                 for (bond in moleculeType.bonds) {
+                    // bonds follow first atom
                     if (atomTypeIndex == moleculeType.atomTypes(bond.atom1Index-1)) {
                         val atom1Key = moleculeType.name+residueNumber+moleculeType.atomNames(bond.atom1Index-1);
                         val atom1Index = atomMap.get(atom1Key);
@@ -127,8 +129,24 @@ public class GromacsCoordinateFileReader {
                     }
                 }
             }
+            if (moleculeType.angles != null) {
+                for (angle in moleculeType.angles) {
+                    // bond angles follow second atom
+                    if (atomTypeIndex == moleculeType.atomTypes(angle.atom2Index-1)) {
+                        val atom1Key = moleculeType.name+residueNumber+moleculeType.atomNames(angle.atom1Index-1);
+                        val atom1Index = atomMap.get(atom1Key);
+                        val atom2Key = moleculeType.name+residueNumber+moleculeType.atomNames(angle.atom2Index-1);
+                        val atom2Index = atomMap.get(atom2Key);
+                        val atom3Key = moleculeType.name+residueNumber+moleculeType.atomNames(angle.atom3Index-1);
+                        val atom3Index = atomMap.get(atom3Key);
+                        //Console.OUT.println("creating angle " + atom1Key + " - " + atom2Key + " - " + atom3Key + " type " + angle.typeIndex);
+                        angles.add(BondAngle(atom1Index, atom2Index, atom3Index, angle.typeIndex));
+                    }
+                }
+            }
         }
         particleData.bonds = bonds.toRail();
+        particleData.angles = angles.toRail();
     }
 
     public def setFileName(fileName:String) {

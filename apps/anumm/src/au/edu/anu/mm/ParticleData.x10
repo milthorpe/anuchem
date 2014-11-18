@@ -45,8 +45,13 @@ public class ParticleData {
 
     // Bond data
 
+    public var bondTypes:Rail[BondStretchParameters];
+    public var angleTypes:Rail[BondAngleParameters];
+
     /** Bonds between atoms, where the first atom is held locally at this place */
     public var bonds:Rail[Bond];
+    /** Bond angles between atoms, where the second atom is held locally at this place */
+    public var angles:Rail[BondAngle];
 
     public def allocateAtoms(N:Long) {
         this.numAtoms = N;

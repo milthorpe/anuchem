@@ -23,6 +23,7 @@ public class MoleculeType {
     public var atomTypes:ArrayList[Int];
 
     public var bonds:ArrayList[Bond];
+    public var angles:ArrayList[BondAngle];
     // TODO angles, dihedrals
 }
 

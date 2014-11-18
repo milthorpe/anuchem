@@ -27,11 +27,16 @@ public class GromacsTopologyFileReader {
     var fileName:String;
     var currentLine:String;
 
+    val atomTypes = new ArrayList[AtomType]();
+    val moleculeTypes = new ArrayList[MoleculeType]();
+    val bondTypes = new ArrayList[BondStretchParameters]();
+    val angleTypes = new ArrayList[BondAngleParameters]();
+
     public def this(fileName:String) { 
         this.fileName = fileName;
     }
 
-    public def readMoleculeType(file:Reader, particleData:ParticleData, forceField:ForceField, allAtomTypes:Rail[AtomType], simulationAtomTypes:ArrayList[AtomType], moleculeTypes:ArrayList[MoleculeType]) {
+    public def readMoleculeType(file:Reader, particleData:ParticleData, allAtomTypes:Rail[AtomType]) {
         currentLine = file.readLine();
         while (!finishedSection()) {
             if (!isComment()) {
@@ -41,13 +46,13 @@ public class GromacsTopologyFileReader {
 
                 while (currentLine != null) {
                     if (currentLine.indexOf("[ atoms ]") >= 0) {
-                        readAtoms(file, particleData, moleculeType, allAtomTypes, simulationAtomTypes, forceField);
+                        readAtoms(file, particleData, moleculeType, allAtomTypes);
                     } else if (currentLine.indexOf("[ bonds ]") >= 0) {
-                        moleculeType.bonds = readBonds(file, particleData, moleculeType, forceField);
+                        readBonds(file, particleData, moleculeType);
                     } else if (currentLine.indexOf("[ pairs ]") >= 0) {
                         skipSection(file);
                     } else if (currentLine.indexOf("[ angles ]") >= 0) {
-                        skipSection(file);
+                        readAngles(file, particleData, moleculeType);
                     } else if (currentLine.indexOf("[ dihedrals ]") >= 0) {
                         skipSection(file);
                     } else if (currentLine.indexOf("[") >= 0) {
@@ -64,7 +69,7 @@ public class GromacsTopologyFileReader {
         }
     }
 
-    public def readAtoms(file:Reader, particleData:ParticleData, molecule:MoleculeType, allAtomTypes:Rail[AtomType], simulationAtomTypes:ArrayList[AtomType], forceField:ForceField) {
+    public def readAtoms(file:Reader, particleData:ParticleData, molecule:MoleculeType, allAtomTypes:Rail[AtomType]) {
         currentLine = file.readLine();
         molecule.atomNames = new ArrayList[String]();
         molecule.atomTypes = new ArrayList[Int]();
@@ -83,11 +88,11 @@ public class GromacsTopologyFileReader {
                         mass = atomType.mass;
                         atomicNumber = atomType.atomicNumber;
                         //Console.OUT.println("found atomType " + atomTypeName + " " + mass);
-                        simulationAtomTypes.add(AtomType(atomTypeName, atomicNumber, mass, charge));
+                        atomTypes.add(AtomType(atomTypeName, atomicNumber, mass, charge));
 
                         // TODO link atomName and index in MoleculeType
                         molecule.atomNames.add(atomName);
-                        molecule.atomTypes.add((simulationAtomTypes.size()-1) as Int);
+                        molecule.atomTypes.add((atomTypes.size()-1) as Int);
                         break;
                     }
                 }
@@ -99,25 +104,61 @@ public class GromacsTopologyFileReader {
         }
     }
 
-    public def readBonds(file:Reader, particleData:ParticleData, molecule:MoleculeType, forceField:ForceField):ArrayList[Bond] {
+    public def readBonds(file:Reader, particleData:ParticleData, molecule:MoleculeType) {
         val bonds = new ArrayList[Bond]();
         currentLine = file.readLine();
         while (!finishedSection()) {
             if (!isComment() && currentLine.trim().length() > 0n) {
                 val words = StringSplitter.splitOnWhitespace(currentLine);
-                val bondType = Int.parseInt(words(0));
-                val atom1Index = Int.parseInt(words(1));
-                val atom2Index = Int.parseInt(words(2));
-                //Console.OUT.println("molecule " + molecule.name + " has bond " + atom1Index + " to " + atom2Index + " type " + bondType);
-                bonds.add(new Bond(atom1Index, atom2Index, bondType));
+                val atom1Index = Int.parseInt(words(0));
+                val atom2Index = Int.parseInt(words(1));
+                val functionType = Int.parseInt(words(2)); // not used
+
+                val idealRadius = Double.parseDouble(words(3));
+                val forceConstant = Double.parseDouble(words(4));
+                val atom1TypeIndex = molecule.atomTypes(atom1Index-1);
+                val atom2TypeIndex = molecule.atomTypes(atom2Index-1);
+                bondTypes.add(new BondStretchParameters(atom1TypeIndex, atom2TypeIndex, idealRadius, forceConstant));
+                //Console.OUT.println("adding new bond stretch params " + atom1TypeIndex + " to " + atom2TypeIndex + " idealRadius " + idealRadius);
+
+                //Console.OUT.println("molecule " + molecule.name + " has bond " + atom1Index + " to " + atom2Index + " type " + (bondTypes.size()-1));
+                bonds.add(new Bond(atom1Index, atom2Index, (bondTypes.size()-1) as Int));
             }
 
             currentLine = file.readLine();
         }
-        return bonds;
+        molecule.bonds = bonds;
     }
 
-    public def readAtomTypes(file:Reader, particleData:ParticleData, forceField:ForceField):Rail[AtomType] {
+    public def readAngles(file:Reader, particleData:ParticleData, molecule:MoleculeType) {
+        val angles = new ArrayList[BondAngle]();
+        currentLine = file.readLine();
+        while (!finishedSection()) {
+            if (!isComment() && currentLine.trim().length() > 0n) {
+                val words = StringSplitter.splitOnWhitespace(currentLine);
+                val atom1Index = Int.parseInt(words(0));
+                val atom2Index = Int.parseInt(words(1));
+                val atom3Index = Int.parseInt(words(2));
+                val function = Int.parseInt(words(3)); // not used
+                 // convert to radians
+                val idealAngle = Double.parseDouble(words(4)) / 180.0 * Math.PI;
+                val forceConstant = Double.parseDouble(words(5));
+
+                //Console.OUT.println("molecule " + molecule.name + " has angle " + atom1Index + " - " + atom2Index + " - " + atom3Index + " idealAngle " + idealAngle + " forceConstant " + forceConstant);
+                val atom1TypeIndex = molecule.atomTypes(atom1Index-1);
+                val atom2TypeIndex = molecule.atomTypes(atom2Index-1);
+                val atom3TypeIndex = molecule.atomTypes(atom3Index-1);
+                angleTypes.add(new BondAngleParameters(atom1TypeIndex, atom2TypeIndex, atom3TypeIndex, idealAngle, forceConstant));
+
+                angles.add(new BondAngle(atom1Index, atom2Index, atom3Index, (angleTypes.size()-1) as Int));
+            }
+
+            currentLine = file.readLine();
+        }
+        molecule.angles = angles;
+    }
+
+    public def readAtomTypes(file:Reader, particleData:ParticleData):Rail[AtomType] {
         val atomTypes = new ArrayList[AtomType]();
         currentLine = file.readLine();
         while (!finishedSection()) {
@@ -135,7 +176,7 @@ public class GromacsTopologyFileReader {
         return atomTypes.toRail();
     }
 
-    public def readMolecules(file:Reader, particleData:ParticleData, forceField:ForceField, moleculeTypeIndex:ArrayList[Int]) {
+    public def readMolecules(file:Reader, particleData:ParticleData, moleculeTypeIndex:ArrayList[Int]) {
         currentLine = file.readLine();
         while (!finishedSection()) {
             if (!isComment()) {
@@ -158,9 +199,7 @@ public class GromacsTopologyFileReader {
         // inhibiting generation of linemarkers
         val processedFile = Runtime.execForRead("cpp -P -I"+gmxLib+" "+fileName);
 
-        val moleculeTypes = new ArrayList[MoleculeType]();
         var allAtomTypes:Rail[AtomType] = null;
-        val simulationAtomTypes = new ArrayList[AtomType]();
         // add a dummy type as element 0, because GROMACS uses 1-based indexing
         val dummy = new MoleculeType();
         dummy.name = "unknown";
@@ -173,11 +212,11 @@ public class GromacsTopologyFileReader {
             while (currentLine != null) {
                 if (!isComment()) {
                     if (currentLine.indexOf("[ atomtypes ]") >= 0) {
-                        allAtomTypes = readAtomTypes(processedFile, particleData, forceField);
+                        allAtomTypes = readAtomTypes(processedFile, particleData);
                     } else if (currentLine.indexOf("[ moleculetype ]") >= 0) {
-                        readMoleculeType(processedFile, particleData, forceField, allAtomTypes, simulationAtomTypes, moleculeTypes);
+                        readMoleculeType(processedFile, particleData, allAtomTypes);
                     } else if (currentLine.indexOf("[ molecules ]") >= 0) {
-                        readMolecules(processedFile, particleData, forceField, moleculeTypeIndex);
+                        readMolecules(processedFile, particleData, moleculeTypeIndex);
                     } else {
                         currentLine = processedFile.readLine();
                     }
@@ -191,13 +230,17 @@ public class GromacsTopologyFileReader {
 
 /*
         Console.OUT.println("found simulation atom types:");
-        for (i in 0..(simulationAtomTypes.size()-1)) {
-            Console.OUT.println(simulationAtomTypes(i));
+        for (i in 0..(atomTypes.size()-1)) {
+            Console.OUT.println(atomTypes(i));
         }
 */
-        particleData.atomTypes = simulationAtomTypes.toRail();
+        particleData.atomTypes = atomTypes.toRail();
         particleData.moleculeTypes = moleculeTypes.toRail();
         particleData.moleculeTypeIndex = moleculeTypeIndex.toRail();
+
+        particleData.bondTypes = bondTypes.toRail();
+        particleData.angleTypes = angleTypes.toRail();
+
         processedFile.close();
     }
 

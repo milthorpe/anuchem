@@ -15,26 +15,15 @@ import x10.regionarray.Dist;
 import au.edu.anu.chem.mm.MMAtom;
 
 public class GenericForceField implements ForceField {
-    val specs:Rail[AtomType];
-    val bondStretchParameters:Rail[BondStretchParameters];
-
     public def this() {
-        // TODO read in parameters from file
-        specs = new Rail[AtomType](3);
-        specs(0) = AtomType("OW", 8n, 15.9949146, -0.82);
-        specs(1) = AtomType("HW1", 1n, 1.00794,    0.41);
-        specs(2) = AtomType("HW2", 1n, 1.00794,    0.41);
-
-        bondStretchParameters = new Rail[BondStretchParameters](2);
-        bondStretchParameters(1) = BondStretchParameters(0n, 1n, 0.1, 418400.0);
     }
 
-    public def getAtomTypes() {
-        return specs;
+    public def getAtomTypes():Rail[AtomType] {
+        throw new UnsupportedOperationException("GenericForceField.getAtomTypes");
     }
 
     public def getAtomMass(species:Int):Double {
-        return specs(species).mass;
+        throw new UnsupportedOperationException("GenericForceField.getAtomMass");
     }
 
     public def getBondTypeIndex(species1:Int, species2:Int, structureFileType:Int):Int {
@@ -50,6 +39,7 @@ public class GenericForceField implements ForceField {
                 var myEnergy : Double = 0.0;
 
                 myEnergy += bondStretching(particleData);
+                myEnergy += bondAngles(particleData);
 
                 // TODO angle, torsion, inversion, non-bonded terms
                 offer myEnergy;
@@ -62,7 +52,7 @@ public class GenericForceField implements ForceField {
         var potential:Double = 0.0;
         val bonds = particleData.bonds;
         for (bond in bonds) {
-            val bondParams = bondStretchParameters(bond.typeIndex);
+            val bondParams = particleData.bondTypes(bond.typeIndex);
             val atom1Center = particleData.x(bond.atom1Index);
             val atom2Center = particleData.x(bond.atom2Index);
 
@@ -87,6 +77,39 @@ public class GenericForceField implements ForceField {
             // potential is for both particles
             val v = bondParams.forceConstant * stretch * stretch;
             //Console.OUT.println("potential = " + v);
+            potential += v;
+        }
+
+        return potential;
+    }
+
+    private def bondAngles(particleData:ParticleData):Double {
+        var potential:Double = 0.0;
+        val angles = particleData.angles;
+        for (angle in angles) {
+            val angleParams = particleData.angleTypes(angle.typeIndex);
+            val atom1Center = particleData.x(angle.atom1Index);
+            val atom2Center = particleData.x(angle.atom2Index);
+            val atom3Center = particleData.x(angle.atom3Index);
+            //Console.OUT.println("atom1 " + atom1Center + " atom2 " + atom2Center + " atom3 " + atom3Center);
+
+            val r12 = atom2Center - atom1Center;
+            val r32 = atom2Center - atom3Center;
+            val dotProd = r12.dot(r32);
+            val norm12 = r12.length();
+            val norm32 = r32.length();
+            val theta = Math.acos(dotProd / (norm12 * norm32));
+            //Console.OUT.printf("ideal angle %10.6f theta %10.6f force constant %10.6f\n", angleParams.idealAngle, theta, angleParams.forceConstant);
+            val bisectVector = (r12 + r32).normalize();
+            val bend = theta - angleParams.idealAngle;
+            val force = bend * angleParams.forceConstant * bisectVector;
+            //Console.OUT.println("force = " + force);
+            particleData.fx(angle.atom1Index) -= force;
+            particleData.fx(angle.atom3Index) -= force;
+            particleData.fx(angle.atom2Index) += 2.0 * force;
+
+            // potential is for both particles
+            val v = angleParams.forceConstant * bend * bend;
             potential += v;
         }
 
