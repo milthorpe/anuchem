@@ -1,0 +1,91 @@
+PGAS-FMM (Fast Multipole Method) code, part of ANU-Chem
+
+This program is controlled by the Eclipse Public Licence v1.0
+http://www.eclipse.org/legal/epl-v10.html
+
+Introduction:
+------------
+
+PGAS-FMM calculates electrostatic potential and force over a system of charged
+particles using the Fast Multipole Method with analytic expansions.
+
+The implementation basically follows White & Head-Gordon (1994), with periodic
+boundary conditions as per Kudin & Scuseria (1998).  Some aspects of the
+distributed algorithm are taken from Lashuk et al. (2009) such as the use of
+Locally Essential Trees.
+
+The potential calculation by itself is not very useful; in the future we hope
+to incorporate it into a dynamics code (e.g. apps/anumm).  For now, it provides
+an illustration of the possible use of X10 language constructs to construct a
+distributed tree code.
+
+1. White & Head-Gordon (1994). "Derivation and efficient implementation of the
+   fast multipole method". J Chem Phys 101 (8)
+2. Kudin & Scuseria (1998). "A fast multipole method for periodic systems with
+   arbitrary unit cell geometries". Chem Phys Lett 283 (1-2), 61
+3. Lashuk et al. (2009). "A massively parallel adaptive fast-multipole method
+   on heterogeneous architectures". Proceedings of SC 2009
+
+
+Compiling:
+----------
+
+$ ant
+
+will build the executable bin/fmm
+
+$ ant clean
+
+will remove the executable and all intermediate C++ files.
+
+The default build script builds against the "sockets" implementation of X10RT.
+To build against the MPI implementation set property ${x10rt} to "mpi".
+To build for Blue Gene/Q set ${bgq} to "true".
+
+For other implementations see 
+  http://x10-lang.org/documentation/getting-started/x10rt-implementations.html
+
+
+Compile dependencies:
+------------------------
+* X10 version 2.5 (optionally with x10rt=mpi)
+* XLA library (cd ~/anuchem-code/x10x.lib/xla && ant)
+* anu-chem library (cd ~/anuchem-code/anuchem && ant)
+
+
+To run:
+------
+
+Single place:
+
+$ bin/fmm numAtoms [dMax] [numTerms] [wellSpaced] [-verbose] [-compare] [-rms]
+
+Multiple place:
+
+$ mpiexec -n <n> bin/fmm numAtoms [dMax] [numTerms] [wellSpaced] [-verbose] [-compare] [-rms]
+
+where <n> is number of places
+
+- numAtoms is self explanatory
+- dMax is the maximum number of levels in the tree.
+- numTerms is the number of terms "p" at which to truncate multipole and local
+  expansions.  The default is 10; the larger the value, the more accurate the
+  result and the longer the run time.
+- wellSpaced is the number of intervening boxes by which a pair of boxes must
+  be separated to be considered "well spaced".  The default is 2; the larger
+  the value, the accurate the result and the longer the run time. 
+- -verbose provides more verbose logging, including statistics of the time
+   spent in each phase of the code
+- -compare performs an additional N^2 (direct) electrostatics calculation,
+   for the purpose of comparing performance and accuracy of the result
+- -rms calculates the root-mean-squared error of force magnitude compared to
+   direct calculation (note: very slow).
+
+Referencing PGAS-FMM:
+-----------------------------
+Please cite the following paper when referencing PGAS-FMM in a publication.
+
+J. Milthorpe, A.P. Rendell and T. Huber "PGAS-FMM: Implementing a distributed
+fast multipole method using the X10 programming language", Concurrency and
+Computation: Practice and Experience. 2014 26 (3) 712-727. doi:10.1002/cpe.3039
+

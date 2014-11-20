@@ -1,0 +1,56 @@
+ANUMM (molecular mechanics) code, part of ANU-Chem
+
+This program is controlled by the Eclipse Public Licence v1.0
+http://www.eclipse.org/legal/epl-v10.html
+
+Introduction:
+------------
+
+ANUMM is intended as a general framework for molecular dynamics simulation in
+X10 that would support different integrators, force fields and particularly
+different parallel methods of computing non-bonded interactions.  However, it
+is currently unfinished and so is unsuitable for most simulations. 
+
+ANUMM has been used in a complete MD simulation of ion-ion interactions in a
+mass spectrometer (see test/au/edu/anu/mm/TestCyclotron.x10).
+
+Compiling:
+----------
+
+$ ant
+
+will build the executable bin/anumm
+
+$ ant clean
+
+will remove the executable and all intermediate C++ files.
+
+The default build script builds against the "sockets" implementation of X10RT.
+To build against the MPI implementation set property ${x10rt} to "mpi".
+To build for Blue Gene/Q set ${bgq} to "true".
+
+For other implementations see 
+  http://x10-lang.org/documentation/getting-started/x10rt-implementations.html
+
+
+Compile dependencies:
+------------------------
+* X10 version 2.5 (optionally with x10rt=mpi)
+* XLA library (cd ~/anuchem-code/x10x.lib/xla && ant)
+* anu-chem library (cd ~/anuchem-code/anuchem && ant)
+* PGAS-FMM library (cd ~/anuchem-code/apps/fmm && ant buildx10lib-cpp)
+* FFTW http://www.fftw.org/ 
+  (header files at the location ${fftw3.include} in the ant build script)
+* FFTW X10 wrapper (cd ~/anuchem-code/fftw_wrapper && ant)
+
+
+To run:
+------
+
+$ bin/anumm [testfile]
+
+e.g.
+
+$ bin/anumm test/water10.mol
+
+

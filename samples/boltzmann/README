@@ -1,9 +1,21 @@
-This example code performs a two-dimensional lattice Boltzmann simulation of flow in a lid-driven square cavity.
+Lattice-Boltzmann code, part of ANU-Chem
+
+This program is controlled by the Eclipse Public Licence v1.0 
+http://www.eclipse.org/legal/epl-v10.html
+
+Introduction
+------------
+
+This example code performs a two-dimensional lattice Boltzmann simulation of
+flow in a lid-driven square cavity.
 
 See:
-J. Milthorpe and A.P. Rendell (2012). Efficient update of ghost regions using active messages (preprint), in proceedings of the 19th IEEE International Conference on High Performance Computing (HiPC). 
+J. Milthorpe and A.P. Rendell (2012). Efficient update of ghost regions using
+active messages (preprint), in proceedings of the 19th IEEE International
+Conference on High Performance Computing (HiPC). 
 
 Dependencies
 ------------
-This example requires the addition of ghost region support to the X10 array library, as described in Milthorpe and Rendell (2012).  See ghostRegions.patch
+This example requires the addition of ghost region support to the X10 array
+library, as described in Milthorpe and Rendell (2012).  See ghostRegions.patch
 
