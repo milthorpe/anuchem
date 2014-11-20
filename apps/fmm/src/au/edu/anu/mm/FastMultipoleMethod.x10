@@ -513,8 +513,8 @@ public class FastMultipoleMethod {
         local.timer.start(FmmLocalData.TIMER_INDEX_REDIST);
         val firstLeafOctant = local.firstLeafOctant;
         val levelBytes = (dMax as UInt << 24);
-        finish for (var p:Long = here.id+1; p!=here.id && octantAtoms.size() > 0; p=(p+1)%Place.numPlaces()) {
-            val destPlace = Place(p);
+        finish for (var destPlace:Place=Place.places().next(here); destPlace!=here && octantAtoms.size() > 0; destPlace=Place.places().next(destPlace)) {
+            val p = destPlace.id;
             val placeStart = firstLeafOctant(p);
             val placeEnd = firstLeafOctant(p+1);
             //Console.OUT.println("at " + here + " sending octants between " + placeStart + " and " + placeEnd + " to " + destPlace);
