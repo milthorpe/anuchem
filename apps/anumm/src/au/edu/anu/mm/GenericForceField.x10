@@ -15,9 +15,6 @@ import x10.regionarray.Dist;
 import au.edu.anu.chem.mm.MMAtom;
 
 public class GenericForceField implements ForceField {
-    public def this() {
-    }
-
     public def getAtomTypes():Rail[AtomType] {
         throw new UnsupportedOperationException("GenericForceField.getAtomTypes");
     }
@@ -27,27 +24,31 @@ public class GenericForceField implements ForceField {
     }
 
     public def getBondTypeIndex(species1:Int, species2:Int, structureFileType:Int):Int {
-        // TODO lookup bond stretch params
-        return 0n;
+        throw new UnsupportedOperationException("GenericForceField.getBondTypeIndex");
     }
     
     public def getPotentialAndForces(particleDataPlh:PlaceLocalHandle[ParticleData]):Double {
-        val energy = finish(SumReducer()) {
+        val energy = finish(Reducible.SumReducer[Double]()) {
             ateach(p in Dist.makeUnique()) {
                 val particleData = particleDataPlh();
 
-                var myEnergy : Double = 0.0;
+                var myEnergy:Double = 0.0;
 
                 myEnergy += bondStretching(particleData);
                 myEnergy += bondAngles(particleData);
 
-                // TODO angle, torsion, inversion, non-bonded terms
+                // TODO torsion, inversion, non-bonded terms
                 offer myEnergy;
             }
         };
         return energy;
     }
 
+    /** 
+     * Compute all bond-stretch interactions between pairs of atoms joined by
+     * covalent bonds.
+     * TODO interaction potentials other than harmonic
+     */
     private def bondStretching(particleData:ParticleData):Double {
         var potential:Double = 0.0;
         val bonds = particleData.bonds;
@@ -85,6 +86,17 @@ public class GenericForceField implements ForceField {
         return potential;
     }
 
+    /**
+     * Compute all bond angle deformation interactions between triplets of
+     * atoms, two of which share bonds with a common central atom.
+     * The angle-bend interaction is described by a harmonic potential
+     * proportional to the squared deviation of the angle from the 'ideal' bond
+     * angle in radians: V = k (angle - ideal)^2.
+     * The restorative force on the central atom is towards the interior of the
+     * angle, and twice the strength of the force on each of the outside atoms.
+     * TODO check direction of force for outside atoms
+     * TODO interaction potentials other than harmonic
+     */
     private def bondAngles(particleData:ParticleData):Double {
         var potential:Double = 0.0;
         val angles = particleData.angles;
@@ -118,10 +130,5 @@ public class GenericForceField implements ForceField {
         }
 
         return potential;
-    }
-
-    static struct SumReducer implements Reducible[Double] {
-        public def zero() = 0.0;
-        public operator this(a:Double, b:Double) = (a + b);
     }
 }

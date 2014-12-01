@@ -93,7 +93,7 @@ public class UniversalForceField implements ForceField {
     }
     
     public def getPotentialAndForces(particleDataPlh:PlaceLocalHandle[ParticleData]):Double {
-        val energy = finish(SumReducer()) {
+        val energy = finish(Reducible.SumReducer[Double]()) {
             ateach(p in Dist.makeUnique()) {
                 val particleData = particleDataPlh();
 
@@ -171,10 +171,5 @@ public class UniversalForceField implements ForceField {
                 (idealRadius * idealRadius * idealRadius);
 
         return BondStretchParameters(species1, species2, idealRadius, forceConstant);
-    }
-
-    static struct SumReducer implements Reducible[Double] {
-        public def zero() = 0.0;
-        public operator this(a:Double, b:Double) = (a + b);
     }
 }
