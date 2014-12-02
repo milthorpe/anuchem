@@ -114,7 +114,7 @@ public class FastMultipoleMethod {
     }
     
     public def calculateEnergy():Double {
-        val totalEnergy = finish (SumReducer()) {
+        val totalEnergy = finish (Reducible.SumReducer[Double]()) {
             ateach(p1 in Dist.makeUnique()) {
                 offer calculateEnergyLocal();
             }
@@ -263,7 +263,7 @@ public class FastMultipoleMethod {
         local.timer.start(FmmLocalData.TIMER_INDEX_DOWNWARD);
 
         val topLevelExp:LocalExpansion = null; // TODO periodic ? (at (boxes(0).dist(0,0,0)) {boxes(0)(0,0,0).localExp}) : null;
-        val farField = finish(SumReducer()) {
+        val farField = finish(Reducible.SumReducer[Double]()) {
             for (topLevelOctant in local.topLevelOctants) {
                 if (topLevelOctant != null && topLevelOctant.id.level == OctantId.TOP_LEVEL) async {
                     offer topLevelOctant.downward(topLevelExp);
@@ -320,7 +320,7 @@ public class FastMultipoleMethod {
     }
 
     public def countOctants() {
-        val totalOctants = finish (IntSumReducer()) {
+        val totalOctants = finish (Reducible.SumReducer[Int]()) {
             ateach(p1 in Dist.makeUnique()) {
                 var octants:Int = 0n;
                 for (topLevelOctant in FastMultipoleMethod.localData.topLevelOctants) {
@@ -329,7 +329,7 @@ public class FastMultipoleMethod {
                 offer octants;
             }
         };
-        val totalGhostOctants = finish (IntSumReducer()) {
+        val totalGhostOctants = finish (Reducible.SumReducer[Int]()) {
             ateach(p1 in Dist.makeUnique()) {
                 var ghostOctants:Int = 0n;
                 for (topLevelOctant in FastMultipoleMethod.localData.topLevelOctants) {
@@ -769,16 +769,6 @@ public class FastMultipoleMethod {
             }
         }
         return atomList;
-    }
-
-    static struct SumReducer implements Reducible[Double] {
-        public def zero() = 0.0;
-        public operator this(a:Double, b:Double) = (a + b);
-    }
-
-    static struct IntSumReducer implements Reducible[Int] {
-        public def zero() = 0n;
-        public operator this(a:Int, b:Int) = (a + b);
     }
 }
 

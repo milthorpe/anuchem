@@ -60,7 +60,7 @@ public class ParentOctant extends Octant {
     public def numAtoms() = numAtoms;
 
     /** 
-     * For each shared octant, combines multipole expansions for <= 8 child
+     * For each shared octant, combines multipole expansions for &le; 8 child
      * octants into a single multipole expansion for the parent octant.
      */
     protected def upward():Pair[Long,MultipoleExpansion] {
@@ -134,7 +134,7 @@ public class ParentOctant extends Octant {
             addParentExpansion(parentLocalExpansion);
 
             val parentExp = localExp;
-            val farField = finish (SumReducer()) {
+            val farField = finish (Reducible.SumReducer[Double]()) {
                 for (i in 0..(children.size-1)) {
                     val childOctant = children(i);
                     if (childOctant != null) async {
