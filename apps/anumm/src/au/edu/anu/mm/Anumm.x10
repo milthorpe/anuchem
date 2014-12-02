@@ -55,10 +55,8 @@ public class Anumm {
     public def mdRun(timestep:Double, numSteps:Long) {
         Console.OUT.println("# Timestep = " + timestep + "ps, number of steps = " + numSteps);
 
-        var step : Long = 0;
-        if (verbose) {
-            startTimestep(0.0);
-        }
+        var step:Long = 0;
+        if (verbose) printTimestep(0.0);
         val potential = forceField.getPotentialAndForces(particleDataPlh); // get initial forces
 
         val kinetic = getKineticEnergy();
@@ -68,9 +66,7 @@ public class Anumm {
         var energy:Double = 0.0;
         while(step < numSteps) {
             step++;
-            if (verbose) {
-                startTimestep(step*timestep);
-            }
+            if (verbose) printTimestep(step*timestep);
             energy = mdStep(timestep);
         }
         if (verbose) {
@@ -99,7 +95,7 @@ public class Anumm {
         public operator this(a:Double, b:Double) = (a + b);
     }
 
-    private def startTimestep(time:Double) {
+    private def printTimestep(time:Double) {
         Console.OUT.printf("\n%10.4f ", time);
     }
 
@@ -110,7 +106,7 @@ public class Anumm {
      * @param returns the total system energy
      */
     public def mdStep(dt:Double):Double {
-    finish ateach(place in Dist.makeUnique()) {
+        finish ateach(place in Dist.makeUnique()) {
             val particleData = particleDataPlh();
 
             for (i in 0..(particleData.numAtoms-1)) {
