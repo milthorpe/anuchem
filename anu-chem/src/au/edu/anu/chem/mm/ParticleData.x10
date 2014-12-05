@@ -16,6 +16,12 @@ import x10.util.ArrayList;
 import x10x.vector.Point3d;
 import x10x.vector.Vector3d;
 
+/**
+ * Holds all particle data for a given place in a molecular mechanics
+ * simulation.  Atom features (atomType, position, velocity, force) are held
+ * in separate Rails, indexed by a 'local atom index' at this place.
+ * The globalIndex for an atom is unique across all places.
+ */
 public class ParticleData {
     public var description:String;
 
@@ -27,16 +33,31 @@ public class ParticleData {
     public val atomTypeIndex = new ArrayList[Int]();
     /** Atom centers in nm */
     public val x = new ArrayList[Point3d]();
+    /** Atom velocities */
+    public val dx = new ArrayList[Vector3d]();
     /** Instantaneous force on atoms */
     public val fx = new ArrayList[Vector3d]();
 
     public final def numAtoms() = globalIndex.size();
 
-    public def addAtom(index:Long, atomType:Int, center:Point3d) {
+    public def addAtom(index:Long, atomType:Int, center:Point3d, velocity:Vector3d) {
         globalIndex.add(index);
         atomTypeIndex.add(atomType);
         x.add(center);
+        dx.add(velocity);
         fx.add(Vector3d.NULL);
+    }
+
+    public def addAtom(index:Long, atomType:Int, center:Point3d) {
+        addAtom(index, atomType, center, Vector3d.NULL);
+    }
+
+    public def removeAtom(index:Long) {
+        globalIndex.removeAt(index);
+        atomTypeIndex.removeAt(index);
+        x.removeAt(index);
+        dx.removeAt(index);
+        fx.removeAt(index);
     }
 
     /**

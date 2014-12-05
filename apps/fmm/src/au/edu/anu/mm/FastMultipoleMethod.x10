@@ -534,11 +534,12 @@ public class FastMultipoleMethod {
                 //Console.OUT.println(here + " sending atoms " + atomsStart + " ... " + atomsEnd + " to " + destPlace);
                 val atomIds = particleData.globalIndex.moveSectionToRail(atomsStart, atomsEnd);
                 val atomTypes = particleData.atomTypeIndex.moveSectionToRail(atomsStart, atomsEnd);
-                val atomCenters = particleData.x.moveSectionToRail(atomsStart, atomsEnd);
+                val centers = particleData.x.moveSectionToRail(atomsStart, atomsEnd);
+                val velocities = particleData.dx.moveSectionToRail(atomsStart, atomsEnd);
                 val throwAwayForces = particleData.fx.moveSectionToRail(atomsStart, atomsEnd);
 
                 at(destPlace) async {
-                    addReceivedAtoms(atomIds, atomTypes, atomCenters);
+                    addReceivedAtoms(atomIds, atomTypes, centers, velocities);
                 }
                 for (octant in octantsToSend) {
                     //Console.OUT.println(here + " removing octant " + octant.first);
@@ -572,13 +573,14 @@ public class FastMultipoleMethod {
      * Add atoms received from another place to the atoms at this place.
      */
     private def addReceivedAtoms(atomIds:Rail[Long],
-                                       atomTypes:Rail[Int]{self.size==atomIds.size},
-                                       atomCenters:Rail[Point3d]{self.size==atomIds.size}) {
+                                 atomTypes:Rail[Int]{self.size==atomIds.size},
+                                 centers:Rail[Point3d]{self.size==atomIds.size},
+                                 velocities:Rail[Vector3d]{self.size==atomIds.size}) {
         val particleData = FastMultipoleMethod.localData.particleData;
         atomic {
             for (j in 0..(atomIds.size-1)) {
                 //Console.OUT.println(here + " receiving " + atomIds(j));
-                particleData.addAtom(atomIds(j), atomTypes(j), atomCenters(j));
+                particleData.addAtom(atomIds(j), atomTypes(j), centers(j), velocities(j));
             }
         }
     }

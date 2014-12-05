@@ -14,15 +14,13 @@ package au.edu.anu.mm;
 import x10.io.File;
 import x10.io.FileReader;
 import x10.io.EOFException;
-import x10.regionarray.Dist;
-import x10.regionarray.DistArray;
 import x10.util.ArrayList;
-import x10.util.Pair;
 import x10.util.Random;
 
 import x10x.vector.Point3d;
 import x10x.vector.Vector3d;
-import au.edu.anu.chem.mm.MMAtom;
+import au.edu.anu.chem.mm.AtomType;
+import au.edu.anu.chem.mm.ParticleData;
 import au.edu.anu.util.StringSplitter;
 
 /**
@@ -141,8 +139,12 @@ public class TestCyclotron {
             line = fil.readLine();
         }
 
+        val particleDataPlh = PlaceLocalHandle.make[ParticleData](Place.places(), () => new ParticleData());
+        val particleData = particleDataPlh();
+
         var totalIons:Int = 0n;
-        val speciesList = new ArrayList[AtomType]();
+        val atomTypes = new ArrayList[AtomType]();
+        val numPerSpecies = new ArrayList[Long]();
         try {
             while (line != null && line.startsWith("species")) {
                 val wrd = StringSplitter.splitOnWhitespace(line);
@@ -152,72 +154,63 @@ public class TestCyclotron {
                 val numIons = Int.parseInt(wrd(4));
                 totalIons += numIons;
 
-                speciesList.add(new AtomType(name, numIons, mass, charge));
+                atomTypes.add(new AtomType(name, -1n, mass, charge));
+                numPerSpecies.add(numIons);
 
                 line = fil.readLine();
             }
         } catch (e:EOFException) {
             // no more species
         }
-        if (speciesList.isEmpty()) {
+        if (atomTypes.isEmpty()) {
             throw new Exception("Invalid input: expected at least one species. Next line was:\n"+line);
         }
         fil.close();
+        particleData.atomTypes = atomTypes.toRail();
 
         Console.OUT.printf("# Testing %s: cyclotron trapping potential: %2.1f V magnetic field: %6.4f T edgeLength %4.1f mm\n", title, V, B, edgeLength*1e3);
         Console.OUT.println("# species:");
 
         val rand = new Random(27178281L);
 
-        var atoms:Rail[MMAtom] = null;
-        if (snapshotFileName == null) {
-            atoms = new Rail[MMAtom](totalIons);
-        }
         var i:Int = 0n;
-        for (speciesId in 0..(speciesList.size()-1)) {
-            val species = speciesList(speciesId);
-            val omega_c = species.charge * B / species.mass * (PenningTrap.CHARGE_MASS_FACTOR);
-            val omega_z = Math.sqrt(2.0 * PenningTrap.ALPHA_PRIME * species.charge * V / (species.mass * edgeLength*edgeLength) * PenningTrap.CHARGE_MASS_FACTOR);
+        for (atomTypeIndex in 0..(atomTypes.size()-1)) {
+            val atomType = atomTypes(atomTypeIndex);
+            val omega_c = atomType.charge * B / atomType.mass * (PenningTrap.CHARGE_MASS_FACTOR);
+            val omega_z = Math.sqrt(2.0 * PenningTrap.ALPHA_PRIME * atomType.charge * V / (atomType.mass * edgeLength*edgeLength) * PenningTrap.CHARGE_MASS_FACTOR);
             val omega_plus = omega_c / 2.0 + Math.sqrt(omega_c*omega_c / 4 - omega_z*omega_z / 2);
             val nu_plus = omega_plus / (2.0 * Math.PI);
 
-            val v = PenningTrap.CHARGE_MASS_FACTOR * B * radius * species.charge / species.mass;
-            val r = species.mass * v / (species.charge * B) / PenningTrap.CHARGE_MASS_FACTOR;
-            Console.OUT.printf("# %6i %10s mass %8.5f charge %i ", species.number, species.name, species.mass, species.charge);
+            val v = PenningTrap.CHARGE_MASS_FACTOR * B * radius * atomType.charge / atomType.mass;
+            val r = atomType.mass * v / (atomType.charge * B) / PenningTrap.CHARGE_MASS_FACTOR;
+            Console.OUT.printf("# %6i %10s mass %8.5f charge %i ", numPerSpecies(atomTypeIndex), atomType.name, atomType.mass, atomType.charge);
             Console.OUT.printf("omega_c = %7i rad/s omega_z = %6i rad/s omega_+ = %7i rad/s nu_+ = %7i v = %9.3g m/s\n", omega_c as Int, omega_z as Int, omega_plus as Int, nu_plus as Int, v);
 
             if (snapshotFileName == null) {
-                for (j in 0..(species.number-1)) {
+                for (j in 0..(numPerSpecies(atomTypeIndex)-1)) { // 
                     // distribution for each species is uniform 1mm cylinder along
                     // z dimension centred at [x=-(excitation radius), y=0, z=0]
                     val er = rand.nextDouble() * 1.0e-3;
                     val theta = rand.nextDouble() * Math.PI * 2.0;
                     val ex = Math.cos(theta) * er;
                     val ey = Math.sin(theta) * er;
-                    val ion = new MMAtom(speciesId as Int, Point3d(-radius+ex, ey, perturbation(rand, 1e-3)), species.mass, species.charge);
-
                     // velocity is Maxwellian distribution with addition of velocity v in y direction
-                    val ev = maxwellianVelocity(rand, species.mass);
-                    ion.velocity = Vector3d(ev.i, v+ev.j, ev.k);
-                    atoms(i) = ion;
-                    ion.index = i++;
+                    val ev = maxwellianVelocity(rand, atomType.mass);
+
+                    particleData.addAtom(i++, atomTypeIndex as Int, Point3d(-radius+ex, ey, perturbation(rand, 1e-3)), Vector3d(ev.i, v+ev.j, ev.k));
                 }
             }
         }
 
-        val trap = new PenningTrap(totalIons, V, new Vector3d(0.0, 0.0, B), edgeLength, fmmDMax, fmmTerms, speciesList.toRail());
+        val trap = new PenningTrap(totalIons, V, new Vector3d(0.0, 0.0, B), edgeLength, fmmDMax, fmmTerms);
 
         var resumeStep:Int = 0n;
         if (snapshotFileName != null) {
-            val state = trap.loadFromSnapshot(snapshotFileName);
-            resumeStep = state.first;
-            atoms = state.second;
+            resumeStep = trap.loadFromSnapshot(snapshotFileName, particleData);
         }
+        trap.fmm.initialAssignment(particleDataPlh().numAtoms() as Int, particleDataPlh);
 
-        val distAtoms = DistArray.make[Rail[MMAtom]](Dist.makeUnique(), (Point) => new Rail[MMAtom](0));
-        distAtoms(0) = atoms; // assign all atoms to place 0 to start - they will be reassigned
-
-        trap.mdRun(dt, steps, resumeStep, logSteps, distAtoms);
+        trap.mdRun(dt, steps, resumeStep, logSteps);
     }
 
     private static def perturbation(rand:Random, max:Double) {

@@ -29,8 +29,6 @@ public class AnummParticleData extends ParticleData {
 
     /** Residue number (e.g. index of molecule) for each atom */
     public val residueNumber = new ArrayList[Int]();
-    /** Atom velocities */
-    public val dx = new ArrayList[Vector3d]();
 
     // Bond data
     public var bondTypes:Rail[BondStretchParameters];
@@ -44,7 +42,16 @@ public class AnummParticleData extends ParticleData {
     public def addAtom(index:Long, atomType:Int, center:Point3d) {
         super.addAtom(index, atomType, center);
         residueNumber.add(0n);
-        dx.add(Vector3d.NULL);
+    }
+
+    public def addAtom(index:Long, atomType:Int, center:Point3d, velocity:Vector3d) {
+        super.addAtom(index, atomType, center, velocity);
+        residueNumber.add(0n);
+    }
+
+    public def removeAtom(index:Long) {
+        super.removeAtom(index);
+        residueNumber.removeAt(index);
     }
 }
 

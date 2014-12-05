@@ -220,7 +220,6 @@ public class LeafOctant extends Octant {
                 val dx = xj-xi;
                 val dy = yj-yi;
                 val dz = zj-zi;
-
                 
                 val r2 = (dx*dx + dy*dy + dz*dz);
                 val invR:Double;
