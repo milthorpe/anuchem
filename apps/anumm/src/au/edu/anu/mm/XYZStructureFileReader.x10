@@ -15,6 +15,8 @@ import x10.io.File;
 import x10.io.FileReader;
 import x10x.vector.Point3d;
 
+import au.edu.anu.chem.mm.AtomType;
+
 /**
  * This class reads XYZ molecular structure files of the following format:
  *  <number of atoms>
@@ -28,13 +30,11 @@ public class XYZStructureFileReader {
         this.fileName = fileName;
     }
 
-    public def readParticleData(particleData:ParticleData, forceField:ForceField) {
+    public def readParticleData(particleData:AnummParticleData, forceField:ForceField) {
         val atomTypes = forceField.getAtomTypes();
         val file = new FileReader(new File(fileName));
         // line 1: number of atoms
         val numAtoms = Int.parseInt(file.readLine().trim());
-
-        particleData.allocateAtoms(numAtoms);
 
         // line 2: structure title
         val title = file.readLine();
@@ -56,11 +56,10 @@ public class XYZStructureFileReader {
             if (species == -1n) {
                 throw new IllegalArgumentException("no species found for symbol " + symbol);
             }
-            particleData.atomTypeIndex(i) = species;
-            particleData.globalIndex(i) = i+1;
-            particleData.x(i) = Point3d(Double.parseDouble(words(1).trim()),
-                                        Double.parseDouble(words(2).trim()),
-                                        Double.parseDouble(words(3).trim())) * 10.0;
+            val center = Point3d(Double.parseDouble(words(1).trim()),
+                                 Double.parseDouble(words(2).trim()),
+                                 Double.parseDouble(words(3).trim())) * 10.0;
+            particleData.addAtom(i+1, species, center);
         }
         file.close();
 

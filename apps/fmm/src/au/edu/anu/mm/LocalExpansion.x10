@@ -12,9 +12,9 @@ package au.edu.anu.mm;
 
 import x10.regionarray.Array;
 
-import au.edu.anu.chem.mm.MMAtom;
 import x10x.vector.Vector3d;
 import x10x.polar.Polar3d;
+import au.edu.anu.chem.mm.ParticleData;
 
 /**
  * This class calculates local Taylor-type expansions, using the algorithms given in
@@ -202,15 +202,15 @@ public class LocalExpansion extends Expansion {
     /**
      * Calculate the potential and forces for an atom due to this expansion,
      * and add the forces to the atom.
-     * @param atom the atom for which to calculate the potential
+     * @param atomIndex the local atom index against which to calculate the potential
      * @param v the vector from the box centre to the atom centre
      * @param plm a scratch space in which to store the assoc. Legendre polynomial for the atom centre
      * @return the potential due to distant particles
      * @see Kabadshow (2006). "The Fast Multipole Method - Alternative Gradient Algorithm and Parallelization". PhD thesis, Forschungszentrum Juelich.  Section 3.2.1
      */
-    public def calculatePotentialAndForces(atom:MMAtom, v:Vector3d, pplm:AssociatedLegendrePolynomial):Double {
+    public def calculatePotentialAndForces(atomIndex:Long, particleData:ParticleData, v:Vector3d, pplm:AssociatedLegendrePolynomial):Double {
         val v_pole = Polar3d.getPolar3d(v);
-        val q = atom.charge;
+        val q = particleData.atomTypes(particleData.atomTypeIndex(atomIndex)).charge;
         pplm.getPlk(v_pole.theta);
 
         var dr:Double = 0.0;
@@ -249,7 +249,7 @@ public class LocalExpansion extends Expansion {
             rfacPrev = rfac;
             rfac = rfac * v_pole.r;
         }
-        atom.force += v_pole.getGradientVector(dr, -dt, -dp);
+        particleData.fx(atomIndex) += v_pole.getGradientVector(dr, -dt, -dp);
         return potential;
     }
 

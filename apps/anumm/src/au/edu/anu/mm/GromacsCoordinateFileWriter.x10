@@ -33,14 +33,14 @@ public class GromacsCoordinateFileWriter {
         this.out = new File(fileName).printer();
     }
 
-    public def writePositions(particleDataPlh:PlaceLocalHandle[ParticleData], forceField:ForceField) {
+    public def writePositions(particleDataPlh:PlaceLocalHandle[AnummParticleData], forceField:ForceField) {
         out.println(particleDataPlh().description);
-        out.println(particleDataPlh().numAtoms);
+        out.println(particleDataPlh().numAtoms());
         finish for(place in Place.places()) {
             val placeString = at(place) {
                 val particleData = particleDataPlh();
                 val posString = new StringBuilder();
-                for (i in 0..(particleData.numAtoms-1)) {
+                for (i in 0..(particleData.numAtoms()-1)) {
                     val moleculeTypeIndex = particleData.moleculeTypeIndex(particleData.residueNumber(i));
                     val residueName = particleData.moleculeTypes(moleculeTypeIndex).name;
                     val name = particleData.atomTypes(particleData.atomTypeIndex(i)).name;

@@ -8,12 +8,8 @@
     <property name="bgq" value="false" />
     <property name="x10x.xla" location="../../xla"/>
 	<property name="xla.props" location="${x10x.xla}/xla.properties"/>
-	<property name="xla.src" location="${x10x.xla}/src"/>
-	<property name="xla.lib" location="${x10x.xla}/lib/xla.jar"/>
     <property name="anuchem" location="../../anu-chem"/>
     <property name="anuchem.props" location="${anuchem}/anuchem.properties"/>
-	<property name="anuchem.src" location="${anuchem}/src"/>
-	<property name="anuchem.lib" location="${anuchem}/lib/anu-chem.jar"/>
     <property name="papi" value="false" />
     <property name="x10papi" location="../../papi_wrapper"/>
     <property name="x10papi.props" location="${x10papi}/x10papi.properties"/>
@@ -22,11 +18,9 @@
     <property name="x10.testlib" location="${env.X10_HOME}/x10.tests/tests/x10lib"/>
     <property name="bash.exe" value="bash"/>    
     <property name="optimize" value="true"/>
-    <property name="workstealing" value="false" />
     <property name="nochecks" value="true"/>
     <property name="unroll" value="false"/>
     <property name="debug" value="true"/>
-    <property name="profile"  value="false"/>
     <property name="cpuprofile"  value="false"/>
     <property name="perftoolsHome" location="${user.home}/perftools"/>
     <property name="mpiPprofile"  value="false"/>
@@ -47,10 +41,6 @@
 
     <condition property="x10c.nochecks" value="-NO_CHECKS -VERBOSE_CHECKS=true"  else="-VERBOSE_CHECKS=true">
         <istrue value="${nochecks}"/>
-    </condition>
-
-    <condition property="x10c.workstealing" value="-WORK_STEALING=true"  else="">
-        <istrue value="${workstealing}"/>
     </condition>
 
     <condition property="bg" value="true" else="">
@@ -77,10 +67,6 @@
 
     <condition property="x10c.debug" value="-DEBUG" else="">
         <istrue value="${debug}"/>
-    </condition>
-
-    <condition property="x10c.profile" value="-pg" else="">
-        <istrue value="${profile}" />
     </condition>
 
     <condition property="x10c.cpuprofile" value="-gpt" else="">
@@ -128,7 +114,7 @@
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/src">
             <arg value="-c"/>
-            <arg value="'x10c' ${x10c.optimize} -sourcepath .${path.separator}${xla.src}${path.separator}${anuchem.src} -classpath ${xla.lib}${path.separator}${anuchem.lib} -d ${target-src} '${basedir}/${testclass}'"/>
+            <arg value="'x10c' ${x10c.optimize} -x10lib ${xla.props} -x10lib ${anuchem.props} ${x10lib.papi} -sourcepath . -d ${target-src} '${basedir}/${testclass}'"/>
         </exec>
     </target>
 
@@ -137,7 +123,7 @@
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/src">
             <arg value="-c"/>
-            <arg value="'x10c' ${x10c.optimize} -sourcepath .${path.separator}${xla.src}${path.separator}${anuchem.src} -classpath ${xla.lib}${path.separator}${anuchem.lib} -d ${target-src} '${basedir}/${testclass}'"/>
+            <arg value="'x10c' ${x10c.optimize} -x10lib ${xla.props} -x10lib ${anuchem.props} ${x10lib.papi} -sourcepath . -d ${target-src} '${basedir}/${testclass}'"/>
         </exec>
     </target>
 
@@ -151,11 +137,11 @@
         <pathconvert property="src.list" refid="src.files" dirsep="/" pathsep=" ">
             <map from="${basedir}${file.separator}src${file.separator}" to=""/>
         </pathconvert>
-        <echo message="x10c++ -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} ${x10c.bg} ${x10c.debug} ${x10c.profile} -x10lib ${xla.props} -x10lib ${anuchem.props} ${x10lib.papi} -sourcepath . -buildx10lib ../. ${src.list} -d ../include -o ${x10lib-cpp}"/>
+        <echo message="x10c++ -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} ${x10c.bg} ${x10c.debug} -x10lib ${xla.props} -x10lib ${anuchem.props} ${x10lib.papi} -sourcepath . -buildx10lib ../. ${src.list} -d ../include -o ${x10lib-cpp}"/>
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/src">
             <arg value="-c"/>
-            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} ${x10c.bg} ${x10c.debug} ${x10c.profile} -report postcompile=1 -post '# # ${post.define.bg} ${cxx.bgq} # ${ld.bgq}' -x10lib ${xla.props} -x10lib ${anuchem.props} ${x10lib.papi} -sourcepath . -buildx10lib ../. ${src.list} -d ../include -o ${x10lib-cpp}"/>
+            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} ${x10c.bg} ${x10c.debug} -report postcompile=1 -post '# # ${post.define.bg} ${cxx.bgq} # ${ld.bgq}' -x10lib ${xla.props} -x10lib ${anuchem.props} ${x10lib.papi} -sourcepath . -buildx10lib ../. ${src.list} -d ../include -o ${x10lib-cpp}"/>
         </exec>
 
         <jar jarfile="${x10lib-cpp}.jar">
@@ -166,11 +152,11 @@
     <target name="build-src-cpp" depends="check-src-cpp" unless="src.uptodate.cpp,x10lib.uptodate.cpp">
         <echo message="Building source tree"/>
 
-        <echo message="x10c++ -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} ${x10c.workstealing} ${x10c.bg} ${x10c.debug} ${x10c.cpuprofile} ${x10c.profile} ${define.papi} ${define.exclude_near} -x10lib ${xla.props} -x10lib ${anuchem.props} ${x10lib.papi} -sourcepath . '${basedir}/${testclass}'"/>
+        <echo message="x10c++ -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} ${x10c.bg} ${x10c.debug} ${x10c.cpuprofile} ${define.papi} ${define.exclude_near} -x10lib ${xla.props} -x10lib ${anuchem.props} ${x10lib.papi} -sourcepath . '${basedir}/${testclass}'"/>
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/src">
             <arg value="-c"/>
-            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} ${x10c.workstealing} ${x10c.bg} ${x10c.debug} ${x10c.cpuprofile} ${x10c.profile} ${define.papi} ${define.exclude_near} -report postcompile=1 -post '# # ${post.define.bg} ${post.unroll} ${cxx.bgq} # ${ld.bgq} ${link.mpiPprofile}' -x10lib ${xla.props} -x10lib ${anuchem.props} ${x10lib.papi} -sourcepath . -d '${target-src}' '${basedir}/${testclass}'"/>
+            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} ${x10c.bg} ${x10c.debug} ${x10c.cpuprofile} ${define.papi} ${define.exclude_near} -report postcompile=1 -post '# # ${post.define.bg} ${post.unroll} ${cxx.bgq} # ${ld.bgq} ${link.mpiPprofile}' -x10lib ${xla.props} -x10lib ${anuchem.props} ${x10lib.papi} -sourcepath . -d '${target-src}' '${basedir}/${testclass}'"/>
         </exec>
     </target>
 
@@ -217,17 +203,14 @@
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/test">
             <arg value="-c"/>
-            <arg value="'x10c' ${x10c.optimize} -sourcepath '.${path.separator}${basedir}/src${path.separator}${xla.src}${path.separator}${anuchem.src}${path.separator}${x10.testlib}' -classpath '${xla.lib}${path.separator}${anuchem.lib}${path.separator}${target-src}' -commandlineonly -d '${target-test}' ${test.list}"/>
+            <arg value="'x10c' ${x10c.optimize} -x10lib ${xla.props} -x10lib ${anuchem.props} ${x10lib.papi} -sourcepath '.${path.separator}${basedir}/src${path.separator}${x10.testlib}' -classpath '${target-src}' -commandlineonly -d '${target-test}' ${test.list}"/>
         </exec>
     </target>
 
-    <target name="test" depends="build-test">
-        <apply executable="x10" failonerror="true" dir="${target-test}" relative="true" addsourcefile="false">
-            <arg line="-t -v -mx 128M -classpath '${xla.lib}${path.separator}${anuchem.lib}${path.separator}${target-src}${path.separator}${target-test}'"/>
-            <targetfile/>
-            <fileset dir="${target-test}" includes="**/Test*.java"/>
-            <mapper type="package" from="*.java" to="*"/>
-        </apply>
+    <target name="test">
+        <exec executable="${env.X10_HOME}/x10.tests/bin/runTest.sh" failonerror="true" dir="${basedir}/test">
+            <arg line="-l au/edu/anu/mm -x10lib ${xla.props} -x10lib ${anuchem.props} -x10lib ${basedir}/fmm.properties -x10lib ${x10papi.props} -report_dir results" />
+        </exec>
     </target>
 
 	<target name="init-test" depends="init">

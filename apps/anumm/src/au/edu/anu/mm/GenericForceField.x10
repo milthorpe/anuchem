@@ -12,7 +12,7 @@ package au.edu.anu.mm;
 
 import x10.regionarray.Dist;
 
-import au.edu.anu.chem.mm.MMAtom;
+import au.edu.anu.chem.mm.AtomType;
 
 public class GenericForceField implements ForceField {
     public def getAtomTypes():Rail[AtomType] {
@@ -27,7 +27,7 @@ public class GenericForceField implements ForceField {
         throw new UnsupportedOperationException("GenericForceField.getBondTypeIndex");
     }
     
-    public def getPotentialAndForces(particleDataPlh:PlaceLocalHandle[ParticleData]):Double {
+    public def getPotentialAndForces(particleDataPlh:PlaceLocalHandle[AnummParticleData]):Double {
         val energy = finish(Reducible.SumReducer[Double]()) {
             ateach(p in Dist.makeUnique()) {
                 val particleData = particleDataPlh();
@@ -49,7 +49,7 @@ public class GenericForceField implements ForceField {
      * covalent bonds.
      * TODO interaction potentials other than harmonic
      */
-    private def bondStretching(particleData:ParticleData):Double {
+    private def bondStretching(particleData:AnummParticleData):Double {
         var potential:Double = 0.0;
         val bonds = particleData.bonds;
         if (bonds != null) {
@@ -97,7 +97,7 @@ public class GenericForceField implements ForceField {
      * TODO check direction of force for outside atoms
      * TODO interaction potentials other than harmonic
      */
-    private def bondAngles(particleData:ParticleData):Double {
+    private def bondAngles(particleData:AnummParticleData):Double {
         var potential:Double = 0.0;
         val angles = particleData.angles;
         if (angles != null) {

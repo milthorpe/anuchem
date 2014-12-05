@@ -106,7 +106,7 @@ public class TestFastMultipoleMethod extends TestElectrostatic {
             for (timerId in 4..9) {
                 FastMultipoleMethod.localData.timer.clear(timerId);
             }
-          fmm.reassignAtoms(0);
+            fmm.reassignAtoms(0);
         }
         //fmm.countOctants();
 
@@ -123,7 +123,7 @@ public class TestFastMultipoleMethod extends TestElectrostatic {
 
 
         for (i in 1..9) {
-            finish ateach(place in atoms) {
+            finish ateach(place in Dist.makeUnique()) {
                 fmm.reassignAtoms(i);
                 fmm.calculateEnergyLocal();
             }

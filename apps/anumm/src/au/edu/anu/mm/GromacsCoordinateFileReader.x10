@@ -35,12 +35,11 @@ public class GromacsCoordinateFileReader {
         this.fileName = fileName;
     }
 
-    public def readParticleData(particleData:ParticleData, forceField:ForceField) {
+    public def readParticleData(particleData:AnummParticleData) {
         val file = new FileReader(new File(fileName));
         val title = file.readLine(); // TODO should read from topology file
         val numAtoms = Int.parseInt(file.readLine());
         
-        particleData.allocateAtoms(numAtoms);
         particleData.description = title;
 
         // maps residue name, number, atom name to globalIndex
@@ -75,13 +74,13 @@ public class GromacsCoordinateFileReader {
             if (atomTypeIndex == -1n) {
                 throw new IllegalArgumentException("no atomTypeIndex found for atomName " + atomName);
             }
-            particleData.atomTypeIndex(i) = atomTypeIndex;
 
-            particleData.globalIndex(i) = Long.parseLong(line.substring(15n,20n).trim());
+            val globalIndex = Long.parseLong(line.substring(15n,20n).trim());
             // multiply coords by 10 to convert nm to Angstroms
-            particleData.x(i) = Point3d(Double.parseDouble(line.substring(20n,28n)),
-                                        Double.parseDouble(line.substring(28n,36n)),
-                                        Double.parseDouble(line.substring(36n,44n)));
+            val center = Point3d(Double.parseDouble(line.substring(20n,28n)),
+                                 Double.parseDouble(line.substring(28n,36n)),
+                                 Double.parseDouble(line.substring(36n,44n)));
+            particleData.addAtom(globalIndex, atomTypeIndex, center);
 
             if (line.length() >= 67) {
                 // velocities are included
@@ -109,10 +108,10 @@ public class GromacsCoordinateFileReader {
      * Create bonds for each residue from the bond structure held in
      * particleData.moleculeTypes
      */
-    private def createBonds(particleData:ParticleData, atomMap:HashMap[String,Int]) {
+    private def createBonds(particleData:AnummParticleData, atomMap:HashMap[String,Int]) {
         val bonds = new ArrayList[Bond]();
         val angles = new ArrayList[BondAngle]();
-        for (i in 0..(particleData.numAtoms-1)) {
+        for (i in 0..(particleData.numAtoms()-1)) {
             val atomTypeIndex = particleData.atomTypeIndex(i);
             val residueNumber = particleData.residueNumber(i);
             val moleculeType = particleData.moleculeTypes(particleData.moleculeTypeIndex(residueNumber));

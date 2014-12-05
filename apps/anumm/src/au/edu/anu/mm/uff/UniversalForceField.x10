@@ -17,8 +17,8 @@ import x10x.vector.Vector3d;
 import au.edu.anu.mm.BondStretchParameters;
 import au.edu.anu.mm.ForceField;
 import au.edu.anu.mm.LennardJonesParameters;
-import au.edu.anu.mm.ParticleData;
-import au.edu.anu.mm.AtomType;
+import au.edu.anu.mm.AnummParticleData;
+import au.edu.anu.chem.mm.AtomType;
 import au.edu.anu.chem.BondType;
 
 public class UniversalForceField implements ForceField {
@@ -92,7 +92,7 @@ public class UniversalForceField implements ForceField {
         return bondTypeIndex;
     }
     
-    public def getPotentialAndForces(particleDataPlh:PlaceLocalHandle[ParticleData]):Double {
+    public def getPotentialAndForces(particleDataPlh:PlaceLocalHandle[AnummParticleData]):Double {
         val energy = finish(Reducible.SumReducer[Double]()) {
             ateach(p in Dist.makeUnique()) {
                 val particleData = particleDataPlh();
@@ -109,7 +109,7 @@ public class UniversalForceField implements ForceField {
     }
 
 
-    private def bondStretching(particleData:ParticleData):Double {
+    private def bondStretching(particleData:AnummParticleData):Double {
         var energy:Double = 0.0;
         val bonds = particleData.bonds;
         for (bond in bonds) {

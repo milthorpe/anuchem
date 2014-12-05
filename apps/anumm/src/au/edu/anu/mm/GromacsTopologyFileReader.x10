@@ -18,6 +18,8 @@ import x10.io.Reader;
 import x10.io.EOFException;
 import x10.util.ArrayList;
 
+import au.edu.anu.chem.mm.AtomType;
+
 /**
  * This class reads GROMACS topology files (*.top) to populate particle
  * data and force field parameters.
@@ -36,7 +38,7 @@ public class GromacsTopologyFileReader {
         this.fileName = fileName;
     }
 
-    public def readMoleculeType(file:Reader, particleData:ParticleData, allAtomTypes:Rail[AtomType]) {
+    public def readMoleculeType(file:Reader, allAtomTypes:Rail[AtomType]) {
         currentLine = file.readLine();
         while (!finishedSection()) {
             if (!isComment()) {
@@ -46,13 +48,13 @@ public class GromacsTopologyFileReader {
 
                 while (currentLine != null) {
                     if (currentLine.indexOf("[ atoms ]") >= 0) {
-                        readAtoms(file, particleData, moleculeType, allAtomTypes);
+                        readAtoms(file, moleculeType, allAtomTypes);
                     } else if (currentLine.indexOf("[ bonds ]") >= 0) {
-                        readBonds(file, particleData, moleculeType);
+                        readBonds(file, moleculeType);
                     } else if (currentLine.indexOf("[ pairs ]") >= 0) {
                         skipSection(file);
                     } else if (currentLine.indexOf("[ angles ]") >= 0) {
-                        readAngles(file, particleData, moleculeType);
+                        readAngles(file, moleculeType);
                     } else if (currentLine.indexOf("[ dihedrals ]") >= 0) {
                         skipSection(file);
                     } else if (currentLine.indexOf("[") >= 0) {
@@ -69,7 +71,7 @@ public class GromacsTopologyFileReader {
         }
     }
 
-    public def readAtoms(file:Reader, particleData:ParticleData, molecule:MoleculeType, allAtomTypes:Rail[AtomType]) {
+    public def readAtoms(file:Reader, molecule:MoleculeType, allAtomTypes:Rail[AtomType]) {
         currentLine = file.readLine();
         molecule.atomNames = new ArrayList[String]();
         molecule.atomTypes = new ArrayList[Int]();
@@ -104,7 +106,7 @@ public class GromacsTopologyFileReader {
         }
     }
 
-    public def readBonds(file:Reader, particleData:ParticleData, molecule:MoleculeType) {
+    public def readBonds(file:Reader, molecule:MoleculeType) {
         val bonds = new ArrayList[Bond]();
         currentLine = file.readLine();
         while (!finishedSection()) {
@@ -130,7 +132,7 @@ public class GromacsTopologyFileReader {
         molecule.bonds = bonds;
     }
 
-    public def readAngles(file:Reader, particleData:ParticleData, molecule:MoleculeType) {
+    public def readAngles(file:Reader, molecule:MoleculeType) {
         val angles = new ArrayList[BondAngle]();
         currentLine = file.readLine();
         while (!finishedSection()) {
@@ -158,7 +160,7 @@ public class GromacsTopologyFileReader {
         molecule.angles = angles;
     }
 
-    public def readAtomTypes(file:Reader, particleData:ParticleData):Rail[AtomType] {
+    public def readAtomTypes(file:Reader):Rail[AtomType] {
         val atomTypes = new ArrayList[AtomType]();
         currentLine = file.readLine();
         while (!finishedSection()) {
@@ -176,7 +178,7 @@ public class GromacsTopologyFileReader {
         return atomTypes.toRail();
     }
 
-    public def readMolecules(file:Reader, particleData:ParticleData, moleculeTypeIndex:ArrayList[Int]) {
+    public def readMolecules(file:Reader, moleculeTypeIndex:ArrayList[Int]) {
         currentLine = file.readLine();
         while (!finishedSection()) {
             if (!isComment()) {
@@ -189,7 +191,7 @@ public class GromacsTopologyFileReader {
         }
     }
 
-    public def readTopology(particleData:ParticleData, forceField:ForceField) {
+    public def readTopology(particleData:AnummParticleData) {
         // perform pre-processing
         val gmxLib = System.getenv("GMXLIB");
         if (gmxLib == null) {
@@ -212,11 +214,11 @@ public class GromacsTopologyFileReader {
             while (currentLine != null) {
                 if (!isComment()) {
                     if (currentLine.indexOf("[ atomtypes ]") >= 0) {
-                        allAtomTypes = readAtomTypes(processedFile, particleData);
+                        allAtomTypes = readAtomTypes(processedFile);
                     } else if (currentLine.indexOf("[ moleculetype ]") >= 0) {
-                        readMoleculeType(processedFile, particleData, allAtomTypes);
+                        readMoleculeType(processedFile, allAtomTypes);
                     } else if (currentLine.indexOf("[ molecules ]") >= 0) {
-                        readMolecules(processedFile, particleData, moleculeTypeIndex);
+                        readMolecules(processedFile, moleculeTypeIndex);
                     } else {
                         currentLine = processedFile.readLine();
                     }

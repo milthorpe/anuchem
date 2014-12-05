@@ -7,16 +7,15 @@
  *      http://www.opensource.org/licenses/eclipse-1.0.php
  *
  * (C) Copyright Josh Milthorpe 2010-2014.
+ *  (C) Copyright IBM Corporation 2014.
  */
 package au.edu.anu.chem.mm;
 
-import x10.regionarray.Dist;
-import x10.regionarray.DistArray;
 import x10.util.Random;
 import x10.util.ArrayList;
 
 import x10x.vector.Point3d;
-import au.edu.anu.chem.mm.MMAtom;
+import x10x.vector.Vector3d;
 import au.edu.anu.util.Timer;
 
 /**
@@ -52,32 +51,34 @@ public class TestElectrostatic {
     }
 
 
-    public def generateAtoms(numAtoms:Long) : DistArray[Rail[MMAtom]](1) {
+    public def generateAtoms(numAtoms:Long):PlaceLocalHandle[ParticleData] {
         return generateAtoms(numAtoms, true);
     }
 
     /**
-     * Generate an array of local Arrays of MMAtoms, one Array for each
-     * place.  FMM assumes that the atoms have already been distributed.
-     * Locate all particles within a small displacement from points on 
-     * a cbrt(N) grid of size SIZE, centered at the origin.
+     * Generate a PlaceLocalHandle[ParticleData], containing particle data for
+     * all places. Locate all particles within a small displacement from points
+     * on a cbrt(N) grid of size SIZE, centered at the origin.
      */
-    public def generateAtoms(numAtoms:Long, perturb:Boolean) : DistArray[Rail[MMAtom]](1) {
+    public def generateAtoms(numAtoms:Long, perturb:Boolean):PlaceLocalHandle[ParticleData] {
         val charge = 1.0 / numAtoms; // keep charge density constant
         //Console.OUT.println("size of cluster =  " + sizeOfCentralCluster());
         val gridSize = (Math.ceil(Math.cbrt(numAtoms)) as Int);
         // assign atoms to a central cluster of size "sizeOfCentralCluster()"
         val clusterStart = -sizeOfCentralCluster() / 2.0;
 
+        val atomTypes = new Rail[AtomType](1);
+        atomTypes(0) = AtomType("default", -1n, 1.0, charge);
+
         // generate particles at each place in slabs, divide space by X coordinate
-        val atoms = DistArray.make[Rail[MMAtom]](Dist.makeUnique());
-        finish ateach(place in Dist.makeUnique()) {
+        val particleDataPlh = PlaceLocalHandle.make[ParticleData](Place.places(), ()=> {
             val chunkSize = (numAtoms / Place.numPlaces()) + ((numAtoms % Place.numPlaces() > 0) ? 1 : 0);
             val startHere = here.id * chunkSize;
             val endHere = Math.min(numAtoms, (here.id+1) * chunkSize);
-            val numAtomsHere = Math.max(0L, endHere-startHere-1);
-            val atomsHere = new Rail[MMAtom](numAtomsHere);
-            var i:Long = 0;
+            val numAtomsHere = Math.max(0L, endHere-startHere);
+            val particleData = new ParticleData();
+            particleData.atomTypes = atomTypes;
+
             for(gridPoint in startHere..(endHere-1)) {
                 val gridX = gridPoint / (gridSize * gridSize);
                 val gridY = (gridPoint - (gridX * gridSize * gridSize)) / gridSize;
@@ -85,13 +86,14 @@ public class TestElectrostatic {
                 val x = clusterStart + (gridX + 0.5) * (sizeOfCentralCluster() / gridSize) + (perturb ? randomNoise(): 0.0);
                 val y = clusterStart + (gridY + 0.5) * (sizeOfCentralCluster() / gridSize) + (perturb ? randomNoise(): 0.0);
                 val z = clusterStart + (gridZ + 0.5) * (sizeOfCentralCluster() / gridSize) + (perturb ? randomNoise(): 0.0);
-                //Console.OUT.println(here.id + ": " + x + " " + y + " " + z);
-                atomsHere(i++) = new MMAtom(Point3d(x, y, z), 1.0, charge);
+                //Console.OUT.println(here.id + " " + i + ": " + x + " " + y + " " + z);
+                particleData.addAtom(gridPoint, 0n, Point3d(x, y, z));
             }
-            atoms(here.id) = atomsHere;
-        }
 
-        return atoms;
+            particleData
+        });
+
+        return particleDataPlh;
     }
 
     /** 

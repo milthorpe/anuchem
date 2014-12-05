@@ -37,7 +37,7 @@ public class MOLStructureFileReader {
         this.fileName = fileName;
     }
 
-    public def readParticleData(particleData:ParticleData, forceField:ForceField) {
+    public def readParticleData(particleData:AnummParticleData, forceField:ForceField) {
         val atomTypes = forceField.getAtomTypes();
         val file = new FileReader(new File(fileName));
         val title = file.readLine();
@@ -47,15 +47,14 @@ public class MOLStructureFileReader {
         val numAtoms = Int.parseInt(metaLine.substring(0n,3n).trim());
         val numBonds = Int.parseInt(metaLine.substring(3n,6n).trim());
 
-        particleData.allocateAtoms(numAtoms);
         particleData.description = title;
 
         // following lines up to numAtoms contain atom data
         for (i in 0..(numAtoms-1)) {
             val line = file.readLine();
-            particleData.x(i)  = Point3d(Double.parseDouble(line.substring( 0n,10n).trim()),
-                                         Double.parseDouble(line.substring(10n,20n).trim()),
-                                         Double.parseDouble(line.substring(20n,30n).trim())) * 10.0; // convert to nm
+            val center = Point3d(Double.parseDouble(line.substring( 0n,10n).trim()),
+                                 Double.parseDouble(line.substring(10n,20n).trim()),
+                                 Double.parseDouble(line.substring(20n,30n).trim())) * 10.0; // convert to nm
             val symbol = line.substring(31n,34n).trim();
             var species:Int = -1n;
             for (j in 0..(atomTypes.size-1)) {
@@ -69,9 +68,8 @@ public class MOLStructureFileReader {
             if (species == -1n) {
                 throw new IllegalArgumentException("no species found for symbol " + symbol);
             }
-            //Console.OUT.println("position " + particleData.x(i));
-            particleData.atomTypeIndex(i) = species;
-            particleData.globalIndex(i) = i+1;
+            //Console.OUT.println("position " + center);
+            particleData.addAtom(i+1, species, center);
         }
 
         val bonds = new Rail[Bond](numBonds);

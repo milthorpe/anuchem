@@ -10,12 +10,14 @@
  */
 package au.edu.anu.mm;
 
+import x10.util.ArrayList;
+
 import x10x.vector.Point3d;
 import x10x.vector.Vector3d;
 
-public class ParticleData {
-    public var description:String;
+import au.edu.anu.chem.mm.ParticleData;
 
+public class AnummParticleData extends ParticleData {
     public var boxEdges:Vector3d;
 
     // Molecule / residue data
@@ -25,26 +27,12 @@ public class ParticleData {
     /** Mapping from residue number to molecule type */
     public var moleculeTypeIndex:Rail[Int];
 
-    // Atom data
-
-    public var atomTypes:Rail[AtomType];
-
-    public var numAtoms:Long;
-    /** Atom type index for each atom */
-    public var atomTypeIndex:Rail[Int];
     /** Residue number (e.g. index of molecule) for each atom */
-    public var residueNumber:Rail[Int];
-    /** Global index of each atom */
-    public var globalIndex:Rail[Long];
-    /** Atom centers in nm */
-    public var x:Rail[Point3d];
+    public val residueNumber = new ArrayList[Int]();
     /** Atom velocities */
-    public var dx:Rail[Vector3d];
-    /** Instantaneous force on atoms */
-    public var fx:Rail[Vector3d];
+    public val dx = new ArrayList[Vector3d]();
 
     // Bond data
-
     public var bondTypes:Rail[BondStretchParameters];
     public var angleTypes:Rail[BondAngleParameters];
 
@@ -53,14 +41,10 @@ public class ParticleData {
     /** Bond angles between atoms, where the second atom is held locally at this place */
     public var angles:Rail[BondAngle];
 
-    public def allocateAtoms(N:Long) {
-        this.numAtoms = N;
-        atomTypeIndex = new Rail[Int](N);
-        residueNumber = new Rail[Int](N);
-        globalIndex = new Rail[Long](N);
-        x = new Rail[Point3d](N);
-        dx = new Rail[Vector3d](N);
-        fx = new Rail[Vector3d](N);
+    public def addAtom(index:Long, atomType:Int, center:Point3d) {
+        super.addAtom(index, atomType, center);
+        residueNumber.add(0n);
+        dx.add(Vector3d.NULL);
     }
 }
 

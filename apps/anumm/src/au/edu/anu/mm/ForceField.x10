@@ -11,8 +11,7 @@
  */
 package au.edu.anu.mm;
 
-import x10.regionarray.DistArray;
-import au.edu.anu.chem.mm.MMAtom;
+import au.edu.anu.chem.mm.AtomType;
 
 /**
  * This interface represents an all-atom force field such as
@@ -24,7 +23,7 @@ public interface ForceField {
      * on each atom in the system.
      * @return the energy of the system // TODO units?
      */
-    public def getPotentialAndForces(particleDataPlh:PlaceLocalHandle[ParticleData]):Double;
+    public def getPotentialAndForces(particleDataPlh:PlaceLocalHandle[AnummParticleData]):Double;
 
     /**
      * @return the mass of the given atom type e.g. 1.00794 for H=1

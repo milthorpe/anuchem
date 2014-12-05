@@ -17,6 +17,7 @@ import x10.util.HashMap;
 import x10.util.HashSet;
 
 import au.edu.anu.util.Timer;
+import au.edu.anu.chem.mm.ParticleData;
 
 public class FmmLocalData {
     // TODO enum - XTENLANG-1118
@@ -41,7 +42,12 @@ public class FmmLocalData {
      * calculations, all force/energy calculations are performed within 
      * an origin-centred cube.
      */
-    public var size:Double; 
+    public var size:Double;
+
+    /**
+     * Particle data: positions, charges and mass of particles at this place.
+     */
+    public var particleData:ParticleData;
 
     /** All octants held at this place. */
     val octants = new HashMap[UInt,Octant]();

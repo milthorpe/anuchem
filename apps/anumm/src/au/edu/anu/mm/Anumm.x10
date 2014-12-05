@@ -27,7 +27,7 @@ import au.edu.anu.mm.uff.UniversalForceField;
  */
 public class Anumm {
     /** The particle data for the simulation, of which each place holds a portion. */
-    private val particleDataPlh:PlaceLocalHandle[ParticleData];
+    private val particleDataPlh:PlaceLocalHandle[AnummParticleData];
 
     /** The force field applied to the atoms in this simulation. */
     private val forceField:ForceField;
@@ -36,7 +36,7 @@ public class Anumm {
 
     private val verbose:Boolean;
 
-    public def this(particleDataPlh:PlaceLocalHandle[ParticleData],
+    public def this(particleDataPlh:PlaceLocalHandle[AnummParticleData],
                     forceField:ForceField,
                     outputFile:GromacsCoordinateFileWriter,
                     verbose:Boolean) {
@@ -80,7 +80,7 @@ public class Anumm {
             ateach(p in Dist.makeUnique()) {
                 var kinetic:Double = 0.0;
                 val particleData = particleDataPlh();
-                for (i in 0..(particleData.numAtoms-1)) {
+                for (i in 0..(particleData.numAtoms()-1)) {
                     val mass = particleData.atomTypes(particleData.atomTypeIndex(i)).mass;
                     kinetic += mass * particleData.dx(i).lengthSquared();
                 }
@@ -109,7 +109,7 @@ public class Anumm {
         finish ateach(place in Dist.makeUnique()) {
             val particleData = particleDataPlh();
 
-            for (i in 0..(particleData.numAtoms-1)) {
+            for (i in 0..(particleData.numAtoms()-1)) {
                 val invMass = 1.0 / particleData.atomTypes(particleData.atomTypeIndex(i)).mass;
                 particleData.dx(i) = particleData.dx(i) + 0.5 * dt * invMass * particleData.fx(i);
                 particleData.x(i) = particleData.x(i) + particleData.dx(i) * dt;
@@ -123,7 +123,7 @@ public class Anumm {
             ateach(p in Dist.makeUnique()) {
                 val particleData = particleDataPlh();
                 var kineticHere:Double = 0.0;
-                for (i in 0..(particleData.numAtoms-1)) {
+                for (i in 0..(particleData.numAtoms()-1)) {
                     val mass = particleData.atomTypes(particleData.atomTypeIndex(i)).mass;
                     val invMass = 1.0 / mass;
                     particleData.dx(i) = particleData.dx(i) + 0.5 * dt * invMass * particleData.fx(i);
@@ -175,7 +175,7 @@ public class Anumm {
         val outputFileName = opts("o", defaultOutputFileName);
 
         var ff:ForceField = null;
-        val particleDataPlh = PlaceLocalHandle.make[ParticleData](Place.places(), ()=> new ParticleData());
+        val particleDataPlh = PlaceLocalHandle.make[AnummParticleData](Place.places(), ()=> new AnummParticleData());
 
         val particleData = particleDataPlh();
         if (structureFileName.length() > 4) {
@@ -206,8 +206,8 @@ public class Anumm {
                 }
                 ff = new GenericForceField(); // TODO read forcefield from topology
                 try {
-                    new GromacsTopologyFileReader(topologyFileName).readTopology(particleData, ff);
-                    new GromacsCoordinateFileReader(structureFileName).readParticleData(particleData, ff);
+                    new GromacsTopologyFileReader(topologyFileName).readTopology(particleData);
+                    new GromacsCoordinateFileReader(structureFileName).readParticleData(particleData);
                 } catch (e:IOException) {
                     Console.ERR.println(e);
                     System.setExitCode(1n);
@@ -218,7 +218,7 @@ public class Anumm {
 
         val outputFile = new GromacsCoordinateFileWriter(outputFileName);
 
-        Console.OUT.println("# MD for " + particleData.description + ": " + particleData.numAtoms + " atoms");
+        Console.OUT.println("# MD for " + particleData.description + ": " + particleData.numAtoms() + " atoms");
         val anumm = new Anumm(particleDataPlh, ff, outputFile, true);
         anumm.mdRun(timestep, numSteps);
         Console.OUT.println("\n# Run completed after " + numSteps + " steps");

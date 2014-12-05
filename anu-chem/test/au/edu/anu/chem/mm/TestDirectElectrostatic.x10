@@ -12,8 +12,6 @@ package au.edu.anu.chem.mm;
 
 import x10.compiler.Ifdef;
 
-import au.edu.anu.chem.mm.SimpleElectrostaticDirectMethod;
-import au.edu.anu.chem.mm.TestElectrostatic;
 import au.edu.anu.util.Timer;
 
 import edu.utk.cs.papi.PAPI;
@@ -41,9 +39,9 @@ public class TestDirectElectrostatic extends TestElectrostatic {
     public def test(numAtoms:Long) {
         Console.OUT.println("Testing direct electrostatic for " + numAtoms + " particles.");
 
-        val atoms = SimpleElectrostaticDirectMethod.generateAtoms(numAtoms);
+        val atoms = generateAtoms(numAtoms);
 
-        val direct = new SimpleElectrostaticDirectMethod(atoms);
+        val direct = new ElectrostaticDirectMethod(atoms);
 
         @Ifdef("__PAPI__") {
         papi.initialize();
@@ -59,7 +57,7 @@ public class TestDirectElectrostatic extends TestElectrostatic {
         papi.shutDown();
         }
 
-        logTime("Time", SimpleElectrostaticDirectMethod.TIMER_INDEX_TOTAL, direct.timer);
+        logTime("Time", ElectrostaticDirectMethod.TIMER_INDEX_TOTAL, direct.timer);
         Console.OUT.println("energy = " + directEnergy);
     }
 }
