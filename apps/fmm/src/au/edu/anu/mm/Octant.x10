@@ -228,11 +228,6 @@ public abstract class Octant implements Comparable[Octant] {
         return (stop-start)/10L;
     }
 
-    static struct SumReducer implements Reducible[Double] {
-        public def zero() = 0.0;
-        public operator this(a:Double, b:Double) = (a + b);
-    }
-
     public def toString(): String {
         return "Octant " + id;
     }

@@ -17,14 +17,12 @@ import x10.io.FileWriter;
 import x10.io.IOException;
 import x10.io.Printer;
 import x10.regionarray.Dist;
-import x10.regionarray.DistArray;
 import x10.util.ArrayList;
-import x10.util.Pair;
 import x10.util.Team;
 import x10x.vector.Point3d;
 import x10x.vector.Vector3d;
-import au.edu.anu.chem.Molecule;
-import au.edu.anu.chem.mm.MMAtom;
+import au.edu.anu.chem.mm.AtomType;
+import au.edu.anu.chem.mm.ParticleData;
 import au.edu.anu.util.StatisticalTimer;
 import au.edu.anu.util.Timer;
 import edu.mit.fftw.FFTW;
@@ -74,9 +72,6 @@ public class PenningTrap {
     /** The maximum calculated error in particle x displacement. */
     private var maxErrorX:Double = 0.0;
 
-    /** All species of ion represented in the trap. */
-    private val speciesList:Rail[SpeciesSpec];
-
     /** 
      * Creates a new Penning trap containing the given atoms.
      * @param trappingPotential the axial confinement potential in V applied to the end plates
@@ -88,8 +83,7 @@ public class PenningTrap {
                     magneticField:Vector3d,
                     edgeLength:Double,
                     fmmDMax:Int,
-                    fmmNumTerms:Int,
-                    speciesList:Rail[SpeciesSpec]) {
+                    fmmNumTerms:Int) {
         this.numAtoms = numAtoms;
         val wellSeparatedParam = 2n;
         val fmmNumBoxes = Math.pow(8.0, fmmDMax);
@@ -102,7 +96,6 @@ public class PenningTrap {
         this.eNorm = V_T * PenningTrap.ALPHA_PRIME / (edgeLength * edgeLength);
         this.eFieldNorm = -BETA_PRIME / edgeLength;
         this.magB = magneticField.magnitude();
-        this.speciesList = speciesList;
     }
 
     /**
@@ -111,8 +104,7 @@ public class PenningTrap {
      * @param timestep length in ns
      * @param numSteps number of timesteps to simulate
      */
-    public def mdRun(timestep:Double, numSteps:Int, resumeStep:Int, logSteps:Int, atoms:DistArray[Rail[MMAtom]](1)) {
-        fmm.initialAssignment(numAtoms, atoms);
+    public def mdRun(timestep:Double, numSteps:Int, resumeStep:Int, logSteps:Int) {
         finish ateach(place in Dist.makeUnique()) {
             for (timerId in 4..9) {
                 FastMultipoleMethod.localData.timer.clear(timerId);
@@ -214,14 +206,18 @@ public class PenningTrap {
     private def printStartPositions(props:SystemProperties) {
         val startPosPrinter = new Printer(new FileWriter(new File("positions_0.dat"), true));
         val leafOctants = FastMultipoleMethod.localData.leafOctants;
+        val particleData = FastMultipoleMethod.localData.particleData;
         for (leafOctant in leafOctants) {
             val octantAtoms = leafOctant.atoms;
-            for (atoms in octantAtoms) {
-                props.accumulate(atoms, this);
+            for (localAtomIdx in octantAtoms) {
+                val center = particleData.x(localAtomIdx);
+                val velocity = particleData.dx(localAtomIdx);
+                val atomType = particleData.atomTypes(particleData.atomTypeIndex(localAtomIdx));
+                props.accumulate(center, velocity, atomType, this);
             }
-            // print start positions
-            printPositions(0, octantAtoms, startPosPrinter);
         }
+        // print start positions
+        printPositions(0, particleData, startPosPrinter);
         startPosPrinter.close();
         reduceAndPrintProperties(0, props);
     }
@@ -230,22 +226,18 @@ public class PenningTrap {
         // print end positions
         val timeInt = (time) as Int;
         val endPosPrinter = new Printer(new FileWriter(new File("positions_" + timeInt + ".dat"), true));
-        val leafOctants = FastMultipoleMethod.localData.leafOctants;
-        for (leafOctant in leafOctants) {
-            printPositions(time, leafOctant.atoms, endPosPrinter);
-        }
+        val particleData = FastMultipoleMethod.localData.particleData;
+        printPositions(time, particleData, endPosPrinter);
     }
 
     private def printEnergies(time:Double) {
         // print end positions
         val timeInt = (time) as Int;
         val energiesPrinter = new Printer(new FileWriter(new File("energies_" + timeInt + ".dat"), true));
-        var stats:Statistics = new Statistics();
-        val leafOctants = FastMultipoleMethod.localData.leafOctants;
-        for (leafOctant in leafOctants) {
-            val s = printEnergies(time, leafOctant.atoms, energiesPrinter);
-            stats.add(s);
-        }
+        val stats = new Statistics();
+        val particleData = FastMultipoleMethod.localData.particleData;
+        val s = printEnergies(time, particleData, energiesPrinter);
+        stats.add(s);
         energiesPrinter.printf("# mean %.5g stddev %.4g", stats.mean(), stats.stdDev());
     }
 
@@ -269,10 +261,14 @@ public class PenningTrap {
         timer.stop(1);
 
         val leafOctants = FastMultipoleMethod.localData.leafOctants;
+        val particleData = FastMultipoleMethod.localData.particleData;
         finish for (leafOctant in leafOctants) async {
-            for (atom in leafOctant.atoms) {
+            for (localAtomIndex in leafOctant.atoms) {
+                val atomTypeIndex = particleData.atomTypeIndex(localAtomIndex);
+                val atomType = particleData.atomTypes(atomTypeIndex);
+
                 // timestep using Boris integrator
-                val chargeMassRatio = atom.charge / atom.mass * CHARGE_MASS_FACTOR;
+                val chargeMassRatio = atomType.charge / atomType.mass * CHARGE_MASS_FACTOR;
 
                 /*
                 // get the electric field at ion centre due to other ions
@@ -291,11 +287,12 @@ public class PenningTrap {
                 //E += Ef;
                 */
                 
-                val E = getElectrostaticField(atom.centre);
+                val E = getElectrostaticField(particleData.x(localAtomIndex));
 
-                //Console.OUT.println("atom at " + atom.centre + " E = " + E + " pairwise = " + COULOMB_FACTOR * atom.force);
-                val halfA = 0.5 * dt * chargeMassRatio * (E + COULOMB_FACTOR * atom.force);
-                val vMinus = atom.velocity + halfA; // m
+                Console.OUT.println("atom at " + particleData.x(localAtomIndex)
+                    + " E = " + E + " pairwise = " + COULOMB_FACTOR * particleData.fx(localAtomIndex));
+                val halfA = 0.5 * dt * chargeMassRatio * (E + COULOMB_FACTOR * particleData.fx(localAtomIndex));
+                val vMinus = particleData.dx(localAtomIndex) + halfA; // m
 
                 //val larmorFreq = chargeMassRatio * magB;
                 val t = 0.5 * dt * chargeMassRatio * B;
@@ -305,7 +302,7 @@ public class PenningTrap {
                 val s = t * (2.0 / (1.0 + magt2));
                 val vPlus = vMinus + vPrime.cross(s);
 
-                atom.velocity = vPlus + halfA;
+                particleData.dx(localAtomIndex) = vPlus + halfA;
             }
         }
 
@@ -321,20 +318,23 @@ public class PenningTrap {
             val boxProps = new SystemProperties();
             val boxAtoms = leafOctant.atoms;
             //placeAtoms += boxAtoms.size;
-            for (i in 0..(boxAtoms.size()-1)) {
-                val atom = boxAtoms(i);
-                atom.centre = atom.centre + atom.velocity * dt;
-                //Console.OUT.print(atom.centre.i + " " + atom.centre.j + " " + atom.centre.k + " ");
+            for (localAtomIndex in boxAtoms) {
+                val atomTypeIndex = particleData.atomTypeIndex(localAtomIndex);
+                val atomType = particleData.atomTypes(atomTypeIndex);
+                var center:Point3d = particleData.x(localAtomIndex);
+                val velocity = particleData.dx(localAtomIndex);
+                center = center + velocity * dt;
 
-                if (Math.abs(atom.centre.i) > edgeLength/2.0
-                 || Math.abs(atom.centre.j) > edgeLength/2.0
-                 || Math.abs(atom.centre.k) > edgeLength/2.0) {
+                if (Math.abs(center.i) > edgeLength/2.0
+                 || Math.abs(center.j) > edgeLength/2.0
+                 || Math.abs(center.k) > edgeLength/2.0) {
                     // ion lost to wall
-                    boxAtoms(i) = null;
+                    particleData.removeAtom(localAtomIndex);
                 } else {
-                    currentLocal += getImageCurrent(atom);
+                    particleData.x(localAtomIndex) = center;
+                    currentLocal += getImageCurrent(atomType.charge, velocity);
                     if (accumProps) {
-                        boxProps.accumulate(atom, this);
+                        boxProps.accumulate(center, velocity, atomType, this);
                     }
                 }
             }
@@ -383,8 +383,8 @@ public class PenningTrap {
      * @return the image current induced by the given ion
      * @see Guan & Marshall eq. 69-70
      */
-    public @Inline def getImageCurrent(ion:MMAtom):Double {
-        return ion.charge * ion.velocity.j * eFieldNorm;
+    public @Inline def getImageCurrent(charge:Double, velocity:Vector3d):Double {
+        return charge * velocity.j * eFieldNorm;
     }
 
 
@@ -393,77 +393,74 @@ public class PenningTrap {
      * numAtoms:Int
      * repeat -
      *   atomIndex:Int
-     *   speciesId:Int
+     *   atomTypeIndex:Int
      *   atomCentre:Int[3]
      *   atomVelocity:Int[3]
      */
     private def writeSnapshot(timesteps:Int) {
         // print end positions
-        val snapshotWriter = new FileWriter(new File("snapshot_" + timesteps + ".dat"));
-        snapshotWriter.writeInt(timesteps);
-        snapshotWriter.writeInt(numAtoms);
-        val leafOctants = FastMultipoleMethod.localData.leafOctants;
-        for (leafOctant in leafOctants) {
-            writeSnapshot(leafOctant.atoms, snapshotWriter);
+        val writer = new FileWriter(new File("snapshot_" + timesteps + ".dat"));
+        writer.writeInt(timesteps);
+        writer.writeInt(numAtoms);
+        val particleData = FastMultipoleMethod.localData.particleData;
+        for (i in 0..(particleData.numAtoms()-1)) {
+            val globalIndex = particleData.globalIndex(i);
+            val atomTypeIndex = particleData.atomTypeIndex(i);
+            val atomType = particleData.atomTypes(atomTypeIndex);
+            val center = particleData.x(i);
+            val velocity = particleData.dx(i);
+
+            writer.writeLong(globalIndex);
+            writer.writeInt(atomTypeIndex);
+            writer.writeDouble(center.i);
+            writer.writeDouble(center.j);
+            writer.writeDouble(center.k);
+            writer.writeDouble(velocity.i);
+            writer.writeDouble(velocity.j);
+            writer.writeDouble(velocity.k);
         }
-        snapshotWriter.close();
+        writer.close();
     }
 
-    private def writeSnapshot(myAtoms:ArrayList[MMAtom], writer:FileWriter) {
-        for (i in 0..(myAtoms.size()-1)) {
-            val atom = myAtoms(i);
-            if (atom != null) {
-                writer.writeInt(atom.index as Int);
-                writer.writeInt(atom.species);
-                writer.writeDouble(atom.centre.i);
-                writer.writeDouble(atom.centre.j);
-                writer.writeDouble(atom.centre.k);
-                writer.writeDouble(atom.velocity.i);
-                writer.writeDouble(atom.velocity.j);
-                writer.writeDouble(atom.velocity.k);
-            }
-        }
-    }
-
-    public def loadFromSnapshot(snapshotFileName:String):Pair[Int, Rail[MMAtom]] {
+    /**
+     * Load particle data from the given snapshot file.
+     * @return timesteps the number of timesteps since the start of the simulation
+     */
+    public def loadFromSnapshot(snapshotFileName:String, particleData:ParticleData):Int {
         Console.OUT.println("loading from snapshot file " + snapshotFileName);
         val reader = new FileReader(new File(snapshotFileName));
         val timesteps = reader.readInt();
         numAtoms = reader.readInt();
         Console.OUT.println("reading " + numAtoms + " atoms");
-        val atoms = new Rail[MMAtom](numAtoms);
+        
         var i:Long = 0;
         try {
             for (i=0; i < numAtoms; i++) {
                 val index = reader.readInt();
-                val speciesId = reader.readInt();
-                val species = speciesList(speciesId);
+                val atomTypeIndex = reader.readInt();
                 val x = reader.readDouble();
                 val y = reader.readDouble();
                 val z = reader.readDouble();
                 val dx = reader.readDouble();
                 val dy = reader.readDouble();
                 val dz = reader.readDouble();
-                val ion = new MMAtom(speciesId, Point3d(x, y, z), species.mass, species.charge);
-                ion.index = index;
-                ion.velocity = Vector3d(dx, dy, dz);
-                atoms(i) = ion;
+                particleData.addAtom(i, atomTypeIndex, Point3d(x, y, z), Vector3d(dx, dy, dz));
             }
         } catch (e:Exception) {
             // no more atoms
             throw new Exception("incomplete snapshot file: " + snapshotFileName + " (read " + i + " atoms)");
         }
         reader.close();
-        return Pair[Int, Rail[MMAtom]](timesteps, atoms);
+        return timesteps;
     }
 
-    private def printPositions(time:Double, myAtoms:ArrayList[MMAtom], printer:Printer) {
+    private def printPositions(time:Double, particleData:ParticleData, printer:Printer) {
         val timeInt = time as Int;
-        for (i in 0..(myAtoms.size()-1)) {
-            val atom = myAtoms(i);
-            if (atom != null) {
-                printer.printf("%i %i %12.8f %12.8f %12.8f\n", atom.index, atom.species, atom.centre.i*1.0e3, atom.centre.j*1.0e3, atom.centre.k*1.0e3);
-            }
+        for (i in 0..(particleData.numAtoms()-1)) {
+            val globalIndex = particleData.globalIndex(i);
+            val atomTypeIndex = particleData.atomTypeIndex(i);
+            val center = particleData.x(i);
+            printer.printf("%i %i %12.8f %12.8f %12.8f\n", globalIndex, atomTypeIndex, center.i*1.0e3, center.j*1.0e3, center.k*1.0e3);
         }
     }
 
@@ -471,18 +468,20 @@ public class PenningTrap {
      * Prints the energies of all particles in the list.  Also returns
      * Statistics on the energy.
      */
-    private def printEnergies(time:Double, myAtoms:ArrayList[MMAtom], printer:Printer):Statistics {
+    private def printEnergies(time:Double, particleData:ParticleData, printer:Printer):Statistics {
         val timeInt = time as Int;
-        var stats:Statistics = new Statistics();
-        for (i in 0..(myAtoms.size()-1)) {
-            val atom = myAtoms(i);
-            if (atom != null) {
-                val energy = 0.5 * 1.66053892173e-12 /* Da->kg * 10^15fJ */ * atom.mass * atom.velocity.lengthSquared();
-                printer.printf("%i %i %12.8f\n", atom.index, atom.species, energy);
-                stats.n++; 
-                stats.sum += energy;
-                stats.sumOfSquares += energy*energy;
-            }
+        val stats = new Statistics();
+        for (i in 0..(particleData.numAtoms()-1)) {
+            val globalIndex = particleData.globalIndex(i);
+            val atomTypeIndex = particleData.atomTypeIndex(i);
+            val atomType = particleData.atomTypes(atomTypeIndex);
+            val velocity = particleData.dx(i);
+
+            val energy = 0.5 * 1.66053892173e-12 /* Da->kg * 10^15fJ */ * atomType.mass * velocity.lengthSquared();
+            printer.printf("%i %i %12.8f\n", globalIndex, atomTypeIndex, energy);
+            stats.n++; 
+            stats.sum += energy;
+            stats.sumOfSquares += energy*energy;
         }
         return stats;
     }
@@ -560,14 +559,14 @@ public class PenningTrap {
         /**
          * Accumulates the properties for the given atom.
          */
-        public @Inline def accumulate(atom:MMAtom, trap:PenningTrap) {
+        public @Inline def accumulate(center:Point3d, velocity:Vector3d, atomType:AtomType, trap:PenningTrap) {
             raw(0)++;
-            raw(1) += atom.centre.i;
-            raw(2) += atom.centre.j;
-            raw(3) += atom.centre.k;
-            raw(4) += atom.mass * atom.velocity.lengthSquared();
-            raw(5) += atom.charge * trap.getElectrostaticPotential(atom.centre);
-            raw(6) += trap.getImageCurrent(atom);
+            raw(1) += center.i;
+            raw(2) += center.j;
+            raw(3) += center.k;
+            raw(4) += atomType.mass * velocity.lengthSquared();
+            raw(5) += atomType.charge * trap.getElectrostaticPotential(center);
+            raw(6) += trap.getImageCurrent(atomType.charge, velocity);
         }
 
         /**

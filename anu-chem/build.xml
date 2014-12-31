@@ -196,14 +196,10 @@
         </exec>
     </target>
 
-    <target name="test" depends="build-test">
-        <apply executable="x10" failonerror="true" dir="${target-test}" relative="true" addsourcefile="false">
-            <arg line="-t -v -mx 128M -classpath '${target-src}${path.separator}${target-test}'" />
-            <targetfile/>
-
-            <fileset dir="${target-test}" includes="**/Test*.java" />
-            <mapper type="glob" from="*.java" to="*"/>
-        </apply>
+    <target name="test">
+        <exec executable="${env.X10_HOME}/x10.tests/bin/runTest.sh" failonerror="true" dir="${basedir}/test">
+            <arg line="-l au/edu/anu/chem/mm -x10lib ${xla.props} -x10lib ${basedir}/${x10libname}.properties -x10lib ${x10papi.props} -report_dir results" />
+        </exec>
     </target>
 
 	<target name="init-test" depends="init">

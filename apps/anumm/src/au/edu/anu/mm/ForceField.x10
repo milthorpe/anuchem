@@ -6,12 +6,12 @@
  *  You may obtain a copy of the License at
  *      http://www.opensource.org/licenses/eclipse-1.0.php
  *
- * (C) Copyright Josh Milthorpe 2010.
+ *  (C) Copyright Josh Milthorpe 2010.
+ *  (C) Copyright IBM Corporation 2014.
  */
 package au.edu.anu.mm;
 
-import x10.regionarray.DistArray;
-import au.edu.anu.chem.mm.MMAtom;
+import au.edu.anu.chem.mm.AtomType;
 
 /**
  * This interface represents an all-atom force field such as
@@ -23,10 +23,20 @@ public interface ForceField {
      * on each atom in the system.
      * @return the energy of the system // TODO units?
      */
-    public def getPotentialAndForces(atoms: DistArray[Rail[MMAtom]](1)) : Double;
+    public def getPotentialAndForces(particleDataPlh:PlaceLocalHandle[AnummParticleData]):Double;
 
     /**
      * @return the mass of the given atom type e.g. 1.00794 for H=1
      */
     public def getAtomMass(species:Int) : Double;
+
+    /**
+     * @return the list of all species supported by this force field
+     */
+    public def getAtomTypes():Rail[AtomType];
+
+    /**
+     * @return the bond type index within this force field for the given species
+     */
+    public def getBondTypeIndex(species1:Int, species2:Int, structureFileType:Int):Int;
 }

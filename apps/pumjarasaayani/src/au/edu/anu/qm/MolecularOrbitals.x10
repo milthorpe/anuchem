@@ -34,9 +34,9 @@ public class MolecularOrbitals extends DenseMatrix{self.M==self.N} {
         val diag = new GMLDiagonalizer();
 
         diag.diagonalize(a);
-        orbitalEnergies = diag.getEigenValues().d;
+        orbitalEnergies = diag.getEigenvalues().d;
 
-        super.transMult(diag.getEigenVectors(), x);
+        super.transMult(diag.getEigenvectors(), x);
     }
 }
 

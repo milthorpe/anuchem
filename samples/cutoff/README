@@ -1,9 +1,18 @@
-This example code calculates electrostatic potential energy for a system of charged particles with periodic boundary conditions, using a simple cutoff.
+Cutoff electrostatics, part of ANU-Chem
 
-Dependencies
+This program is controlled by the Eclipse Public Licence v1.0 
+http://www.eclipse.org/legal/epl-v10.html
+
+Introduction
 ------------
-This example assumes you have built the X10Libs for XLA and ANUChem.
 
-$ cd ~/x10-apps/xla && ant buildx10lib-cpp
-$ cd ~/x10-apps/anu-chem && ant buildx10lib-cpp
+This example code calculates electrostatic potential energy for a system of
+charged particles with periodic boundary conditions, using a simple cutoff.
+
+Compile dependencies:
+------------------------
+* X10 version 2.5 (optionally with x10rt=mpi)
+* XLA library (cd ~/anuchem-code/x10x.lib/xla && ant)
+* anu-chem library (cd ~/anuchem-code/anuchem && ant)
+
 

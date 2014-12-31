@@ -1,4 +1,4 @@
-set output 'positions_0_yz.eps'
+set output 'positions_25000_yz.eps'
 set term postscript eps 22  enhanced
 
 set xrange [-5:5]
@@ -13,4 +13,4 @@ set xzeroaxis
 set yzeroaxis
 set key left top
 
-plot 'positions_0.dat' using 4:5:2 with points pt 0 palette notitle
+plot 'positions_25000.dat' using 4:5:2 with points pt 0 palette notitle

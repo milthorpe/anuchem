@@ -1,13 +1,18 @@
 ANUMM (molecular mechanics) code, part of ANU-Chem
 
-This program is controlled by the Eclipse Public Licence v1.0 http://www.eclipse.org/legal/epl-v10.html
+This program is controlled by the Eclipse Public Licence v1.0
+http://www.eclipse.org/legal/epl-v10.html
 
 Introduction:
 ------------
 
-ANUMM is intended as a general framework for molecular dynamics simulation in X10 that would support different integrators, force fields and particularly different parallel methods of computing non-bonded interactions.  However, it is currently unfinished and so is unsuitable for most simulations. 
+ANUMM is intended as a general framework for molecular dynamics simulation in
+X10 that would support different integrators, force fields and particularly
+different parallel methods of computing non-bonded interactions.  However, it
+is currently unfinished and so is unsuitable for most simulations. 
 
-ANUMM has been used in a complete MD simulation of ion-ion interactions in a mass spectrometer (see test/au/edu/anu/mm/TestCyclotron.x10).
+ANUMM has been used in a complete MD simulation of ion-ion interactions in a
+mass spectrometer (see test/au/edu/anu/mm/TestCyclotron.x10).
 
 Compiling:
 ----------

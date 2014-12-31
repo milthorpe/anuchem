@@ -148,7 +148,7 @@ public class DIISFockExtrapolator(N:Long) {
         B(noOfIterations) = -1.0;
 
         val permutation = new Rail[Int](M);
-        val result = DenseMatrixLAPACK.solveLinearEquation(A, B, permutation);
+        DenseMatrixLAPACK.solveLinearEquation(A, B, permutation);
 
         for (var i:Long=0; i < noOfIterations; i++) {
           val prevFock = fockMatrixList.get(i);

@@ -8,7 +8,7 @@ Overview:
 
 ANUChem is a suite of computational chemistry codes written in the X10
 programming language.
-http://x10.codehaus.org/
+http://x10-lang.org/
 
 It is intended to test the expressiveness, performance and scalability of X10
 for use in developing scientific application codes.
@@ -22,7 +22,7 @@ ANUChem currently contains three significant application codes:
 - pme (Particle Mesh Ewald): calculates electrostatic potential using the
   Smooth Particle Mesh Ewald method.
 
-The individual codes are described in ${appname}/doc/README including the build
+The individual codes are described in ${appname}/README including the build
 process and test inputs.
 
 In addition, there are a number of smaller codes contained in ./samples and
@@ -47,8 +47,8 @@ Working with ANUChem:
 The codes are under continuous revision and the current source is available at
 http://sourceforge.net/p/anuchem/code
 
-In addition, there are source distributions containing tagged "release" versions
-of the source code that compile against each released version of X10.
+In addition, there are source distributions containing "release" versions of
+the source code that compile against each released version of X10.
 
 For any questions about building, testing or extending ANUChem, please email
 josh.milthorpe@anu.edu.au
