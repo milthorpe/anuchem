@@ -44,7 +44,7 @@ public class Pong {
             }
             // ping-pong using remote handles
             // TODO ping-pong between all places, not just first two
-            val nextId = here.next().id;
+            val nextId = Place.places().next(here).id;
             val localSrc = dsrc(here.id);
             val remoteSrc = dremoteSrc(here.id)(nextId);
             val localDst = ddst(here.id);
@@ -61,9 +61,9 @@ public class Pong {
                 }
             }
 
-            at(here.next()) {
+            at(Place.places().next(here)) {
                 val nextDst = ddst(here.id);
-                val prevId = here.prev().id;
+                val prevId = Place.places().prev(here).id;
                 for (i in 0..(nextDst.size-1)) {
                     if (nextDst(i) != prevId as Double) {
                         throw new Exception("at " + here + " incorrect value for element " + i + ": " + nextDst(i));
@@ -80,7 +80,7 @@ public class Pong {
             val a = new Rail[Double](size / 8);
             val start = System.nanoTime();
             for (i in 1..ITERS) {
-                val b = at(here.next()) {
+                val b = at(Place.places().next(here)) {
                     a(0) = 1.0;
                     a
                 };
