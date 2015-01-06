@@ -12,15 +12,16 @@ package au.edu.anu.chem.mm;
 
 import x10.compiler.Inline;
 import x10.util.ArrayList;
+import x10.util.Pair;
 
 import x10x.vector.Point3d;
 import x10x.vector.Vector3d;
 
 /**
  * Holds all particle data for a given place in a molecular mechanics
- * simulation.  Atom features (atomType, position, velocity, force) are held
- * in separate Rails, indexed by a 'local atom index' at this place.
- * The globalIndex for an atom is unique across all places.
+ * simulation.  Atom features (globalIndex, atomType, residueNumber, position,
+ * velocity, force) are held in separate Rails, indexed by a 'local atom index'
+ * at this place. The globalIndex for an atom is unique across all places.
  */
 public class ParticleData {
     public var description:String;
@@ -31,6 +32,8 @@ public class ParticleData {
     public val globalIndex = new ArrayList[Long]();
     /** Atom type index for each atom */
     public val atomTypeIndex = new ArrayList[Int]();
+    /** Residue number (e.g. index of molecule) for each atom */
+    public val residueNumber = new ArrayList[Int]();
     /** Atom centers in nm */
     public val x = new ArrayList[Point3d]();
     /** Atom velocities */
@@ -40,9 +43,28 @@ public class ParticleData {
 
     public final def numAtoms() = globalIndex.size();
 
+    /**
+     * Exclusion list for non-bonded interactions. Each excluded pair is
+     * entered twice as (a,b) and (b,a); the list is sorted by first atom
+     * index to support searching.
+     */
+    protected val exclusions = new ArrayList[Pair[Long,Long]]();
+
+    public compareExclusions = (a:Pair[Long,Long],b:Pair[Long,Long])=> {
+        val f = a.first.compareTo(b.first);
+        (f != 0n) ? f : a.second.compareTo(b.second)
+    };
+
+    public final @Inline def isExcluded(atomIndex1:Long, atomIndex2:Long) {
+        val index = exclusions.binarySearch(Pair[Long,Long](atomIndex1,atomIndex2), compareExclusions);
+        val excluded = (index >= 0 && exclusions(index).first == atomIndex1 && exclusions(index).second == atomIndex2);
+        return excluded;
+    }
+
     public def addAtom(index:Long, atomType:Int, center:Point3d, velocity:Vector3d) {
         globalIndex.add(index);
         atomTypeIndex.add(atomType);
+        residueNumber.add(0n);
         x.add(center);
         dx.add(velocity);
         fx.add(Vector3d.NULL);
@@ -55,6 +77,7 @@ public class ParticleData {
     public def removeAtom(index:Long) {
         globalIndex.removeAt(index);
         atomTypeIndex.removeAt(index);
+        residueNumber.removeAt(index);
         x.removeAt(index);
         dx.removeAt(index);
         fx.removeAt(index);
@@ -110,9 +133,10 @@ public class ParticleData {
      * Swap data between positions i and j in all of the particle data
      * arrays.
      */
-    private @Inline final def swapAtoms(i:Long, j:Long):void {
+    private @Inline def swapAtoms(i:Long, j:Long):void {
         exch(globalIndex, i, j);
         exch(atomTypeIndex, i, j);
+        exch(residueNumber, i, j);
         exch(x, i, j);
         exch(fx, i, j);
     }

@@ -54,7 +54,7 @@ For other implementations see
 
 Compile dependencies:
 ------------------------
-* X10 version 2.5 (optionally with x10rt=mpi)
+* X10 version 2.5.1 (optionally with x10rt=mpi)
 * X10 Global Matrix Library (distributed with X10 source under x10/x10.gml)
 * LAPACK and BLAS libraries (transitive through X10 GML)
   http://www.netlib.org/lapack/

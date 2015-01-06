@@ -25,7 +25,7 @@ import x10x.vector.Point3d;
  *  <comments>
  *  <comments>
  *  numAtoms [3] ...
- *  x[10] y[10] z[10] species // repeated for number of atoms
+ *  x[10] y[10] z[10] species // repeated for number of atoms, in Angstroms
  *  <atomIndex1> <atomIndex2> <bondType> // repeated for number of bonds
  * M  END
  * @see http://infochim.u-strasbg.fr/recherche/Download/Fragmentor/MDL_SDF.pdf
@@ -54,7 +54,7 @@ public class MOLStructureFileReader {
             val line = file.readLine();
             val center = Point3d(Double.parseDouble(line.substring( 0n,10n).trim()),
                                  Double.parseDouble(line.substring(10n,20n).trim()),
-                                 Double.parseDouble(line.substring(20n,30n).trim())) * 10.0; // convert to nm
+                                 Double.parseDouble(line.substring(20n,30n).trim())) * 0.1; // convert to nm
             val symbol = line.substring(31n,34n).trim();
             var species:Int = -1n;
             for (j in 0..(atomTypes.size-1)) {
@@ -92,6 +92,7 @@ public class MOLStructureFileReader {
         particleData.moleculeTypeIndex = [ 0n as Int ];
 
         particleData.atomTypes = forceField.getAtomTypes();
+        particleData.boxEdges = particleData.getMaxExtent();
     
         file.close();
     }

@@ -1,0 +1,6 @@
+TODOs for ANU Molecular Mechanics
+
+- periodic boundary conditions
+- remaining bonded interactions (torsion, inversion)
+- Lennard-Jones interactions
+- multi-place with redistribution of particles / exclusions

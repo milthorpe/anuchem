@@ -32,7 +32,7 @@ public class FmmScratch {
 
     private static val store:Rail[FmmScratch] = new Rail[FmmScratch](Runtime.MAX_THREADS);
 
-    public static getWorkerLocal():FmmScratch {
+    public static def getWorkerLocal():FmmScratch {
         return store(Runtime.workerId());
     }
 

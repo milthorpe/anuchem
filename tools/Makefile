@@ -1,5 +1,5 @@
 X10CPP := x10c++
-XFLAGS := -O -NO_CHECKS
+XFLAGS := -O -NO_CHECKS -VERBOSE_CHECKS
 
 topology:	Topology.x10
 	$(X10CPP) $(XFLAGS) Topology.x10 -o topology

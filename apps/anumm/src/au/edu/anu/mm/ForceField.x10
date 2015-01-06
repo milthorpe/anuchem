@@ -23,7 +23,7 @@ public interface ForceField {
      * on each atom in the system.
      * @return the energy of the system // TODO units?
      */
-    public def getPotentialAndForces(particleDataPlh:PlaceLocalHandle[AnummParticleData]):Double;
+    public def computePotentialAndForces(particleDataPlh:PlaceLocalHandle[AnummParticleData]):Double;
 
     /**
      * @return the mass of the given atom type e.g. 1.00794 for H=1

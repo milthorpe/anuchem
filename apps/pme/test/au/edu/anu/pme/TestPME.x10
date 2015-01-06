@@ -74,7 +74,7 @@ public class TestPME extends TestElectrostatic {
         pme.setup();
         var energy:Double = 0.0; 
         for (i in 1..ITERS) {
-            energy = pme.getEnergy();
+            energy = pme.computePotentialAndForces();
         }
         Console.OUT.printf("energy %12.3g\n", energy);
 
@@ -90,7 +90,7 @@ public class TestPME extends TestElectrostatic {
 
  /*
         val direct = new ElectrostaticDirectMethod(atoms);
-        val directEnergy = direct.getEnergy();
+        val directEnergy = direct.computePotentialAndForces();
         logTime("cf. Direct calculation", ElectrostaticDirectMethod.TIMER_INDEX_TOTAL, direct.timer);
         // direct error comparison is only useful if there is a huge empty border around the particles
         val error = directEnergy - energy;

@@ -11,6 +11,7 @@
 package au.edu.anu.mm;
 
 import x10.util.ArrayList;
+import x10.util.Pair;
 
 import x10x.vector.Point3d;
 import x10x.vector.Vector3d;
@@ -27,9 +28,6 @@ public class AnummParticleData extends ParticleData {
     /** Mapping from residue number to molecule type */
     public var moleculeTypeIndex:Rail[Int];
 
-    /** Residue number (e.g. index of molecule) for each atom */
-    public val residueNumber = new ArrayList[Int]();
-
     // Bond data
     public var bondTypes:Rail[BondStretchParameters];
     public var angleTypes:Rail[BondAngleParameters];
@@ -39,19 +37,47 @@ public class AnummParticleData extends ParticleData {
     /** Bond angles between atoms, where the second atom is held locally at this place */
     public var angles:Rail[BondAngle];
 
-    public def addAtom(index:Long, atomType:Int, center:Point3d) {
-        super.addAtom(index, atomType, center);
-        residueNumber.add(0n);
+    public def getMaxExtent():Vector3d {
+        var maxX:Double = 0.0;
+        var maxY:Double = 0.0;
+        var maxZ:Double = 0.0;
+        for (center in x) {
+            maxX = Math.max(maxX, Math.abs(center.i));
+            maxY = Math.max(maxY, Math.abs(center.j));
+            maxZ = Math.max(maxX, Math.abs(center.k));
+        }
+        return Vector3d(maxX, maxY, maxZ);
     }
 
-    public def addAtom(index:Long, atomType:Int, center:Point3d, velocity:Vector3d) {
-        super.addAtom(index, atomType, center, velocity);
-        residueNumber.add(0n);
-    }
+    /**
+     * Create the list of exclusions for non-bonded interactions.
+     * All atoms that are separated by at most three bonds are excluded
+     * from non-bonded interactions.
+     */
+    public def generateNonBondedExclusions() {
+        if (bonds != null) {
+            for (bond in bonds) {
+                exclusions.add(Pair[Long,Long](
+                    globalIndex(bond.atom1Index),
+                    globalIndex(bond.atom2Index)));
+                exclusions.add(Pair[Long,Long](
+                    globalIndex(bond.atom2Index),
+                    globalIndex(bond.atom1Index)));
+            }
+        }
 
-    public def removeAtom(index:Long) {
-        super.removeAtom(index);
-        residueNumber.removeAt(index);
+        if (angles != null) {
+            for (angle in angles) {
+                exclusions.add(Pair[Long,Long](
+                    globalIndex(angle.atom1Index),
+                    globalIndex(angle.atom3Index)));
+                exclusions.add(Pair[Long,Long](
+                    globalIndex(angle.atom3Index),
+                    globalIndex(angle.atom1Index)));
+            }
+        }
+
+        exclusions.sort(compareExclusions);
     }
 }
 

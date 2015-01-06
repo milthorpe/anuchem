@@ -17,11 +17,14 @@ import au.edu.anu.util.Timer;
  * particles directly.  This is an O(N^2) calculation, intended
  * for comparison with other methods e.g. FMM, SPME.
  */
-public class SimpleElectrostaticDirectMethod {
+public class SimpleElectrostaticDirectMethod implements ElectrostaticMethod {
     public static val SIZE = 80.0;
     // TODO enum - XTENLANG-1118
     public static val TIMER_INDEX_TOTAL = 0;
-    /** A multi-timer for the several segments of a single getEnergy invocation, indexed by the constants above. */
+    /**
+     * A multi-timer for the several segments of a single invocation of
+     * computePotentialAndForces, indexed by the constants above.
+     */
     public val timer = new Timer(1);
 
     public static class Atom {
@@ -44,7 +47,7 @@ public class SimpleElectrostaticDirectMethod {
 		this.atoms = atoms;
     }
 	
-    public def getEnergy() : Double {
+    public def computePotentialAndForces():Double {
         timer.start(TIMER_INDEX_TOTAL);
 
         var energy:Double = 0.0;
@@ -80,10 +83,10 @@ public class SimpleElectrostaticDirectMethod {
                 val fy = forceScaling * dy;
                 val fz = forceScaling * dz;
 
-                fix += fx;
-                fiy += fy;
-                fiz += fz;
-                //atomJ.force += Vector3d(-fx, -fy, -fz);
+                fix -= fx;
+                fiy -= fy;
+                fiz -= fz;
+                //atomJ.force += Vector3d(fx, fy, fz);
             }
             atomI.fx = fix;
             atomI.fy = fiy;

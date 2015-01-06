@@ -12,6 +12,7 @@ package au.edu.anu.mm;
 
 import x10.util.RailUtils;
 import x10.util.HashMap;
+import x10.util.Pair;
 
 import au.edu.anu.chem.PointCharge;
 
@@ -37,18 +38,18 @@ public class LET {
     public val multipoleCopies:HashMap[UInt,MultipoleExpansion];
 
     /**
-     * A cache of PointCharge for the combined U-list of all
+     * A cache of atom data for the combined U-list of all
      * boxes at this place.  Used to store fetched atoms from 
      * non-well-separated boxes for use in direct evaluations 
      * with all atoms at a given place.
      */
-    public val cachedAtoms : Rail[Rail[Double]];
+    public val cachedAtoms:Rail[Pair[Rail[Long],Rail[Double]]];
     
     public def this(combinedUList:Rail[UInt]) {
         this.combinedUList = combinedUList;
         this.multipoleCopies = new HashMap[UInt,MultipoleExpansion](combinedUList.size); // guess that V-List is at least as big as U-List
 
-        this.cachedAtoms = new Rail[Rail[Double]](combinedUList.size);
+        this.cachedAtoms = new Rail[Pair[Rail[Long],Rail[Double]]](combinedUList.size);
     }
 
     public def getMultipoleForOctant(mortonId:UInt) {
@@ -59,19 +60,19 @@ public class LET {
         multipoleCopies.put(mortonId, multipoleExp);
     }
 
-    public def getAtomDataForOctant(mortonId:UInt) {
+    public def getAtomDataForOctant(mortonId:UInt):Pair[Rail[Long],Rail[Double]] {
         val cacheIndex = RailUtils.binarySearch(combinedUList, mortonId);
         if (cacheIndex >= 0) {
             return cachedAtoms(cacheIndex);
         } else {
-            return null;
+            return new Pair[Rail[Long],Rail[Double]](null,null);
         }
     }
 
-    public def setAtomDataForOctant(mortonId:UInt, atoms:Rail[Double]) {
+    public def setAtomDataForOctant(mortonId:UInt, atomData:Pair[Rail[Long],Rail[Double]]) {
         val cacheIndex = RailUtils.binarySearch(combinedUList, mortonId);
         if (cacheIndex >= 0) {
-            cachedAtoms(cacheIndex) = atoms;
+            cachedAtoms(cacheIndex) = atomData;
         }
     }
 }

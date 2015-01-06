@@ -7,6 +7,7 @@
  *      http://www.opensource.org/licenses/eclipse-1.0.php
  *
  * (C) Copyright Josh Milthorpe 2010-2012.
+ * (C) IBM Corporation 2014.
  */
 package au.edu.anu.mm;
 
@@ -19,6 +20,8 @@ import x10.util.Option;
 import x10x.vector.Vector3d;
 
 import au.edu.anu.util.Timer;
+import au.edu.anu.chem.mm.ElectrostaticDirectMethod;
+import au.edu.anu.chem.mm.ParticleData;
 import au.edu.anu.mm.uff.UniversalForceField;
 
 /**
@@ -26,7 +29,10 @@ import au.edu.anu.mm.uff.UniversalForceField;
  * Performs molecular mechanics using the velocity-Verlet algorithm.
  */
 public class Anumm {
-    /** The particle data for the simulation, of which each place holds a portion. */
+    static val ELECTRIC_CONVERSION_FACTOR = 1.389354859e2; // 1 / (4 PI e0)
+
+    static val BOX_MARGIN = 0.00001; // to avoid particles falling outside the box
+
     private val particleDataPlh:PlaceLocalHandle[AnummParticleData];
 
     /** The force field applied to the atoms in this simulation. */
@@ -34,30 +40,55 @@ public class Anumm {
 
     private transient val outputFile:GromacsCoordinateFileWriter;
 
+    //val fmm:FastMultipoleMethod;
+    val electrostatics:ElectrostaticDirectMethod;
+
+    /* timestep length in ps */
+    private val dt:Double;
+
     private val verbose:Boolean;
 
     public def this(particleDataPlh:PlaceLocalHandle[AnummParticleData],
                     forceField:ForceField,
                     outputFile:GromacsCoordinateFileWriter,
+                    timestep:Double,
                     verbose:Boolean) {
         this.particleDataPlh = particleDataPlh;
         this.forceField = forceField;
         this.outputFile = outputFile;
+        val particleData = particleDataPlh() as AnummParticleData;
+/*
+        val fmmDMax = 3n;
+        val fmmNumTerms = 10n;
+        val numAtoms = particleData.numAtoms();
+        val fmmNumBoxes = Math.pow(8.0, fmmDMax);
+        val fmmDensity = Math.ceil(numAtoms / fmmNumBoxes);
+        //Console.OUT.println("fmm dMax = " + fmmDMax + " num terms = " + fmmNumTerms + " density = " + fmmDensity);
+        // simulation cube centered at the origin, containing all atoms
+        val boxSideLength = particleData.boxEdges.maxNorm() * (2.0 + BOX_MARGIN);
+Console.OUT.println("boxSideLength " + boxSideLength);
+        this.fmm = new FastMultipoleMethod(fmmDensity, fmmDMax, fmmNumTerms, 1n, boxSideLength);
+*/
+        val particleDataNotAnumm = PlaceLocalHandle.make[ParticleData](Place.places(), () => particleDataPlh());
+        //fmm.initialAssignment(particleData.numAtoms() as Int, particleDataNotAnumm);
+        electrostatics = new ElectrostaticDirectMethod(particleDataNotAnumm);
+        this.dt = timestep;
         this.verbose = verbose;
     }
 
     /**
      * Perform a molecular mechanics run on the system of atoms
      * for the given number and length of timesteps.
-     * @param timestep length in ps
      * @param numSteps number of timesteps to simulate
      */
-    public def mdRun(timestep:Double, numSteps:Long) {
-        Console.OUT.println("# Timestep = " + timestep + "ps, number of steps = " + numSteps);
+    public def mdRun(numSteps:Long) {
+        Console.OUT.println("# Timestep = " + dt + "ps, number of steps = " + numSteps);
 
         var step:Long = 0;
         if (verbose) printTimestep(0.0);
-        val potential = forceField.getPotentialAndForces(particleDataPlh); // get initial forces
+        val bonded = 0.0;//forceField.computePotentialAndForces(particleDataPlh); // get initial forces
+        val electrostatic = electrostatics.computePotentialAndForces() * ELECTRIC_CONVERSION_FACTOR;
+        val potential = bonded + electrostatic;
 
         val kinetic = getKineticEnergy();
         Console.OUT.printf("potential %10.5e kinetic %10.5e total %10.5e\n", potential, kinetic, (potential+kinetic));
@@ -66,17 +97,39 @@ public class Anumm {
         var energy:Double = 0.0;
         while(step < numSteps) {
             step++;
-            if (verbose) printTimestep(step*timestep);
-            energy = mdStep(timestep);
+            if (verbose) printTimestep(step*dt);
+            energy = mdStep(step);
         }
+/*
         if (verbose) {
-            outputFile.writePositions(particleDataPlh, forceField);
+            if (here == Place.FIRST_PLACE) {
+                fmm.reduceMaxTimes();
+
+                logTime("tree    ",  FmmLocalData.TIMER_INDEX_TREE,     FastMultipoleMethod.localData.timer);
+                logTime("  (sort)   ", FmmLocalData.TIMER_INDEX_SORT,      FastMultipoleMethod.localData.timer);
+                logTime("  (balance)", FmmLocalData.TIMER_INDEX_BALANCE,   FastMultipoleMethod.localData.timer);
+                logTime("  (redist) ", FmmLocalData.TIMER_INDEX_REDIST,    FastMultipoleMethod.localData.timer);
+                logTime("  (parents)", FmmLocalData.TIMER_INDEX_PARENTS,   FastMultipoleMethod.localData.timer);
+                logTime("  (LET)    ", FmmLocalData.TIMER_INDEX_LET,       FastMultipoleMethod.localData.timer);
+
+                logTime("Prefetch",  FmmLocalData.TIMER_INDEX_PREFETCH,  FastMultipoleMethod.localData.timer);
+                logTime("Upward  ",  FmmLocalData.TIMER_INDEX_UPWARD,    FastMultipoleMethod.localData.timer);
+                logTime("M2L     ",  FmmLocalData.TIMER_INDEX_M2L,       FastMultipoleMethod.localData.timer);
+                logTime("Downward",  FmmLocalData.TIMER_INDEX_DOWNWARD,  FastMultipoleMethod.localData.timer);
+                logTime("Total   ",  FmmLocalData.TIMER_INDEX_TOTAL,     FastMultipoleMethod.localData.timer);
+            }
         }
+*/
+        outputFile.writePositions(particleDataPlh, forceField);
         Console.OUT.printf("\nrelative energy drift %10.5e", (energy-startingEnergy)/energy);
     }
 
+    public def logTime(desc:String, timerIndex:Long, timer:Timer) {
+        Console.OUT.printf(desc + ": %g seconds\n", (timer.mean(timerIndex) as Double) / 1e9);
+    }
+
     private def getKineticEnergy() {
-        val energy = finish(SumReducer()) {
+        val energy = finish(Reducible.SumReducer[Double]()) {
             ateach(p in Dist.makeUnique()) {
                 var kinetic:Double = 0.0;
                 val particleData = particleDataPlh();
@@ -90,11 +143,6 @@ public class Anumm {
         return 0.5 * energy;
     }
 
-    static struct SumReducer implements Reducible[Double] {
-        public def zero() = 0.0;
-        public operator this(a:Double, b:Double) = (a + b);
-    }
-
     private def printTimestep(time:Double) {
         Console.OUT.printf("\n%10.4f ", time);
     }
@@ -102,39 +150,53 @@ public class Anumm {
     /**
      * Performs a single molecular dynamics timestep
      * using the velocity-Verlet algorithm. 
-     * @param dt time in ps
+     * @param currentStep the number of the current timestep
      * @param returns the total system energy
      */
-    public def mdStep(dt:Double):Double {
-        finish ateach(place in Dist.makeUnique()) {
-            val particleData = particleDataPlh();
+    public def mdStep(currentStep:Long):Double {
+        val electrostatic = finish(Reducible.SumReducer[Double]()) {
+            ateach(p in Dist.makeUnique()) {
+                //fmm.reassignAtoms(currentStep);
+                val particleData = particleDataPlh();
 
-            for (i in 0..(particleData.numAtoms()-1)) {
-                val invMass = 1.0 / particleData.atomTypes(particleData.atomTypeIndex(i)).mass;
-                particleData.dx(i) = particleData.dx(i) + 0.5 * dt * invMass * particleData.fx(i);
-                particleData.x(i) = particleData.x(i) + particleData.dx(i) * dt;
-                particleData.fx(i) = Vector3d.NULL; // zero before next force calculation
+                for (i in 0..(particleData.numAtoms()-1)) {
+                    val invMass = 1.0 / particleData.atomTypes(particleData.atomTypeIndex(i)).mass;
+                    particleData.dx(i) = particleData.dx(i) + 0.5 * dt * invMass * particleData.fx(i);
+                    particleData.x(i) = particleData.x(i) + particleData.dx(i) * dt;
+                    particleData.fx(i) = Vector3d.NULL; // zero before next force calculation
+                }
+
+                // TODO electrostatics only for non-bonded atoms
+                val electrostaticLocal = electrostatics.computePotentialAndForcesLocal();
+
+                offer electrostaticLocal * ELECTRIC_CONVERSION_FACTOR;
+                for (i in 0..(particleData.numAtoms()-1)) {
+                    particleData.fx(i) *= ELECTRIC_CONVERSION_FACTOR;
+//Console.OUT.println("particle " + particleData.globalIndex(i) + " electrostatic force " + particleData.fx(i));
+                }
             }
-        }
+        };
 
-        val potential = forceField.getPotentialAndForces(particleDataPlh);
+        val bonded = 0.0;//forceField.computePotentialAndForces(particleDataPlh);
 
-        val kinetic = finish(SumReducer()) {
+        val kinetic = finish(Reducible.SumReducer[Double]()) {
             ateach(p in Dist.makeUnique()) {
                 val particleData = particleDataPlh();
                 var kineticHere:Double = 0.0;
                 for (i in 0..(particleData.numAtoms()-1)) {
+//Console.OUT.println("particle " + particleData.globalIndex(i) + " total force " + particleData.fx(i));
                     val mass = particleData.atomTypes(particleData.atomTypeIndex(i)).mass;
                     val invMass = 1.0 / mass;
                     particleData.dx(i) = particleData.dx(i) + 0.5 * dt * invMass * particleData.fx(i);
                     val ke = 0.5 * mass * particleData.dx(i).lengthSquared();
-                    //Console.OUT.println("kinetic for " + i + " = " + ke + " mass " + mass);
                     kineticHere += ke;
                 }
                 offer kineticHere;
             }
         };
-        Console.OUT.printf("potential %10.5e kinetic %10.5e total %10.5e", potential, kinetic, (potential+kinetic));
+        //Console.OUT.println("electrostatic = " + electrostatic + " bonded =  " + bonded);
+        val potential = electrostatic + bonded;
+        Console.OUT.printf("potential %10.5e kinetic %10.5e total %10.5e\n", potential, kinetic, (potential+kinetic));
         return potential+kinetic;
     }
 
@@ -214,41 +276,18 @@ public class Anumm {
                     return;
                 }
             }
+            particleData.generateNonBondedExclusions();
         }
 
         val outputFile = new GromacsCoordinateFileWriter(outputFileName);
 
         Console.OUT.println("# MD for " + particleData.description + ": " + particleData.numAtoms() + " atoms");
-        val anumm = new Anumm(particleDataPlh, ff, outputFile, true);
-        anumm.mdRun(timestep, numSteps);
+        val anumm = new Anumm(particleDataPlh, ff, outputFile, timestep, true);
+        anumm.mdRun(numSteps);
         Console.OUT.println("\n# Run completed after " + numSteps + " steps");
 
         return;
     }
-
-    /**
-     * Partitions the molecule amongst all places, returning a distributed
-     * array of Array[MMAtom], one Array for each place.  
-     * MD requires that the atoms have already been distributed. 
-     */
-/*
-    public static def assignAtoms(molecule : Molecule[MMAtom]) : DistArray[Rail[MMAtom]](1) {
-        val tempAtoms = DistArray.make[ArrayList[MMAtom]](Dist.makeUnique(), (Point) => new ArrayList[MMAtom]());
-        val atomList = molecule.getAtoms();
-        val maxExtent = molecule.getMaxExtent();
-        finish for (var i:Long = 0; i < atomList.size(); i++) {
-            val atom = atomList(i);
-            val p = getPlaceId(atom.centre.i, atom.centre.j, atom.centre.k, maxExtent);
-            //Console.OUT.println(atom + " to " + p);
-            at(Place(p)) async {
-                val remoteAtom = new MMAtom(atom);
-                atomic { tempAtoms(p).add(remoteAtom); }
-            }
-        }
-        val atoms = DistArray.make[Rail[MMAtom]](Dist.makeUnique(), ([p] : Point) => tempAtoms(p).toRail());
-        return atoms;
-    }
-*/
 
     /** 
      * Gets the place ID to which to assign the given atom coordinates.

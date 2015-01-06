@@ -33,6 +33,7 @@ import au.edu.anu.chem.mm.ParticleData;
 @NativeCPPInclude("bg_math.h")
 public class LeafOctant extends Octant {
     public val atoms = new ArrayList[Long]();
+    private var globalIndices:Rail[Long];
     private var sources:Rail[Double];
 
     /** The U-list consists of all leaf octants not well-separated from this octant. */
@@ -43,6 +44,7 @@ public class LeafOctant extends Octant {
     }
 
     public def makeSources(particleData:ParticleData) {
+        this.globalIndices = new Rail[Long](atoms.size(), (i:Long)=>particleData.globalIndex(atoms(i)));
         this.sources = new Rail[Double](atoms.size()*4);
         for (i in 0..(atoms.size()-1)) {
             val atomIndex = atoms(i);
@@ -56,8 +58,8 @@ public class LeafOctant extends Octant {
 
     public def numAtoms() = atoms.size();
 
-    public def getSources():Rail[Double] {
-        return sources;
+    public def getSources():Pair[Rail[Long],Rail[Double]] {
+        return Pair[Rail[Long],Rail[Double]](globalIndices,sources);
     }
 
     public def countOctants():Int = 1n;
@@ -150,38 +152,41 @@ public class LeafOctant extends Octant {
     public def nearField(size:Double, particleData:ParticleData, myLET:LET, dMax:UByte):Double {
         var directEnergy:Double = 0.0;
 
-        val periodic = false; // TODO
         // direct calculation with all atoms in non-well-separated octants
         for (mortonId in uList) {
             val oct2Data = myLET.getAtomDataForOctant(mortonId);
-            if (oct2Data != null) {
+            if (oct2Data.first != null) {
                 directEnergy += p2pKernel(oct2Data, particleData);
             }
         }
 
         for (a1 in 0..(atoms.size()-1)) {
             val atomIndex1 = atoms(a1);
+            val globalIndex1 = particleData.globalIndex(atomIndex1);
             // direct calculation between all atoms in this octant
             for (a2 in 0..(a1-1)) {
                 val atomIndex2 = atoms(a2);
-                val rVec = particleData.x(atomIndex2) - particleData.x(atomIndex1);
-                val invR:Double;
-                val invR2:Double;
-@Ifdef("__BG__") {
-                                invR = rsqrt(rVec.lengthSquared());
-                                invR2 = invR * invR;
-}
-@Ifndef("__BG__") {
-                                invR2 = 1.0 / rVec.lengthSquared();
-                                invR = Math.sqrt(invR2);
-}
-                val e = particleData.atomTypes(particleData.atomTypeIndex(atomIndex1)).charge
-                      * particleData.atomTypes(particleData.atomTypeIndex(atomIndex2)).charge
-                      * invR;
-                directEnergy += 2.0 * e;
-                val pairForce = e * invR2 * rVec;
-                particleData.fx(atomIndex1) += pairForce;
-                particleData.fx(atomIndex2) -= pairForce;
+                val globalIndex2 = particleData.globalIndex(atomIndex2);
+                if (!particleData.isExcluded(globalIndex1, globalIndex2)) {
+                    val rVec = particleData.x(atomIndex2) - particleData.x(atomIndex1);
+                    val invR:Double;
+                    val invR2:Double;
+    @Ifdef("__BG__") {
+                                    invR = rsqrt(rVec.lengthSquared());
+                                    invR2 = invR * invR;
+    }
+    @Ifndef("__BG__") {
+                                    invR2 = 1.0 / rVec.lengthSquared();
+                                    invR = Math.sqrt(invR2);
+    }
+                    val e = particleData.atomTypes(particleData.atomTypeIndex(atomIndex1)).charge
+                          * particleData.atomTypes(particleData.atomTypeIndex(atomIndex2)).charge
+                          * invR;
+                    directEnergy += 2.0 * e;
+                    val pairForce = e * invR2 * rVec;
+                    particleData.fx(atomIndex1) -= pairForce;
+                    particleData.fx(atomIndex2) += pairForce;
+                }
             }
         }
 
@@ -198,9 +203,12 @@ public class LeafOctant extends Octant {
      * - atom z coord
      * - atom charge
      */
-    private @Inline def p2pKernel(oct2Data:Rail[Double], particleData:ParticleData) {
+    private @Inline def p2pKernel(oct2Atoms:Pair[Rail[Long],Rail[Double]], particleData:ParticleData) {
+        val oct2Indices = oct2Atoms.first;
+        val oct2Data = oct2Atoms.second;
         var directEnergy:Double=0.0;
         for (i in atoms) {
+            val atom1Index = particleData.globalIndex(i);
             val ci = particleData.x(i);
             val xi = ci.i;
             val yi = ci.j;
@@ -211,35 +219,39 @@ public class LeafOctant extends Octant {
             var fiy:Double = fi.j;
             var fiz:Double = fi.k;
 
-            for (var j:Long=0; j<oct2Data.size; j+=4) {
-                val xj = oct2Data(j);
-                val yj = oct2Data(j+1);
-                val zj = oct2Data(j+2);
-                val qj = oct2Data(j+3);
+            for (j in 0..(oct2Indices.size-1)) {
+                val atom2Index = oct2Indices(j);
+                if (!particleData.isExcluded(atom1Index, atom2Index)) {
+                    val jj = j*4;
+                    val xj = oct2Data(jj);
+                    val yj = oct2Data(jj+1);
+                    val zj = oct2Data(jj+2);
+                    val qj = oct2Data(jj+3);
 
-                val dx = xj-xi;
-                val dy = yj-yi;
-                val dz = zj-zi;
-                
-                val r2 = (dx*dx + dy*dy + dz*dz);
-                val invR:Double;
-                val invR2:Double;
-@Ifdef("__BG__") {
-                                invR = rsqrt(r2);
-                                invR2 = invR * invR;
-}
-@Ifndef("__BG__") {
-                                invR2 = 1.0 / r2;
-                                invR = Math.sqrt(invR2);
-}
-                val qq = qi * qj;
-                val e = invR * qq;
-                directEnergy += e;
+                    val dx = xj-xi;
+                    val dy = yj-yi;
+                    val dz = zj-zi;
+                    
+                    val r2 = (dx*dx + dy*dy + dz*dz);
+                    val invR:Double;
+                    val invR2:Double;
+    @Ifdef("__BG__") {
+                                    invR = rsqrt(r2);
+                                    invR2 = invR * invR;
+    }
+    @Ifndef("__BG__") {
+                                    invR2 = 1.0 / r2;
+                                    invR = Math.sqrt(invR2);
+    }
+                    val qq = qi * qj;
+                    val e = invR * qq;
+                    directEnergy += e;
 
-                val forceScaling = e * invR2;
-                fix += forceScaling * dx;
-                fiy += forceScaling * dy;
-                fiz += forceScaling * dz;
+                    val forceScaling = e * invR2;
+                    fix -= forceScaling * dx;
+                    fiy -= forceScaling * dy;
+                    fiz -= forceScaling * dz;
+                }
             }
             particleData.fx(i) = Vector3d(fix, fiy, fiz);
         }
@@ -306,12 +318,13 @@ public class LeafOctant extends Octant {
         }
 
         // interact with dummy singly-charged ions in random positions offset by [39,39,39]
+        val dummyIndices = new Rail[Long](q, -1);
         val dummyData = new Rail[Double](q*4, 
                 (i:Long) => (i%4==3L)? 1.0 : rand.nextDouble()+39.0);
 
         val start = System.nanoTime();
         for (i in 0..1000) {
-            dummyOctant.p2pKernel(dummyData, dummyParticles);
+            dummyOctant.p2pKernel(Pair[Rail[Long],Rail[Double]](dummyIndices, dummyData), dummyParticles);
         }
         val stop = System.nanoTime();
 

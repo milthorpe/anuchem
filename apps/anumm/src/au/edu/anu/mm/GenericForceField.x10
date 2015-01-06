@@ -27,7 +27,7 @@ public class GenericForceField implements ForceField {
         throw new UnsupportedOperationException("GenericForceField.getBondTypeIndex");
     }
     
-    public def getPotentialAndForces(particleDataPlh:PlaceLocalHandle[AnummParticleData]):Double {
+    public def computePotentialAndForces(particleDataPlh:PlaceLocalHandle[AnummParticleData]):Double {
         val energy = finish(Reducible.SumReducer[Double]()) {
             ateach(p in Dist.makeUnique()) {
                 val particleData = particleDataPlh();
@@ -77,7 +77,7 @@ public class GenericForceField implements ForceField {
                 //Console.OUT.println("atom2 force " + particleData.fx(bond.atom2Index));
 
                 // potential is for both particles
-                val v = bondParams.forceConstant * stretch * stretch;
+                val v = 0.5 * bondParams.forceConstant * stretch * stretch;
                 //Console.OUT.println("potential = " + v);
                 potential += v;
             }
@@ -92,9 +92,9 @@ public class GenericForceField implements ForceField {
      * The angle-bend interaction is described by a harmonic potential
      * proportional to the squared deviation of the angle from the 'ideal' bond
      * angle in radians: V = k (angle - ideal)^2.
-     * The restorative force on the central atom is towards the interior of the
-     * angle, and twice the strength of the force on each of the outside atoms.
-     * TODO check direction of force for outside atoms
+     * The restorative force on each outside atom is proportional to the bend
+     * and in the same direction as the vector from the other outside atom to
+     * the central atom. 
      * TODO interaction potentials other than harmonic
      */
     private def bondAngles(particleData:AnummParticleData):Double {
@@ -115,16 +115,18 @@ public class GenericForceField implements ForceField {
                 val norm32 = r32.length();
                 val theta = Math.acos(dotProd / (norm12 * norm32));
                 //Console.OUT.printf("ideal angle %10.6f theta %10.6f force constant %10.6f\n", angleParams.idealAngle, theta, angleParams.forceConstant);
-                val bisectVector = (r12 + r32).normalize();
+                //val bisectVector = (r12 + r32).normalize();
                 val bend = theta - angleParams.idealAngle;
-                val force = bend * angleParams.forceConstant * bisectVector;
+                //val force = bend * angleParams.forceConstant * bisectVector;
                 //Console.OUT.println("force = " + force);
-                particleData.fx(angle.atom1Index) -= force;
-                particleData.fx(angle.atom3Index) -= force;
-                particleData.fx(angle.atom2Index) += 2.0 * force;
+                val f1 = bend * angleParams.forceConstant / norm32 * r32;
+                val f3 = bend * angleParams.forceConstant / norm12 * r12;
+                particleData.fx(angle.atom1Index) -= f1;
+                particleData.fx(angle.atom3Index) -= f3;
+                particleData.fx(angle.atom2Index) += (f1+f3);
 
                 // potential is for both particles
-                val v = angleParams.forceConstant * bend * bend;
+                val v = 0.5 * angleParams.forceConstant * bend * bend;
                 potential += v;
             }
         }

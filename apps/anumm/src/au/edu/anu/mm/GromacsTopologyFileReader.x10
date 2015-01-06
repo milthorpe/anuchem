@@ -45,7 +45,6 @@ public class GromacsTopologyFileReader {
                 val words = StringSplitter.splitOnWhitespace(currentLine);
                 val moleculeType = new MoleculeType();
                 moleculeType.name = words(0);
-
                 while (currentLine != null) {
                     if (currentLine.indexOf("[ atoms ]") >= 0) {
                         readAtoms(file, moleculeType, allAtomTypes);

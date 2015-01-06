@@ -47,7 +47,6 @@ public class GromacsCoordinateFileReader {
 
         for(var i:Int=0n; i<numAtoms; i++) {
             val line = file.readLine();
-//Console.OUT.println("reading atom: " + line);
             val residueNumber = Int.parseInt(line.substring(0n,5n).trim());
             particleData.residueNumber(i) = residueNumber;
 
@@ -60,7 +59,6 @@ public class GromacsCoordinateFileReader {
                 }
             }
             val moleculeType = particleData.moleculeTypes(particleData.moleculeTypeIndex(residueNumber));
-//Console.OUT.println("found residue: " + residueName + " residueNumber " + residueNumber + " moleculeType " + moleculeType.name);
 
             val atomName = line.substring(10n,15n).trim();
             var atomTypeIndex:Int = -1n;

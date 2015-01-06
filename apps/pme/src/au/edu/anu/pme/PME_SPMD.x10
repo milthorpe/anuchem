@@ -47,7 +47,7 @@ public class PME_SPMD {
     public static val TIMER_INDEX_DIRECT : Int          = 6n;
     public static val TIMER_INDEX_PREFETCH : Int        = 7n;
     public static val TIMER_INDEX_SETUP : Int           = 8n;
-    /** A multi-timer for the several segments of a single getEnergy invocation, indexed by the constants above. */
+    /** A multi-timer for the several segments of a single computePotentialAndForces invocation, indexed by the constants above. */
     static val timer = new Timer(9);
 
     /** The number of grid lines in each dimension of the simulation unit cell. */
@@ -103,14 +103,14 @@ public class PME_SPMD {
     /** The gridded charge array Q as defined in Eq. 4.6 */
     private val Q : DistArray[Double]{self.dist==gridDist};
 
-    /** The inverse DFT of the Q array.  TODO this should be a scoped local variable in getEnergy() XTENLANG-??? */
+    /** The inverse DFT of the Q array.  TODO this should be a scoped local variable in computePotentialAndForces() XTENLANG-??? */
     private val Qinv : DistArray[Complex]{self.dist==gridDist};
 
-    /** thetaRecConvQ as used in Eq. 4.7.  TODO this should be a scoped local variable in getEnergy() XTENLANG-??? */
+    /** thetaRecConvQ as used in Eq. 4.7.  TODO this should be a scoped local variable in computePotentialAndForces() XTENLANG-??? */
     private val thetaRecConvQ : DistArray[Complex]{self.dist==gridDist};
     private val thetaRecConvQReal : DistArray[Double]{self.dist==gridDist};
 
-    /** Scratch array for use during 3D FFT.  TODO this should be a scoped local variable in getEnergy() XTENLANG-??? */
+    /** Scratch array for use during 3D FFT.  TODO this should be a scoped local variable in computePotentialAndForces() XTENLANG-??? */
     private val temp : DistArray[Complex]{self.dist==gridDist};
     private val temp2 : DistArray[Double]{self.dist==gridDist};
 
@@ -228,7 +228,7 @@ public class PME_SPMD {
         timer.stop(TIMER_INDEX_SETUP);
     }
 	
-    public def getEnergy() : Double {
+    public def computePotentialAndForces() : Double {
         val totalEnergy = finish (Reducible.SumReducer[Double]()) {
             ateach(p1 in Dist.makeUnique()) {
                 timer.start(TIMER_INDEX_TOTAL);

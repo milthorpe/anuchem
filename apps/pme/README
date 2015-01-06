@@ -44,7 +44,7 @@ For other implementations see
 
 Compile dependencies:
 ------------------------
-* X10 version 2.5 (optionally with x10rt=mpi)
+* X10 version 2.5.1 (optionally with x10rt=mpi)
 * FFTW http://www.fftw.org/ 
   (header files at the location ${fftw3.include} in the ant build script)
 * FFTW X10 wrapper (cd ~/anuchem-code/fftw_wrapper && ant)

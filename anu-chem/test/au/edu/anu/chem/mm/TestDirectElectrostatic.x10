@@ -49,7 +49,7 @@ public class TestDirectElectrostatic extends TestElectrostatic {
         papi.start();
         }
 
-        val directEnergy = direct.getEnergy();
+        val directEnergy = direct.computePotentialAndForces();
 
         @Ifdef("__PAPI__"){
         papi.stop();

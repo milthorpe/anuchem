@@ -119,13 +119,13 @@ public class TestFastMultipoleMethod extends TestElectrostatic {
         papi.start();
 }
 */
-        val energy = fmm.calculateEnergy();
+        val energy = fmm.computePotentialAndForces();
 
 
         for (i in 1..9) {
             finish ateach(place in Dist.makeUnique()) {
                 fmm.reassignAtoms(i);
-                fmm.calculateEnergyLocal();
+                fmm.computePotentialAndForcesLocal();
             }
         }
 
@@ -164,7 +164,7 @@ public class TestFastMultipoleMethod extends TestElectrostatic {
                 fmm.printRMSErrors();
             }
             val direct = new ElectrostaticDirectMethod(atoms);
-            val directEnergy = direct.getEnergy();
+            val directEnergy = direct.computePotentialAndForces();
             logTime(" cf. Direct electrostatic ", ElectrostaticDirectMethod.TIMER_INDEX_TOTAL, direct.timer);
             val error = Math.abs(directEnergy - energy) / Math.abs(energy);
             if (verbose) {

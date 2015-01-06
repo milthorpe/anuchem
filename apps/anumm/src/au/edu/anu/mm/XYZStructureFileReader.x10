@@ -21,7 +21,7 @@ import au.edu.anu.chem.mm.AtomType;
  * This class reads XYZ molecular structure files of the following format:
  *  <number of atoms>
  *  <title>
- *  species x y z // repeated, positions in nm
+ *  species x y z // repeated, positions in Angstroms
  */
 public class XYZStructureFileReader { 
     var fileName:String;
@@ -58,11 +58,12 @@ public class XYZStructureFileReader {
             }
             val center = Point3d(Double.parseDouble(words(1).trim()),
                                  Double.parseDouble(words(2).trim()),
-                                 Double.parseDouble(words(3).trim())) * 10.0;
+                                 Double.parseDouble(words(3).trim())) * 0.1; // convert to nm
             particleData.addAtom(i+1, species, center);
         }
         file.close();
 
+        particleData.boxEdges = particleData.getMaxExtent();
     }
 
     public def setFileName(fileName:String) {

@@ -24,7 +24,7 @@ public class PenningForceField implements ForceField {
         this.magneticField = B;
     }
     
-    public def getPotentialAndForces(atoms: DistArray[Rail[MMAtom]](1)) : Double {
+    public def computePotentialAndForces(atoms:DistArray[Rail[MMAtom]](1)):Double {
         var V : Double = 0.0;
         finish ateach(place in atoms) {
             val atomsHere = atoms(place);

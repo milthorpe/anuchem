@@ -112,9 +112,9 @@ public class TestPMEWaterBox extends TestElectrostatic {
 
         val pme = new PME_SPMD(edges, gridSizes, atoms, splineOrder, ewaldCoefficient, cutoff);
         pme.setup();
-        val energy = pme.getEnergy();
+        val energy = pme.computePotentialAndForces();
         for (i in 1..ITERS) {
-            pme.getEnergy();
+            pme.computePotentialAndForces();
         }
         Console.OUT.println("energy = " + energy);
 
