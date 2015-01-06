@@ -86,7 +86,7 @@ Console.OUT.println("boxSideLength " + boxSideLength);
 
         var step:Long = 0;
         if (verbose) printTimestep(0.0);
-        val bonded = 0.0;//forceField.computePotentialAndForces(particleDataPlh); // get initial forces
+        val bonded = forceField.computePotentialAndForces(particleDataPlh); // get initial forces
         val electrostatic = electrostatics.computePotentialAndForces() * ELECTRIC_CONVERSION_FACTOR;
         val potential = bonded + electrostatic;
 
@@ -177,7 +177,7 @@ Console.OUT.println("boxSideLength " + boxSideLength);
             }
         };
 
-        val bonded = 0.0;//forceField.computePotentialAndForces(particleDataPlh);
+        val bonded = forceField.computePotentialAndForces(particleDataPlh);
 
         val kinetic = finish(Reducible.SumReducer[Double]()) {
             ateach(p in Dist.makeUnique()) {
@@ -287,14 +287,6 @@ Console.OUT.println("boxSideLength " + boxSideLength);
         Console.OUT.println("\n# Run completed after " + numSteps + " steps");
 
         return;
-    }
-
-    /** 
-     * Gets the place ID to which to assign the given atom coordinates.
-     * Currently just splits them up into slices by X coordinate.
-     */
-    private static def getPlaceId(x : Double, y : Double, z : Double, size : Double) : Int {
-        return ((x / (size * 2) + 0.5) * Place.numPlaces()) as Int;
     }
 }
 

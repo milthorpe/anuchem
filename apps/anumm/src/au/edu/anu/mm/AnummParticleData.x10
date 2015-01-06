@@ -10,7 +10,6 @@
  */
 package au.edu.anu.mm;
 
-import x10.util.ArrayList;
 import x10.util.Pair;
 
 import x10x.vector.Point3d;
@@ -37,6 +36,7 @@ public class AnummParticleData extends ParticleData {
     /** Bond angles between atoms, where the second atom is held locally at this place */
     public var angles:Rail[BondAngle];
 
+    /** Get the maximum distance from the origin in any dimension for any atom. */
     public def getMaxExtent():Vector3d {
         var maxX:Double = 0.0;
         var maxY:Double = 0.0;
