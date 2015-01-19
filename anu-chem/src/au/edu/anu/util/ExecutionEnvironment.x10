@@ -14,6 +14,7 @@ import x10.compiler.Native;
 import x10.compiler.NativeCPPInclude;
 import x10.io.IOException;
 import x10.regionarray.Dist;
+import x10.xrx.Runtime;
 
 /** 
  * Provides methods to query and modify the execution environment ANUChem.
