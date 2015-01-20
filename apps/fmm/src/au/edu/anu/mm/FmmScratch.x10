@@ -10,6 +10,8 @@
  */
 package au.edu.anu.mm;
 
+import x10.xrx.Runtime;
+
 /**
  * This class provides worker-local scratch space for use in the 
  * FMM operators, to avoid overhead of array allocation and GC.
