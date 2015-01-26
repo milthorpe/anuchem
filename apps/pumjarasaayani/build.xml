@@ -11,8 +11,9 @@
     <property name="anuchem" location="../../anu-chem"/>
     <property name="anuchem.src" location="${anuchem}/src"/>
     <property name="anuchem.props" location="${anuchem}/anuchem.properties"/>
-    <property name="gml.lib" location="${env.X10_HOME}/x10.gml/lib/native_gml.jar"/>
-    <property name="gml.props" location="${env.X10_HOME}/x10.gml/native_gml.properties"/>
+    <property name="gml.home" location="${env.X10_HOME}/x10.gml/native_double"/>
+    <property name="gml.lib" location="${gml.home}/lib/native_gml.jar"/>
+    <property name="gml.props" location="${gml.home}/native_gml.properties"/>
     <property name="papi" value="false" />
     <property name="verbose" value="false" />
     <property name="x10papi" location="../../papi_wrapper"/>
