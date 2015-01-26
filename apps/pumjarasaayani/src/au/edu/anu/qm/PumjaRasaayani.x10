@@ -11,6 +11,7 @@
 package au.edu.anu.qm;
 
 import x10.io.File;
+import x10.xrx.Runtime;
 import au.edu.anu.chem.Molecule;
 import au.edu.anu.util.Timer;
 

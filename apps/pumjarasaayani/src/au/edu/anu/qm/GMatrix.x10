@@ -15,6 +15,7 @@ import x10.regionarray.DistArray;
 import x10.util.ArrayList;
 import x10.util.Team;
 import x10.util.concurrent.AtomicLong;
+import x10.xrx.Runtime;
 
 import x10.matrix.DenseMatrix;
 import au.edu.anu.chem.Molecule;
