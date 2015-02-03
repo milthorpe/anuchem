@@ -15,6 +15,10 @@ import x10.compiler.StackAllocate;
 import x10.io.File;
 import x10.io.FileWriter;
 import x10.io.Printer;
+import x10.regionarray.Array;
+import x10.regionarray.Dist;
+import x10.regionarray.DistArray;
+import x10.regionarray.Region;
 import x10.util.Team;
 
 import au.edu.anu.util.Timer;
@@ -31,7 +35,7 @@ import au.edu.anu.util.Timer;
  * @author milthorpe 09/2011
  * 23/09 started 20:45
  */
-public class Boltzmann(nsize:Int, nsteps:Int) {
+public class Boltzmann(nsize:Long, nsteps:Int) {
     public static GHOST_WIDTH = 1;
 
     public static VISCOSITY = 1.0;
@@ -60,7 +64,7 @@ public class Boltzmann(nsize:Int, nsteps:Int) {
     /** van der Waals parameter b (eq. 4.10) */
     public static B_VDW = 0.0;
 
-    public val size:Rail[Int];
+    public val size:Rail[Long];
 
     /** the distance between lattice points */
     public val delta_x:Double;
@@ -81,16 +85,16 @@ public class Boltzmann(nsize:Int, nsteps:Int) {
     val lbProps:DistArray[LBProperties](2);
 
     /** The boundary condition data. maps to g_bc*/
-    val boundary:DistArray[Int](2);
+    val boundary:DistArray[Long](2);
 
     /** Speed - magnitude of velocity for e_i */
     val cspd:Double;
 
-    public val timer = PlaceLocalHandle.make[Timer](Dist.makeUnique(), () => new Timer(2)); // maps to tstats
+    public val timer = PlaceLocalHandle.make[Timer](Place.places(), () => new Timer(2)); // maps to tstats
 
-    val ffb = new Array[Double](9);
-    val ffc = new Array[Double](9);
-    val ffd = new Array[Double](9);
+    val ffb = new Rail[Double](9);
+    val ffc = new Rail[Double](9);
+    val ffd = new Rail[Double](9);
 
     /** The velocity vectors e_i */
     val ei = initEi();
@@ -98,14 +102,14 @@ public class Boltzmann(nsize:Int, nsteps:Int) {
     static hash = initHash();
     static ihash = initIHash();
 
-    public def this(nsize:Int, nsteps:Int) {
+    public def this(nsize:Long, nsteps:Int) {
         property(nsize, nsteps);
-        val size = new Array[Int](2, nsize);
+        val size = new Rail[Long](2, nsize);
         this.size = size;
         val delta_x = XMAX/((nsize-1) as Double);
         this.delta_x = delta_x;
 
-        val latticeRegion = 0..(size(0)-1) * 0..(size(1)-1);
+        val latticeRegion = Region.makeRectangular(0..(size(0)-1), 0..(size(1)-1));
         val latticeDist = Dist.makeBlockBlock(latticeRegion, 0, 1);
         this.latticeDist = latticeDist;
 
@@ -119,7 +123,7 @@ public class Boltzmann(nsize:Int, nsteps:Int) {
 
         // initialize boundary conditions
         val boundaryCond = ([i,j]:Point(2)) => { (i==0 || i==(size(0)-1) || j==0) ? 1 : (j==(size(1)-1)) ? 2 : 0 };
-        val boundary = DistArray.make[Int](latticeDist, boundaryCond, GHOST_WIDTH, false);
+        val boundary = DistArray.make[Long](latticeDist, boundaryCond, GHOST_WIDTH, false);
         boundary.updateGhosts();
         this.boundary = boundary;
 
@@ -139,7 +143,7 @@ public class Boltzmann(nsize:Int, nsteps:Int) {
 
         initializeLatticeParameters();
 
-        val lbDist = Dist.makeBlockBlock(latticeRegion * 0..8, 0, 1);
+        val lbDist = Dist.makeBlockBlock(latticeRegion * Region.makeRectangular(0..8), 0, 1);
         Console.OUT.println("lbDist = " + lbDist);
         this.current = DistArray.make[Double](lbDist, 0, false);
         this.equilibrium = DistArray.make[Double](lbDist, 0, false);
@@ -247,39 +251,38 @@ public class Boltzmann(nsize:Int, nsteps:Int) {
         }
     }
 
-    private static def initHash(): Array[Int](2){rect} {
-        val hash = new Array[Int](-1..1 * -1..1);
-        hash(0,0)   = 0;
-        hash(1,0)   = 1;
-        hash(-1,0)  = 2;
-        hash(0,1)   = 3;
-        hash(0,-1)  = 4;
-        hash(1,1)   = 5;
-        hash(-1,-1) = 6;
-        hash(1,-1)  = 7;
-        hash(-1,1)  = 8;
+    private static def initHash():Array[Int](2){rect} {
+        val hash = new Array[Int](MASK_REGION);
+        hash(0,0)   = 0n;
+        hash(1,0)   = 1n;
+        hash(-1,0)  = 2n;
+        hash(0,1)   = 3n;
+        hash(0,-1)  = 4n;
+        hash(1,1)   = 5n;
+        hash(-1,-1) = 6n;
+        hash(1,-1)  = 7n;
+        hash(-1,1)  = 8n;
         return hash;
     }
 
-    private static def initIHash(): Array[Int](2){rect} {
-        val ihash = new Array[Int](-1..1 * -1..1);
-        ihash(0,0)   = 0;
-        ihash(1,0)   = 2;
-        ihash(-1,0)  = 1;
-        ihash(0,1)   = 4;
-        ihash(0,-1)  = 3;
-        ihash(1,1)   = 6;
-        ihash(-1,-1) = 5;
-        ihash(1,-1)  = 8;
-        ihash(-1,1)  = 7;
+    private static def initIHash():Array[Int](2){rect} {
+        val ihash = new Array[Int](MASK_REGION);
+        ihash(0,0)   = 0n;
+        ihash(1,0)   = 2n;
+        ihash(-1,0)  = 1n;
+        ihash(0,1)   = 4n;
+        ihash(0,-1)  = 3n;
+        ihash(1,1)   = 6n;
+        ihash(-1,-1) = 5n;
+        ihash(1,-1)  = 8n;
+        ihash(-1,1)  = 7n;
         return ihash;
     }
 
-    static struct DisplacementVector(x:Int, y:Int) {
-        public def this(x:Int, y:Int) { property(x,y); }   
-    }
-    private static def initEi(): Rail[DisplacementVector] {
-        val ei = new Array[DisplacementVector](9);
+    static struct DisplacementVector(x:Long, y:Long) { }
+
+    private static def initEi():Rail[DisplacementVector] {
+        val ei = new Rail[DisplacementVector](9);
         ei(0) = DisplacementVector( 0, 0);
         ei(1) = DisplacementVector( 1, 0);
         ei(2) = DisplacementVector(-1, 0);
@@ -386,8 +389,8 @@ public class Boltzmann(nsize:Int, nsteps:Int) {
         localTimer.start(0);
 
         localTimer.start(1);
-        previous.sendGhosts();
-        previous.waitOnGhosts();
+        previous.sendGhostsLocal();
+        previous.waitForGhostsLocal();
         localTimer.stop(1);
 
         val currentLocal = current.getLocalPortion() as Array[Double](3){rect};
@@ -398,21 +401,21 @@ public class Boltzmann(nsize:Int, nsteps:Int) {
         val latticeRegion = latticeDist.region as Region(2){rect,zeroBased};
 
         // Perform streaming operation
-        val boundaryLocal = boundary.getLocalPortion() as Array[Int](2){rect};
-        val patch = new Array[Double](-1..1 * -1..1 * 0..8); // maps to fgp
-        val mask = new Array[Int](MASK_REGION);
+        val boundaryLocal = boundary.getLocalPortion() as Array[Long](2){rect};
+        val patch = new Array[Double](MASK_REGION * Region.makeRectangular(0..8)); // maps to fgp
+        val mask = new Array[Long](MASK_REGION);
         for ([ii,jj] in latticeRegionLocal) {
             if (boundaryLocal(ii,jj) == 0) {
                 for (i in 1..8) {
-                    val ix = ei(i).x; //Math.round(ei(i).x) as Int;
-                    val iy = ei(i).y; //Math.round(ei(i).y) as Int;
+                    val ix = ei(i).x; //Math.round(ei(i).x) as Long;
+                    val iy = ei(i).y; //Math.round(ei(i).y) as Long;
                     currentLocal(ii,jj,i) = previousLocal(ii-ix,jj-iy,i);
                 }
             } else {
                 getPatch(ii, jj, patch, mask, currentLocal, previousLocal, boundaryLocal, latticeRegion);
                 for (i in 1..8) {
-                    val ix = ei(i).x; //Math.round(ei(i).x) as Int;
-                    val iy = ei(i).y; //Math.round(ei(i).y) as Int;
+                    val ix = ei(i).x; //Math.round(ei(i).x) as Long;
+                    val iy = ei(i).y; //Math.round(ei(i).y) as Long;
                     currentLocal(ii,jj,i) = patch(-ix,-iy,i);
                 }   
             }
@@ -444,10 +447,10 @@ public class Boltzmann(nsize:Int, nsteps:Int) {
         return localStats;
     }
 
-    static MASK_REGION = -1..1 * -1..1;
+    static MASK_REGION = Region.makeRectangular(-1..1, -1..1);
 
     /** Handle cells at boundary */
-    private def getPatch(ii:Int, jj:Int, patch:Array[Double](3){rect}, mask:Array[Int](2){rect}, currentLocal:Array[Double](3){rect}, previousLocal:Array[Double](3){rect}, boundaryLocal:Array[Int](2){rect}, latticeRegion:Region(2){rect,zeroBased}) {
+    private def getPatch(ii:Long, jj:Long, patch:Array[Double](3){rect}, mask:Array[Long](2){rect}, currentLocal:Array[Double](3){rect}, previousLocal:Array[Double](3){rect}, boundaryLocal:Array[Long](2){rect}, latticeRegion:Region(2){rect,zeroBased}) {
         // Check values of neighboring cells
         for (k in -1..1) {
             for (l in -1..1) {
@@ -552,11 +555,11 @@ public class Boltzmann(nsize:Int, nsteps:Int) {
         val latticeDist = this.latticeDist; // TODO shouldn't be necessary XTENLANG-1913
         val lbProps = this.lbProps; // TODO shouldn't be necessary XTENLANG-1913
 
-        lbProps.sendGhosts();
-        lbProps.waitOnGhosts();
+        lbProps.sendGhostsLocal();
+        lbProps.waitForGhostsLocal();
 
         val lbPropsLocal = lbProps.getLocalPortion();
-        val interiorRegion = 1..(size(0)-2) * 1..(size(1)-2);
+        val interiorRegion = Region.makeRectangular(1..(size(0)-2), 1..(size(1)-2));
         val interiorRegionHere = (interiorRegion && latticeDist(here)) as Region(2){rect};
         for ([ii,jj] in interiorRegionHere) {
             val props = lbPropsLocal(ii,jj);
@@ -620,21 +623,21 @@ public class Boltzmann(nsize:Int, nsteps:Int) {
     private def printData() {
         if (here == Place.FIRST_PLACE) {
             val imax = nsize/10;
-            val glo = new Array[Int](3, 1);
-            val ghi = new Array[Int](3);
+            val glo = new Rail[Long](3, 1);
+            val ghi = new Rail[Long](3);
             ghi(0) = nsize;
             ghi(2) = 3;
-            val bld = new Array[Int](2);
+            val bld = new Rail[Long](2);
             bld(0) = nsize;
             bld(1) = 10;
 
             val MAXELEM=256;
 
             // Check dimensions to see if size needs to be reduced
-            val inc1:Int;
-            val inc2:Int;
-            val icnt1:Int;
-            val icnt2:Int;
+            val inc1:Long;
+            val inc2:Long;
+            val icnt1:Long;
+            val icnt2:Long;
             // TODO non-square array (use size(i))
             if (nsize > MAXELEM) {
                 inc1 = size(0)/MAXELEM;
@@ -667,7 +670,7 @@ public class Boltzmann(nsize:Int, nsteps:Int) {
             fil.println("rho                           1");
 
     /*
-            var jcnt:Int = 0;
+            var jcnt:Long = 0;
             for (i in 0..(imax-1)) {
                 glo(2) = (i-1)*10 + 1;
                 ghi(2) = i*10;
@@ -691,10 +694,10 @@ public class Boltzmann(nsize:Int, nsteps:Int) {
     }
 
     public static def main(args:Rail[String]) {
-        var nsize:Int = 129;
-        var nsteps:Int = 5000;
+        var nsize:Long = 129;
+        var nsteps:Int = 5000n;
         if (args.size > 0) {
-            nsize = Int.parseInt(args(0));
+            nsize = Long.parseLong(args(0));
             if (args.size > 1) {
                 nsteps = Int.parseInt(args(1));
             }
@@ -751,11 +754,11 @@ public class Boltzmann(nsize:Int, nsteps:Int) {
 	    }
 
         public def teamReduce():LBStatistics {
-            val stats = new Array[Double](3);
+            val stats = new Rail[Double](3);
             stats(0) = rtot;
             stats(1) = uxtot;
             stats(2) = uytot;
-            Team.WORLD.allreduce[Double](here.id, stats, 0, stats, 0, 3, Team.ADD);
+            Team.WORLD.allreduce[Double](stats, 0, stats, 0, 3, Team.ADD);
             return new LBStatistics(stats(0), stats(1), stats(2));
         }
     }

@@ -1,12 +1,12 @@
 X10CPP := x10c++
-X10CPPFLAGS := -O -NO_CHECKS -x10rt mpi -VERBOSE_CHECKS
-ifdef CPUPROFILE
-  X10CPPFLAGS += -gpt -DEBUG -post '\# -L/scratch/perftools/lib'
+X10CPPFLAGS := -O -NO_CHECKS -VERBOSE_CHECKS
+ifdef PROFILE
+  X10CPPFLAGS += -gpt
 endif
-X10FLAGS := X10_NTHREADS=1 X10_STATIC_THREADS=true
+X10FLAGS := X10_NPLACES=4 X10_NTHREADS=1
 
 run:    updateGhosts
-	${X10FLAGS} ./updateGhosts 1025
+	${X10FLAGS} ./updateGhosts 128
 
 updateGhosts:	BenchmarkUpdateGhosts.x10
 	$(X10CPP) $(X10CPPFLAGS) BenchmarkUpdateGhosts.x10 -o updateGhosts
