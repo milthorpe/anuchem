@@ -9,6 +9,8 @@
  * (C) Copyright Australian National University 2013.
  */
 
+import x10.xrx.Runtime;
+
 /**
  * This class prints the hostname and number of threads for each place in
  * the X10 system.  It is useful for understanding the topology of the system.
