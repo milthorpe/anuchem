@@ -25,11 +25,11 @@ public class TestPME extends TestElectrostatic {
     public def sizeOfCentralCluster() : Double = 80.0;
 
     public static def main(args:Rail[String]) {
-        var numAtoms : Int;
-        var ewaldCoefficient : Double = 0.35;
-        var cutoff : Double = 8.0;
-        var gridSize : Int = 64;
-        var splineOrder : Int = 4;
+        var numAtoms:Long;
+        var ewaldCoefficient:Double = 0.35;
+        var cutoff:Double = 10.0;
+        var gridSize:Long = 64;
+        var splineOrder:Int = 4n;
         if (args.size > 0) {
             numAtoms = Int.parseInt(args(0));
             if (args.size > 1) {
@@ -37,7 +37,7 @@ public class TestPME extends TestElectrostatic {
                 if (args.size > 2) {
                     cutoff = Double.parseDouble(args(2));
                     if (args.size > 3) {
-                        gridSize = Int.parseInt(args(3));
+                        gridSize = Long.parseLong(args(3));
                         if (args.size > 4) {
                             splineOrder = Int.parseInt(args(4));
                         }
@@ -56,11 +56,11 @@ public class TestPME extends TestElectrostatic {
         new TestPME().test(numAtoms, ewaldCoefficient, cutoff, gridSize, splineOrder);
     }
 
-    public def test(numAtoms : Int, ewaldCoefficient : Double, cutoff : Double, gridSize : Int, splineOrder : Int) {
+    public def test(numAtoms:Long, ewaldCoefficient:Double, cutoff:Double, gridSize:Long, splineOrder:Int) {
 
         val edges = [Vector3d(SIZE, 0.0, 0.0), Vector3d(0.0, SIZE, 0.0), Vector3d(0.0, 0.0, SIZE)];
         val g = gridSize;
-        val gridSizes = new Array[Int](3, g);
+        val gridSizes = new Rail[Long](3, g);
 
         Console.OUT.println("Testing PME for " + numAtoms + " particles."
             //+ "\nBox edges: " + edges(0) + "," + edges(1) + "," + edges(2)

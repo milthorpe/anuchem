@@ -15,7 +15,6 @@ import x10.regionarray.Array;
 import x10.regionarray.Dist;
 import x10.regionarray.DistArray;
 import x10.regionarray.Region;
-import x10.regionarray.PeriodicDist;
 import x10.util.ArrayList;
 import x10.util.HashMap;
 import x10.util.Pair;
@@ -24,7 +23,7 @@ import x10x.vector.Point3d;
 import x10x.vector.Vector3d;
 import au.edu.anu.chem.PointCharge;
 import au.edu.anu.chem.mm.ElectrostaticMethod;
-import au.edu.anu.chem.mm.MMAtom;
+import au.edu.anu.chem.mm.ParticleData;
 import au.edu.anu.fft.DistributedReal3dFft;
 import au.edu.anu.util.Timer;
 //import org.netlib.fdlibm.Erf;
@@ -93,8 +92,10 @@ public class PME implements ElectrostaticMethod {
      */
     private val imageTranslations : PlaceLocalHandle[Array[Vector3d](3){rect}];
 
-    /** The atoms in the simulation, divided up into a distributed array of Arrays, one for each place. */
-    private val atoms : DistArray[Rail[MMAtom]](1);
+    /**
+     * Particle data: positions, charges and mass of particles at each place.
+     */
+    private val particleDataPlh:PlaceLocalHandle[ParticleData];
 
     private val B : DistArray[Double]{self.dist==gridDist};
     private val C : DistArray[Double]{self.dist==gridDist};
@@ -129,24 +130,18 @@ public class PME implements ElectrostaticMethod {
     /** The number of sub-cells per side of the unit cell. */
     private val numSubCells : Long;
 
-    /** 
-     * A cache of atoms from subcells stored at other places.  
-     * This is used to prefetch atom data for direct energy calculation.
-     */
-    private val atomsCache : DistArray[Array[Rail[PointCharge]]{rank==3,rect}](1);
-
     /**
      * Creates a new particle mesh Ewald method.
      * @param edges the edge vectors of the unit cell
      * @param gridSize the number of grid lines in each dimension of the unit cell
-     * @param atoms the atoms in the unit cell
-     * @param splineOrder the order n of B-spline interpolationb
+     * @param particleDataPlh place-local handle of particle data at each place
+     * @param splineOrder the order n of B-spline interpolation
      * @param beta the Ewald coefficient beta
      * @param cutoff the distance in Angstroms beyond which direct interactions are ignored
      */
     public def this(edges : Rail[Vector3d],
             gridSize : Rail[Long],
-            atoms: DistArray[Rail[MMAtom]](1),
+            particleDataPlh:PlaceLocalHandle[ParticleData],
             splineOrder : Int,
             beta : Double,
             cutoff : Double) {
@@ -162,7 +157,7 @@ public class PME implements ElectrostaticMethod {
         this.K2 = K2;
         this.K3 = K3;
 
-        this.atoms = atoms;
+        this.particleDataPlh = particleDataPlh;
         val gridRegion = Region.make(0..(gridSize(0)-1), 0..(gridSize(1)-1), 0..(gridSize(2)-1));
         val gridDist = Dist.makeBlockBlock(gridRegion, 0, 1);
         this.gridDist = gridDist;
@@ -180,23 +175,11 @@ public class PME implements ElectrostaticMethod {
         }
         val numSubCells = Math.ceil(edgeLengths(0) / (cutoff/2.0)) as Long;
         val subCellRegion = Region.make(0..(numSubCells-1), 0..(numSubCells-1), 0..(numSubCells-1));
-        val subCells = DistArray.make[Rail[PointCharge]](new PeriodicDist(Dist.makeBlockBlock(subCellRegion, 0, 1)));
+        val periodic = true;
+        val subCells = DistArray.make[Rail[PointCharge]](Dist.makeBlockBlock(subCellRegion, 0, 1), 2, periodic);
         //Console.OUT.println("subCells dist = " + subCells.dist);
         this.subCells = subCells;
         this.numSubCells = numSubCells;
-
-        val atomsCache = DistArray.make[Array[Rail[PointCharge]]{rank==3,rect}](Dist.makeUnique());
-        finish ateach(p in atomsCache) {
-            val mySubCellRegion = subCells.dist(here);
-            if (! mySubCellRegion.isEmpty()) {
-                val directRequiredRegion = 
-                    Region.make((mySubCellRegion.min(0) - 2)..(mySubCellRegion.max(0) + 2),
-                                (mySubCellRegion.min(1) - 2)..(mySubCellRegion.max(1) + 2),
-                                (mySubCellRegion.min(2) - 2)..(mySubCellRegion.max(2) + 2));
-                atomsCache(p) = new Array[Rail[PointCharge]](directRequiredRegion);
-            }
-        }
-        this.atomsCache = atomsCache;
 
         //Console.OUT.println("gridDist = " + gridDist);
 
@@ -282,14 +265,13 @@ public class PME implements ElectrostaticMethod {
     private def divideAtomsIntoSubCells() {
         val halfCutoff = (cutoff / 2.0);
         val subCellsTemp = DistArray.make[ArrayList[PointCharge]](subCells.dist, (Point) => new ArrayList[PointCharge]());
-        val atoms = this.atoms; // TODO shouldn't be necessary XTENLANG-1913
+        val particleDataPlh = this.particleDataPlh; // TODO shouldn't be necessary XTENLANG-1913
         val halfNumSubCells = this.numSubCells / 2;
-        finish ateach(p in atoms) {
-            val localAtoms = atoms(p);
-            finish for (l in 0..(localAtoms.size-1)) {
-                val atom = localAtoms(l);
-                val centre = atom.centre;
-                val charge = atom.charge;
+        finish ateach(p in Dist.makeUnique()) {
+            val particleData = particleDataPlh();
+            finish for (l in 0..(particleData.numAtoms()-1)) {
+                val centre = particleData.x(l);
+                val charge = particleData.atomTypes(particleData.atomTypeIndex(l)).charge;
                 // get subcell i,j,k
                 val i = (centre.i / halfCutoff) as Int + halfNumSubCells;
                 val j = (centre.j / halfCutoff) as Int + halfNumSubCells;
@@ -311,56 +293,8 @@ public class PME implements ElectrostaticMethod {
      */
     private def prefetchRemoteAtoms() {
         timer.start(TIMER_INDEX_PREFETCH);
-		val subCells = this.subCells; // TODO shouldn't be necessary XTENLANG-1913
-		val atomsCache = this.atomsCache; // TODO shouldn't be necessary XTENLANG-1913
-        finish ateach(p in atomsCache) {
-            val myAtomsCache = atomsCache(here.id);
-            if (myAtomsCache != null) {
-                val haloPlaces = new HashMap[Long,ArrayList[Point(3)]](8); // a place may have up to 8 immediate neighbours in the two block-divided dimensions
-                
-                // separate the halo subcells into partial lists stored at each nearby place
-                for (boxIndex[x,y,z] in myAtomsCache.region) {
-                    val placeId = subCells.dist(x,y,z).id;
-                    var haloForPlace : ArrayList[Point(3)] = haloPlaces.getOrElse(placeId, null);
-                    if (haloForPlace == null) {
-                        haloForPlace = new ArrayList[Point(3)]();
-                        haloPlaces.put(placeId, haloForPlace);
-                    }
-                    haloForPlace.add(boxIndex);
-                }
-
-                // retrieve the partial list for each place and store into my LET
-                finish for (placeEntry in haloPlaces.entries()) async {
-                    val placeId = placeEntry.getKey();
-                    val haloForPlace = placeEntry.getValue();
-                    val haloListArray = haloForPlace.toRail();
-                    if (placeId == here.id) {
-                        // atoms cache is just a set of pointers to sub cells that are here
-                        for (i in 0..(haloListArray.size-1)) {
-                            myAtomsCache(haloListArray(i)) = subCells(haloListArray(i));
-                        }
-                    } else {
-                        val atomsForPlace = at(Place(placeId)) { getAtomsForSubcellList(subCells, haloListArray)};
-                        for (i in 0..(haloListArray.size-1)) {
-                            myAtomsCache(haloListArray(i)) = atomsForPlace(i);
-                        }
-                    }
-                }
-            }
-        }
+		subCells.updateGhosts();
         timer.stop(TIMER_INDEX_PREFETCH);
-    }
-
-    /**
-     * Given a list of subcell indices as Point(3) stored at a single
-     * place, returns an Array, each element of which is in turn
-     * a Array of PointCharge containing the atoms for each subcell.
-	 * TODO should use instance fields instead of all those parameters - XTENLANG-1913
-     */
-    private static def getAtomsForSubcellList(subCells : DistArray[Rail[PointCharge]](3), boxList : Rail[Point(3)]) {
-        val atoms = new Rail[Rail[PointCharge]](boxList.size, 
-                                                 (i:Long) => subCells(boxList(i)));
-        return atoms;
     }
 
     public def getDirectEnergy() : Double {
@@ -368,16 +302,15 @@ public class PME implements ElectrostaticMethod {
         val cutoffSquared = cutoff*cutoff;
 		val subCellsDist = this.subCells.dist;
 		val numSubCells = this.numSubCells; // TODO shouldn't be necessary XTENLANG-1913
-		val atomsCache = this.atomsCache; // TODO shouldn't be necessary XTENLANG-1913
+        val subCells = this.subCells; // TODO shouldn't be necessary XTENLANG-1913
 		val imageTranslations = this.imageTranslations; // TODO shouldn't be necessary XTENLANG-1913
 		val beta = this.beta; // TODO shouldn't be necessary XTENLANG-1913
         val directEnergy = finish (Reducible.SumReducer[Double]()) {
             ateach(place in Dist.makeUnique()) {
-                val cachedAtoms = atomsCache(here.id);
                 val translations = imageTranslations();
                 val localRegion = subCellsDist(here) as Region(3){rect};
                 for ([x,y,z] in localRegion) async {
-                    val thisCell = cachedAtoms(x,y,z) as Rail[PointCharge];
+                    val thisCell = subCells(x,y,z) as Rail[PointCharge];
                     var cellDirectEnergy : Double = 0.0;
                     for (var i:Long = x-2; i<=x; i++) {
                         var n1:Int = 0n;
@@ -401,7 +334,7 @@ public class PME implements ElectrostaticMethod {
                                 // interact with "left half" of other boxes i.e. only boxes with i<=x
                                 if (i < x || (i == x && j < y) || (i == x && j == y && k < z)) {
                                     val translation = translations(n1,n2,n3);
-                                    val otherCell : Rail[PointCharge] = cachedAtoms(i,j,k);
+                                    val otherCell = subCells.getPeriodic(i,j,k);
                                     for (otherAtomIndex in 0..(otherCell.size-1)) {
                                         val otherAtom = otherCell(otherAtomIndex);
                                         val imageLoc = otherAtom.centre + translation;
@@ -455,7 +388,7 @@ public class PME implements ElectrostaticMethod {
         val selfEnergy = finish (Reducible.SumReducer[Double]()) {
             ateach(place in Dist.makeUnique()) {
                 val localSubCells = subCells.getLocalPortion();
-                val localRegion = localSubCells.region as Region(3){rect};
+                val localRegion = subCells.dist(here) as Region(3){rect};
                 var mySelfEnergy : Double = 0.0;
                 for ([i,j,k] in localRegion) {
                     val thisCell = localSubCells(i,j,k) as Rail[PointCharge];
@@ -480,20 +413,19 @@ public class PME implements ElectrostaticMethod {
 
         val gridSize = this.gridSize; // TODO shouldn't be necessary XTENLANG-1913
         val numSubCells = this.numSubCells; // TODO shouldn't be necessary XTENLANG-1913
+        val subCells = this.subCells; // TODO shouldn't be necessary XTENLANG-1913
         val splineOrder = this.splineOrder; // TODO shouldn't be necessary XTENLANG-1913
         val scalingVector = this.scalingVector; // TODO shouldn't be necessary XTENLANG-1913
         val Q = this.Q; // TODO shouldn't be necessary XTENLANG-1913
-        val atomsCache = this.atomsCache; // TODO shouldn't be necessary XTENLANG-1913
         val subCellRegion = subCells.region as Region(3){rect};
         finish ateach(place1 in Dist.makeUnique()) {
             val qLocal = Q.getLocalPortion() as Array[Double](3){rect};
-            val localGridRegion = qLocal.region as Region(3){rect};
+            val localGridRegion = Q.dist(here) as Region(3){rect};
             if (!localGridRegion.isEmpty()) {
                 qLocal.clear();
                 val gridSize0 = gridSize(0);
                 val gridSize1 = gridSize(1);
                 val gridSize2 = gridSize(2);
-                val myAtomsCache = atomsCache(here.id);
 
                 val subCellHaloRegion = PME.getSubcellHaloRegionForPlace(gridSize0, numSubCells, splineOrder, localGridRegion, subCellRegion);
                 //Console.OUT.println("subCellHaloRegion at " + here + " = " + subCellHaloRegion);
@@ -507,7 +439,7 @@ public class PME implements ElectrostaticMethod {
                 val qjMax = localGridRegion.max(1);
 
                 for ([x,y,z] in subCellHaloRegion) {
-                    val thisCell = myAtomsCache(x,y,z) as Rail[PointCharge];
+                    val thisCell = subCells(x,y,z) as Rail[PointCharge];
                     for (atomIndex in 0..(thisCell.size-1)) {
                         val atom = thisCell(atomIndex);
                         val q = atom.charge;
@@ -586,8 +518,8 @@ public class PME implements ElectrostaticMethod {
     private def getReciprocalEnergy(thetaRecConvQ:DistArray[Double]{self.dist==gridDist}) {
         timer.start(TIMER_INDEX_RECIPROCAL);
 
-	val gridDist = this.gridDist; // TODO shouldn't be necessary XTENLANG-1913
-	val Q = this.Q; // TODO shouldn't be necessary XTENLANG-1913
+        val gridDist = this.gridDist; // TODO shouldn't be necessary XTENLANG-1913
+        val Q = this.Q; // TODO shouldn't be necessary XTENLANG-1913
 
         val scale = 1.0 / (K1 * K2 * K3);
         val reciprocalEnergy = finish (Reducible.SumReducer[Double]()) {
@@ -595,7 +527,7 @@ public class PME implements ElectrostaticMethod {
                 var myReciprocalEnergy : Double = 0.0;
                 val localQ = Q.getLocalPortion();
                 val localThetaRecConvQ = thetaRecConvQ.getLocalPortion();
-                val localRegion = localQ.region as Region(3){rect};
+                val localRegion = Q.dist(here) as Region(3){rect};
                 for ([i,j,k] in localRegion) {
                     myReciprocalEnergy += localQ(i,j,k) * localThetaRecConvQ(i,j,k);
                 }

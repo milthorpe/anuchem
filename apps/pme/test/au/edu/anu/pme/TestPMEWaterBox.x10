@@ -32,6 +32,7 @@ import au.edu.anu.util.Timer;
  */
 public class TestPMEWaterBox extends TestElectrostatic {
     public static ITERS = 10;
+    public static MAX_GRID_SPACING = 0.9; // in Angstroms
     var size:Double = 80.0;
     public def sizeOfCentralCluster() { return size; }
     public def boxSize() { return size; }
@@ -40,7 +41,7 @@ public class TestPMEWaterBox extends TestElectrostatic {
         var structureFileName : String;
         var ewaldCoefficient : Double = 0.35;
         var cutoff : Double = 10.0;
-        var gridSize : Long = 72;
+        var gridSize : Long = -1;
         var splineOrder : Int = 4n;
         if (args.size > 0) {
             structureFileName = args(0);
@@ -61,7 +62,7 @@ public class TestPMEWaterBox extends TestElectrostatic {
             return;
         }
 
-        if (splineOrder > gridSize) {
+        if (gridSize > 0 && splineOrder > gridSize) {
             Console.ERR.println("pme: splineOrder must not be greater than gridSize");
             return;
         }
@@ -75,12 +76,12 @@ public class TestPMEWaterBox extends TestElectrostatic {
         this.size = gmxFileReader.boxEdges.i; // TODO assume cubic box
 
         val edges = [Vector3d(size, 0.0, 0.0), Vector3d(0.0, size, 0.0), Vector3d(0.0, 0.0, size)];
-        val g = gridSize;
+        val g = gridSize > 0 ? gridSize : (size / MAX_GRID_SPACING) as Long;
         val gridSizes = new Rail[Long](3, g);
 
         Console.OUT.println("Testing PME with structure file " + structureFileName
             + "\nBox edges: " + edges(0) + "," + edges(1) + "," + edges(2)
-            + "\nGrid size: " + gridSize
+            + "\nGrid size: " + g
             + "\nspline order: " + splineOrder + " Beta: " + ewaldCoefficient + " Cutoff: " + cutoff);
 
         val molAtoms = molecule.getAtoms();

@@ -15,7 +15,6 @@ import x10.regionarray.Array;
 import x10.regionarray.Dist;
 import x10.regionarray.DistArray;
 import x10.regionarray.Region;
-import x10.regionarray.PeriodicDist;
 import x10.util.ArrayList;
 import x10.util.HashMap;
 import x10.util.Pair;
@@ -129,12 +128,6 @@ public class PME_SPMD {
     /** The number of sub-cells per side of the unit cell. */
     private val numSubCells : Long;
 
-    /** 
-     * A cache of atoms from subcells stored at other places.  
-     * This is used to prefetch atom data for direct energy calculation.
-     */
-    private val atomsCache : DistArray[Array[Rail[PointCharge]]{rank==3,rect}](1);
-
     /**
      * Creates a new particle mesh Ewald method.
      * @param edges the edge vectors of the unit cell
@@ -180,23 +173,11 @@ public class PME_SPMD {
         }
         val numSubCells = Math.ceil(edgeLengths(0) / (cutoff/2.0)) as Long;
         val subCellRegion = Region.make(0..(numSubCells-1), 0..(numSubCells-1), 0..(numSubCells-1));
-        val subCells = DistArray.make[Rail[PointCharge]](new PeriodicDist(Dist.makeBlockBlock(subCellRegion, 0, 1)));
+        val periodic = true;
+        val subCells = DistArray.make[Rail[PointCharge]](Dist.makeBlockBlock(subCellRegion, 0, 1), 2, periodic);
         //Console.OUT.println("subCells dist = " + subCells.dist);
         this.subCells = subCells;
         this.numSubCells = numSubCells;
-
-        val atomsCache = DistArray.make[Array[Rail[PointCharge]]{rank==3,rect}](Dist.makeUnique());
-        finish ateach(p in atomsCache) {
-            val mySubCellRegion = subCells.dist(here);
-            if (! mySubCellRegion.isEmpty()) {
-                val directRequiredRegion = 
-                    Region.make((mySubCellRegion.min(0) - 2)..(mySubCellRegion.max(0) + 2),
-                                (mySubCellRegion.min(1) - 2)..(mySubCellRegion.max(1) + 2),
-                                (mySubCellRegion.min(2) - 2)..(mySubCellRegion.max(2) + 2));
-                atomsCache(p) = new Array[Rail[PointCharge]](directRequiredRegion);
-            }
-        }
-        this.atomsCache = atomsCache;
 
         //Console.OUT.println("gridDist = " + gridDist);
 
@@ -247,7 +228,6 @@ public class PME_SPMD {
                 val localBdotC = BdotC.getLocalPortion();
                 val localThetaRecConvQ = thetaRecConvQ.getLocalPortion();
                 val localQinv = Qinv.getLocalPortion();
-                val localRegion = localBdotC.region as Region(3){rect};
                 localBdotC.map[Complex,Complex](localThetaRecConvQ, localQinv, (a:Double, b:Complex) => a * b);
 
                 Team.WORLD.barrier();
@@ -313,64 +293,19 @@ public class PME_SPMD {
      */
     private def prefetchPackedAtomsLocal() {
         timer.start(TIMER_INDEX_PREFETCH);
-        val myAtomsCache = atomsCache(here.id);
-        if (myAtomsCache != null) {
-            val haloPlaces = new HashMap[Long,ArrayList[Point(3)]](8); // a place may have up to 8 immediate neighbours in the two block-divided dimensions
-            
-            // separate the halo subcells into partial lists stored at each nearby place
-            for (boxIndex[x,y,z] in myAtomsCache.region) {
-                val placeId = subCells.dist(x,y,z).id;
-                var haloForPlace : ArrayList[Point(3)] = haloPlaces.getOrElse(placeId, null);
-                if (haloForPlace == null) {
-                    haloForPlace = new ArrayList[Point(3)]();
-                    haloPlaces.put(placeId, haloForPlace);
-                }
-                haloForPlace.add(boxIndex);
-            }
-
-            // retrieve the partial list for each place and store into my LET
-            finish for (placeEntry in haloPlaces.entries()) async {
-                val placeId = placeEntry.getKey();
-                val haloForPlace = placeEntry.getValue();
-                val haloListArray = haloForPlace.toRail();
-                if (placeId == here.id) {
-                    // atoms cache is just a set of pointers to sub cells that are here
-                    for (i in 0..(haloListArray.size-1)) {
-                        myAtomsCache(haloListArray(i)) = subCells(haloListArray(i));
-                    }
-                } else {
-                    val atomsForPlace = at(Place(placeId)) { getAtomsForSubcellList(subCells, haloListArray)};
-                    for (i in 0..(haloListArray.size-1)) {
-                        myAtomsCache(haloListArray(i)) = atomsForPlace(i);
-                    }
-                }
-            }
-        }
+        subCells.sendGhostsLocal();
+        subCells.waitForGhostsLocal();
         timer.stop(TIMER_INDEX_PREFETCH);
-    }
-
-    /**
-     * Given a list of subcell indices as Point(3) stored at a single
-     * place, returns an Array, each element of which is in turn
-     * a Array of PointCharge containing the atoms for each subcell.
-	 * TODO should use instance fields instead of all those parameters - XTENLANG-1913
-     */
-    private static def getAtomsForSubcellList(subCells : DistArray[Rail[PointCharge]](3), boxList : Rail[Point(3)]) {
-        val atoms = new Rail[Rail[PointCharge]](boxList.size, 
-                                                 (i:Long) => subCells(boxList(i)));
-        return atoms;
     }
 
     public def getDirectEnergy() : Double {
         timer.start(TIMER_INDEX_DIRECT);
         val cutoffSquared = cutoff*cutoff;
-		val subCellsDist = this.subCells.dist;
-        val cachedAtoms = atomsCache(here.id);
         val translations = imageTranslations();
-        val localRegion = subCellsDist(here) as Region(3){rect};
+        val myRegion = subCells.dist(here) as Region(3){rect};
         val directEnergy = finish (Reducible.SumReducer[Double]()) {
-            for ([x,y,z] in localRegion) async {
-                val thisCell = cachedAtoms(x,y,z) as Rail[PointCharge];
+            for ([x,y,z] in myRegion) async {
+                val thisCell = subCells(x,y,z) as Rail[PointCharge];
                 var cellDirectEnergy : Double = 0.0;
                 for (var i:Long = x-2; i<=x; i++) {
                     var n1:Int = 0n;
@@ -394,7 +329,7 @@ public class PME_SPMD {
                             // interact with "left half" of other boxes i.e. only boxes with i<=x
                             if (i < x || (i == x && j < y) || (i == x && j == y && k < z)) {
                                 val translation = translations(n1,n2,n3);
-                                val otherCell : Rail[PointCharge] = cachedAtoms(i,j,k);
+                                val otherCell = subCells.getPeriodic(i,j,k);
                                 for (otherAtomIndex in 0..(otherCell.size-1)) {
                                     val otherAtom = otherCell(otherAtomIndex);
                                     val imageLoc = otherAtom.centre + translation;
@@ -444,9 +379,9 @@ public class PME_SPMD {
     public def getSelfEnergy() : Double {
         timer.start(TIMER_INDEX_SELF);
         val localSubCells = subCells.getLocalPortion();
-        val localRegion = localSubCells.region as Region(3){rect};
+        val myRegion = subCells.dist(here) as Region(3){rect};
         var mySelfEnergy : Double = 0.0;
-        for ([i,j,k] in localRegion) {
+        for ([i,j,k] in myRegion) {
             val thisCell = localSubCells(i,j,k) as Rail[PointCharge];
             for (thisAtom in 0..(thisCell.size-1)) {
                 mySelfEnergy += thisCell(thisAtom).charge * thisCell(thisAtom).charge;
@@ -466,17 +401,15 @@ public class PME_SPMD {
         timer.start(TIMER_INDEX_GRIDCHARGES);
 
         val qLocal = Q.getLocalPortion() as Array[Double](3){rect};
-        val localGridRegion = qLocal.region as Region(3){rect};
+        val localGridRegion = Q.dist(here) as Region(3){rect};
         if (!localGridRegion.isEmpty()) {
             val subCellRegion = subCells.dist.region;
             qLocal.clear();
             val gridSize0 = gridSize(0);
             val gridSize1 = gridSize(1);
             val gridSize2 = gridSize(2);
-            val myAtomsCache = atomsCache(here.id);
 
             val subCellHaloRegion = PME_SPMD.getSubcellHaloRegionForPlace(gridSize0, numSubCells, splineOrder, localGridRegion, subCellRegion);
-            //Console.OUT.println("subCellHaloRegion at " + here + " = " + subCellHaloRegion);
             val iSpline = new Rail[Double](splineOrder);
             val jSpline = new Rail[Double](splineOrder);
             val kSpline = new Rail[Double](splineOrder);
@@ -487,7 +420,7 @@ public class PME_SPMD {
             val qjMax = localGridRegion.max(1);
 
             for ([x,y,z] in subCellHaloRegion) {
-                val thisCell = myAtomsCache(x,y,z) as Rail[PointCharge];
+                val thisCell = subCells(x,y,z) as Rail[PointCharge];
                 for (atomIndex in 0..(thisCell.size-1)) {
                     val atom = thisCell(atomIndex);
                     val q = atom.charge;
@@ -569,8 +502,8 @@ public class PME_SPMD {
         var myReciprocalEnergy : Double = 0.0;
         val localQ = Q.getLocalPortion();
         val localThetaRecConvQ = thetaRecConvQ.getLocalPortion();
-        val localRegion = localQ.region as Region(3){rect};
-        for ([i,j,k] in localRegion) {
+        val myRegion = Q.dist(here) as Region(3){rect};
+        for ([i,j,k] in myRegion) {
             myReciprocalEnergy += localQ(i,j,k) * localThetaRecConvQ(i,j,k);
         }
 
