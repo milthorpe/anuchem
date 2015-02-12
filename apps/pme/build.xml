@@ -14,14 +14,14 @@
     <property name="x10.testlib" location="${env.X10_HOME}/x10.tests/tests/x10lib"/>
     <property name="fftw" location="../../fftw_wrapper"/>
     <property name="fftw.props" location="${fftw}/fftw.properties" />
-    <property name="fftw3.include" location="${user.home}/fftw/include" />
+    <property name="fftw3.home" location="${user.home}/fftw" />
     <property environment="env"/>
     <property name="bash.exe" value="bash"/>    
     <property name="optimize" value="true"/>
     <property name="nochecks" value="true"/>
     <property name="debug" value="true"/>
     <property name="profile"  value="false"/>
-    <property name="cpuprofile"  value="true"/>
+    <property name="cpuprofile"  value="false"/>
     <property name="workstealing"  value="false"/>
     <property name="perftoolsHome" location="${user.home}/perftools"/>
     <property name="mpiPprofile"  value="false"/>
@@ -104,7 +104,7 @@
 
         <exec executable="${bash.exe}" failonerror="true" dir="${basedir}/src">
             <arg value="-c"/>
-            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} ${x10c.debug} ${x10c.cpuprofile} ${x10c.profile}  ${x10c.workstealing} -report postcompile=1 -post '# &quot;-I${fftw3.include}&quot; ${link.mpiPprofile}' -x10lib ${xla.props} -x10lib ${anuchem.props} -x10lib ${fftw.props} -sourcepath . -d '${target-src}' '${basedir}/${testclass}'"/>
+            <arg value="'x10c++' -x10rt ${x10rt} ${x10c.optimize} ${x10c.nochecks} ${x10c.debug} ${x10c.cpuprofile} ${x10c.profile}  ${x10c.workstealing} -report postcompile=1 -post '# # -I${fftw3.home}/include ${link.mpiPprofile} # -L${fftw3.home}/lib -lfftw3' -x10lib ${xla.props} -x10lib ${anuchem.props} -x10lib ${fftw.props} -sourcepath . -d '${target-src}' '${basedir}/${testclass}'"/>
         </exec>
     </target>
 
