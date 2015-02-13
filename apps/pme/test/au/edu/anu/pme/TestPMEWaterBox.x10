@@ -111,7 +111,7 @@ public class TestPMEWaterBox extends TestElectrostatic {
         }
         val atoms = DistArray.make[Rail[MMAtom]](Dist.makeUnique(), ([p] : Point) => tempAtoms(p).toRail());
 
-        val pme = new PME_SPMD(edges, gridSizes, atoms, splineOrder, ewaldCoefficient, cutoff);
+        val pme = PME_SPMD.make(edges, gridSizes, atoms, splineOrder, ewaldCoefficient, cutoff);
         pme.setup();
         val energy = pme.computePotentialAndForces();
         for (i in 1..ITERS) {
@@ -119,15 +119,15 @@ public class TestPMEWaterBox extends TestElectrostatic {
         }
         Console.OUT.println("energy = " + energy);
 
-        logTime("Grid charges",      PME.TIMER_INDEX_GRIDCHARGES,   pme.timer);
-        logTime("Inverse FFT",       PME.TIMER_INDEX_INVFFT,        pme.timer);
-        logTime("ThetaRecConvQ",     PME.TIMER_INDEX_THETARECCONVQ, pme.timer);
-        logTime("Reciprocal energy", PME.TIMER_INDEX_RECIPROCAL,    pme.timer);
-        logTime("Self energy",       PME.TIMER_INDEX_SELF,          pme.timer);
-        logTime("Direct",            PME.TIMER_INDEX_DIRECT,        pme.timer);
-        logTime("Total",             PME.TIMER_INDEX_TOTAL,         pme.timer);
-        logTime("Prefetch",          PME.TIMER_INDEX_PREFETCH,      pme.timer);
-        logTime("Setup",             PME.TIMER_INDEX_SETUP,         pme.timer);
+        logTime("Grid charges",      PME_SPMD.TIMER_INDEX_GRIDCHARGES,   pme.timer);
+        logTime("Inverse FFT",       PME_SPMD.TIMER_INDEX_INVFFT,        pme.timer);
+        logTime("ThetaRecConvQ",     PME_SPMD.TIMER_INDEX_THETARECCONVQ, pme.timer);
+        logTime("Reciprocal energy", PME_SPMD.TIMER_INDEX_RECIPROCAL,    pme.timer);
+        logTime("Self energy",       PME_SPMD.TIMER_INDEX_SELF,          pme.timer);
+        logTime("Direct",            PME_SPMD.TIMER_INDEX_DIRECT,        pme.timer);
+        logTime("Total",             PME_SPMD.TIMER_INDEX_TOTAL,         pme.timer);
+        logTime("Prefetch",          PME_SPMD.TIMER_INDEX_PREFETCH,      pme.timer);
+        logTime("Setup",             PME_SPMD.TIMER_INDEX_SETUP,         pme.timer);
     }
 }
 

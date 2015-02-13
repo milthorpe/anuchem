@@ -35,7 +35,7 @@ import au.edu.anu.util.Timer;
  * @see Essmann et al. "A Smooth Particle Mesh Ewald method", J. Comp. Phys. 101,
  * pp.8577-8593 (1995) DOI: 10.1063/1.470117
  */
-public class PME_SPMD {
+public class PME_SPMD(gridDist:Dist(3)) {
     // TODO enum - XTENLANG-1118
     public static val TIMER_INDEX_TOTAL : Int           = 0n;
     public static val TIMER_INDEX_GRIDCHARGES : Int     = 1n;
@@ -70,8 +70,6 @@ public class PME_SPMD {
      */
     private val scalingVector : Vector3d;
 
-    private val gridDist : Dist(3);
-    
     /** The order of B-spline interpolation */
     private val splineOrder : Int;
 
@@ -137,12 +135,35 @@ public class PME_SPMD {
      * @param beta the Ewald coefficient beta
      * @param cutoff the distance in Angstroms beyond which direct interactions are ignored
      */
-    public def this(edges : Rail[Vector3d],
+    public static def make(edges : Rail[Vector3d],
             gridSize : Rail[Long],
             atoms: DistArray[Rail[MMAtom]](1),
             splineOrder : Int,
             beta : Double,
             cutoff : Double) {
+        val gridRegion = Region.make(0..(gridSize(0)-1), 0..(gridSize(1)-1), 0..(gridSize(2)-1));
+        val gridDist = Dist.makeBlockBlock(gridRegion, 0, 1);
+        return new PME_SPMD(gridDist, gridSize, edges, atoms, splineOrder, beta, cutoff);
+    }
+
+    /**
+     * Creates a new particle mesh Ewald method.
+     * @param edges the edge vectors of the unit cell
+     * @param gridSize the number of grid lines in each dimension of the unit cell
+     * @param atoms the atoms in the unit cell
+     * @param splineOrder the order n of B-spline interpolationb
+     * @param beta the Ewald coefficient beta
+     * @param cutoff the distance in Angstroms beyond which direct interactions are ignored
+     */
+    public def this(gridDist:Dist(3),
+            gridSize : Rail[Long],
+            edges : Rail[Vector3d],
+            atoms: DistArray[Rail[MMAtom]](1),
+            splineOrder : Int,
+            beta : Double,
+            cutoff : Double) {
+        property(gridDist);
+
         this.gridSize = gridSize;
         val K1 = gridSize(0) as Double;
         val K2 = gridSize(1) as Double;
@@ -156,9 +177,7 @@ public class PME_SPMD {
         this.K3 = K3;
 
         this.atoms = atoms;
-        val gridRegion = Region.make(0..(gridSize(0)-1), 0..(gridSize(1)-1), 0..(gridSize(2)-1));
-        val gridDist = Dist.makeBlockBlock(gridRegion, 0, 1);
-        this.gridDist = gridDist;
+
         this.splineOrder = splineOrder;
         this.beta = beta;
         this.cutoff = cutoff;
