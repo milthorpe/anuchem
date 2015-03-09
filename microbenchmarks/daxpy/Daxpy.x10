@@ -50,6 +50,7 @@ public class Daxpy(N:Long) {
     }
 
 	public def testAll() {
+        Console.OUT.println("X10 DAXPY ");
         var start:Long;
         var stop:Long;
 
@@ -61,7 +62,7 @@ public class Daxpy(N:Long) {
             daxpy(alpha, x, y);
         }
         stop = System.nanoTime();
-        Console.OUT.printf("X10 DAXPY for vectors length %d: %g ms\n", N, ((stop-start) as Double) / 1e6 / ITERS);
+        Console.OUT.printf("vector size: %d X10_NTHREADS: %d time per iteration: %g ms\n", N, x10.xrx.Runtime.NTHREADS, ((stop-start) as Double) / 1e6 / ITERS);
 	}
 
 	public static def main(args:Rail[String]): void = {

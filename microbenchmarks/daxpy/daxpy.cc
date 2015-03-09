@@ -14,6 +14,7 @@
 #include <math.h>
 #include <sys/time.h>
 #include <algorithm>
+#include <omp.h>
 
 const size_t ITERS = 1000;
 
@@ -32,6 +33,7 @@ int main(int argc, char *argv[]) {
         fprintf(stderr, "usage: daxpy_c N\n");
         exit(1);
     }
+    printf("C++ DAXPY\n");
     int N = atoi(argv[1]);
     double alpha = 2.5;
     double *x = new double[N]();
@@ -49,7 +51,7 @@ int main(int argc, char *argv[]) {
     }
     int64_t t2 = TimeInMicros();
 
-    printf("C++ DAXPY for vectors length %d: %g ms\n", N, (t2-t1)/1e3/ITERS);
+    printf("vector size: %d num threads: %d time per iteration: %g ms\n", N, omp_get_num_threads(), (t2-t1)/1e3/ITERS);
 
     delete x;
     delete y;

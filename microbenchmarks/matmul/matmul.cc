@@ -14,6 +14,7 @@
 #include <math.h>
 #include <sys/time.h>
 #include <algorithm>
+#include <omp.h>
 
 const size_t ITERS = 100;
 
@@ -32,6 +33,7 @@ int main(int argc, char *argv[]) {
         fprintf(stderr, "usage: matmul_c N\n");
         exit(1);
     }
+    printf("C++ matrix multiplication\n");
     int N = atoi(argv[1]);
     double *a = new double[N*N]();
     double *b = new double[N*N]();
@@ -57,7 +59,7 @@ int main(int argc, char *argv[]) {
     }
     int64_t t2 = TimeInMicros();
 
-    printf("C++ matrix multiplication size %d: %g ms\n", N, (t2-t1)/1e3/ITERS);
+    printf("matrix size: %d num threads: %d time per iteration: %g ms\n", N, omp_get_num_threads(), (t2-t1)/1e3/ITERS);
 
     delete a;
     delete b;
