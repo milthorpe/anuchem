@@ -6,15 +6,15 @@
  *  You may obtain a copy of the License at
  *      http://www.opensource.org/licenses/eclipse-1.0.php
  *
- *  (C) Copyright IBM Corporation 2014.
+ *  (C) Copyright IBM Corporation 2014-2015.
  */
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
 #include <sys/time.h>
-#include <algorithm>
 #include <omp.h>
+#include <algorithm>
 
 const size_t ITERS = 100;
 
@@ -25,7 +25,7 @@ int64_t TimeInMicros() {
 }
 
 /** 
- * Simple code to perform multiplication of square matrices of dimension N.
+ * C++/OpenMP code to perform multiplication of square matrices of dimension N.
  * Intended as a comparison to MatMul.x10
  */
 int main(int argc, char *argv[]) {
@@ -33,11 +33,15 @@ int main(int argc, char *argv[]) {
         fprintf(stderr, "usage: matmul_c N\n");
         exit(1);
     }
-    printf("C++ matrix multiplication\n");
+    printf("C++ matrix multiplication with OpenMP\n");
     int N = atoi(argv[1]);
+
     double *a = new double[N*N]();
     double *b = new double[N*N]();
     double *c = new double[N*N]();
+
+    #pragma omp parallel shared(a, b, c)
+    #pragma omp for schedule(static)
     for (size_t i = 0; i < N; i++) {
         for (size_t j = 0; j < N; j++) {
             a[i+j*N] = b[i+j*N] = i+j*N;
@@ -46,7 +50,7 @@ int main(int argc, char *argv[]) {
 
     int64_t t1 = TimeInMicros();
     for (size_t iter = 0; iter < ITERS; iter++) {
-        #pragma omp parallel for collapse(2)
+        #pragma omp for schedule(static)
         for (size_t j = 0; j < N; j++) {
             for (size_t i = 0; i < N; i++) {
                 double x = 0.0;
@@ -59,7 +63,8 @@ int main(int argc, char *argv[]) {
     }
     int64_t t2 = TimeInMicros();
 
-    printf("matrix size: %d num threads: %d time per iteration: %g ms\n", N, omp_get_num_threads(), (t2-t1)/1e3/ITERS);
+    printf("matrix size: %d num threads: %d time per iteration: %g ms\n",
+        N, omp_get_max_threads(), (t2-t1)/1e3/ITERS);
 
     delete a;
     delete b;

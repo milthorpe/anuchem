@@ -6,15 +6,15 @@
  *  You may obtain a copy of the License at
  *      http://www.opensource.org/licenses/eclipse-1.0.php
  *
- *  (C) Copyright Australian National University 2013.
+ *  (C) Copyright IBM Corporation 2015.
  */
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
 #include <sys/time.h>
+#include <tbb/tbb.h>
 #include <algorithm>
-#include <omp.h>
 
 const size_t ITERS = 1000;
 
@@ -24,8 +24,26 @@ int64_t TimeInMicros() {
     return tv.tv_sec*1000000 + tv.tv_usec;
 }
 
+struct Daxpy {
+    double* x;
+    const double *y;
+    double alpha;
+
+    Daxpy(const double alpha, double* x, const double* y) {
+        this->alpha = alpha;
+        this->x = x;
+        this->y = y;
+    }
+
+    void operator()(const tbb::blocked_range<size_t>& range) const {
+        for (int i = range.begin(); i < range.end(); ++i) {
+            x[i] = alpha * x[i] + y[i];
+        }
+    }
+};
+
 /** 
- * Simple code to perform a DAXPY of vectors of length N.
+ * C++/TBB code to perform a DAXPY of vectors of length N.
  * Intended as a comparison to Daxpy.x10
  */
 int main(int argc, char *argv[]) {
@@ -33,8 +51,12 @@ int main(int argc, char *argv[]) {
         fprintf(stderr, "usage: daxpy_c N\n");
         exit(1);
     }
-    printf("C++ DAXPY\n");
+    printf("C++ DAXPY with TBB\n");
     int N = atoi(argv[1]);
+    int num_threads =  tbb::task_scheduler_init::default_num_threads();
+    if (argc > 2) {
+        num_threads = atoi(argv[2]);
+    }
     double alpha = 2.5;
     double *x = new double[N]();
     double *y = new double[N]();
@@ -42,16 +64,18 @@ int main(int argc, char *argv[]) {
         x[i] = y[i] = N;
     }
 
+    tbb::task_scheduler_init sched(num_threads);
+
+    Daxpy daxpy(alpha, x, y);
+
     int64_t t1 = TimeInMicros();
     for (size_t iter = 0; iter < ITERS; iter++) {
-        #pragma omp parallel for private(i) schedule(static)
-        for (size_t i = 0; i < N; i++) {
-            x[i] = alpha * x[i] + y[i];
-        }
+        tbb:parallel_for(tbb::blocked_range<size_t>(0, N), daxpy);
     }
     int64_t t2 = TimeInMicros();
 
-    printf("vector size: %d num threads: %d time per iteration: %g ms\n", N, omp_get_num_threads(), (t2-t1)/1e3/ITERS);
+    printf("vector size: %d num threads: %d time per iteration: %g ms\n",
+        N, num_threads, (t2-t1)/1e3/ITERS);
 
     delete x;
     delete y;
