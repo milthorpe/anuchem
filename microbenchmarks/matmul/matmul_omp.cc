@@ -50,7 +50,7 @@ int main(int argc, char *argv[]) {
 
     int64_t t1 = TimeInMicros();
     for (size_t iter = 0; iter < ITERS; iter++) {
-        #pragma omp for schedule(static)
+        #pragma omp for schedule(static) collapse(2)
         for (size_t j = 0; j < N; j++) {
             for (size_t i = 0; i < N; i++) {
                 double x = 0.0;
