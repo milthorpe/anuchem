@@ -40,8 +40,6 @@ int main(int argc, char *argv[]) {
     double *b = new double[N*N]();
     double *c = new double[N*N]();
 
-    #pragma omp parallel shared(a, b, c)
-    #pragma omp for schedule(static)
     for (size_t i = 0; i < N; i++) {
         for (size_t j = 0; j < N; j++) {
             a[i+j*N] = b[i+j*N] = i+j*N;
