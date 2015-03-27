@@ -44,13 +44,13 @@ public class Daxpy(N:Long) {
         }
 */
         //Foreach.basic(start, end, body);
-        //Foreach.block(start, end, body);
+        Foreach.block(start, end, body);
         //Foreach.cyclic(start, end, body);
-        Foreach.bisect(start, end, body);
+        //Foreach.bisect(start, end, body);
     }
 
 	public def testAll() {
-        Console.OUT.println("X10 DAXPY ");
+        Console.OUT.print("X10 DAXPY ");
         var start:Long;
         var stop:Long;
 
