@@ -59,7 +59,7 @@ public class MatMul(N:Long) {
     }
 
 	public def testAll() {
-        Console.OUT.println("X10 matrix multiplication ");
+        Console.OUT.println("X10 matrix multiplication");
         var start:Long;
         var stop:Long;
 

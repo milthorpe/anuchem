@@ -50,7 +50,7 @@ public class Daxpy(N:Long) {
     }
 
 	public def testAll() {
-        Console.OUT.print("X10 DAXPY ");
+        Console.OUT.println("X10 DAXPY");
         var start:Long;
         var stop:Long;
 

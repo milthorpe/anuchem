@@ -9,7 +9,7 @@ endif
 NPROC ?= $(shell nproc)
 
 CXX 	 = g++
-CXXFLAGS = -g -O2 -fopenmp -ftree-vectorize #-ftree-vectorizer-verbose=6 
+CXXFLAGS = -g -O3 -fopenmp
 LDFLAGS = -lpthread
 
 SIZE=500
