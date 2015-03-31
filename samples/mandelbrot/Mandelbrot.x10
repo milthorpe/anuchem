@@ -21,7 +21,7 @@ public class Mandelbrot {
     public static val LIMIT = 2;
     public static val MAX_ITERATIONS = 255;
 
-	public def compute(min : Complex, max : Complex, realPoints:Long) = {
+	public def compute(min : Complex, max : Complex, realPoints:Long) {
         val gridSpacing = (max.re - min.re) / realPoints;
         val imaginaryPoints = ((max.im - min.im) / (max.re - min.re) * realPoints) as Long;
         val result = new Array_2[Double](realPoints+1, imaginaryPoints+1);

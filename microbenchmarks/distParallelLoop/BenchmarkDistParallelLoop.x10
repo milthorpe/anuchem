@@ -221,7 +221,7 @@ public class BenchmarkDistParallelLoop(size:Long, print:Boolean) {
         }
     }
 
-	public static def main(args:Rail[String]):void = {
+	public static def main(args:Rail[String]):void {
         var size:Long = 8000;
         var print:Boolean = false;
         if (args.size > 0) {

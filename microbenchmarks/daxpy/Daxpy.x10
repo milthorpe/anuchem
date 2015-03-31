@@ -65,7 +65,7 @@ public class Daxpy(N:Long) {
         Console.OUT.printf("vector size: %d X10_NTHREADS: %d time per iteration: %g ms\n", N, x10.xrx.Runtime.NTHREADS, ((stop-start) as Double) / 1e6 / ITERS);
 	}
 
-	public static def main(args:Rail[String]): void = {
+	public static def main(args:Rail[String]): void {
         var size:Long = 100000;
         var print:Boolean = false;
         if (args.size > 0) {

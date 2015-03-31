@@ -56,7 +56,7 @@ public class BenchmarkTransferMatrix(M:Long, N:Long) {
         Console.OUT.printf("transfer with Rail.asyncCopy: %g ms\n", ((stop-start) as Double) / 1e6 / ITERS);
 	}
 
-	public static def main(args:Rail[String]): void = {
+	public static def main(args:Rail[String]): void {
         var m:Long = 14450;
         var n:Long = 700;
         var print:Boolean = false;

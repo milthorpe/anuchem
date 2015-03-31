@@ -20,7 +20,7 @@ public class MandelbrotDist {
     public static val LIMIT = 2;
     public static val MAX_ITERATIONS = 255;
 
-	public def compute(min : Complex, max : Complex, realPoints : Int) = {
+	public def compute(min : Complex, max : Complex, realPoints : Int) {
         val gridSpacing = (max.re - min.re) / realPoints;
         val imaginaryPoints = ((max.im - min.im) / (max.re - min.re) * realPoints) as Int;
 
@@ -100,7 +100,7 @@ Console.OUT.println(offsets);
 */
 	}
 
-	public static def main(var args: Array[String](1)): void = {
+	public static def main(var args: Array[String](1)): void {
         val min = Complex(-2.0, -1.0);
         val max = Complex(1.0, 1.0);
         var realPoints : Int = 1200;

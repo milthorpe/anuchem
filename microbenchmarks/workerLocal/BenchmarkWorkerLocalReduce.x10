@@ -99,7 +99,7 @@ public class BenchmarkWorkerLocalReduce(N:Long, print:Boolean) {
         Console.OUT.printf("collecting finish double: %g ms\n", ((stop-start) as Double) / 1e6 / ITERS);
 	}
 
-	public static def main(args:Rail[String]): void = {
+	public static def main(args:Rail[String]): void {
         var size:Long = 100000;
         var print:Boolean = false;
         if (args.size > 0) {

@@ -125,7 +125,7 @@ public class FivePointStencil(N:Long) {
         }
     }
 
-	public def run(): Boolean = {
+	public def run(): Boolean {
         initialise();
         val start = System.nanoTime();
         for (t in 1..TIME_STEPS) {
@@ -166,7 +166,7 @@ public class FivePointStencil(N:Long) {
         return true;
 	}
 
-	public static def main(args:Rail[String]):void = {
+	public static def main(args:Rail[String]):void {
         var elementsPerPlace:Long = 512;
         if (args.size > 0) {
             elementsPerPlace = Long.parse(args(0));
