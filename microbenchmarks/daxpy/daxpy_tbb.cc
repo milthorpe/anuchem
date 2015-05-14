@@ -74,7 +74,7 @@ int main(int argc, char *argv[]) {
     }
     int64_t t2 = TimeInMicros();
 
-    printf("vector size: %d num threads: %d time per iteration: %g ms\n",
+    printf("vector size: %d threads: %d time per iteration: %g ms\n",
         N, num_threads, (t2-t1)/1e3/ITERS);
 
     delete x;

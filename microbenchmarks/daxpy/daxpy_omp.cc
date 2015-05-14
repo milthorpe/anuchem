@@ -51,7 +51,7 @@ int main(int argc, char *argv[]) {
     }
     int64_t t2 = TimeInMicros();
 
-    printf("vector size: %d num threads: %d time per iteration: %g ms\n",
+    printf("vector size: %d OMP_NUM_THREADS: %d time per iteration: %g ms\n",
         N, omp_get_max_threads(), (t2-t1)/1e3/ITERS);
 
     delete x;
