@@ -84,27 +84,6 @@ public class ParticleData {
     }
 
     /**
-     * Sorts a portion of the atoms into ascending order.
-     * @param lo the index of the start of the range to be sorted
-     * @param hi the index of the end of the range to be sorted
-     * @param cmp the comparison function to use
-     */
-    public def sortAtoms(lo:Long, hi:Long, cmp:(Long,Long)=>Int) {
-        if (hi <= lo) return;
-        var l:Long = lo - 1;
-        var h:Long = hi;
-        while (true) {
-            while (cmp(++l,hi)<0);
-            while (cmp(hi, --h)<0 && h>lo);
-            if (l >= h) break;
-            swapAtoms(l, h);
-        }
-        swapAtoms(l, hi);
-        sortAtoms(lo, l-1, cmp);
-        sortAtoms(l+1, hi, cmp);
-    }
-
-    /**
      * Sorts a portion of the atoms into ascending order based on an external
      * feature array.
      * @param a the Rail containing the feature upon which to sort
@@ -113,27 +92,59 @@ public class ParticleData {
      * @param cmp the comparison function to use
      */
     public def sortAtoms[T](a:Rail[T], lo:Long, hi:Long, cmp:(T,T)=>Int) {
-        if (hi <= lo) return;
-        var l:Long = lo - 1;
-        var h:Long = hi;
-        while (true) {
-            while (cmp(a(++l),a(hi))<0);
-            while (cmp(a(hi),a(--h))<0 && h>lo);
-            if (l >= h) break;
-            exch(a, l, h);
-            swapAtoms(l, h);
+        if (lo < hi) {
+            val p = partition(a, lo, hi, cmp);
+            sortAtoms[T](a, lo, p-1, cmp);
+            sortAtoms[T](a, p+1, hi, cmp);
         }
-        exch(a, l, hi);
-        swapAtoms(l, hi);
-        sortAtoms[T](a, lo, l-1, cmp);
-        sortAtoms[T](a, l+1, hi, cmp);
+    }
+
+    private @Inline def partition[T](a:Rail[T], lo:Long, hi:Long, cmp:(T,T)=>Int) {
+        val pivotIndex = medianIndex(a, lo, hi, cmp);
+        val pivotValue = a(pivotIndex);
+        swapAtoms(a, pivotIndex, hi);
+
+        var p:Long = lo;
+        for (var i:Long = lo; i < hi; i++) {
+            if (cmp(a(i), pivotValue) <= 0)
+                swapAtoms(a, i, p++);
+        }
+        swapAtoms(a, p, hi);
+
+        return p;
+    }
+
+    /**
+     * Given indices lo and hi, returns the index of the median element of
+     * a[lo, hi, (lo+hi)/2].
+     */
+    private @Inline def medianIndex[T](a:Rail[T], lo:Long, hi:Long, cmp:(T,T)=>Int) {
+        val mid = (lo + hi) / 2;
+        if (cmp(a(lo), a(mid)) < 0) {
+            if (cmp(a(mid), a(hi)) < 0) {
+                return mid;
+            } else if (cmp(a(lo), a(hi)) < 0) {
+                return hi;
+            } else {
+                return lo;
+            }
+        } else {
+            if (cmp(a(lo), a(hi)) < 0) {
+                return lo;
+            } else if (cmp(a(mid), a(hi)) < 0) {
+                return hi;
+            } else {
+                return mid;
+            }
+        }
     }
 
     /**
      * Swap data between positions i and j in all of the particle data
      * arrays.
      */
-    private @Inline def swapAtoms(i:Long, j:Long):void {
+    private @Inline def swapAtoms[T](a:Rail[T], i:Long, j:Long):void {
+        exch(a, i, j);
         exch(globalIndex, i, j);
         exch(atomTypeIndex, i, j);
         exch(residueNumber, i, j);
