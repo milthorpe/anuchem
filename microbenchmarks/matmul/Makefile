@@ -1,4 +1,4 @@
-X10FLAG := -O -NO_CHECKS
+X10FLAG := -O3 -NO_CHECKS
 
 # enable CPU profiling with google-perftools
 PROFILE ?=

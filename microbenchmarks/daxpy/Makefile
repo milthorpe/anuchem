@@ -1,5 +1,5 @@
 X10CPP := x10c++
-X10CPPFLAGS := -O -NO_CHECKS
+X10CPPFLAGS := -O3 -NO_CHECKS
 
 # enable CPU profiling with google-perftools
 PROFILE ?=
