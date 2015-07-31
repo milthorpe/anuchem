@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <meta name="description" content="ANUChem : A collection of chemistry codes written in the X10 language.">
+
+    <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
+
+    <title>ANUChem</title>
+  </head>
+
+  <body>
+
+    <!-- HEADER -->
+    <div id="header_wrap" class="outer">
+        <header class="inner">
+          <a id="forkme_banner" href="https://github.com/milthorpe/anuchem">View on GitHub</a>
+
+          <h1 id="project_title">ANUChem</h1>
+          <h2 id="project_tagline">A collection of chemistry codes written in the X10 language.</h2>
+
+            <section id="downloads">
+              <a class="zip_download_link" href="https://github.com/milthorpe/anuchem/zipball/master">Download this project as a .zip file</a>
+              <a class="tar_download_link" href="https://github.com/milthorpe/anuchem/tarball/master">Download this project as a tar.gz file</a>
+            </section>
+        </header>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div id="main_content_wrap" class="outer">
+      <section id="main_content" class="inner">
+        <h1>
+<a id="anuchem-computational-chemistry-suite" class="anchor" href="#anuchem-computational-chemistry-suite" aria-hidden="true"><span class="octicon octicon-link"></span></a>ANUChem computational chemistry suite</h1>
+
+<p>This program is controlled by the Eclipse Public Licence v1.0
+<a href="http://www.eclipse.org/legal/epl-v10.html">http://www.eclipse.org/legal/epl-v10.html</a></p>
+
+<h2>
+<a id="overview" class="anchor" href="#overview" aria-hidden="true"><span class="octicon octicon-link"></span></a>Overview</h2>
+
+<p>ANUChem is a suite of computational chemistry codes written in the <a href="http://x10-lang.org/">X10 programming language</a>.</p>
+
+<p>It is intended to test the expressiveness, performance and scalability of X10 for use in developing scientific application codes.</p>
+
+<p>ANUChem currently contains three significant application codes:</p>
+
+<ul>
+<li>pumjarasaayani (Quantum Chemistry): solves the molecular electronic structure problem using the Hartree-Fock/self-consistent field method.</li>
+<li>fmm (PGAS-FMM): calculates the electrostatic potential of a system of charged particles using the Fast Multipole Method.</li>
+<li>pme (Particle Mesh Ewald): calculates electrostatic potential using the Smooth Particle Mesh Ewald method.</li>
+</ul>
+
+<p>The individual codes are described in <code>${appname}/README</code> including the build process and test inputs.</p>
+
+<p>In addition, there are a number of smaller codes contained in <code>./samples</code> and <code>./microbenchmarks</code>.  These are codes from outside the chemistry domain which
+exercise specific features of the X10 language.</p>
+
+<h2>
+<a id="compiling" class="anchor" href="#compiling" aria-hidden="true"><span class="octicon octicon-link"></span></a>Compiling</h2>
+
+<pre><code>$ ant
+</code></pre>
+
+<p>will build and test the major application codes in ANUChem (fmm, pme and
+pumjarasaayani).</p>
+
+<p>Each application or sample subdirectory also has either an Ant build script or
+a Makefile.</p>
+
+<h2>
+<a id="working-with-anuchem" class="anchor" href="#working-with-anuchem" aria-hidden="true"><span class="octicon octicon-link"></span></a>Working with ANUChem</h2>
+
+<p>The codes are under continuous revision and the current source is available in the <a href="https://github.com/milthorpe/anuchem">ANUChem Github project</a>.</p>
+
+<p>In addition, there are source distributions containing "release" versions of the source code that compile against each released version of X10.</p>
+
+<p>For any questions about building, testing or extending ANUChem, please email <a href="mailto:josh.milthorpe@anu.edu.au">josh.milthorpe@anu.edu.au</a></p>
+
+<p>ANUChem is free software under the Eclipse Public License.</p>
+
+<h2>
+<a id="referencing-anuchem" class="anchor" href="#referencing-anuchem" aria-hidden="true"><span class="octicon octicon-link"></span></a>Referencing ANUChem</h2>
+
+<p>Please cite the following paper when referencing ANUChem in a publication.</p>
+
+<p>J. Milthorpe, V. Ganesh, A.P. Rendell, and D. Grove (2011). <strong>X10 as a parallel language for scientific computation: practice and experience</strong>, in proceedings of the 25th IEEE International Parallel &amp; Distributed Processing Symposium (ISBN 978-0-7695-4385-7), 1080-1088 <a href="http://dx.doi.org/10.1109/IPDPS.2011.103">doi:10.1109/IPDPS.2011.103</a></p>
+      </section>
+    </div>
+
+    <!-- FOOTER  -->
+    <div id="footer_wrap" class="outer">
+      <footer class="inner">
+        <p class="copyright">ANUChem maintained by <a href="https://github.com/milthorpe">milthorpe</a></p>
+        <p>Published with <a href="https://pages.github.com">GitHub Pages</a></p>
+      </footer>
+    </div>
+
+              <script type="text/javascript">
+            var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+            document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+          </script>
+          <script type="text/javascript">
+            try {
+              var pageTracker = _gat._getTracker("UA-38087426-1");
+            pageTracker._trackPageview();
+            } catch(err) {}
+          </script>
+
+
+  </body>
+</html>
