@@ -135,7 +135,7 @@ public class DIISFockExtrapolator(N:Long) {
         // set up A x = B to be solved
         for (var i:Int=0n; i < noOfIterations; i++) {
             for (var j:Int=0n; j < noOfIterations; j++) {
-                A(i,j) = errorVectorList.get(i).blasTransProduct(errorVectorList.get(j));
+                A(i,j) = errorVectorList.get(i).dot(errorVectorList.get(j));
             } // end for
         } // end for
 
