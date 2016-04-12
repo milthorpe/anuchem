@@ -2,8 +2,8 @@
 <!DOCTYPE project [<!ENTITY buildfile SYSTEM "file:./build-user.xml">]>
 <project name="FFTW wrapper x10lib" default="build" basedir=".">
     <property name="x10rt" value="sockets" />
-    <property name="fftw3.include" location="${user.home}/fftw/include" />
-    <property name="fftw3.lib" location="${user.home}/fftw/lib" />
+    <property name="fftw3.include" location="${user.home}/opt/fftw3/include" />
+    <property name="fftw3.lib" location="${user.home}/opt/fftw3/lib" />
     <property environment="env"/>
     <property name="bash.exe" value="bash"/>    
     <property name="optimize" value="true"/>
