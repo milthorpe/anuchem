@@ -39,6 +39,13 @@ style molecules.
 Compiling:
 ----------
 
+Note: before building this code for the first time, it is necessary to clone the submodule for the [spherical harmonics library](https://github.com/milthorpe/spherical-harmonics).
+
+$ git submodule init
+$ git submodule update
+
+After this, the spherical harmonics code will be found in the ./ro directory.
+
 $ ant
 
 will build the required executable and put it in bin/pumjarasaayani
