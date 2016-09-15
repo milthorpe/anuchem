@@ -184,8 +184,8 @@
         </uptodate>
     </target>
 
-    <target name="build-integral-pack" depends="check-src-cpp" unless="src.uptodate.cpp">
-        <echo message="Building integral pack"/>
+    <target name="build-sh-lib" depends="check-src-cpp" unless="src.uptodate.cpp">
+        <echo message="Building spherical harmonics library"/>
 
         <mkdir dir="${lib}"/>
 
@@ -195,7 +195,28 @@
 
         <exec executable="${bash.exe}" failonerror="true" dir="${lib}">
             <arg value="-c"/> 
-            <arg value="g++ -Wall -c -g -O3 -D__X10_HEADERS -I${x10.stdlib} Integral_Pack.cc SphericalHarmonics.cc bessel4.cc"/>
+            <arg value="g++ -Wall -c -g -O3 -D__X10_HEADERS -I${x10.stdlib} SphericalHarmonics.cc bessel4.cc"/>
+        </exec>
+
+        <mkdir dir="${target-src}/au/edu/anu/qm/ro"/>
+
+        <copy todir="${target-src}/au/edu/anu/qm/ro">
+            <fileset id="header.file" dir="ro" includes="*.h"/>
+        </copy>
+    </target>
+
+    <target name="build-integral-pack" depends="check-src-cpp,build-sh-lib" unless="src.uptodate.cpp">
+        <echo message="Building integral pack"/>
+
+        <mkdir dir="${lib}"/>
+
+        <copy todir="${lib}">
+            <fileset id="cpp.files" dir="${basedir}/src/au/edu/anu/qm/ro" includes="**/*.h,**/*.cc"/>
+        </copy>
+
+        <exec executable="${bash.exe}" failonerror="true" dir="${lib}">
+            <arg value="-c"/> 
+            <arg value="g++ -Wall -c -g -O3 -D__X10_HEADERS -I${x10.stdlib} Integral_Pack.cc"/>
         </exec>
 
         <exec executable="${bash.exe}" failonerror="true" dir="${lib}">
@@ -206,7 +227,7 @@
         <mkdir dir="${target-src}/au/edu/anu/qm/ro"/>
 
         <copy todir="${target-src}/au/edu/anu/qm/ro">
-            <fileset id="header.file" dir="ro" includes="*.h"/>
+            <fileset id="integral.header.file" dir="${basedir}/src/au/edu/anu/qm/ro" includes="*.h"/>
         </copy>
     </target>
     
