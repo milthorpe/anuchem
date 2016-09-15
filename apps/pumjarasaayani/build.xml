@@ -195,7 +195,7 @@
 
         <exec executable="${bash.exe}" failonerror="true" dir="${lib}">
             <arg value="-c"/> 
-            <arg value="g++ -Wall -c -g -O3 -D__X10_HEADERS -I${x10.stdlib} SphericalHarmonics.cc bessel4.cc"/>
+            <arg value="g++ -Wall -c -g -O3 -D__X10_HEADERS -I${x10.stdlib} SphericalHarmonics.cc"/>
         </exec>
 
         <mkdir dir="${target-src}/au/edu/anu/qm/ro"/>
@@ -216,7 +216,7 @@
 
         <exec executable="${bash.exe}" failonerror="true" dir="${lib}">
             <arg value="-c"/> 
-            <arg value="g++ -Wall -c -g -O3 -D__X10_HEADERS -I${x10.stdlib} Integral_Pack.cc"/>
+            <arg value="g++ -Wall -c -g -O3 -D__X10_HEADERS -I${x10.stdlib} Integral_Pack.cc bessel4.cc"/>
         </exec>
 
         <exec executable="${bash.exe}" failonerror="true" dir="${lib}">
